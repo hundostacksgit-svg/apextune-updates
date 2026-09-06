@@ -36,7 +36,11 @@ jobs:
           python3 -m py_compile tools/sysreport.py
           echo "site looks complete"
 
+      # enablement turns Pages on for the repo automatically, so the first
+      # deploy works without anyone visiting Settings first.
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
