@@ -94,7 +94,7 @@ Wi-Fi adapter.
 
 ## Install it on your phone
 
-1. Open the deployed URL in your phone's browser.
+1. Open <https://hundostacksgit-svg.github.io/apextune-updates/> in your phone's browser.
 2. **Android / Chrome:** tap **Install** in the app header, or menu **⋮ → Add to Home screen**.
 3. **iPhone / Safari:** tap **Share** → **Add to Home Screen**.
 
@@ -156,19 +156,19 @@ python3 -m http.server 8080
 
 ## Deploying
 
-The repo ships a GitHub Actions workflow that publishes to GitHub Pages on every
-push. There is no build step — the site is served exactly as committed.
+**The site is live at <https://hundostacksgit-svg.github.io/apextune-updates/>.**
 
-**One-time setup.** Pages has to be switched on by the repository owner; a
-workflow token is not allowed to create the Pages site itself:
+Pages is enabled and serves the `gh-pages` branch. The workflow in
+`.github/workflows/pages.yml` mirrors every push onto that branch, so the live
+site tracks the default branch automatically. There is no build step — the
+files are served exactly as committed.
 
-1. Go to **Settings → Pages**.
-2. Under **Source**, choose **GitHub Actions**.
-3. Go to **Actions**, open **Deploy to GitHub Pages**, and click **Run workflow**
-   (or just push any commit).
-
-The site then appears at `https://<user>.github.io/<repo>/` — for this
-repository, <https://hundostacksgit-svg.github.io/apextune-updates/>.
+This deliberately uses a branch deploy rather than the `deploy-pages` action.
+A workflow token is not permitted to create a Pages site, so an Actions-source
+deploy cannot bootstrap itself on a repository where Pages has never been
+turned on; pushing a `gh-pages` branch to a public repository enables Pages on
+its own. Mirroring to that branch needs only `contents: write` and no
+repository setting.
 
 ---
 

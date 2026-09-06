@@ -1,24 +1,22 @@
-name: Deploy to GitHub Pages
+name: Publish to GitHub Pages
 
+# Pages serves this repository from the gh-pages branch, so publishing is a
+# matter of mirroring the pushed commit onto that branch. This needs only
+# contents:write — no Pages API call, and no repository setting to switch on.
 on:
   push:
     branches: [main, master, "claude/universal-diagnostics-app-6x8tot"]
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
+  group: publish-pages
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,22 +24,20 @@ jobs:
       - name: Verify the site is complete
         run: |
           set -euo pipefail
-          for f in index.html manifest.webmanifest sw.js css/app.css \
+          for f in index.html manifest.webmanifest sw.js .nojekyll css/app.css \
                    js/app.js js/ui.js js/store.js js/report.js \
                    js/obd/elm327.js js/obd/transport.js js/obd/pids.js js/obd/dtc.js \
                    icons/icon-192.png icons/icon-512.png; do
             [ -f "$f" ] || { echo "missing required file: $f"; exit 1; }
           done
           python3 -c "import json; json.load(open('manifest.webmanifest'))"
-          python3 -m py_compile tools/sysreport.py
+          python3 -m py_compile tools/sysreport.py desktop/apextune.py desktop/install.py
           echo "site looks complete"
 
-      # Pages must be switched on once for the repository, under
-      # Settings -> Pages -> Source -> GitHub Actions. The workflow token is
-      # not permitted to create the Pages site itself.
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Publish to gh-pages
+        run: |
+          set -euo pipefail
+          # gh-pages is a deploy branch that nothing else writes, so forcing it
+          # to match the commit being published is always the correct result.
+          git push origin "HEAD:refs/heads/gh-pages" --force
+          echo "published ${GITHUB_SHA} to gh-pages"

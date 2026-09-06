@@ -83,8 +83,8 @@ that reports saved under the old port will not appear.
 
 ## No Python? Install the web app instead
 
-If the site is deployed (see the main README), Chrome and Edge on the desktop
-can install it directly: open the URL, then **⋮ → Cast, save and share →
-Install page as app**. That creates a real desktop shortcut and Start-menu entry
+Chrome and Edge on the desktop can install the live site directly: open
+<https://hundostacksgit-svg.github.io/apextune-updates/>, then **⋮ → Cast, save
+and share → Install page as app**. That creates a real desktop shortcut and Start-menu entry
 with no scripts and no Python at all. The only thing you give up is that it
 needs the deployed URL rather than running purely from this folder.
