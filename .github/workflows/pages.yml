@@ -1,14 +1,15 @@
 name: Publish to GitHub Pages
 
+# Pages serves this repository from the gh-pages branch, so publishing is a
+# matter of mirroring the pushed commit onto that branch. This needs only
+# contents:write — no Pages API call, and no repository setting to switch on.
 on:
   push:
     branches: [main, master, "claude/universal-diagnostics-app-6x8tot"]
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: publish-pages
@@ -16,9 +17,6 @@ concurrency:
 
 jobs:
   publish:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -36,12 +34,10 @@ jobs:
           python3 -m py_compile tools/sysreport.py desktop/apextune.py desktop/install.py
           echo "site looks complete"
 
-      # The Pages site already exists, so this only has to read its config and
-      # switch the build source to Actions -- it never needs the create call
-      # that the workflow token is not permitted to make.
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Publish to gh-pages
+        run: |
+          set -euo pipefail
+          # gh-pages is a deploy branch that nothing else writes, so forcing it
+          # to match the commit being published is always the correct result.
+          git push origin "HEAD:refs/heads/gh-pages" --force
+          echo "published ${GITHUB_SHA} to gh-pages"
