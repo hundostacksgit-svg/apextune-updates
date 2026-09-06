@@ -130,8 +130,18 @@ python3 -m http.server 8080
 ## Deploying
 
 The repo ships a GitHub Actions workflow that publishes to GitHub Pages on every
-push to the default branch. Enable it once under **Settings → Pages → Source →
-GitHub Actions**. There is no build step — the site is served as-is.
+push. There is no build step — the site is served exactly as committed.
+
+**One-time setup.** Pages has to be switched on by the repository owner; a
+workflow token is not allowed to create the Pages site itself:
+
+1. Go to **Settings → Pages**.
+2. Under **Source**, choose **GitHub Actions**.
+3. Go to **Actions**, open **Deploy to GitHub Pages**, and click **Run workflow**
+   (or just push any commit).
+
+The site then appears at `https://<user>.github.io/<repo>/` — for this
+repository, <https://hundostacksgit-svg.github.io/apextune-updates/>.
 
 ---
 

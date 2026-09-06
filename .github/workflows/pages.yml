@@ -36,11 +36,10 @@ jobs:
           python3 -m py_compile tools/sysreport.py
           echo "site looks complete"
 
-      # enablement turns Pages on for the repo automatically, so the first
-      # deploy works without anyone visiting Settings first.
+      # Pages must be switched on once for the repository, under
+      # Settings -> Pages -> Source -> GitHub Actions. The workflow token is
+      # not permitted to create the Pages site itself.
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
