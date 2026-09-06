@@ -1,0 +1,44 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main, master, "claude/universal-diagnostics-app-6x8tot"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify the site is complete
+        run: |
+          set -euo pipefail
+          for f in index.html manifest.webmanifest sw.js css/app.css \
+                   js/app.js js/ui.js js/store.js js/report.js \
+                   js/obd/elm327.js js/obd/transport.js js/obd/pids.js js/obd/dtc.js \
+                   icons/icon-192.png icons/icon-512.png; do
+            [ -f "$f" ] || { echo "missing required file: $f"; exit 1; }
+          done
+          python3 -c "import json; json.load(open('manifest.webmanifest'))"
+          python3 -m py_compile tools/sysreport.py
+          echo "site looks complete"
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4
