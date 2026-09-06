@@ -87,6 +87,36 @@ export async function promptInstall() {
   return outcome === 'accepted';
 }
 
+/* ---------- desktop launcher liaison ---------- */
+/* The desktop launcher opens the app with ?app=desktop and shuts its local
+   server down once this window stops checking in, so closing the app never
+   strands a background process. A hosted copy never sets the flag, so none of
+   this runs there. The flag lives in sessionStorage to survive reloads and the
+   hash routing, and is scoped to this window only. */
+const DESKTOP_FLAG = 'apextune.desktop';
+const HEARTBEAT_MS = 30000;
+
+function isDesktopSession() {
+  try {
+    if (new URLSearchParams(location.search).get('app') === 'desktop') {
+      sessionStorage.setItem(DESKTOP_FLAG, '1');
+    }
+    return sessionStorage.getItem(DESKTOP_FLAG) === '1';
+  } catch {
+    return false; // storage blocked — the launcher falls back to its idle timeout
+  }
+}
+
+function startDesktopHeartbeat() {
+  // sendBeacon survives page teardown, which a fetch() on pagehide does not.
+  const ping = (path) => { try { navigator.sendBeacon(path, ''); } catch { /* launcher gone */ } };
+  ping('__alive');
+  setInterval(() => ping('__alive'), HEARTBEAT_MS);
+  // Fires on close and on reload alike; the launcher waits a few seconds so a
+  // reload's fresh heartbeat cancels the shutdown.
+  window.addEventListener('pagehide', () => ping('__quit'));
+}
+
 /* ---------- start ---------- */
 window.addEventListener('hashchange', render);
 window.addEventListener('online', paintNet);
@@ -100,6 +130,7 @@ $('#btn-install')?.addEventListener('click', promptInstall);
 
 (async function boot() {
   paintNet();
+  if (isDesktopSession()) startDesktopHeartbeat();
   if (!location.hash) location.hash = '#/home';
   await render();
   setTimeout(() => $('#splash')?.classList.add('gone'), 220);

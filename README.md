@@ -102,6 +102,32 @@ It then launches full screen from your home screen and works with no signal.
 
 ---
 
+## Install it on your desktop
+
+The app also runs as a proper desktop app — own window, own icon, no address
+bar — with a shortcut you double-click.
+
+**Windows** — double-click `desktop\Create-Shortcut.cmd`
+
+**macOS / Linux**
+```
+python3 desktop/install.py
+```
+
+That puts *ApexTune Diagnostics* on your desktop: a `.lnk` on Windows, a real
+`.app` bundle on macOS, and a `.desktop` entry (desktop **and** applications
+menu) on Linux. Remove it again with `python3 desktop/install.py --uninstall`.
+
+Behind the shortcut, `desktop/apextune.py` serves the app from
+`http://127.0.0.1:8787`. A loopback address is a *secure origin*, so **USB and
+Bluetooth OBD-II adapters work from the desktop app** just as they do from a
+hosted copy. Nothing is exposed to your network, and the server stops by itself
+when you close the window.
+
+Needs Python 3.8+ and, for the borderless window, a Chromium-family browser
+(Chrome, Edge, Brave, Chromium). Without one it opens as a normal tab, which
+still works. Full detail in [`desktop/README.md`](desktop/README.md).
+
 ## Deeper PC diagnostics
 
 A browser is sandboxed — it cannot read disk SMART health, CPU temperatures,
@@ -117,7 +143,8 @@ nothing is uploaded or changed. Use `--json` for machine-readable output.
 
 ---
 
-## Running it locally
+
+## Running it from a plain server
 
 Any static file server will do — but it must be `localhost` or HTTPS, since
 service workers and hardware APIs require a secure context.
@@ -164,6 +191,9 @@ js/obd/transport.js     Bluetooth LE, Web Serial and simulated ECU links
 js/obd/elm327.js        ELM327 command queue and response framing
 js/obd/pids.js          SAE J1979 parameter definitions and decoders
 js/obd/dtc.js           trouble-code decoding, descriptions, readiness monitors
+desktop/apextune.py     desktop launcher — local server plus its own app window
+desktop/install.py      creates the desktop shortcut on Windows, macOS or Linux
+desktop/*.cmd           Windows double-click helpers that locate Python
 tools/sysreport.py      companion deep hardware scan
 ```
 

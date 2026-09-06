@@ -1,0 +1,8 @@
+# Windows batch files must keep CRLF endings or cmd.exe mis-parses labels.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binary assets git should never try to normalise.
+*.png binary
+*.ico binary
+*.icns binary
