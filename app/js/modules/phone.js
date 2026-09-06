@@ -140,7 +140,7 @@ export async function mount(host) {
         for (let i = 0; i < 4; i++) {
           const t = performance.now();
           try {
-            await fetch(`icons/favicon-32.png?ping=${Date.now()}_${i}`, { cache: 'no-store' });
+            await fetch(`../icons/favicon-32.png?ping=${Date.now()}_${i}`, { cache: 'no-store' });
             samples.push(performance.now() - t);
           } catch { /* one failed probe is not fatal */ }
           await sleep(45);

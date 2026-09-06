@@ -1,6 +1,6 @@
 /* ELM327 driver: command queue, response framing, and the OBD-II service calls. */
-import { PIDS, decodeSupport } from './pids.js';
-import { decodeDTCBytes, decodeMonitors } from './dtc.js';
+import { PIDS, decodeSupport, FREEZE_ORDER } from './pids.js';
+import { decodeDTCBytes, decodeMonitors, decodeDTC } from './dtc.js';
 
 const PROMPT = '>';
 const NO_DATA = /NO DATA|UNABLE TO CONNECT|BUS INIT|CAN ERROR|STOPPED|ERROR|\?$/i;
@@ -257,6 +257,44 @@ export class ELM327 {
   async clearDTCs() {
     const raw = await this.send('04', 8000);
     return !NO_DATA.test(raw);
+  }
+
+  /**
+   * Freeze frame (mode 02): the sensor values recorded at the instant a fault
+   * was stored. Same PID meanings as mode 01, but the reply carries a frame
+   * number after the PID echo, which has to come off before decoding.
+   */
+  async readFreezeFramePID(pid, frame = 0) {
+    const def = PIDS[pid];
+    if (!def) return null;
+    const cmd = `02${pid.toString(16).toUpperCase().padStart(2, '0')}`
+      + `${frame.toString(16).toUpperCase().padStart(2, '0')}`;
+    const raw = await this.trySend(cmd, 4000);
+    const d = ELM327.payload(raw, 0x02, pid);
+    if (!d || d.length < def.bytes + 1) return null;
+    const v = def.dec(d.slice(1));           // drop the frame number
+    return Number.isFinite(v) ? v : null;
+  }
+
+  /** The trouble code the freeze frame was captured for (mode 02, PID 02). */
+  async readFreezeFrameDTC(frame = 0) {
+    const cmd = `0202${frame.toString(16).toUpperCase().padStart(2, '0')}`;
+    const raw = await this.trySend(cmd, 4000);
+    const d = ELM327.payload(raw, 0x02, 0x02);
+    if (!d || d.length < 3) return null;
+    return decodeDTC(d[1], d[2]);            // d[0] is the frame number
+  }
+
+  /** Read the whole freeze frame: the triggering code plus its conditions. */
+  async readFreezeFrame(frame = 0) {
+    const dtc = await this.readFreezeFrameDTC(frame);
+    const values = {};
+    for (const pid of FREEZE_ORDER) {
+      const v = await this.readFreezeFramePID(pid, frame);
+      if (v !== null) values[PIDS[pid].key] = v;
+    }
+    if (!dtc && !Object.keys(values).length) return null;
+    return { dtc, values, frame };
   }
 
   /** Vehicle Identification Number via mode 09 PID 02. */

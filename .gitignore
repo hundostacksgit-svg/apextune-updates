@@ -1,4 +1,5 @@
 node_modules/
+omnidx-system-report.txt
 apextune-system-report.txt
 __pycache__/
 *.pyc

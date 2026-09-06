@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ApexTune Diagnostics — desktop launcher.
+OmniDx — desktop launcher.
 
 Serves the app from this machine and opens it in its own window, with no
 browser tabs or address bar. Running over http://127.0.0.1 keeps it a secure
@@ -8,7 +8,7 @@ context, so service workers, Web Serial and Web Bluetooth all work exactly as
 they do on a hosted copy — which means USB and Bluetooth OBD-II adapters can
 be used from the desktop app.
 
-    python3 desktop/apextune.py
+    python3 desktop/omnidx.py
 
 The server stops on its own once you close the window. Nothing is exposed to
 your network: it listens on the loopback interface only.
@@ -31,7 +31,7 @@ import urllib.request
 import webbrowser
 from pathlib import Path
 
-APP_NAME = "ApexTune Diagnostics"
+APP_NAME = "OmniDx"
 ROOT = Path(__file__).resolve().parent.parent
 
 # A stable port matters: the browser keys saved reports, the service worker
@@ -125,7 +125,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         if self.path.split("?", 1)[0] == "/__ping":
-            body = json.dumps({"app": "apextune", "port": self.port}).encode()
+            body = json.dumps({"app": "omnidx", "port": self.port}).encode()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
@@ -136,10 +136,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 
 def already_running(port: int) -> bool:
-    """True if a previous ApexTune launcher already owns this port."""
+    """True if a previous OmniDx launcher already owns this port."""
     try:
         with urllib.request.urlopen(f"http://127.0.0.1:{port}/__ping", timeout=0.6) as r:
-            return json.loads(r.read()).get("app") == "apextune"
+            return json.loads(r.read()).get("app") == "omnidx"
     except Exception:
         return False
 
@@ -212,8 +212,8 @@ def main() -> int:
     ap.add_argument("--no-autoquit", action="store_true", help="keep serving after the window closes")
     args = ap.parse_args()
 
-    if not (ROOT / "index.html").exists():
-        print(f"error: cannot find index.html next to {ROOT}", file=sys.stderr)
+    if not (ROOT / "app" / "index.html").exists():
+        print(f"error: cannot find app/index.html next to {ROOT}", file=sys.stderr)
         print("Keep this script inside the repository's desktop/ folder.", file=sys.stderr)
         return 1
 
@@ -225,7 +225,7 @@ def main() -> int:
     for candidate in range(args.port, args.port + PORT_SPAN):
         if port_in_use(candidate) and already_running(candidate):
             print(f"{APP_NAME} is already running on port {candidate} — opening another window.")
-            open_window(f"http://127.0.0.1:{candidate}/index.html?app=desktop")
+            open_window(f"http://127.0.0.1:{candidate}/app/index.html?app=desktop")
             return 0
 
     port = args.port
@@ -249,7 +249,7 @@ def main() -> int:
     server.daemon_threads = True
     threading.Thread(target=server.serve_forever, daemon=True).start()
 
-    url = f"http://127.0.0.1:{port}/index.html?app=desktop"
+    url = f"http://127.0.0.1:{port}/app/index.html?app=desktop"
     print(f"\n  {APP_NAME}")
     print(f"  serving {ROOT}")
     print(f"  at      {url}\n")

@@ -1,9 +1,9 @@
-# ApexTune on the desktop
+# OmniDx on the desktop
 
 Turns the web app into a proper desktop app: its own window, its own icon, no
 address bar, and a shortcut you double-click like anything else.
 
-It works by serving the app from `http://127.0.0.1:8787` on your own machine.
+It works by serving the app from `http://127.0.0.1:8787/app/` on your own machine.
 That matters — a loopback address counts as a *secure origin*, so service
 workers, **Web Serial and Web Bluetooth all keep working**. Your USB or
 Bluetooth OBD-II adapter can be used from the desktop app exactly as it would
@@ -25,8 +25,8 @@ You get:
 
 | Platform | What is created |
 |---|---|
-| Windows | `ApexTune Diagnostics.lnk` on your Desktop |
-| macOS | `ApexTune Diagnostics.app` on your Desktop |
+| Windows | `OmniDx.lnk` on your Desktop |
+| macOS | `OmniDx.app` on your Desktop |
 | Linux | A `.desktop` entry on your Desktop **and** in the applications menu |
 
 Then double-click it. Nothing is installed system-wide and no administrator
@@ -39,11 +39,11 @@ python3 desktop/install.py --uninstall
 
 ## Run it without a shortcut
 
-**Windows** — double-click `ApexTune.cmd`
+**Windows** — double-click `OmniDx.cmd`
 
 **macOS / Linux**
 ```
-python3 desktop/apextune.py
+python3 desktop/omnidx.py
 ```
 
 Options:
@@ -84,7 +84,7 @@ that reports saved under the old port will not appear.
 ## No Python? Install the web app instead
 
 Chrome and Edge on the desktop can install the live site directly: open
-<https://hundostacksgit-svg.github.io/apextune-updates/>, then **⋮ → Cast, save
+<https://hundostacksgit-svg.github.io/omnidx-updates/>, then **⋮ → Cast, save
 and share → Install page as app**. That creates a real desktop shortcut and Start-menu entry
 with no scripts and no Python at all. The only thing you give up is that it
 needs the deployed URL rather than running purely from this folder.

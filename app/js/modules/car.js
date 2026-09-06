@@ -2,9 +2,9 @@
 import { $, esc, toast, gauge, rows, scoreRing, confirmDialog, fmt } from '../ui.js';
 import { BleTransport, SerialTransport, DemoTransport, bleSupported, serialSupported } from '../obd/transport.js';
 import { ELM327 } from '../obd/elm327.js';
-import { PIDS, LIVE_ORDER, SNAPSHOT_ORDER, pidPct, pidTone } from '../obd/pids.js';
+import { PIDS, LIVE_ORDER, SNAPSHOT_ORDER, FREEZE_ORDER, pidPct, pidTone } from '../obd/pids.js';
 import { severity, describe } from '../obd/dtc.js';
-import { scoreCar, verdict, save, shareReport } from '../report.js';
+import { scoreCar, verdict, save, shareReport, exportCSV } from '../report.js';
 import { store } from '../store.js';
 
 const POLL_MS = 700;
@@ -17,6 +17,7 @@ export async function mount(host) {
     logLines: [],
     busy: false,
     livePids: [],
+    recording: null,   // array of samples while a log is being recorded
   };
 
   /* ---------------- teardown ---------------- */
@@ -24,6 +25,7 @@ export async function mount(host) {
     destroy() {
       clearInterval(view.poll);
       view.poll = null;
+      view.recording = null;
       view.elm?.disconnect().catch(() => {});
       view.elm = null;
     },
@@ -142,6 +144,13 @@ export async function mount(host) {
       setProgress('Reading trouble codes…', 52);
       const dtc = await elm.readDTCs();
 
+      // A freeze frame only exists once something has been stored.
+      let freeze = null;
+      if (dtc.stored.length || dtc.permanent.length) {
+        setProgress('Reading freeze frame…', 60);
+        freeze = await elm.readFreezeFrame();
+      }
+
       setProgress('Identifying vehicle…', 66);
       const vin = await elm.readVIN();
 
@@ -154,7 +163,7 @@ export async function mount(host) {
 
       const voltage = live.voltage ?? (await elm.readVoltage());
 
-      view.scan = { info, status, dtc, vin, live, voltage, kind: transport.kind, at: Date.now() };
+      view.scan = { info, status, dtc, freeze, vin, live, voltage, kind: transport.kind, at: Date.now() };
       setProgress('Done', 100);
       renderResults();
     } catch (err) {
@@ -213,10 +222,14 @@ export async function mount(host) {
         : `<div class="card"><h3 style="color:var(--ok)">No trouble codes</h3>
            <div class="small muted">Nothing stored, pending or permanent.</div></div>`}
 
+      ${freezeHtml(s.freeze)}
+
       <h2>Live data</h2>
       <div class="chips">
         <button class="chip" id="a-live">Start live polling</button>
+        <button class="chip" id="a-rec">Record log</button>
       </div>
+      <div id="rec-status"></div>
       <div class="gauges" id="gauges">${gaugesHtml(s.live)}</div>
 
       <h2>Readiness monitors</h2>
@@ -274,6 +287,37 @@ export async function mount(host) {
     wireResults();
   }
 
+  function paintRec() {
+    const el = $('#rec-status');
+    if (!el) return;
+    if (!view.recording) { el.innerHTML = ''; return; }
+    const n = view.recording.length;
+    const secs = n ? ((view.recording[n - 1].t - view.recording[0].t) / 1000).toFixed(0) : '0';
+    el.innerHTML = `<div class="note warn" style="margin-bottom:11px">
+      <strong>Recording.</strong> ${n} sample${n === 1 ? '' : 's'} over ${secs}s.
+      Drive as you normally would, then tap <strong>Stop and export</strong> for a CSV
+      you can open in any spreadsheet.</div>`;
+  }
+
+  function freezeHtml(f) {
+    if (!f || (!f.dtc && !Object.keys(f.values || {}).length)) return '';
+    const pairs = FREEZE_ORDER
+      .filter((p) => PIDS[p] && Number.isFinite(f.values[PIDS[p].key]))
+      .map((p) => {
+        const def = PIDS[p];
+        const val = f.values[def.key];
+        return [def.name, `${val.toFixed(def.unit === 'V' ? 1 : Math.abs(val) < 10 && !Number.isInteger(val) ? 1 : 0)} ${def.unit}`];
+      });
+    return `
+      <h2>Freeze frame</h2>
+      <div class="note info">
+        <strong>A snapshot of the engine at the moment the fault was stored.</strong>
+        This is what the car was actually doing when it went wrong${f.dtc ? `, recorded for <span class="mono">${esc(f.dtc)}</span>` : ''} —
+        often the fastest way to work out why.
+      </div>
+      ${rows(pairs)}`;
+  }
+
   function gaugesHtml(live) {
     const shown = LIVE_ORDER.filter((p) => Number.isFinite(live[PIDS[p].key]));
     if (!shown.length) return '<div class="card small muted">This vehicle reported no live sensor values.</div>';
@@ -294,10 +338,35 @@ export async function mount(host) {
   /* ---------------- results wiring ---------------- */
 
   function wireResults() {
-    $('#a-save').onclick = () => {
-      const r = save('car', view.scan.kind === 'demo' ? 'Vehicle Scan (demo)' : 'Vehicle Scan',
-        scoreCar(view.scan), view.scan);
-      toast('Report saved', 'ok');
+    $('#a-save').onclick = async () => {
+      const isDemoScan = view.scan.kind === 'demo';
+      let vehicleId = null;
+
+      // File the scan against a vehicle when there is a real VIN to match on.
+      // Demo scans are skipped so a simulated VIN never lands in the garage.
+      if (view.scan.vin && !isDemoScan) {
+        const match = store.vehicleByVin(view.scan.vin);
+        if (match) {
+          vehicleId = match.id;
+        } else {
+          const add = await confirmDialog({
+            title: 'Add this vehicle to your garage?',
+            body: `VIN ${view.scan.vin} is not saved yet. Adding it files this scan, and every future one `
+                + 'from the same car, under one vehicle so you can watch it over time.',
+            confirmText: 'Add it',
+          });
+          if (add) {
+            vehicleId = store.saveVehicle({
+              name: `Vehicle ${view.scan.vin.slice(-6)}`, vin: view.scan.vin, notes: '',
+            }).id;
+          }
+        }
+      }
+
+      const r = save('car', isDemoScan ? 'Vehicle Scan (demo)' : 'Vehicle Scan',
+        scoreCar(view.scan), view.scan, vehicleId);
+      const filed = vehicleId && store.getVehicle(vehicleId);
+      toast(filed ? `Saved to ${filed.name}` : 'Report saved', 'ok');
       location.hash = `#/reports/${r.id}`;
     };
 
@@ -336,11 +405,34 @@ export async function mount(host) {
         try {
           const fresh = await view.elm.readMany(view.livePids);
           Object.assign(view.scan.live, fresh);
+          if (view.recording) {
+            view.recording.push({ t: Date.now(), values: { ...fresh } });
+            paintRec();
+          }
           const g = $('#gauges');
           if (g) g.innerHTML = gaugesHtml(view.scan.live);
         } catch { /* transient read failure — next tick retries */ }
         view.busy = false;
       }, POLL_MS);
+    };
+
+    $('#a-rec').onclick = () => {
+      if (view.recording) {
+        const samples = view.recording;
+        view.recording = null;
+        $('#a-rec').textContent = 'Record log';
+        $('#a-rec').classList.remove('on');
+        exportCSV(view.scan.vin ? `omnidx-${view.scan.vin.slice(-6)}` : 'omnidx-log', samples);
+        paintRec();
+        return;
+      }
+      if (!view.elm?.connected) { toast('Not connected', 'bad'); return; }
+      view.recording = [];
+      $('#a-rec').textContent = 'Stop and export';
+      $('#a-rec').classList.add('on');
+      // Recording is fed by the polling loop, so make sure it is running.
+      if (!view.poll) $('#a-live').click();
+      paintRec();
     };
 
     $('#a-clear').onclick = async () => {

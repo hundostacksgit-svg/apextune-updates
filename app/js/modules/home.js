@@ -11,6 +11,7 @@ const CARDS = [
 
 export async function mount(host) {
   const reports = store.reports();
+  const vehicleCount = store.vehicles().length;
   const recent = reports.slice(0, 3);
   const showInstall = !isStandalone();
 
@@ -50,6 +51,24 @@ export async function mount(host) {
       </a>`;
     }).join('') + `<a class="btn" href="#/reports" style="margin-top:4px">View all ${reports.length}</a>`
       : `<div class="card"><div class="small muted">No scans yet. Run one above and it will be saved here.</div></div>`}
+
+    <h2>Tools</h2>
+    <a class="card tap card-row" href="#/codes" style="display:flex">
+      <span class="glyph">⌕</span>
+      <span class="grow">
+        <h3>Code Lookup</h3>
+        <div class="small muted">Type any trouble code and see what it means. Works offline, no adapter needed.</div>
+      </span>
+      <span class="arrow">›</span>
+    </a>
+    <a class="card tap card-row" href="#/garage" style="display:flex">
+      <span class="glyph">⛭</span>
+      <span class="grow">
+        <h3>Garage</h3>
+        <div class="small muted">${vehicleCount ? `${vehicleCount} vehicle${vehicleCount === 1 ? '' : 's'} saved. Scans file themselves by VIN.` : 'Save your vehicles so every scan is filed against the right one.'}</div>
+      </span>
+      <span class="arrow">›</span>
+    </a>
 
     <h2>Hardware</h2>
     <a class="card tap card-row" href="#/gear" style="display:flex">

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>OmniDx</title>
+<meta name="description" content="Universal diagnostics for your car, phone, and PC. Runs offline, installs to your home screen.">
+<meta name="theme-color" content="#0c0d11">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="OmniDx">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="../icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<div id="splash" class="splash">
+  <img src="../icons/icon-192.png" alt="" width="72" height="72">
+  <div class="splash-name">OmniDx</div>
+  <div class="spinner"></div>
+</div>
+
+<header class="topbar">
+  <div class="brand">
+    <img src="../icons/icon-192.png" alt="" width="26" height="26">
+    <span>OmniDx</span>
+  </div>
+  <div class="topbar-actions">
+    <button id="btn-install" class="chip chip-accent" hidden>Install</button>
+    <span id="net-dot" class="dot" title="Network status"></span>
+  </div>
+</header>
+
+<main id="view" class="view" role="main" aria-live="polite"></main>
+
+<nav class="tabbar" role="navigation">
+  <a href="#/home"   data-tab="home">   <span class="ico" aria-hidden="true">◎</span><span>Home</span></a>
+  <a href="#/car"    data-tab="car">    <span class="ico" aria-hidden="true">⛃</span><span>Car</span></a>
+  <a href="#/phone"  data-tab="phone">  <span class="ico" aria-hidden="true">▭</span><span>Device</span></a>
+  <a href="#/system" data-tab="system"> <span class="ico" aria-hidden="true">▤</span><span>System</span></a>
+  <a href="#/reports"data-tab="reports"><span class="ico" aria-hidden="true">≣</span><span>Reports</span></a>
+</nav>
+
+<div id="toast-host" class="toast-host" aria-live="assertive"></div>
+
+<dialog id="modal" class="modal">
+  <div class="modal-body"></div>
+</dialog>
+
+<script type="module" src="js/app.js"></script>
+<noscript><p style="padding:2rem;color:#eee">This app needs JavaScript enabled.</p></noscript>
+</body>
+</html>

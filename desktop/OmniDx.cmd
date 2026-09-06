@@ -1,5 +1,5 @@
 @echo off
-REM Starts ApexTune Diagnostics. Double-click this file.
+REM Starts OmniDx. Double-click this file.
 setlocal
 set "HERE=%~dp0"
 
@@ -15,7 +15,7 @@ if defined PY goto :run
 goto :nopython
 
 :run
-"%PY%" "%HERE%apextune.py" %*
+"%PY%" "%HERE%omnidx.py" %*
 set "RC=%errorlevel%"
 if not "%RC%"=="0" pause
 exit /b %RC%

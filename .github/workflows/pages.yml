@@ -24,14 +24,26 @@ jobs:
       - name: Verify the site is complete
         run: |
           set -euo pipefail
-          for f in index.html manifest.webmanifest sw.js .nojekyll css/app.css \
-                   js/app.js js/ui.js js/store.js js/report.js \
-                   js/obd/elm327.js js/obd/transport.js js/obd/pids.js js/obd/dtc.js \
-                   icons/icon-192.png icons/icon-512.png; do
+          for f in index.html .nojekyll assets/site.css \
+                   app/index.html app/manifest.webmanifest app/sw.js app/css/app.css \
+                   app/js/app.js app/js/ui.js app/js/store.js app/js/report.js \
+                   app/js/modules/car.js app/js/modules/codes.js app/js/modules/garage.js \
+                   app/js/obd/elm327.js app/js/obd/transport.js app/js/obd/pids.js app/js/obd/dtc.js \
+                   icons/icon-192.png icons/icon-512.png icons/icon.ico icons/icon.icns; do
             [ -f "$f" ] || { echo "missing required file: $f"; exit 1; }
           done
-          python3 -c "import json; json.load(open('manifest.webmanifest'))"
-          python3 -m py_compile tools/sysreport.py desktop/apextune.py desktop/install.py
+          python3 -c "import json; json.load(open('app/manifest.webmanifest'))"
+          python3 -m py_compile tools/sysreport.py desktop/omnidx.py desktop/install.py
+
+          # Every screenshot the landing page references must actually exist.
+          python3 - <<'PYCHK'
+          import re, sys, pathlib
+          html = pathlib.Path('index.html').read_text()
+          missing = [s for s in re.findall(r'src="(assets/[^"]+)"', html) if not pathlib.Path(s).exists()]
+          if missing:
+              print('landing page references missing assets:', missing); sys.exit(1)
+          print(f'landing page assets present ({html.count("assets/shots/")} screenshots)')
+          PYCHK
           echo "site looks complete"
 
       - name: Publish to gh-pages

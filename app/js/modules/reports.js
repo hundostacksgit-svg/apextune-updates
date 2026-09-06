@@ -70,6 +70,18 @@ function detail(host, id) {
 
     ${scoreRing(r.score, v.label, `${KIND_LABEL[r.kind] || r.kind} report`)}
 
+    ${(() => {
+      const veh = r.vehicleId ? store.getVehicle(r.vehicleId) : null;
+      return veh
+        ? `<a class="card tap card-row" href="#/garage/${esc(veh.id)}" style="display:flex">
+             <span class="glyph">⛃</span>
+             <span class="grow"><h3>${esc(veh.name)}</h3>
+               <div class="small muted">${veh.vin ? esc(veh.vin) : 'Filed in your garage'}</div></span>
+             <span class="arrow">›</span>
+           </a>`
+        : '';
+    })()}
+
     <div class="btn-row">
       <button class="btn btn-primary" id="share">Share</button>
       <button class="btn" id="copy">Copy</button>

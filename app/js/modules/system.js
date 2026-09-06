@@ -146,7 +146,7 @@ export async function mount(host) {
         if (!('caches' in window)) return { state: 'warn', detail: 'Cache Storage unavailable — skipped' };
         const SIZE = 8 * 1024 * 1024;
         const blob = new Blob([new Uint8Array(SIZE).fill(7)]);
-        const cache = await caches.open('apextune-benchmark');
+        const cache = await caches.open('omnidx-benchmark');
         const key = '/__bench__';
         try {
           const w0 = performance.now();
@@ -174,7 +174,7 @@ export async function mount(host) {
           return { state: 'ok', detail: `${wMBs.toFixed(0)} MB/s write · ${rMBs.toFixed(0)} MB/s read`, value: wMBs };
         } finally {
           await cache.delete(key).catch(() => {});
-          await caches.delete('apextune-benchmark').catch(() => {});
+          await caches.delete('omnidx-benchmark').catch(() => {});
         }
       },
     },
@@ -187,7 +187,7 @@ export async function mount(host) {
         if (!navigator.onLine) return { state: 'warn', detail: 'Offline — skipped' };
 
         // Pull our own largest asset a few times; same-origin, no third party involved.
-        const URLS = ['icons/icon-512.png', 'icons/maskable-512.png', 'css/app.css'];
+        const URLS = ['../icons/icon-512.png', '../icons/maskable-512.png', 'css/app.css'];
         let bytes = 0;
         const t0 = performance.now();
         for (let i = 0; i < 6; i++) {
@@ -271,7 +271,7 @@ export async function mount(host) {
         installed RAM sticks or running processes. The repo ships a zero-dependency Python script that can.</p>
         <div class="log" style="max-height:none">python3 tools/sysreport.py</div>
         <p class="small muted" style="margin-top:10px">Works on Windows, macOS and Linux with any Python 3.
-        It prints a full report to your terminal and writes <span class="mono">apextune-system-report.txt</span>
+        It prints a full report to your terminal and writes <span class="mono">omnidx-system-report.txt</span>
         next to itself. Nothing is uploaded.</p>
       </div>
     `;

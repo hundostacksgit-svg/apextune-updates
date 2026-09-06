@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-ApexTune companion system report.
+OmniDx companion system report.
 
 A browser is sandboxed and cannot see disk SMART health, CPU temperatures,
 installed memory modules or running processes. This script can. It uses only
@@ -488,7 +488,7 @@ def build():
 
 def render(data):
     W = 66
-    L = ["=" * W, "APEXTUNE SYSTEM REPORT".center(W), "=" * W, ""]
+    L = ["=" * W, "OMNIDX SYSTEM REPORT".center(W), "=" * W, ""]
 
     def kv(title, mapping):
         L.append(f"-- {title.upper()} " + "-" * max(0, W - len(title) - 4))
@@ -535,10 +535,10 @@ def render(data):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="ApexTune companion system report")
+    ap = argparse.ArgumentParser(description="OmniDx companion system report")
     ap.add_argument("--json", action="store_true", help="emit JSON instead of text")
     ap.add_argument("--stdout", action="store_true", help="do not write a file")
-    ap.add_argument("-o", "--out", default="apextune-system-report.txt", help="output file path")
+    ap.add_argument("-o", "--out", default="omnidx-system-report.txt", help="output file path")
     args = ap.parse_args()
 
     print("Collecting system information…", file=sys.stderr)

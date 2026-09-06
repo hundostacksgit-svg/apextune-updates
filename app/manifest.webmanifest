@@ -1,0 +1,25 @@
+{
+  "name": "OmniDx",
+  "short_name": "OmniDx",
+  "description": "Universal diagnostics for your car, phone and PC. Reads OBD-II trouble codes, runs live device health checks, and works offline.",
+  "id": "./",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#0b0c10",
+  "theme_color": "#0c0d11",
+  "categories": ["utilities", "productivity"],
+  "icons": [
+    { "src": "../icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "../icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "../icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "../icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Scan Car", "url": "./index.html#/car", "icons": [{ "src": "../icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Device Health", "url": "./index.html#/phone", "icons": [{ "src": "../icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Reports", "url": "./index.html#/reports", "icons": [{ "src": "../icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

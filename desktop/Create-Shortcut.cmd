@@ -1,5 +1,5 @@
 @echo off
-REM Creates the ApexTune desktop shortcut. Double-click this file.
+REM Creates the OmniDx desktop shortcut. Double-click this file.
 setlocal
 set "HERE=%~dp0"
 

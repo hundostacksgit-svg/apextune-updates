@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Create a desktop shortcut for ApexTune Diagnostics on this machine.
+Create a desktop shortcut for OmniDx on this machine.
 
     python3 desktop/install.py              # add the shortcut
     python3 desktop/install.py --uninstall  # remove it again
 
 Windows gets a .lnk on the Desktop, macOS gets a real .app bundle, and Linux
 gets a .desktop entry on the Desktop and in the applications menu. Each one
-runs desktop/apextune.py, which serves the app locally and opens it in its own
+runs desktop/omnidx.py, which serves the app locally and opens it in its own
 window. Nothing is installed system-wide and nothing needs administrator rights.
 """
 
@@ -21,13 +21,13 @@ import sys
 import tempfile
 from pathlib import Path
 
-APP_NAME = "ApexTune Diagnostics"
-APP_ID = "apextune-diagnostics"
+APP_NAME = "OmniDx"
+APP_ID = "omnidx-diagnostics"
 COMMENT = "Run diagnostics on your car, phone and PC"
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
-LAUNCHER = HERE / "apextune.py"
+LAUNCHER = HERE / "omnidx.py"
 
 IS_WIN = sys.platform.startswith("win")
 IS_MAC = sys.platform == "darwin"
@@ -123,7 +123,7 @@ PLIST = """<?xml version="1.0" encoding="UTF-8"?>
 <dict>
   <key>CFBundleName</key><string>{name}</string>
   <key>CFBundleDisplayName</key><string>{name}</string>
-  <key>CFBundleIdentifier</key><string>com.apextune.diagnostics</string>
+  <key>CFBundleIdentifier</key><string>com.omnidx.diagnostics</string>
   <key>CFBundleExecutable</key><string>{exe}</string>
   <key>CFBundleIconFile</key><string>icon.icns</string>
   <key>CFBundlePackageType</key><string>APPL</string>
@@ -143,7 +143,7 @@ for py in {preferred} /usr/bin/python3 /usr/local/bin/python3 /opt/homebrew/bin/
     exec "$py" {script}
   fi
 done
-/usr/bin/osascript -e 'display alert "Python 3 not found" message "ApexTune needs Python 3. Install it from python.org, or run: xcode-select --install"'
+/usr/bin/osascript -e 'display alert "Python 3 not found" message "OmniDx needs Python 3. Install it from python.org, or run: xcode-select --install"'
 exit 1
 """
 
@@ -158,7 +158,7 @@ def do_macos(remove: bool) -> int:
             print(f"Nothing to remove at {bundle}")
         return 0
 
-    exe_name = "ApexTune"
+    exe_name = "OmniDx"
     macos_dir = bundle / "Contents" / "MacOS"
     res_dir = bundle / "Contents" / "Resources"
     if bundle.exists():
@@ -270,7 +270,7 @@ def main() -> int:
 
     if not LAUNCHER.exists():
         return fail(f"launcher missing: {LAUNCHER}")
-    if not (ROOT / "index.html").exists():
+    if not (ROOT / "app" / "index.html").exists():
         return fail(f"app files not found next to {ROOT}")
 
     target = desktop_dir()

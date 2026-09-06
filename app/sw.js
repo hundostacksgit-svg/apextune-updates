@@ -1,15 +1,16 @@
-/* ApexTune Diagnostics — offline service worker */
-const VERSION = 'apextune-v1';
+/* OmniDx — offline service worker */
+const VERSION = 'omnidx-v1';
 const CORE = [
   './', './index.html', './manifest.webmanifest',
   './css/app.css',
   './js/app.js', './js/ui.js', './js/store.js', './js/report.js',
   './js/modules/home.js', './js/modules/car.js', './js/modules/phone.js',
   './js/modules/system.js', './js/modules/reports.js', './js/modules/gear.js',
+  './js/modules/codes.js', './js/modules/garage.js',
   './js/obd/elm327.js', './js/obd/transport.js', './js/obd/pids.js', './js/obd/dtc.js',
-  './icons/icon-192.png', './icons/icon-512.png',
-  './icons/maskable-192.png', './icons/maskable-512.png',
-  './icons/apple-touch-icon.png', './icons/favicon-32.png'
+  '../icons/icon-192.png', '../icons/icon-512.png',
+  '../icons/maskable-192.png', '../icons/maskable-512.png',
+  '../icons/apple-touch-icon.png', '../icons/favicon-32.png'
 ];
 
 self.addEventListener('install', (e) => {

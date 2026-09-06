@@ -206,6 +206,19 @@ export class DemoTransport {
       };
       const v = M[pid];
       out = v ? `41 ${hex(pid)} ${v}` : 'NO DATA';
+    } else if (cmd.startsWith('02')) {
+      // Freeze frame: the conditions captured when P0302 was stored. Fixed
+      // values, because a freeze frame is a snapshot and never moves.
+      const pid = parseInt(cmd.slice(2, 4), 16);
+      const F = {
+        0x02: '03 02',                                  // the code that stored it
+        0x04: hex(63), 0x05: hex(96 + 40), 0x0C: pair(2184 * 4),
+        0x0D: hex(51), 0x0B: hex(74), 0x10: pair(1685),
+        0x11: hex(0.41 * 255), 0x0F: hex(41 + 40),
+        0x06: hex(128 + 24), 0x07: hex(128 + 19), 0x0E: hex((9 + 64) * 2),
+      };
+      const v = F[pid];
+      out = v ? `42 ${hex(pid)} 00 ${v}` : 'NO DATA';
     } else if (cmd.startsWith('03')) {
       out = `43 ${bytes(this.stored)}`;
     } else if (cmd.startsWith('07')) {

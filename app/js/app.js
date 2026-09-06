@@ -8,6 +8,8 @@ const ROUTES = {
   system:  () => import('./modules/system.js'),
   reports: () => import('./modules/reports.js'),
   gear:    () => import('./modules/gear.js'),
+  codes:   () => import('./modules/codes.js'),
+  garage:  () => import('./modules/garage.js'),
 };
 
 let current = null;
@@ -93,7 +95,7 @@ export async function promptInstall() {
    strands a background process. A hosted copy never sets the flag, so none of
    this runs there. The flag lives in sessionStorage to survive reloads and the
    hash routing, and is scoped to this window only. */
-const DESKTOP_FLAG = 'apextune.desktop';
+const DESKTOP_FLAG = 'omnidx.desktop';
 const HEARTBEAT_MS = 30000;
 
 function isDesktopSession() {
@@ -108,13 +110,15 @@ function isDesktopSession() {
 }
 
 function startDesktopHeartbeat() {
-  // sendBeacon survives page teardown, which a fetch() on pagehide does not.
+  // Absolute paths: the app is served under /app/, but the launcher's control
+  // endpoints live at the server root. sendBeacon survives page teardown,
+  // which a fetch() on pagehide does not.
   const ping = (path) => { try { navigator.sendBeacon(path, ''); } catch { /* launcher gone */ } };
-  ping('__alive');
-  setInterval(() => ping('__alive'), HEARTBEAT_MS);
+  ping('/__alive');
+  setInterval(() => ping('/__alive'), HEARTBEAT_MS);
   // Fires on close and on reload alike; the launcher waits a few seconds so a
   // reload's fresh heartbeat cancels the shutdown.
-  window.addEventListener('pagehide', () => ping('__quit'));
+  window.addEventListener('pagehide', () => ping('/__quit'));
 }
 
 /* ---------- start ---------- */

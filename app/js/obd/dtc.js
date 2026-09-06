@@ -281,6 +281,38 @@ export function describe(code) {
   return 'Unrecognised code';
 }
 
+/**
+ * Look up or search the code table. An exact code match wins; otherwise this
+ * matches on code prefix and on words in the description, so "misfire" or
+ * "P030" both find the misfire family. Works entirely offline.
+ */
+export function searchCodes(query, limit = 40) {
+  const q = String(query || '').trim().toUpperCase();
+  if (!q) return [];
+
+  const exact = DB[q];
+  const out = [];
+  if (exact) out.push({ code: q, desc: exact, exact: true });
+
+  // A well-formed code that is not in the table still deserves an answer.
+  if (!exact && /^[PCBU][0-3][0-9A-F]{3}$/.test(q)) {
+    out.push({ code: q, desc: describe(q), exact: true, generated: true });
+  }
+
+  const needle = q.toLowerCase();
+  for (const [code, desc] of Object.entries(DB)) {
+    if (out.some((o) => o.code === code)) continue;
+    if (code.startsWith(q) || desc.toLowerCase().includes(needle)) {
+      out.push({ code, desc, exact: false });
+      if (out.length >= limit) break;
+    }
+  }
+  return out;
+}
+
+/** How many codes the offline table holds — quoted on the landing page. */
+export const CODE_COUNT = Object.keys(DB).length;
+
 /** Readiness monitor names, decoded from Mode 01 PID 01 bytes B/C/D. */
 export function decodeMonitors(d) {
   if (!d || d.length < 4) return { mil: false, count: 0, monitors: [] };
