@@ -34,7 +34,8 @@ jobs:
             [ -f "$f" ] || { echo "missing required file: $f"; exit 1; }
           done
           python3 -c "import json; json.load(open('app/manifest.webmanifest'))"
-          python3 -m py_compile tools/sysreport.py tools/make-licence.py desktop/omnidx.py desktop/install.py
+          python3 -m py_compile tools/sysreport.py tools/make-licence.py tools/set-domain.py \
+            desktop/omnidx.py desktop/install.py
 
           # Every screenshot the landing page references must actually exist.
           python3 - <<'PYCHK'

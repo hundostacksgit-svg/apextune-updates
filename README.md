@@ -156,14 +156,21 @@ itself on a repository where Pages has never been turned on. Pushing a `gh-pages
 a public repository enables Pages on its own, and mirroring to it needs only
 `contents: write`.
 
-### Pointing a .com at it
+### Custom domain
 
-See [`docs/CUSTOM-DOMAIN.md`](docs/CUSTOM-DOMAIN.md). Short version: buy the domain
-(~$10–12/yr), add four DNS records, then add a one-line `CNAME` file.
+The chosen domain is **omnidx.net** (`omnidx.com` is taken). It was unregistered at the last
+check, so it should be available for about $11–15/yr.
 
-**Do not add the `CNAME` file before the domain is bought and the DNS is pointing here** —
-GitHub will start serving the site only on that hostname and the `github.io` URL will stop
-working until the DNS resolves.
+Buy it, add four A records, then run:
+
+```
+python3 tools/set-domain.py omnidx.net
+```
+
+That script checks DNS before writing the `CNAME` file and refuses if the domain isn't
+pointing at GitHub yet — because once a `CNAME` exists, Pages serves the site *only* on that
+hostname, and adding it early takes the live site offline. Full steps in
+[`docs/CUSTOM-DOMAIN.md`](docs/CUSTOM-DOMAIN.md).
 
 ---
 

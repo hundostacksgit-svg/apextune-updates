@@ -1,33 +1,31 @@
-# Pointing a .com at OmniDx
+# Putting OmniDx on omnidx.net
 
-The site is live on GitHub Pages already. A custom domain replaces the
-`github.io` address with your own, and it stays free — you only pay the
-registrar for the name.
+`omnidx.net` is the chosen domain. As of the last check it was **not registered**
+— a DNS lookup returns NXDOMAIN — so it should be available to buy.
 
-**Total cost:** about $10–12 a year. Nothing else.
+`omnidx.com` is taken; it resolves to a live host.
+
+**Cost:** about $11–15 a year for the `.net`. Nothing else — GitHub Pages hosting
+and the HTTPS certificate are free.
 
 ---
 
-## 1. Buy the domain
+## 1. Buy it
 
-Any registrar works. Two that don't upsell:
-
-| Registrar | Typical .com | Note |
+| Registrar | Typical .net | Note |
 |---|---|---|
-| **Cloudflare Registrar** | ~$10.50/yr | Sells at cost, no first-year bait pricing |
-| **Namecheap** | ~$11–14/yr | Cheap first year, renews higher — check the renewal price |
+| **Cloudflare Registrar** | ~$11/yr | Sells at cost, no first-year bait pricing, free WHOIS privacy |
+| Namecheap | ~$13–15/yr | Cheap first year, renews higher — check the renewal price |
+| Porkbun | ~$12/yr | Free privacy, decent DNS panel |
 
-Avoid registrars that bundle "privacy protection" as a paid extra; both above
-include it free.
-
-If `omnidx.com` is taken, `omnidx.app`, `getomnidx.com`, `omnidx.io` or
-`tryomnidx.com` all read fine.
+Any of them work. Cloudflare is the cheapest over time because it never marks up
+renewals.
 
 ---
 
 ## 2. Add the DNS records
 
-At your registrar's DNS panel, add these **four A records**, all with host `@`:
+In the registrar's DNS panel, add **four A records**, all with host `@`:
 
 ```
 185.199.108.153
@@ -43,76 +41,80 @@ Host:  www
 Value: hundostacksgit-svg.github.io
 ```
 
-DNS usually takes 10–60 minutes to propagate, occasionally a few hours.
-
-Check it has taken effect:
-
-```
-dig +short omnidx.com
-```
-
-You should see those four addresses.
+DNS usually takes 10–60 minutes, occasionally a few hours.
 
 ---
 
-## 3. Only then, add the CNAME file
+## 3. Let the script do the rest
 
-**Do this last.** Once this file exists, GitHub serves the site *only* on that
-hostname and redirects the `github.io` URL to it. If the DNS is not pointing at
-GitHub yet, the site becomes unreachable until it is.
-
-Create a file called `CNAME` in the repository root — no extension, one line,
-just the bare domain with no `https://` and no trailing slash:
+Don't hand-write the `CNAME` file. Once it exists, GitHub serves the site *only*
+on that hostname — add it before DNS is ready and the site goes dark until it
+catches up. This script checks first and refuses if it isn't safe:
 
 ```
-omnidx.com
+python3 tools/set-domain.py omnidx.net
 ```
 
-Commit and push it. The deploy workflow mirrors it to `gh-pages` like everything
-else, and GitHub picks it up on the next build.
+While DNS is still propagating it tells you exactly what's missing and changes
+nothing. To poll without touching anything:
+
+```
+python3 tools/set-domain.py --check-only omnidx.net
+```
+
+When it's ready it writes the file and prints the commit command. Push it and
+the deploy workflow carries it to `gh-pages` like everything else.
 
 ---
 
 ## 4. Turn on HTTPS
 
-Go to **Settings → Pages**. Once GitHub has issued the certificate — usually a
-few minutes, sometimes up to an hour — tick **Enforce HTTPS**.
-
-The certificate is free and renews itself.
+**Settings → Pages.** Once GitHub has issued the certificate — a few minutes,
+sometimes up to an hour — tick **Enforce HTTPS**. Free, and it renews itself.
 
 ---
 
 ## Undoing it
 
-Delete the `CNAME` file, commit and push. The site returns to the `github.io`
-address on the next build.
+```
+python3 tools/set-domain.py --remove
+git add -A && git commit -m "Return to the github.io address" && git push
+```
+
+The site goes back to `hundostacksgit-svg.github.io/apextune-updates/`.
 
 ---
 
 ## Troubleshooting
 
-**"Domain does not resolve to the GitHub Pages server"**
-DNS hasn't propagated yet, or a record is wrong. Confirm with
-`dig +short yourdomain.com` that you get exactly the four addresses above.
+**"not registered — returns NXDOMAIN"**
+You haven't bought it yet, or the registration hasn't propagated. New
+registrations are usually live within minutes.
 
-**Site works on `www` but not the bare domain, or vice versa**
+**"registered but has no A records yet"**
+Bought, but the DNS records aren't added. Go back to step 2.
+
+**"Missing GitHub Pages addresses"**
+Some records are wrong or still propagating. The script lists exactly which
+addresses it found and which it expected. Wait, then re-run.
+
+**Works on `www` but not the bare domain, or vice versa**
 The bare domain needs the four A records; `www` needs the CNAME record. Both are
 required for both to work.
 
 **"Enforce HTTPS" is greyed out**
-The certificate hasn't been issued yet. It cannot start until the DNS resolves
-correctly, so fix the DNS first, then wait.
-
-**The github.io URL stopped working**
-That is expected once a `CNAME` file exists — it now redirects to your domain.
+The certificate can't be issued until DNS resolves correctly. Fix DNS, then wait.
 
 ---
 
-## A note on the repository name
+## After it's live
 
-The repository is still called `apextune-updates`, which is why the current URL
-is `hundostacksgit-svg.github.io/apextune-updates/`. Renaming it to `omnidx`
-would tidy that up, but it changes the `github.io` URL and breaks any existing
-bookmark or installed shortcut. Once a custom domain is in place the repository
-name stops being visible at all, so it is easiest to point the domain first and
-leave the rename alone.
+Two things worth updating once `omnidx.net` is serving:
+
+- `index.html` — the `og:image` meta tag is a relative path and will work either
+  way, but you may want to add an explicit `og:url`.
+- `README.md` and `desktop/README.md` still name the `github.io` URL in a few
+  places. Cosmetic, but tidy.
+
+The repository name (`apextune-updates`) stops being visible entirely once a
+custom domain is in front of it, so there's no need to rename it.
