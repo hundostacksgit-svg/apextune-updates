@@ -169,24 +169,47 @@ working until the DNS resolves.
 
 ## Selling it
 
-The landing page has a pricing section with a Free and a Pro tier. **Checkout is not
-wired up** — the *Get Pro* button is a placeholder marked in `index.html`:
+Payment is wired to **Cash App** (`app/js/config.js` holds the cashtag, price and links —
+change it in one place and the app and site follow).
 
-```html
-<a class="btn btn-primary" href="#faq-buy" data-checkout="replace-with-your-payment-link">Get Pro</a>
+The buyer pays, puts their email in the payment note, and you send back an unlock code
+generated offline:
+
+```
+python3 tools/make-licence.py
 ```
 
-Replace that `href` with a Stripe Payment Link, Gumroad or Lemon Squeezy URL and the button
-works. Those need your own account, so they can't be set up from here.
+Codes validate against a checksum in `app/js/pro.js` with no server involved. Check one with
+`python3 tools/make-licence.py --check OMNIDX-XXXX-XXXX-XXXX`.
 
-Worth knowing before you sell: this is a static client-side app, so the Pro features are
-present in the code that every visitor downloads. Feature gating in the browser alone can
-be bypassed by anyone who looks. Honest options are to sell on trust (a one-time
-supporter price), to move the gate behind a small serverless licence check, or to sell a
-packaged desktop build. Pick deliberately rather than assuming the tier labels enforce
-themselves.
+**Read [`docs/PAYMENTS.md`](docs/PAYMENTS.md) before selling.** It covers taking cards and
+wallets properly through Square while still being paid into Cash App, why a raw cashtag link
+is limited, and exactly how much the licence check does and doesn't protect. Short version:
+it stops guessing and casual sharing; it cannot stop someone determined, because nothing
+running only in the buyer's browser can.
 
----
+The free/paid split is one line in `app/js/pro.js`:
+
+```js
+export const PRO_FEATURES = ['live-scan', 'logging', 'garage'];
+```
+
+Installing the app never unlocks Pro — the tier is decided by the licence code, so a buyer
+can install on every device they own and unlock each with the same code, with no reinstall
+after paying.
+
+### What the site does not have, and why
+
+- **No login or signup.** There is no server, so any login form would be theatre — and one
+  that collects passwords it cannot check is actively harmful, since people reuse them. The
+  licence code fills the same role without an account. Real accounts would mean adding a
+  backend (Supabase and Firebase both have free tiers).
+- **No app-store downloads.** Publishing to the App Store needs an Apple developer account
+  at $99/yr plus a native build; Google Play needs $25 and the same. The install cards give
+  a genuine home-screen app on all four platforms today, for nothing.
+- **No public rating count.** Ratings are stored in the visitor's own browser, so each
+  person sees their own. Showing an aggregate would need a backend to hold them — and
+  inventing one would be fake social proof.
 
 ## How it is built
 

@@ -6,6 +6,7 @@ import { PIDS, LIVE_ORDER, SNAPSHOT_ORDER, FREEZE_ORDER, pidPct, pidTone } from 
 import { severity, describe } from '../obd/dtc.js';
 import { scoreCar, verdict, save, shareReport, exportCSV } from '../report.js';
 import { store } from '../store.js';
+import { can, isPro } from '../pro.js';
 
 const POLL_MS = 700;
 
@@ -49,6 +50,7 @@ export async function mount(host) {
   function renderPicker(errorMsg) {
     const ble = bleSupported();
     const ser = serialSupported();
+    const pro = isPro();
     const iOS = /iP(hone|ad|od)/.test(navigator.userAgent);
 
     host.innerHTML = `
@@ -64,12 +66,20 @@ export async function mount(host) {
           : 'Open this app in Chrome or Edge to connect to an adapter.'}
       </div>` : ''}
 
-      <button class="btn btn-primary" id="c-ble" ${ble ? '' : 'disabled'}>
-        Connect over Bluetooth${ble ? '' : ' — unavailable'}
+      ${pro ? '' : `<div class="note info">
+        <strong>Live scanning is part of Pro.</strong> Demo mode below is free and always will be —
+        it runs the whole scan against a simulated engine so you can see exactly what you'd get.
+        <div class="btn-row" style="margin-bottom:0">
+          <a class="btn btn-primary" href="#/pro">Unlock Pro</a>
+        </div>
+      </div>`}
+
+      <button class="btn ${pro ? 'btn-primary' : ''}" id="c-ble" ${ble ? '' : 'disabled'}>
+        Connect over Bluetooth${ble ? '' : ' — unavailable'}${pro || !ble ? '' : ' 🔒'}
       </button>
       <div class="spacer"></div>
       <button class="btn" id="c-ser" ${ser ? '' : 'disabled'}>
-        Connect over USB${ser ? '' : ' — unavailable'}
+        Connect over USB${ser ? '' : ' — unavailable'}${pro || !ser ? '' : ' 🔒'}
       </button>
       <div class="spacer"></div>
       <button class="btn" id="c-demo">Try demo mode — no adapter needed</button>
@@ -89,9 +99,13 @@ export async function mount(host) {
       <a class="btn" href="#/gear" style="margin-top:11px">Which adapter should I buy?</a>
     `;
 
-    $('#c-ble').onclick  = () => connect(new BleTransport());
-    $('#c-ser').onclick  = () => connect(new SerialTransport());
-    $('#c-demo').onclick = () => connect(new DemoTransport());
+    const gated = (make) => () => {
+      if (!can('live-scan')) { location.hash = '#/pro'; return; }
+      connect(make());
+    };
+    $('#c-ble').onclick  = gated(() => new BleTransport());
+    $('#c-ser').onclick  = gated(() => new SerialTransport());
+    $('#c-demo').onclick = () => connect(new DemoTransport());   // always free
   }
 
   function renderProgress(step, pct) {
@@ -227,7 +241,7 @@ export async function mount(host) {
       <h2>Live data</h2>
       <div class="chips">
         <button class="chip" id="a-live">Start live polling</button>
-        <button class="chip" id="a-rec">Record log</button>
+        <button class="chip" id="a-rec">Record log${isPro() ? '' : ' 🔒'}</button>
       </div>
       <div id="rec-status"></div>
       <div class="gauges" id="gauges">${gaugesHtml(s.live)}</div>
@@ -417,6 +431,7 @@ export async function mount(host) {
     };
 
     $('#a-rec').onclick = () => {
+      if (!can('logging')) { location.hash = '#/pro'; return; }
       if (view.recording) {
         const samples = view.recording;
         view.recording = null;

@@ -21,10 +21,10 @@
   <div class="wrap">
     <a class="logo" href="#top"><img src="icons/icon-192.png" alt="">OmniDx</a>
     <div class="nav-links">
-      <a href="#what">What it does</a>
-      <a href="#hardware">Hardware</a>
+      <a href="#demo">Demo</a>
+      <a href="#pro-locked">Pro</a>
+      <a href="#get">Get the app</a>
       <a href="#pricing">Pricing</a>
-      <a href="#faq">FAQ</a>
       <a class="btn btn-primary" href="app/index.html">Launch app</a>
     </div>
   </div>
@@ -48,6 +48,11 @@
       <div class="hero-note">
         Runs in your browser · installs to your home screen · works with no signal
       </div>
+      <div class="quicklinks">
+        <a href="#demo"><span class="dot"></span>Try the demo</a>
+        <a href="#get">Get the app</a>
+        <a href="app/index.html#/pro">Unlock Pro</a>
+      </div>
     </div>
     <div class="phone phone-tilt">
       <img src="assets/shots/car-results.png" width="600" height="1230"
@@ -56,6 +61,83 @@
   </div>
 </header>
 
+
+<!-- ============ live demo ============ -->
+<section id="demo">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">Try it right now</div>
+      <h2>Run a real check on this device.</h2>
+      <p>Not a video, not a mockup — this actually measures the machine you're reading on.
+         It takes a few seconds and nothing leaves your device.</p>
+    </div>
+    <div class="demo-box reveal">
+      <button class="btn btn-primary btn-lg" id="demo-run">Run the free demo</button>
+      <div id="demo-out" style="margin-top:20px"></div>
+      <div id="demo-summary"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ locked Pro features ============ -->
+<section id="pro-locked">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">Unlock with Pro</div>
+      <h2>The car side, one payment away.</h2>
+      <p>Everything below is built and working — it just needs unlocking. One payment of $19,
+         no subscription, and the code works on every device you own.</p>
+    </div>
+
+    <div class="locked-grid">
+      <div class="locked reveal">
+        <div class="locked-shot"><img loading="lazy" src="assets/shots/car-results.png" width="600" height="1230" alt="Blurred preview of the vehicle scan results screen"></div>
+        <div class="lock-shine"></div>
+        <span class="lock-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 9V7A5 5 0 0 0 7 7v2H5v12h14V9zM9 7a3 3 0 0 1 6 0v2H9z"/></svg>Pro</span>
+        <div class="locked-body">
+          <h3>Live vehicle scanning</h3>
+          <p>Read stored, pending and permanent fault codes straight from your car, each one translated into plain English.</p>
+        </div>
+      </div>
+      <div class="locked reveal">
+        <div class="locked-shot"><img loading="lazy" src="assets/shots/car-freeze.png" width="600" height="1230" alt="Blurred preview of the freeze frame data screen"></div>
+        <div class="lock-shine"></div>
+        <span class="lock-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 9V7A5 5 0 0 0 7 7v2H5v12h14V9zM9 7a3 3 0 0 1 6 0v2H9z"/></svg>Pro</span>
+        <div class="locked-body">
+          <h3>Freeze frame</h3>
+          <p>The exact engine conditions recorded at the moment a fault was stored. Usually the fastest route to the cause.</p>
+        </div>
+      </div>
+      <div class="locked reveal">
+        <div class="locked-shot"><img loading="lazy" src="assets/shots/car-live.png" width="600" height="1230" alt="Blurred preview of the live gauge dashboard"></div>
+        <div class="lock-shine"></div>
+        <span class="lock-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 9V7A5 5 0 0 0 7 7v2H5v12h14V9zM9 7a3 3 0 0 1 6 0v2H9z"/></svg>Pro</span>
+        <div class="locked-body">
+          <h3>Live gauges &amp; logging</h3>
+          <p>Watch revs, coolant, throttle and voltage as you drive, then export the whole session as a spreadsheet.</p>
+        </div>
+      </div>
+      <div class="locked reveal">
+        <div class="locked-shot"><img loading="lazy" src="assets/shots/garage.png" width="600" height="1230" alt="Blurred preview of the garage screen"></div>
+        <div class="lock-shine"></div>
+        <span class="lock-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 9V7A5 5 0 0 0 7 7v2H5v12h14V9zM9 7a3 3 0 0 1 6 0v2H9z"/></svg>Pro</span>
+        <div class="locked-body">
+          <h3>Multi-vehicle garage</h3>
+          <p>Keep several cars. Scans recognise the VIN and file themselves, so each vehicle builds a real history.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row reveal" style="margin-top:30px;justify-content:center">
+      <a class="btn btn-primary btn-lg" href="app/index.html#/pro">Unlock Pro — $19 once</a>
+      <a class="btn btn-lg" href="app/index.html#/car">Try it free in demo mode</a>
+    </div>
+    <p class="small muted reveal" style="text-align:center;margin-top:14px">
+      Demo mode runs the entire car scan against a simulated engine, free and forever.
+      Buy only once you've seen it work.
+    </p>
+  </div>
+</section>
 <!-- ============ three scanners ============ -->
 <section id="what">
   <div class="wrap">
@@ -99,7 +181,7 @@
 <!-- ============ car deep dive ============ -->
 <section>
   <div class="wrap">
-    <div class="feature">
+    <div class="feature reveal">
       <div class="feature-text">
         <div class="eyebrow">Vehicle scan</div>
         <h2>Why is the check-engine light on?</h2>
@@ -116,7 +198,7 @@
         alt="Scan results listing trouble codes P0302, P0171, P0456 and P0300 with plain-English descriptions and severity labels."></div>
     </div>
 
-    <div class="feature flip">
+    <div class="feature flip reveal">
       <div class="feature-text">
         <div class="eyebrow">Freeze frame</div>
         <h2>See exactly what the car was doing when it broke.</h2>
@@ -133,7 +215,7 @@
         alt="Freeze frame data showing 2184 rpm, 51 km/h, 96 degrees coolant and elevated fuel trims recorded when code P0302 was stored."></div>
     </div>
 
-    <div class="feature">
+    <div class="feature reveal">
       <div class="feature-text">
         <div class="eyebrow">Live data &amp; logging</div>
         <h2>Watch the engine think, then take the numbers with you.</h2>
@@ -149,7 +231,7 @@
         alt="Live gauge dashboard showing coolant temperature, throttle position, engine load, module voltage, fuel level and intake readings."></div>
     </div>
 
-    <div class="feature flip">
+    <div class="feature flip reveal">
       <div class="feature-text">
         <div class="eyebrow">Emissions readiness</div>
         <h2>Know if you'll pass the test before you pay for it.</h2>
@@ -170,7 +252,7 @@
 <!-- ============ device + system ============ -->
 <section>
   <div class="wrap">
-    <div class="feature">
+    <div class="feature reveal">
       <div class="feature-text">
         <div class="eyebrow">Device health</div>
         <h2>Is the phone dying, or is it just full?</h2>
@@ -187,7 +269,7 @@
         alt="Device health results with a score of 88, showing battery, memory, storage, processor, graphics and display checks."></div>
     </div>
 
-    <div class="feature flip">
+    <div class="feature flip reveal">
       <div class="feature-text">
         <div class="eyebrow">System benchmarks</div>
         <h2>Find out whether your computer is actually slow.</h2>
@@ -213,7 +295,7 @@
       <div class="eyebrow">Everyday tools</div>
       <h2>Useful even when you're nowhere near a car.</h2>
     </div>
-    <div class="feature">
+    <div class="feature reveal">
       <div class="feature-text">
         <h3 style="font-size:26px;margin-bottom:6px">Code lookup</h3>
         <p>Somebody quoted you a repair for a code you've never heard of. Type it in and
@@ -228,7 +310,7 @@
       <div class="phone"><img loading="lazy" src="assets/shots/codes.png" width="600" height="1230"
         alt="Code lookup screen showing P0301 identified as a cylinder 1 misfire and marked critical."></div>
     </div>
-    <div class="feature flip">
+    <div class="feature flip reveal">
       <div class="feature-text">
         <h3 style="font-size:26px;margin-bottom:6px">Garage</h3>
         <p>Keep more than one vehicle. Scans recognise the VIN and file themselves against
@@ -246,6 +328,77 @@
   </div>
 </section>
 
+
+<!-- ============ get the app ============ -->
+<section id="get">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">Get the app</div>
+      <h2>Installs like a normal app. On everything.</h2>
+      <p>There's nothing to download from a store — OmniDx installs straight from the web and
+         then opens full screen with its own icon, working offline. Takes about ten seconds.</p>
+    </div>
+
+    <div class="plat-grid">
+      <div class="plat reveal" data-platform="android">
+        <svg class="plat-ico" viewBox="0 0 24 24"><path d="M17 1H7a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm0 18H7V5h10zM10 21h4v-1h-4z"/></svg>
+        <div class="plat-tag">Android</div>
+        <h3>Phone &amp; tablet</h3>
+        <ol>
+          <li>Open OmniDx in <strong>Chrome</strong></li>
+          <li>Tap <strong>Install</strong> in the header, or <strong>⋮ → Add to Home screen</strong></li>
+        </ol>
+        <a class="btn btn-primary" href="app/index.html">Install on Android</a>
+      </div>
+
+      <div class="plat reveal" data-platform="ios">
+        <svg class="plat-ico" viewBox="0 0 24 24"><path d="M17 1H7a2 2 0 0 0-2 2v18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2zm0 18H7V5h10zM10 21h4v-1h-4z"/></svg>
+        <div class="plat-tag">iPhone &amp; iPad</div>
+        <h3>iOS</h3>
+        <ol>
+          <li>Open OmniDx in <strong>Safari</strong></li>
+          <li>Tap <strong>Share</strong> → <strong>Add to Home Screen</strong></li>
+        </ol>
+        <a class="btn btn-primary" href="app/index.html">Install on iOS</a>
+      </div>
+
+      <div class="plat reveal" data-platform="windows">
+        <svg class="plat-ico" viewBox="0 0 24 24"><path d="M3 5.5l7.5-1v7H3zm0 13l7.5 1v-7H3zm8.5 1.2L21 21V12.5h-9.5zM11.5 4.3V11H21V3z"/></svg>
+        <div class="plat-tag">Windows</div>
+        <h3>PC</h3>
+        <ol>
+          <li>Open OmniDx in <strong>Chrome</strong> or <strong>Edge</strong></li>
+          <li>Click <strong>Install</strong> in the header, or <strong>⋮ → Install OmniDx</strong></li>
+        </ol>
+        <a class="btn btn-primary" href="app/index.html">Install on Windows</a>
+      </div>
+
+      <div class="plat reveal" data-platform="mac">
+        <svg class="plat-ico" viewBox="0 0 24 24"><path d="M4 4h16a1 1 0 0 1 1 1v11H3V5a1 1 0 0 1 1-1zm-3 14h22v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2zM5 6v9h14V6z"/></svg>
+        <div class="plat-tag">macOS</div>
+        <h3>Mac</h3>
+        <ol>
+          <li>Open OmniDx in <strong>Chrome</strong> or <strong>Edge</strong></li>
+          <li>Click <strong>Install</strong> in the header</li>
+        </ol>
+        <a class="btn btn-primary" href="app/index.html">Install on Mac</a>
+      </div>
+    </div>
+
+    <div class="note warn reveal" style="margin-top:24px">
+      <strong>Installing doesn't unlock Pro.</strong> The app is the same everywhere and starts on the
+      free tier. Your Pro code unlocks it — enter it once under <em>Unlock Pro</em> and the features
+      appear immediately, with no reinstall and no update to wait for. The same code works on every
+      device you own.
+    </div>
+
+    <div class="note reveal" style="margin-top:14px">
+      <strong>On iPhone and iPad,</strong> everything works except live car scanning. Apple doesn't
+      allow Bluetooth hardware access in any iOS browser, so no web app can do it. Demo mode still
+      runs the full car scan.
+    </div>
+  </div>
+</section>
 <!-- ============ hardware ============ -->
 <section id="hardware">
   <div class="wrap">
@@ -256,7 +409,7 @@
          vehicle side you need one small adapter, and the good ones are cheap.</p>
     </div>
 
-    <div class="hw">
+    <div class="hw reveal">
       <svg class="hw-art" viewBox="28 20 142 92" role="img" aria-label="Bluetooth OBD-II adapter">
         <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stop-color="#ff9e2b"/><stop offset="1" stop-color="#ff4a3a"/></linearGradient></defs>
@@ -280,7 +433,7 @@
       <div class="price">$28–40</div>
     </div>
 
-    <div class="hw">
+    <div class="hw reveal">
       <svg class="hw-art" viewBox="34 24 128 84" role="img" aria-label="Generic Bluetooth OBD-II dongle">
         <rect x="62" y="30" width="92" height="70" rx="11" fill="#171b23" stroke="#333b47" stroke-width="2"/>
         <path d="M62 46 L40 54 L40 76 L62 84 Z" fill="#20252f" stroke="#333b47" stroke-width="2" stroke-linejoin="round"/>
@@ -299,7 +452,7 @@
       <div class="price">$15–22</div>
     </div>
 
-    <div class="hw">
+    <div class="hw reveal">
       <svg class="hw-art" viewBox="18 18 162 82" role="img" aria-label="USB OBD-II cable">
         <path d="M46 44 L24 52 L24 78 L46 86 Z" fill="#20252f" stroke="#333b47" stroke-width="2" stroke-linejoin="round"/>
         <rect x="46" y="38" width="34" height="54" rx="9" fill="#171b23" stroke="#333b47" stroke-width="2"/>
@@ -316,7 +469,7 @@
       <div class="price">$10–18</div>
     </div>
 
-    <div class="hw">
+    <div class="hw reveal">
       <svg class="hw-art" viewBox="26 18 146 96" role="img" aria-label="Professional OBD-II scan adapter">
         <defs><linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0" stop-color="#5aa9ff"/><stop offset="1" stop-color="#31d07a"/></linearGradient></defs>
@@ -417,13 +570,25 @@
           <li>Live gauges with CSV data logging</li>
           <li>Multi-vehicle garage and scan history</li>
         </ul>
-        <!-- Wire this to your Stripe Payment Link, Gumroad or Lemon Squeezy URL. -->
-        <a class="btn btn-primary" href="#faq-buy" data-checkout="replace-with-your-payment-link">Get Pro</a>
+        <a class="btn btn-primary" href="app/index.html#/pro">Get Pro</a>
       </div>
     </div>
   </div>
 </section>
 
+
+<!-- ============ rating ============ -->
+<section id="rate">
+  <div class="wrap">
+    <div class="section-head reveal" style="text-align:center;margin-left:auto;margin-right:auto">
+      <div class="eyebrow">Your opinion</div>
+      <h2>Used it? Rate it.</h2>
+      <p style="margin-left:auto;margin-right:auto">Ratings are stored on your own device — there's no
+         account and no tracking behind this.</p>
+    </div>
+    <div class="rating-box reveal" id="rating"></div>
+  </div>
+</section>
 <!-- ============ faq ============ -->
 <section id="faq">
   <div class="wrap">
@@ -439,9 +604,32 @@
          want to read your own car.</p>
     </details>
     <details id="faq-buy">
-      <summary>How do I actually pay for Pro?</summary>
-      <p>Checkout isn't connected yet. If you're reading this on a copy that hasn't been set
-         up, the Get Pro button is a placeholder waiting for a payment link.</p>
+      <summary>How do I pay, and what happens next?</summary>
+      <p>Payment goes through Cash App, which also takes a debit or credit card if you don't
+         use Cash App yourself. <strong>Put your email address in the payment note</strong> —
+         Cash App doesn't pass an order along, so that note is the only way to know where to
+         send your unlock code. The code arrives by hand, usually within a day, and you enter
+         it once in the app under <em>Unlock Pro</em>.</p>
+    </details>
+    <details>
+      <summary>Is the code tied to one device?</summary>
+      <p>No. Enter the same code on your phone, your tablet and your laptop. It's stored in
+         each browser, so you'll need it again if you clear your browsing data — keep the
+         email.</p>
+    </details>
+    <details>
+      <summary>Do I need an account?</summary>
+      <p>No, and there isn't one to make. There's no server behind OmniDx, so there's nothing to
+         log into — which also means no password to leak and no profile to sell. Your Pro code is
+         all the "account" there is: enter it on any device to unlock, and keep the email it came
+         in so you can enter it again later.</p>
+    </details>
+    <details>
+      <summary>Where do I download it?</summary>
+      <p>You don't — it installs straight from this site. Open OmniDx and use <strong>Install</strong>
+         in the header (Android, Windows, Mac) or <strong>Share → Add to Home Screen</strong> on
+         iPhone. You get a real icon that opens full screen and works offline. There's no app store
+         listing, which is also why there's no store cut and no waiting on review.</p>
     </details>
     <details>
       <summary>Will this work on my car?</summary>
@@ -535,5 +723,6 @@
   </div>
 </footer>
 
+<script src="assets/site.js" defer></script>
 </body>
 </html>

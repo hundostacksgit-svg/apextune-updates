@@ -2,6 +2,7 @@
 import { $, esc, toast, fmt, rows, confirmDialog, empty } from '../ui.js';
 import { store } from '../store.js';
 import { verdict } from '../report.js';
+import { can } from '../pro.js';
 
 export async function mount(host, arg) {
   if (arg) return detail(host, arg);
@@ -11,6 +12,19 @@ export async function mount(host, arg) {
 /* ---------------- list ---------------- */
 
 function list(host) {
+  if (!can('garage')) {
+    host.innerHTML = `
+      <h1>Garage</h1>
+      <p class="sub">Keep several vehicles and have every scan file itself against the right one.</p>
+      <div class="note info">
+        <strong>The garage is part of Pro.</strong> It files each scan by VIN so a car builds a
+        score history instead of a pile of unrelated results.
+      </div>
+      <a class="btn btn-primary" href="#/pro">Unlock Pro</a>
+      <div class="spacer"></div>
+      <a class="btn" href="#/home">Back</a>`;
+    return {};
+  }
   const vehicles = store.vehicles();
 
   host.innerHTML = `

@@ -10,6 +10,7 @@ const ROUTES = {
   gear:    () => import('./modules/gear.js'),
   codes:   () => import('./modules/codes.js'),
   garage:  () => import('./modules/garage.js'),
+  pro:     () => import('./modules/pro.js'),
 };
 
 let current = null;

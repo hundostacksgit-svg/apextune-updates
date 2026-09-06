@@ -2,6 +2,7 @@ import { esc, fmt } from '../ui.js';
 import { store } from '../store.js';
 import { verdict } from '../report.js';
 import { isStandalone, canInstall, promptInstall } from '../app.js';
+import { isPro } from '../pro.js';
 
 const CARDS = [
   { href: '#/car',    glyph: '⛃', title: 'Vehicle Scan',   sub: 'Read check-engine codes, live sensors and readiness. Needs an OBD-II adapter — or try demo mode.' },
@@ -12,6 +13,7 @@ const CARDS = [
 export async function mount(host) {
   const reports = store.reports();
   const vehicleCount = store.vehicles().length;
+  const pro = isPro();
   const recent = reports.slice(0, 3);
   const showInstall = !isStandalone();
 
@@ -77,6 +79,18 @@ export async function mount(host) {
         <h3>What you need to buy</h3>
         <div class="small muted">Only the car side needs an adapter. Budget picks from about $15.</div>
       </span>
+      <span class="arrow">›</span>
+    </a>
+
+    <a class="card tap card-row" href="#/pro" style="display:flex">
+      <span class="glyph">${pro ? '★' : '◇'}</span>
+      <span class="grow">
+        <h3>${pro ? 'Pro is active' : 'Unlock Pro'}</h3>
+        <div class="small muted">${pro
+          ? 'Live scanning, logging and the garage are unlocked. Thanks for buying.'
+          : 'Live vehicle scanning, data logging and the garage. One payment, no subscription.'}</div>
+      </span>
+      ${pro ? '<span class="badge ok">Pro</span>' : ''}
       <span class="arrow">›</span>
     </a>
 

@@ -180,3 +180,100 @@ footer a:hover{color:var(--text)}
 
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}
   html{scroll-behavior:auto}}
+
+/* ================= reveal on scroll ================= */
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
+.reveal.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none}}
+
+/* ================= sub-nav under the hero ================= */
+.quicklinks{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px;
+  padding-top:24px;border-top:1px solid var(--line-soft)}
+.quicklinks a{display:inline-flex;align-items:center;gap:8px;padding:9px 16px;
+  border-radius:999px;border:1px solid var(--line);background:var(--surface);
+  color:var(--text-2);font-size:14px;font-weight:600;transition:border-color .15s,color .15s}
+.quicklinks a:hover{border-color:var(--accent);color:var(--text)}
+.quicklinks a .dot{width:6px;height:6px;border-radius:50%;background:var(--accent)}
+
+/* ================= live demo ================= */
+.demo-box{background:var(--surface);border:1px solid var(--line);border-radius:18px;
+  padding:26px;max-width:640px}
+.dstep{display:grid;grid-template-columns:26px 1fr auto;grid-template-areas:"m l v" ". d d";
+  gap:2px 12px;padding:12px 0;border-bottom:1px solid var(--line-soft);
+  opacity:0;transform:translateY(6px);animation:dstepIn .3s ease forwards}
+.dstep:last-child{border-bottom:0}
+@keyframes dstepIn{to{opacity:1;transform:none}}
+.dmark{grid-area:m;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
+  font-size:12px;font-weight:800;background:var(--surface-2);color:var(--text-3)}
+.dmark.ok{background:rgba(49,208,122,.16);color:var(--ok)}
+.dmark.warn{background:rgba(255,192,67,.16);color:#ffc043}
+.dmark.bad{background:rgba(255,90,77,.16);color:var(--bad)}
+.dmark.run{background:var(--accent-soft);color:var(--accent);animation:dpulse 1s ease-in-out infinite}
+@keyframes dpulse{50%{opacity:.35}}
+.dlabel{grid-area:l;font-weight:650;font-size:15.5px}
+.dval{grid-area:v;font-family:var(--mono);font-size:15px;color:var(--text)}
+.ddetail{grid-area:d;font-size:13px;color:var(--text-3)}
+.dscore{display:flex;align-items:center;gap:18px;margin-top:22px;padding-top:22px;
+  border-top:1px solid var(--line)}
+.dscore-n{font-family:var(--mono);font-size:40px;font-weight:700;line-height:1;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+#demo-summary{opacity:0;transition:opacity .5s ease}
+#demo-summary.in{opacity:1}
+
+/* ================= locked Pro features ================= */
+.locked-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px}
+@media(max-width:780px){.locked-grid{grid-template-columns:1fr}}
+.locked{position:relative;border-radius:16px;overflow:hidden;border:1px solid var(--line);
+  background:var(--surface);min-height:380px;display:flex;flex-direction:column;
+  transition:transform .25s ease,border-color .25s ease}
+.locked:hover{transform:translateY(-4px);border-color:var(--accent)}
+.locked-shot{position:absolute;inset:0;overflow:hidden}
+.locked-shot img{width:100%;height:100%;object-fit:cover;object-position:top center;
+  filter:blur(5px) saturate(.9) brightness(.78);transform:scale(1.07);
+  transition:filter .5s ease,transform .5s ease}
+.locked:hover .locked-shot img{filter:blur(2.5px) saturate(1) brightness(.95);transform:scale(1.03)}
+.locked::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(8,9,12,.12) 0%,rgba(8,9,12,.55) 52%,rgba(8,9,12,.93) 100%)}
+.locked-body{position:relative;z-index:2;margin-top:auto;padding:22px}
+.locked-body h3{margin-bottom:7px}
+.locked-body p{margin:0;font-size:14.5px;color:var(--text-2)}
+.lock-chip{position:absolute;top:16px;right:16px;z-index:3;display:inline-flex;align-items:center;
+  gap:7px;padding:7px 13px;border-radius:999px;font-size:12px;font-weight:750;
+  letter-spacing:.05em;text-transform:uppercase;
+  background:rgba(20,23,30,.82);backdrop-filter:blur(8px);
+  border:1px solid rgba(255,158,43,.42);color:var(--accent)}
+.lock-chip svg{width:12px;height:12px;fill:currentColor}
+.lock-shine{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+.lock-shine::before{content:"";position:absolute;top:-60%;left:-140%;width:70%;height:220%;
+  background:linear-gradient(100deg,transparent,rgba(255,158,43,.16),transparent);
+  transform:rotate(14deg);animation:sweep 5.5s ease-in-out infinite}
+@keyframes sweep{0%,62%{left:-140%}100%{left:150%}}
+@media(prefers-reduced-motion:reduce){.lock-shine::before{animation:none}}
+
+/* ================= platform / get the app ================= */
+.plat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(232px,1fr));gap:18px}
+.plat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:24px;
+  display:flex;flex-direction:column;transition:border-color .2s,transform .2s}
+.plat:hover{transform:translateY(-3px)}
+.plat.yours{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.plat-ico{width:40px;height:40px;margin-bottom:14px;fill:var(--text-2)}
+.plat.yours .plat-ico{fill:var(--accent)}
+.plat-tag{font-size:11.5px;font-weight:750;letter-spacing:.09em;text-transform:uppercase;
+  color:var(--text-3);margin-bottom:6px}
+.plat.yours .plat-tag{color:var(--accent)}
+.plat h3{margin-bottom:8px}
+.plat ol{margin:0 0 18px;padding-left:19px;color:var(--text-2);font-size:14.5px}
+.plat ol li{margin-bottom:7px}
+.plat .btn{margin-top:auto;width:100%}
+
+/* ================= rating ================= */
+.rating-box{background:var(--surface);border:1px solid var(--line);border-radius:18px;
+  padding:30px;text-align:center;max-width:480px;margin:0 auto}
+.stars{display:flex;gap:6px;justify-content:center;margin-bottom:12px}
+.star{background:none;border:0;padding:2px;font-size:34px;line-height:1;cursor:pointer;
+  color:var(--line);transition:color .12s,transform .12s}
+.star:hover{transform:scale(1.14)}
+.star.on{color:var(--accent)}
+.linkish{background:none;border:0;padding:0;color:var(--accent);cursor:pointer;
+  font:inherit;text-decoration:underline}

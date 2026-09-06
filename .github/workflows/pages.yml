@@ -24,16 +24,17 @@ jobs:
       - name: Verify the site is complete
         run: |
           set -euo pipefail
-          for f in index.html .nojekyll assets/site.css \
+          for f in index.html .nojekyll assets/site.css assets/site.js \
                    app/index.html app/manifest.webmanifest app/sw.js app/css/app.css \
                    app/js/app.js app/js/ui.js app/js/store.js app/js/report.js \
+                   app/js/pro.js app/js/config.js app/js/modules/pro.js \
                    app/js/modules/car.js app/js/modules/codes.js app/js/modules/garage.js \
                    app/js/obd/elm327.js app/js/obd/transport.js app/js/obd/pids.js app/js/obd/dtc.js \
                    icons/icon-192.png icons/icon-512.png icons/icon.ico icons/icon.icns; do
             [ -f "$f" ] || { echo "missing required file: $f"; exit 1; }
           done
           python3 -c "import json; json.load(open('app/manifest.webmanifest'))"
-          python3 -m py_compile tools/sysreport.py desktop/omnidx.py desktop/install.py
+          python3 -m py_compile tools/sysreport.py tools/make-licence.py desktop/omnidx.py desktop/install.py
 
           # Every screenshot the landing page references must actually exist.
           python3 - <<'PYCHK'
