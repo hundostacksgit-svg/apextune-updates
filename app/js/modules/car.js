@@ -6,6 +6,7 @@ import { PIDS, LIVE_ORDER, SNAPSHOT_ORDER, FREEZE_ORDER, pidPct, pidTone } from 
 import { severity, describe } from '../obd/dtc.js';
 import { repairFor, misfireCylinder, DIFFICULTY_LABEL } from '../obd/repairs.js';
 import { scoreCar, verdict, save, shareReport, exportCSV } from '../report.js';
+import { shareCard } from '../card.js';
 import { store } from '../store.js';
 import { can, isPro } from '../pro.js';
 
@@ -224,6 +225,7 @@ export async function mount(host) {
       <div class="btn-row">
         <button class="btn btn-primary" id="a-save">Save report</button>
         <button class="btn" id="a-share">Share</button>
+        <button class="btn" id="a-card">Share as image</button>
       </div>
 
       <h2>Trouble codes</h2>
@@ -387,10 +389,12 @@ export async function mount(host) {
       location.hash = `#/reports/${r.id}`;
     };
 
-    $('#a-share').onclick = () => {
-      const r = { kind: 'car', title: 'Vehicle Scan', ts: Date.now(), score: scoreCar(view.scan), data: view.scan };
-      shareReport(r);
-    };
+    const asReport = () => ({
+      kind: 'car', title: 'Vehicle Scan', ts: Date.now(),
+      score: scoreCar(view.scan), data: view.scan,
+    });
+    $('#a-share').onclick = () => shareReport(asReport());
+    $('#a-card').onclick = () => shareCard(asReport());
 
     $('#a-log').onclick = (e) => {
       const el = $('#obd-log');

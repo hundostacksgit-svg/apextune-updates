@@ -2,6 +2,7 @@
 import { $, esc, toast, fmt, rows, scoreRing, confirmDialog, empty, testItem } from '../ui.js';
 import { store } from '../store.js';
 import { verdict, toText, shareReport, copyReport, downloadReport } from '../report.js';
+import { shareCard } from '../card.js';
 import { severity, describe } from '../obd/dtc.js';
 
 const KIND_LABEL = { car: 'Vehicle', device: 'Device', system: 'System' };
@@ -84,6 +85,7 @@ function detail(host, id) {
 
     <div class="btn-row">
       <button class="btn btn-primary" id="share">Share</button>
+      <button class="btn" id="card">Share as image</button>
       <button class="btn" id="copy">Copy</button>
       <button class="btn" id="dl">Save file</button>
     </div>
@@ -100,6 +102,7 @@ function detail(host, id) {
   `;
 
   $('#share').onclick = () => shareReport(r);
+  $('#card').onclick = () => shareCard(r);
   $('#copy').onclick  = () => copyReport(r);
   $('#dl').onclick    = () => downloadReport(r);
   $('#del').onclick   = async () => {

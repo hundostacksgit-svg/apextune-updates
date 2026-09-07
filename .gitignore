@@ -5,3 +5,6 @@ __pycache__/
 *.pyc
 .DS_Store
 .promo-build/
+node_modules
+tools/promo/beatmap.json
+omnidx-beatcut.mp4

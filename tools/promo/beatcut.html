@@ -1,0 +1,230 @@
+<!doctype html><html><head><meta charset="utf-8"><title>beatcut</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#000}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
+  color:#fff;-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#06070a}
+.bed{position:absolute;inset:0;opacity:0;display:none;will-change:transform,opacity,filter}
+.bed .img{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden}
+.bed img{height:100%;width:auto;max-width:none;filter:saturate(1.06)}
+.bed .veil{position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(6,7,10,.62),rgba(6,7,10,.18) 42%,rgba(6,7,10,.92))}
+.txt{position:absolute;left:0;right:0;text-align:center;font-weight:900;letter-spacing:-.045em;
+  line-height:.92;opacity:0;display:none;will-change:transform,opacity;padding:0 46px}
+.xl{font-size:196px}.lg{font-size:142px}.md{font-size:100px}.sm{font-size:70px}
+.grad{background:linear-gradient(115deg,#ff9e2b,#ff4a3a);-webkit-background-clip:text;
+  background-clip:text;color:transparent}
+.outline{-webkit-text-stroke:6px #ff9e2b;color:transparent}
+.strike{position:relative;color:#8b93a3}
+.strike::after{content:"";position:absolute;left:2%;right:2%;top:52%;height:12px;
+  background:#ff4a3a;transform:rotate(-4deg)}
+.phone{position:absolute;left:315px;top:340px;width:450px;border:12px solid #171b23;
+  border-radius:44px;overflow:hidden;box-shadow:0 40px 90px rgba(0,0,0,.85);background:#0b0c10;
+  opacity:0;display:none;will-change:transform,opacity}
+.phone img{display:block;width:100%}
+.chip{position:absolute;left:50%;padding:18px 46px;border-radius:999px;font-size:46px;
+  font-weight:900;letter-spacing:.1em;text-transform:uppercase;border:4px solid #ff9e2b;
+  color:#ff9e2b;white-space:nowrap;opacity:0;display:none;transform:translateX(-50%)}
+#logo{position:absolute;left:50%;display:flex;align-items:center;gap:24px;opacity:0;display:none}
+#logo img{width:118px;height:118px;border-radius:28px}
+#logo span{font-size:88px;font-weight:900;letter-spacing:-.03em}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:90}
+#bars{position:absolute;inset:0;pointer-events:none;z-index:80;opacity:0}
+#bars::before,#bars::after{content:"";position:absolute;left:0;right:0;height:200px;background:#000}
+#bars::before{top:0}#bars::after{bottom:0}
+#vig{position:absolute;inset:0;pointer-events:none;z-index:70;
+  background:radial-gradient(ellipse at center,transparent 44%,rgba(0,0,0,.75))}
+</style></head><body>
+<div id="stage">
+  <div id="beds"></div><div id="phones"></div><div id="texts"></div>
+  <div id="logo" style="top:640px"></div>
+  <div class="chip" id="chip" style="top:1100px">omnidx.net</div>
+  <div id="vig"></div><div id="bars"></div><div id="flash"></div>
+</div>
+<script>
+const S='/assets/shots/';
+
+/* ------------------------------------------------------------------ *
+ * The edit is written in beats, never in seconds.
+ *
+ * Every shot below says how many beats it lasts. beatmap.json says when
+ * those beats happen in the song you picked. So the same edit works at 75
+ * bpm or 160 bpm without a single number being retyped -- and every cut
+ * lands on a hit instead of near one.
+ * ------------------------------------------------------------------ */
+const SHOTS=[
+  {beats:2, bed:'car-results.png', text:'CHECK<br>ENGINE', cls:'xl',   top:760},
+  {beats:2, bed:'car-results.png', text:'LIGHT ON?',       cls:'xl outline', top:820, hold:true},
+  {beats:2, bed:'car-freeze.png',  text:'P0302',           cls:'lg',   top:300},
+  {beats:2, bed:'car-freeze.png',  text:'MISFIRE',         cls:'xl grad', top:800, hold:true},
+  {beats:2, bed:'car-freeze.png',  text:'CYLINDER 2',      cls:'lg grad', top:300},
+  {beats:3, bed:'car-freeze.png',  text:'swap the coil<br>with cylinder 1', cls:'md', top:1120, hold:true},
+  {beats:2, phone:'car-live.png',  text:'$30 COIL',        cls:'lg grad', top:250},
+  {beats:2, phone:'car-live.png',  text:'<span class="strike">$1,200 guess</span>', cls:'md', top:1310, hold:true},
+  {beats:2, phone:'device-results.png', text:'YOUR PHONE', cls:'lg', top:250},
+  {beats:2, phone:'system-results.png', text:'YOUR LAPTOP',cls:'lg', top:250},
+  {beats:2, bed:'codes.png',       text:'205',             cls:'xl grad', top:760},
+  {beats:2, bed:'codes.png',       text:'codes decoded<br>cause + fix',   cls:'md', top:1090, hold:true},
+  {beats:4, end:true},
+];
+
+const el=(tag,cls,parent,style)=>{const n=document.createElement(tag);if(cls)n.className=cls;
+  if(style)n.setAttribute('style',style);parent.appendChild(n);return n};
+
+/* Build the DOM from SHOTS so adding a shot means adding one line above. */
+const beds=document.getElementById('beds'), phones=document.getElementById('phones'),
+      texts=document.getElementById('texts');
+const bedFor={}, phoneFor={};
+SHOTS.forEach((s,i)=>{
+  if(s.bed && !bedFor[s.bed]){
+    const b=el('div','bed',beds); b.innerHTML='<div class="img"><img src="'+S+s.bed+'"></div><div class="veil"></div>';
+    bedFor[s.bed]=b;
+  }
+  if(s.phone && !phoneFor[s.phone]){
+    const p=el('div','phone',phones); p.innerHTML='<img src="'+S+s.phone+'" width="600" height="1230">';
+    phoneFor[s.phone]=p;
+  }
+  if(s.text){ s.el=el('div','txt '+(s.cls||'md'),texts,'top:'+(s.top||800)+'px'); s.el.innerHTML=s.text; }
+});
+document.getElementById('logo').innerHTML='<img src="/icons/icon-512.png"><span>OmniDx</span>';
+
+/* ---- the beat map ---- */
+const FALLBACK={bpm:128,period:60/128,offset:0.12,barPhase:0,duration:15,
+  beats:Array.from({length:33},(_,i)=>+(0.12+i*60/128).toFixed(4)),
+  energy:Array.from({length:33},()=>0.7),drop:null};
+
+let MAP=FALLBACK, PLAN=[], DUR=15;
+
+function plan(map){
+  const B=map.beats, N=B.length-1;               // last beat only bounds the one before it
+  const want=SHOTS.reduce((a,s)=>a+s.beats,0);
+  const scale=N/want;
+  let acc=0; const out=[];
+  SHOTS.forEach((s,i)=>{
+    const startB=Math.round(acc*scale), endB=Math.min(N,Math.max(startB+1,Math.round((acc+s.beats)*scale)));
+    acc+=s.beats;
+    out.push({...s, a:B[startB], b:B[endB], beatIndex:startB, endIndex:endB});
+  });
+  // The first beat of a song is rarely at zero. Start the opening shot at zero
+  // anyway -- a tenth of a second of black is a tenth of a second of people
+  // scrolling past.
+  out[0].a=0;
+  return out;
+}
+
+function apply(map){
+  MAP=map; PLAN=plan(map);
+  DUR=Math.min(map.duration||15, PLAN[PLAN.length-1].b);
+  window.VIDEO_DURATION=DUR;
+}
+apply(FALLBACK);
+
+/* ---- easing ---- */
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const P=(t,a,b)=>b<=a?1:clamp((t-a)/(b-a),0,1);
+const outC=t=>1-Math.pow(1-t,3);
+const outB=t=>{const c=2.70158;return 1+c*Math.pow(t-1,3)+1.70158*Math.pow(t-1,2)};
+/* Deterministic jitter: seeded by frame number so two renders match exactly. */
+const noise=x=>{const v=Math.sin(x*127.1)*43758.5453;return (v-Math.floor(v))-0.5};
+
+/* How far into the current beat we are, and how hard that beat hits. */
+function beatPhase(t){
+  const B=MAP.beats;
+  let i=0; while(i+1<B.length && B[i+1]<=t) i++;
+  const span=(B[i+1]??(B[i]+MAP.period))-B[i];
+  const k=clamp((t-B[i])/span,0,1);
+  const bar=((i-(MAP.barPhase||0))%4+4)%4===0;
+  const e=(MAP.energy&&MAP.energy[i]!=null)?MAP.energy[i]:0.7;
+  return {i,k,span,bar,energy:e};
+}
+
+function seek(t){
+  const bp=beatPhase(t);
+  // One punch envelope drives everything: hard on the beat, settled by the next.
+  const punch=Math.pow(1-bp.k,2.2)*(0.55+0.45*bp.energy)*(bp.bar?1.35:1);
+
+  const hidden=new Set([...Object.values(bedFor),...Object.values(phoneFor)]);
+  SHOTS.forEach(s=>{ if(s.el){s.el.style.display='none';s.el.style.opacity=0;} });
+  let endOn=false;
+
+  PLAN.forEach(s=>{
+    const on=t>=s.a && t<s.b;
+    if(s.end){ endOn = endOn || on; return; }
+    if(!on) return;
+
+    if(s.bed){
+      const b=bedFor[s.bed]; hidden.delete(b);
+      b.style.display='block'; b.style.opacity=1;
+      const k=P(t,s.a,s.b);
+      // Slow push through the shot, plus a snap on every beat.
+      const z=1.04+0.09*outC(k)+punch*0.05;
+      b.style.transform=`scale(${z.toFixed(4)}) translateY(${(-26*k).toFixed(1)}px)`;
+      b.style.filter=`blur(${(Math.pow(1-P(t,s.a,s.a+0.09),2)*16).toFixed(2)}px)`;
+    }
+    if(s.phone){
+      const p=phoneFor[s.phone]; hidden.delete(p);
+      p.style.display='block';
+      const inK=P(t,s.a,s.a+Math.min(0.18,(s.b-s.a)*0.4)), e=outB(inK);
+      p.style.opacity=Math.min(1,inK*3);
+      const dir=(s.beatIndex%2)?1:-1;
+      p.style.transform=`translateX(${((1-e)*620*dir).toFixed(1)}px) `+
+        `rotate(${((1-e)*dir*6).toFixed(2)}deg) scale(${(0.97+punch*0.06).toFixed(4)})`;
+      p.style.filter=inK<1?`blur(${((1-inK)*18).toFixed(1)}px)`:'none';
+    }
+    if(s.el){
+      const inD=Math.min(0.17,(s.b-s.a)*0.35);
+      const k=P(t,s.a,s.a+inD), e=outB(k);
+      // Text lands from big and overshoots slightly, except held lines which
+      // arrive under an already-running shot and should not fight it.
+      const from=s.hold?1.35:2.1;
+      const sc=(from+(1-from)*e)*(1+punch*0.035);
+      const jit=k<1?(1-k)*(s.hold?18:32):0;
+      const fr=Math.round(t*30);
+      s.el.style.display='block';
+      s.el.style.opacity=Math.min(1,k*3.2);
+      s.el.style.transform=`translate(${(jit?noise(fr+s.a*13)*jit:0).toFixed(1)}px,`+
+        `${(jit?noise(fr*1.7+s.a*29)*jit:0).toFixed(1)}px) scale(${sc.toFixed(4)})`;
+      const ab=(1-k)*10;
+      s.el.style.textShadow=ab>0.4
+        ?`${ab.toFixed(1)}px 0 rgba(255,0,60,.9), ${(-ab).toFixed(1)}px 0 rgba(0,220,255,.9)`:'none';
+    }
+  });
+
+  hidden.forEach(n=>{n.style.display='none';n.style.opacity=0});
+
+  // ---- end card ----
+  const lg=document.getElementById('logo'), ch=document.getElementById('chip');
+  const endShot=PLAN.find(s=>s.end);
+  if(endOn && endShot){
+    const k=P(t,endShot.a,endShot.a+0.3), l=outB(k);
+    lg.style.display='flex'; lg.style.opacity=Math.min(1,k*4);
+    lg.style.transform=`translateX(-50%) scale(${(0.6+0.4*l).toFixed(3)})`;
+    const c=outB(P(t,endShot.a+MAP.period,endShot.a+MAP.period+0.3));
+    ch.style.display='block'; ch.style.opacity=P(t,endShot.a+MAP.period,endShot.a+MAP.period+0.18);
+    ch.style.transform=`translateX(-50%) scale(${((0.65+0.35*c)*(1+punch*0.05)).toFixed(3)})`;
+  } else { lg.style.display='none'; lg.style.opacity=0; ch.style.display='none'; ch.style.opacity=0; }
+
+  // ---- flash on the beat, hardest on the downbeat and at the drop ----
+  const dropNear=MAP.drop!=null && Math.abs(t-MAP.drop)<0.07;
+  let f=(t<MAP.beats[0])?0:Math.pow(1-bp.k,7)*(bp.bar?0.5:0.24)*(0.5+0.5*bp.energy);
+  if(dropNear) f=Math.max(f,0.7*(1-Math.abs(t-MAP.drop)/0.07));
+  document.getElementById('flash').style.opacity=Math.min(0.9,f).toFixed(3);
+
+  // Letterbox through the phone montage so it reads as a different section.
+  const mont=PLAN.some(s=>s.phone&&t>=s.a&&t<s.b);
+  document.getElementById('bars').style.opacity=mont?1:0;
+}
+
+window.seek=seek;
+window.VIDEO_DURATION=DUR;
+
+/* Load the real beat map if beatsync.py has written one. Rendering waits on
+   window.MAP_READY so a render never captures the fallback grid by accident. */
+window.MAP_READY=fetch('beatmap.json',{cache:'no-store'})
+  .then(r=>r.ok?r.json():null)
+  .then(m=>{ if(m&&m.beats&&m.beats.length>4){apply(m);window.MAP_SOURCE=m.source||'beatmap.json';}
+             else window.MAP_SOURCE='fallback 128bpm'; seek(0); return window.MAP_SOURCE; })
+  .catch(()=>{ window.MAP_SOURCE='fallback 128bpm'; seek(0); return window.MAP_SOURCE; });
+seek(0);
+</script></body></html>

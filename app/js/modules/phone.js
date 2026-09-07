@@ -1,6 +1,7 @@
 /* Device diagnostics: everything measurable from the browser, no extra hardware. */
 import { $, toast, testItem, rows, scoreRing, fmt } from '../ui.js';
 import { scoreTests, verdict, save, shareReport } from '../report.js';
+import { shareCard } from '../card.js';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -260,6 +261,7 @@ export async function mount(host) {
       ${done ? `<div class="btn-row">
         <button class="btn" id="save">Save report</button>
         <button class="btn" id="share">Share</button>
+        <button class="btn" id="card">Share as image</button>
       </div>` : '<div class="spacer"></div>'}
 
       <h2>Automatic checks</h2>
@@ -613,10 +615,12 @@ export async function mount(host) {
       toast('Report saved', 'ok');
       location.hash = `#/reports/${r.id}`;
     });
-    $('#share') && ($('#share').onclick = () => shareReport({
+    const asReport = () => ({
       kind: 'device', title: 'Device Health', ts: Date.now(),
       score: scoreTests(state.tests), data: { tests: state.tests, facts: state.facts },
-    }));
+    });
+    $('#share') && ($('#share').onclick = () => shareReport(asReport()));
+    $('#card') && ($('#card').onclick = () => shareCard(asReport()));
 
     $('#t-screen').onclick  = screenTest;
     $('#t-touch').onclick   = touchTest;

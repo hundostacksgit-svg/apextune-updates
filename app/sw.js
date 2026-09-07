@@ -1,9 +1,9 @@
 /* OmniDx — offline service worker */
-const VERSION = 'omnidx-v1';
+const VERSION = 'omnidx-v2';
 const CORE = [
   './', './index.html', './manifest.webmanifest',
   './css/app.css',
-  './js/app.js', './js/ui.js', './js/store.js', './js/report.js',
+  './js/app.js', './js/ui.js', './js/store.js', './js/report.js', './js/card.js',
   './js/modules/home.js', './js/modules/car.js', './js/modules/phone.js',
   './js/modules/system.js', './js/modules/reports.js', './js/modules/gear.js',
   './js/modules/codes.js', './js/modules/garage.js', './js/modules/pro.js',

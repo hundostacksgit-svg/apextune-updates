@@ -12,6 +12,10 @@ const c = await b.newContext({ viewport:{width:1080,height:1920}, deviceScaleFac
 const p = await c.newPage();
 await p.goto(`http://127.0.0.1:8099/tools/promo/${PAGE}.html`, { waitUntil:'networkidle' });
 await p.waitForTimeout(1500);
+// beatcut.html loads its beat map asynchronously. Reading the duration before
+// that resolves would render the 128bpm fallback grid against your song.
+const src = await p.evaluate(() => window.MAP_READY ?? null);
+if (src) console.log(`beat map: ${src}`);
 const DUR = await p.evaluate(() => window.VIDEO_DURATION);
 const total = Math.round(DUR * FPS);
 console.log(`rendering ${PAGE}: ${total} frames at ${FPS}fps (${DUR}s)`);

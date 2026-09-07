@@ -7,8 +7,8 @@ export const BUY = {
 
   /* Cash App cashtag money is sent to. Verify this link opens YOUR account
      before advertising it — a typo sends customers' money to a stranger. */
-  cashtag: '$lCompl',
-  cashAppUrl: 'https://cash.app/$lCompl',
+  cashtag: '$Ahmirp1961',
+  cashAppUrl: 'https://cash.app/$Ahmirp1961',
 
   /* Preferred when set: a Square or Stripe checkout link, which takes cards and
      wallets properly and can still deposit into Cash App. See docs/PAYMENTS.md.
