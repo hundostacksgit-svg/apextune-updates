@@ -1,0 +1,176 @@
+<!doctype html><html><head><meta charset="utf-8"><title>fastcut</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#000}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
+  color:#fff;-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#06070a}
+.layer{position:absolute;inset:0;opacity:0;will-change:transform,opacity,filter}
+.bgimg{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden}
+.bgimg img{height:100%;width:auto;max-width:none;filter:saturate(1.05)}
+.veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,7,10,.55),rgba(6,7,10,.2) 40%,rgba(6,7,10,.9))}
+.slam{position:absolute;left:0;right:0;text-align:center;font-weight:900;letter-spacing:-.04em;
+  line-height:.95;will-change:transform,opacity}
+.xl{font-size:190px}.lg{font-size:140px}.md{font-size:104px}.sm{font-size:74px}
+.grad{background:linear-gradient(115deg,#ff9e2b,#ff4a3a);-webkit-background-clip:text;
+  background-clip:text;color:transparent}
+.outline{-webkit-text-stroke:5px #ff9e2b;color:transparent}
+.chip{position:absolute;left:50%;transform:translateX(-50%);padding:18px 44px;border-radius:999px;
+  font-size:46px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;
+  border:4px solid #ff9e2b;color:#ff9e2b;white-space:nowrap}
+.phone{position:absolute;border:12px solid #171b23;border-radius:44px;overflow:hidden;
+  box-shadow:0 40px 90px rgba(0,0,0,.8);background:#0b0c10}
+.phone img{display:block;width:100%}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:90}
+#bars{position:absolute;inset:0;pointer-events:none;z-index:80;opacity:0}
+#bars::before,#bars::after{content:"";position:absolute;left:0;right:0;height:190px;background:#000}
+#bars::before{top:0}#bars::after{bottom:0}
+#vig{position:absolute;inset:0;pointer-events:none;z-index:70;
+  background:radial-gradient(ellipse at center,transparent 46%,rgba(0,0,0,.72))}
+.logo{position:absolute;left:50%;display:flex;align-items:center;gap:24px;transform:translateX(-50%)}
+.logo img{width:110px;height:110px;border-radius:26px}
+.logo span{font-size:84px;font-weight:900;letter-spacing:-.03em}
+</style></head><body>
+<div id="stage">
+  <div class="layer" id="L1"><div class="bgimg"><img id="i1"></div><div class="veil"></div></div>
+  <div class="layer" id="L2"><div class="bgimg"><img id="i2"></div><div class="veil"></div></div>
+  <div class="layer" id="L3"><div class="bgimg"><img id="i3"></div><div class="veil"></div></div>
+
+  <div class="slam xl" id="T1" style="top:820px">CHECK<br>ENGINE</div>
+  <div class="slam xl outline" id="T2" style="top:860px">LIGHT ON?</div>
+  <div class="slam lg" id="T3" style="top:300px">P0302</div>
+  <div class="slam xl grad" id="T4" style="top:820px">MISFIRE</div>
+  <div class="slam lg" id="T5" style="top:840px">SEE IT ALL<br><span class="grad">FREEZE FRAME</span></div>
+  <div class="slam xl grad" id="T6" style="top:830px">$30</div>
+  <div class="slam md" id="T7" style="top:1180px">that's the whole cost</div>
+  <div class="slam lg" id="T8" style="top:300px">YOUR PHONE</div>
+  <div class="slam lg" id="T9" style="top:300px">YOUR LAPTOP</div>
+  <div class="slam xl grad" id="TA" style="top:800px">205</div>
+  <div class="slam md" id="TB" style="top:1080px">codes decoded<br>offline</div>
+  <div class="slam xl" id="TC" style="top:840px"><span class="grad">FREE</span><br>TO TRY</div>
+
+  <div class="phone" id="P1" style="left:315px;top:330px;width:450px"></div>
+  <div class="phone" id="P2" style="left:315px;top:330px;width:450px"></div>
+  <div class="phone" id="P3" style="left:315px;top:330px;width:450px"></div>
+
+  <div class="layer" id="LE">
+    <div class="logo" id="LG" style="top:700px"></div>
+    <div class="slam md" id="TD" style="top:900px">all-around <span class="grad">diagnostics</span></div>
+    <div class="chip" id="CH" style="top:1120px">Link in bio</div>
+  </div>
+
+  <div id="vig"></div><div id="bars"></div><div id="flash"></div>
+</div>
+<script>
+const S='/assets/shots/';
+const set=(id,src)=>document.getElementById(id).src=S+src;
+set('i1','car-results.png'); set('i2','car-freeze.png'); set('i3','codes.png');
+const ph=(id,src)=>document.getElementById(id).innerHTML='<img src="'+S+src+'" width="600" height="1230">';
+ph('P1','car-live.png'); ph('P2','device-results.png'); ph('P3','system-results.png');
+document.getElementById('LG').innerHTML='<img src="/icons/icon-512.png"><span>OmniDx</span>';
+
+const DUR=15.0, B=0.5;                     // 120bpm feel: a beat every 0.5s
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const P=(t,a,b)=>clamp((t-a)/(b-a),0,1);
+const outC=t=>1-Math.pow(1-t,3);
+const outB=t=>{const c=1.70158+1;return 1+c*Math.pow(t-1,3)+1.70158*Math.pow(t-1,2)};
+
+/* show el only inside [a,b); slam in over `in`s with overshoot + chromatic hit */
+function slam(id,t,a,b,opt={}){
+  const el=document.getElementById(id);
+  if(t<a||t>=b){el.style.opacity=0;el.style.display='none';return;}
+  el.style.display='block';
+  const inD=opt.in??0.16, k=P(t,a,a+inD), e=outB(k);
+  const s=(opt.from??1.9)+(1-(opt.from??1.9))*e;
+  // Deterministic shake: seeded from the frame time so the render is
+  // reproducible and the motion reads as a deliberate hit, not noise.
+  const jit=k<1?(1-k)*(opt.shake??26):0;
+  const n=(x)=>{const v=Math.sin(x*127.1)*43758.5453;return (v-Math.floor(v))-0.5;};
+  const fr=Math.round(t*30);
+  const dx=jit?n(fr+a*13)*jit:0, dy=jit?n(fr*1.7+a*29)*jit:0;
+  el.style.opacity=Math.min(1,k*3.2);
+  el.style.transform=`translate(${dx}px,${dy}px) scale(${s.toFixed(4)})`;
+  const ab=(1-k)*9;
+  el.style.textShadow=ab>0.4?`${ab}px 0 rgba(255,0,60,.9), ${-ab}px 0 rgba(0,220,255,.9)`:'none';
+}
+/* full-bleed image layer with a slow push-in */
+function layer(id,t,a,b,opt={}){
+  const el=document.getElementById(id);
+  if(t<a||t>=b){el.style.opacity=0;el.style.display='none';return;}
+  el.style.display='block';
+  const k=P(t,a,b), inK=P(t,a,a+0.1);
+  el.style.opacity=inK;
+  const z=(opt.from??1.18)+((opt.to??1.02)-(opt.from??1.18))*outC(k);
+  const px=(opt.panX??0)*k, py=(opt.panY??0)*k;
+  el.style.transform=`translate(${px}px,${py}px) scale(${z.toFixed(4)})`;
+  el.style.filter=inK<1?`blur(${(1-inK)*14}px)`:'none';
+}
+/* phone card that whips in from a side */
+function whip(id,t,a,b,dir=1,opt={}){
+  const el=document.getElementById(id);
+  if(t<a||t>=b){el.style.opacity=0;el.style.display='none';return;}
+  el.style.display='block';
+  const k=P(t,a,a+(opt.in??0.2)), e=outC(k), out=P(t,b-0.12,b);
+  const x=(1-e)*640*dir;
+  const z=(opt.z??0.98)+outC(P(t,a,b))*0.08;
+  el.style.opacity=(1-out).toFixed(3);
+  el.style.transform=`translateX(${x.toFixed(1)}px) scale(${z.toFixed(4)}) rotate(${(1-e)*dir*7}deg)`;
+  el.style.filter=k<1?`blur(${(1-k)*18}px)`:'none';
+}
+
+function seek(t){
+  // ---- image beds ----
+  layer('L1',t,1.5,3.6,{panY:-30,from:1.12,to:1.0});
+  layer('L2',t,3.6,5.0,{panY:-40,from:1.10,to:1.0});
+  layer('L3',t,10.4,11.6,{panY:26,from:1.10,to:1.0});
+
+  // ---- phones ----
+  whip('P1',t,6.0,7.1,-1);
+  whip('P2',t,7.6,8.7,1);
+  whip('P3',t,9.2,10.4,-1);
+
+  // ---- text slams, on the beat ----
+  slam('T1',t,0.30,1.00,{from:2.3});
+  slam('T2',t,1.00,1.55,{from:0.55,shake:34});
+  slam('T3',t,2.10,2.70,{from:2.2});
+  slam('T4',t,2.70,3.60,{from:0.5,shake:38});
+  slam('T5',t,3.90,5.00,{from:1.7});
+  slam('T6',t,5.05,5.75,{from:2.6,shake:40});
+  slam('T7',t,5.35,5.95,{from:1.4,in:0.2});
+  slam('T8',t,6.05,7.05,{from:1.8});
+  slam('T9',t,7.65,8.65,{from:1.8});
+  slam('TA',t,8.95,10.35,{from:2.4,shake:30});
+  slam('TB',t,9.35,10.35,{from:1.35,in:0.22});
+  slam('TC',t,10.45,11.55,{from:2.0,shake:32});
+
+  // ---- end card ----
+  {
+    const el=document.getElementById('LE');
+    const on=t>=11.7;
+    el.style.display=on?'block':'none';
+    el.style.opacity=on?P(t,11.7,11.95):0;
+    if(on){
+      const l=outB(P(t,11.75,12.15));
+      document.getElementById('LG').style.transform=`translateX(-50%) scale(${(0.55+0.45*l).toFixed(3)})`;
+      const d=outB(P(t,12.05,12.45));
+      document.getElementById('TD').style.transform=`scale(${(0.7+0.3*d).toFixed(3)})`;
+      document.getElementById('TD').style.opacity=P(t,12.05,12.3);
+      const c=outB(P(t,12.45,12.85));
+      const pulse=1+Math.sin(Math.max(0,t-12.9)*8)*0.045;
+      document.getElementById('CH').style.transform=`translateX(-50%) scale(${((0.6+0.4*c)*pulse).toFixed(3)})`;
+      document.getElementById('CH').style.opacity=P(t,12.45,12.7);
+    }
+  }
+
+  // ---- flash on every hard cut ----
+  const CUTS=[0.30,1.00,1.50,2.10,2.70,3.60,3.90,5.05,6.00,7.60,9.20,10.45,11.70,12.90];
+  let f=0;
+  for(const c of CUTS){ if(t>=c&&t<c+0.09) f=Math.max(f,(1-(t-c)/0.09)*0.82); }
+  document.getElementById('flash').style.opacity=f.toFixed(3);
+
+  // ---- cinematic bars during the montage ----
+  const bars=(t>=6.0&&t<10.4)?1:0;
+  document.getElementById('bars').style.opacity=bars;
+}
+window.seek=seek; window.VIDEO_DURATION=DUR; seek(0);
+</script></body></html>

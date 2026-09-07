@@ -1,0 +1,141 @@
+<!doctype html><html><head><meta charset="utf-8"><title>codes</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#06070a}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
+  color:#fff;-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#06070a}
+.glow{position:absolute;left:50%;top:-10%;width:1500px;height:1000px;transform:translateX(-50%);
+  background:radial-gradient(ellipse at center,rgba(255,120,45,.24),transparent 62%)}
+.scene{position:absolute;inset:0;opacity:0}
+.kick{position:absolute;left:80px;right:80px;font-size:36px;font-weight:800;letter-spacing:.2em;
+  text-transform:uppercase;color:#ff9e2b}
+.ttl{position:absolute;left:80px;right:80px;font-size:100px;font-weight:900;line-height:1.03;
+  letter-spacing:-.035em}
+.grad{background:linear-gradient(115deg,#ff9e2b,#ff4a3a);-webkit-background-clip:text;
+  background-clip:text;color:transparent}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+
+.dash{position:absolute;left:50%;transform:translateX(-50%);width:620px;height:300px;
+  border-radius:34px;border:5px solid #2b3240;background:#0d1015;display:grid;place-items:center}
+.mil{font-size:150px;line-height:1;color:#ff9e2b;filter:drop-shadow(0 0 34px rgba(255,158,43,.75))}
+
+.cd{position:absolute;left:70px;right:70px;background:#14171e;border:3px solid #262b35;
+  border-radius:30px;padding:38px 42px;border-left:12px solid #ff5a4d}
+.cd .c{font-size:86px;font-weight:900;letter-spacing:.02em}
+.cd .d{font-size:44px;color:#c7cede;margin-top:12px;line-height:1.24}
+.cd .s{font-size:28px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  color:#ff5a4d;margin-top:16px}
+.cd.warn{border-left-color:#ffc043}.cd.warn .s{color:#ffc043}
+.cd.info{border-left-color:#5aa9ff}.cd.info .s{color:#5aa9ff}
+
+.big{position:absolute;left:0;right:0;text-align:center;font-size:230px;font-weight:900;
+  line-height:.9;letter-spacing:-.05em}
+.sub{position:absolute;left:80px;right:80px;text-align:center;font-size:52px;font-weight:700;color:#a8b0bf}
+.logo{position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:24px}
+.logo img{width:112px;height:112px;border-radius:26px}
+.logo span{font-size:86px;font-weight:900;letter-spacing:-.03em}
+.chip{position:absolute;left:50%;transform:translateX(-50%);padding:18px 46px;border-radius:999px;
+  font-size:44px;font-weight:900;border:4px solid #ff9e2b;color:#ff9e2b;white-space:nowrap}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;z-index:90;pointer-events:none}
+</style></head><body>
+<div id="stage">
+  <div class="glow"></div>
+
+  <div class="scene" id="s0">
+    <div class="kick" style="top:430px">Check engine light</div>
+    <div class="ttl" style="top:500px">It's telling you<br><span class="grad">exactly</span> what's<br>wrong.</div>
+    <div class="dash" style="top:900px"><div class="mil">⚙</div></div>
+    <div class="sub" style="top:1280px">You just need to read it.</div>
+  </div>
+
+  <div class="scene" id="s1">
+    <div class="kick" style="top:300px">For example</div>
+    <div class="cd" id="c1" style="top:420px"><div class="c mono">P0420</div>
+      <div class="d">Catalytic converter running below efficiency</div><div class="s">Major</div></div>
+    <div class="cd warn" id="c2" style="top:760px"><div class="c mono">P0171</div>
+      <div class="d">Engine running lean — often a vacuum leak</div><div class="s">Major</div></div>
+    <div class="cd" id="c3" style="top:1100px"><div class="c mono">P0301</div>
+      <div class="d">Cylinder 1 misfire detected</div><div class="s">Critical</div></div>
+  </div>
+
+  <div class="scene" id="s2">
+    <div class="big grad" style="top:560px">205</div>
+    <div class="sub" style="top:840px;font-size:64px;color:#fff;font-weight:900">codes decoded</div>
+    <div class="sub" style="top:960px">No adapter. No signal. No account.</div>
+    <div class="cd info" style="top:1120px"><div class="c mono" style="font-size:60px">Type any code →</div>
+      <div class="d">and find out what it actually means</div></div>
+  </div>
+
+  <div class="scene" id="s3">
+    <div class="logo" id="lg" style="top:640px"></div>
+    <div class="ttl" style="top:860px;text-align:center">Free.<br><span class="grad">Right now.</span></div>
+    <div class="chip" id="ch" style="top:1180px">Link in bio</div>
+  </div>
+
+  <div id="flash"></div>
+</div>
+<script>
+document.getElementById('lg').innerHTML='<img src="/icons/icon-512.png"><span>OmniDx</span>';
+const DUR=18.0;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const P=(t,a,b)=>clamp((t-a)/(b-a),0,1);
+const outC=t=>1-Math.pow(1-t,3);
+const outB=t=>{const c=2.4;return 1+c*Math.pow(t-1,3)+1.3*Math.pow(t-1,2)};
+
+const SC=[['s0',0.0,5.0],['s1',5.0,11.4],['s2',11.4,15.0],['s3',15.0,18.0]];
+const XF=0.26;
+function seek(t){
+  for(const [id,a,b] of SC){
+    const el=document.getElementById(id);
+    let o=0;
+    if(t>=a-XF&&t<=b+XF)
+      o=Math.min(clamp((t-(a-XF))/XF,0,1), 1-clamp((t-(b-XF))/XF,0,1));
+    el.style.opacity=o.toFixed(4); el.style.display=o>0.001?'block':'none';
+  }
+  const q=id=>document.getElementById(id);
+
+  // intro: copy rises, warning lamp throbs
+  { const c=q('s0').children;
+    c[0].style.opacity=P(t,0.05,0.45); c[0].style.transform=`translateY(${(1-outC(P(t,0.05,0.6)))*22}px)`;
+    c[1].style.opacity=P(t,0.25,0.7);  c[1].style.transform=`translateY(${(1-outC(P(t,0.25,0.95)))*44}px)`;
+    const d=outB(P(t,1.0,1.6));
+    const thr=1+Math.sin(Math.max(0,t-1.6)*4.4)*0.045;
+    c[2].style.opacity=P(t,1.0,1.35);
+    c[2].style.transform=`translateX(-50%) scale(${((0.7+0.3*d)*thr).toFixed(3)})`;
+    c[3].style.opacity=P(t,2.3,2.75); c[3].style.transform=`translateY(${(1-outC(P(t,2.3,2.95)))*24}px)`; }
+
+  // three code cards, staggered, each with a small settle
+  { const c=q('s1').children;
+    c[0].style.opacity=P(t,5.1,5.5);
+    [[1,5.4],[2,6.6],[3,7.8]].forEach(([i,a])=>{
+      const k=outB(P(t,a,a+0.6));
+      c[i].style.opacity=P(t,a,a+0.3);
+      c[i].style.transform=`translateX(${(1-k)*-70}px) scale(${(0.9+0.1*k).toFixed(3)})`;
+    }); }
+
+  // payoff number
+  { const c=q('s2').children;
+    const n=outB(P(t,11.5,12.2));
+    c[0].style.opacity=P(t,11.5,11.85); c[0].style.transform=`scale(${(0.5+0.5*n).toFixed(3)})`;
+    c[1].style.opacity=P(t,11.9,12.25); c[1].style.transform=`translateY(${(1-outC(P(t,11.9,12.5)))*26}px)`;
+    c[2].style.opacity=P(t,12.3,12.7);  c[2].style.transform=`translateY(${(1-outC(P(t,12.3,12.9)))*24}px)`;
+    const cd=outB(P(t,12.8,13.4));
+    c[3].style.opacity=P(t,12.8,13.1);  c[3].style.transform=`translateY(${(1-cd)*44}px) scale(${(0.94+0.06*cd).toFixed(3)})`; }
+
+  // outro
+  { const c=q('s3').children;
+    const l=outB(P(t,15.2,15.85));
+    c[0].style.opacity=P(t,15.2,15.5); c[0].style.transform=`translateX(-50%) scale(${(0.6+0.4*l).toFixed(3)})`;
+    c[1].style.opacity=P(t,15.6,16.0); c[1].style.transform=`translateY(${(1-outC(P(t,15.6,16.25)))*30}px)`;
+    const ci=outB(P(t,16.1,16.7));
+    const pulse=1+Math.sin(Math.max(0,t-16.8)*7)*0.04;
+    c[2].style.opacity=P(t,16.1,16.4);
+    c[2].style.transform=`translateX(-50%) scale(${((0.62+0.38*ci)*pulse).toFixed(3)})`; }
+
+  let f=0;
+  for(const cu of [5.0,11.4,15.0]){ if(t>=cu-0.05&&t<cu+0.13) f=Math.max(f,(1-Math.abs(t-cu)/0.13)*0.4); }
+  q('flash').style.opacity=f.toFixed(3);
+}
+window.seek=seek; window.VIDEO_DURATION=DUR; seek(0);
+</script></body></html>

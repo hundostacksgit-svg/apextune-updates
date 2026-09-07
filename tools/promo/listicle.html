@@ -1,0 +1,137 @@
+<!doctype html><html><head><meta charset="utf-8"><title>listicle</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#06070a}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
+  color:#fff;-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#06070a}
+.glow{position:absolute;left:50%;top:-12%;width:1500px;height:1000px;transform:translateX(-50%);
+  background:radial-gradient(ellipse at center,rgba(255,120,45,.26),transparent 62%)}
+.scene{position:absolute;inset:0;opacity:0;will-change:opacity,transform}
+.num{position:absolute;left:80px;font-size:250px;font-weight:900;line-height:.8;
+  -webkit-text-stroke:6px rgba(255,158,43,.5);color:transparent;letter-spacing:-.05em}
+.ttl{position:absolute;left:80px;right:80px;font-size:96px;font-weight:900;line-height:1.02;
+  letter-spacing:-.035em}
+.desc{position:absolute;left:80px;right:80px;font-size:46px;line-height:1.34;color:#a8b0bf;font-weight:500}
+.grad{background:linear-gradient(115deg,#ff9e2b,#ff4a3a);-webkit-background-clip:text;
+  background-clip:text;color:transparent}
+.kick{position:absolute;left:80px;right:80px;font-size:36px;font-weight:800;letter-spacing:.2em;
+  text-transform:uppercase;color:#ff9e2b}
+.phone{position:absolute;border:12px solid #171b23;border-radius:44px;overflow:hidden;
+  box-shadow:0 44px 100px rgba(0,0,0,.8);background:#0b0c10}
+.phone img{display:block;width:100%}
+.pricetag{position:absolute;right:70px;padding:16px 32px;border-radius:999px;font-size:34px;
+  font-weight:800;background:rgba(49,208,122,.14);border:3px solid rgba(49,208,122,.45);color:#31d07a;
+  white-space:nowrap}
+.pricetag.need{background:rgba(255,158,43,.14);border-color:rgba(255,158,43,.5);color:#ff9e2b}
+.logo{position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:24px}
+.logo img{width:112px;height:112px;border-radius:26px}
+.logo span{font-size:86px;font-weight:900;letter-spacing:-.03em}
+.chip{position:absolute;left:50%;transform:translateX(-50%);padding:18px 46px;border-radius:999px;
+  font-size:44px;font-weight:900;border:4px solid #ff9e2b;color:#ff9e2b;white-space:nowrap}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;z-index:90;pointer-events:none}
+</style></head><body>
+<div id="stage">
+  <div class="glow"></div>
+
+  <div class="scene" id="s0">
+    <div class="kick" style="top:560px">Free app</div>
+    <div class="ttl" style="top:630px;font-size:110px">3 things one<br>free app does<br><span class="grad">for you.</span></div>
+  </div>
+
+  <div class="scene" id="s1">
+    <div class="num" style="top:250px">1</div>
+    <div class="ttl" style="top:530px">Reads your car's<br><span class="grad">fault codes</span></div>
+    <div class="desc" style="top:760px">In plain English, not code numbers.</div>
+    <div class="pricetag need" style="top:250px">needs a $30 adapter</div>
+    <div class="phone" id="p1" style="left:340px;top:900px;width:400px"></div>
+  </div>
+
+  <div class="scene" id="s2">
+    <div class="num" style="top:250px">2</div>
+    <div class="ttl" style="top:530px">Tests your phone's<br><span class="grad">hardware</span></div>
+    <div class="desc" style="top:760px">Battery, screen, cameras, GPS, sensors.</div>
+    <div class="pricetag" style="top:250px">no hardware needed</div>
+    <div class="phone" id="p2" style="left:340px;top:900px;width:400px"></div>
+  </div>
+
+  <div class="scene" id="s3">
+    <div class="num" style="top:250px">3</div>
+    <div class="ttl" style="top:530px">Benchmarks your<br><span class="grad">computer</span></div>
+    <div class="desc" style="top:760px">CPU, memory, graphics, disk, network.</div>
+    <div class="pricetag" style="top:250px">no hardware needed</div>
+    <div class="phone" id="p3" style="left:340px;top:900px;width:400px"></div>
+  </div>
+
+  <div class="scene" id="s4">
+    <div class="logo" id="lg" style="top:620px"></div>
+    <div class="ttl" style="top:840px;text-align:center;left:40px;right:40px">One app.<br><span class="grad">Free to try.</span></div>
+    <div class="chip" id="ch" style="top:1180px">Link in bio</div>
+  </div>
+
+  <div id="flash"></div>
+</div>
+<script>
+const S='/assets/shots/';
+const ph=(id,f)=>document.getElementById(id).innerHTML='<img src="'+S+f+'" width="600" height="1230">';
+ph('p1','car-results.png'); ph('p2','device-results.png'); ph('p3','system-results.png');
+document.getElementById('lg').innerHTML='<img src="/icons/icon-512.png"><span>OmniDx</span>';
+
+const DUR=20.0;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const P=(t,a,b)=>clamp((t-a)/(b-a),0,1);
+const outC=t=>1-Math.pow(1-t,3);
+const outB=t=>{const c=2.2;return 1+c*Math.pow(t-1,3)+1.2*Math.pow(t-1,2)};
+
+const SC=[['s0',0.0,3.6],['s1',3.6,8.2],['s2',8.2,12.4],['s3',12.4,16.4],['s4',16.4,20.0]];
+const XF=0.26;
+
+function seek(t){
+  for(const [id,a,b] of SC){
+    const el=document.getElementById(id);
+    let o=0;
+    if(t>=a-XF&&t<=b+XF){
+      o=Math.min(clamp((t-(a-XF))/XF,0,1), 1-clamp((t-(b-XF))/XF,0,1));
+    }
+    el.style.opacity=o.toFixed(4);
+    el.style.display=o>0.001?'block':'none';
+  }
+  const q=(id)=>document.getElementById(id);
+  const mv=(el,o,y,s)=>{el.style.opacity=o;el.style.transform=`translateY(${y}px) scale(${s})`};
+
+  // intro
+  { const k=outC(P(t,0.1,0.9)); const el=q('s0').children;
+    mv(el[0],P(t,0.05,0.4),(1-k)*24,1); mv(el[1],P(t,0.25,0.7),(1-outC(P(t,0.25,1.0)))*44,1); }
+
+  // the three items share one motion recipe
+  [['s1',3.7],['s2',8.3],['s3',12.5]].forEach(([id,a])=>{
+    const c=q(id).children;                       // num, ttl, desc, pricetag, phone
+    const n=outB(P(t,a,a+0.5));
+    c[0].style.opacity=P(t,a,a+0.25); c[0].style.transform=`scale(${0.55+0.45*n}) rotate(${(1-n)*-9}deg)`;
+    const ti=outC(P(t,a+0.15,a+0.75));
+    c[1].style.opacity=P(t,a+0.15,a+0.5); c[1].style.transform=`translateY(${(1-ti)*40}px)`;
+    const de=outC(P(t,a+0.35,a+0.95));
+    c[2].style.opacity=P(t,a+0.35,a+0.7); c[2].style.transform=`translateY(${(1-de)*30}px)`;
+    const pg=outB(P(t,a+0.6,a+1.1));
+    c[3].style.opacity=P(t,a+0.6,a+0.85); c[3].style.transform=`scale(${0.6+0.4*pg}) rotate(${(1-pg)*8}deg)`;
+    const pk=outC(P(t,a+0.45,a+1.4));
+    c[4].style.opacity=P(t,a+0.45,a+0.8);
+    c[4].style.transform=`translateY(${(1-pk)*150}px) scale(${0.94+0.06*pk})`;
+  });
+
+  // outro
+  { const l=outB(P(t,16.6,17.3)); const c=q('s4').children;
+    c[0].style.transform=`translateX(-50%) scale(${(0.6+0.4*l).toFixed(3)})`; c[0].style.opacity=P(t,16.6,16.9);
+    const h=outC(P(t,17.0,17.7)); mv(c[1],P(t,17.0,17.4),(1-h)*32,1);
+    const ci=outB(P(t,17.5,18.1));
+    const pulse=1+Math.sin(Math.max(0,t-18.2)*7)*0.04;
+    c[2].style.transform=`translateX(-50%) scale(${((0.62+0.38*ci)*pulse).toFixed(3)})`;
+    c[2].style.opacity=P(t,17.5,17.8); }
+
+  // soft flash on each item change
+  let f=0;
+  for(const c of [3.6,8.2,12.4,16.4]){ if(t>=c-0.05&&t<c+0.13) f=Math.max(f,(1-Math.abs(t-c)/0.13)*0.45); }
+  q('flash').style.opacity=f.toFixed(3);
+}
+window.seek=seek; window.VIDEO_DURATION=DUR; seek(0);
+</script></body></html>

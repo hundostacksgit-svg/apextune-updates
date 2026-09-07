@@ -1,6 +1,8 @@
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
-const FPS = 30, OUT = `${process.env.SP}/vid/frames`;
+const PAGE = process.env.PAGE || 'promo';          // which promo html to render
+const FPS = Number(process.env.FPS || 30);
+const OUT = `${process.env.SP}/vid/frames-${PAGE}`;
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -8,11 +10,11 @@ const b = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium-1194
   args:['--no-sandbox','--force-device-scale-factor=1','--hide-scrollbars'] });
 const c = await b.newContext({ viewport:{width:1080,height:1920}, deviceScaleFactor:1 });
 const p = await c.newPage();
-await p.goto('http://127.0.0.1:8099/tools/promo/promo.html', { waitUntil:'networkidle' });
+await p.goto(`http://127.0.0.1:8099/tools/promo/${PAGE}.html`, { waitUntil:'networkidle' });
 await p.waitForTimeout(1500);
 const DUR = await p.evaluate(() => window.VIDEO_DURATION);
 const total = Math.round(DUR * FPS);
-console.log(`rendering ${total} frames at ${FPS}fps (${DUR}s)`);
+console.log(`rendering ${PAGE}: ${total} frames at ${FPS}fps (${DUR}s)`);
 const t0 = Date.now();
 for (let i = 0; i < total; i++) {
   await p.evaluate((t) => window.seek(t), i / FPS);
