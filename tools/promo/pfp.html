@@ -1,0 +1,59 @@
+<!doctype html><html><head><meta charset="utf-8"><title>pfp</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#222;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif}
+.pfp{width:1080px;height:1080px;position:relative;overflow:hidden;display:grid;place-items:center}
+/* TikTok crops to a circle, so nothing important goes outside the inscribed circle */
+.grad{background:linear-gradient(135deg,#ffab35 0%,#ff7a2b 42%,#ff3d2e 100%)}
+.dark{background:radial-gradient(circle at 50% 34%,#232833 0%,#0d1015 68%)}
+svg{display:block}
+.mono{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
+  font-weight:900;letter-spacing:-.06em}
+</style></head><body>
+
+<!-- A: white pulse on the brand gradient — brightest, pops hardest in a dark feed -->
+<div class="pfp grad" id="A">
+  <svg width="820" height="820" viewBox="0 0 100 100">
+    <path d="M14 50 H30 L38 26 L50 74 L58 42 L66 50 H86" fill="none" stroke="#fff"
+          stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M23 26 A34 34 0 0 1 77 26" fill="none" stroke="#fff" stroke-width="7.5"
+          stroke-linecap="round" opacity=".55"/>
+  </svg>
+</div>
+
+<!-- B: brand mark on charcoal — matches the app icon exactly -->
+<div class="pfp dark" id="B">
+  <svg width="820" height="820" viewBox="0 0 100 100">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffab35"/><stop offset="1" stop-color="#ff3d2e"/></linearGradient></defs>
+    <path d="M23 26 A34 34 0 0 1 77 26" fill="none" stroke="url(#g)" stroke-width="7.5"
+          stroke-linecap="round" opacity=".85"/>
+    <path d="M14 50 H30 L38 26 L50 74 L58 42 L66 50 H86" fill="none" stroke="url(#g)"
+          stroke-width="9.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</div>
+
+<!-- C: Dx monogram — most legible at 48px, least distinctive -->
+<div class="pfp grad" id="C">
+  <div class="mono" style="font-size:520px;color:#fff;line-height:1;margin-top:-20px">Dx</div>
+</div>
+
+<!-- D: pulse inside a ring, tighter crop so it still reads when tiny -->
+<div class="pfp dark" id="D">
+  <svg width="900" height="900" viewBox="0 0 100 100">
+    <defs><linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffab35"/><stop offset="1" stop-color="#ff3d2e"/></linearGradient></defs>
+    <circle cx="50" cy="50" r="39" fill="none" stroke="url(#g2)" stroke-width="6" opacity=".3"/>
+    <path d="M16 50 H31 L39 28 L50 72 L58 44 L65 50 H84" fill="none" stroke="url(#g2)"
+          stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</div>
+
+<!-- E: inverted — dark mark on a solid orange field, maximum contrast -->
+<div class="pfp" id="E" style="background:#ff7a2b">
+  <svg width="860" height="860" viewBox="0 0 100 100">
+    <path d="M14 50 H30 L38 25 L50 76 L58 41 L66 50 H86" fill="none" stroke="#14100c"
+          stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</div>
+</body></html>
