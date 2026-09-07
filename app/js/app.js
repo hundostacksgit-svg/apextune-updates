@@ -11,6 +11,8 @@ const ROUTES = {
   codes:   () => import('./modules/codes.js'),
   garage:  () => import('./modules/garage.js'),
   pro:     () => import('./modules/pro.js'),
+  controller: () => import('./modules/controller.js'),
+  display: () => import('./modules/display.js'),
 };
 
 let current = null;

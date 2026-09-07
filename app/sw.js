@@ -7,8 +7,9 @@ const CORE = [
   './js/modules/home.js', './js/modules/car.js', './js/modules/phone.js',
   './js/modules/system.js', './js/modules/reports.js', './js/modules/gear.js',
   './js/modules/codes.js', './js/modules/garage.js', './js/modules/pro.js',
+  './js/modules/controller.js', './js/modules/display.js',
   './js/pro.js', './js/config.js',
-  './js/obd/elm327.js', './js/obd/transport.js', './js/obd/pids.js', './js/obd/dtc.js',
+  './js/obd/elm327.js', './js/obd/transport.js', './js/obd/pids.js', './js/obd/dtc.js', './js/obd/repairs.js',
   '../icons/icon-192.png', '../icons/icon-512.png',
   '../icons/maskable-192.png', '../icons/maskable-512.png',
   '../icons/apple-touch-icon.png', '../icons/favicon-32.png'

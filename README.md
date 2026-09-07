@@ -5,6 +5,7 @@ phone's hardware, and benchmarks your computer — offline, with nothing uploade
 
 - **Site:** <https://hundostacksgit-svg.github.io/apextune-updates/>
 - **App:** <https://hundostacksgit-svg.github.io/apextune-updates/app/>
+- **Launch kit:** [`docs/LAUNCH-KIT.md`](docs/LAUNCH-KIT.md) — videos, scripts, what to buy, how to get paid
 
 No app store, no account, no backend. It's a Progressive Web App: a static site that
 installs like a native app on a phone or a desktop.
@@ -18,6 +19,10 @@ Talks to a standard OBD-II adapter and reads what a shop scanner reads:
 
 - **Trouble codes** — stored, pending and permanent, each translated into plain English and
   ranked critical / major / minor.
+- **Cause and fix guidance** — for every code in the table: the likely causes in order of how
+  often they turn out to be the culprit, what to check first (cheapest first), a difficulty
+  rating and a rough parts cost. P0420 tells you to rule out an oxygen sensor before buying a
+  catalytic converter, which is the single most over-replaced part in car repair.
 - **Freeze frame** — the engine conditions recorded at the exact moment a fault was stored
   (revs, speed, coolant, fuel trims). Usually the fastest route to the real cause.
 - **Readiness monitors** — the self-tests an emissions inspection checks, and the usual
@@ -44,6 +49,15 @@ accelerometer/gyroscope and the vibration motor.
 Single-core and all-core CPU benchmarks with parallel-scaling analysis, memory allocation
 ceiling, GPU fill rate, storage read/write speed, network throughput, and a browser
 capability matrix.
+
+### Controllers and screens
+PS5, Xbox, Switch Pro and generic pads over Bluetooth or USB: **stick drift measured**
+against a resting baseline, every button, both trigger ranges, and rumble. Plus a display
+suite — dead pixels, backlight bleed, uniformity, colour banding, ghosting, black level and
+text clarity — which works on a monitor, a laptop, a phone or the TV a console is plugged into.
+
+A console itself cannot be reached from a browser and the app says so. Its controller and its
+screen are the parts that actually fail, and both are genuinely testable.
 
 ### Everyday tools
 - **Code lookup** — 205 trouble codes searchable by code, partial code or plain-English

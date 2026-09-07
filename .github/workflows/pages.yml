@@ -30,6 +30,7 @@ jobs:
                    app/js/pro.js app/js/config.js app/js/modules/pro.js \
                    app/js/modules/car.js app/js/modules/codes.js app/js/modules/garage.js \
                    app/js/obd/elm327.js app/js/obd/transport.js app/js/obd/pids.js app/js/obd/dtc.js \
+                   app/js/obd/repairs.js app/js/modules/controller.js app/js/modules/display.js \
                    icons/icon-192.png icons/icon-512.png icons/icon.ico icons/icon.icns; do
             [ -f "$f" ] || { echo "missing required file: $f"; exit 1; }
           done

@@ -1,9 +1,10 @@
 /* Vehicle scan: connect to an ELM327 adapter, read codes, monitors and live data. */
-import { $, esc, toast, gauge, rows, scoreRing, confirmDialog, fmt } from '../ui.js';
+import { $, esc, toast, gauge, rows, scoreRing, confirmDialog, fmt, repairBlock } from '../ui.js';
 import { BleTransport, SerialTransport, DemoTransport, bleSupported, serialSupported } from '../obd/transport.js';
 import { ELM327 } from '../obd/elm327.js';
 import { PIDS, LIVE_ORDER, SNAPSHOT_ORDER, FREEZE_ORDER, pidPct, pidTone } from '../obd/pids.js';
 import { severity, describe } from '../obd/dtc.js';
+import { repairFor, misfireCylinder, DIFFICULTY_LABEL } from '../obd/repairs.js';
 import { scoreCar, verdict, save, shareReport, exportCSV } from '../report.js';
 import { store } from '../store.js';
 import { can, isPro } from '../pro.js';
@@ -196,6 +197,8 @@ export async function mount(host) {
       <div class="code">${esc(code)}</div>
       <div class="desc">${esc(describe(code))}</div>
       <div class="meta">${esc(label)} · ${esc(sev)}</div>
+      ${repairBlock(code, repairFor(code), DIFFICULTY_LABEL,
+        { open: sev === 'critical', cylinder: misfireCylinder(code) })}
     </div>`;
   }
 

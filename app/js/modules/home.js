@@ -72,6 +72,23 @@ export async function mount(host) {
       <span class="arrow">›</span>
     </a>
 
+    <a class="card tap card-row" href="#/controller" style="display:flex">
+      <span class="glyph">⊞</span>
+      <span class="grow">
+        <h3>Controller Test</h3>
+        <div class="small muted">PS5, Xbox and generic pads. Measures stick drift, checks every button and the triggers.</div>
+      </span>
+      <span class="arrow">›</span>
+    </a>
+    <a class="card tap card-row" href="#/display" style="display:flex">
+      <span class="glyph">▢</span>
+      <span class="grow">
+        <h3>Display Test</h3>
+        <div class="small muted">Dead pixels, backlight bleed, ghosting and banding — on a monitor, laptop or TV.</div>
+      </span>
+      <span class="arrow">›</span>
+    </a>
+
     <h2>Hardware</h2>
     <a class="card tap card-row" href="#/gear" style="display:flex">
       <span class="glyph">⚙</span>

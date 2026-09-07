@@ -1,6 +1,7 @@
 /* Offline trouble-code lookup. No adapter, no connection, no network. */
-import { $, esc, toast, empty } from '../ui.js';
+import { $, esc, toast, empty, repairBlock } from '../ui.js';
 import { searchCodes, severity, CODE_COUNT } from '../obd/dtc.js';
+import { repairFor, misfireCylinder, DIFFICULTY_LABEL } from '../obd/repairs.js';
 import { store } from '../store.js';
 
 const RECENT_KEY = 'recentCodes';
@@ -71,6 +72,8 @@ export async function mount(host, arg) {
       ${hit.generated
         ? '<div class="meta">Not in the table — described from its code range</div>'
         : ''}
+      ${repairBlock(hit.code, repairFor(hit.code), DIFFICULTY_LABEL,
+        { open: hit.exact, cylinder: misfireCylinder(hit.code) })}
     </div>`;
   }
 

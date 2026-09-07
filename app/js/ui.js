@@ -156,3 +156,26 @@ export function empty(icon, title, body) {
   return `<div class="empty"><div class="eico">${icon}</div>
     <h3>${esc(title)}</h3><p class="small">${esc(body)}</p></div>`;
 }
+
+
+/**
+ * Repair guidance for a trouble code, as a collapsible block. `rep` comes from
+ * repairFor() in obd/repairs.js; pass null and this renders nothing.
+ */
+export function repairBlock(code, rep, labels, opts = {}) {
+  if (!rep) return '';
+  const open = opts.open ? ' open' : '';
+  const cyl = opts.cylinder ? ` on cylinder ${opts.cylinder}` : '';
+  return `<details class="fixit"${open}>
+    <summary><span>What causes this &amp; how to fix it${esc(cyl)}</span></summary>
+    ${rep.urgent ? `<div class="fix-urgent">${esc(rep.urgent)}</div>` : ''}
+    <div class="fix-h">Most likely causes</div>
+    <ol class="fix-list">${rep.causes.map((c) => `<li>${esc(c)}</li>`).join('')}</ol>
+    <div class="fix-h">Check in this order</div>
+    <ol class="fix-list steps">${rep.fix.map((f) => `<li>${esc(f)}</li>`).join('')}</ol>
+    <div class="fix-meta">
+      <span class="fix-tag ${esc(rep.difficulty)}">${esc(labels[rep.difficulty] || rep.difficulty)}</span>
+      <span class="fix-cost">${esc(rep.cost)}</span>
+    </div>
+  </details>`;
+}
