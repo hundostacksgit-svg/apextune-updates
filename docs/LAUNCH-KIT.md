@@ -7,6 +7,26 @@ what to buy, and how to get paid.
 
 ---
 
+## 0. Do this next, in this order
+
+Each step is worth doing on its own, so a hold-up on one does not block the rest.
+
+1. **Open <https://cash.app/$Ahmirp1961> and check it is your account.** Before
+   anything else and before any post. A wrong character pays a stranger and
+   there is no getting it back.
+2. **Buy the OBD-II adapter (~$30). Scan your own car.** You need to have seen it
+   work on a real engine before a stranger asks you a question about it.
+3. **Buy omnidx.net (~$12).** Add the DNS records in section 2, wait, then run
+   the one command. The site keeps working the whole time.
+4. **Make the TikTok account.** Profile picture, handle, bio, link. Section 8.
+5. **Post `4-codes.mp4`.** Then the rest, a day or two apart. Section 4.
+6. **Set up Square checkout** once a payment or two has come through Cash App and
+   you know the demand is real. Section 3, Option B.
+
+Everything after that is repetition: post, read the comments, post again.
+
+---
+
 ## 1. What to buy
 
 Two things, about **$45 total**. Nothing else costs money — hosting, HTTPS and
@@ -156,7 +176,58 @@ committing to it.
 
 ---
 
-## 5. Text-to-speech scripts
+## 5. Cutting a video to your own sound
+
+Send a song and the edit will be rebuilt so every cut, every text hit and every
+flash lands on the beat of that specific track. One command:
+
+```
+tools/promo/make-beat-video.sh song.mp3
+```
+
+That writes `omnidx-beatcut.mp4` in the repo root — 1080×1920, the audio already
+muxed in, ready to upload.
+
+Options, in order:
+
+```
+tools/promo/make-beat-video.sh song.mp3 20 8
+```
+
+...means make it 20 seconds long starting 8 seconds into the track — which is
+usually what you want, because the part of a song worth cutting to is rarely the
+intro.
+
+**If the cuts feel like they are on the offbeat**, the tempo was read at half or
+double what you hear. Force it:
+
+```
+python3 tools/promo/beatsync.py song.mp3 --bpm 150
+tools/promo/make-beat-video.sh song.mp3
+```
+
+This is not always the tool being wrong — on a half-time trap beat, 75 and 150
+are both defensible answers, and only you know which one the video should move at.
+
+**How it works**, briefly: `beatsync.py` finds the tempo and the position of
+every beat and writes `beatmap.json`. `beatcut.html` writes the edit in beats
+rather than seconds, so the same cuts work at any tempo without a single number
+being retyped. Check it against tracks of known tempo any time with:
+
+```
+python3 tools/promo/beatsync.py --selftest
+```
+
+**On using commercial music:** posting with a track from TikTok's own library is
+fine and is what the algorithm rewards. Baking someone's copyrighted song into a
+file and uploading it elsewhere — YouTube, your own site, an ad — is not. For
+TikTok, the safest route is to upload the beat-cut video *silent* and add the
+sound in the TikTok editor; the cuts still land, because they were cut to that
+track.
+
+---
+
+## 6. Text-to-speech scripts
 
 Upload the **silent** file, add each line as a text block at the time shown, tap it
 → **text-to-speech**. TikTok's voices are free and sound far better than anything
@@ -204,7 +275,7 @@ the cuts land on the beat.
 
 ---
 
-## 6. Captions and hashtags
+## 7. Captions and hashtags
 
 **codes**
 ```
@@ -241,7 +312,7 @@ Free to try, link in bio 👇
 
 ---
 
-## 7. Account setup
+## 8. Account setup
 
 **Profile picture:** `assets/social/pfp-a-gradient-white.png` — white mark on the
 brand gradient. The app icon itself (`pfp-b`) is the most on-brand option and the
@@ -264,15 +335,15 @@ looks for a brand they've never heard of. "Car diagnostics" is what they type.
 Read your check engine light yourself. Car, phone & PC. Free 👇
 ```
 
-**Put the link in before you post anything.** All four videos end on "link in bio."
+**Put the link in before you post anything.** Every video ends on "link in bio."
 
 ---
 
-## 8. An honest growth plan
+## 9. An honest growth plan
 
 There's no trick here, so here's what actually moves the needle, in order.
 
-**Volume beats polish.** Four videos is a start, not a campaign. Accounts that
+**Volume beats polish.** Five videos is a start, not a campaign. Accounts that
 grow post 1–2 a day for weeks. The generators are in `tools/promo/` — change the
 hook, re-render, post. Every video is one number in one array away from a variant.
 
@@ -290,6 +361,13 @@ already have the answer written.
 
 **Free thing first, product second.** The code lookup needs no purchase and no
 adapter. Lead with it. People who found you useful once will look twice.
+
+**Push the share card.** Every result screen has *Share as image* — the score,
+the code, the cause and the first thing to check, with `omnidx.net` printed on
+it. Someone showing a friend what's wrong with their car is a post you did not
+have to make. Say it in the videos: "screenshot this and send it to whoever's
+been telling you it's the catalytic converter." That is the only part of your
+distribution that grows without you.
 
 **Expect the objections and answer them straight:**
 - *"AutoZone does this free"* — true. The pitch is not driving there, seeing
@@ -310,12 +388,15 @@ experiment, not 4.
 
 ---
 
-## 9. Where everything lives
+## 10. Where everything lives
 
 ```
-assets/social/videos/        the four videos
+assets/social/videos/        the five videos
 assets/social/pfp-*.png      profile pictures + the size comparison
 tools/promo/                 video generators — re-cut any of them
+tools/promo/beatsync.py      find the beat in a song you want to post with
+tools/promo/make-beat-video.sh  cut the promo to that song, one command
+app/js/card.js               the share-as-image card
 tools/make-licence.py        generate a Pro code after a payment
 tools/set-domain.py          point omnidx.net at the site, safely
 app/js/config.js             cashtag, price, checkout link
@@ -323,4 +404,5 @@ app/js/pro.js                what Free vs Pro includes (one array)
 app/js/obd/repairs.js        the cause-and-fix guidance
 docs/PAYMENTS.md             full payment setup
 docs/CUSTOM-DOMAIN.md        full domain setup
+docs/NEXT-PRODUCTS.md        what else is worth building, and what isn't
 ```

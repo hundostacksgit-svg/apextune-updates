@@ -6,6 +6,7 @@ phone's hardware, and benchmarks your computer — offline, with nothing uploade
 - **Site:** <https://hundostacksgit-svg.github.io/apextune-updates/>
 - **App:** <https://hundostacksgit-svg.github.io/apextune-updates/app/>
 - **Launch kit:** [`docs/LAUNCH-KIT.md`](docs/LAUNCH-KIT.md) — videos, scripts, what to buy, how to get paid
+- **What to build next:** [`docs/NEXT-PRODUCTS.md`](docs/NEXT-PRODUCTS.md) — other products worth the effort, and the ones that aren't
 
 No app store, no account, no backend. It's a Progressive Web App: a static site that
 installs like a native app on a phone or a desktop.
@@ -249,15 +250,19 @@ app/js/app.js           router, service worker registration, install prompt
 app/js/ui.js            DOM helpers, gauges, score rings, toasts
 app/js/store.js         local persistence — reports, vehicles, preferences
 app/js/report.js        scoring, text rendering, share / copy / CSV export
+app/js/card.js          the result drawn as a share-ready 1080x1920 image
 app/js/modules/*.js     one file per screen
 app/js/obd/transport.js Bluetooth LE, Web Serial and simulated ECU links
 app/js/obd/elm327.js    ELM327 command queue and response framing
 app/js/obd/pids.js      SAE J1979 parameter definitions and decoders
 app/js/obd/dtc.js       trouble-code decoding, descriptions, search, monitors
+app/js/obd/repairs.js   what causes each code and what to check first
 icons/                  app icons, plus .ico and .icns for desktop shortcuts
 desktop/omnidx.py       desktop launcher — local server plus its own app window
 desktop/install.py      creates the desktop shortcut on Windows, macOS or Linux
 tools/sysreport.py      companion deep hardware scan
+tools/promo/            promo video generators
+tools/promo/beatsync.py find the beat in a song, so the edit can be cut to it
 ```
 
 ---
