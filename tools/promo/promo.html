@@ -1,0 +1,248 @@
+<!doctype html><html><head><meta charset="utf-8"><title>promo</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:#07080b}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
+  color:#fff;-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#07080b}
+.scene{position:absolute;inset:0;opacity:0;will-change:opacity,transform}
+.glow{position:absolute;left:50%;top:-14%;width:1500px;height:1100px;transform:translateX(-50%);
+  background:radial-gradient(ellipse at center,rgba(255,120,45,.30),transparent 62%);pointer-events:none}
+.glow.b{top:auto;bottom:-18%;background:radial-gradient(ellipse at center,rgba(255,74,58,.24),transparent 62%)}
+
+.kicker{position:absolute;left:80px;right:80px;font-size:34px;font-weight:800;letter-spacing:.20em;
+  text-transform:uppercase;color:#ff9e2b}
+.head{position:absolute;left:80px;right:80px;font-size:104px;line-height:1.03;font-weight:900;
+  letter-spacing:-.035em}
+.head.sm{font-size:82px}
+.sub{position:absolute;left:80px;right:80px;font-size:44px;line-height:1.32;color:#aab2c0;font-weight:500}
+.grad{background:linear-gradient(120deg,#ff9e2b,#ff4a3a);-webkit-background-clip:text;
+  background-clip:text;color:transparent}
+
+.phone{position:absolute;border:14px solid #1b1f28;border-radius:56px;overflow:hidden;
+  box-shadow:0 50px 120px rgba(0,0,0,.75),0 0 0 2px rgba(255,255,255,.06);background:#0b0c10}
+.phone img{display:block;width:100%}
+
+.pill{position:absolute;display:inline-flex;align-items:center;gap:16px;padding:20px 38px;
+  border-radius:999px;font-size:36px;font-weight:800;background:rgba(20,23,30,.9);
+  border:2px solid rgba(255,158,43,.5);color:#ff9e2b;backdrop-filter:blur(8px)}
+.card{position:absolute;background:#14171e;border:2px solid #262b35;border-radius:28px;padding:34px 38px}
+.code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:60px;font-weight:800;letter-spacing:.02em}
+.codedesc{font-size:40px;color:#c7cede;margin-top:10px}
+.arrow{position:absolute;font-size:70px;color:#ff9e2b;font-weight:800}
+.badge{position:absolute;padding:12px 26px;border-radius:999px;font-size:28px;font-weight:800;
+  letter-spacing:.06em;text-transform:uppercase}
+.b-bad{background:rgba(255,90,77,.18);color:#ff5a4d;border:2px solid rgba(255,90,77,.45)}
+
+.logo{position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:26px}
+.logo img{width:120px;height:120px;border-radius:28px}
+.logo span{font-size:88px;font-weight:900;letter-spacing:-.03em}
+.url{position:absolute;left:0;right:0;text-align:center;font-size:52px;font-weight:800;color:#ff9e2b}
+.tick{position:absolute;left:80px;right:80px;font-size:46px;font-weight:700;color:#e9ecf2;
+  display:flex;align-items:center;gap:22px}
+.tick i{width:44px;height:44px;border-radius:50%;background:rgba(49,208,122,.18);color:#31d07a;
+  display:grid;place-items:center;font-size:26px;font-style:normal;font-weight:900;flex:0 0 44px}
+.strike{position:relative;display:inline-block}
+.strike::after{content:"";position:absolute;left:-6px;top:52%;height:9px;background:#ff4a3a;
+  border-radius:6px;width:0}
+</style></head><body>
+<div id="stage">
+  <div class="glow" id="glowA"></div>
+  <div class="glow b" id="glowB"></div>
+
+  <!-- 1 HOOK -->
+  <div class="scene" id="s1">
+    <div class="kicker" style="top:520px" id="s1k">Check engine light on?</div>
+    <div class="head" style="top:600px" id="s1h">Shops charge up to<br><span class="strike" id="s1s">$80</span> just to<br><span class="grad">read the code.</span></div>
+    <div class="sub" style="top:1080px" id="s1sub">You can do it yourself.</div>
+  </div>
+
+  <!-- 2 SOLUTION -->
+  <div class="scene" id="s2">
+    <div class="kicker" style="top:250px">In about 10 seconds</div>
+    <div class="head sm" style="top:320px">Plug in. Scan.<br><span class="grad">Know.</span></div>
+    <div class="phone" id="s2p" style="left:340px;top:600px;width:400px"></div>
+  </div>
+
+  <!-- 3 WHAT YOU NEED -->
+  <div class="scene" id="s3">
+    <div class="kicker" style="top:280px">All you need</div>
+    <div class="head sm" style="top:350px">A <span class="grad">$30</span> adapter<br>and your phone.</div>
+    <svg id="s3svg" style="position:absolute;left:190px;top:760px;width:700px" viewBox="28 20 142 92">
+      <defs><linearGradient id="ag" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#ff9e2b"/><stop offset="1" stop-color="#ff4a3a"/></linearGradient></defs>
+      <rect x="58" y="26" width="104" height="78" rx="13" fill="#1a1e27" stroke="#39414f" stroke-width="2"/>
+      <path d="M58 44 L34 52 L34 78 L58 86 Z" fill="#232833" stroke="#39414f" stroke-width="2" stroke-linejoin="round"/>
+      <g fill="#4b5566"><circle cx="44" cy="59" r="2.6"/><circle cx="44" cy="70" r="2.6"/>
+        <circle cx="51" cy="57" r="2.6"/><circle cx="51" cy="72" r="2.6"/></g>
+      <circle cx="88" cy="65" r="7" fill="url(#ag)"/>
+      <path d="M118 50 l16 12 -16 12 v-32 l16 12 -16 12" fill="none" stroke="url(#ag)"
+            stroke-width="3.4" stroke-linejoin="round" stroke-linecap="round"/>
+    </svg>
+    <div class="sub" style="top:1310px;text-align:center">Works on any car since 1996.</div>
+  </div>
+
+  <!-- 4 MONEY SHOT -->
+  <div class="scene" id="s4">
+    <div class="phone" id="s4p" style="left:360px;top:210px;width:360px"></div>
+    <div class="card" id="s4c1" style="left:60px;top:1000px;right:60px;border-left:10px solid #ff5a4d">
+      <div class="code">P0302</div><div class="codedesc">Cylinder 2 misfire detected</div></div>
+    <div class="card" id="s4c2" style="left:60px;top:1205px;right:60px;border-left:10px solid #ffc043">
+      <div class="code">P0171</div><div class="codedesc">System running too lean, bank 1</div></div>
+    <div class="sub" id="s4s" style="top:1400px;left:40px;right:40px;text-align:center;color:#fff;font-weight:800;font-size:44px;white-space:nowrap">
+      Plain English. Not code numbers.</div>
+  </div>
+
+  <!-- 5 FREEZE FRAME -->
+  <div class="scene" id="s5">
+    <div class="kicker" style="top:200px">Freeze frame</div>
+    <div class="head sm" style="top:270px">See what the engine<br>was doing <span class="grad">when it broke.</span></div>
+    <div class="phone" id="s5p" style="left:340px;top:580px;width:400px"></div>
+  </div>
+
+  <!-- 6 BREADTH -->
+  <div class="scene" id="s6">
+    <div class="kicker" style="top:230px">Same app</div>
+    <div class="head sm" style="top:300px">Your phone.<br>Your laptop. <span class="grad">Too.</span></div>
+    <div class="phone" id="s6a" style="left:150px;top:690px;width:330px"></div>
+    <div class="phone" id="s6b" style="left:600px;top:760px;width:330px"></div>
+  </div>
+
+  <!-- 7 CTA -->
+  <div class="scene" id="s7">
+    <div class="logo" id="s7l" style="top:560px"></div>
+    <div class="head" id="s7h" style="top:780px;text-align:center;font-size:86px">All-around<br><span class="grad">diagnostics.</span></div>
+    <div class="tick" id="s7t1" style="top:1090px;justify-content:center"><i>✓</i>Free to try</div>
+    <div class="tick" id="s7t2" style="top:1170px;justify-content:center"><i>✓</i>No app store</div>
+    <div class="tick" id="s7t3" style="top:1250px;justify-content:center"><i>✓</i>Works offline</div>
+    <div class="url" id="s7u" style="top:1390px">Link in bio</div>
+  </div>
+</div>
+
+<script>
+const SHOTS = '/assets/shots/';
+function phone(id, shot){ document.getElementById(id).innerHTML =
+  '<img src="'+SHOTS+shot+'" width="600" height="1230">'; }
+phone('s2p','car-results.png'); phone('s4p','car-results.png');
+phone('s5p','car-freeze.png');  phone('s6a','device-results.png'); phone('s6b','system-results.png');
+document.getElementById('s7l').innerHTML = '<img src="/icons/icon-512.png"><span>OmniDx</span>';
+
+/* ---- deterministic timeline ---- */
+const DUR = 28.0;
+const ease = t => t<0?0 : t>1?1 : 1-Math.pow(1-t,3);
+const clamp01 = t => Math.max(0, Math.min(1, t));
+// progress of t through [a,b]
+const P = (t,a,b) => clamp01((t-a)/(b-a));
+
+const SCENES = [
+  ['s1', 0.0,  3.4],
+  ['s2', 3.4,  7.2],
+  ['s3', 7.2, 11.4],
+  ['s4', 11.4, 17.6],
+  ['s5', 17.6, 21.4],
+  ['s6', 21.4, 24.6],
+  ['s7', 24.6, 28.0],
+];
+const XF = 0.28; // crossfade seconds
+
+function set(el, o, tx=0, ty=0, s=1){
+  el.style.opacity = o;
+  el.style.transform = `translate(${tx}px,${ty}px) scale(${s})`;
+}
+
+function seek(t){
+  // background glows drift slowly for life
+  document.getElementById('glowA').style.transform =
+    `translateX(-50%) translateY(${Math.sin(t*0.55)*36}px)`;
+  document.getElementById('glowB').style.transform =
+    `translateX(-50%) translateY(${Math.cos(t*0.45)*30}px)`;
+
+  for (const [id, a, b] of SCENES){
+    const el = document.getElementById(id);
+    let o = 0;
+    if (t >= a - XF && t <= b + XF){
+      const fin = clamp01((t-(a-XF))/XF);
+      const fout = 1 - clamp01((t-(b-XF))/XF);
+      o = Math.min(fin, fout);
+    }
+    el.style.opacity = o.toFixed(4);
+    el.style.display = o > 0.001 ? 'block' : 'none';
+  }
+
+  // ---- per-scene motion ----
+  // S1: kicker then headline rise, strike-through sweeps
+  {
+    const p = P(t, 0.0, 3.4);
+    set(document.getElementById('s1k'), ease(P(t,0.05,0.5)), 0, (1-ease(P(t,0.05,0.5)))*30);
+    set(document.getElementById('s1h'), ease(P(t,0.35,1.0)), 0, (1-ease(P(t,0.35,1.0)))*48);
+    set(document.getElementById('s1sub'), ease(P(t,1.9,2.4)), 0, (1-ease(P(t,1.9,2.4)))*26);
+    const sw = ease(P(t,1.25,1.75));
+    const strike = document.getElementById('s1s');
+    strike.style.setProperty('--w', sw);
+    strike.querySelector; // no-op
+    document.styleSheets[0]; // no-op
+    strike.style.cssText = 'position:relative;display:inline-block';
+    let after = strike.querySelector('.sw');
+    if(!after){ after = document.createElement('span'); after.className='sw';
+      after.style.cssText='position:absolute;left:-6px;top:52%;height:9px;background:#ff4a3a;border-radius:6px';
+      strike.appendChild(after); }
+    after.style.width = (sw*100)+'%';
+  }
+  // S2: phone rises + slight scale
+  {
+    const p = ease(P(t, 3.5, 4.6));
+    set(document.getElementById('s2p'), 1, 0, (1-p)*120, 0.94+p*0.06);
+  }
+  // S3: adapter scales in, glow pulse
+  {
+    const p = ease(P(t, 7.3, 8.4));
+    const sv = document.getElementById('s3svg');
+    sv.style.opacity = p;
+    sv.style.transform = `scale(${0.86+p*0.14}) rotate(${(1-p)*-6}deg)`;
+    sv.style.transformOrigin = 'center';
+  }
+  // S4: phone in, badge pops, cards slide up one after another, then slow zoom
+  {
+    const pin = ease(P(t, 11.5, 12.4));
+    const zoom = P(t, 12.4, 17.6);
+    set(document.getElementById('s4p'), 1, 0, (1-pin)*70, 0.96 + pin*0.04 + zoom*0.05);
+    const c1 = ease(P(t, 13.3, 13.9));
+    set(document.getElementById('s4c1'), c1, 0, (1-c1)*60);
+    const c2 = ease(P(t, 14.1, 14.7));
+    set(document.getElementById('s4c2'), c2, 0, (1-c2)*60);
+    const sp = ease(P(t, 15.2, 15.8));
+    set(document.getElementById('s4s'), sp, 0, (1-sp)*30);
+  }
+  // S5: phone slides in from right
+  {
+    const p = ease(P(t, 17.7, 18.7));
+    set(document.getElementById('s5p'), 1, (1-p)*260, 0, 0.95+p*0.05);
+  }
+  // S6: two phones stagger in
+  {
+    const a = ease(P(t, 21.5, 22.3));
+    const b = ease(P(t, 21.8, 22.7));
+    set(document.getElementById('s6a'), a, (1-a)*-140, 0, 0.95+a*0.05);
+    set(document.getElementById('s6b'), b, (1-b)*140, 0, 0.95+b*0.05);
+  }
+  // S7: logo pops, ticks stagger, url pulses
+  {
+    const l = ease(P(t, 24.7, 25.4));
+    set(document.getElementById('s7l'), l, 0, (1-l)*-30, 0.86+l*0.14);
+    document.getElementById('s7l').style.transform =
+      `translateX(-50%) translateY(${(1-l)*-30}px) scale(${0.86+l*0.14})`;
+    const h = ease(P(t, 25.1, 25.8));
+    set(document.getElementById('s7h'), h, 0, (1-h)*28);
+    [['s7t1',25.7],['s7t2',25.95],['s7t3',26.2]].forEach(([id,st])=>{
+      const p = ease(P(t, st, st+0.45));
+      set(document.getElementById(id), p, 0, (1-p)*22);
+    });
+    const u = ease(P(t, 26.7, 27.2));
+    const pulse = 1 + Math.sin(Math.max(0,t-27.2)*7)*0.035;
+    set(document.getElementById('s7u'), u, 0, (1-u)*20, u*pulse);
+  }
+}
+window.seek = seek;
+window.VIDEO_DURATION = DUR;
+seek(0);
+</script></body></html>
