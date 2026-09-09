@@ -1,0 +1,18 @@
+Copyright (c) 2026 OmniDx. All rights reserved.
+
+This source is published so that anyone can verify what the app does with their
+data — which is nothing: it makes no network calls beyond loading itself, and
+every scan stays on the device that ran it.
+
+Publishing it is not a grant of any licence. You may read this code and run the
+app. You may not copy, modify, redistribute or sell it, or any derivative of it,
+without written permission.
+
+A note on what this does and does not do: this is a static web app, so its code
+is readable by anyone who opens the page, and no licence changes that. What the
+terms above give you is a legal position if somebody republishes the work as
+their own, not a technical barrier against it.
+
+Trouble code descriptions are the generic SAE definitions and are not
+copyrightable as facts. The repair guidance, the interface, the artwork and the
+code are.

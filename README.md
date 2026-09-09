@@ -263,6 +263,9 @@ desktop/install.py      creates the desktop shortcut on Windows, macOS or Linux
 tools/sysreport.py      companion deep hardware scan
 tools/promo/            promo video generators
 tools/promo/beatsync.py find the beat in a song, so the edit can be cut to it
+tools/promo/og.html     source of the 1200x630 link-preview card
+tools/set-domain.py     move the site, and repoint its absolute URLs with it
+LICENSE                 published source, not an open licence
 ```
 
 ---

@@ -116,5 +116,16 @@ Two things worth updating once `omnidx.net` is serving:
 - `README.md` and `desktop/README.md` still name the `github.io` URL in a few
   places. Cosmetic, but tidy.
 
+If you rename the repository instead of buying a domain, the address changes
+without any DNS involved — and the link-preview tags in `index.html` carry
+absolute URLs that have to move with it:
+
+```
+python3 tools/set-domain.py --site-url https://hundostacksgit-svg.github.io/omnidx/
+```
+
+GitHub keeps redirecting the old address after a rename, so nothing you have
+already posted breaks.
+
 The repository name (`apextune-updates`) stops being visible entirely once a
 custom domain is in front of it, so there's no need to rename it.

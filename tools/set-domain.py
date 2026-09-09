@@ -9,6 +9,13 @@ script checks first and refuses if the domain isn't ready, so that can't happen.
     python3 tools/set-domain.py omnidx.net      # check, then write CNAME
     python3 tools/set-domain.py --check-only omnidx.net
     python3 tools/set-domain.py --remove        # go back to the github.io URL
+
+The link-preview tags in index.html carry absolute URLs, because the scrapers
+behind iMessage, Discord and the rest will not resolve a relative one. Moving the
+site means rewriting them, so this does that too -- including after a repository
+rename, which changes the address without involving DNS at all:
+
+    python3 tools/set-domain.py --site-url https://user.github.io/omnidx/
 """
 
 from __future__ import annotations
@@ -22,6 +29,16 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CNAME = ROOT / "CNAME"
+INDEX = ROOT / "index.html"
+
+# Every absolute link in the page head. Each is rewritten as a whole URL rather
+# than by substituting a hostname, so a half-updated tag is not possible.
+SITE_TAGS = (
+    ('<link rel="canonical" href="', '">'),
+    ('<meta property="og:url" content="', '">'),
+    ('<meta property="og:image" content="', '">'),
+    ('<meta name="twitter:image" content="', '">'),
+)
 
 # GitHub Pages' apex addresses. Your A records must be exactly these four.
 GH_IPS = {"185.199.108.153", "185.199.109.153", "185.199.110.153", "185.199.111.153"}
@@ -91,13 +108,59 @@ def check(domain: str) -> tuple[bool, list[str]]:
     return True, notes
 
 
+def rewrite_site_url(base: str) -> list[str]:
+    """Point the link-preview tags at `base`. Returns what changed."""
+    base = base.rstrip("/") + "/"
+    html = INDEX.read_text(encoding="utf-8")
+
+    # The canonical tag is the authority on where the site currently lives.
+    # Everything else is rewritten relative to it, because a project page's URL
+    # carries a repository path -- "/user.github.io/omnidx/" -- that belongs to
+    # the site root, not to the file underneath it. Splitting on slashes instead
+    # would fold that path into the filename and produce /omnidx/old-name/....
+    cstart = html.find(SITE_TAGS[0][0])
+    if cstart < 0:
+        return ["! no canonical tag in index.html — cannot tell where the site lives"]
+    cstart += len(SITE_TAGS[0][0])
+    old_base = html[cstart:html.find(SITE_TAGS[0][1], cstart)].rstrip("/") + "/"
+
+    changed = []
+    for prefix, suffix in SITE_TAGS:
+        start = html.find(prefix)
+        if start < 0:
+            changed.append(f"! {prefix.strip()} not found in index.html — left alone")
+            continue
+        vstart = start + len(prefix)
+        vend = html.find(suffix, vstart)
+        old = html[vstart:vend]
+        if not old.startswith(old_base.rstrip("/")):
+            changed.append(f"! {old} is not under {old_base} — left alone")
+            continue
+        tail = old[len(old_base):] if old.startswith(old_base) else ""
+        new_url = base + tail
+        if new_url != old:
+            html = html[:vstart] + new_url + html[vend:]
+            changed.append(f"  {old}\n    -> {new_url}")
+    INDEX.write_text(html, encoding="utf-8")
+    return changed
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Point OmniDx at a custom domain, safely")
     ap.add_argument("domain", nargs="?", help="e.g. omnidx.net")
     ap.add_argument("--check-only", action="store_true", help="report readiness, change nothing")
     ap.add_argument("--remove", action="store_true", help="delete CNAME and return to the github.io URL")
     ap.add_argument("--force", action="store_true", help="write CNAME even if the check fails (will break the site)")
+    ap.add_argument("--site-url", metavar="URL",
+                    help="just repoint the link-preview tags at URL (use after a repo rename)")
     args = ap.parse_args()
+
+    if args.site_url:
+        changes = rewrite_site_url(args.site_url)
+        for c in changes:
+            print(c)
+        print("\nNothing to change." if not changes else "\nUpdated index.html. Commit and push.")
+        return 0
 
     if args.remove:
         if CNAME.exists():
@@ -128,9 +191,12 @@ def main() -> int:
 
     CNAME.write_text(domain + "\n", encoding="utf-8")
     print(f"Wrote {CNAME} containing: {domain}")
+    for c in rewrite_site_url(f"https://{domain}/"):
+        print(c)
+    print("Repointed the link-preview tags at the new address.")
     print()
     print("Now commit and push:")
-    print('  git add CNAME && git commit -m "Point the site at ' + domain + '" && git push')
+    print('  git add -A && git commit -m "Point the site at ' + domain + '" && git push')
     print()
     print("Then in Settings -> Pages, tick Enforce HTTPS once the certificate is issued.")
     return 0
