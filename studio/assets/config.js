@@ -71,6 +71,23 @@ export const EDITIONS = {
     monthly: 4.99,
     blurb: 'Unlimited AI, scopes, unlimited LUTs, 10 devices, and every future update.',
   },
+  team: {
+    id: 'team',
+    name: 'Team',
+    tagline: 'Three people, one project, one payment.',
+    once: 69.99,
+    monthly: 8.99,
+    seats: 3,
+    /* The comparison shown next to the price is three individual Studio
+       licences, because that is what a team of three would otherwise buy and
+       it is a number anyone can check. A struck-out "was $120" for a price
+       never actually charged is a fake reference price — the FTC treats that
+       as deceptive in the US, and the EU's Omnibus rules require a prior price
+       you genuinely charged in the last 30 days. This one is true. */
+    compareTo: 119.97,
+    compareLabel: '3 separate Studio licences',
+    blurb: 'Everything in Studio for three people, with shared projects and a shared licence.',
+  },
 };
 
 /* Feature -> minimum edition. The app reads this and nothing else, so moving
@@ -110,15 +127,28 @@ export const ENTITLEMENTS = {
   'auto-reframe':    'studio',
   'cloud-sync':      'studio',
   'team-devices':    'studio',
+  'prores':          'studio',
+  'audio-repair':    'creator',
+  'proxies':         'free',
+
+  /* team */
+  'shared-projects': 'team',
+  'seats':           'team',
 };
 
-export const RANK = { free: 0, creator: 1, studio: 2 };
+export const RANK = { free: 0, creator: 1, studio: 2, team: 3 };
 
 /** How many devices each edition may be signed in on at once. */
-export const DEVICE_LIMIT = { free: 2, creator: 3, studio: 10 };
+export const DEVICE_LIMIT = { free: 2, creator: 3, studio: 10, team: 9 };
+
+/**
+ * Seats on a shared licence. Only Team has more than one, and three means
+ * three — see server/worker.js, where it is enforced rather than suggested.
+ */
+export const SEATS = { free: 1, creator: 1, studio: 1, team: 3 };
 
 /** Monthly AI actions. Free gets a real taste, not a teaser. */
-export const AI_QUOTA = { free: 5, creator: 200, studio: Infinity };
+export const AI_QUOTA = { free: 5, creator: 200, studio: Infinity, team: Infinity };
 
 /* ------------------------------------------------------------------ *
  * Taking the money.
@@ -140,13 +170,16 @@ export const PAY = {
   checkout: {
     creator: '',                  // e.g. 'https://buy.stripe.com/xxxx'
     studio: '',
+    team: '',
     creatorMonthly: '',
     studioMonthly: '',
+    teamMonthly: '',
   },
 
   paypal: {
     creator: '',                  // e.g. 'https://www.paypal.com/ncp/payment/xxxx'
     studio: '',
+    team: '',
   },
 
   /* Shown on the checkout screen so buyers know what they can pay with. Keep

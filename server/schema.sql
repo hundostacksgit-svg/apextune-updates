@@ -64,3 +64,25 @@ CREATE TABLE IF NOT EXISTS ai_usage (
   used     INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (user_id, month)
 );
+
+-- Team seats.
+--
+-- A Team licence is three people. The limit is enforced in the Worker inside
+-- the same request that writes the row, so a fourth invite fails no matter
+-- what the app in front of it believes.
+--
+-- Rows are released, never deleted: taking a seat back and giving it to
+-- someone else has to leave a trail, or "who had access in March" becomes
+-- unanswerable.
+CREATE TABLE IF NOT EXISTS seats (
+  licence_key  TEXT NOT NULL REFERENCES licences(key) ON DELETE CASCADE,
+  email        TEXT NOT NULL,
+  user_id      TEXT REFERENCES users(id) ON DELETE SET NULL,
+  invite_code  TEXT UNIQUE,
+  claimed_at   INTEGER,
+  created_at   INTEGER NOT NULL,
+  released_at  INTEGER
+);
+CREATE INDEX IF NOT EXISTS seats_licence ON seats(licence_key);
+CREATE INDEX IF NOT EXISTS seats_user ON seats(user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS seats_active ON seats(licence_key, email) WHERE released_at IS NULL;

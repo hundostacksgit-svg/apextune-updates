@@ -43,12 +43,26 @@ speed lines, zoom blur, bloom, halftone, cel shading, VHS wobble, CRT.
 **Three-way colour wheels** — lift, gamma, gain — as a GPU filter, so grading stays
 real-time on a laptop.
 
+**Professional export.** H.264 and H.265 encoded frame by frame, faster than real
+time, with the tab free to go in the background. Apple ProRes 422 and Avid DNxHR
+from the desktop app, with no extra licence to buy.
+
+**Studio audio repair.** Spectral noise reduction, mains-hum removal, click repair
+and automatic levelling — the four things people open a DAW for.
+
+**Projects that move.** A bundle carries your footage with the edit, so it opens
+intact on a phone, a friend's laptop or a desktop install. It's also just a ZIP.
+
+**Proxies and awkward files.** Automatic 540p proxies for old machines — never used
+for export. Variable-frame-rate phone video and screen recordings open as they are.
+
 Read next:
 [what it does and why](docs/STUDIO-COMPLAINTS.md) ·
 [how it's built](docs/STUDIO.md) ·
 [getting paid](docs/STUDIO-PAYMENTS.md) ·
 [shipping to the stores](docs/STUDIO-BUILD.md) ·
-[pushing updates](docs/STUDIO-UPDATES.md)
+[pushing updates](docs/STUDIO-UPDATES.md) ·
+[deploying the API](docs/STUDIO-DEPLOY.md)
 
 ---
 

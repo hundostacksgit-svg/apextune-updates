@@ -35,11 +35,14 @@ export function mount(host) {
           <input class="input" type="color" id="s-bg" value="${esc(st.background)}"></div>
         <div class="btn-row">
           <button class="btn btn-sm" id="s-save-file">Save project file</button>
-          <button class="btn btn-sm btn-ghost" id="s-open-file">Open a file</button>
+          <button class="btn btn-sm btn-primary" id="s-bundle">Save bundle (with footage)</button>
+          <button class="btn btn-sm btn-ghost" id="s-open-file">Open a file or bundle</button>
         </div>
         <p class="tiny muted" style="margin:9px 0 0">
-          A project file is readable JSON. It opens on any machine that has the same footage,
-          and you can keep it in a folder, a Dropbox, or version control.
+          A <b>project file</b> is readable JSON — small, but it needs the footage already on the
+          other machine. A <b>bundle</b> carries the footage with it, so a project opens intact on
+          your phone, someone else's laptop, or a desktop install. It is also an ordinary ZIP:
+          rename it and any computer opens it, with or without this app.
         </p>
       </div>
     </details>
@@ -99,6 +102,19 @@ export function mount(host) {
     </details>
 
     <details class="group">
+      <summary>Playback &amp; proxies</summary>
+      <div class="gbody" id="s-proxies">
+        <p class="tiny muted" style="margin-top:0">
+          A proxy is a small copy of a big clip, used only while you edit. Export always goes back
+          to the original — a proxy can never end up in your finished video.
+        </p>
+        <label style="display:flex;gap:8px;align-items:center;font-size:12.5px;margin:10px 0">
+          <input type="checkbox" id="s-proxy-on" checked> Use proxies while editing</label>
+        <div id="s-proxy-list"></div>
+      </div>
+    </details>
+
+    <details class="group">
       <summary>Storage</summary>
       <div class="gbody" id="s-storage"><p class="tiny muted">Checking…</p></div>
     </details>
@@ -125,6 +141,60 @@ export function mount(host) {
   wire(host);
   paintProjects(host);
   paintStorage(host);
+  paintProxies(host);
+}
+
+async function paintProxies(host) {
+  const box = $('#s-proxy-list', host);
+  if (!box) return;
+  const { canProxy, shouldProxy, buildProxy } = await import('../engine/proxy.js');
+  const { hasProxy, setProxyMode } = await import('../engine/media.js');
+
+  $('#s-proxy-on', host)?.addEventListener('change', (e) => {
+    setProxyMode(e.target.checked);
+    actions.refresh();
+  });
+
+  if (!await canProxy()) {
+    box.innerHTML = '<p class="tiny muted">This browser has no H.264 encoder, so proxies are not '
+      + 'available here. Chrome, Edge or the desktop app can make them.</p>';
+    return;
+  }
+
+  const big = S.project.media.filter((m) => m.kind === 'video');
+  if (!big.length) { box.innerHTML = '<p class="tiny muted">No video imported yet.</p>'; return; }
+
+  box.innerHTML = big.map((m) => `
+    <div style="display:flex;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line-soft)">
+      <span class="tiny" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        ${esc(m.name)} <span class="muted">${m.width || '?'}×${m.height || '?'}</span></span>
+      ${hasProxy(m) ? '<span class="tiny" style="color:var(--ok)">proxy ready</span>'
+        : shouldProxy(m)
+          ? `<button class="btn btn-sm" data-proxy="${esc(m.id)}">Make proxy</button>`
+          : '<span class="tiny muted">not needed</span>'}
+    </div>`).join('');
+
+  box.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-proxy]');
+    if (!btn) return;
+    const media = S.project.media.find((m) => m.id === btn.dataset.proxy);
+    if (!media) return;
+    btn.disabled = true;
+    try {
+      const out = await buildProxy(media, {
+        onProgress: ({ done, total }) => { btn.textContent = `${Math.round((done / total) * 100)}%`; },
+      });
+      media.proxyHash = out.hash;
+      const { loadProxy } = await import('../engine/proxy.js');
+      await loadProxy(media);
+      actions.commit('Build proxy');
+      toast(`Proxy ready — ${out.width}×${out.height}, ${bytes(out.size)}`, 'ok', 4200);
+    } catch (err) {
+      toast(err.message, 'bad', 6000);
+      btn.disabled = false;
+      btn.textContent = 'Make proxy';
+    }
+  });
 }
 
 function wire(host) {
@@ -154,18 +224,63 @@ function wire(host) {
 
   $('#s-save-file', host).addEventListener('click', actions.exportProjectFile);
 
+  $('#s-bundle', host).addEventListener('click', async () => {
+    const btn = $('#s-bundle', host);
+    btn.disabled = true;
+    try {
+      const { pack, bundleName } = await import('../engine/bundle.js');
+      const blob = await pack(S.project, {
+        onProgress: ({ name, done, total }) => {
+          btn.textContent = name ? `Packing ${done + 1}/${total}…` : 'Writing…';
+        },
+      });
+      const { saveBytes } = await import('../desktop.js');
+      const name = bundleName(S.project);
+      if (!await saveBytes(blob, name)) {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 20000);
+      }
+      toast(`${name} — ${bytes(blob.size)}, footage included`, 'ok', 5000);
+    } catch (err) {
+      toast(`Could not build the bundle: ${err.message}`, 'bad', 6000);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save bundle (with footage)';
+    }
+  });
+
   $('#s-open-file', host).addEventListener('click', () => {
     const picker = document.createElement('input');
     picker.type = 'file';
-    picker.accept = '.json,application/json';
+    picker.accept = '.json,.omnidxpkg,.zip,application/json,application/zip';
     picker.addEventListener('change', async () => {
       const file = picker.files?.[0];
       if (!file) return;
       try {
-        await actions.loadDocument(JSON.parse(await file.text()));
-        toast('Project opened', 'ok');
+        // A bundle carries its footage; a bare project file does not. Told
+        // apart by content, not by extension, because people rename things.
+        const head = new Uint8Array(await file.slice(0, 2).arrayBuffer());
+        const isZip = head[0] === 0x50 && head[1] === 0x4b;
+        if (isZip) {
+          toast('Opening bundle…');
+          const { unpack } = await import('../engine/bundle.js');
+          const { project, media } = await unpack(file);
+          await actions.loadDocument(project);
+          if (media.length) {
+            await actions.importFiles(media.map((m) => m.file), { silent: true });
+            toast(`Opened with ${media.length} file${media.length === 1 ? '' : 's'} of footage`, 'ok', 5000);
+          } else {
+            toast('Project opened', 'ok');
+          }
+        } else {
+          await actions.loadDocument(JSON.parse(await file.text()));
+          toast('Project opened', 'ok');
+        }
       } catch (err) {
-        toast(`That file could not be opened: ${err.message}`, 'bad', 5000);
+        toast(`That file could not be opened: ${err.message}`, 'bad', 6000);
       }
     });
     picker.click();

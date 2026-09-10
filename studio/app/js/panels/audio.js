@@ -6,6 +6,7 @@
 import { $, esc, toast, slider } from '../ui.js';
 import { S, actions, engine } from '../main.js';
 import { decode, detectBeats, detectSilence, peaks } from '../engine/media.js';
+import { repair, describeRepair, detectHum } from '../engine/audio-repair.js';
 import { applyPlan } from '../ai/apply.js';
 import * as licence from '../licence.js';
 
@@ -53,6 +54,28 @@ export function mount(host) {
         <button class="btn btn-sm btn-primary btn-full" id="a-silence">Cut the silences</button>
       </div>` : ''}
 
+    ${voice.length || music ? `
+      <details class="group">
+        <summary>Repair the audio</summary>
+        <div class="gbody">
+          <p class="tiny muted" style="margin:0 0 10px">
+            The four things people leave an editor for a DAW to do. Runs on the selected clip's
+            audio, or on the first clip with sound if nothing is selected.
+          </p>
+          ${slider({ key: 'nr', label: 'Reduce background noise', value: 1.2, min: 0, max: 2.4, step: 0.1,
+            fmt: (v) => (v < 0.05 ? 'off' : v < 1 ? 'gentle' : v < 1.8 ? 'normal' : 'heavy') })}
+          <label style="display:flex;gap:8px;align-items:center;font-size:12.5px;margin:8px 0">
+            <input type="checkbox" id="a-hum" checked> Remove mains hum (50/60Hz)</label>
+          <label style="display:flex;gap:8px;align-items:center;font-size:12.5px;margin:8px 0">
+            <input type="checkbox" id="a-click" checked> Repair clicks and pops</label>
+          <label style="display:flex;gap:8px;align-items:center;font-size:12.5px;margin:8px 0">
+            <input type="checkbox" id="a-level" checked> Even out the level</label>
+          <button class="btn btn-sm btn-primary btn-full" id="a-repair" style="margin-top:10px">
+            Repair audio</button>
+          <p class="tiny muted" id="a-repair-note" style="margin:9px 0 0"></p>
+        </div>
+      </details>` : ''}
+
     <div class="group" style="padding:12px">
       <b style="font-size:12.5px">Ducking</b>
       <p class="tiny muted" style="margin:4px 0 10px">
@@ -72,6 +95,7 @@ export function mount(host) {
   $('#a-beats', host)?.addEventListener('click', () => findBeats(music));
   $('#a-beatcut', host)?.addEventListener('click', () => beatCut(music));
   $('#a-silence', host)?.addEventListener('click', () => cutSilence());
+  $('#a-repair', host)?.addEventListener('click', () => runRepair(host));
 
   startMeter(host);
 }
@@ -128,4 +152,76 @@ function startMeter(host) {
     const level = engine.audio?.level?.() ?? 0;
     bar.style.width = `${Math.min(100, level * 100)}%`;
   }, 90);
+}
+
+
+/* ------------------------------------------------------------------ */
+/* repair                                                              */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Repair is destructive to the decoded buffer but not to the file: the
+ * original stays on disk untouched, and the repaired version is what the
+ * timeline plays and exports. Undo puts the original back because the media
+ * record is part of the project document.
+ */
+async function runRepair(host) {
+  if (!licence.gate('audio-repair', () => {}, { what: 'Audio repair' })) return;
+
+  const clip = [...S.sel]
+    .map((id) => S.project.clips.find((c) => c.id === id))
+    .find((c) => c && S.project.media.find((m) => m.id === c.mediaId)?.hasAudio);
+  const media = clip
+    ? S.project.media.find((m) => m.id === clip.mediaId)
+    : S.project.media.find((m) => m.hasAudio);
+
+  if (!media) { toast('Nothing with audio to repair', 'bad'); return; }
+
+  const btn = $('#a-repair', host);
+  const note = $('#a-repair-note', host);
+  btn.disabled = true;
+  btn.textContent = 'Listening…';
+
+  try {
+    const buffer = await decode(media);
+    if (!buffer) throw new Error('that file could not be decoded');
+
+    const { buffer: fixed, report } = await repair(buffer, {
+      noise: Number($('#nr', host)?.value ?? host.querySelector('[data-k="nr"]')?.value ?? 1.2),
+      hum: $('#a-hum', host)?.checked !== false,
+      clicks: $('#a-click', host)?.checked !== false,
+      level: $('#a-level', host)?.checked !== false,
+      onProgress: ({ phase }) => { btn.textContent = `${phase}…`; },
+    });
+
+    // Swap the repaired audio in and rebuild the waveform so the timeline
+    // shows what you will actually hear.
+    replaceBuffer(media, fixed);
+    media.peaks = peaks(fixed, 900);
+    media.repaired = true;
+    actions.commit('Repair audio');
+
+    note.textContent = describeRepair(report);
+    note.style.color = 'var(--ok)';
+    toast(describeRepair(report), 'ok', 6000);
+  } catch (err) {
+    note.textContent = err.message;
+    note.style.color = 'var(--bad)';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Repair audio';
+  }
+}
+
+/** Put a repaired buffer where the decoder cache would have put the original. */
+async function replaceBuffer(media, buffer) {
+  const { attach } = await import('../engine/media.js');
+  const { toWav } = await import('../engine/audio-render.js');
+  const wav = toWav(buffer);
+  // Written back as a WAV so every later decode — export included — gets the
+  // repaired audio, rather than the cache and the file disagreeing.
+  attach(media, { blob: wav, objectUrl: URL.createObjectURL(wav) });
+  const store = await import('../store.js');
+  await store.putMedia(media.hash, new File([wav], `${media.name}.repaired.wav`, { type: 'audio/wav' }),
+    { repaired: true, name: media.name });
 }

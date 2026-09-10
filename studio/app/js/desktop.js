@@ -46,6 +46,33 @@ export function wireDesktop({ actions, openPanel, startTour, openExport, openPal
 }
 
 /**
+ * Can this build produce ProRes or DNxHR?
+ *
+ * No browser can encode either. The desktop build ships ffmpeg, so the answer
+ * is yes there and no everywhere else — and the export dialog only offers them
+ * when it is yes, rather than showing an option that fails at the end.
+ */
+export function proResAvailable() {
+  return Boolean(window.omnidxDesktop?.transcode && window.omnidxDesktop?.hasFfmpeg);
+}
+
+/**
+ * Hand a finished render to ffmpeg for a professional intermediate format.
+ * Returns { blob, ext } or null when this build cannot do it.
+ */
+export async function transcode(blob, format) {
+  if (!proResAvailable()) {
+    throw new Error(`${format === 'prores' ? 'ProRes' : 'DNxHR'} needs the desktop app — no browser can encode it`);
+  }
+  const out = await window.omnidxDesktop.transcode(await blob.arrayBuffer(), format);
+  if (!out?.data) throw new Error(out?.error || 'the conversion failed');
+  return {
+    blob: new Blob([out.data], { type: 'video/quicktime' }),
+    ext: format === 'prores' ? 'mov' : 'mxf',
+  };
+}
+
+/**
  * Save bytes through a real file dialog when we have one, and fall back to a
  * browser download when we don't. Export and project-save both go through
  * here so neither has to know which one it got.

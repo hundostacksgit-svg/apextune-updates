@@ -32,15 +32,36 @@ function slot(id) {
 }
 
 /** Attach bytes to a media record. Revokes any URL it replaces. */
-export function attach(media, { blob, objectUrl } = {}) {
+export function attach(media, { blob, objectUrl, proxyUrl } = {}) {
   const rec = slot(media.id);
   if (objectUrl && rec.objectUrl && rec.objectUrl !== objectUrl) URL.revokeObjectURL(rec.objectUrl);
+  if (proxyUrl && rec.proxyUrl && rec.proxyUrl !== proxyUrl) URL.revokeObjectURL(rec.proxyUrl);
   if (blob) rec.blob = blob;
   if (objectUrl) rec.objectUrl = objectUrl;
+  if (proxyUrl) rec.proxyUrl = proxyUrl;
   return rec;
 }
 
-export function urlOf(media) { return media ? runtime.get(media.id)?.objectUrl || null : null; }
+/*
+ * Preview uses the proxy when there is one; export never does.
+ *
+ * That split is the entire point — a proxy exists so scrubbing is smooth on a
+ * laptop, and an export that quietly used the 540p copy would be a disaster
+ * nobody notices until the video is posted.
+ */
+let useProxies = true;
+export function setProxyMode(on) { useProxies = Boolean(on); }
+export function proxyMode() { return useProxies; }
+
+export function urlOf(media, { preferProxy = false } = {}) {
+  if (!media) return null;
+  const rec = runtime.get(media.id);
+  if (!rec) return null;
+  if (preferProxy && useProxies && rec.proxyUrl) return rec.proxyUrl;
+  return rec.objectUrl || null;
+}
+
+export function hasProxy(media) { return Boolean(media && runtime.get(media.id)?.proxyUrl); }
 export function blobOf(media) { return media ? runtime.get(media.id)?.blob || null : null; }
 export function bufferOf(media) { return media ? runtime.get(media.id)?.buffer || null : null; }
 
@@ -50,6 +71,7 @@ export function isReady(media) { return Boolean(urlOf(media)); }
 export function forget(mediaId) {
   const rec = runtime.get(mediaId);
   if (rec?.objectUrl) URL.revokeObjectURL(rec.objectUrl);
+  if (rec?.proxyUrl) URL.revokeObjectURL(rec.proxyUrl);
   runtime.delete(mediaId);
 }
 
@@ -145,9 +167,17 @@ function probeAV(url, kind) {
     node.preload = 'metadata';
     node.muted = true;
     node.src = url;
-    const done = () => {
+    const done = async () => {
+      // Screen recordings and anything MediaRecorder made routinely report
+      // Infinity here until the browser scans to the end. Without this they
+      // import as zero-length clips and look corrupt when they are fine.
+      let duration = node.duration;
+      if (!Number.isFinite(duration) || duration <= 0 || duration >= 86400) {
+        const { resolveDuration } = await import('./proxy.js');
+        duration = await resolveDuration(node);
+      }
       resolve({
-        duration: Number.isFinite(node.duration) ? node.duration : 0,
+        duration: Number.isFinite(duration) ? duration : 0,
         width: node.videoWidth || 0,
         height: node.videoHeight || 0,
         // No portable "has an audio track" flag exists; these cover the
@@ -164,9 +194,9 @@ function probeAV(url, kind) {
       node.removeEventListener('loadedmetadata', done);
       node.removeEventListener('error', fail);
     };
-    node.addEventListener('loadedmetadata', done);
+    node.addEventListener('loadedmetadata', () => { done().catch(fail); });
     node.addEventListener('error', fail);
-    setTimeout(() => { if (node.readyState === 0) fail(); }, 15000);
+    setTimeout(() => { if (node.readyState === 0) fail(); }, 20000);
   });
 }
 
@@ -274,10 +304,12 @@ function imageThumb(url, width = 240) {
 const POOL_LIMIT = 20;
 const elements = new Map();          // Map preserves insertion order = LRU order
 
-export function elementFor(media, clipId = 'shared') {
-  const src = urlOf(media);
+export function elementFor(media, clipId = 'shared', { preferProxy = false } = {}) {
+  const src = urlOf(media, { preferProxy });
   if (!src) return null;
-  const key = `${media.id}:${clipId}`;
+  // Proxy and original are different elements: swapping the src on one would
+  // reset its position mid-scrub.
+  const key = `${media.id}:${clipId}${preferProxy && src !== urlOf(media) ? ':proxy' : ''}`;
   const cached = elements.get(key);
   if (cached) {
     elements.delete(key);            // move to the back: most recently used

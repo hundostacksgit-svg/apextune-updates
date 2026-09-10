@@ -17,6 +17,9 @@ const MENU_EVENTS = [
 contextBridge.exposeInMainWorld('omnidxDesktop', {
   version: process.versions.electron,
   platform: process.platform,
+  // Whether ffmpeg was found at startup. The renderer uses this to decide
+  // whether to offer ProRes at all, rather than offering it and failing later.
+  hasFfmpeg: ipcRenderer.sendSync('omnidx:has-ffmpeg') === true,
 
   /** Subscribe to a menu action. Unknown channels are ignored, not forwarded. */
   on(channel, handler) {
@@ -33,5 +36,10 @@ contextBridge.exposeInMainWorld('omnidxDesktop', {
 
   reveal(path) {
     return ipcRenderer.invoke('omnidx:reveal', path);
+  },
+
+  /** Convert a finished render to ProRes or DNxHR via ffmpeg. */
+  transcode(arrayBuffer, format) {
+    return ipcRenderer.invoke('omnidx:transcode', { data: new Uint8Array(arrayBuffer), format });
   },
 });

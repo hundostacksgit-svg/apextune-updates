@@ -428,3 +428,8 @@ footer{border-top:1px solid var(--line-soft);padding:52px 0 60px;background:var(
   letter-spacing:-.03em;background:var(--grad);-webkit-background-clip:text;
   background-clip:text;color:transparent}
 .stat-row .s span{font-size:13px;color:var(--text-3)}
+
+/* Anchor price: the honest kind — what the alternative actually costs. */
+.tier .anchor{display:block;font-size:12.5px;color:var(--text-3);margin:-2px 0 6px}
+.tier .anchor s{color:var(--bad);opacity:.85;margin-right:5px}
+.tiers{grid-template-columns:repeat(auto-fit,minmax(260px,1fr));max-width:1200px}

@@ -4,7 +4,7 @@
  * build step — the same rule the rest of OmniDx follows.
  */
 
-import { EDITIONS, priceOf, buyUrl, PAY, DEVICE_LIMIT } from './config.js';
+import { EDITIONS, priceOf, buyUrl, PAY, DEVICE_LIMIT, SEATS } from './config.js';
 import * as auth from './auth.js';
 
 export const $  = (s, r = document) => r.querySelector(s);
@@ -96,6 +96,15 @@ function initPricing() {
       ['Silence removal', 1],
       ['Brand kit — fonts, colours, logo', 1],
     ],
+    team: [
+      ['Everything in Studio, for three people', 1],
+      ['Exactly 3 seats — enforced, not suggested', 1],
+      ['Shared projects and a shared licence', 1],
+      ['9 devices across the three of you', 1],
+      ['Unlimited AI for all three', 1],
+      ['One payment, no per-seat billing', 1],
+      ['Every future update included, free', 1],
+    ],
     studio: [
       ['Everything in Creator', 1],
       ['Unlimited AI editing', 1],
@@ -111,6 +120,12 @@ function initPricing() {
 
   function card(id) {
     const e = EDITIONS[id];
+    // The struck-through figure is what three individual Studio licences cost,
+    // which is a real number anyone can check — not a price we invented and
+    // never charged.
+    const anchor = e.compareTo && period === 'once'
+      ? `<span class="anchor"><s>$${e.compareTo.toFixed(2)}</s> ${esc(e.compareLabel)}</span>`
+      : '';
     const feat = FEATURES[id].map(([t, on]) => {
       // 1 = shipped, 0 = not in this edition, 2 = being built, included free
       const cls = on === 1 ? '' : on === 2 ? 'soon' : 'no';
@@ -128,18 +143,21 @@ function initPricing() {
       ${featured ? '<span class="badge-top">Most popular</span>' : ''}
       <div class="tname">${esc(e.name)}</div>
       <div class="amount">${esc(price)}</div>
+      ${anchor}
       <p class="sub">${esc(sub)}</p>
       <p class="small" style="margin:10px 0 0">${esc(e.blurb)}</p>
       <ul>${feat}</ul>
       ${cta}
       <p class="tiny muted" style="margin:12px 0 0;text-align:center">
-        ${id === 'free' ? 'Nothing to cancel.' : `Up to ${DEVICE_LIMIT[id]} devices · 14-day refund, no questions`}
+        ${id === 'free' ? 'Nothing to cancel.'
+          : SEATS[id] > 1 ? `${SEATS[id]} people · ${DEVICE_LIMIT[id]} devices · 14-day refund`
+          : `Up to ${DEVICE_LIMIT[id]} devices · 14-day refund, no questions`}
       </p>
     </div>`;
   }
 
   function paint() {
-    host.innerHTML = ['free', 'creator', 'studio'].map(card).join('');
+    host.innerHTML = ['free', 'creator', 'studio', 'team'].map(card).join('');
     $$('#tiers [data-buy]').forEach((a) => a.addEventListener('click', (ev) => {
       if (a.getAttribute('href') === PAY.cashAppUrl) {
         ev.preventDefault();
@@ -197,7 +215,16 @@ const COMPARE = [
   ['Ducking under voice', true, true, true],
   ['Waveforms &amp; beat detection', true, true, true],
 
+  ['— Audio', null, null, null],
+  ['Noise reduction, hum and click repair', false, true, true],
+  ['Automatic level matching', false, true, true],
+
   ['— Export', null, null, null],
+  ['H.264 / MP4', true, true, true],
+  ['H.265 / HEVC', false, true, true],
+  ['Apple ProRes &amp; DNxHR (desktop)', false, false, true],
+  ['Automatic proxies', true, true, true],
+  ['Project bundles with footage', true, true, true],
   ['Watermark', 'None', 'None', 'None'],
   ['Maximum resolution', '1080p', '4K / 60', '4K / 60'],
   ['Platform presets with safe zones', true, true, true],
@@ -206,6 +233,7 @@ const COMPARE = [
   ['— Everything else', null, null, null],
   ['Works offline', true, true, true],
   ['Autosave &amp; crash recovery', true, true, true],
+  ['People on the licence', '1', '1', '1'],
   ['Devices per licence', '2', '3', '10'],
   ['Project sync across devices', false, false, true],
   ['Brand kit (fonts, colours, logo)', false, true, true],

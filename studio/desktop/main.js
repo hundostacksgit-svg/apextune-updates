@@ -16,6 +16,8 @@
 const { app, BrowserWindow, Menu, dialog, shell, ipcMain, nativeTheme } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
+const os = require('node:os');
+const { spawn, spawnSync } = require('node:child_process');
 
 const isDev = !app.isPackaged;
 
@@ -105,6 +107,70 @@ ipcMain.handle('omnidx:save-file', async (_event, { name, data, mime }) => {
 
 ipcMain.handle('omnidx:reveal', (_event, filePath) => {
   shell.showItemInFolder(filePath);
+});
+
+/* ------------------------------------------------------------------ */
+/* ffmpeg: ProRes and DNxHR                                            */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Neither format can be produced by a browser at all, which is the whole
+ * reason the desktop build exists for editors who need to hand a file to
+ * someone else. ffmpeg is looked for once at startup: bundled next to the app
+ * first, then on PATH, so a user who already has it does not need ours.
+ */
+let ffmpegPath = null;
+
+function findFfmpeg() {
+  const names = process.platform === 'win32' ? ['ffmpeg.exe'] : ['ffmpeg'];
+  const bundled = names.map((n) => path.join(process.resourcesPath || __dirname, 'ffmpeg', n));
+  const local = names.map((n) => path.join(__dirname, 'ffmpeg', n));
+  for (const candidate of [...bundled, ...local]) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  const probe = spawnSync(names[0], ['-version'], { encoding: 'utf8' });
+  return probe.status === 0 ? names[0] : null;
+}
+
+ipcMain.on('omnidx:has-ffmpeg', (event) => {
+  if (ffmpegPath === null) ffmpegPath = findFfmpeg();
+  event.returnValue = Boolean(ffmpegPath);
+});
+
+const PROFILES = {
+  // ProRes 422 (profile 2) is the interchange format everyone accepts. HQ and
+  // 4444 exist but the file sizes stop being reasonable.
+  prores: { ext: 'mov', args: ['-c:v', 'prores_ks', '-profile:v', '2', '-pix_fmt', 'yuv422p10le', '-c:a', 'pcm_s16le'] },
+  dnxhr: { ext: 'mxf', args: ['-c:v', 'dnxhd', '-profile:v', 'dnxhr_hq', '-pix_fmt', 'yuv422p', '-c:a', 'pcm_s16le'] },
+};
+
+ipcMain.handle('omnidx:transcode', async (_event, { data, format }) => {
+  if (ffmpegPath === null) ffmpegPath = findFfmpeg();
+  if (!ffmpegPath) return { error: 'ffmpeg was not found next to the app or on your PATH' };
+  const profile = PROFILES[format];
+  if (!profile) return { error: `unknown format "${format}"` };
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'omnidx-'));
+  const input = path.join(dir, 'in.mp4');
+  const output = path.join(dir, `out.${profile.ext}`);
+  fs.writeFileSync(input, Buffer.from(data));
+
+  try {
+    await new Promise((resolve, reject) => {
+      const proc = spawn(ffmpegPath, ['-y', '-i', input, ...profile.args, output]);
+      let stderr = '';
+      proc.stderr.on('data', (chunk) => { stderr += chunk.toString().slice(-2000); });
+      proc.on('error', reject);
+      proc.on('close', (code) => (code === 0
+        ? resolve()
+        : reject(new Error(stderr.split('\n').filter(Boolean).pop() || `ffmpeg exited ${code}`))));
+    });
+    return { data: fs.readFileSync(output) };
+  } catch (err) {
+    return { error: err.message };
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 /* ------------------------------------------------------------------ */

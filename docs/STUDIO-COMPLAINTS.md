@@ -106,6 +106,18 @@ Suggestions that came up again and again, and are in:
 
 ---
 
+## The things other editors charge extra for
+
+| Complaint | About | What we do |
+|---|---|---|
+| "ProRes needs a paid tier or a separate licence" | Premiere, Resolve free | ProRes 422 and DNxHR come out of the desktop app with nothing extra to buy. |
+| "H.265 export is behind an upgrade" | Several | H.265 is in Creator, $19.99 once, where the hardware supports it. |
+| "Backup and sharing need an expensive tier" | Everyone | A bundle carries the footage with the edit and is a plain ZIP. Team is three people for $69.99 — less than half what three individual licences cost. |
+| "Real noise reduction means buying a DAW" | Everyone | Spectral noise reduction, hum removal, click repair and levelling, in the app, offline. |
+| "A project won't move between desktop and mobile" | Almost everyone | The same bundle opens on all of them. The format is documented and readable. |
+| "Proxy generation is clunky or missing" | Mid-tier editors | One button per clip, or on by default. Preview uses the proxy, export never does. |
+| "It can't open my screen recording without converting it first" | Many | Variable-frame-rate files work as they are, and a broken duration — which most screen recorders write — is recovered on import instead of showing a zero-length clip. |
+
 ## Partly done — and what's missing
 
 **Auto-captions.** There are two halves: *when* someone speaks and *what* they
@@ -115,14 +127,16 @@ which no browser offers for a file, so it needs a transcription key configured
 (`server/`). The app says which mode it is in rather than calling both
 "auto-captions".
 
-**Export speed.** A timeline with sound is captured in real time, because
-that is the only way a browser will mux audio and video without shipping a
-30 MB transcoder. Three minutes of video takes three minutes. Silent timelines
-render frame-by-frame and are usually faster. The desktop build is where a real
-encoder belongs, and it isn't there yet.
+**Export speed.** Fixed where the browser allows it. On Chrome and Edge the
+encoder is driven directly, so export is frame-exact, usually faster than real
+time, and the tab can be in the background. On browsers without an H.264
+encoder it falls back to capturing the timeline as it plays — three minutes of
+video takes three minutes — and the export dialog says which one you are
+getting and why.
 
-**Background rendering.** Exports run in the foreground and want the tab in
-front. Backgrounded tabs get throttled by the browser and drop frames.
+**Audio repair on very long files.** The noise reduction is an FFT over the
+whole track. A three-minute clip is a second or two; an hour-long podcast will
+make you wait. It should process in the background and does not yet.
 
 **Sharpening.** The colour panel has blur but not a true unsharp mask; doing it
 properly needs a convolution pass that isn't in yet.
@@ -136,11 +150,9 @@ properly needs a convolution pass that isn't in yet.
 
 - **Green screen keying.** Background removal is planned for Studio but the
   chroma keyer isn't written.
-- **Voice isolation and noise removal.** Advertised on the Studio tier; the
-  model isn't wired up. Until it is, that tier is worth its price on the other
-  features — and if you bought it for this, ask for a refund and get one.
 - **Multicam sync.** Same: listed, not built.
-- **Audio effects** beyond gain, fades and ducking. No EQ, no compressor.
+- **Audio effects** beyond gain, fades, ducking and the repair chain. No EQ,
+  no per-clip compressor.
 - **HDR / 10-bit.** Everything is 8-bit sRGB.
 - **Timeline markers with notes and colours** — markers exist, notes don't.
 - **A proper curve editor** for keyframes. Easing presets only.

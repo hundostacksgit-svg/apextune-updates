@@ -20,9 +20,13 @@ import Anthropic from '@anthropic-ai/sdk';
 
 /* Kept in step with studio/assets/config.js. If you change the split there,
    change it here too — the server is the side that decides. */
-const RANK = { free: 0, creator: 1, studio: 2 };
-const DEVICE_LIMIT = { free: 2, creator: 3, studio: 10 };
-const AI_QUOTA = { free: 5, creator: 200, studio: Number.MAX_SAFE_INTEGER };
+const RANK = { free: 0, creator: 1, studio: 2, team: 3 };
+const DEVICE_LIMIT = { free: 2, creator: 3, studio: 10, team: 9 };
+const AI_QUOTA = { free: 5, creator: 200, studio: Number.MAX_SAFE_INTEGER, team: Number.MAX_SAFE_INTEGER };
+/* Three means three. This is the only place it can actually be guaranteed —
+   a client-side check is a suggestion, and the whole point of the Team price
+   is that it is cheaper than three individual licences. */
+const SEATS = { free: 1, creator: 1, studio: 1, team: 3 };
 
 const SESSION_DAYS = 60;
 const DEFAULT_PBKDF2_ROUNDS = 210_000;
@@ -104,8 +108,8 @@ const validEmail = (v) => /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(String(v || '').t
 /* ------------------------------------------------------------------ */
 
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const TAGS = { CRE: 'creator', STU: 'studio' };
-const TAG_FOR = { creator: 'CRE', studio: 'STU' };
+const TAGS = { CRE: 'creator', STU: 'studio', TEA: 'team' };
+const TAG_FOR = { creator: 'CRE', studio: 'STU', team: 'TEA' };
 const KEY_SALT = 'omnidx-studio-2026';
 
 function fnv1a(str) {
@@ -165,16 +169,35 @@ async function userFor(env, request) {
   return row ? { ...row, token } : null;
 }
 
-/** The edition a user is entitled to: the highest licence they hold. */
+/**
+ * The edition a user is entitled to.
+ *
+ * Two routes: a licence they own outright, or a seat somebody gave them on a
+ * Team licence. The higher of the two wins.
+ */
 async function editionFor(env, userId) {
-  const rows = await env.DB.prepare(
+  const owned = await env.DB.prepare(
     'SELECT edition FROM licences WHERE user_id = ? AND revoked_at IS NULL',
   ).bind(userId).all();
   let best = 'free';
-  for (const r of rows.results || []) {
+  for (const r of owned.results || []) {
     if ((RANK[r.edition] ?? -1) > RANK[best]) best = r.edition;
   }
+
+  const seat = await env.DB.prepare(
+    `SELECT l.edition FROM seats s JOIN licences l ON l.key = s.licence_key
+     WHERE s.user_id = ? AND s.released_at IS NULL AND l.revoked_at IS NULL`,
+  ).bind(userId).first();
+  if (seat && (RANK[seat.edition] ?? -1) > RANK[best]) best = seat.edition;
+
   return best;
+}
+
+/** The Team licence this user owns, if any. */
+function teamLicenceFor(env, userId) {
+  return env.DB.prepare(
+    `SELECT * FROM licences WHERE user_id = ? AND edition = 'team' AND revoked_at IS NULL LIMIT 1`,
+  ).bind(userId).first();
 }
 
 /* ------------------------------------------------------------------ */
@@ -287,6 +310,121 @@ const routes = {
     return json({ edition: await editionFor(env, user.id) }, { env, request });
   },
 
+  /* ---------------- team seats ---------------- */
+
+  'POST /v1/team/list': async (request, env) => {
+    const user = await userFor(env, request);
+    if (!user) return fail('Sign in first.', 401, env, request);
+    const licence = await teamLicenceFor(env, user.id);
+    if (!licence) return json({ owner: false, seats: [], limit: 0 }, { env, request });
+
+    const rows = await env.DB.prepare(
+      `SELECT s.email, s.user_id AS userId, s.claimed_at AS claimedAt, s.invite_code AS invite
+       FROM seats s WHERE s.licence_key = ? AND s.released_at IS NULL ORDER BY s.claimed_at`,
+    ).bind(licence.key).all();
+
+    return json({
+      owner: true,
+      limit: SEATS.team,
+      used: (rows.results || []).length,
+      seats: rows.results || [],
+    }, { env, request });
+  },
+
+  /**
+   * Invite someone to a seat.
+   *
+   * The limit is checked here, against the database, inside the same request
+   * that writes the row. A fourth invite fails whatever the client believes,
+   * and no amount of editing the app in dev tools changes that — the seat only
+   * counts when this route says it does.
+   */
+  'POST /v1/team/invite': async (request, env, body) => {
+    const user = await userFor(env, request);
+    if (!user) return fail('Sign in first.', 401, env, request);
+    const licence = await teamLicenceFor(env, user.id);
+    if (!licence) return fail('You do not own a Team licence.', 403, env, request);
+
+    const email = String(body.email || '').trim().toLowerCase();
+    if (!validEmail(email)) return fail('That email address does not look right.', 400, env, request);
+
+    const { count } = await env.DB.prepare(
+      'SELECT COUNT(*) AS count FROM seats WHERE licence_key = ? AND released_at IS NULL',
+    ).bind(licence.key).first();
+
+    if (count >= SEATS.team) {
+      return fail(
+        `A Team licence is ${SEATS.team} people, and all ${SEATS.team} seats are taken. `
+        + 'Remove someone first, or buy a second Team licence.',
+        409, env, request,
+      );
+    }
+
+    const existing = await env.DB.prepare(
+      'SELECT email FROM seats WHERE licence_key = ? AND email = ? AND released_at IS NULL',
+    ).bind(licence.key, email).first();
+    if (existing) return fail('That person already has a seat.', 409, env, request);
+
+    const invite = randomHex(8).toUpperCase();
+    const target = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(email).first();
+
+    await env.DB.prepare(
+      `INSERT INTO seats (licence_key, email, user_id, invite_code, claimed_at, created_at)
+       VALUES (?,?,?,?,?,?)`,
+    ).bind(licence.key, email, target?.id || null, invite, target ? Date.now() : null, Date.now()).run();
+
+    if (env.RESEND_API_KEY) await emailInvite(env, email, invite, user.email);
+
+    return json({
+      ok: true,
+      invite,
+      used: count + 1,
+      limit: SEATS.team,
+      joined: Boolean(target),
+    }, { env, request });
+  },
+
+  'POST /v1/team/claim': async (request, env, body) => {
+    const user = await userFor(env, request);
+    if (!user) return fail('Sign in first, then use the invite.', 401, env, request);
+    const code = String(body.invite || '').trim().toUpperCase();
+
+    const seat = await env.DB.prepare(
+      'SELECT * FROM seats WHERE invite_code = ? AND released_at IS NULL',
+    ).bind(code).first();
+    if (!seat) return fail('That invite is not valid, or it has been withdrawn.', 404, env, request);
+    if (seat.user_id && seat.user_id !== user.id) {
+      return fail('That invite has already been used by someone else.', 409, env, request);
+    }
+    // The count is re-checked at claim time as well as at invite time: seats
+    // can be handed out, revoked and re-issued, and only this check is between
+    // that history and a fourth person editing.
+    const { count } = await env.DB.prepare(
+      'SELECT COUNT(*) AS count FROM seats WHERE licence_key = ? AND released_at IS NULL AND user_id IS NOT NULL',
+    ).bind(seat.licence_key).first();
+    if (count >= SEATS.team && !seat.user_id) {
+      return fail(`All ${SEATS.team} seats on that licence are in use.`, 409, env, request);
+    }
+
+    await env.DB.prepare('UPDATE seats SET user_id = ?, claimed_at = ? WHERE invite_code = ?')
+      .bind(user.id, Date.now(), code).run();
+
+    return json({ edition: await editionFor(env, user.id) }, { env, request });
+  },
+
+  'POST /v1/team/remove': async (request, env, body) => {
+    const user = await userFor(env, request);
+    if (!user) return fail('Sign in first.', 401, env, request);
+    const licence = await teamLicenceFor(env, user.id);
+    if (!licence) return fail('You do not own a Team licence.', 403, env, request);
+
+    await env.DB.prepare(
+      'UPDATE seats SET released_at = ? WHERE licence_key = ? AND email = ? AND released_at IS NULL',
+    ).bind(Date.now(), licence.key, String(body.email || '').toLowerCase()).run();
+
+    return json({ ok: true }, { env, request });
+  },
+
   /* ---------------- AI ---------------- */
 
   'POST /v1/ai/plan': async (request, env, body) => {
@@ -350,7 +488,10 @@ const routes = {
     // Which edition was bought is decided by the amount, so a new price or a
     // discount code cannot accidentally hand out the wrong tier.
     const cents = session.amount_total ?? 0;
-    const edition = cents >= 3000 ? 'studio' : cents >= 1000 ? 'creator' : null;
+    const edition = cents >= 6000 ? 'team'
+      : cents >= 3000 ? 'studio'
+      : cents >= 1000 ? 'creator'
+      : null;
     if (!edition) return json({ ignored: 'amount below any edition' });
 
     const email = (session.customer_details?.email || session.customer_email || '').toLowerCase();
@@ -630,6 +771,29 @@ async function verifyStripe(payload, header, secret) {
 /* ------------------------------------------------------------------ */
 /* delivery                                                            */
 /* ------------------------------------------------------------------ */
+
+async function emailInvite(env, email, invite, from) {
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        from: env.MAIL_FROM || 'OmniDx Studio <keys@omnidx.net>',
+        to: [email],
+        subject: 'You have a seat on OmniDx Studio',
+        text: `${from} has given you a seat on their OmniDx Studio Team licence.
+
+Your invite code: ${invite}
+
+Make an account at https://omnidx.net/studio/account/ with this email address,
+then paste the code in. That unlocks everything — the full editor, unlimited AI,
+every effect — on up to three of your devices.
+
+There is nothing to pay and nothing to cancel.`,
+      }),
+    });
+  } catch { /* the seat row exists; the code can be passed on by hand */ }
+}
 
 async function emailKey(env, email, key, edition) {
   const pretty = `OMNIDX-${key.slice(6, 9)}-${key.slice(9, 13)}-${key.slice(13, 17)}-${key.slice(17, 21)}`;

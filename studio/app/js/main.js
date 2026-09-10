@@ -109,7 +109,7 @@ export const actions = {
 
   /* ---------------- media ---------------- */
 
-  async importFiles(fileList) {
+  async importFiles(fileList, { silent = false } = {}) {
     const files = [...fileList];
     if (!files.length) return;
     let added = 0;
@@ -117,7 +117,7 @@ export const actions = {
       try {
         // eslint-disable-next-line no-await-in-loop -- one at a time keeps the UI alive
         const rec = await media.importFile(file, {
-          onProgress: (phase) => toast(`${file.name} — ${phase}…`, '', 900),
+          onProgress: (phase) => { if (!silent) toast(`${file.name} — ${phase}…`, '', 900); },
         });
         if (rec.kind === 'audio' || rec.hasAudio) {
           // eslint-disable-next-line no-await-in-loop
@@ -134,8 +134,10 @@ export const actions = {
     if (!added) return;
     actions.commit(`Import ${added} file${added === 1 ? '' : 's'}`);
     $('#drop-hint')?.classList.add('hide');
-    if (S.panel !== 'media') openPanel('media');
-    toast(`${added} file${added === 1 ? '' : 's'} added`, 'ok');
+    if (!silent) {
+      if (S.panel !== 'media') openPanel('media');
+      toast(`${added} file${added === 1 ? '' : 's'} added`, 'ok');
+    }
   },
 
   /** Drop a media item onto a track at a given time. */

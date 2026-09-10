@@ -21,7 +21,7 @@
 
 import { $, esc, toast } from './ui.js';
 
-export const BUILD = '1.1.0';           // bumped by tools/release.py
+export const BUILD = '1.2.0';           // bumped by tools/release.py
 const CHECK_EVERY = 30 * 60 * 1000;
 const SEEN_KEY = 'omnidx.studio.seenVersion';
 

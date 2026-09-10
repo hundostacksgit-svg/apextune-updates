@@ -131,7 +131,8 @@ export class Renderer {
 
     const media = mediaById(project, clip.mediaId);
     if (!media || media.missing) return null;
-    const node = elementFor(media, clip.id);
+    // forExport is the only thing that decides this, and it must stay that way.
+    const node = elementFor(media, clip.id, { preferProxy: !forExport });
     if (!node) return null;
 
     // Where in the source we want to be. Deliberately not clamped to the clip:

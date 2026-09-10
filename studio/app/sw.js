@@ -10,7 +10,7 @@
  * origin's storage quota for no benefit.
  */
 
-const VERSION = 'omnidx-studio-v2';
+const VERSION = 'omnidx-studio-v1.2.0';
 const SHELL = [
   './',
   './index.html',

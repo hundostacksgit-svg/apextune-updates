@@ -1,16 +1,16 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "date": "2026-09-10",
-  "headline": "Anime and velocity styles, motion tracking, colour wheels and 18 new effects.",
+  "headline": "Professional codecs, audio repair, Team seats and projects that move",
   "notes": [
-    "One-tap styles: anime AMV, velocity, phonk, aesthetic, cinematic, gaming, product, meme, sports, listicle and talking-head cleanup.",
-    "\"Sync my clips to the track\" now keeps your clips and your order and only moves the cuts onto the beat.",
-    "Motion tracking: draw a box, follow anything through a shot, pin a blur, a sticker or a title to it.",
-    "18 effects including real motion blur, chromatic split that pulses on the beat, zoom blur, glow, speed lines, impact frames, halftone, cel shading, VHS wobble and CRT.",
-    "Three-way colour wheels — lift, gamma and gain — running as a GPU filter, not a per-pixel loop.",
-    "Real speed ramps: the speed changes through a shot and the audio follows it.",
-    "Stickers and callouts: 42 emoji plus arrows, circles, speech bubbles, progress bars and countdowns.",
-    "The AI recognises named styles and asks a question when the answer would change the edit."
+    "H.264 and H.265 encoded frame by frame \u2014 faster than real time, and the tab can go in the background.",
+    "Apple ProRes 422 and Avid DNxHR from the desktop app, with no extra licence to buy.",
+    "Studio audio repair: spectral noise reduction, mains-hum removal, click repair and automatic levelling.",
+    "Team edition \u2014 three people, one payment, and the three-seat limit is enforced on the server.",
+    "Project bundles carry your footage with the edit, so a project opens intact anywhere. It is also just a ZIP.",
+    "Automatic 540p proxies for smooth editing on older machines. Export always uses the original.",
+    "Variable-frame-rate phone video and screen recordings open without converting anything first.",
+    "The cloud AI retries, then falls back to the on-device planner, so an outage costs seconds and nothing else."
   ],
   "minimum": "1.0.0",
   "app": "studio"

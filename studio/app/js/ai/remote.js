@@ -23,6 +23,90 @@ export function available() {
   return Boolean(API.base);
 }
 
+/* ------------------------------------------------------------------ */
+/* staying up when the server is not                                   */
+/* ------------------------------------------------------------------ */
+/*
+ * The local planner is always there, so a Worker outage should cost a few
+ * seconds and nothing else. Two things make that true:
+ *
+ *   Retries with backoff, but only for failures worth retrying. A 402 (out of
+ *   quota) or a 400 (bad request) will fail identically the second time; a 502
+ *   or a dropped connection usually will not.
+ *
+ *   A circuit breaker. After three consecutive failures we stop trying for two
+ *   minutes and go straight to the local planner. Without it, a server that is
+ *   down makes every single request wait for a timeout first, which turns one
+ *   outage into an app that feels broken.
+ */
+const RETRYABLE = new Set([408, 425, 429, 500, 502, 503, 504]);
+const BREAKER_AFTER = 3;
+const BREAKER_FOR = 2 * 60 * 1000;
+
+let consecutiveFailures = 0;
+let openedAt = 0;
+
+function breakerOpen() {
+  if (consecutiveFailures < BREAKER_AFTER) return false;
+  if (Date.now() - openedAt > BREAKER_FOR) {
+    // Let one request through to see whether it is back.
+    consecutiveFailures = BREAKER_AFTER - 1;
+    return false;
+  }
+  return true;
+}
+
+function noteFailure() {
+  consecutiveFailures++;
+  if (consecutiveFailures === BREAKER_AFTER) openedAt = Date.now();
+}
+
+function noteSuccess() { consecutiveFailures = 0; }
+
+/** Health, for the settings panel. Never throws. */
+export async function health() {
+  if (!API.base) return { configured: false };
+  try {
+    const res = await fetch(`${API.base}/v1/health`, {
+      cache: 'no-store',
+      signal: AbortSignal.timeout?.(8000),
+    });
+    if (!res.ok) return { configured: true, up: false, status: res.status };
+    return { configured: true, up: true, ...(await res.json()) };
+  } catch (err) {
+    return { configured: true, up: false, error: err.message };
+  }
+}
+
+async function postWithRetry(path, body, { attempts = 3, timeout = 25000 } = {}) {
+  let lastError = null;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      const res = await fetch(API.base + path, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout?.(timeout),
+      });
+      if (res.ok) { noteSuccess(); return res; }
+      if (!RETRYABLE.has(res.status)) {
+        noteSuccess();     // the server answered; it just said no
+        throw new Error(`server returned ${res.status}`);
+      }
+      lastError = new Error(`server returned ${res.status}`);
+    } catch (err) {
+      lastError = err;
+    }
+    // 1s, then 2s. Long enough for a redeploy or a cold start, short enough
+    // that nobody sits watching a spinner.
+    if (attempt < attempts - 1) {
+      await new Promise((r) => setTimeout(r, 1000 * 2 ** attempt));
+    }
+  }
+  noteFailure();
+  throw lastError || new Error('no response');
+}
+
 /** What we're willing to send: names, lengths and shapes. No pixels. */
 function describeMedia(project) {
   return project.media.map((m) => ({
@@ -45,11 +129,18 @@ export async function askForPlan(prompt, project, context) {
     return { ...localPlan(prompt, context), source: 'local' };
   }
 
+  if (breakerOpen()) {
+    const fallback = localPlan(prompt, context);
+    fallback.warnings = [
+      ...(fallback.warnings || []),
+      'The cloud planner has been unreachable, so this plan came from the built-in one. '
+      + 'It will try the server again in a couple of minutes.',
+    ];
+    return { ...fallback, source: 'local' };
+  }
+
   try {
-    const res = await fetch(API.base + API.aiPath, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
+    const res = await postWithRetry(API.aiPath, {
         prompt,
         media: describeMedia(project),
         timeline: {
@@ -63,12 +154,9 @@ export async function askForPlan(prompt, project, context) {
         // The spec and the style list go with the request so the model writes
         // arguments that work rather than plausible-looking ones, and knows
         // which named styles already exist instead of inventing a worse one.
-        spec: OP_SPEC,
-        styles: TEMPLATES.map((t) => ({ id: t.id, name: t.name, blurb: t.blurb, tags: t.tags })),
-      }),
-      signal: AbortSignal.timeout?.(25000),
+      spec: OP_SPEC,
+      styles: TEMPLATES.map((t) => ({ id: t.id, name: t.name, blurb: t.blurb, tags: t.tags })),
     });
-    if (!res.ok) throw new Error(`server returned ${res.status}`);
     const data = await res.json();
     const cleaned = validate(data);
     if (!cleaned) throw new Error('the reply was not a usable plan');
