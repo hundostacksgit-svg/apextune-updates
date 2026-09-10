@@ -14,24 +14,45 @@ than a bank transfer that might bounce.
 
 ---
 
-## If a Square link just loads forever
+## If a Square page just loads forever
 
-That is Square, not you, and it is nearly always one of three things:
+That is Square, not you. Work down this list — it is ordered by how often each
+one turns out to be the answer.
 
-1. **The URL has moved.** Square changes these paths and renames the menus
-   between account types. A dead deep link shows a spinner, not a 404 — so it
-   looks like the page is loading when there is no page. **Fix:** go to
-   <https://app.squareup.com/dashboard> and use the menu path given at each
-   step below.
-2. **You are not signed in on that browser.** The deep link bounces to a login
-   and sometimes stalls there. **Fix:** sign in at
-   <https://app.squareup.com/dashboard> first, then use the menu.
-3. **You are on a phone.** Dashboard links try to hand off to the Square app
-   and hang. **Fix:** do this part on a computer, or use the Square app's own
-   menus.
+**First, find out how broad the problem is.** Open
+<https://app.squareup.com/dashboard> on its own. Does the main dashboard
+appear, or does that spin too? If the *main dashboard* spins, it is causes 1-3
+below. If the main dashboard is fine and only certain pages hang, it is 4 or 5.
+
+1. **You are on a phone.** This is the usual answer. Tapping an
+   `app.squareup.com` link on a phone with the Square app installed hands the
+   link to the app, the app has no screen for that address, and you get a
+   spinner that never resolves. **Fix:** do this on a computer. Square's own
+   activation instructions say the same thing.
+2. **Your account is not activated yet.** A signed-up-but-unverified account
+   can sign in and then stall, and Payment Links do not work until activation
+   finishes. **Fix:** on a computer, sign in and look for **Verify identity**
+   or **Activate your account** — expect to give your legal name, address, date
+   of birth, and the last 4 of your SSN (or an EIN). Payment Links appear once
+   that clears.
+3. **Something is blocking Square's scripts.** An ad blocker, a privacy
+   browser, or strict tracking protection will leave the page frame up with
+   nothing in it. **Fix:** try a normal Chrome window with extensions off, or a
+   private window.
+4. **The URL has moved.** Square changes these paths and renames these menus
+   between account types. A dead deep link shows a spinner, not a 404, so it
+   looks like loading when there is no page. **Fix:** start at
+   <https://app.squareup.com/dashboard> and use the menu path at each step.
+5. **You are not signed in on that browser.** The deep link bounces to a login
+   and sometimes stalls there. **Fix:** sign in at the dashboard first, then
+   navigate by menu.
 
 Every step below gives the **menu path first** and the direct link second, for
 exactly this reason.
+
+If the main dashboard still will not load on a computer with extensions off,
+the problem is on Square's side of your account and only they can see it —
+Square support is **1-855-700-6000** (US), Monday to Friday.
 
 ---
 
@@ -39,8 +60,13 @@ exactly this reason.
 
 Have these to hand. That's it.
 
-- Your phone with Cash App on it
+- **A computer.** Not a phone. Square's own instructions say identity
+  verification has to be done on a desktop, and dashboard links tapped on a
+  phone get grabbed by the Square app, which has no screen to show them and
+  hangs on a spinner. Almost every "the link just loads forever" report is this.
+- Your phone with Cash App on it (for the account numbers, if you need them)
 - An email address
+- Your SSN's last 4 digits, or your EIN — Square asks during activation
 - 10 minutes
 
 ---
@@ -93,18 +119,59 @@ Whichever it says, **Payment links** is the item underneath it.
 Press **Create payment link**. Choose **"Accept a payment"** each time — never
 "Subscription", because OmniDx doesn't have any.
 
-Make exactly these three:Make exactly these three:
+Make exactly these three. The exact text to type is below — copy it straight
+in.
 
-| Name in Square | Price | What the buyer gets |
-|---|---|---|
-| `OmniDx Studio — Creator` | **19.99** | AI editing, captions, all filters, 4K |
-| `OmniDx Studio — Studio` | **39.99** | Everything, unlimited AI, ProRes, 10 devices |
-| `OmniDx Studio — Team (3 people)` | **69.99** | Everything, for exactly 3 people |
+### Link 1 of 3
 
-The free edition isn't in the list because there is nothing to buy.
+| Field | What to put |
+|---|---|
+| Item / service name | `OmniDx Studio — Creator` |
+| Amount | `19.99` |
+| Description | `Unlocks AI editing, auto-captions, the full filter library, studio audio repair and 4K export. One payment, nothing renews. Your licence key is emailed to you after purchase.` |
 
-Each one gives you a link that looks like `https://square.link/u/AbC12345`.
-**Copy all three somewhere** before you close the tab.
+### Link 2 of 3
+
+| Field | What to put |
+|---|---|
+| Item / service name | `OmniDx Studio — Studio` |
+| Amount | `39.99` |
+| Description | `Everything in Creator, plus unlimited AI, Apple ProRes and DNxHR export, scopes, unlimited LUT slots and 10 devices. One payment, nothing renews. Your licence key is emailed to you after purchase.` |
+
+### Link 3 of 3
+
+| Field | What to put |
+|---|---|
+| Item / service name | `OmniDx Studio — Team (3 people)` |
+| Amount | `69.99` |
+| Description | `Everything in Studio for exactly 3 people, with a shared licence and shared projects. Three separate Studio licences would be $119.97. One payment, nothing renews. Three licence keys are emailed to you after purchase.` |
+
+### The settings that matter
+
+Most of the toggles on that screen do not apply to software. These four do:
+
+- **Fixed amount**, not "let the customer choose what to pay".
+- **Collect the buyer's email address: ON.** You cannot send someone a licence
+  key without it, and this is the field the whole manual fulfilment step
+  depends on.
+- **Shipping address: OFF.** There is nothing to post.
+- **Quantity: OFF / fixed at 1.** One licence per purchase. (Team is already
+  three seats on one licence — a buyer should not be able to order "2 × Team"
+  and expect six.)
+
+If the form offers **"Redirect to a URL after payment"**, point it at your
+account page so a buyer lands somewhere that explains what happens next:
+
+```
+https://hundostacksgit-svg.github.io/apextune-updates/studio/account/
+```
+
+> **The description promises an email.** That email is you, by hand, running
+> `tools/make-studio-key.py` — see below. Square notifies you on every sale, but
+> nothing sends the key on its own yet. If you are going to be asleep for eight
+> hours, say "within 24 hours" in the description rather than implying it is
+> instant. A buyer who pays and hears nothing files a chargeback, and that costs
+> far more than the sale.
 
 ---
 
