@@ -5,8 +5,8 @@ and doesn't rent itself to you.
 
 | | What it is | Try it |
 |---|---|---|
-| **OmniDx Diagnostics** | Reads your car's engine fault codes, tests your phone's hardware, benchmarks your computer. | [Open the app](https://hundostacksgit-svg.github.io/apextune-updates/app/) |
-| **OmniDx Studio** | A full video editor with an AI that turns a sentence into a finished edit. | [Open the editor](https://hundostacksgit-svg.github.io/apextune-updates/studio/app/) · [Site](https://hundostacksgit-svg.github.io/apextune-updates/studio/) |
+| **OmniDx Diagnostics** | Reads your car's engine fault codes, tests your phone's hardware, benchmarks your computer. | [Open the app](https://omnidx.net/app/) |
+| **OmniDx Studio** | A full video editor with an AI that turns a sentence into a finished edit. | [Open the editor](https://omnidx.net/studio/app/) · [Site](https://omnidx.net/studio/) |
 
 ---
 
@@ -79,8 +79,8 @@ Read next:
 **All-around diagnostics.** One app that reads your car's engine fault codes, tests your
 phone's hardware, and benchmarks your computer — offline, with nothing uploaded anywhere.
 
-- **Site:** <https://hundostacksgit-svg.github.io/apextune-updates/>
-- **App:** <https://hundostacksgit-svg.github.io/apextune-updates/app/>
+- **Site:** <https://omnidx.net/diagnostics/>
+- **App:** <https://omnidx.net/app/>
 - **Launch kit:** [`docs/LAUNCH-KIT.md`](docs/LAUNCH-KIT.md) — videos, scripts, what to buy, how to get paid
 - **What to build next:** [`docs/NEXT-PRODUCTS.md`](docs/NEXT-PRODUCTS.md) — other products worth the effort, and the ones that aren't
 - **The business:** [`docs/THE-BUSINESS.md`](docs/THE-BUSINESS.md) — what $30k a year actually costs by route, and the order to do things in

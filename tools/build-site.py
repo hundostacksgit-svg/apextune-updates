@@ -26,12 +26,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / 'studio'
 
-# page -> (prefix to studio/, prefix to the repo root)
+# page -> (prefix to studio/, prefix to the Diagnostics site)
+#
+# omnidx.net is Studio's address: the root redirects here, and Diagnostics —
+# the other app in this repository — lives one folder along at /diagnostics/.
 PAGES = {
-    'index.html': ('', '../'),
-    'pricing/index.html': ('../', '../../'),
-    'download/index.html': ('../', '../../'),
-    'account/index.html': ('../', '../../'),
+    'index.html': ('', '../diagnostics/'),
+    'pricing/index.html': ('../', '../../diagnostics/'),
+    'download/index.html': ('../', '../../diagnostics/'),
+    'account/index.html': ('../', '../../diagnostics/'),
 }
 
 LOGO_SVG = (

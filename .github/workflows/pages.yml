@@ -24,7 +24,7 @@ jobs:
       - name: Verify the site is complete
         run: |
           set -euo pipefail
-          for f in index.html .nojekyll assets/site.css assets/site.js \
+          for f in index.html diagnostics/index.html .nojekyll assets/site.css assets/site.js \
                    app/index.html app/manifest.webmanifest app/sw.js app/css/app.css \
                    app/js/app.js app/js/ui.js app/js/store.js app/js/report.js \
                    app/js/pro.js app/js/config.js app/js/modules/pro.js \
@@ -74,15 +74,26 @@ jobs:
             tools/make-studio-key.py tools/release.py \
             desktop/omnidx.py desktop/install.py
 
-          # Every screenshot the landing page references must actually exist.
+          # Every screenshot the Diagnostics landing page references must exist.
+          # It reads diagnostics/index.html, not index.html: the root is now a
+          # redirect to Studio and carries no screenshots, so pointing this at
+          # the root would check nothing and pass regardless.
           python3 - <<'PYCHK'
           import re, sys, pathlib
-          html = pathlib.Path('index.html').read_text()
-          missing = [s for s in re.findall(r'src="(assets/[^"]+)"', html) if not pathlib.Path(s).exists()]
+          page = pathlib.Path('diagnostics/index.html')
+          html = page.read_text()
+          refs = re.findall(r'src="(\.\./assets/[^"]+)"', html)
+          missing = [r for r in refs if not (page.parent / r).resolve().exists()]
           if missing:
-              print('landing page references missing assets:', missing); sys.exit(1)
-          print(f'landing page assets present ({html.count("assets/shots/")} screenshots)')
+              print('Diagnostics landing page references missing assets:', missing); sys.exit(1)
+          if not refs:
+              print('no screenshots referenced — did the page move again?'); sys.exit(1)
+          print(f'Diagnostics landing page assets present ({len(refs)} references)')
           PYCHK
+
+          # The root must send visitors to Studio, or omnidx.net is a dead page.
+          grep -q 'url=studio/' index.html || { echo "root index.html no longer redirects to studio/"; exit 1; }
+          grep -q "location.replace('studio/" index.html || { echo "root index.html lost its script redirect"; exit 1; }
           echo "site looks complete"
 
       - name: Publish to gh-pages
