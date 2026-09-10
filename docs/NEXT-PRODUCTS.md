@@ -5,6 +5,10 @@ and TikTok is your distribution.
 
 ---
 
+> For the arithmetic behind *which kind* of product is worth building — what
+> $30,000 costs as an app, a subscription, a service or a business tool — see
+> [`THE-BUSINESS.md`](THE-BUSINESS.md). It changes which of these ideas is right.
+
 ## Read this before the list
 
 **A second product with no audience earns exactly what the first one earns with

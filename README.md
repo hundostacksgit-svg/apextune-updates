@@ -7,6 +7,7 @@ phone's hardware, and benchmarks your computer — offline, with nothing uploade
 - **App:** <https://hundostacksgit-svg.github.io/apextune-updates/app/>
 - **Launch kit:** [`docs/LAUNCH-KIT.md`](docs/LAUNCH-KIT.md) — videos, scripts, what to buy, how to get paid
 - **What to build next:** [`docs/NEXT-PRODUCTS.md`](docs/NEXT-PRODUCTS.md) — other products worth the effort, and the ones that aren't
+- **The business:** [`docs/THE-BUSINESS.md`](docs/THE-BUSINESS.md) — what $30k a year actually costs by route, and the order to do things in
 
 No app store, no account, no backend. It's a Progressive Web App: a static site that
 installs like a native app on a phone or a desktop.
