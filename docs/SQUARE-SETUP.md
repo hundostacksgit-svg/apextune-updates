@@ -14,6 +14,27 @@ than a bank transfer that might bounce.
 
 ---
 
+## If a Square link just loads forever
+
+That is Square, not you, and it is nearly always one of three things:
+
+1. **The URL has moved.** Square changes these paths and renames the menus
+   between account types. A dead deep link shows a spinner, not a 404 — so it
+   looks like the page is loading when there is no page. **Fix:** go to
+   <https://app.squareup.com/dashboard> and use the menu path given at each
+   step below.
+2. **You are not signed in on that browser.** The deep link bounces to a login
+   and sometimes stalls there. **Fix:** sign in at
+   <https://app.squareup.com/dashboard> first, then use the menu.
+3. **You are on a phone.** Dashboard links try to hand off to the Square app
+   and hang. **Fix:** do this part on a computer, or use the Square app's own
+   menus.
+
+Every step below gives the **menu path first** and the direct link second, for
+exactly this reason.
+
+---
+
 ## Before you start
 
 Have these to hand. That's it.
@@ -39,7 +60,11 @@ Your own name is fine.
 
 ## Step 2 — Point the payouts at Cash App (2 min)
 
-**Direct link:** <https://app.squareup.com/dashboard/balance/settings>
+**In the dashboard:** ⚙️ **Settings** → **Account & Settings** → **Banking** →
+**Bank accounts**
+
+**Direct link (if it works):**
+<https://app.squareup.com/dashboard/balances/bank-accounts>
 
 On that page choose **Cash App** as where your money goes.
 
@@ -52,16 +77,23 @@ details instead — they work like any bank account:
 
 Either way, the money ends up in the same place.
 
+> **Already linked Cash App in the Square app?** Then this step is done — the
+> phone app and the website are the same account. Skip to Step 3.
+
 ---
 
 ## Step 3 — Make three payment links (4 min)
 
-**Direct link:** <https://app.squareup.com/dashboard/items/payment-links>
+**In the dashboard:** **Payments & orders** → **Payment links**
 
-Press **Create payment link** three times. Choose **"Accept a payment"** each
-time — never "Subscription", because OmniDx doesn't have any.
+Square renames this menu depending on what your account has switched on, so it
+may read **Payments & invoices**, **Payments**, or **Online Checkout** instead.
+Whichever it says, **Payment links** is the item underneath it.
 
-Make exactly these three:
+Press **Create payment link**. Choose **"Accept a payment"** each time — never
+"Subscription", because OmniDx doesn't have any.
+
+Make exactly these three:Make exactly these three:
 
 | Name in Square | Price | What the buyer gets |
 |---|---|---|
@@ -122,9 +154,9 @@ about 88¢ in fees. Check that:
 3. The money appears in your Square balance
 4. You get a receipt by email
 
-Then refund yourself here: <https://app.squareup.com/dashboard/sales/transactions>
-— find the payment, press **Issue refund**. The fee is returned too on a full
-refund.
+Then refund yourself: in the dashboard go to **Payments & orders** →
+**Transactions**, click the payment, then **•••** → **Issue refund**. The fee is
+returned too on a full refund.
 
 ---
 
@@ -185,12 +217,17 @@ ask for. Talk to one before you are making real money, not after.
 
 ## Where each thing lives
 
-| What | Direct link |
-|---|---|
-| Sign up | <https://squareup.com/signup> |
-| Payout destination | <https://app.squareup.com/dashboard/balance/settings> |
-| Payment links | <https://app.squareup.com/dashboard/items/payment-links> |
-| Sales and refunds | <https://app.squareup.com/dashboard/sales/transactions> |
-| Your prices in code | `studio/assets/config.js` |
-| Make a licence key | `tools/make-studio-key.py` |
-| The long version | [STUDIO-PAYMENTS.md](STUDIO-PAYMENTS.md) |
+| What | Where in the dashboard | Direct link |
+|---|---|---|
+| Sign up | — | <https://squareup.com/signup> |
+| Everything below | — | <https://app.squareup.com/dashboard> |
+| Payout destination | Settings → Account & Settings → Banking → Bank accounts | <https://app.squareup.com/dashboard/balances/bank-accounts> |
+| Payment links | Payments & orders → Payment links | — |
+| Sales and refunds | Payments & orders → Transactions | — |
+| Your prices in code | — | `studio/assets/config.js` |
+| Make a licence key | — | `tools/make-studio-key.py` |
+| The long version | — | [STUDIO-PAYMENTS.md](STUDIO-PAYMENTS.md) |
+
+The menu paths are the ones to trust. Square moves its URLs and renames its
+menus between account types, so a deep link that worked last year can spin
+forever today while the menu path still gets you there.

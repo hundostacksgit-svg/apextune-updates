@@ -38,13 +38,20 @@ between a stranger's credit card and your Cash App balance, and it is the only
 one where the payout is *native* rather than a bank transfer that might bounce.
 
 1. Create a free Square account at squareup.com.
-2. **Payment Links → Create** → one link per edition:
+2. Square Dashboard → **Payments & orders → Payment links** → one link per
+   edition. (Square renames that menu per account type: it may say **Payments &
+   invoices**, **Payments**, or **Online Checkout**. **Payment links** is the
+   item underneath whichever it says.)
    - Creator — $19.99
    - Studio — $39.99
    - Team — $69.99 (three people, one licence)
-3. Square Dashboard → **Balance → Settings → Linked accounts** → choose **Cash
-   App** as the destination. Block owns both, so this is a menu choice, not a
-   bank transfer.
+3. Square Dashboard → **Settings → Account & Settings → Banking → Bank
+   accounts** → choose **Cash App** as the destination. Block owns both, so this
+   is a menu choice, not a bank transfer.
+
+   Navigate by menu, not by a saved URL. Square moves these paths, and a stale
+   deep link renders as a spinner that never resolves rather than a 404 — which
+   looks like a broken account and is not one.
 4. Paste the links into `studio/assets/config.js`:
 
 ```js
