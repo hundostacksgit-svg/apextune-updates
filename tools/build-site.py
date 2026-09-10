@@ -42,7 +42,13 @@ LOGO_SVG = (
     '<path d="M43 24.5 L54 32 L43 39.5 Z" fill="#fff"/></svg>'
 )
 
-DOCS = 'https://github.com/hundostacksgit-svg/apextune-updates/blob/main/docs/'
+# Links into the repository must name a branch that exists. This project has
+# no "main": the default branch is the diagnostics one, and the Studio files
+# live only here. A /blob/main/ link therefore 404s, and so does /blob/HEAD/,
+# because HEAD resolves to a default branch without these files. If this branch
+# is ever renamed or merged, change this one line and re-run this script.
+BRANCH = 'claude/omnidx-editing-platform-9phdcc'
+DOCS = f'https://github.com/hundostacksgit-svg/apextune-updates/blob/{BRANCH}/docs/'
 
 # ---------------------------------------------------------------------------
 # The menu. Each entry is either a plain link or a group with a panel under it.

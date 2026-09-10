@@ -434,7 +434,7 @@ function initCompare() {
     note.innerHTML = 'Rows marked <b>Building</b> are not in the app yet. They are '
       + 'listed because a Studio licence includes them the day they land, at no extra cost — '
       + 'but do not buy today for something on that list. '
-      + '<a href="https://github.com/hundostacksgit-svg/apextune-updates/blob/main/docs/STUDIO-COMPLAINTS.md">'
+      + '<a href="https://github.com/hundostacksgit-svg/apextune-updates/blob/claude/omnidx-editing-platform-9phdcc/docs/STUDIO-COMPLAINTS.md">'
       + 'The full built / not-built list is here.</a>';
   }
   body.innerHTML = COMPARE.map(([label, a, b, c]) => {
