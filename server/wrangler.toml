@@ -1,0 +1,36 @@
+name = "omnidx-studio-api"
+main = "worker.js"
+compatibility_date = "2026-01-15"
+compatibility_flags = ["nodejs_compat"]
+
+# The database holding accounts, devices and licences.
+# Create it once:  npx wrangler d1 create omnidx-studio
+# then paste the id it prints below.
+[[d1_databases]]
+binding = "DB"
+database_name = "omnidx-studio"
+database_id = "PASTE_YOUR_DATABASE_ID_HERE"
+
+[vars]
+# Comma-separated list of sites allowed to call this API. Set it before you go
+# live — with it empty the Worker echoes whatever origin asks, which is handy
+# in development and too permissive in public.
+ALLOWED_ORIGINS = "https://omnidx.net,https://hundostacksgit-svg.github.io"
+
+# Raise or lower against your Workers plan's CPU allowance. 210,000 is a good
+# figure on the paid plan; the free plan's 10ms limit will reject logins, so
+# drop to 60000 there and understand you are trading away some resistance to an
+# offline attack on a stolen database.
+PBKDF2_ROUNDS = "210000"
+
+# The model the AI planner uses.
+CLAUDE_MODEL = "claude-opus-5"
+
+MAIL_FROM = "OmniDx Studio <keys@omnidx.net>"
+
+# Secrets are NOT set here — they would end up in git. Set each one with:
+#   npx wrangler secret put ANTHROPIC_API_KEY
+#   npx wrangler secret put STRIPE_WEBHOOK_SECRET
+#   npx wrangler secret put RESEND_API_KEY      (optional — emails the key)
+#   npx wrangler secret put STT_URL             (optional — transcription)
+#   npx wrangler secret put STT_KEY

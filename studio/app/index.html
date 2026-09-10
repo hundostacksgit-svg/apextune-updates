@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-level="intermediate">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>OmniDx Studio</title>
+<meta name="description" content="A full multitrack video editor with a built-in AI editor. Works offline, installs to your home screen, and never uploads your footage.">
+<meta name="theme-color" content="#04060d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="OmniDx Studio">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../../icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/app.css">
+<script>
+(function(){try{
+  var t=localStorage.getItem('omnidx.theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');
+  document.documentElement.setAttribute('data-theme',t);
+  var l=localStorage.getItem('omnidx.studio.level')||'beginner';
+  document.documentElement.setAttribute('data-level',l);
+}catch(e){}})();
+</script>
+</head>
+<body>
+
+<div id="splash" class="splash">
+  <div class="splash-mark"></div>
+  <div class="splash-name">OmniDx <b>Studio</b></div>
+  <div class="spinner"></div>
+</div>
+
+<!-- ===================== top bar ===================== -->
+<header class="topbar">
+  <div class="tb-left">
+    <a class="brand" href="../" title="Back to omnidx.net/studio">
+      <span class="mark"></span><span class="bname">OmniDx <b>Studio</b></span>
+    </a>
+    <button class="tb-btn" id="btn-projects" title="Projects (Ctrl+O)">
+      <span class="ico">🗂</span><span class="lbl">Projects</span>
+    </button>
+    <input class="proj-name" id="proj-name" value="Untitled project" aria-label="Project name" spellcheck="false">
+    <span class="saved" id="saved-dot" title="Saved">Saved</span>
+  </div>
+
+  <div class="tb-mid">
+    <div class="level-switch" id="level-switch" role="tablist" aria-label="Skill level">
+      <button data-level="beginner"     title="Nine tools, guided">Beginner</button>
+      <button data-level="intermediate" title="Full timeline, no colour science">Intermediate</button>
+      <button data-level="expert"       title="Everything, nothing hidden">Expert</button>
+    </div>
+  </div>
+
+  <div class="tb-right">
+    <button class="tb-btn" id="btn-undo" title="Undo (Ctrl+Z)" disabled><span class="ico">↶</span></button>
+    <button class="tb-btn" id="btn-redo" title="Redo (Ctrl+Shift+Z)" disabled><span class="ico">↷</span></button>
+    <button class="tb-btn" id="btn-palette" title="Find anything (Ctrl+K)"><span class="ico">⌘</span><span class="lbl">Find</span></button>
+    <button class="tb-btn" id="btn-theme" title="Dark / light"><span class="ico">◐</span></button>
+    <button class="tb-btn" id="btn-account" title="Account and licence"><span class="ico">👤</span><span class="lbl" id="acct-lbl">Free</span></button>
+    <button class="tb-btn primary" id="btn-export" title="Export (Ctrl+E)"><span class="ico">⇪</span><span class="lbl">Export</span></button>
+  </div>
+</header>
+
+<!-- ===================== workspace ===================== -->
+<div class="workspace">
+
+  <!-- icon rail -->
+  <nav class="rail" id="rail" aria-label="Panels">
+    <button data-panel="media"    class="on" title="Media (1)"><span>🎞</span><i>Media</i></button>
+    <button data-panel="ai"       title="AI editor (2)"><span>✨</span><i>AI</i></button>
+    <button data-panel="effects"  title="Effects &amp; transitions (3)"><span>🎛</span><i>Effects</i></button>
+    <button data-panel="color"    title="Colour (4)" data-min="intermediate"><span>🎨</span><i>Colour</i></button>
+    <button data-panel="text"     title="Text &amp; titles (5)"><span>T</span><i>Text</i></button>
+    <button data-panel="audio"    title="Audio (6)"><span>🔊</span><i>Audio</i></button>
+    <button data-panel="captions" title="Captions (7)"><span>💬</span><i>Captions</i></button>
+    <button data-panel="settings" title="Settings (8)"><span>⚙</span><i>Settings</i></button>
+    <button data-panel="help"     class="rail-end" title="Tutorial &amp; shortcuts"><span>?</span><i>Learn</i></button>
+  </nav>
+
+  <!-- left panel -->
+  <aside class="panel" id="panel" aria-live="polite"></aside>
+
+  <!-- viewer -->
+  <main class="stage">
+    <div class="viewer" id="viewer">
+      <div class="canvas-wrap" id="canvas-wrap">
+        <canvas id="preview" width="1080" height="1920"></canvas>
+        <div class="safe" id="safe" hidden>
+          <div class="safe-top">platform UI</div>
+          <div class="safe-bottom">caption / UI area</div>
+        </div>
+        <div class="drop-hint" id="drop-hint">
+          <div class="dh-icon">＋</div>
+          <h3>Drop your clips here</h3>
+          <p>Video, photos or music. Nothing gets uploaded — it all stays on this device.</p>
+          <button class="btn btn-primary" id="btn-import-hero">Choose files</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="transport">
+      <button class="tp" id="tp-start" title="Go to start (Home)">⏮</button>
+      <button class="tp" id="tp-back" title="Back 1 frame (←)">◀|</button>
+      <button class="tp play" id="tp-play" title="Play / pause (Space)">▶</button>
+      <button class="tp" id="tp-fwd" title="Forward 1 frame (→)">|▶</button>
+      <button class="tp" id="tp-end" title="Go to end (End)">⏭</button>
+      <span class="tc mono" id="tc">00:00:00:00</span>
+      <span class="tc-sep">/</span>
+      <span class="tc mono muted" id="tc-total">00:00:00:00</span>
+      <div class="tp-spacer"></div>
+      <label class="tp-toggle" title="Show where the platform's buttons cover your video">
+        <input type="checkbox" id="tg-safe"> Safe zones
+      </label>
+      <select class="tp-select" id="ratio" title="Aspect ratio" data-min="intermediate">
+        <option value="9:16">9:16 · TikTok / Reels</option>
+        <option value="16:9">16:9 · YouTube</option>
+        <option value="1:1">1:1 · Square</option>
+        <option value="4:5">4:5 · Instagram feed</option>
+        <option value="2.39:1">2.39:1 · Cinemascope</option>
+      </select>
+      <select class="tp-select" id="quality" title="Preview quality" data-min="expert">
+        <option value="auto">Preview: auto</option>
+        <option value="full">Preview: full</option>
+        <option value="half">Preview: half</option>
+      </select>
+    </div>
+  </main>
+
+  <!-- inspector -->
+  <aside class="inspector" id="inspector" data-min="intermediate"></aside>
+</div>
+
+<!-- ===================== timeline ===================== -->
+<section class="timeline" id="timeline">
+  <div class="tl-bar">
+    <div class="tl-tools">
+      <button class="tl-btn" data-tool="select" title="Select (V)">▣</button>
+      <button class="tl-btn" data-tool="razor" title="Razor (C)">✂</button>
+      <button class="tl-btn" id="tl-split" title="Split at playhead (S)">⌗ Split</button>
+      <button class="tl-btn" id="tl-delete" title="Delete selected (Del)">🗑</button>
+      <button class="tl-btn" id="tl-dup" title="Duplicate (Ctrl+D)">⧉</button>
+      <span class="tl-div"></span>
+      <label class="tl-toggle" title="Clips stick to edges and the playhead">
+        <input type="checkbox" id="tg-snap" checked> Snap
+      </label>
+      <label class="tl-toggle" data-min="intermediate" title="Closing a gap pushes everything after it">
+        <input type="checkbox" id="tg-ripple" checked> Ripple
+      </label>
+      <button class="tl-btn" id="tl-marker" title="Add marker (M)" data-min="intermediate">⚑</button>
+    </div>
+    <div class="tl-zoom">
+      <button class="tl-btn" id="zoom-fit" title="Fit the whole timeline (Shift+Z)">Fit</button>
+      <button class="tl-btn" id="zoom-out" title="Zoom out (−)">−</button>
+      <input type="range" id="zoom" min="8" max="400" value="60" aria-label="Timeline zoom">
+      <button class="tl-btn" id="zoom-in" title="Zoom in (+)">+</button>
+    </div>
+  </div>
+  <div class="tl-body" id="tl-body">
+    <div class="tl-heads" id="tl-heads"></div>
+    <div class="tl-scroll" id="tl-scroll">
+      <div class="tl-inner" id="tl-inner">
+        <div class="tl-ruler" id="tl-ruler"></div>
+        <div class="tl-tracks" id="tl-tracks"></div>
+        <div class="playhead" id="playhead"><span class="ph-grip"></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== overlays ===================== -->
+<div id="toast-host" class="toast-host" aria-live="assertive"></div>
+
+<dialog id="modal" class="modal"><div class="modal-body"></div></dialog>
+
+<div class="palette" id="palette" hidden>
+  <div class="pal-box">
+    <input class="pal-input" id="pal-input" placeholder="Search tools, effects, settings, clips…" aria-label="Search everything">
+    <div class="pal-list" id="pal-list"></div>
+    <div class="pal-foot"><span><span class="kbd">↑</span><span class="kbd">↓</span> move</span>
+      <span><span class="kbd">↵</span> run</span><span><span class="kbd">esc</span> close</span></div>
+  </div>
+</div>
+
+<div class="coach" id="coach" hidden>
+  <div class="coach-box">
+    <div class="coach-step" id="coach-step">Step 1 of 8</div>
+    <h3 id="coach-title">Welcome</h3>
+    <p id="coach-body">…</p>
+    <div class="coach-actions">
+      <button class="btn btn-ghost btn-sm" id="coach-skip">Skip the tutorial</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-sm" id="coach-prev">Back</button>
+      <button class="btn btn-primary btn-sm" id="coach-next">Next</button>
+    </div>
+  </div>
+  <div class="coach-ring" id="coach-ring"></div>
+</div>
+
+<div class="render-overlay" id="render-overlay" hidden>
+  <div class="ro-box">
+    <h3 id="ro-title">Exporting…</h3>
+    <div class="ro-bar"><i id="ro-fill"></i></div>
+    <p class="small muted" id="ro-note">Rendering frame 0</p>
+    <video id="ro-preview" class="ro-preview" muted playsinline></video>
+    <div class="btn-row"><button class="btn" id="ro-cancel">Cancel</button></div>
+  </div>
+</div>
+
+<input type="file" id="file-input" multiple accept="video/*,audio/*,image/*" hidden>
+<div id="media-pool" class="media-pool" aria-hidden="true"></div>
+
+<script type="module" src="js/main.js"></script>
+<noscript><p style="padding:2rem;color:#eee">OmniDx Studio needs JavaScript. Nothing is uploaded — the whole editor runs in this tab.</p></noscript>
+</body>
+</html>

@@ -1,0 +1,62 @@
+{
+  "name": "omnidx-studio-desktop",
+  "productName": "OmniDx Studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OmniDx Studio — video editor for macOS, Windows and Linux.",
+  "main": "main.js",
+  "author": "OmniDx",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "net.omnidx.studio",
+    "productName": "OmniDx Studio",
+    "directories": { "output": "out" },
+    "files": ["main.js", "preload.js", "package.json"],
+    "extraResources": [
+      { "from": "../app", "to": "studio/app" },
+      { "from": "../assets", "to": "studio/assets" },
+      { "from": "../../icons", "to": "studio/icons" }
+    ],
+    "fileAssociations": [
+      {
+        "ext": "omnidx",
+        "name": "OmniDx project",
+        "role": "Editor",
+        "mimeType": "application/json"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.video",
+      "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
+      "icon": "../../icons/icon.icns",
+      "hardenedRuntime": true,
+      "entitlements": "entitlements.mac.plist",
+      "entitlementsInherit": "entitlements.mac.plist"
+    },
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "../../icons/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false
+    },
+    "linux": {
+      "target": ["AppImage", "deb", "rpm"],
+      "category": "AudioVideo",
+      "icon": "../../icons/icon-512.png"
+    }
+  }
+}

@@ -1,0 +1,387 @@
+/*
+ * Performing a plan.
+ *
+ * Every operation here is something you could have done by hand with the mouse.
+ * That is the whole design: the AI does not have a private back door into the
+ * project, it drives the same functions the timeline does. Which is why one
+ * Ctrl+Z after an AI run puts everything back, and why you can keep half of
+ * what it did and change the rest.
+ */
+
+import {
+  addClip, addTrack, clipsOn, clipById, mediaById, duration,
+  removeClips, closeGaps, setKeyframe, RATIOS,
+} from '../engine/project.js';
+import { decode, detectSilence, detectBeats, energyCurve } from '../engine/media.js';
+import { defaultText, TITLE_PRESETS } from '../engine/titles.js';
+
+/**
+ * Run a plan against a project. Mutates `project` and returns a report.
+ * Each op is wrapped so one failure can't abandon the rest of the edit —
+ * a plan that got eight steps in and stopped is more useful than one that
+ * rolled everything back.
+ */
+export async function applyPlan(project, plan, ctx = {}) {
+  const done = [];
+  const failed = [];
+
+  for (const step of plan.steps) {
+    const fn = OPS[step.op];
+    if (!fn) { failed.push({ step, why: `Unknown operation "${step.op}"` }); continue; }
+    try {
+      // eslint-disable-next-line no-await-in-loop -- steps build on each other
+      const note = await fn(project, step.args || {}, ctx);
+      done.push({ step, note });
+    } catch (err) {
+      failed.push({ step, why: err.message });
+    }
+  }
+  project.updatedAt = Date.now();
+  return { done, failed, warnings: plan.warnings || [] };
+}
+
+/* ------------------------------------------------------------------ */
+/* helpers                                                             */
+/* ------------------------------------------------------------------ */
+
+function videoTracks(p) { return p.tracks.filter((t) => t.kind === 'video'); }
+function audioTracks(p) { return p.tracks.filter((t) => t.kind === 'audio'); }
+function mainVideoTrack(p) { return videoTracks(p).at(-1) || addTrack(p, 'video'); }
+function mainAudioTrack(p) { return audioTracks(p)[0] || addTrack(p, 'audio'); }
+
+function visualMedia(p) {
+  return p.media.filter((m) => (m.kind === 'video' || m.kind === 'image') && !m.missing);
+}
+
+/** Video clips on the timeline, in play order. */
+function storyClips(p) {
+  return videoTracks(p)
+    .flatMap((t) => clipsOn(p, t.id))
+    .filter((c) => c.kind !== 'title')
+    .sort((a, b) => a.start - b.start);
+}
+
+/**
+ * The most interesting `length` seconds of a piece of media.
+ * Loudness is a crude proxy for "something is happening", but it is a good one:
+ * it finds the wave breaking, the door slamming, the person starting to talk.
+ * With no audio to go on we take from just after the start, because the first
+ * second of a handheld clip is almost always the camera settling.
+ */
+async function bestSegment(media, length) {
+  const usable = Math.max(0, (media.duration || 0) - length);
+  if (usable <= 0.05) return 0;
+  if (media.kind === 'image') return 0;
+  const buffer = await decode(media).catch(() => null);
+  if (!buffer) return Math.min(usable, media.duration * 0.15);
+
+  const step = 0.25;
+  const curve = energyCurve(buffer, step);
+  const win = Math.max(1, Math.round(length / step));
+  let best = 0, bestSum = -1;
+  for (let i = 0; i + win <= curve.length; i++) {
+    let sum = 0;
+    for (let j = i; j < i + win; j++) sum += curve[j];
+    if (sum > bestSum) { bestSum = sum; best = i * step; }
+  }
+  return Math.min(best, usable);
+}
+
+function shuffled(list) {
+  const out = [...list];
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+/** Clear the video tracks so a layout op starts from a blank timeline. */
+function clearStory(p) {
+  const ids = storyClips(p).map((c) => c.id);
+  removeClips(p, ids);
+}
+
+/* ------------------------------------------------------------------ */
+/* the operations                                                      */
+/* ------------------------------------------------------------------ */
+
+const OPS = {
+
+  setRatio(p, { ratio }) {
+    const r = RATIOS[ratio];
+    if (!r) throw new Error(`${ratio} is not a ratio this app knows.`);
+    p.settings.ratio = ratio;
+    p.settings.width = r.w;
+    p.settings.height = r.h;
+    return `Canvas is now ${r.w}×${r.h}.`;
+  },
+
+  /** Lay every usable clip down back to back, trimmed to a consistent length. */
+  async layout(p, { targetDur, clipLength = 2.2, shuffle = false, pickBest = true }) {
+    const pool = visualMedia(p);
+    if (!pool.length) throw new Error('There is no footage in the media pool.');
+
+    clearStory(p);
+    const track = mainVideoTrack(p);
+    const order = shuffle ? shuffled(pool) : pool;
+
+    // How many shots we need, and how long each holds. When a target length is
+    // given, the shot length bends to hit it rather than the count changing —
+    // "a 30 second edit" means 30 seconds, not "roughly 30".
+    let count = order.length;
+    let each = clipLength;
+    if (targetDur) {
+      count = Math.max(1, Math.round(targetDur / clipLength));
+      each = targetDur / count;
+    }
+
+    let t = 0;
+    for (let i = 0; i < count; i++) {
+      const media = order[i % order.length];
+      const len = Math.min(each, media.kind === 'image' ? each : media.duration);
+      if (len < 0.15) continue;
+      // eslint-disable-next-line no-await-in-loop -- analysis is per clip
+      const inPoint = pickBest ? await bestSegment(media, len) : 0;
+      addClip(p, { mediaId: media.id, trackId: track.id, start: t, dur: len, in: inPoint });
+      t += len;
+    }
+    return `${count} shots, ${t.toFixed(1)}s total.`;
+  },
+
+  /** Same idea, but every cut lands on a beat of the music. */
+  async beatCut(p, { targetDur, every = 4, shuffle = false }, ctx) {
+    const music = p.media.find((m) => m.kind === 'audio');
+    if (!music) throw new Error('No music track to cut against.');
+    const buffer = ctx.beatBuffer || await decode(music);
+    if (!buffer) throw new Error('That music file could not be decoded for beat detection.');
+
+    const detected = ctx.beats || detectBeats(buffer);
+    if (!detected?.beats?.length) throw new Error('No steady beat was found in that track.');
+
+    const pool = visualMedia(p);
+    if (!pool.length) throw new Error('There is no footage in the media pool.');
+
+    clearStory(p);
+    const track = mainVideoTrack(p);
+    const order = shuffle ? shuffled(pool) : pool;
+
+    // Cut points: every Nth beat, stopping at the target length.
+    const cuts = detected.beats.filter((_, i) => i % every === 0);
+    const limit = targetDur || cuts.at(-1) || 30;
+    let i = 0;
+    for (let c = 0; c < cuts.length - 1; c++) {
+      const start = cuts[c];
+      const end = Math.min(cuts[c + 1], limit);
+      if (start >= limit) break;
+      const len = end - start;
+      if (len < 0.12) continue;
+      const media = order[i % order.length];
+      i++;
+      const usable = Math.min(len, media.kind === 'image' ? len : media.duration);
+      // eslint-disable-next-line no-await-in-loop -- analysis is per clip
+      const inPoint = await bestSegment(media, usable);
+      addClip(p, { mediaId: media.id, trackId: track.id, start, dur: usable, in: inPoint });
+    }
+    return `${i} shots at ${detected.bpm} BPM, cutting every ${every} beats.`;
+  },
+
+  /** Drop the quiet parts and close the gaps — the jump-cut look. */
+  async removeSilence(p, { minLen = 0.35, pad = 0.08 }) {
+    const clips = storyClips(p);
+    if (!clips.length) throw new Error('There is nothing on the timeline yet.');
+
+    let removed = 0;
+    for (const clip of clips) {
+      const media = mediaById(p, clip.mediaId);
+      if (!media || !media.hasAudio) continue;
+      // eslint-disable-next-line no-await-in-loop -- decode is per media file
+      const buffer = await decode(media);
+      if (!buffer) continue;
+      const quiet = detectSilence(buffer, { minLen, pad });
+      if (!quiet.length) continue;
+
+      // Keep only the loud stretches inside this clip's in/out range.
+      const from = clip.in;
+      const to = clip.in + clip.dur * (clip.speed || 1);
+      const keeps = [];
+      let cursor = from;
+      for (const range of quiet) {
+        if (range.end <= from || range.start >= to) continue;
+        const gapStart = Math.max(from, range.start);
+        if (gapStart - cursor > 0.12) keeps.push([cursor, gapStart]);
+        cursor = Math.max(cursor, Math.min(to, range.end));
+        removed++;
+      }
+      if (to - cursor > 0.12) keeps.push([cursor, to]);
+      if (!keeps.length || keeps.length === 1) continue;
+
+      const trackId = clip.trackId;
+      const startAt = clip.start;
+      removeClips(p, [clip.id]);
+      let t = startAt;
+      for (const [a, b] of keeps) {
+        const len = (b - a) / (clip.speed || 1);
+        const made = addClip(p, { mediaId: media.id, trackId, start: t, dur: len, in: a });
+        made.color = structuredClone(clip.color);
+        made.transform = structuredClone(clip.transform);
+        made.volume = clip.volume;
+        made.speed = clip.speed;
+        t += len;
+      }
+    }
+    for (const track of videoTracks(p)) closeGaps(p, track.id);
+    return removed ? `${removed} silent stretch${removed === 1 ? '' : 'es'} cut out.` : 'No silences long enough to cut.';
+  },
+
+  setSpeed(p, { speed }) {
+    const clips = storyClips(p);
+    if (!clips.length) throw new Error('There is nothing on the timeline yet.');
+    for (const clip of clips) {
+      clip.speed = speed;
+      clip.dur = clip.dur / speed;
+    }
+    for (const track of videoTracks(p)) closeGaps(p, track.id);
+    return `${clips.length} clips at ${speed}×.`;
+  },
+
+  applyLook(p, { look, strength = 1 }) {
+    const clips = storyClips(p);
+    if (!clips.length) throw new Error('There is nothing on the timeline to grade.');
+    for (const clip of clips) {
+      clip.color.look = look;
+      clip.color.strength = strength;
+    }
+    return `${clips.length} clips graded.`;
+  },
+
+  addTransitions(p, { type = 'dissolve', dur = 0.4 }) {
+    let count = 0;
+    for (const track of videoTracks(p)) {
+      const list = clipsOn(p, track.id).filter((c) => c.kind !== 'title');
+      list.forEach((clip, i) => {
+        if (i === 0) return;
+        // Never let a transition eat more than a third of the shorter shot.
+        const room = Math.min(clip.dur, list[i - 1].dur) / 3;
+        clip.transitionIn = { type, dur: Math.min(dur, room) };
+        count++;
+      });
+    }
+    return count ? `${count} transitions added.` : 'Only one shot — nothing to transition between.';
+  },
+
+  kenBurns(p, { amount = 0.12 }) {
+    let count = 0;
+    for (const clip of storyClips(p)) {
+      const media = mediaById(p, clip.mediaId);
+      if (!media || media.kind !== 'image') continue;
+      // Alternate the direction so a run of photos doesn't pulse in unison.
+      const inward = count % 2 === 0;
+      setKeyframe(clip, 'transform.scale', 0, inward ? 1 : 1 + amount, 'linear');
+      setKeyframe(clip, 'transform.scale', clip.dur, inward ? 1 + amount : 1, 'linear');
+      count++;
+    }
+    return count ? `Movement added to ${count} photo${count === 1 ? '' : 's'}.` : 'No photos on the timeline.';
+  },
+
+  /**
+   * Captions.
+   *
+   * With a transcription key configured we get the words and the timings. With
+   * no key we still do the hard half — finding where speech actually is — and
+   * leave empty cues you type into. That is far better than nothing and it is
+   * the honest version of "offline auto-captions".
+   */
+  async captions(p, { style = 'tiktok' }, ctx) {
+    const clips = storyClips(p);
+    const withVoice = clips.filter((c) => mediaById(p, c.mediaId)?.hasAudio);
+    if (!withVoice.length) throw new Error('No audio on the timeline to caption.');
+
+    if (ctx.transcribe) {
+      const cues = await ctx.transcribe(p);
+      if (cues?.length) {
+        p.captions = cues.map((c) => ({ ...c, style }));
+        return `${cues.length} captions transcribed and timed.`;
+      }
+    }
+
+    const cues = [];
+    for (const clip of withVoice) {
+      const media = mediaById(p, clip.mediaId);
+      // eslint-disable-next-line no-await-in-loop -- decode is per media file
+      const buffer = await decode(media);
+      if (!buffer) continue;
+      const quiet = detectSilence(buffer, { minLen: 0.28, pad: 0.05 });
+      const from = clip.in;
+      const to = clip.in + clip.dur * (clip.speed || 1);
+      let cursor = from;
+      for (const gap of [...quiet, { start: to, end: to }]) {
+        if (gap.start <= from) { cursor = Math.max(cursor, gap.end); continue; }
+        const speechEnd = Math.min(gap.start, to);
+        if (speechEnd - cursor > 0.4) {
+          const startOnTimeline = clip.start + (cursor - from) / (clip.speed || 1);
+          const endOnTimeline = clip.start + (speechEnd - from) / (clip.speed || 1);
+          // Long stretches get split, because a caption on screen for eight
+          // seconds is a wall of text nobody reads.
+          const span = endOnTimeline - startOnTimeline;
+          const pieces = Math.max(1, Math.round(span / 2.4));
+          for (let i = 0; i < pieces; i++) {
+            cues.push({
+              start: Number((startOnTimeline + (span / pieces) * i).toFixed(3)),
+              end: Number((startOnTimeline + (span / pieces) * (i + 1)).toFixed(3)),
+              text: '',
+              style,
+            });
+          }
+        }
+        cursor = Math.max(cursor, gap.end);
+        if (cursor >= to) break;
+      }
+    }
+    p.captions = cues;
+    return cues.length
+      ? `${cues.length} caption slots placed on the speech. Type the words in the Captions panel — the timing is already done.`
+      : 'No speech found to caption.';
+  },
+
+  addTitle(p, { content, preset = 'headline', at = 0, dur = 2.2 }) {
+    const presetDef = TITLE_PRESETS.find((t) => t.id === preset) || TITLE_PRESETS[0];
+    // Titles go on their own track above the picture so they never displace a shot.
+    let track = videoTracks(p).find((t) => t.name === 'Titles');
+    if (!track) { track = addTrack(p, 'video', 'Titles'); }
+    const clip = addClip(p, {
+      trackId: track.id, start: at, dur, kind: 'title',
+      text: { ...defaultText(content), ...presetDef.text, content },
+    });
+    return `Title "${String(content).slice(0, 30)}" added at ${at.toFixed(1)}s.`;
+  },
+
+  fitMusic(p, { fadeOut = 1.2, duck = true }) {
+    const music = p.media.find((m) => m.kind === 'audio');
+    if (!music) throw new Error('No music in the media pool.');
+    const track = mainAudioTrack(p);
+    if (duck) track.duck = false;      // the music track itself is the one ducked
+
+    const total = duration(p) || 15;
+    // Replace any existing copy rather than stacking a second one.
+    removeClips(p, clipsOn(p, track.id).filter((c) => c.mediaId === music.id).map((c) => c.id));
+    const len = Math.min(total, music.duration);
+    const clip = addClip(p, { mediaId: music.id, trackId: track.id, start: 0, dur: len, in: 0 });
+    clip.fadeOut = Math.min(fadeOut, len / 3);
+    clip.volume = 0.8;
+    track.duck = true;
+    return `${music.name} trimmed to ${len.toFixed(1)}s with a ${clip.fadeOut.toFixed(1)}s fade.`;
+  },
+
+  fadeEnds(p, { dur = 0.5 }) {
+    const clips = storyClips(p);
+    if (!clips.length) throw new Error('There is nothing on the timeline yet.');
+    const first = clips[0];
+    const last = clips.at(-1);
+    first.fadeIn = Math.min(dur, first.dur / 2);
+    last.fadeOut = Math.min(dur, last.dur / 2);
+    return 'Faded in and out.';
+  },
+};
+
+export const OPERATIONS = Object.keys(OPS);

@@ -1,5 +1,44 @@
 # OmniDx
 
+Two apps, one idea: software that tells you the truth, runs on your own machine,
+and doesn't rent itself to you.
+
+| | What it is | Try it |
+|---|---|---|
+| **OmniDx Diagnostics** | Reads your car's engine fault codes, tests your phone's hardware, benchmarks your computer. | [Open the app](https://hundostacksgit-svg.github.io/apextune-updates/app/) |
+| **OmniDx Studio** | A full video editor with an AI that turns a sentence into a finished edit. | [Open the editor](https://hundostacksgit-svg.github.io/apextune-updates/studio/app/) · [Site](https://hundostacksgit-svg.github.io/apextune-updates/studio/) |
+
+---
+
+## OmniDx Studio
+
+**Tell it what you want. Watch it cut itself.**
+
+A real multitrack video editor — timeline, colour, keyframes, audio mixing,
+export — with an AI layer on top. Drop your clips in, type *"make me a 30
+second TikTok trailer, fast cuts on the beat, teal and orange, captions on"*,
+and it plans the edit, shows you every step, and puts it on the timeline as
+ordinary clips you can drag, trim or undo.
+
+- **Free is the product, not a trial.** The whole editor, no watermark, no
+  export limit, no account needed. Paid tiers are $19.99 and $39.99, once.
+- **Works offline.** Install it and edit with the wifi off.
+- **Your footage never leaves your machine.** Editing and export happen on the
+  device. Only an AI request ever goes out, and only if you use one.
+- **Three skill levels.** Beginner shows nine tools; Expert hides nothing.
+- **Autosave every five seconds** with real crash recovery.
+- **Runs everywhere** — macOS, Windows, Linux, iOS, Android, or a browser tab.
+
+Read next:
+[what it does and why](docs/STUDIO-COMPLAINTS.md) ·
+[how it's built](docs/STUDIO.md) ·
+[getting paid](docs/STUDIO-PAYMENTS.md) ·
+[shipping to the stores](docs/STUDIO-BUILD.md)
+
+---
+
+## OmniDx Diagnostics
+
 **All-around diagnostics.** One app that reads your car's engine fault codes, tests your
 phone's hardware, and benchmarks your computer — offline, with nothing uploaded anywhere.
 

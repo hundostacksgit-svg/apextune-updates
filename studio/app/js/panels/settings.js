@@ -1,0 +1,262 @@
+/*
+ * Settings, projects and the account, in one panel.
+ *
+ * Kept together on purpose: "where is that setting" is one of the loudest
+ * complaints about every editor, and the answer here is always the same place,
+ * plus Ctrl+K.
+ */
+
+import { $, $$, esc, toast, bytes, confirmDialog, selectRow } from '../ui.js';
+import { S, actions, paintAccount } from '../main.js';
+import * as store from '../store.js';
+import * as levels from '../levels.js';
+import * as licence from '../licence.js';
+import { RATIOS } from '../engine/project.js';
+import { API, setApiBase, EDITIONS, buyUrl, DEVICE_LIMIT } from '../../../assets/config.js';
+import * as auth from '../../../assets/auth.js';
+
+export function mount(host) {
+  const st = S.project.settings;
+  const ed = licence.edition();
+
+  host.innerHTML = `
+    <div class="panel-h"><h2>Settings</h2></div>
+
+    <details class="group" open>
+      <summary>This project</summary>
+      <div class="gbody">
+        <div class="field"><label for="s-name">Name</label>
+          <input class="input" id="s-name" value="${esc(S.project.name)}"></div>
+        ${selectRow({ key: 'ratio', label: 'Aspect ratio', value: st.ratio,
+          options: Object.entries(RATIOS).map(([id, r]) => [id, `${id} — ${r.label}`]) })}
+        ${selectRow({ key: 'fps', label: 'Frame rate', value: st.fps,
+          options: [[24, '24 — film'], [25, '25 — PAL'], [30, '30 — the safe default'], [60, '60 — smooth motion']] })}
+        <div class="field"><label for="s-bg">Background</label>
+          <input class="input" type="color" id="s-bg" value="${esc(st.background)}"></div>
+        <div class="btn-row">
+          <button class="btn btn-sm" id="s-save-file">Save project file</button>
+          <button class="btn btn-sm btn-ghost" id="s-open-file">Open a file</button>
+        </div>
+        <p class="tiny muted" style="margin:9px 0 0">
+          A project file is readable JSON. It opens on any machine that has the same footage,
+          and you can keep it in a folder, a Dropbox, or version control.
+        </p>
+      </div>
+    </details>
+
+    <details class="group">
+      <summary>Projects</summary>
+      <div class="gbody" id="s-projects">
+        <p class="tiny muted">Loading…</p>
+      </div>
+    </details>
+
+    <details class="group">
+      <summary>Account &amp; licence</summary>
+      <div class="gbody">
+        <div class="note ${ed === 'free' ? '' : 'ok'}" style="margin-top:0">
+          <b>${esc(EDITIONS[ed].name)} edition</b> — ${esc(EDITIONS[ed].blurb)}
+        </div>
+        ${auth.isSignedIn()
+          ? `<p class="tiny muted">Signed in as ${esc(auth.session()?.email || 'this device')}.
+             ${DEVICE_LIMIT[ed]} device${DEVICE_LIMIT[ed] === 1 ? '' : 's'} allowed.</p>
+             <div class="btn-row"><button class="btn btn-sm btn-ghost" id="s-signout">Sign out</button></div>`
+          : `<p class="tiny muted">You don't need an account to edit. It exists to move a paid
+             licence between your devices.</p>`}
+        <div class="field" style="margin-top:12px">
+          <label for="s-key">Licence key</label>
+          <input class="input mono" id="s-key" placeholder="OMNIDX-STU-XXXX-XXXX-XXXX"
+            style="text-transform:uppercase">
+        </div>
+        <div class="btn-row" style="margin-top:0">
+          <button class="btn btn-sm" id="s-redeem">Unlock</button>
+          <a class="btn btn-sm btn-ghost" href="../account/" target="_blank" rel="noopener">Account page</a>
+        </div>
+        ${ed !== 'studio' ? `<div class="btn-row">
+          <a class="btn btn-sm btn-primary btn-full" href="${esc(buyUrl(ed === 'free' ? 'creator' : 'studio'))}"
+             target="_blank" rel="noopener">
+            Get ${esc(ed === 'free' ? 'Creator' : 'Studio')} —
+            $${(ed === 'free' ? EDITIONS.creator.once : EDITIONS.studio.once).toFixed(2)}</a>
+        </div>` : ''}
+        <p class="tiny muted" style="margin:10px 0 0">
+          AI actions this month: ${licence.aiLimit() === Infinity ? 'unlimited'
+            : `${licence.aiLimit() - licence.aiRemaining()} of ${licence.aiLimit()} used`}.
+        </p>
+      </div>
+    </details>
+
+    <details class="group">
+      <summary>Skill level</summary>
+      <div class="gbody">
+        ${levels.LEVELS.map((l) => `
+          <label style="display:flex;gap:9px;align-items:flex-start;padding:8px 0;cursor:pointer">
+            <input type="radio" name="lvl" value="${l}" ${levels.current() === l ? 'checked' : ''}
+              style="margin-top:3px">
+            <span><b style="font-size:12.5px">${esc(levels.DESCRIPTIONS[l].name)}</b>
+              <br><span class="tiny muted">${esc(levels.DESCRIPTIONS[l].line)}</span></span>
+          </label>`).join('')}
+      </div>
+    </details>
+
+    <details class="group">
+      <summary>Storage</summary>
+      <div class="gbody" id="s-storage"><p class="tiny muted">Checking…</p></div>
+    </details>
+
+    <details class="group" data-min="expert">
+      <summary>Cloud brain (optional)</summary>
+      <div class="gbody">
+        <p class="tiny muted" style="margin-top:0">
+          Point this copy at your own OmniDx Worker for free-form AI phrasing, transcription and
+          cross-device sync. Leave it empty and everything runs on this device. The code for the
+          Worker is in <span class="mono">server/</span> in the repository.
+        </p>
+        <div class="field">
+          <label for="s-api">Worker URL</label>
+          <input class="input mono" id="s-api" placeholder="https://api.omnidx.net"
+            value="${esc(API.base)}">
+        </div>
+        <div class="btn-row" style="margin-top:0">
+          <button class="btn btn-sm" id="s-api-save">Save</button>
+        </div>
+      </div>
+    </details>`;
+
+  wire(host);
+  paintProjects(host);
+  paintStorage(host);
+}
+
+function wire(host) {
+  $('#s-name', host).addEventListener('change', (e) => {
+    S.project.name = e.target.value.trim() || 'Untitled project';
+    $('#proj-name').value = S.project.name;
+    actions.commit('Rename project');
+  });
+
+  host.addEventListener('change', (e) => {
+    if (e.target.dataset.k === 'ratio') actions.setRatio(e.target.value);
+    if (e.target.dataset.k === 'fps') {
+      S.project.settings.fps = Number(e.target.value);
+      actions.commit('Frame rate');
+    }
+    if (e.target.name === 'lvl') {
+      levels.set(e.target.value);
+      $$('#level-switch button').forEach((b) => b.classList.toggle('on', b.dataset.level === e.target.value));
+      actions.refresh();
+    }
+  });
+
+  $('#s-bg', host).addEventListener('change', (e) => {
+    S.project.settings.background = e.target.value;
+    actions.commit('Background colour');
+  });
+
+  $('#s-save-file', host).addEventListener('click', actions.exportProjectFile);
+
+  $('#s-open-file', host).addEventListener('click', () => {
+    const picker = document.createElement('input');
+    picker.type = 'file';
+    picker.accept = '.json,application/json';
+    picker.addEventListener('change', async () => {
+      const file = picker.files?.[0];
+      if (!file) return;
+      try {
+        await actions.loadDocument(JSON.parse(await file.text()));
+        toast('Project opened', 'ok');
+      } catch (err) {
+        toast(`That file could not be opened: ${err.message}`, 'bad', 5000);
+      }
+    });
+    picker.click();
+  });
+
+  $('#s-redeem', host).addEventListener('click', async () => {
+    try {
+      await licence.redeem($('#s-key', host).value);
+      paintAccount();
+      actions.refresh();
+    } catch (err) {
+      toast(err.message, 'bad', 5000);
+    }
+  });
+
+  $('#s-signout', host)?.addEventListener('click', async () => {
+    await auth.signOut();
+    paintAccount();
+    actions.refresh();
+    toast('Signed out');
+  });
+
+  $('#s-api-save', host)?.addEventListener('click', () => {
+    const url = setApiBase($('#s-api', host).value);
+    toast(url ? `Connected to ${url}` : 'Back to running everything locally', 'ok');
+  });
+}
+
+async function paintProjects(host) {
+  const box = $('#s-projects', host);
+  if (!box) return;
+  const list = await store.listProjects();
+  box.innerHTML = `
+    <div class="btn-row" style="margin-top:0">
+      <button class="btn btn-sm btn-primary" id="s-new">＋ New project</button>
+    </div>
+    ${list.length ? list.map((p) => `
+      <div style="display:flex;gap:8px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line-soft)">
+        <span style="flex:1;min-width:0">
+          <b style="font-size:12.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            ${esc(p.name)}${p.id === S.project.id ? ' · open' : ''}</b>
+          <span class="tiny muted">${p.clips?.length || 0} clips ·
+            ${new Date(p.updatedAt || Date.now()).toLocaleDateString()}</span>
+        </span>
+        ${p.id === S.project.id ? '' : `<button class="btn btn-sm" data-open="${esc(p.id)}">Open</button>`}
+        <button class="btn btn-sm btn-ghost" data-del="${esc(p.id)}" title="Delete">✕</button>
+      </div>`).join('') : '<p class="tiny muted" style="margin-top:10px">No saved projects yet.</p>'}`;
+
+  $('#s-new', box).addEventListener('click', actions.newProject);
+
+  box.addEventListener('click', async (e) => {
+    const open = e.target.closest('[data-open]');
+    if (open) { await actions.openProject(open.dataset.open); return; }
+    const del = e.target.closest('[data-del]');
+    if (!del) return;
+    const ok = await confirmDialog({
+      title: 'Delete this project?',
+      body: 'The project is removed. The video files on your disk are not touched.',
+      confirmText: 'Delete', danger: true,
+    });
+    if (!ok) return;
+    await store.deleteProject(del.dataset.del);
+    paintProjects(host);
+    toast('Project deleted');
+  });
+}
+
+async function paintStorage(host) {
+  const box = $('#s-storage', host);
+  if (!box) return;
+  const used = await store.usage();
+  box.innerHTML = `
+    ${used ? `
+      <p class="tiny muted" style="margin-top:0">
+        Using ${bytes(used.used)} of about ${bytes(used.quota)} the browser will give this app.
+      </p>
+      <div style="height:6px;border-radius:99px;background:var(--surface-3);overflow:hidden">
+        <i style="display:block;height:100%;width:${Math.min(100, (used.used / used.quota) * 100).toFixed(1)}%;
+          background:var(--grad)"></i>
+      </div>` : '<p class="tiny muted">This browser will not say how much space it has given us.</p>'}
+    <div class="btn-row">
+      <button class="btn btn-sm btn-ghost" id="s-prune">Clear unused media</button>
+    </div>
+    <p class="tiny muted" style="margin:8px 0 0">
+      Media files are kept so projects still open after you move or rename the originals.
+      Clearing removes only what no project refers to any more.
+    </p>`;
+
+  $('#s-prune', box).addEventListener('click', async () => {
+    const n = await store.pruneMedia();
+    toast(n ? `${n} unused file${n === 1 ? '' : 's'} cleared` : 'Nothing to clear', 'ok');
+    paintStorage(host);
+  });
+}

@@ -5,7 +5,7 @@ name: Publish to GitHub Pages
 # contents:write — no Pages API call, and no repository setting to switch on.
 on:
   push:
-    branches: [main, master, "claude/universal-diagnostics-app-6x8tot"]
+    branches: [main, master, "claude/universal-diagnostics-app-6x8tot", "claude/omnidx-editing-platform-9phdcc"]
   workflow_dispatch:
 
 permissions:
@@ -34,8 +34,35 @@ jobs:
                    icons/icon-192.png icons/icon-512.png icons/icon.ico icons/icon.icns; do
             [ -f "$f" ] || { echo "missing required file: $f"; exit 1; }
           done
+          for f in studio/index.html studio/pricing/index.html studio/download/index.html \
+                   studio/account/index.html studio/assets/studio.css studio/assets/studio.js \
+                   studio/assets/config.js studio/assets/auth.js studio/assets/mark.svg \
+                   studio/app/index.html studio/app/manifest.webmanifest studio/app/sw.js \
+                   studio/app/css/app.css studio/app/js/main.js studio/app/js/ui.js \
+                   studio/app/js/store.js studio/app/js/licence.js studio/app/js/levels.js \
+                   studio/app/js/timeline-ui.js studio/app/js/palette.js studio/app/js/tutorial.js \
+                   studio/app/js/desktop.js \
+                   studio/app/js/engine/project.js studio/app/js/engine/render.js \
+                   studio/app/js/engine/filters.js studio/app/js/engine/transitions.js \
+                   studio/app/js/engine/titles.js studio/app/js/engine/media.js \
+                   studio/app/js/engine/audio.js studio/app/js/engine/playback.js \
+                   studio/app/js/engine/exporter.js studio/app/js/engine/history.js \
+                   studio/app/js/ai/planner.js studio/app/js/ai/apply.js studio/app/js/ai/remote.js \
+                   studio/app/js/panels/index.js studio/app/js/panels/media.js \
+                   studio/app/js/panels/ai.js studio/app/js/panels/effects.js \
+                   studio/app/js/panels/color.js studio/app/js/panels/text.js \
+                   studio/app/js/panels/audio.js studio/app/js/panels/captions.js \
+                   studio/app/js/panels/settings.js studio/app/js/panels/help.js \
+                   studio/app/js/panels/inspector.js studio/app/js/panels/export.js \
+                   server/worker.js server/schema.sql; do
+            [ -f "$f" ] || { echo "missing required file: $f"; exit 1; }
+          done
           python3 -c "import json; json.load(open('app/manifest.webmanifest'))"
+          python3 -c "import json; json.load(open('studio/app/manifest.webmanifest'))"
+          python3 -c "import json; json.load(open('studio/desktop/package.json'))"
+          python3 -c "import json; json.load(open('studio/mobile/capacitor.config.json'))"
           python3 -m py_compile tools/sysreport.py tools/make-licence.py tools/set-domain.py \
+            tools/make-studio-key.py \
             desktop/omnidx.py desktop/install.py
 
           # Every screenshot the landing page references must actually exist.
