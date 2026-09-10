@@ -15,6 +15,7 @@
 
 import { activeAt, mediaById, speedAt, sourceTime } from './project.js';
 import { decode } from './media.js';
+import { buildAudioChain } from './audio-fx.js';
 
 /**
  * Render the whole timeline's audio.
@@ -59,7 +60,27 @@ export async function renderAudio(project, { duration, sampleRate = 48000, onPro
     source.buffer = buffer;
 
     const gain = ctx.createGain();
-    source.connect(gain).connect(master);
+    gain.connect(master);
+
+    // The creative filter sits between the source and the clip's gain, so
+    // fades and ducking still apply to the filtered sound rather than to the
+    // dry one. This is the same graph the preview builds, from the same
+    // module — the export cannot sound different from what you heard.
+    let chain = null;
+    try {
+      chain = buildAudioChain(ctx, clip.audioFx);
+    } catch {
+      chain = null;                    // never lose a clip's audio to a filter
+    }
+    if (chain) {
+      source.connect(chain.input);
+      chain.output.connect(gain);
+      // Offline, every generator starts at zero: the context's clock begins
+      // at the top of the timeline, not at the clip.
+      chain.start(0);
+    } else {
+      source.connect(gain);
+    }
 
     scheduleGain(project, clip, gain, ctx);
 

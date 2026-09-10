@@ -1,12 +1,15 @@
 /*
- * Audio tools: the master level, the music analysis, and the two operations
- * that save the most time — cutting silence and snapping cuts to the beat.
+ * Audio tools: the master level, the music analysis, the creative filters, and
+ * the two operations that save the most time — cutting silence and snapping
+ * cuts to the beat.
  */
 
-import { $, esc, toast, slider } from '../ui.js';
+import { $, $$, esc, toast, slider } from '../ui.js';
 import { S, actions, engine } from '../main.js';
 import { decode, detectBeats, detectSilence, peaks } from '../engine/media.js';
 import { repair, describeRepair, detectHum } from '../engine/audio-repair.js';
+import { AUDIO_FX, makeAudioFx } from '../engine/audio-fx.js';
+import { clipById } from '../engine/project.js';
 import { applyPlan } from '../ai/apply.js';
 import * as licence from '../licence.js';
 
@@ -76,6 +79,8 @@ export function mount(host) {
         </div>
       </details>` : ''}
 
+    ${fxSection()}
+
     <div class="group" style="padding:12px">
       <b style="font-size:12.5px">Ducking</b>
       <p class="tiny muted" style="margin:4px 0 10px">
@@ -84,13 +89,20 @@ export function mount(host) {
       </p>
     </div>`;
 
-  host.addEventListener('input', (e) => {
-    if (e.target.dataset.k !== 'master') return;
-    const v = Number(e.target.value);
-    engine.audio?.setMasterVolume(v);
-    const label = host.querySelector('[data-val="master"]');
-    if (label) label.textContent = `${Math.round(v * 100)}%`;
-  });
+  // Guarded: the panel host outlives its contents, so an unguarded listener
+  // here would be added again on every re-render and fire N times per drag.
+  if (!host.dataset.masterWired) {
+    host.dataset.masterWired = '1';
+    host.addEventListener('input', (e) => {
+      if (e.target.dataset.k !== 'master') return;
+      const v = Number(e.target.value);
+      engine.audio?.setMasterVolume(v);
+      const label = host.querySelector('[data-val="master"]');
+      if (label) label.textContent = `${Math.round(v * 100)}%`;
+    });
+  }
+
+  wireFx(host);
 
   $('#a-beats', host)?.addEventListener('click', () => findBeats(music));
   $('#a-beatcut', host)?.addEventListener('click', () => beatCut(music));
@@ -98,6 +110,159 @@ export function mount(host) {
   $('#a-repair', host)?.addEventListener('click', () => runRepair(host));
 
   startMeter(host);
+}
+
+/* ------------------------------------------------------------------ */
+/* creative filters                                                    */
+/* ------------------------------------------------------------------ */
+/*
+ * One filter per clip, applied live on playback and baked into the export by
+ * the same module — see engine/audio-fx.js. The panel edits the selected
+ * clips; with nothing selected it says so rather than silently doing nothing,
+ * which is the failure mode that makes people think a feature is broken.
+ */
+
+/** The clips this panel would act on: selected, and carrying sound. */
+function fxTargets() {
+  return [...S.sel]
+    .map((id) => clipById(S.project, id))
+    .filter((c) => c && c.kind !== 'title' && c.kind !== 'sticker');
+}
+
+/** The filter shown in the panel — the first selected clip's, if they agree. */
+function currentFx() {
+  const clips = fxTargets();
+  if (!clips.length) return null;
+  const first = clips[0].audioFx;
+  return clips.every((c) => c.audioFx?.id === first?.id) ? first : null;
+}
+
+function fxSection() {
+  const clips = fxTargets();
+  const fx = currentFx();
+  const spec = fx && AUDIO_FX[fx.id];
+  const canPro = licence.can('audio-fx-pro');
+
+  const groups = {};
+  for (const [id, def] of Object.entries(AUDIO_FX)) {
+    (groups[def.group] ||= []).push([id, def]);
+  }
+
+  const chips = Object.entries(groups).map(([group, list]) => `
+    <div class="fx-group-h">${esc(group)}</div>
+    <div class="fx-chips">${list.map(([id, def]) => `
+      <button class="fx-chip ${fx?.id === id ? 'on' : ''} ${def.pro && !canPro ? 'locked' : ''}"
+              data-fx="${esc(id)}" title="${esc(def.blurb)}">
+        ${esc(def.name)}${def.pro && !canPro ? '<i>Pro</i>' : ''}
+      </button>`).join('')}</div>`).join('');
+
+  return `
+    <details class="group" ${fx ? 'open' : ''} id="a-fx">
+      <summary>Audio filters</summary>
+      <div class="gbody">
+        <p class="tiny muted" style="margin:0 0 10px">
+          Underwater, telephone, cathedral, robot — seventeen of them. They play live while
+          you scrub and are rendered into the export, not stuck on afterwards.
+        </p>
+
+        ${clips.length ? '' : `<div class="note tiny" style="margin-bottom:10px">
+          <b>Select a clip first.</b> Filters belong to a clip, so the same timeline can have a
+          radio voice in one shot and a normal one in the next.</div>`}
+
+        ${chips}
+
+        ${spec ? `
+          <div class="fx-active">
+            <b style="font-size:12.5px">${esc(spec.name)}</b>
+            <p class="tiny muted" style="margin:3px 0 9px">${esc(spec.blurb)}</p>
+            ${slider({ key: 'fx-mix', label: 'Amount', value: fx.mix ?? 1,
+              min: 0, max: 1, step: 0.02, fmt: (v) => `${Math.round(v * 100)}%` })}
+            ${(spec.params || []).map((prm) => slider({
+              key: `fxp-${prm.key}`, label: prm.label,
+              value: fx.params?.[prm.key] ?? spec.defaults[prm.key],
+              min: prm.min, max: prm.max, step: prm.step,
+              fmt: (v) => (prm.step >= 1 ? `${v > 0 ? '+' : ''}${Math.round(v)}` : `${Math.round(v * 100)}%`),
+            })).join('')}
+            ${spec.alsoSetsSpeed ? `<p class="tiny muted" style="margin:8px 0 0">
+              This look also sets the clip's speed to ${Math.round(spec.alsoSetsSpeed * 100)}% so
+              the picture slows with the sound. Change it in the inspector if you'd rather it
+              didn't.</p>` : ''}
+            <button class="btn btn-sm btn-full" id="a-fx-off" style="margin-top:10px">Remove the filter</button>
+          </div>` : ''}
+      </div>
+    </details>`;
+}
+
+function wireFx(host) {
+  $$('[data-fx]', host).forEach((b) => b.addEventListener('click', () => {
+    const id = b.dataset.fx;
+    const spec = AUDIO_FX[id];
+    if (spec.pro && !licence.gate('audio-fx-pro', () => {}, { what: `The ${spec.name} filter` })) return;
+    if (!fxTargets().length) {
+      toast('Select a clip on the timeline first', 'bad');
+      return;
+    }
+    actions.patchSelected((clip) => {
+      clip.audioFx = clip.audioFx?.id === id ? null : makeAudioFx(id);
+      // Two of the looks are half tempo change. Setting only the audio half
+      // would put the sound out of step with the picture, which is not the
+      // effect anybody means when they ask for "slowed and reverb".
+      if (clip.audioFx && spec.alsoSetsSpeed) {
+        clip.speed = spec.alsoSetsSpeed;
+        clip.speedKeys = null;
+      }
+    }, `Audio filter: ${spec.name}`);
+    // patchSelected commits, and committing re-mounts this panel — so there is
+    // deliberately no repaint here.
+  }));
+
+  $('#a-fx-off', host)?.addEventListener('click', () => {
+    actions.patchSelected((clip) => { clip.audioFx = null; }, 'Remove audio filter');
+  });
+
+  /*
+   * Filter sliders write straight to the clip and commit only when the drag
+   * ends.
+   *
+   * Committing on every `input` would push a history entry per pixel and, worse,
+   * re-render this panel underneath the slider being dragged — which drops the
+   * drag on the floor. So: `input` mutates and relabels, `change` (mouse up,
+   * or a keyboard arrow) is the one that becomes an undo step.
+   */
+  if (host.dataset.fxWired) return;
+  host.dataset.fxWired = '1';
+
+  const fxKey = (e) => {
+    const key = e.target?.dataset?.k || '';
+    return (key === 'fx-mix' || key.startsWith('fxp-')) ? key : null;
+  };
+
+  host.addEventListener('input', (e) => {
+    const key = fxKey(e);
+    if (!key) return;
+    const v = Number(e.target.value);
+    for (const clip of fxTargets()) {
+      if (!clip.audioFx) continue;
+      if (key === 'fx-mix') clip.audioFx.mix = v;
+      else clip.audioFx.params = { ...clip.audioFx.params, [key.slice(4)]: v };
+    }
+    const spec = AUDIO_FX[currentFx()?.id];
+    const prm = spec?.params?.find((x) => x.key === key.slice(4));
+    const label = host.querySelector(`[data-val="${CSS.escape(key)}"]`);
+    if (label) {
+      label.textContent = (key === 'fx-mix' || !prm || prm.step < 1)
+        ? `${Math.round(v * 100)}%`
+        : `${v > 0 ? '+' : ''}${Math.round(v)}`;
+    }
+    // Heard immediately while the transport is running; otherwise on the next
+    // play or seek, which is when there is anything to hear.
+    engine.audio?.sync(S.project, S.time, S.playing);
+  });
+
+  host.addEventListener('change', (e) => {
+    if (!fxKey(e)) return;
+    actions.commit('Adjust audio filter', 'audiofx');
+  });
 }
 
 async function findBeats(music) {

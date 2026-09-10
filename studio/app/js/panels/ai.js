@@ -24,15 +24,36 @@ export function mount(host) {
   const remaining = licence.aiRemaining();
   const limit = licence.aiLimit();
   const hasMedia = S.project.media.length > 0;
+  // Not "you have run out" — this edition never had any. Saying so up front,
+  // and pointing at the free thing that does the same job, is better than a
+  // button that looks live and then sells at you.
+  const locked = limit === 0;
 
   host.innerHTML = `
     <div class="panel-h">
       <h2>AI editor</h2>
-      <span class="tiny muted">${limit === Infinity ? 'Unlimited' : `${remaining} left this month`}</span>
+      <span class="tiny muted">${
+        limit === Infinity ? 'Unlimited'
+          : locked ? `${licence.requires('ai-edit')?.name || 'Creator'} and up`
+          : `${remaining} left this month`}</span>
     </div>
     <p class="panel-sub">
       Describe the edit. It plans it, you approve it, it lands on the timeline as normal clips.
     </p>
+
+    ${locked ? `<div class="note info">
+      <b>AI editing is a paid feature.</b> It starts at
+      ${esc(licence.requires('ai-edit')?.name || 'Creator')} —
+      $${(licence.requires('ai-edit')?.once ?? 19.99).toFixed(2)}, paid once, no subscription.
+      <br><br>
+      <b>The free way to do the same job:</b> the <b>Styles</b> panel builds a complete edit —
+      cuts on the beat, a look, transitions, captions — entirely on this device, with no AI and
+      no charge. Most people never need more than that.
+      <div class="btn-row" style="margin-top:10px">
+        <button class="btn btn-sm btn-primary" id="ai-styles">Open Styles instead</button>
+        <button class="btn btn-sm" id="ai-upgrade">What's in ${esc(licence.requires('ai-edit')?.name || 'Creator')}?</button>
+      </div>
+    </div>` : ''}
 
     ${hasMedia ? '' : `<div class="note">
       <b>Import something first.</b> The AI edits your footage — it doesn't generate any.
@@ -43,7 +64,7 @@ export function mount(host) {
       placeholder="Make a 30 second TikTok trailer, fast cuts on the beat, teal and orange, big captions"></textarea>
 
     <div class="btn-row" style="margin-top:9px">
-      <button class="btn btn-primary btn-full" id="ai-plan" ${hasMedia ? '' : 'disabled'}>
+      <button class="btn btn-primary btn-full" id="ai-plan" ${hasMedia && !locked ? '' : 'disabled'}>
         ✨ Plan the edit
       </button>
     </div>
@@ -66,6 +87,11 @@ export function mount(host) {
     </div>`;
 
   $('#ai-import', host)?.addEventListener('click', () => $('#file-input').click());
+  $('#ai-styles', host)?.addEventListener('click', async () => {
+    const { openPanel } = await import('./index.js');
+    openPanel('templates');
+  });
+  $('#ai-upgrade', host)?.addEventListener('click', () => licence.upgradePrompt('ai-edit', 'AI editing'));
 
   $$('[data-example]', host).forEach((b) => b.addEventListener('click', () => {
     $('#ai-prompt', host).value = b.dataset.example;

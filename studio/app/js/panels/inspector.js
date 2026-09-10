@@ -8,7 +8,7 @@
  */
 
 import { $, $$, esc, group, slider, selectRow, toggleRow, empty, dur, tc } from '../ui.js';
-import { S, actions } from '../main.js';
+import { S, actions, drawFrame } from '../main.js';
 import { clipById, mediaById, valueAt, setKeyframe, clearKeyframes } from '../engine/project.js';
 import { CONTROLS, LOOKS } from '../engine/filters.js';
 import { TRANSITION_LIST } from '../engine/transitions.js';
@@ -197,15 +197,45 @@ function keyframeSection(clip, local) {
 /* ------------------------------------------------------------------ */
 
 function wire(host) {
-  // Sliders and selects: one delegated listener for the whole panel.
+  /*
+   * Attached once, to a host that outlives its own contents.
+   *
+   * mount() replaces the panel's innerHTML but not the panel element, so a
+   * listener added here on every mount would survive every re-render. Since a
+   * slider commits, and committing re-mounts, the count would double on each
+   * drag — a hundred listeners after seven nudges of an exposure slider, and
+   * an editor that gets slower the longer you grade in it.
+   */
+  if (host.dataset.wired) return;
+  host.dataset.wired = '1';
+
+  /*
+   * Dragging writes straight to the clip; releasing is what becomes undoable.
+   *
+   * Committing on every `input` would also rebuild this panel underneath the
+   * control being dragged, which throws the drag away mid-gesture. Editors
+   * are judged on exactly this: a colour wheel you cannot drag smoothly is a
+   * colour wheel nobody trusts.
+   */
   host.addEventListener('input', (e) => {
     const key = e.target.dataset.k;
     if (!key) return;
     const value = e.target.type === 'checkbox' ? e.target.checked
       : e.target.type === 'range' ? Number(e.target.value) : e.target.value;
-    applyKey(key, value);
-    const label = host.querySelector(`[data-val="${CSS.escape(key)}"]`);
-    if (label && e.target.type === 'range') label.textContent = formatFor(key, value);
+    if (e.target.type === 'range') {
+      liveKey(key, value);
+      const label = host.querySelector(`[data-val="${CSS.escape(key)}"]`);
+      if (label) label.textContent = formatFor(key, value);
+    } else {
+      applyKey(key, value);
+    }
+  });
+
+  // Mouse-up on a slider, or a keyboard arrow, ends the gesture.
+  host.addEventListener('change', (e) => {
+    if (e.target.dataset.k && e.target.type === 'range') {
+      applyKey(e.target.dataset.k, Number(e.target.value));
+    }
   });
 
   host.addEventListener('change', (e) => {
@@ -304,6 +334,20 @@ function setSpeed(v) {
 /** Apply a dotted key path to every selected clip, coalescing the undo entry. */
 function applyKey(key, value) {
   actions.patchSelected((c) => writeProp(c, key, value), labelFor(key), `insp:${key}`);
+}
+
+/**
+ * The same write, but during a drag: no history entry and no re-render, so the
+ * preview follows the slider without the panel being rebuilt under the mouse.
+ * The commit lands on `change`, once, for the whole gesture.
+ */
+function liveKey(key, value) {
+  if (!S.sel.size) return;
+  for (const id of S.sel) {
+    const clip = clipById(S.project, id);
+    if (clip) writeProp(clip, key, value);
+  }
+  drawFrame();
 }
 
 function readProp(clip, path) {

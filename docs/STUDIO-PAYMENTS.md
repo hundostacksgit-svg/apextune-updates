@@ -10,6 +10,13 @@ to **Cash App**, and add **Stripe** as a second checkout for the methods Square
 doesn't carry. Never advertise a bare `cash.app/$cashtag` link as your only
 option.
 
+> **In a hurry?** [SQUARE-SETUP.md](SQUARE-SETUP.md) is the same thing as a
+> ten-minute checklist with a direct link for every step. Start there; come
+> back here for fees, refunds, tax and the second processor.
+>
+> **Note on subscriptions:** OmniDx no longer sells any. Every edition is a
+> single payment, so create "Accept a payment" links, never subscriptions.
+
 ---
 
 ## The thing that makes this work
@@ -34,7 +41,7 @@ one where the payout is *native* rather than a bank transfer that might bounce.
 2. **Payment Links → Create** → one link per edition:
    - Creator — $19.99
    - Studio — $39.99
-   - (optional) the monthly ones, if you offer them
+   - Team — $69.99 (three people, one licence)
 3. Square Dashboard → **Balance → Settings → Linked accounts** → choose **Cash
    App** as the destination. Block owns both, so this is a menu choice, not a
    bank transfer.
@@ -44,8 +51,7 @@ one where the payout is *native* rather than a bank transfer that might bounce.
   checkout: {
     creator: 'https://square.link/u/XXXXXXXX',
     studio: 'https://square.link/u/YYYYYYYY',
-    creatorMonthly: '',
-    studioMonthly: '',
+    team: 'https://square.link/u/ZZZZZZZZ',
   },
 ```
 

@@ -56,10 +56,18 @@ intact on a phone, a friend's laptop or a desktop install. It's also just a ZIP.
 **Proxies and awkward files.** Automatic 540p proxies for old machines — never used
 for export. Variable-frame-rate phone video and screen recordings open as they are.
 
+**Creative audio filters.** Underwater, telephone, old radio, megaphone, cathedral,
+vinyl, robot, 8-bit, nightcore — seventeen of them, live on playback and rendered
+into the export. Thirteen are free.
+
+**One payment, never a subscription.** $19.99, $39.99, or $69.99 for three people.
+Nothing renews and nothing expires.
+
 Read next:
 [what it does and why](docs/STUDIO-COMPLAINTS.md) ·
 [how it's built](docs/STUDIO.md) ·
-[getting paid](docs/STUDIO-PAYMENTS.md) ·
+[**take money in ten minutes**](docs/SQUARE-SETUP.md) ·
+[getting paid, in full](docs/STUDIO-PAYMENTS.md) ·
 [shipping to the stores](docs/STUDIO-BUILD.md) ·
 [pushing updates](docs/STUDIO-UPDATES.md) ·
 [deploying the API](docs/STUDIO-DEPLOY.md)

@@ -1,7 +1,8 @@
 /*
- * Landing-site behaviour: theme, scroll reveals, the pricing toggle, platform
- * detection on the download page, and the account screens. No framework and no
- * build step — the same rule the rest of OmniDx follows.
+ * Landing-site behaviour: theme, the menu box, the section rail, scroll
+ * reveals, pricing, platform detection on the download page, and the account
+ * screens. No framework and no build step — the same rule the rest of OmniDx
+ * follows.
  */
 
 import { EDITIONS, priceOf, buyUrl, PAY, DEVICE_LIMIT, SEATS } from './config.js';
@@ -62,12 +63,173 @@ function initReveal() {
 }
 
 /* ------------------------------------------------------------------ */
+/* the menu box                                                        */
+/* ------------------------------------------------------------------ */
+/*
+ * Panels open on hover with a pointer and on click with a finger or a
+ * keyboard. Both paths set the same `data-open` attribute, so there is one
+ * state to reason about and CSS does the animating.
+ */
+function initMenuBox() {
+  const groups = $$('[data-mb]');
+  if (!groups.length) return;
+  const fine = matchMedia('(hover:hover) and (pointer:fine)').matches;
+
+  const close = (g) => {
+    g.removeAttribute('data-open');
+    delete g.dataset.pinned;
+    g.querySelector('.mb-btn')?.setAttribute('aria-expanded', 'false');
+  };
+  const closeAll = (except) => groups.forEach((g) => { if (g !== except) close(g); });
+  const open = (g) => {
+    closeAll(g);
+    g.setAttribute('data-open', '');
+    g.querySelector('.mb-btn')?.setAttribute('aria-expanded', 'true');
+  };
+
+  groups.forEach((g) => {
+    const btn = g.querySelector('.mb-btn');
+    let leaveTimer = 0;
+
+    /*
+     * Clicking a button the pointer is already hovering must not close the
+     * panel that hovering just opened — that reads as the menu fighting you.
+     * So a click pins an open panel instead of toggling it, and only a click
+     * on an already-pinned panel closes it. With a finger there is no hover,
+     * so the first click opens and pins in one go and the behaviour is the
+     * plain toggle people expect.
+     */
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (g.dataset.pinned) { close(g); return; }
+      open(g);
+      g.dataset.pinned = '1';
+    });
+
+    if (fine) {
+      g.addEventListener('pointerenter', () => { clearTimeout(leaveTimer); open(g); });
+      // A short grace period: crossing the gap between the button and the panel
+      // should not slam it shut under the pointer. A pinned panel stays put
+      // until something closes it deliberately.
+      g.addEventListener('pointerleave', () => {
+        clearTimeout(leaveTimer);
+        leaveTimer = setTimeout(() => { if (!g.dataset.pinned) close(g); }, 140);
+      });
+    }
+
+    // Escape closes and puts focus back where it started, and Tab out of the
+    // last link closes too — otherwise a panel hangs open behind the page.
+    g.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { close(g); btn.focus(); }
+    });
+    g.addEventListener('focusout', (e) => {
+      if (!g.contains(e.relatedTarget)) close(g);
+    });
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('[data-mb]')) closeAll(null);
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* the phone drawer                                                    */
+/* ------------------------------------------------------------------ */
+function initDrawer() {
+  const btn = $('[data-drawer]');
+  const drawer = $('#drawer');
+  if (!btn || !drawer) return;
+
+  const set = (open) => {
+    drawer.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+    btn.setAttribute('aria-label', open ? 'Close menu' : 'Menu');
+    // Locking the body stops the page scrolling underneath the open drawer,
+    // which on a phone reads as the menu having lost your place.
+    document.body.classList.toggle('drawer-open', open);
+  };
+
+  btn.addEventListener('click', () => set(drawer.hidden));
+  drawer.addEventListener('click', (e) => { if (e.target.closest('a')) set(false); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !drawer.hidden) set(false); });
+  // Rotating to landscape or opening a laptop lid can put the full menu box
+  // back on screen; leaving the drawer open over it would be two menus at once.
+  matchMedia('(min-width:1001px)').addEventListener('change', (m) => { if (m.matches) set(false); });
+}
+
+/* ------------------------------------------------------------------ */
+/* section rail — the scroll indicator                                 */
+/* ------------------------------------------------------------------ */
+/*
+ * Every section of the page becomes a dot on the right-hand edge, and the one
+ * you are looking at lights up as you scroll either way. Labels are taken from
+ * `data-rail`, falling back to the section's own heading, so a new section
+ * joins the rail with nothing to register.
+ *
+ * The active section is whichever one covers the middle of the viewport. That
+ * beats "first one intersecting", which flickers between two neighbours on a
+ * fast scroll and picks the wrong one for a section shorter than the screen.
+ */
+function initRail() {
+  const sections = $$('[data-rail], section[id], header[id]')
+    .filter((el, i, all) => all.indexOf(el) === i)
+    .filter((el) => el.id && el.dataset.rail !== 'off');
+  if (sections.length < 3) return;
+  if (!$('.rail')) {
+    const rail = document.createElement('nav');
+    rail.className = 'rail';
+    rail.setAttribute('aria-label', 'Sections on this page');
+    rail.innerHTML = sections.map((el) => {
+      const label = el.dataset.rail || el.querySelector('h1,h2,h3')?.textContent?.trim().slice(0, 26)
+        || el.id.replace(/-/g, ' ');
+      return `<a href="#${esc(el.id)}" data-rail-to="${esc(el.id)}">
+        <span class="lbl">${esc(label)}</span><span class="dot"></span></a>`;
+    }).join('');
+    document.body.appendChild(rail);
+  }
+
+  const links = new Map($$('[data-rail-to]').map((a) => [a.dataset.railTo, a]));
+  const bar = $('[data-progress]');
+  let current = '';
+  let queued = false;
+
+  function update() {
+    queued = false;
+    const mid = scrollY + innerHeight / 2;
+    let pick = sections[0];
+    for (const el of sections) {
+      const top = el.offsetTop;
+      if (top <= mid) pick = el; else break;
+    }
+    // Right at the bottom the last section may never reach the midpoint —
+    // someone who has scrolled to the end is in the last section, full stop.
+    if (scrollY + innerHeight >= document.body.scrollHeight - 4) pick = sections[sections.length - 1];
+
+    if (pick.id !== current) {
+      links.get(current)?.classList.remove('on');
+      links.get(pick.id)?.classList.add('on');
+      links.get(pick.id)?.setAttribute('aria-current', 'true');
+      links.get(current)?.removeAttribute('aria-current');
+      current = pick.id;
+    }
+    if (bar) {
+      const max = document.documentElement.scrollHeight - innerHeight;
+      bar.style.width = `${max > 0 ? Math.min(100, (scrollY / max) * 100) : 0}%`;
+    }
+  }
+
+  const onScroll = () => { if (!queued) { queued = true; requestAnimationFrame(update); } };
+  addEventListener('scroll', onScroll, { passive: true });
+  addEventListener('resize', onScroll);
+  update();
+}
+
+/* ------------------------------------------------------------------ */
 /* pricing                                                             */
 /* ------------------------------------------------------------------ */
 function initPricing() {
   const host = $('#tiers');
   if (!host) return;
-  let period = 'once';
 
   const FEATURES = {
     free: [
@@ -76,10 +238,12 @@ function initPricing() {
       ['Transitions, titles, audio mixing', 1],
       ['20 colour filters and looks', 1],
       ['All 11 one-tap edit styles', 1],
+      ['13 creative audio filters — underwater, radio…', 1],
       ['Stickers, callouts and shapes', 1],
+      ['Automatic proxies for slow machines', 1],
       ['1080p export, no watermark', 1],
       ['Works offline, no account required', 1],
-      ['AI editing — 5 actions a month', 1],
+      ['AI editing', 0],
       ['Auto-captions', 0],
       ['4K export', 0],
     ],
@@ -90,11 +254,24 @@ function initPricing() {
       ['All 60+ filters, looks and LUT slots', 1],
       ['All 18 effects and motion tracking', 1],
       ['Three-way colour wheels', 1],
-      ['4K / 60fps export', 1],
+      ['Studio audio repair — noise, hum, clicks', 1],
+      ['4K / 60fps and H.265 export', 1],
       ['Speed ramps and keyframe curves', 1],
       ['Beat-synced auto-cutting', 1],
       ['Silence removal', 1],
       ['Brand kit — fonts, colours, logo', 1],
+    ],
+    studio: [
+      ['Everything in Creator', 1],
+      ['Unlimited AI editing', 1],
+      ['Apple ProRes and DNxHR on desktop', 1],
+      ['Project sync across 10 devices', 1],
+      ['Custom LUT slots, unlimited', 1],
+      ['Scopes and the full colour panel', 1],
+      ['Every future update included, free', 1],
+      ['Background removal — building', 2],
+      ['Voice isolation — building', 2],
+      ['Multicam sync — building', 2],
     ],
     team: [
       ['Everything in Studio, for three people', 1],
@@ -105,17 +282,6 @@ function initPricing() {
       ['One payment, no per-seat billing', 1],
       ['Every future update included, free', 1],
     ],
-    studio: [
-      ['Everything in Creator', 1],
-      ['Unlimited AI editing', 1],
-      ['Project sync across 10 devices', 1],
-      ['Custom LUT slots, unlimited', 1],
-      ['Scopes and the full colour panel', 1],
-      ['Every future update included, free', 1],
-      ['Background removal — building', 2],
-      ['Voice isolation — building', 2],
-      ['Multicam sync — building', 2],
-    ],
   };
 
   function card(id) {
@@ -123,7 +289,7 @@ function initPricing() {
     // The struck-through figure is what three individual Studio licences cost,
     // which is a real number anyone can check — not a price we invented and
     // never charged.
-    const anchor = e.compareTo && period === 'once'
+    const anchor = e.compareTo
       ? `<span class="anchor"><s>$${e.compareTo.toFixed(2)}</s> ${esc(e.compareLabel)}</span>`
       : '';
     const feat = FEATURES[id].map(([t, on]) => {
@@ -132,46 +298,36 @@ function initPricing() {
       return `<li class="${cls}">${esc(t)}</li>`;
     }).join('');
     const featured = id === 'creator';
-    const price = priceOf(id, period);
-    const sub = id === 'free' ? 'Forever. No card, no trial clock.'
-      : period === 'monthly' ? 'Cancel any time, in the app.'
+    const sub = id === 'free'
+      ? 'Forever. No card, no trial clock.'
       : 'One payment. Yours permanently.';
     const cta = id === 'free'
       ? `<a class="btn btn-lg" href="../app/">Open the editor</a>`
-      : `<a class="btn btn-primary btn-lg" href="${esc(buyUrl(id, period))}" data-buy="${id}" rel="noopener">Get ${esc(e.name)}</a>`;
+      : `<a class="btn btn-primary btn-lg" href="${esc(buyUrl(id))}" data-buy="${id}" rel="noopener">Get ${esc(e.name)}</a>`;
     return `<div class="tier ${featured ? 'featured' : ''}">
       ${featured ? '<span class="badge-top">Most popular</span>' : ''}
       <div class="tname">${esc(e.name)}</div>
-      <div class="amount">${esc(price)}</div>
+      <div class="amount">${esc(priceOf(id))}</div>
       ${anchor}
       <p class="sub">${esc(sub)}</p>
       <p class="small" style="margin:10px 0 0">${esc(e.blurb)}</p>
       <ul>${feat}</ul>
       ${cta}
       <p class="tiny muted" style="margin:12px 0 0;text-align:center">
-        ${id === 'free' ? 'Nothing to cancel.'
+        ${id === 'free' ? 'Nothing to cancel, because there is nothing to renew.'
           : SEATS[id] > 1 ? `${SEATS[id]} people · ${DEVICE_LIMIT[id]} devices · 14-day refund`
           : `Up to ${DEVICE_LIMIT[id]} devices · 14-day refund, no questions`}
       </p>
     </div>`;
   }
 
-  function paint() {
-    host.innerHTML = ['free', 'creator', 'studio', 'team'].map(card).join('');
-    $$('#tiers [data-buy]').forEach((a) => a.addEventListener('click', (ev) => {
-      if (a.getAttribute('href') === PAY.cashAppUrl) {
-        ev.preventDefault();
-        location.href = `../account/?buy=${a.dataset.buy}&period=${period}`;
-      }
-    }));
-  }
-
-  $$('#billing button').forEach((b) => b.addEventListener('click', () => {
-    $$('#billing button').forEach((x) => x.classList.toggle('on', x === b));
-    period = b.dataset.period;
-    paint();
+  host.innerHTML = ['free', 'creator', 'studio', 'team'].map(card).join('');
+  $$('#tiers [data-buy]').forEach((a) => a.addEventListener('click', (ev) => {
+    if (a.getAttribute('href') === PAY.cashAppUrl) {
+      ev.preventDefault();
+      location.href = `../account/?buy=${a.dataset.buy}`;
+    }
   }));
-  paint();
 }
 
 
@@ -204,7 +360,7 @@ const COMPARE = [
   ['Auto-reframe to any ratio', false, false, 'Building'],
 
   ['— AI', null, null, null],
-  ['AI edit assistant', '5 / month', '200 / month', 'Unlimited'],
+  ['AI edit assistant', false, '200 / month', 'Unlimited'],
   ['Auto-captions', false, true, true],
   ['Beat-synced cutting', false, true, true],
   ['Silence removal', false, true, true],
@@ -214,8 +370,7 @@ const COMPARE = [
   ['Mixing, fades, volume curves', true, true, true],
   ['Ducking under voice', true, true, true],
   ['Waveforms &amp; beat detection', true, true, true],
-
-  ['— Audio', null, null, null],
+  ['Creative audio filters (underwater, radio…)', '13', 'All 17', 'All 17'],
   ['Noise reduction, hum and click repair', false, true, true],
   ['Automatic level matching', false, true, true],
 
@@ -238,6 +393,8 @@ const COMPARE = [
   ['Project sync across devices', false, false, true],
   ['Brand kit (fonts, colours, logo)', false, true, true],
   ['Future updates included', true, true, true],
+  ['How you pay', 'Free', 'Once', 'Once'],
+  ['Anything that renews', false, false, false],
 ];
 
 function cell(v) {
@@ -537,6 +694,9 @@ applyTheme();
 document.addEventListener('DOMContentLoaded', () => {
   applyTheme();
   $$('[data-theme-toggle]').forEach((b) => b.addEventListener('click', toggleTheme));
+  initMenuBox();
+  initDrawer();
+  initRail();
   initReveal();
   initPricing();
   initCompare();
@@ -546,7 +706,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Mark the current page in the nav without hard-coding it per page.
   const here = location.pathname.replace(/index\.html$/, '');
-  $$('.nav-links a').forEach((a) => {
+  $$('.menubox a, .nav-login, .mb-pop a').forEach((a) => {
     const href = a.getAttribute('href') || '';
     if (href.startsWith('http') || href.startsWith('#')) return;
     const target = new URL(href, location.href).pathname.replace(/index\.html$/, '');

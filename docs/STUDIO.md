@@ -83,7 +83,10 @@ while the preview renders the same frame at 1080, from the same code.
 | `transitions.js` | Pure `(ctx, w, h, from, to, progress)` functions. No state, so scrubbing backwards looks like scrubbing forwards. |
 | `titles.js` | Text layout, wrapping and the per-word animations, straight onto canvas. |
 | `media.js` | Import, probing, thumbnails, filmstrips, waveform peaks, tempo detection, silence detection. Owns the decoder pool. |
-| `audio.js` | The Web Audio graph: element → per-clip gain → master, plus a tap for the exporter. |
+| `audio.js` | The Web Audio graph: element → per-clip filter chain → per-clip gain → master, plus a tap for the exporter. |
+| `audio-fx.js` | The 17 creative audio filters. One `buildAudioChain(ctx, fx)` serves both the live `AudioContext` and the export's `OfflineAudioContext`, so a filter cannot preview differently from how it renders. |
+| `audio-repair.js` | Noise reduction, mains-hum removal, click repair, level matching — offline, sample-by-sample. |
+| `audio-render.js` | The offline mix for export: the same gains, fades, ducking and filter chains, rendered faster than realtime. |
 | `playback.js` | The transport. Wall-clock, not a frame counter, so picture chases sound. |
 | `exporter.js` | Realtime capture when there's audio, frame-by-frame when there isn't. |
 | `history.js` | Snapshot undo with named entries. |
@@ -116,7 +119,7 @@ steps the local one never suggests.
 
 ## Skill levels
 
-One attribute on `<html>`, one CSS rule:
+Two halves. Visibility is one attribute on `<html>` and one CSS rule:
 
 ```css
 html[data-level="beginner"] [data-min="intermediate"],
@@ -127,6 +130,24 @@ html[data-level="intermediate"] [data-min="expert"] { display: none !important; 
 Tag a control `data-min="expert"` and it is gone below expert. Nothing is
 disabled or greyed out — those read as the software judging you, which is the
 feeling that makes people close an editor and not come back.
+
+The other half is **density**, and it is the half that decides whether someone
+who edits for a living takes the app seriously. Each level redefines the layout
+variables and, at the top, some of the surface colours:
+
+| Level | Shown as | Inspector | Timeline | Body text | Chrome |
+|---|---|---|---|---|---|
+| `beginner` | Beginner | hidden | 210px | 13.5px | as-is |
+| `intermediate` | Intermediate | 310px | 310px | 13.5px | as-is |
+| `expert` | **Professional** | 322px | 348px | 12.75px | neutral greys, tabular figures, uppercase panel heads |
+
+`expert` is the internal id and stays that way so existing saved preferences
+keep working; "Professional" is what it is called on screen, and that name comes
+from `DESCRIPTIONS` in `levels.js` rather than being written into any markup.
+
+The grey chrome at the top level is not decoration. Judging a grade next to
+saturated blue furniture is your own eye lying to you about what the image is
+doing, which is why every serious finishing application is grey.
 
 ## Storage
 

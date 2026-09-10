@@ -222,6 +222,9 @@ export function addClip(p, {
     transitionOut: null,
     keyframes: {},
     effects: [],
+    /* One creative audio filter per clip — underwater, telephone, cathedral.
+       Null means the clip is heard as recorded. See engine/audio-fx.js. */
+    audioFx: null,
     text,
     sticker,
     label: null,
@@ -478,6 +481,7 @@ function migrate(p) {
     c.color = { ...defaultColor(), ...(c.color || {}) };
     c.keyframes ||= {};
     c.effects ||= [];
+    c.audioFx ??= null;
     c.speed ??= 1;
     if (c.speedKeys && !Array.isArray(c.speedKeys)) c.speedKeys = null;
     c.volume ??= 1;

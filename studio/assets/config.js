@@ -42,9 +42,11 @@ export function setApiBase(url) {
 }
 
 /* ------------------------------------------------------------------ *
- * Editions. Three of them, and the top one is $39.99 by design: it sits
- * under the $40 line where a purchase still feels like a decision someone
- * makes alone, without asking anyone.
+ * Editions. Every one of them is a one-time purchase. There is no
+ * subscription, no renewal and nothing to cancel: you pay once, you own that
+ * edition, and future updates to it are included. The top single-person
+ * edition sits under the $40 line by design, where a purchase is still a
+ * decision someone makes alone without asking anyone.
  * ------------------------------------------------------------------ */
 export const EDITIONS = {
   free: {
@@ -52,7 +54,6 @@ export const EDITIONS = {
     name: 'Starter',
     tagline: 'The whole editor. Really.',
     once: 0,
-    monthly: 0,
     blurb: 'Every core editing tool, no watermark, no time limit, no account needed.',
   },
   creator: {
@@ -60,23 +61,20 @@ export const EDITIONS = {
     name: 'Creator',
     tagline: 'For people posting every week.',
     once: 19.99,
-    monthly: 2.99,
-    blurb: 'AI editing, auto-captions, the full filter library and 4K export.',
+    blurb: 'Unlocks the AI editor, auto-captions, the full filter library and 4K export.',
   },
   studio: {
     id: 'studio',
     name: 'Studio',
     tagline: 'Everything, forever, on every device.',
     once: 39.99,
-    monthly: 4.99,
-    blurb: 'Unlimited AI, scopes, unlimited LUTs, 10 devices, and every future update.',
+    blurb: 'Unlimited AI, scopes, ProRes, unlimited LUTs, 10 devices, and every future update.',
   },
   team: {
     id: 'team',
     name: 'Team',
     tagline: 'Three people, one project, one payment.',
     once: 69.99,
-    monthly: 8.99,
     seats: 3,
     /* The comparison shown next to the price is three individual Studio
        licences, because that is what a team of three would otherwise buy and
@@ -99,6 +97,7 @@ export const ENTITLEMENTS = {
   'transitions':     'free',
   'text':            'free',
   'audio-mix':       'free',
+  'audio-fx':        'free',
   'export-1080':     'free',
   'basic-filters':   'free',
   /* One-tap styles run entirely on the device and cost nothing to serve, so
@@ -111,6 +110,7 @@ export const ENTITLEMENTS = {
   /* creator */
   'ai-edit':         'creator',
   'ai-captions':     'creator',
+  'audio-fx-pro':    'creator',
   'all-filters':     'creator',
   'export-4k':       'creator',
   'speed-ramp':      'creator',
@@ -147,8 +147,16 @@ export const DEVICE_LIMIT = { free: 2, creator: 3, studio: 10, team: 9 };
  */
 export const SEATS = { free: 1, creator: 1, studio: 1, team: 3 };
 
-/** Monthly AI actions. Free gets a real taste, not a teaser. */
-export const AI_QUOTA = { free: 5, creator: 200, studio: Infinity, team: Infinity };
+/**
+ * AI actions included with each edition, counted per calendar month.
+ *
+ * Starter is zero on purpose. Every AI request costs real money to serve, and
+ * a free tier that spends it is a free tier that eventually gets switched off
+ * — which is worse for everyone than saying plainly, up front, that the AI
+ * editor is the thing you buy. Everything that runs on the device stays free:
+ * the timeline, the filters, the templates, the effects, the audio tools.
+ */
+export const AI_QUOTA = { free: 0, creator: 200, studio: Infinity, team: Infinity };
 
 /* ------------------------------------------------------------------ *
  * Taking the money.
@@ -168,12 +176,9 @@ export const PAY = {
   cashAppUrl: 'https://cash.app/$Ahmirp1961',
 
   checkout: {
-    creator: '',                  // e.g. 'https://buy.stripe.com/xxxx'
+    creator: '',                  // e.g. 'https://square.link/u/xxxxxxxx'
     studio: '',
     team: '',
-    creatorMonthly: '',
-    studioMonthly: '',
-    teamMonthly: '',
   },
 
   paypal: {
@@ -189,18 +194,17 @@ export const PAY = {
   supportEmail: '',
 };
 
-/** The link a buy button should open for an edition and billing period. */
-export function buyUrl(edition, period = 'once') {
-  const key = period === 'monthly' ? `${edition}Monthly` : edition;
-  return PAY.checkout[key] || PAY.paypal[edition] || PAY.cashAppUrl;
+/** The link a buy button should open for an edition. One-time payment. */
+export function buyUrl(edition) {
+  return PAY.checkout[edition] || PAY.paypal[edition] || PAY.cashAppUrl;
 }
 
-/** Formatted price, e.g. "$39.99" or "$4.99/mo". */
-export function priceOf(edition, period = 'once') {
+/** Formatted price, e.g. "$39.99". Always a one-time figure. */
+export function priceOf(edition) {
   const e = EDITIONS[edition];
   if (!e) return '';
   if (e.once === 0) return 'Free';
-  return period === 'monthly' ? `$${e.monthly.toFixed(2)}/mo` : `$${e.once.toFixed(2)}`;
+  return `$${e.once.toFixed(2)}`;
 }
 
 export const SITE = {

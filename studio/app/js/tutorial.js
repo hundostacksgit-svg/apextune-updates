@@ -53,7 +53,7 @@ const STEPS = [
   {
     target: '#level-switch',
     title: 'Three editors in one',
-    body: 'Beginner keeps nine tools on screen. Expert shows everything, including curves, scopes and '
+    body: 'Beginner keeps nine tools on screen. Professional shows everything at finishing density, including curves, scopes and '
       + 'keyframes. Switch whenever — it never changes your project, only what is visible.',
   },
   {

@@ -56,8 +56,8 @@ claims to have fixed everything has fixed nothing.
 | Complaint | About | What we do |
 |---|---|---|
 | "Features move behind Pro overnight" | CapCut | The free tier is written down on the pricing page and doesn't move. |
-| "$23/month forever for software I use twice a year" | Premiere | One-time $19.99 / $39.99. A monthly option exists if you prefer; nobody is pushed to it. |
-| "Cancelling costs a fee" | Adobe | Nothing to cancel. Monthly cancels in the app with no fee. |
+| "$23/month forever for software I use twice a year" | Premiere | One-time $19.99 / $39.99 / $69.99. There is no monthly option at all — we removed it. |
+| "Cancelling costs a fee" | Adobe | Nothing to cancel, because nothing renews. You bought it; you have it. |
 | "Constant upgrade popups mid-edit" | CapCut, Filmora | Paid features are labelled once, in grey, where they live. No popups, no countdowns, no interruptions. |
 | "$300 and Mac only" | Final Cut | One licence covers Mac, Windows, iPhone, Android and the browser. |
 | "The trial expired mid-project" | Everyone | There is no trial. The free tier is the product. |
@@ -103,6 +103,17 @@ Suggestions that came up again and again, and are in:
 - **Three-way colour wheels** — lift, gamma, gain — running as a GPU filter.
 - **Impact frames, speed lines and beat-pulsed chromatic split**, because the edits
   people are trying to copy are made of exactly those three things.
+- **17 creative audio filters** — underwater, telephone, old radio, megaphone,
+  through-a-wall, vinyl, small room, cathedral, stadium, slowed-and-reverb,
+  stereo widening, robot, 8-bit, chipmunk, deep voice, nightcore, alien. They
+  play live while you scrub and are rendered into the export by the same code,
+  so what you heard is what ships. Thirteen are free; the four that pitch-shift
+  without changing the clip's length are in Creator and up.
+- **One payment, never a subscription.** There is no monthly plan to cancel
+  because there is no monthly plan.
+- **Three skill levels that change the density, not just the button count** —
+  Professional is a finishing-suite layout with a neutral grey chrome, because
+  judging a grade next to saturated blue furniture is your own eye lying to you.
 
 ---
 
@@ -151,8 +162,10 @@ properly needs a convolution pass that isn't in yet.
 - **Green screen keying.** Background removal is planned for Studio but the
   chroma keyer isn't written.
 - **Multicam sync.** Same: listed, not built.
-- **Audio effects** beyond gain, fades, ducking and the repair chain. No EQ,
-  no per-clip compressor.
+- **A mixing EQ and a per-clip compressor.** There are 17 creative audio
+  filters (underwater, telephone, cathedral, robot, pitch shifting and so on)
+  and the full repair chain, but no parametric EQ band you can place yourself
+  and no compressor with a ratio and a threshold.
 - **HDR / 10-bit.** Everything is 8-bit sRGB.
 - **Timeline markers with notes and colours** — markers exist, notes don't.
 - **A proper curve editor** for keyframes. Easing presets only.

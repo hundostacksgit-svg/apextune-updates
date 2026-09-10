@@ -52,15 +52,15 @@ export function upgradePrompt(feature, what) {
     <h3>${esc(label)} is in ${esc(need.name)}</h3>
     <p>${esc(need.blurb)}</p>
     <div class="note info">
-      <b>$${need.once.toFixed(2)} once</b>, on up to ${need.id === 'studio' ? 10 : 3} devices, including every
-      future update — or $${need.monthly.toFixed(2)} a month if you'd rather. Everything you've made
-      stays yours either way.
+      <b>$${need.once.toFixed(2)}, paid once.</b> On up to ${need.id === 'studio' ? 10 : 3} devices,
+      including every future update. There is no subscription and nothing renews —
+      and everything you've already made stays yours either way.
     </div>
     <p class="tiny muted">Nothing on your timeline changes if you don't. This feature just stays greyed out.</p>
     <div class="btn-row" style="justify-content:flex-end">
       <button class="btn btn-ghost" data-x="close">Not now</button>
       <a class="btn" href="../pricing/" target="_blank" rel="noopener">Compare editions</a>
-      <a class="btn btn-primary" href="${esc(buyUrl(need.id, 'once'))}" target="_blank" rel="noopener">
+      <a class="btn btn-primary" href="${esc(buyUrl(need.id))}" target="_blank" rel="noopener">
         Get ${esc(need.name)} — $${need.once.toFixed(2)}</a>
     </div>`);
   document.querySelector('[data-x="close"]')?.addEventListener('click', closeModal);
@@ -69,9 +69,14 @@ export function upgradePrompt(feature, what) {
 /* ------------------------------------------------------------------ */
 /* AI quota                                                            */
 /* ------------------------------------------------------------------ */
-/* Counted per calendar month and stored locally. Free gets five real actions,
-   not a teaser, because a feature nobody is allowed to try is a feature nobody
-   buys. */
+/*
+ * Counted per calendar month and stored locally.
+ *
+ * Starter is zero: the AI editor is the thing you buy. Rather than dressing
+ * that up, the app says it in one sentence and points at the free features
+ * that do the same job on the device — the one-tap edit styles build a whole
+ * edit with no AI at all, and they are free forever.
+ */
 
 function quotaRecord() {
   const month = new Date().toISOString().slice(0, 7);
@@ -103,16 +108,33 @@ export function spendAi() {
 export function outOfAiPrompt() {
   const ed = edition();
   const next = ed === 'free' ? EDITIONS.creator : EDITIONS.studio;
+
+  // Two different situations, and blurring them is what makes upgrade screens
+  // feel dishonest: the free edition never had AI, whereas a paid one has run
+  // out for the month and gets it back on the 1st.
+  const body = ed === 'free'
+    ? `<h3>The AI editor is a paid feature</h3>
+       <p>Starter does not include AI actions. Every AI request costs real money to
+          run, so rather than a handful that quietly stop working, it starts at
+          ${esc(EDITIONS.creator.name)}.</p>
+       <div class="note">
+         <b>Everything that runs on this device stays free.</b> The one-tap
+         <b>edit styles</b> build a complete edit — cuts on the beat, looks, transitions,
+         captions — with no AI involved at all. Try those first; they are on the
+         Styles panel and they cost nothing.
+       </div>`
+    : `<h3>You've used this month's AI actions</h3>
+       <p>The ${esc(editionName())} edition includes ${aiLimit()} a month, and it resets on
+          the 1st. Everything else in the editor carries on working as normal.</p>`;
+
   modal(`
-    <h3>You've used this month's AI actions</h3>
-    <p>The ${esc(editionName())} edition includes ${aiLimit()} a month, and it resets on the 1st.
-       Everything else in the editor carries on working as normal.</p>
+    ${body}
     <div class="note info"><b>${esc(next.name)}</b> — ${esc(next.blurb)}
-      <br>$${next.once.toFixed(2)} once, or $${next.monthly.toFixed(2)} a month.</div>
+      <br>$${next.once.toFixed(2)}, paid once. No subscription.</div>
     <div class="btn-row" style="justify-content:flex-end">
       <button class="btn btn-ghost" data-x="close">OK</button>
-      <a class="btn btn-primary" href="${esc(buyUrl(next.id, 'once'))}" target="_blank" rel="noopener">
-        Get ${esc(next.name)}</a>
+      <a class="btn btn-primary" href="${esc(buyUrl(next.id))}" target="_blank" rel="noopener">
+        Get ${esc(next.name)} — $${next.once.toFixed(2)}</a>
     </div>`);
   document.querySelector('[data-x="close"]')?.addEventListener('click', closeModal);
 }

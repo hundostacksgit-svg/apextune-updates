@@ -14,6 +14,7 @@
 
 import { activeAt, mediaById, sourceTime, speedAt } from './project.js';
 import { elementFor } from './media.js';
+import { buildAudioChain, fxSignature } from './audio-fx.js';
 
 export class AudioEngine {
   constructor() {
@@ -72,9 +73,51 @@ export class AudioEngine {
     source.connect(gain).connect(this.master);
     node.muted = false;
     node.dataset.wired = '1';
-    const rec = { source, gain };
+    const rec = { source, gain, fxSig: '', chain: null };
     this.wired.set(node, rec);
     return rec;
+  }
+
+  /**
+   * Put the clip's creative audio filter between its source and its gain.
+   *
+   * The graph is rebuilt only when the settings actually change — signature
+   * compared, not deep-equalled — because tearing down a convolver on every
+   * animation frame clicks audibly, and never tearing it down would ignore
+   * the slider someone is dragging. Dragging a slider therefore costs one
+   * rebuild per distinct value, which is the cheapest correct answer.
+   */
+  _applyFx(rec, clip) {
+    const sig = fxSignature(clip.audioFx);
+    if (sig === rec.fxSig) return;
+
+    try { rec.source.disconnect(); } catch { /* not connected yet */ }
+    if (rec.chain) {
+      try { rec.chain.stop(); } catch { /* nothing running */ }
+      try { rec.chain.output.disconnect(); } catch { /* already gone */ }
+      rec.chain = null;
+    }
+
+    let chain = null;
+    if (sig) {
+      try {
+        chain = buildAudioChain(this.ctx, clip.audioFx);
+      } catch {
+        // A filter that cannot be built must not silence the clip: fall
+        // through to the dry path and let the person hear their audio.
+        chain = null;
+      }
+    }
+
+    if (chain) {
+      rec.source.connect(chain.input);
+      chain.output.connect(rec.gain);
+      chain.start(this.ctx.currentTime);
+      rec.chain = chain;
+    } else {
+      rec.source.connect(rec.gain);
+    }
+    rec.fxSig = sig;
   }
 
   /**
@@ -109,6 +152,7 @@ export class AudioEngine {
       const node = elementFor(media, clip.id);
       if (!node || node.tagName === 'IMG') continue;
       const rec = this._wire(node);
+      if (rec) this._applyFx(rec, clip);
       wanted.add(node);
 
       /* ---- level ---- */

@@ -66,17 +66,56 @@ export function openPanel(name) {
   import('../main.js').then(({ S }) => { S.panel = name; });
 }
 
-/** Re-render the open panel and the inspector after the project changes. */
+/**
+ * Re-render the open panel and the inspector after the project changes.
+ *
+ * Both are rebuilt from scratch, which is simple and fast enough — but it
+ * throws away whatever the person was in the middle of using. Scroll position,
+ * keyboard focus and the caret inside a text field are all restored around the
+ * rebuild, because without that a single press of the left-arrow key on a
+ * slider commits, re-renders, destroys the slider and drops focus: you nudge a
+ * value once and the control is gone from under your finger.
+ */
 export function refreshPanel() {
+  const panelHost = $('#panel');
   const entry = PANELS[currentName];
   if (entry) {
-    const host = $('#panel');
-    const scrolled = host.scrollTop;
-    host.innerHTML = '';
-    entry.mod.mount(host);
-    host.scrollTop = scrolled;          // keep the reading position across edits
+    const scrolled = panelHost.scrollTop;
+    const keep = captureFocus(panelHost);
+    panelHost.innerHTML = '';
+    entry.mod.mount(panelHost);
+    panelHost.scrollTop = scrolled;          // keep the reading position across edits
+    restoreFocus(keep);
   }
-  inspector.mount($('#inspector'));
+
+  const inspectorHost = $('#inspector');
+  const keep = captureFocus(inspectorHost);
+  inspector.mount(inspectorHost);
+  restoreFocus(keep);
+}
+
+/** What the person was using, if it was inside `host`. */
+function captureFocus(host) {
+  const el = document.activeElement;
+  if (!host || !el || !host.contains(el) || !el.id) return null;
+  const rec = { id: el.id };
+  // Text fields also lose the caret, which is worse than losing focus: the
+  // cursor jumps to the end mid-word.
+  if (typeof el.selectionStart === 'number') {
+    rec.start = el.selectionStart;
+    rec.end = el.selectionEnd;
+  }
+  return rec;
+}
+
+function restoreFocus(rec) {
+  if (!rec) return;
+  const el = document.getElementById(rec.id);
+  if (!el) return;
+  el.focus({ preventScroll: true });
+  if (rec.start != null && typeof el.setSelectionRange === 'function') {
+    try { el.setSelectionRange(rec.start, rec.end); } catch { /* not a text field any more */ }
+  }
 }
 
 export function currentPanel() { return currentName; }
