@@ -17,6 +17,10 @@ $30,000 a year, by route:
 | Repair / tune-up at **$110** | **273 jobs** | 5 |
 | Laptop flips, **$180** profit each | **167 flips** | 3 |
 | Business tool at **$99/mo** | **25 businesses** | 1 every two weeks |
+| Optimization session at **$75** | **400 sessions** | 8 |
+| Paid community at **$15/mo** | **167 members** | 3 net new |
+| Home WiFi visit at **$130** | **231 visits** | 4 |
+| Website audit + fix at **$900** | **33 jobs** | 1 every two weeks |
 
 Now what 1,579 app sales costs in attention. If 3% of the people who see a video
 tap your bio link and 4% of those buy — both generous — that is **1.3 million
@@ -153,12 +157,159 @@ produces.
 
 ---
 
+## 3b. Optimization, specifically — and the opening nobody takes
+
+Optimization is a better market than general PC work, for one reason that has
+nothing to do with computers: **the people who want it are already paying for
+it.** There are gigs on Fiverr, Discord servers, and "optimization packs" sold on
+Twitter, right now, to competitive players who will spend money for a few frames.
+
+There is also a problem with all of it, and the problem is your opening.
+
+**Most of what is sold as PC optimization does nothing.** Registry cleaners,
+"gaming mode" tweak scripts, disabling twelve services that were using 0.1% CPU,
+$40 .bat files. The buyer cannot tell, because nobody measures. They pay, the
+placebo does its work, and they tell their friends it helped.
+
+So the entire category is built on claims that are never tested. That is an
+enormous opening for one thing:
+
+> **Measure it. Show the before and the after. Say when a tweak did nothing.**
+
+That single decision is a moat, because your competitors *cannot copy it* — most
+of what they sell would not survive the measurement. It is the same DNA as the
+repair guidance in OmniDx: everybody can print a code number, and the value is in
+being the one who says "don't buy the converter."
+
+### A1. The optimization service
+
+**400 sessions a year at $75 is $30,000.** Eight a week, remote, over Discord.
+
+You already know how to do this. What makes yours different is the report: a
+benchmark before, a benchmark after, and the actual numbers — average FPS, and
+more importantly **1% lows**, which is what stutter really is. If a change did
+nothing you say so and you don't charge for it.
+
+The video is the strongest hook on this whole list: **"I optimized this PC and
+here's the proof."** Not a claim. A number, next to another number.
+
+### A2. The optimizer that proves itself
+
+The product version of A1. Benchmark, apply changes one at a time, re-benchmark,
+show the delta per change.
+
+- **Intel's PresentMon is open source** and gives you real frame-time data — 1%
+  lows and latency — which is the hard part solved for free.
+- Free tier measures and tells you what is wrong. Paid tier applies the fixes and
+  proves the gain. People are far more willing to pay *after* seeing their own
+  number.
+- **The honest constraint:** on many machines the answer will be "your PC is
+  fine, the game is badly optimized." A tool that says that sometimes is worth
+  more than one that always finds a problem, and it will cost you some sales.
+  Take the trade.
+
+### A3. Laptop gamers, specifically
+
+Gaming laptops are throttled to death out of the box — power limits, thermal
+ceilings, a stock paste job. Undervolting and a repaste routinely find 15–30%.
+
+Narrower audience than desktops, far worse baseline, so **the wins are bigger and
+the videos are more dramatic.** A before/after on a throttling laptop is a better
+video than a 4% desktop gain, every time.
+
+### A4. Input latency for competitive players
+
+The most obsessive audience with the most money, and almost nothing serving them
+honestly. Polling rate, monitor overdrive, refresh mismatches, frame cap vs
+uncapped, network jitter. Small market, high willingness to pay, and the people
+in it talk to each other constantly — which is free distribution.
+
+---
+
+## 3c. Out of the box
+
+Not computers. Same formula: knowledge people don't have, about something they
+can already see is wrong, that you can measure and film.
+
+### B1. Home WiFi — the biggest one on this page
+
+**Everybody has WiFi problems and nobody knows why.** The bedroom is slow. Video
+calls drop. They blame the ISP and buy an extender that makes it worse.
+
+Almost all of it comes down to a handful of things: the router sitting in a
+cupboard by the front door, everyone on a congested 2.4GHz channel, an extender
+halving the bandwidth, a 5GHz band that doesn't reach, or a router from 2014.
+
+- **A browser can measure a lot of it** — throughput, latency, jitter, and how
+  they change room to room. That is a free tool that produces a real verdict.
+- **And it is a service.** **231 visits at $130 is $30,000** — four a week. An
+  hour of moving a router and setting channels, and people are delighted, because
+  the problem was invisible and now it's gone.
+- **Competition is nil.** The space is ISP marketing and forum guesswork. There
+  is no trusted tool.
+- Filmable: "your WiFi isn't slow, your router is in the worst possible place."
+
+### B2. A paid community, where you are the product
+
+**167 members at $15/month is $30,000.** No product to build, no inventory.
+
+A Discord where people bring their build, their stutter, their upgrade question,
+and get a real answer. You are already going to answer these questions in your
+comments for free. This is the same work, priced.
+
+- **Recurring**, which is the thing every route above lacks.
+- It compounds hard: as members start answering each other, your time per member
+  drops while the value goes up.
+- **The honest catch:** it dies if you go quiet for two weeks. It is a commitment
+  more than a product, and churn is relentless — you replace maybe 10% a month
+  before you grow at all.
+- Best started *after* an audience exists. It is a way to monetise attention, not
+  to create it.
+
+### B3. Creators and streamers
+
+A streamer with 200 viewers is running a business, and their encoder settings are
+wrong. Dropped frames, bad audio, a webcam at the wrong bitrate — all costing
+them money directly.
+
+**200 setups at $150 is $30,000.** They pay readily because the ROI is obvious,
+they are easy to find, and **they tell each other**, which is the cheapest
+customer acquisition that exists.
+
+### B4. Local businesses with broken websites
+
+A scanner that checks a local business's site — load speed, mobile layout, broken
+links, missing hours, no click-to-call — and produces a one-page report.
+
+The report is free. Fixing it is **$900, and 33 of those is $30,000** — one every
+two weeks.
+
+- Highest dollar-per-customer here by far.
+- **Hardest, because it is sales.** Cold outreach, being ignored, following up.
+  Nothing technical about the difficult part.
+- Mentioned because the ceiling is real, not because it is where to start.
+
+### What to skip
+
+**Print-on-demand, dropshipping, faceless channels, reselling other people's
+"optimization packs".** All zero-moat, all competing against people with ad
+budgets, none of them leave you owning anything after a year of work.
+
+**Anything where you'd have to claim a result you can't measure.** Not only
+because it's dishonest — because measurement is the one advantage you have over
+everyone already in these markets.
+
+---
+
 ## 4. What I would actually do
 
 Not one idea. A sequence where each step pays for the next.
 
-**Now — money this month.** Start C. Post on Marketplace, Craigslist, local
-Facebook groups: PC repair and tune-ups, $80–150. Film every job. You are not
+**Now — money this month.** Start A1, the optimization service, over Discord at
+$45 while you have no reviews and $75 once you do. Remote, so your customer is
+not limited to your city. Benchmark before, benchmark after, show the numbers,
+refund anyone whose numbers didn't move. Take local repair and tune-up jobs
+alongside it if the sessions are slow to start. Film everything. You are not
 "starting a content channel", you are recording work you are doing anyway.
 
 **Alongside it — build the audience on the work.** The repair videos *are* the
@@ -169,9 +320,14 @@ will not.
 **Add D when you have $200 spare.** Flipping stacks on top of repair with no new
 skills, and the videos perform better than the repair ones.
 
-**Build A when you have watched thirty machines.** By then you will know exactly
-which problems repeat, which is the difference between a product people need and
-a product you assumed they needed. Charge $29, not $19.
+**Build A2 when you have optimized thirty machines.** By then you will know
+which changes actually move the number and which are folklore — and that
+knowledge is the product. A tool built on thirty measured sessions is something
+nobody can copy from the outside. Charge $29, not $19.
+
+**Add B1 or B2 when there's an audience.** WiFi if you like being paid per job;
+the community if you want the first income you have that arrives whether or not
+you worked that week.
 
 **Keep posting OmniDx.** It is built and it costs nothing to keep promoting. It
 may work. But it should not be the only thing carrying you, because it can only
