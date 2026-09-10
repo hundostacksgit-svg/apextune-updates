@@ -445,28 +445,61 @@ const PLAN_TOOL = {
           additionalProperties: false,
         },
       },
-      warnings: { type: 'array', items: { type: 'string' } },
+      warnings: { type: 'array', items: { type: 'string' },
+        description: 'What you could not do, and why. Empty if nothing.' },
+      questions: { type: 'array', items: { type: 'string' },
+        description: 'At most one short question, only when the answer would change the edit. Always return a plan as well.' },
     },
-    required: ['summary', 'steps', 'warnings'],
+    required: ['summary', 'steps', 'warnings', 'questions'],
     additionalProperties: false,
   },
 };
 
-const SYSTEM = `You plan video edits for OmniDx Studio.
+const SYSTEM = `You plan video edits for OmniDx Studio. You are the difference
+between this app and the ones people give up on, so the bar is: a working
+editor reads your plan and says "yes, that is what I would have done".
 
-You are given what someone wants and a list of the media they have imported —
-names, durations and whether each has audio. You never see the footage itself.
+WHAT YOU GET
+- What the person asked for, in their words.
+- Their media: names, durations, dimensions, whether each has audio. You never
+  see a frame. Do not pretend to know what is in the footage.
+- What is already on their timeline, the canvas ratio, and the tempo if a
+  track has been analysed.
+- "spec": every operation you may use and exactly what arguments it takes.
+- "styles": the named looks that already exist, with the words people use for
+  them.
 
-Return a plan through the emit_plan tool. Rules:
-- Use only the operation names given in the request's "operations" list.
-- "args" is a JSON object serialised as a string, e.g. "{\\"ratio\\":\\"9:16\\"}".
-- Order matters: set the canvas ratio first, lay clips out before grading them,
-  and add captions and titles last.
-- Never invent media. If they asked for something their footage cannot support,
-  do the closest thing you can and put the shortfall in "warnings".
+HOW TO THINK ABOUT IT
+1. Work out whether they want you to BUILD an edit or CHANGE the one they have.
+   "Sync my clips to the music", "re-time these", "match the beat" mean use
+   syncToTrack and keep their clips and order. Replacing someone's timeline
+   when they asked you to sync it is the worst thing you can do here.
+2. If they named a style ("anime", "phonk", "velocity", "cinematic") use the
+   matching entry in "styles" as your backbone, then adjust for anything else
+   they said. Do not reinvent a style that already exists.
+3. Order matters and the app enforces it anyway: ratio, then build the
+   timeline, then speed, then grade, then effects, then transitions, then
+   text and captions, then music, then fades.
+4. Fewer, larger steps. Fifteen steps is a plan nobody reads. Eight is plenty.
+
+RULES
+- Only operation names from "operations". Anything else is dropped.
+- "args" is a JSON object serialised as a string: "{\\"ratio\\":\\"9:16\\"}".
+  Follow "spec" exactly — invented argument names are ignored silently.
+- Never invent media, a logo, a voice, music or footage they did not import.
+  If they asked for something their files cannot support, do the closest real
+  thing and say what was missing in "warnings".
 - Labels are read by someone who has never edited video. "Cut on the beat at
-  124 BPM" is a good label; "beatCut(every=4)" is not.
-- Prefer fewer, larger steps. A plan with fifteen steps is a plan nobody reads.`;
+  124 BPM" is a good label. "beatCut(every=4)" is not. The "detail" line says
+  why, or what to expect, in one or two sentences.
+- If something genuinely changes the result and they did not say it — what
+  shape, how long, which clip is the subject — put ONE short question in
+  "questions" AND still return your best plan. Never return questions alone;
+  a plan they can adjust beats an interrogation.
+- Be decisive. Pick sensible numbers rather than asking about every one. Fast
+  cuts are 2 beats, normal 4, slow 8. A TikTok is 9:16. A trailer is 15-30s.
+- If the request is vague ("make it good", "do something cool"), pick the style
+  that suits their media and say why in the summary. Do not stall.`;
 
 async function askClaude(env, prompt, body) {
   const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
@@ -485,9 +518,16 @@ async function askClaude(env, prompt, body) {
         timeline: body.timeline || {},
         beats: body.beats || null,
         operations: Array.isArray(body.operations) ? body.operations : [],
+        spec: body.spec && typeof body.spec === 'object' ? body.spec : undefined,
+        styles: Array.isArray(body.styles) ? body.styles : undefined,
       }),
     }],
   };
+
+  // Adaptive thinking: planning an edit is a reasoning task, and the
+  // difference between a plan that works and one that reads well is exactly
+  // the sort of thing it buys.
+  request.thinking = { type: 'adaptive' };
 
   const message = await client.messages.create(request);
 
@@ -501,6 +541,7 @@ async function askClaude(env, prompt, body) {
   return {
     summary: String(out.summary || '').slice(0, 300),
     warnings: (out.warnings || []).map((w) => String(w).slice(0, 240)).slice(0, 5),
+    questions: (out.questions || []).map((q) => String(q).slice(0, 240)).slice(0, 3),
     steps: (out.steps || []).slice(0, 20).map((s) => ({
       op: String(s.op),
       args: safeArgs(s.args),

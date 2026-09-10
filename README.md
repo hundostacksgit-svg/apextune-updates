@@ -29,11 +29,26 @@ ordinary clips you can drag, trim or undo.
 - **Autosave every five seconds** with real crash recovery.
 - **Runs everywhere** — macOS, Windows, Linux, iOS, Android, or a browser tab.
 
+**One-tap styles.** Eleven finished edits — anime AMV, velocity, phonk, aesthetic,
+cinematic, gaming, product, meme, sports, listicle, talking-head cleanup — each
+showing its plan before it runs. Free on every tier.
+
+**Motion tracking.** Draw a box round a face or a number plate, and pin a blur, a
+sticker or a title to it. Runs on the device with no model to download.
+
+**Effects that make the edits people copy**: real motion blur sampled from actual
+movement, chromatic split that pulses on the beat, inverted impact frames, drawn
+speed lines, zoom blur, bloom, halftone, cel shading, VHS wobble, CRT.
+
+**Three-way colour wheels** — lift, gamma, gain — as a GPU filter, so grading stays
+real-time on a laptop.
+
 Read next:
 [what it does and why](docs/STUDIO-COMPLAINTS.md) ·
 [how it's built](docs/STUDIO.md) ·
 [getting paid](docs/STUDIO-PAYMENTS.md) ·
-[shipping to the stores](docs/STUDIO-BUILD.md)
+[shipping to the stores](docs/STUDIO-BUILD.md) ·
+[pushing updates](docs/STUDIO-UPDATES.md)
 
 ---
 

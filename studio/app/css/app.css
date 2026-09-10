@@ -470,3 +470,73 @@ input[type=checkbox]{accent-color:var(--blue)}
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.001ms!important;transition-duration:.001ms!important}
 }
+
+/* ============ motion tracking overlay ============ */
+.track-layer{position:absolute;inset:0;z-index:6;cursor:crosshair;
+  background:rgba(2,4,10,.35)}
+.track-box{position:absolute;border:2px solid var(--blue-2);border-radius:3px;
+  box-shadow:0 0 0 9999px rgba(2,4,10,.42),0 0 18px var(--blue-2);
+  left:35%;top:35%;width:30%;height:30%}
+.track-box .th{position:absolute;width:11px;height:11px;background:var(--blue-2);
+  border-radius:2px}
+.track-box .th.tl{left:-6px;top:-6px}.track-box .th.tr{right:-6px;top:-6px}
+.track-box .th.bl{left:-6px;bottom:-6px}.track-box .th.br{right:-6px;bottom:-6px}
+.track-hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);
+  padding:8px 15px;border-radius:99px;background:var(--surface);border:1px solid var(--line);
+  font-size:12px;font-weight:600;white-space:nowrap;pointer-events:none;
+  box-shadow:0 8px 26px rgba(0,0,0,.45)}
+.track-layer.working{cursor:progress}
+.track-layer.working .track-box{border-color:var(--warn);box-shadow:0 0 0 9999px rgba(2,4,10,.42),0 0 18px var(--warn)}
+
+/* ============ effect stack ============ */
+.fx-item{border:1px solid var(--line);border-radius:var(--r-s);background:var(--surface-2);
+  margin-bottom:7px;overflow:hidden}
+.fx-head{display:flex;align-items:center;gap:8px;padding:8px 10px;cursor:pointer}
+.fx-head .fx-ico{font-size:14px;width:18px;text-align:center}
+.fx-head b{flex:1;font-size:12.5px;font-weight:640;min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.fx-head button{width:22px;height:22px;border-radius:5px;border:0;background:transparent;
+  color:var(--text-3);font-size:12px;display:grid;place-items:center}
+.fx-head button:hover{background:var(--surface-3);color:var(--text)}
+.fx-head input[type=checkbox]{margin:0}
+.fx-body{padding:0 10px 10px;border-top:1px solid var(--line-soft)}
+.fx-item.off{opacity:.5}
+
+/* ============ colour wheels ============ */
+.wheels{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.wheel{text-align:center}
+.wheel canvas{width:100%;max-width:90px;aspect-ratio:1;border-radius:50%;cursor:crosshair;
+  border:1px solid var(--line);touch-action:none;display:block;margin:0 auto}
+.wheel .wl{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--text-3);margin-top:6px}
+.wheel .wv{font-family:var(--mono);font-size:10px;color:var(--blue-2)}
+
+/* ============ sticker / template grids ============ */
+.egrid{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+.egrid button{aspect-ratio:1;border:1px solid var(--line);border-radius:8px;
+  background:var(--surface-2);font-size:19px;display:grid;place-items:center;transition:.14s}
+.egrid button:hover{border-color:var(--blue);transform:translateY(-2px)}
+.tpl{display:flex;gap:11px;align-items:flex-start;padding:12px;border:1px solid var(--line);
+  border-radius:var(--r-m);background:var(--surface-2);margin-bottom:8px;text-align:left;
+  width:100%;transition:.15s}
+.tpl:hover{border-color:var(--blue);transform:translateY(-2px)}
+.tpl .te{font-size:22px;flex:none;line-height:1.1}
+.tpl .tt{flex:1;min-width:0}
+.tpl .tt b{display:block;font-size:13px;font-weight:700;margin-bottom:3px}
+.tpl .tt span{font-size:11.5px;color:var(--text-3);line-height:1.45;display:block}
+.tpl .tt em{font-style:normal;color:var(--text-2);font-size:11px;display:block;margin-top:5px}
+
+/* ============ update bar ============ */
+.update-bar{position:fixed;left:50%;bottom:calc(var(--tl-h) + 16px);transform:translateX(-50%);
+  z-index:280;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;
+  background:var(--surface);border:1px solid var(--blue);
+  box-shadow:0 0 0 1px var(--blue),0 18px 50px rgba(0,0,0,.5);
+  animation:tin .3s cubic-bezier(.2,.8,.3,1);max-width:min(560px,92vw)}
+.update-bar .ub-dot{width:9px;height:9px;border-radius:50%;background:var(--blue-2);flex:none;
+  box-shadow:0 0 0 0 var(--glow);animation:pulse 2.1s ease-out infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 9px transparent}100%{box-shadow:0 0 0 0 transparent}}
+.update-bar .ub-text{flex:1;min-width:0;font-size:12.5px;line-height:1.35}
+.update-bar .ub-text b{display:block;font-weight:650}
+.update-bar .ub-text span{color:var(--text-3);font-size:11.5px}
+@media(max-width:700px){.update-bar #ub-notes{display:none}}
+.clip.sticker{background:linear-gradient(120deg,#c2571a,#ffab4d)}

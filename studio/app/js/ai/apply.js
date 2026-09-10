@@ -10,10 +10,12 @@
 
 import {
   addClip, addTrack, clipsOn, clipById, mediaById, duration,
-  removeClips, closeGaps, setKeyframe, RATIOS,
+  removeClips, closeGaps, setKeyframe, sourceSpan, RATIOS,
 } from '../engine/project.js';
 import { decode, detectSilence, detectBeats, energyCurve } from '../engine/media.js';
 import { defaultText, TITLE_PRESETS } from '../engine/titles.js';
+import { defaultSticker } from '../engine/stickers.js';
+import { makeEffect, EFFECTS } from '../engine/effects.js';
 
 /**
  * Run a plan against a project. Mutates `project` and returns a report.
@@ -53,11 +55,17 @@ function visualMedia(p) {
   return p.media.filter((m) => (m.kind === 'video' || m.kind === 'image') && !m.missing);
 }
 
-/** Video clips on the timeline, in play order. */
+/**
+ * The footage, in play order.
+ *
+ * Titles and stickers live on video tracks but they are not shots: laying them
+ * out, grading them or re-timing them onto the beat is always wrong. Every
+ * operation that means "the actual clips" goes through here.
+ */
 function storyClips(p) {
   return videoTracks(p)
     .flatMap((t) => clipsOn(p, t.id))
-    .filter((c) => c.kind !== 'title')
+    .filter((c) => c.kind !== 'title' && c.kind !== 'sticker')
     .sort((a, b) => a.start - b.start);
 }
 
@@ -382,6 +390,271 @@ const OPS = {
     last.fadeOut = Math.min(dur, last.dur / 2);
     return 'Faded in and out.';
   },
+
+  /* ---------------- effects ---------------- */
+
+  /**
+   * Put an effect on some or all clips.
+   *
+   * `scope` is 'all', 'accent' (every Nth shot, so it stays an accent) or
+   * 'first'. Adding the same effect twice replaces it rather than stacking two
+   * copies, because two chromatic splits is a bug every time.
+   */
+  addEffect(p, { effect, params = {}, scope = 'all', every = 3 }) {
+    if (!EFFECTS[effect]) throw new Error(`There is no "${effect}" effect.`);
+    const clips = storyClips(p);
+    if (!clips.length) throw new Error('There is nothing on the timeline yet.');
+
+    const targets = scope === 'first' ? clips.slice(0, 1)
+      : scope === 'accent' ? clips.filter((_, i) => i % Math.max(2, every) === 0)
+      : clips;
+
+    for (const clip of targets) {
+      clip.effects ||= [];
+      const made = makeEffect(effect);
+      Object.assign(made.params, params);
+      const existing = clip.effects.findIndex((f) => f.id === effect);
+      if (existing >= 0) clip.effects[existing] = made;
+      else clip.effects.push(made);
+    }
+    return `${EFFECTS[effect].name} on ${targets.length} clip${targets.length === 1 ? '' : 's'}.`;
+  },
+
+  /**
+   * Punch in on every beat.
+   *
+   * Written as keyframes on each clip rather than a special mode, so you can
+   * open any shot and soften, move or delete its punch like anything else.
+   */
+  beatZoom(p, { amount = 0.16, hold = 0.14 }, ctx) {
+    const clips = storyClips(p);
+    if (!clips.length) throw new Error('There is nothing on the timeline yet.');
+    const beats = ctx.beats?.beats;
+
+    let count = 0;
+    for (const clip of clips) {
+      const base = clip.transform.scale || 1;
+      const hits = beats
+        ? beats.filter((b) => b >= clip.start - 0.02 && b < clip.start + clip.dur).map((b) => b - clip.start)
+        : [0];
+      if (!hits.length) hits.push(0);
+
+      const keys = [];
+      for (const at of hits) {
+        keys.push({ t: Math.max(0, at - 0.02), v: base, ease: 'out' });
+        keys.push({ t: Math.max(0, at), v: base * (1 + amount), ease: 'out' });
+        keys.push({ t: Math.min(clip.dur, at + hold), v: base, ease: 'ease' });
+      }
+      clip.keyframes['transform.scale'] = keys.sort((a, b) => a.t - b.t);
+      count++;
+    }
+    return `${count} clips punch in on the beat.`;
+  },
+
+  /**
+   * Impact frames — the one or two inverted frames an anime cut slams on.
+   * Placed at the start of every Nth shot, where the cut already is.
+   */
+  impactFrames(p, { every = 4, style = 'invert', length = 0.07 }) {
+    const clips = storyClips(p);
+    if (!clips.length) throw new Error('There is nothing on the timeline yet.');
+    let count = 0;
+    clips.forEach((clip, i) => {
+      if (i === 0 || i % Math.max(1, every) !== 0) return;
+      clip.effects ||= [];
+      const fx = makeEffect('invertPulse');
+      fx.params.at = 0;
+      fx.params.length = length;
+      fx.params.mode = style;
+      clip.effects = clip.effects.filter((f) => f.id !== 'invertPulse');
+      clip.effects.push(fx);
+      count++;
+    });
+    return count ? `${count} impact frames.` : 'Not enough shots for impact frames.';
+  },
+
+  /**
+   * Speed ramps.
+   *
+   * Each shot slows at its head and accelerates out of its tail, which is what
+   * makes cuts feel like they are being thrown at you. This is a real time
+   * curve, so audio follows it and the source is consumed at the right rate.
+   */
+  speedRamp(p, { peak = 2.4, floor = 0.6, curve = 'ease' }) {
+    const clips = storyClips(p);
+    if (!clips.length) throw new Error('There is nothing on the timeline yet.');
+    for (const clip of clips) {
+      const media = mediaById(p, clip.mediaId);
+      clip.speedKeys = [
+        { t: 0, v: floor },
+        { t: clip.dur * 0.45, v: (floor + peak) / 2 },
+        { t: clip.dur, v: peak },
+      ];
+      // A ramp eats more source than a flat clip. If the file cannot supply it,
+      // shorten the clip rather than freezing on its last frame.
+      if (media?.duration) {
+        const need = sourceSpan(clip);
+        const have = media.duration - clip.in;
+        if (need > have) clip.dur = Math.max(0.15, clip.dur * (have / need) * 0.98);
+      }
+    }
+    void curve;
+    for (const track of videoTracks(p)) closeGaps(p, track.id);
+    return `${clips.length} shots ramp from ${floor}× to ${peak}×.`;
+  },
+
+  /**
+   * Re-time what is already on the timeline onto the beat.
+   *
+   * This is the one people ask for by name: keep my clips, keep my order, keep
+   * my content — just make the cuts land on the music. Nothing is replaced and
+   * nothing is reordered; each shot is trimmed or extended so its out point
+   * sits exactly on a beat.
+   */
+  async syncToTrack(p, { every = 4, keepOrder = true, trim = true }, ctx) {
+    const clips = storyClips(p);
+    if (!clips.length) throw new Error('Put some clips on the timeline first, then ask me to sync them.');
+
+    const music = p.media.find((m) => m.kind === 'audio');
+    let grid = ctx.beats;
+    if (!grid?.beats?.length) {
+      if (!music) throw new Error('There is no music to sync to. Import a track and ask again.');
+      const buffer = await decode(music);
+      if (!buffer) throw new Error('That music file could not be decoded for beat detection.');
+      grid = detectBeats(buffer);
+    }
+    if (!grid?.beats?.length) throw new Error('No steady beat was found in that track.');
+
+    const cuts = grid.beats.filter((_, i) => i % Math.max(1, every) === 0);
+    if (cuts.length < 2) throw new Error('The track is too short for that many beats between cuts.');
+
+    let moved = 0;
+    let cutIndex = 0;
+    let cursor = cuts[0];
+    for (const clip of clips) {
+      // Find the first cut point far enough ahead to hold this shot; if the
+      // shot is longer than one gap it gets several, which keeps a long clip
+      // long instead of chopping it to the grid.
+      const wanted = clip.dur;
+      let next = cutIndex + 1;
+      while (next < cuts.length - 1 && cuts[next] - cursor < wanted * 0.6) next++;
+      const end = cuts[next] ?? (cursor + wanted);
+      const newDur = Math.max(0.12, end - cursor);
+
+      if (trim) {
+        const media = mediaById(p, clip.mediaId);
+        const available = media?.duration ? media.duration - clip.in : Infinity;
+        clip.dur = Math.min(newDur, available / (clip.speed || 1));
+      } else {
+        clip.dur = newDur;
+      }
+      clip.start = cursor;
+      cursor += clip.dur;
+      cutIndex = next;
+      moved++;
+      if (cutIndex >= cuts.length - 1) break;
+    }
+
+    void keepOrder;
+    return `${moved} cuts moved onto the beat at ${grid.bpm} BPM. Your clips and their order are untouched.`;
+  },
+
+  /**
+   * Alternate the framing across jump cuts.
+   *
+   * After silence removal a talking head is one static shot chopped up, which
+   * reads as broken. Alternating a small push between takes is what every
+   * YouTube editor does by hand.
+   */
+  autoZoomSpeech(p, { amount = 0.09, alternate = true }) {
+    const clips = storyClips(p);
+    if (clips.length < 2) throw new Error('Not enough cuts to alternate the framing.');
+    clips.forEach((clip, i) => {
+      const inward = alternate ? i % 2 === 1 : true;
+      clip.transform.scale = (clip.transform.scale || 1) * (inward ? 1 + amount : 1);
+      // A pushed-in shot re-framed slightly off centre reads as a second camera
+      // rather than the same one cropped.
+      if (inward) clip.transform.x = (i % 4 === 1 ? 0.02 : -0.02);
+    });
+    return `${clips.length} shots alternate their framing.`;
+  },
+
+  /** Number every shot, for a countdown or a list. */
+  numberClips(p, { countdown = true, preset = 'counter' }) {
+    const clips = storyClips(p);
+    if (!clips.length) throw new Error('There is nothing on the timeline yet.');
+    let track = videoTracks(p).find((t) => t.name === 'Titles');
+    if (!track) track = addTrack(p, 'video', 'Titles');
+
+    // Clear any previous numbering so running this twice does not double up.
+    removeClips(p, clipsOn(p, track.id).filter((c) => c.label === 'number').map((c) => c.id));
+
+    const presetDef = TITLE_PRESETS.find((t) => t.id === preset) || TITLE_PRESETS[0];
+    clips.forEach((clip, i) => {
+      const n = countdown ? clips.length - i : i + 1;
+      const made = addClip(p, {
+        trackId: track.id,
+        start: clip.start + 0.05,
+        dur: Math.min(1.6, clip.dur - 0.1),
+        kind: 'title',
+        text: { ...defaultText(String(n)), ...presetDef.text, content: String(n) },
+      });
+      made.label = 'number';
+    });
+    return `${clips.length} shots numbered${countdown ? ', counting down' : ''}.`;
+  },
+
+  /** Drop a sticker or callout on the timeline. */
+  addSticker(p, { kind = 'emoji', value = '🔥', at = 0, dur = 1.6, x = 0.5, y = 0.4, size = 0.18, anim = 'pop', text = '' }) {
+    let track = videoTracks(p).find((t) => t.name === 'Stickers');
+    if (!track) track = addTrack(p, 'video', 'Stickers');
+    const total = duration(p);
+    const start = at < 0 ? Math.max(0, total + at) : at;
+    addClip(p, {
+      trackId: track.id, start, dur, kind: 'sticker',
+      sticker: { ...defaultSticker(kind, value), x, y, size, anim, text },
+    });
+    return `${kind === 'emoji' ? value : value} added at ${start.toFixed(1)}s.`;
+  },
 };
 
 export const OPERATIONS = Object.keys(OPS);
+
+/**
+ * What each operation takes, in one place.
+ *
+ * Sent to the cloud planner so it writes arguments that actually work instead
+ * of plausible-looking ones, and used by the panel to explain a step. Keeping
+ * it next to the implementations is the only way it stays true.
+ */
+export const OP_SPEC = {
+  setRatio: { args: 'ratio: "9:16"|"16:9"|"1:1"|"4:5"|"2.39:1"', does: 'Set the canvas shape. Always first.' },
+  layout: { args: 'targetDur?: seconds, clipLength?: seconds, shuffle?: bool, pickBest?: bool',
+    does: 'Replace the video tracks with every clip in the pool, trimmed to a consistent length. Use when there is no music or no beat.' },
+  beatCut: { args: 'targetDur?: seconds, every?: beats per cut (1|2|4|8), shuffle?: bool',
+    does: 'Replace the video tracks, cutting on the beat grid. Needs music. every:2 is fast, 4 normal, 8 slow.' },
+  syncToTrack: { args: 'every?: beats per cut, keepOrder?: bool, trim?: bool',
+    does: 'KEEP the clips already on the timeline and their order — only move the cuts onto beats. Use whenever someone says sync/re-time/match the music rather than build me an edit.' },
+  removeSilence: { args: 'minLen?: seconds, pad?: seconds', does: 'Cut quiet stretches and close the gaps. The jump-cut look.' },
+  setSpeed: { args: 'speed: multiplier', does: 'A flat speed change on every clip.' },
+  speedRamp: { args: 'peak?: multiplier, floor?: multiplier', does: 'A real speed curve inside each shot — slow head, fast tail. The velocity-edit look.' },
+  applyLook: { args: 'look: id, strength?: 0-1.5',
+    does: 'Grade every clip. Looks: none, punch, cinematic, mono, warm, cool, fade, noir, vivid, soft, kodak, fuji, bleach, vhs, neon, sunburn, moonlight, pastel, crush, infra.' },
+  addEffect: { args: 'effect: id, params?: object, scope?: "all"|"accent"|"first", every?: n',
+    does: 'Add an effect. scope "accent" puts it on every Nth shot only.' },
+  beatZoom: { args: 'amount?: 0-0.4, hold?: seconds', does: 'Keyframed punch-in on every beat.' },
+  impactFrames: { args: 'every?: n shots, style?: "invert"|"white"|"black"|"edge", length?: seconds',
+    does: 'The one-or-two-frame slam an anime cut lands on.' },
+  kenBurns: { args: 'amount?: 0-0.4', does: 'Slow push on photos so stills are not dead on screen.' },
+  autoZoomSpeech: { args: 'amount?: 0-0.2, alternate?: bool', does: 'Alternate the framing across jump cuts so a chopped-up talking head does not look static.' },
+  addTransitions: { args: 'type: id, dur: seconds',
+    does: 'Transitions: dissolve, dipBlack, dipWhite, slideLeft, slideUp, wipe, circle, zoomPunch, whip, blurDissolve, glitch, filmBurn, spin.' },
+  addTitle: { args: 'content: string, preset?: "headline"|"lower"|"subtitle"|"hook"|"counter"|"quote"|"glitchy"|"endcard", at?: seconds (negative counts from the end), dur?: seconds',
+    does: 'A text clip on its own track.' },
+  addSticker: { args: 'kind: "emoji"|"shape", value: emoji or shape id, at?: seconds, dur?: seconds, x?/y?: 0-1, size?: 0-1, anim?: id, text?: string',
+    does: 'Shapes: arrow, circle, box, burst, bubble, progress, countdown, bar, scribble, focus.' },
+  numberClips: { args: 'countdown?: bool, preset?: title preset', does: 'One big number per shot, for a list or countdown.' },
+  captions: { args: 'style?: "tiktok"|"youtube"|"bold"|"karaoke"|"clean"', does: 'Caption cues timed to the speech.' },
+  fitMusic: { args: 'fadeOut?: seconds, duck?: bool', does: 'Trim the music to the edit length. Always last but one.' },
+  fadeEnds: { args: 'dur?: seconds', does: 'Fade the first and last shot.' },
+};

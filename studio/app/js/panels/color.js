@@ -5,7 +5,7 @@
 
 import { $, $$, esc, toast, empty, slider } from '../ui.js';
 import { S, actions, engine } from '../main.js';
-import { LOOKS, CONTROLS } from '../engine/filters.js';
+import { LOOKS, CONTROLS, neutralWheels, supportsUrlFilters } from '../engine/filters.js';
 import * as licence from '../licence.js';
 import { current as currentLevel } from '../levels.js';
 
@@ -42,6 +42,31 @@ export function mount(host) {
           <span class="sw" style="background:${esc(l.swatch)}"></span>${esc(l.name)}</button>`;
       }).join('')}
     </div>
+
+    <details class="group" data-min="expert" ${clip ? 'open' : ''}>
+      <summary>Colour wheels</summary>
+      <div class="gbody">
+        ${clip ? `
+          <div class="wheels" id="c-wheels">
+            ${['lift', 'gamma', 'gain'].map((which) => `
+              <div class="wheel">
+                <canvas data-wheel="${which}" width="128" height="128"
+                  title="Drag to push ${which} toward a colour. Double-click to reset."></canvas>
+                <div class="wl">${which === 'lift' ? 'Shadows' : which === 'gamma' ? 'Midtones' : 'Highlights'}</div>
+                <div class="wv" data-wv="${which}">neutral</div>
+              </div>`).join('')}
+          </div>
+          ${slider({ key: 'offset', label: 'Overall', value: (clip.color.wheels?.offset ?? 0),
+            min: -1, max: 1, step: 0.01, fmt: (v) => Number(v).toFixed(2) })}
+          <div class="btn-row" style="margin-top:6px">
+            <button class="btn btn-sm btn-ghost" id="c-wheels-reset">Reset wheels</button>
+          </div>
+          ${supportsUrlFilters() ? '' : `<p class="tiny muted" style="margin:9px 0 0">
+            This browser does not support the filter these wheels use, so they fall back to a
+            coarser approximation. Chrome or Edge gives you the real thing.</p>`}
+        ` : '<p class="tiny muted" style="margin:0">Select one clip to grade it with the wheels.</p>'}
+      </div>
+    </details>
 
     <div id="c-sliders" style="margin-top:16px">
       ${clip ? CONTROLS.map((ctl) => `<div data-min="${ctl.level}">${slider({
@@ -103,6 +128,19 @@ export function mount(host) {
     toast('Grade copied to every clip', 'ok');
   });
 
+  $('#c-wheels-reset', host)?.addEventListener('click', () => {
+    actions.patchSelected((c) => { c.color.wheels = null; }, 'Reset colour wheels');
+  });
+
+  host.addEventListener('input', (e) => {
+    if (e.target.dataset.k !== 'offset') return;
+    const v = Number(e.target.value);
+    actions.patchSelected((c) => {
+      c.color.wheels = { ...(c.color.wheels || neutralWheels()), offset: v };
+    }, 'Overall exposure', 'wheel:offset');
+  });
+
+  if (clip) wireWheels(host, clip);
   startScope(host);
   void $$;
 }
@@ -154,4 +192,130 @@ function startScope(host) {
 
   paint();
   scopeTimer = setInterval(paint, 400);
+}
+
+
+/* ------------------------------------------------------------------ */
+/* colour wheels                                                       */
+/* ------------------------------------------------------------------ */
+/*
+ * The standard colourist control: drag toward a hue to push that part of the
+ * range toward it, distance from the centre is how far. Double-click returns
+ * it to neutral, which is the one gesture every editor gets wrong by hiding it
+ * in a right-click menu.
+ */
+
+const MAX_PUSH = 0.55;      // full deflection is strong but not destructive
+
+function hueRgb(angleDeg) {
+  const h = ((angleDeg % 360) + 360) % 360 / 60;
+  const x = 1 - Math.abs((h % 2) - 1);
+  const [r, g, b] = h < 1 ? [1, x, 0] : h < 2 ? [x, 1, 0] : h < 3 ? [0, 1, x]
+    : h < 4 ? [0, x, 1] : h < 5 ? [x, 0, 1] : [1, 0, x];
+  return { r, g, b };
+}
+
+function paintWheel(canvas, offset) {
+  const ctx = canvas.getContext('2d');
+  const size = canvas.width;
+  const r = size / 2;
+  const img = ctx.createImageData(size, size);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const dx = x - r, dy = y - r;
+      const dist = Math.hypot(dx, dy) / r;
+      const i = (y * size + x) * 4;
+      if (dist > 1) { img.data[i + 3] = 0; continue; }
+      const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+      const c = hueRgb(angle);
+      // Toward the centre it desaturates to grey — the neutral position.
+      const mix = (v) => Math.round(255 * (0.5 + (v - 0.5) * dist));
+      img.data[i] = mix(c.r);
+      img.data[i + 1] = mix(c.g);
+      img.data[i + 2] = mix(c.b);
+      img.data[i + 3] = dist > 0.97 ? Math.round(255 * ((1 - dist) / 0.03)) : 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+
+  // the puck
+  const push = Math.hypot(offset?.r || 0, offset?.g || 0, offset?.b || 0) / MAX_PUSH;
+  if (push > 0.01) {
+    const angle = Math.atan2((offset.g - offset.b) * 0.866, offset.r - (offset.g + offset.b) / 2);
+    const px = r + Math.cos(angle) * Math.min(1, push) * r * 0.92;
+    const py = r + Math.sin(angle) * Math.min(1, push) * r * 0.92;
+    ctx.beginPath();
+    ctx.arc(px, py, 6, 0, Math.PI * 2);
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,0,0,.6)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.arc(r, r, 4, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,.85)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+}
+
+function wireWheels(host, clip) {
+  for (const canvas of $$('[data-wheel]', host)) {
+    const which = canvas.dataset.wheel;
+    const current = () => clip.color.wheels?.[which] || { r: 0, g: 0, b: 0 };
+    paintWheel(canvas, current());
+    updateReadout(host, which, current());
+
+    const setFrom = (ev) => {
+      const rect = canvas.getBoundingClientRect();
+      const r = rect.width / 2;
+      const dx = ev.clientX - rect.left - r;
+      const dy = ev.clientY - rect.top - r;
+      const dist = Math.min(1, Math.hypot(dx, dy) / r);
+      const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+      const c = hueRgb(angle);
+      const push = dist * MAX_PUSH;
+      const offset = {
+        r: Number(((c.r - 0.5) * 2 * push).toFixed(4)),
+        g: Number(((c.g - 0.5) * 2 * push).toFixed(4)),
+        b: Number(((c.b - 0.5) * 2 * push).toFixed(4)),
+      };
+      actions.patchSelected((cl) => {
+        cl.color.wheels = { ...(cl.color.wheels || neutralWheels()), [which]: offset };
+      }, `Colour wheel: ${which}`, `wheel:${which}`);
+      paintWheel(canvas, offset);
+      updateReadout(host, which, offset);
+    };
+
+    canvas.addEventListener('pointerdown', (ev) => {
+      canvas.setPointerCapture(ev.pointerId);
+      setFrom(ev);
+      const move = (e2) => setFrom(e2);
+      const up = () => {
+        canvas.removeEventListener('pointermove', move);
+        canvas.removeEventListener('pointerup', up);
+      };
+      canvas.addEventListener('pointermove', move);
+      canvas.addEventListener('pointerup', up);
+    });
+
+    canvas.addEventListener('dblclick', () => {
+      actions.patchSelected((cl) => {
+        cl.color.wheels = { ...(cl.color.wheels || neutralWheels()), [which]: { r: 0, g: 0, b: 0 } };
+      }, `Reset ${which}`);
+      paintWheel(canvas, { r: 0, g: 0, b: 0 });
+      updateReadout(host, which, { r: 0, g: 0, b: 0 });
+    });
+  }
+}
+
+function updateReadout(host, which, offset) {
+  const el = host.querySelector(`[data-wv="${which}"]`);
+  if (!el) return;
+  const push = Math.hypot(offset.r, offset.g, offset.b);
+  el.textContent = push < 0.01
+    ? 'neutral'
+    : `${offset.r >= 0 ? '+' : ''}${offset.r.toFixed(2)} ${offset.g >= 0 ? '+' : ''}${offset.g.toFixed(2)} ${offset.b >= 0 ? '+' : ''}${offset.b.toFixed(2)}`;
 }

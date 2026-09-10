@@ -90,6 +90,19 @@ Suggestions that came up again and again, and are in:
 - **An open project format.**
 - **Ducking music under voice** without keyframing it by hand.
 - **A grade you can copy to every clip at once.**
+- **One-tap edit styles** — anime AMV, velocity, phonk, aesthetic, cinematic, gaming,
+  product, meme, sports, listicle, talking-head cleanup. Every one shows its plan
+  before it runs, and they are free on every tier.
+- **"Sync my clips to the track"** that keeps your clips and your order and only
+  moves the cuts onto the beat, rather than rebuilding your edit.
+- **Motion tracking.** Draw a box, follow anything through the shot, pin a blur, a
+  sticker or a title to it. Classical template tracking with sub-pixel fitting —
+  no model to download and it runs offline.
+- **Real motion blur**, sampled from the actual movement rather than a directional smear.
+- **Speed ramps** where the speed changes *through* a shot and the audio follows it.
+- **Three-way colour wheels** — lift, gamma, gain — running as a GPU filter.
+- **Impact frames, speed lines and beat-pulsed chromatic split**, because the edits
+  people are trying to copy are made of exactly those three things.
 
 ---
 
@@ -120,7 +133,7 @@ properly needs a convolution pass that isn't in yet.
 
 - **Real-time collaboration.** Two people on one timeline. Wanted a lot, not built.
 - **Nested sequences / compound clips.**
-- **Motion tracking**, and text that sticks to a moving object.
+
 - **Green screen keying.** Background removal is planned for Studio but the
   chroma keyer isn't written.
 - **Voice isolation and noise removal.** Advertised on the Studio tier; the

@@ -100,6 +100,9 @@ async function runPlan(host) {
       ratio: S.project.settings.ratio,
       beats: S.beats,
       duration: duration(S.project),
+      // The planner needs to know whether there is anything to re-time, or a
+      // "sync my clips" request silently turns into "replace my clips".
+      clipCount: S.project.clips.filter((c) => c.kind !== 'title' && c.kind !== 'sticker').length,
       canTranscribe: cloudAvailable(),
     };
     lastPlan = await askForPlan(prompt, S.project, ctx);
@@ -124,10 +127,15 @@ function paintPlan(host, plan) {
 
   out.innerHTML = `
     <div class="note info" style="margin-top:0">
-      <b>The plan</b> — ${esc(plan.summary)}
+      ${plan.template ? `<b>${plan.template.emoji} ${esc(plan.template.name)}</b><br>` : '<b>The plan</b> — '}
+      ${esc(plan.summary)}
       ${plan.source === 'cloud' ? '<br><span class="tiny muted">Planned in the cloud.</span>'
         : '<br><span class="tiny muted">Planned on this device.</span>'}
     </div>
+    ${(plan.questions || []).map((q) => `<div class="note tiny">
+      <b>One thing —</b> ${esc(q)}<br>
+      <span class="muted">The plan below works either way; say more and press Plan again to change it.</span>
+    </div>`).join('')}
     ${(plan.warnings || []).map((w) => `<div class="note tiny">${esc(w)}</div>`).join('')}
     <div id="ai-steps">
       ${plan.steps.map((s, i) => `

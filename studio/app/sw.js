@@ -10,7 +10,7 @@
  * origin's storage quota for no benefit.
  */
 
-const VERSION = 'omnidx-studio-v1';
+const VERSION = 'omnidx-studio-v2';
 const SHELL = [
   './',
   './index.html',
@@ -50,6 +50,14 @@ const SHELL = [
   './js/panels/inspector.js',
   './js/panels/export.js',
   './js/panels/inspector.js',
+  './js/panels/templates.js',
+  './js/panels/tracking.js',
+  './js/updates.js',
+  './js/desktop.js',
+  './js/engine/effects.js',
+  './js/engine/stickers.js',
+  './js/engine/templates.js',
+  './js/engine/tracking.js',
   '../assets/config.js',
   '../assets/auth.js',
   '../assets/mark.svg',
@@ -63,6 +71,12 @@ self.addEventListener('install', (event) => {
     await Promise.all(SHELL.map((url) => cache.add(url).catch(() => {})));
     await self.skipWaiting();
   })());
+});
+
+/* The app asks for this when someone presses Reload on the update bar, so the
+   new shell takes over on that reload rather than the one after. */
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {

@@ -11,10 +11,15 @@
  * those finished clip canvases and combine them.
  */
 
-import { activeAt, clipsOn, valueAt, mediaById } from './project.js';
-import { resolved, cssFilter, applyPasses, isIdentity } from './filters.js';
+import { activeAt, clipsOn, valueAt, mediaById, sourceTime, speedAt } from './project.js';
+import {
+  resolved, cssFilter, applyPasses, isIdentity,
+  wheelFilter, applyWheelsFallback, wheelsAreNeutral, supportsUrlFilters,
+} from './filters.js';
 import { drawTransition } from './transitions.js';
 import { drawText, CAPTION_STYLES } from './titles.js';
+import { applyEffects } from './effects.js';
+import { drawSticker } from './stickers.js';
 import { elementFor } from './media.js';
 
 export class Renderer {
@@ -26,6 +31,13 @@ export class Renderer {
     this.quality = 1;
     this.pendingSeeks = new Set();
     this.onNeedsRedraw = null;
+    // Set by the app so beat-reactive effects know where they are in the bar.
+    this.beats = null;
+    this.fps = 30;
+    // Motion blur re-renders the clip at sub-frame offsets, which needs a
+    // canvas nothing else is using that frame.
+    this._blur = document.createElement('canvas');
+    this._blurCtx = this._blur.getContext('2d');
   }
 
   resize(w, h) {
@@ -33,6 +45,17 @@ export class Renderer {
     this.canvas.width = w;
     this.canvas.height = h;
     for (const c of this.scratch) { c.width = w; c.height = h; }
+    this._blur.width = w;
+    this._blur.height = h;
+  }
+
+  /** Where we are between beats, 0 at the beat and 1 just before the next. */
+  _beatPhase(t) {
+    const grid = this.beats;
+    if (!grid?.period) return undefined;
+    const since = t - (grid.beats?.[0] ?? 0);
+    if (since < 0) return undefined;
+    return (since % grid.period) / grid.period;
   }
 
   /**
@@ -86,7 +109,7 @@ export class Renderer {
 
   /* ---------------- one clip, fully graded, on a scratch canvas -------- */
 
-  _clipCanvas(project, clip, t, slot, playing, forExport) {
+  _clipCanvas(project, clip, t, slot, playing, forExport, skipEffects = false) {
     const cv = this.scratch[slot];
     const ctx = this.scratchCtx[slot];
     const w = cv.width, h = cv.height;
@@ -95,6 +118,14 @@ export class Renderer {
     if (clip.kind === 'title') {
       const local = t - clip.start;
       drawText(ctx, w, h, clip.text, Math.max(0, local), clip.dur);
+      if (!skipEffects && clip.effects?.length) this._runEffects(ctx, w, h, clip, t, project);
+      return cv;
+    }
+
+    if (clip.kind === 'sticker') {
+      const local = t - clip.start;
+      drawSticker(ctx, w, h, clip.sticker, Math.max(0, local), clip.dur, this._beatPhase(t));
+      if (!skipEffects && clip.effects?.length) this._runEffects(ctx, w, h, clip, t, project);
       return cv;
     }
 
@@ -107,11 +138,14 @@ export class Renderer {
     // during a transition the outgoing clip keeps rolling past its out point,
     // which is what makes a cross dissolve look like a dissolve and not a
     // freeze frame held against the incoming shot.
-    const speed = clip.speed || 1;
     const local = t - clip.start;
-    const src = clip.reversed
-      ? clip.in + (clip.dur - local) * speed
-      : clip.in + local * speed;
+    // Deliberately not clamped to the clip: during a transition the outgoing
+    // clip keeps rolling past its out point, which is what makes a cross
+    // dissolve look like a dissolve rather than a freeze held against the
+    // incoming shot. sourceTime handles the ramp; this handles the overrun.
+    const src = local < 0 || local > clip.dur
+      ? clip.in + local * speedAt(clip, Math.max(0, Math.min(clip.dur, local)))
+      : sourceTime(clip, t);
 
     if (media.kind === 'video') {
       if (!node.videoWidth) return null;
@@ -143,8 +177,12 @@ export class Renderer {
     const rotate = valueAt(clip, 'transform.rotate', local, clip.transform.rotate || 0);
 
     const grade = resolved(clip.color);
+    // The wheels are an SVG filter chained onto the CSS one, so both stages
+    // happen in a single GPU pass rather than a read-back.
+    const wheels = wheelFilter(clip.id, clip.color.wheels);
+    const css = cssFilter(grade);
     ctx.save();
-    ctx.filter = cssFilter(grade);
+    ctx.filter = wheels ? (css === 'none' ? wheels : `${css} ${wheels}`) : css;
     if (rotate) {
       ctx.translate(w / 2, h / 2);
       ctx.rotate((rotate * Math.PI) / 180);
@@ -160,6 +198,32 @@ export class Renderer {
     ctx.filter = 'none';
 
     if (!isIdentity(clip.color)) applyPasses(ctx, w, h, grade);
+    // Only when the GPU path is unavailable — otherwise this would double up.
+    if (!supportsUrlFilters() && !wheelsAreNeutral(clip.color.wheels)) {
+      applyWheelsFallback(ctx, w, h, clip.color.wheels);
+    }
+
+    if (!skipEffects && clip.effects?.length) {
+      applyEffects(ctx, w, h, clip, {
+        clip,
+        local,
+        time: t,
+        fps: project.settings.fps || this.fps,
+        beatPhase: this._beatPhase(t),
+        // Motion blur asks for the clip at other moments in the exposure. It
+        // renders into a canvas of its own with effects off, so this cannot
+        // recurse.
+        redrawClip: (localT) => {
+          const src = this._clipCanvas(
+            project, clip, clip.start + localT, slot === 0 ? 1 : 0, playing, forExport, true,
+          );
+          if (!src) return null;
+          this._blurCtx.clearRect(0, 0, w, h);
+          this._blurCtx.drawImage(src, 0, 0);
+          return this._blur;
+        },
+      });
+    }
 
     // Clip-level fades sit on top of everything, including the grade.
     const fade = fadeAlpha(clip, local);
@@ -171,6 +235,18 @@ export class Renderer {
     }
 
     return cv;
+  }
+
+  /** Effects for clips with no source frame (titles, stickers). */
+  _runEffects(ctx, w, h, clip, t, project) {
+    applyEffects(ctx, w, h, clip, {
+      clip,
+      local: t - clip.start,
+      time: t,
+      fps: project.settings.fps || this.fps,
+      beatPhase: this._beatPhase(t),
+      redrawClip: null,
+    });
   }
 
   /* ---------------- transitions ---------------- */
@@ -245,10 +321,7 @@ export class Renderer {
       if (!media || media.kind !== 'video') continue;
       const node = elementFor(media, clip.id);
       if (!node || !node.duration) continue;
-      const speed = clip.speed || 1;
-      const local = t - clip.start;
-      const src = clip.reversed ? clip.in + (clip.dur - local) * speed : clip.in + local * speed;
-      const target = Math.max(0, Math.min(src, node.duration - 0.02));
+      const target = Math.max(0, Math.min(sourceTime(clip, t), node.duration - 0.02));
       if (Math.abs(node.currentTime - target) < 0.012) continue;
       jobs.push(new Promise((resolve) => {
         const finish = () => { clearTimeout(bail); resolve(); };

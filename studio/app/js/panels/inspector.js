@@ -14,6 +14,7 @@ import { CONTROLS, LOOKS } from '../engine/filters.js';
 import { TRANSITION_LIST } from '../engine/transitions.js';
 import { BLEND_MODES } from '../engine/render.js';
 import * as licence from '../licence.js';
+import { trackSection, handleInspectorClick } from './tracking.js';
 
 export function mount(host) {
   if (!host) return;
@@ -49,6 +50,7 @@ export function mount(host) {
     ${clip.kind === 'title' ? '' : colourSection(clip)}
     ${audioSection(clip, media)}
     ${transitionSection(clip)}
+    ${trackSection(clip)}
     ${keyframeSection(clip, local)}`;
 
   wire(host);
@@ -250,8 +252,12 @@ function wire(host) {
       return;
     }
 
+    const pinTrack = e.target.closest('[data-pintrack]');
+    if (pinTrack && handleInspectorClick(null, pinTrack.dataset)) return;
+
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (!act) return;
+    if (handleInspectorClick(act, null)) return;
     runAction(act);
   });
 }

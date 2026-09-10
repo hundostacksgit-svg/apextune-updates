@@ -84,6 +84,10 @@ export const ENTITLEMENTS = {
   'audio-mix':       'free',
   'export-1080':     'free',
   'basic-filters':   'free',
+  /* One-tap styles run entirely on the device and cost nothing to serve, so
+     they are free. Gating them would have taken the best thing about the app
+     away from everyone who has not paid yet — which is exactly backwards. */
+  'templates':       'free',
   'autosave':        'free',
   'projects':        'free',
 

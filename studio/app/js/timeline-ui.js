@@ -120,13 +120,14 @@ export class TimelineUI {
     const media = mediaById(p, clip.mediaId);
     const selected = this.state.sel.has(clip.id);
     const kindClass = clip.kind === 'title' ? 'title'
+      : clip.kind === 'sticker' ? 'sticker'
       : track.kind === 'audio' ? 'audio'
       : media?.kind === 'image' ? 'image' : '';
 
     const node = el('div', {
       class: `clip ${kindClass} ${selected ? 'sel' : ''}`,
       'data-clip': clip.id,
-      title: `${media?.name || clip.text?.content || 'Clip'} · ${fmtDur(clip.dur)}`,
+      title: `${clipLabel(clip, media)} · ${fmtDur(clip.dur)}`,
     });
     node.style.left = `${this.toPx(clip.start)}px`;
     node.style.width = `${Math.max(4, this.toPx(clip.dur))}px`;
@@ -162,8 +163,9 @@ export class TimelineUI {
       node.appendChild(el('div', { class: 'trans l', title: clip.transitionIn.type }, '◐'));
     }
 
+    const ramped = clip.speedKeys?.length;
     node.appendChild(el('span', { class: 'cname' },
-      `${media?.name || clip.text?.content || 'Title'}${clip.speed !== 1 ? ` · ${clip.speed}×` : ''}`));
+      `${clipLabel(clip, media)}${ramped ? ' · ramp' : clip.speed !== 1 ? ` · ${clip.speed}×` : ''}`));
     node.appendChild(el('div', { class: 'handle l', 'data-handle': 'l' }));
     node.appendChild(el('div', { class: 'handle r', 'data-handle': 'r' }));
     return node;
@@ -389,6 +391,17 @@ export class TimelineUI {
   }
 
   _hideSnap() { if (this.snapLine) this.snapLine.hidden = true; }
+}
+
+/** What to call a clip on the timeline. A sticker is not a title. */
+function clipLabel(clip, media) {
+  if (clip.kind === 'sticker') {
+    const st = clip.sticker;
+    if (!st) return 'Sticker';
+    return st.kind === 'emoji' ? st.value : (st.text || st.value || 'Shape');
+  }
+  if (clip.kind === 'title') return clip.text?.content?.slice(0, 24) || 'Title';
+  return media?.name || 'Clip';
 }
 
 /* ------------------------------------------------------------------ */

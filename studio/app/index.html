@@ -69,12 +69,13 @@
   <nav class="rail" id="rail" aria-label="Panels">
     <button data-panel="media"    class="on" title="Media (1)"><span>🎞</span><i>Media</i></button>
     <button data-panel="ai"       title="AI editor (2)"><span>✨</span><i>AI</i></button>
-    <button data-panel="effects"  title="Effects &amp; transitions (3)"><span>🎛</span><i>Effects</i></button>
-    <button data-panel="color"    title="Colour (4)" data-min="intermediate"><span>🎨</span><i>Colour</i></button>
-    <button data-panel="text"     title="Text &amp; titles (5)"><span>T</span><i>Text</i></button>
-    <button data-panel="audio"    title="Audio (6)"><span>🔊</span><i>Audio</i></button>
-    <button data-panel="captions" title="Captions (7)"><span>💬</span><i>Captions</i></button>
-    <button data-panel="settings" title="Settings (8)"><span>⚙</span><i>Settings</i></button>
+    <button data-panel="templates" title="Templates (3)"><span>🎞</span><i>Styles</i></button>
+    <button data-panel="effects"  title="Effects &amp; transitions (4)"><span>🎛</span><i>Effects</i></button>
+    <button data-panel="color"    title="Colour (5)" data-min="intermediate"><span>🎨</span><i>Colour</i></button>
+    <button data-panel="text"     title="Text, titles &amp; stickers (6)"><span>T</span><i>Text</i></button>
+    <button data-panel="audio"    title="Audio (7)"><span>🔊</span><i>Audio</i></button>
+    <button data-panel="captions" title="Captions (8)"><span>💬</span><i>Captions</i></button>
+    <button data-panel="settings" title="Settings (9)"><span>⚙</span><i>Settings</i></button>
     <button data-panel="help"     class="rail-end" title="Tutorial &amp; shortcuts"><span>?</span><i>Learn</i></button>
   </nav>
 
@@ -90,6 +91,14 @@
           <div class="safe-top">platform UI</div>
           <div class="safe-bottom">caption / UI area</div>
         </div>
+        <div class="track-layer" id="track-layer" hidden>
+          <div class="track-box" id="track-box">
+            <span class="th tl"></span><span class="th tr"></span>
+            <span class="th bl"></span><span class="th br"></span>
+          </div>
+          <div class="track-hint" id="track-hint">Drag a box around what you want to follow</div>
+        </div>
+
         <div class="drop-hint" id="drop-hint">
           <div class="dh-icon">＋</div>
           <h3>Drop your clips here</h3>

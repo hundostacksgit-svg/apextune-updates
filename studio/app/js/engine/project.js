@@ -59,6 +59,7 @@ export function newProject(opts = {}) {
     clips: [],
     markers: [],
     captions: [],
+    motionTracks: [],
     brand: null,
   };
 }
@@ -101,15 +102,65 @@ export function activeAt(p, t) {
 }
 
 /**
+ * Speed at a moment inside a clip.
+ *
+ * A flat `speed` is the common case. `speedKeys` — [{t, v}] in clip-local
+ * seconds — is a real ramp: the speed changes continuously through the shot,
+ * which is what a velocity edit and a slow-motion highlight both need and what
+ * a speed dropdown cannot express.
+ */
+export function speedAt(clip, localT) {
+  const keys = clip.speedKeys;
+  if (!keys?.length) return clip.speed || 1;
+  if (keys.length === 1) return keys[0].v;
+  const sorted = [...keys].sort((a, b) => a.t - b.t);
+  if (localT <= sorted[0].t) return sorted[0].v;
+  if (localT >= sorted.at(-1).t) return sorted.at(-1).v;
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const a = sorted[i], b = sorted[i + 1];
+    if (localT >= a.t && localT <= b.t) {
+      const f = (localT - a.t) / ((b.t - a.t) || 1);
+      // Smoothstep, so a ramp accelerates into and out of its extremes rather
+      // than changing rate abruptly at each key.
+      const e = f * f * (3 - 2 * f);
+      return a.v + (b.v - a.v) * e;
+    }
+  }
+  return clip.speed || 1;
+}
+
+/** How much source a clip consumes between two local times. */
+function consumed(clip, fromLocal, toLocal, samples = 48) {
+  const span = toLocal - fromLocal;
+  if (span <= 0) return 0;
+  const step = span / samples;
+  let acc = 0;
+  for (let i = 0; i < samples; i++) acc += speedAt(clip, fromLocal + step * (i + 0.5)) * step;
+  return acc;
+}
+
+/**
  * Where in the source file we are at timeline time t.
- * Speed and reverse both fold into this one function so nothing downstream
- * has to think about them.
+ * Speed, speed ramps and reverse all fold into this one function so nothing
+ * downstream has to think about them.
  */
 export function sourceTime(clip, t) {
   const local = clamp(t - clip.start, 0, clip.dur);
+
+  if (clip.speedKeys?.length) {
+    const total = consumed(clip, 0, clip.dur);
+    const used = consumed(clip, 0, local);
+    return clip.in + (clip.reversed ? total - used : used);
+  }
+
   const speed = clip.speed || 1;
   const off = clip.reversed ? (clip.dur - local) * speed : local * speed;
   return clip.in + off;
+}
+
+/** Total source seconds a clip uses — what a trim has to stay inside. */
+export function sourceSpan(clip) {
+  return clip.speedKeys?.length ? consumed(clip, 0, clip.dur) : clip.dur * (clip.speed || 1);
 }
 
 /* ------------------------------------------------------------------ */
@@ -149,7 +200,9 @@ export function nextFreeStart(p, trackId, from = 0, length = 0) {
   return t;
 }
 
-export function addClip(p, { mediaId, trackId, start, dur: d, in: inPoint = 0, kind = 'clip', text = null }) {
+export function addClip(p, {
+  mediaId, trackId, start, dur: d, in: inPoint = 0, kind = 'clip', text = null, sticker = null,
+}) {
   const clip = {
     id: uid('c'),
     kind,
@@ -168,7 +221,9 @@ export function addClip(p, { mediaId, trackId, start, dur: d, in: inPoint = 0, k
     transitionIn: null,
     transitionOut: null,
     keyframes: {},
+    effects: [],
     text,
+    sticker,
     label: null,
   };
   p.clips.push(clip);
@@ -263,7 +318,7 @@ export function moveClip(p, clipId, { start, trackId }) {
   if (!track) return;
   // A video clip on an audio track (or the reverse) is almost always a slip of
   // the hand, so it just doesn't happen.
-  const wants = c.kind === 'clip' || c.kind === 'image' || c.kind === 'title' ? 'video' : 'audio';
+  const wants = c.kind === 'audio' ? 'audio' : 'video';
   if (c.kind !== 'audio' && track.kind !== 'video' && wants === 'video') return;
   if (c.kind === 'audio' && track.kind !== 'audio') return;
 
@@ -416,12 +471,15 @@ function migrate(p) {
   }
   p.markers ||= [];
   p.captions ||= [];
+  p.motionTracks ||= [];
   p.media ||= [];
   for (const c of p.clips) {
     c.transform = { ...defaultTransform(), ...(c.transform || {}) };
     c.color = { ...defaultColor(), ...(c.color || {}) };
     c.keyframes ||= {};
+    c.effects ||= [];
     c.speed ??= 1;
+    if (c.speedKeys && !Array.isArray(c.speedKeys)) c.speedKeys = null;
     c.volume ??= 1;
     c.fadeIn ??= 0;
     c.fadeOut ??= 0;

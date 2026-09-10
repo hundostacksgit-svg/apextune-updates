@@ -239,3 +239,180 @@ export const CONTROLS = [
   { key: 'grain',       label: 'Film grain',  min: 0,    max: 100, level: 'expert' },
   { key: 'blur',        label: 'Blur',        min: 0,    max: 12, step: 0.1, level: 'expert' },
 ];
+
+/* ------------------------------------------------------------------ */
+/* colour wheels — lift / gamma / gain                                 */
+/* ------------------------------------------------------------------ */
+/*
+ * A real three-way corrector, not three sliders pretending to be one.
+ *
+ * Doing it per pixel in JavaScript means reading two million pixels a frame
+ * and playback dies. Instead each clip gets an SVG <filter> built from its
+ * wheel values and referenced through ctx.filter as url(#id) — which is the
+ * same feComponentTransfer the browser uses for CSS filters, running on the
+ * GPU. Lift is the intercept, gain is the slope, gamma is the exponent, which
+ * is exactly the definition, so the maths is right rather than approximated.
+ *
+ * Where url() filters aren't supported the wheels fall back to the composited
+ * approximation in applyPasses, and the panel says so instead of silently
+ * doing nothing.
+ */
+
+const WHEEL_NS = 'http://www.w3.org/2000/svg';
+let wheelHost = null;
+let urlFilterSupport = null;
+
+export function neutralWheels() {
+  return {
+    lift: { r: 0, g: 0, b: 0 },     // −1..1, added to the whole range (shadows read most)
+    gamma: { r: 0, g: 0, b: 0 },    // −1..1, midtone bend
+    gain: { r: 0, g: 0, b: 0 },     // −1..1, multiplier (highlights read most)
+    offset: 0,                       // overall exposure trim, −1..1
+  };
+}
+
+export function wheelsAreNeutral(wheels) {
+  if (!wheels) return true;
+  for (const key of ['lift', 'gamma', 'gain']) {
+    const w = wheels[key];
+    if (!w) continue;
+    if (Math.abs(w.r) > 0.002 || Math.abs(w.g) > 0.002 || Math.abs(w.b) > 0.002) return false;
+  }
+  return Math.abs(wheels.offset || 0) <= 0.002;
+}
+
+/**
+ * Does this browser honour ctx.filter = url(#id)?
+ *
+ * Probed once by inverting a white pixel and reading it back — the only
+ * reliable test, because the property accepts the string either way.
+ */
+export function supportsUrlFilters() {
+  if (urlFilterSupport !== null) return urlFilterSupport;
+  try {
+    const host = filterHost();
+    const probe = document.createElementNS(WHEEL_NS, 'filter');
+    probe.setAttribute('id', 'omnidx-probe');
+    probe.setAttribute('color-interpolation-filters', 'sRGB');
+    const invert = document.createElementNS(WHEEL_NS, 'feColorMatrix');
+    invert.setAttribute('type', 'matrix');
+    invert.setAttribute('values', '-1 0 0 0 1  0 -1 0 0 1  0 0 -1 0 1  0 0 0 1 0');
+    probe.appendChild(invert);
+    host.appendChild(probe);
+
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = 2;
+    const ctx = cv.getContext('2d', { willReadFrequently: true });
+    ctx.filter = 'url(#omnidx-probe)';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, 2, 2);
+    ctx.filter = 'none';
+    const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+    probe.remove();
+    urlFilterSupport = r < 40 && g < 40 && b < 40;
+  } catch {
+    urlFilterSupport = false;
+  }
+  return urlFilterSupport;
+}
+
+function filterHost() {
+  if (wheelHost) return wheelHost;
+  const svg = document.createElementNS(WHEEL_NS, 'svg');
+  svg.setAttribute('width', '0');
+  svg.setAttribute('height', '0');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
+  const defs = document.createElementNS(WHEEL_NS, 'defs');
+  svg.appendChild(defs);
+  document.body.appendChild(svg);
+  wheelHost = defs;
+  return defs;
+}
+
+/**
+ * Build (or update) the filter for one clip's wheels and return its url().
+ * Filters are keyed by clip id and rewritten in place, so dragging a wheel
+ * doesn't leak a new <filter> element per frame.
+ */
+export function wheelFilter(clipId, wheels) {
+  if (!wheels || wheelsAreNeutral(wheels) || !supportsUrlFilters()) return null;
+  const id = `omnidx-w-${clipId}`;
+  const host = filterHost();
+  let filter = host.querySelector(`#${CSS.escape(id)}`);
+  if (!filter) {
+    filter = document.createElementNS(WHEEL_NS, 'filter');
+    filter.setAttribute('id', id);
+    // sRGB, not linearRGB: the numbers then mean what a colourist expects, and
+    // it matches what the CSS-filter stage does.
+    filter.setAttribute('color-interpolation-filters', 'sRGB');
+    host.appendChild(filter);
+  }
+  filter.textContent = '';
+
+  const offset = wheels.offset || 0;
+  const linear = document.createElementNS(WHEEL_NS, 'feComponentTransfer');
+  const gammaNode = document.createElementNS(WHEEL_NS, 'feComponentTransfer');
+
+  for (const ch of ['R', 'G', 'B']) {
+    const key = ch.toLowerCase();
+    const lift = (wheels.lift?.[key] || 0) * 0.5 + offset * 0.35;
+    const gain = 1 + (wheels.gain?.[key] || 0) * 0.9 + offset * 0.4;
+    const gamma = 1 - (wheels.gamma?.[key] || 0) * 0.7;   // >1 darkens midtones
+
+    const lin = document.createElementNS(WHEEL_NS, `feFunc${ch}`);
+    lin.setAttribute('type', 'linear');
+    lin.setAttribute('slope', gain.toFixed(4));
+    lin.setAttribute('intercept', lift.toFixed(4));
+    linear.appendChild(lin);
+
+    const gam = document.createElementNS(WHEEL_NS, `feFunc${ch}`);
+    gam.setAttribute('type', 'gamma');
+    gam.setAttribute('amplitude', '1');
+    gam.setAttribute('exponent', Math.max(0.05, gamma).toFixed(4));
+    gam.setAttribute('offset', '0');
+    gammaNode.appendChild(gam);
+  }
+
+  filter.appendChild(linear);
+  filter.appendChild(gammaNode);
+  return `url(#${id})`;
+}
+
+/** Drop a clip's filter element when the clip goes away. */
+export function releaseWheelFilter(clipId) {
+  wheelHost?.querySelector(`#${CSS.escape(`omnidx-w-${clipId}`)}`)?.remove();
+}
+
+/**
+ * The composited fallback for browsers without url() filter support. Coarser
+ * than the real thing — it cannot bend midtones independently — but it moves
+ * the picture in the right direction rather than doing nothing.
+ */
+export function applyWheelsFallback(ctx, w, h, wheels) {
+  if (!wheels || wheelsAreNeutral(wheels)) return;
+  const mix = (o, scale) => `rgba(${Math.round(128 + (o.r || 0) * 127 * scale)},${
+    Math.round(128 + (o.g || 0) * 127 * scale)},${Math.round(128 + (o.b || 0) * 127 * scale)},1)`;
+
+  const save = ctx.globalCompositeOperation;
+  if (wheels.lift) {
+    ctx.globalCompositeOperation = 'screen';
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = mix(wheels.lift, 0.6);
+    ctx.fillRect(0, 0, w, h);
+  }
+  if (wheels.gain) {
+    ctx.globalCompositeOperation = 'overlay';
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = mix(wheels.gain, 0.8);
+    ctx.fillRect(0, 0, w, h);
+  }
+  if (wheels.gamma) {
+    ctx.globalCompositeOperation = 'soft-light';
+    ctx.globalAlpha = 0.55;
+    ctx.fillStyle = mix(wheels.gamma, 1);
+    ctx.fillRect(0, 0, w, h);
+  }
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = save;
+}

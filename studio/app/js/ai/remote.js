@@ -15,7 +15,8 @@
  */
 
 import { API } from '../../../assets/config.js';
-import { OPERATIONS } from './apply.js';
+import { OPERATIONS, OP_SPEC } from './apply.js';
+import { TEMPLATES } from '../engine/templates.js';
 import { plan as localPlan } from './planner.js';
 
 export function available() {
@@ -59,6 +60,11 @@ export async function askForPlan(prompt, project, context) {
         },
         beats: context.beats ? { bpm: context.beats.bpm } : null,
         operations: OPERATIONS,
+        // The spec and the style list go with the request so the model writes
+        // arguments that work rather than plausible-looking ones, and knows
+        // which named styles already exist instead of inventing a worse one.
+        spec: OP_SPEC,
+        styles: TEMPLATES.map((t) => ({ id: t.id, name: t.name, blurb: t.blurb, tags: t.tags })),
       }),
       signal: AbortSignal.timeout?.(25000),
     });
@@ -97,6 +103,7 @@ function validate(data) {
     steps,
     summary: String(data.summary || `${steps.length} steps.`).slice(0, 300),
     warnings: Array.isArray(data.warnings) ? data.warnings.map((w) => String(w).slice(0, 240)).slice(0, 5) : [],
+    questions: Array.isArray(data.questions) ? data.questions.map((q) => String(q).slice(0, 240)).slice(0, 3) : [],
     intent: data.intent && typeof data.intent === 'object' ? data.intent : {},
   };
 }

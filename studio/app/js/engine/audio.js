@@ -12,7 +12,7 @@
  * says so rather than pretending.
  */
 
-import { activeAt, mediaById, sourceTime } from './project.js';
+import { activeAt, mediaById, sourceTime, speedAt } from './project.js';
 import { elementFor } from './media.js';
 
 export class AudioEngine {
@@ -129,7 +129,8 @@ export class AudioEngine {
 
       /* ---- position ---- */
       const src = sourceTime(clip, t);
-      node.playbackRate = Math.max(0.25, Math.min(4, clip.speed || 1));
+      // Follows a ramp, so audio stays with the picture through a speed change.
+      node.playbackRate = Math.max(0.25, Math.min(4, speedAt(clip, local)));
       if (playing) {
         if (node.paused) { node.play().catch(() => { /* autoplay policy; the gesture will fix it */ }); }
         // Correct drift, but only when it's audible. Nudging every frame is

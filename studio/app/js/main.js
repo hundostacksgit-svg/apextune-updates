@@ -27,6 +27,7 @@ import { openPalette } from './palette.js';
 import { maybeOfferTour, startTour } from './tutorial.js';
 import { openExport } from './panels/export.js';
 import { wireDesktop, isDesktop } from './desktop.js';
+import { startUpdateChecks, BUILD } from './updates.js';
 
 /* ------------------------------------------------------------------ */
 /* state                                                               */
@@ -399,6 +400,10 @@ function sizeCanvas() {
 
 function drawFrame(scrub = false) {
   if (!renderer) return;
+  // Beat-reactive effects need the grid; the renderer reads it rather than
+  // being handed it on every one of sixty frames a second.
+  renderer.beats = S.beats;
+  renderer.fps = S.project.settings.fps;
   renderer.draw(S.project, S.time, { playing: S.playing || scrub });
 }
 
@@ -429,7 +434,7 @@ export function paintAccount() {
 /* keyboard                                                            */
 /* ------------------------------------------------------------------ */
 
-const PANEL_KEYS = ['media', 'ai', 'effects', 'color', 'text', 'audio', 'captions', 'settings'];
+const PANEL_KEYS = ['media', 'ai', 'templates', 'effects', 'color', 'text', 'audio', 'captions', 'settings'];
 
 function onKey(e) {
   const typing = /^(input|textarea|select)$/i.test(e.target.tagName) || e.target.isContentEditable;
@@ -466,7 +471,7 @@ function onKey(e) {
     case '-': case '_': setZoom(S.zoom / 1.4); break;
     case 'Escape': actions.select([]); break;
     default:
-      if (/^[1-8]$/.test(e.key)) openPanel(PANEL_KEYS[Number(e.key) - 1]);
+      if (/^[1-9]$/.test(e.key)) openPanel(PANEL_KEYS[Number(e.key) - 1]);
   }
 }
 
@@ -617,6 +622,7 @@ function paintLevel() {
     onFrame: (t, playing) => {
       S.time = t;
       S.playing = playing;
+      renderer.beats = S.beats;
       renderer.draw(S.project, t, { playing });
       audio.sync(S.project, t, playing);
       timeline.renderPlayhead();
@@ -684,6 +690,7 @@ function paintLevel() {
   paintSaved('ok');
 
   maybeOfferTour();
+  startUpdateChecks();
 
   if ('serviceWorker' in navigator) {
     try {
@@ -703,4 +710,4 @@ function paintLevel() {
 })();
 
 /* Panels and the palette import these rather than reaching into the DOM. */
-export { openPanel, refreshPanel, closePanel, PANELS, startTour, isDesktop, sizeCanvas, drawFrame, setZoom, togglePlay };
+export { openPanel, refreshPanel, closePanel, PANELS, startTour, isDesktop, BUILD, sizeCanvas, drawFrame, setZoom, togglePlay };

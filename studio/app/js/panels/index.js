@@ -10,6 +10,7 @@
 import { $, $$ } from '../ui.js';
 import * as mediaPanel from './media.js';
 import * as aiPanel from './ai.js';
+import * as templatesPanel from './templates.js';
 import * as effectsPanel from './effects.js';
 import * as colorPanel from './color.js';
 import * as textPanel from './text.js';
@@ -22,6 +23,7 @@ import * as inspector from './inspector.js';
 export const PANELS = {
   media: { title: 'Media', mod: mediaPanel },
   ai: { title: 'AI editor', mod: aiPanel },
+  templates: { title: 'Styles', mod: templatesPanel },
   effects: { title: 'Effects', mod: effectsPanel },
   color: { title: 'Colour', mod: colorPanel },
   text: { title: 'Text', mod: textPanel },
