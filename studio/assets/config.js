@@ -175,10 +175,12 @@ export const PAY = {
   cashtag: '$Ahmirp1961',
   cashAppUrl: 'https://cash.app/$Ahmirp1961',
 
+  /* Live Square payment links. Created in this order, so they map in this
+     order: Creator $19.99, Studio $39.99, Team $69.99. */
   checkout: {
-    creator: '',                  // e.g. 'https://square.link/u/xxxxxxxx'
-    studio: '',
-    team: '',
+    creator: 'https://square.link/u/xm9VtiGc',
+    studio: 'https://square.link/u/sxi62gva',
+    team: 'https://square.link/u/i8zrHwkn',
   },
 
   paypal: {
