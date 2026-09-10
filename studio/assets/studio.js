@@ -63,6 +63,29 @@ function initReveal() {
 }
 
 /* ------------------------------------------------------------------ */
+/* support address                                                     */
+/* ------------------------------------------------------------------ */
+/*
+ * One address, written into config.js, rendered anywhere a page marks a spot
+ * with `data-support`. Nothing hard-codes it, so changing it is one line and
+ * cannot leave a stale address behind on a page somebody forgot.
+ *
+ * If it is not set, the spots disappear rather than showing an empty mailto —
+ * a "Contact us" link that opens a blank email is worse than no link.
+ */
+function initSupport() {
+  const spots = $$('[data-support]');
+  if (!spots.length) return;
+  const addr = (PAY.supportEmail || '').trim();
+  for (const el of spots) {
+    if (!addr) { el.hidden = true; continue; }
+    const subject = el.dataset.support || 'OmniDx Studio';
+    el.innerHTML = `<a href="mailto:${esc(addr)}?subject=${encodeURIComponent(subject)}">${esc(addr)}</a>`;
+    el.hidden = false;
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* the menu box                                                        */
 /* ------------------------------------------------------------------ */
 /*
@@ -696,6 +719,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $$('[data-theme-toggle]').forEach((b) => b.addEventListener('click', toggleTheme));
   initMenuBox();
   initDrawer();
+  initSupport();
   initRail();
   initReveal();
   initPricing();

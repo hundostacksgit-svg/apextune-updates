@@ -211,6 +211,7 @@ def build_footer(s: str, r: str) -> str:
         <a href="{s}pricing/#faq">FAQ</a>
         <a href="{s}account/#redeem">Redeem a key</a>
         <a href="{DOCS}STUDIO-COMPLAINTS.md">What's built</a>
+        <span class="foot-support" data-support="OmniDx Studio — help" hidden></span>
       </div>
     </div>
     <div class="foot-note">

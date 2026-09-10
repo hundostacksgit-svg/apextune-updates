@@ -3,6 +3,8 @@
 import { $, esc } from '../ui.js';
 import { startTour } from '../tutorial.js';
 import * as levels from '../levels.js';
+import { PAY } from '../../../assets/config.js';
+import { BUILD } from '../updates.js';
 
 export const SHORTCUTS = [
   ['Space', 'Play / pause'],
@@ -62,7 +64,30 @@ export function mount(host) {
     <div class="note tiny">
       Your work is saved every five seconds, and a copy is written the instant anything changes.
       If this tab crashes, reopening it offers to put you back exactly where you were.
-    </div>`;
+    </div>
+    ${supportBlock()}`;
 
   $('#h-tour', host).addEventListener('click', startTour);
+}
+
+/**
+ * How to reach a person, from inside the app.
+ *
+ * Rendered only when an address is configured — an empty "Contact us" that
+ * opens a blank email is worse than not offering one at all.
+ */
+function supportBlock() {
+  const addr = (PAY.supportEmail || '').trim();
+  if (!addr) return '';
+  const body = encodeURIComponent(
+    `\n\n---\nBuild ${BUILD}\nLevel: ${levels.current()}\n${navigator.userAgent}\n`,
+  );
+  return `
+    <h4 style="font-size:12px;margin:18px 0 8px;color:var(--text-2)">Still stuck</h4>
+    <div class="note tiny">
+      Email <a href="mailto:${esc(addr)}?subject=${
+        encodeURIComponent('OmniDx Studio — help')}&body=${body}">${esc(addr)}</a>.
+      The link fills in your build number and browser, which is usually the
+      first thing anyone would have to ask you for.
+    </div>`;
 }

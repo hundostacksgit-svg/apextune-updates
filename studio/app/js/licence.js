@@ -12,7 +12,7 @@
  * people who were never going to pay.
  */
 
-import { ENTITLEMENTS, RANK, EDITIONS, AI_QUOTA, buyUrl } from '../../assets/config.js';
+import { ENTITLEMENTS, RANK, EDITIONS, AI_QUOTA, buyUrl, PAY } from '../../assets/config.js';
 import * as auth from '../../assets/auth.js';
 import { modal, closeModal, esc, toast } from './ui.js';
 
@@ -44,6 +44,23 @@ export function gate(feature, action, { what } = {}) {
   return false;
 }
 
+/**
+ * A line telling someone how to reach a person, or nothing at all.
+ *
+ * Keys are issued by hand, so the gap between paying and being unlocked is the
+ * moment this app is most likely to lose someone's trust. Every dialog that
+ * asks for money therefore also says how to get hold of a human — and says
+ * nothing at all rather than opening an empty mailto when no address is set.
+ */
+export function supportLine(subject = 'OmniDx Studio') {
+  const addr = (PAY.supportEmail || '').trim();
+  if (!addr) return '';
+  return `<p class="tiny muted" style="margin:12px 0 0">
+    Bought this already and waiting on a key?
+    <a href="mailto:${esc(addr)}?subject=${encodeURIComponent(subject)}">${esc(addr)}</a>
+  </p>`;
+}
+
 export function upgradePrompt(feature, what) {
   const need = requires(feature);
   if (!need) return;
@@ -57,6 +74,7 @@ export function upgradePrompt(feature, what) {
       and everything you've already made stays yours either way.
     </div>
     <p class="tiny muted">Nothing on your timeline changes if you don't. This feature just stays greyed out.</p>
+    ${supportLine(`OmniDx Studio — ${label}`)}
     <div class="btn-row" style="justify-content:flex-end">
       <button class="btn btn-ghost" data-x="close">Not now</button>
       <a class="btn" href="../pricing/" target="_blank" rel="noopener">Compare editions</a>
@@ -131,6 +149,7 @@ export function outOfAiPrompt() {
     ${body}
     <div class="note info"><b>${esc(next.name)}</b> — ${esc(next.blurb)}
       <br>$${next.once.toFixed(2)}, paid once. No subscription.</div>
+    ${supportLine('OmniDx Studio — AI actions')}
     <div class="btn-row" style="justify-content:flex-end">
       <button class="btn btn-ghost" data-x="close">OK</button>
       <a class="btn btn-primary" href="${esc(buyUrl(next.id))}" target="_blank" rel="noopener">

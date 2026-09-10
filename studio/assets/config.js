@@ -193,7 +193,11 @@ export const PAY = {
      this honest: list only what your live checkout link actually accepts. */
   methods: ['Card', 'Apple Pay', 'Google Pay', 'Cash App Pay', 'PayPal', 'Klarna'],
 
-  supportEmail: '',
+  /* Shown wherever a buyer might need to reach a human — the footer, the
+     pricing page, the account screen and the in-app licence dialogs. It
+     matters more than it looks: licence keys are sent by hand, so this is the
+     only route someone has when they have paid and nothing has arrived. */
+  supportEmail: 'ahmirpierce36@gmail.com',
 };
 
 /** The link a buy button should open for an edition. One-time payment. */

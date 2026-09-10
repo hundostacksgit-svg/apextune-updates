@@ -189,12 +189,19 @@ swap in your own codes:
   },
 ```
 
-While you are in that file, put your support email in too, so buyers have
-somewhere to write:
+While you are in that file, put your support email in too:
 
 ```js
   supportEmail: 'you@example.com',
 ```
+
+This one is not decoration. Licence keys are sent by hand, so the gap between
+someone paying and being unlocked is exactly when they need a person — and a
+buyer holding a receipt with no key and no way to ask about it charges back.
+Setting it puts the address in the footer of every page, in the pricing FAQ, on
+the account screen under "Paid, but no licence key yet?", and in the editor's
+own upgrade dialogs and Help panel. Leave it empty and every one of those spots
+removes itself rather than showing a dead link.
 
 Save the file, commit it, push it. Every buy button on the website and inside
 the editor switches over the moment that lands — there is nothing else to
