@@ -26,15 +26,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / 'studio'
 
-# page -> (prefix to studio/, prefix to the Diagnostics site)
+# page -> prefix back to studio/
 #
-# omnidx.net is Studio's address: the root redirects here, and Diagnostics —
-# the other app in this repository — lives one folder along at /diagnostics/.
+# omnidx.net is OmniDx Studio's domain and nothing else's. The other app in
+# this repository is not part of this site, is not linked from it, and is not
+# published under this domain — so there is no second prefix to track.
 PAGES = {
-    'index.html': ('', '../diagnostics/'),
-    'pricing/index.html': ('../', '../../diagnostics/'),
-    'download/index.html': ('../', '../../diagnostics/'),
-    'account/index.html': ('../', '../../diagnostics/'),
+    'index.html': '',
+    'pricing/index.html': '../',
+    'download/index.html': '../',
+    'account/index.html': '../',
 }
 
 LOGO_SVG = (
@@ -66,7 +67,7 @@ MENU = [
             ('⚡', 'Edit styles', '11 one-tap styles — anime, phonk, velocity', '{s}#styles'),
             ('🎚️', 'Pro tools', 'ProRes, audio repair, proxies, colour wheels', '{s}#pro'),
             ('🎓', 'Skill levels', 'Beginner, Intermediate, Professional', '{s}#levels'),
-            ('🩺', 'OmniDx Diagnostics', 'Our other app — check any device, free', '{r}'),
+            ('🔊', 'Audio filters', 'Underwater, telephone, cathedral, robot', '{s}#pro'),
         ],
     },
     {
@@ -94,26 +95,26 @@ MENU = [
 ]
 
 
-def href(raw: str, s: str, r: str) -> str:
-    return raw.replace('{s}', s).replace('{r}', r)
+def href(raw: str, s: str) -> str:
+    return raw.replace('{s}', s)
 
 
-def panel_items(group, s, r) -> str:
+def panel_items(group, s) -> str:
     return ''.join(
-        f'<a class="mb-link" href="{href(h, s, r)}" role="menuitem">'
+        f'<a class="mb-link" href="{href(h, s)}" role="menuitem">'
         f'<span class="mb-ico" aria-hidden="true">{icon}</span>'
         f'<span class="mb-txt"><b>{title}</b><span>{desc}</span></span></a>'
         for icon, title, desc, h in group['items']
     )
 
 
-def build_nav(s: str, r: str) -> str:
+def build_nav(s: str) -> str:
     """The sticky top bar: logo, the menu box, then the account controls."""
     top = []
     for i, group in enumerate(MENU):
         if 'href' in group:
             top.append(
-                f'      <a class="mb-btn" href="{href(group["href"], s, r)}">{group["label"]}</a>'
+                f'      <a class="mb-btn" href="{href(group["href"], s)}">{group["label"]}</a>'
             )
             continue
         gid = f'mbp{i}'
@@ -123,7 +124,7 @@ def build_nav(s: str, r: str) -> str:
             f' aria-controls="{gid}">{group["label"]}'
             f'<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>'
             f'</button>\n'
-            f'        <div class="mb-pop" id="{gid}" role="menu">{panel_items(group, s, r)}</div>\n'
+            f'        <div class="mb-pop" id="{gid}" role="menu">{panel_items(group, s)}</div>\n'
             f'      </div>'
         )
     return f'''<nav class="nav">
@@ -156,12 +157,12 @@ def build_nav(s: str, r: str) -> str:
      same links as the box above so nothing is only reachable on a desktop. -->
 <div class="drawer" id="drawer" hidden>
   <div class="drawer-inner">
-{build_drawer(s, r)}
+{build_drawer(s)}
   </div>
 </div>'''
 
 
-def build_drawer(s: str, r: str) -> str:
+def build_drawer(s: str) -> str:
     out = [
         '    <div class="drawer-top">',
         f'      <a class="btn btn-primary btn-lg" href="{s}app/">Open the editor</a>',
@@ -171,11 +172,11 @@ def build_drawer(s: str, r: str) -> str:
     for group in MENU:
         if 'href' in group:
             out.append(
-                f'    <a class="drawer-solo" href="{href(group["href"], s, r)}">{group["label"]}</a>'
+                f'    <a class="drawer-solo" href="{href(group["href"], s)}">{group["label"]}</a>'
             )
             continue
         links = ''.join(
-            f'\n        <a href="{href(h, s, r)}"><span aria-hidden="true">{icon}</span>{title}'
+            f'\n        <a href="{href(h, s)}"><span aria-hidden="true">{icon}</span>{title}'
             f'<em>{desc}</em></a>'
             for icon, title, desc, h in group['items']
         )
@@ -188,7 +189,7 @@ def build_drawer(s: str, r: str) -> str:
     return '\n'.join(out)
 
 
-def build_footer(s: str, r: str) -> str:
+def build_footer(s: str) -> str:
     return f'''<footer>
   <div class="wrap">
     <div class="foot">
@@ -216,7 +217,6 @@ def build_footer(s: str, r: str) -> str:
       </div>
       <div>
         <h4>More</h4>
-        <a href="{r}">OmniDx Diagnostics</a>
         <a href="{s}pricing/#faq">FAQ</a>
         <a href="{s}account/#redeem">Redeem a key</a>
         <a href="{DOCS}STUDIO-COMPLAINTS.md">What's built</a>
@@ -256,16 +256,16 @@ def swap(html, fenced, first, block, opener, closer, what, rel):
 
 def main() -> int:
     changed = 0
-    for rel, (s, r) in PAGES.items():
+    for rel, s in PAGES.items():
         path = SITE / rel
         html = path.read_text()
         before = html
 
-        html = swap(html, FENCED_NAV, FIRST_NAV, build_nav(s, r),
+        html = swap(html, FENCED_NAV, FIRST_NAV, build_nav(s),
                     NAV_OPEN, NAV_CLOSE, '<nav class="nav">', rel)
         if html is None:
             return 1
-        html = swap(html, FENCED_FOOT, FIRST_FOOT, build_footer(s, r),
+        html = swap(html, FENCED_FOOT, FIRST_FOOT, build_footer(s),
                     FOOT_OPEN, FOOT_CLOSE, '<footer>', rel)
         if html is None:
             return 1

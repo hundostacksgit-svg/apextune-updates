@@ -39,14 +39,14 @@
     "mac": {
       "category": "public.app-category.video",
       "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
-      "icon": "../../icons/icon.icns",
+      "icon": "../assets/icons/icon-512.png",
       "hardenedRuntime": true,
       "entitlements": "entitlements.mac.plist",
       "entitlementsInherit": "entitlements.mac.plist"
     },
     "win": {
       "target": [{ "target": "nsis", "arch": ["x64"] }],
-      "icon": "../../icons/icon.ico"
+      "icon": "../assets/icons/icon-512.png"
     },
     "nsis": {
       "oneClick": false,
@@ -56,7 +56,7 @@
     "linux": {
       "target": ["AppImage", "deb", "rpm"],
       "category": "AudioVideo",
-      "icon": "../../icons/icon-512.png"
+      "icon": "../assets/icons/icon-512.png"
     }
   }
 }

@@ -24,7 +24,7 @@ jobs:
       - name: Verify the site is complete
         run: |
           set -euo pipefail
-          for f in index.html diagnostics/index.html .nojekyll assets/site.css assets/site.js \
+          for f in index.html .nojekyll \
                    app/index.html app/manifest.webmanifest app/sw.js app/css/app.css \
                    app/js/app.js app/js/ui.js app/js/store.js app/js/report.js \
                    app/js/pro.js app/js/config.js app/js/modules/pro.js \
@@ -38,6 +38,9 @@ jobs:
                    studio/account/index.html studio/assets/studio.css studio/assets/studio.js \
                    studio/assets/config.js studio/assets/auth.js studio/assets/mark.svg \
                    studio/assets/og-card.png \
+                   studio/assets/icons/icon-192.png studio/assets/icons/icon-512.png \
+                   studio/assets/icons/maskable-192.png studio/assets/icons/maskable-512.png \
+                   studio/assets/icons/apple-touch-icon.png \
                    studio/app/index.html studio/app/manifest.webmanifest studio/app/sw.js \
                    studio/app/css/app.css studio/app/js/main.js studio/app/js/ui.js \
                    studio/app/js/store.js studio/app/js/licence.js studio/app/js/levels.js \
@@ -73,23 +76,6 @@ jobs:
           python3 -m py_compile tools/sysreport.py tools/make-licence.py tools/set-domain.py \
             tools/make-studio-key.py tools/release.py \
             desktop/omnidx.py desktop/install.py
-
-          # Every screenshot the Diagnostics landing page references must exist.
-          # It reads diagnostics/index.html, not index.html: the root is now a
-          # redirect to Studio and carries no screenshots, so pointing this at
-          # the root would check nothing and pass regardless.
-          python3 - <<'PYCHK'
-          import re, sys, pathlib
-          page = pathlib.Path('diagnostics/index.html')
-          html = page.read_text()
-          refs = re.findall(r'src="(\.\./assets/[^"]+)"', html)
-          missing = [r for r in refs if not (page.parent / r).resolve().exists()]
-          if missing:
-              print('Diagnostics landing page references missing assets:', missing); sys.exit(1)
-          if not refs:
-              print('no screenshots referenced — did the page move again?'); sys.exit(1)
-          print(f'Diagnostics landing page assets present ({len(refs)} references)')
-          PYCHK
 
           # The root must send visitors to Studio, or omnidx.net is a dead page.
           grep -q 'url=studio/' index.html || { echo "root index.html no longer redirects to studio/"; exit 1; }

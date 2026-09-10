@@ -37,7 +37,6 @@ INDEX = ROOT / "index.html"
 # behind by a previous move still ends up in the right place.
 PAGES = (
     INDEX,
-    ROOT / "diagnostics" / "index.html",
     ROOT / "studio" / "index.html",
     ROOT / "studio" / "pricing" / "index.html",
     ROOT / "studio" / "download" / "index.html",
