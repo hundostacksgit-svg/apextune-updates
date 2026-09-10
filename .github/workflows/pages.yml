@@ -37,6 +37,7 @@ jobs:
           for f in studio/index.html studio/pricing/index.html studio/download/index.html \
                    studio/account/index.html studio/assets/studio.css studio/assets/studio.js \
                    studio/assets/config.js studio/assets/auth.js studio/assets/mark.svg \
+                   studio/assets/og-card.png \
                    studio/app/index.html studio/app/manifest.webmanifest studio/app/sw.js \
                    studio/app/css/app.css studio/app/js/main.js studio/app/js/ui.js \
                    studio/app/js/store.js studio/app/js/licence.js studio/app/js/levels.js \

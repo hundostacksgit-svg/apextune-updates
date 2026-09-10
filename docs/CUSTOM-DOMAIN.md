@@ -1,5 +1,22 @@
 # Putting OmniDx on omnidx.net
 
+Once the domain is live the two apps sit at clean paths under it:
+
+| | URL |
+|---|---|
+| Diagnostics site | `omnidx.net` |
+| Diagnostics app | `omnidx.net/app/` |
+| **Studio site** | `omnidx.net/studio/` |
+| **Studio editor** | `omnidx.net/studio/app/` |
+| Pricing | `omnidx.net/studio/pricing/` |
+| Download | `omnidx.net/studio/download/` |
+| Account | `omnidx.net/studio/account/` |
+
+`tools/set-domain.py --site-url` rewrites the link-preview tags on every one of
+those pages in a single run, so a move never leaves half the site pointing at
+the old address.
+
+
 `omnidx.net` is the chosen domain. As of the last check it was **not registered**
 — a DNS lookup returns NXDOMAIN — so it should be available to buy.
 
