@@ -177,6 +177,38 @@ function openMenu(root, id) {
   pop.innerHTML = renderItems(menu);
   wrap.classList.add('open');
   $('.mn-btn', wrap)?.setAttribute('aria-expanded', 'true');
+  fit(pop, wrap);
+}
+
+/*
+ * Keep the open menu inside the window.
+ *
+ * Anchored under its button and left-aligned, which is right until the button
+ * is near the right-hand edge or the window is short — and then the last items
+ * are off the screen, which reads as the menu being broken rather than as the
+ * window being small. Measured and nudged rather than guessed at, because the
+ * length of these menus changes with what is selected.
+ */
+function fit(pop, wrap) {
+  pop.style.left = '';
+  pop.style.right = '';
+  pop.style.maxHeight = '';
+
+  const btn = wrap.getBoundingClientRect();
+  const r = pop.getBoundingClientRect();
+  const margin = 8;
+
+  // Past the right edge: align the menu's right edge to the button's instead
+  // of its left, the way every menu bar does at the end of the bar.
+  if (r.right > window.innerWidth - margin) {
+    if (btn.right - r.width >= margin) { pop.style.left = 'auto'; pop.style.right = '0'; }
+    else pop.style.left = `${Math.round(margin - btn.left)}px`;
+  }
+
+  // Taller than the room under it: cap it and let it scroll, rather than
+  // running items off the bottom where they cannot be reached at all.
+  const room = window.innerHeight - r.top - margin;
+  if (r.height > room) pop.style.maxHeight = `${Math.max(160, Math.round(room))}px`;
 }
 
 export function closeMenus(root = document) {
@@ -226,6 +258,15 @@ export function initMenubar(root, actions) {
    * which feels broken to anyone who has used a menu bar before.
    */
   bar.addEventListener('pointerover', (e) => {
+    /*
+     * Mouse only. This is the bug that made the whole bar unusable on a touch
+     * screen: a tap raises pointerover before click, so tapping a second menu
+     * while one was open ran this first — opening it — and then the click
+     * handler below saw an already-open menu and closed it again. Every
+     * attempt to move from one menu to the next shut the bar instead, which is
+     * exactly the thing you cannot work around by tapping more carefully.
+     */
+    if (e.pointerType === 'touch' || e.pointerType === 'pen') return;
     const btn = e.target.closest('.mn-btn');
     if (!btn || !$('.mn.open', root)) return;
     const wrap = btn.closest('.mn');
@@ -235,7 +276,37 @@ export function initMenubar(root, actions) {
   document.addEventListener('pointerdown', (e) => {
     if (!e.target.closest('#menubar')) closeMenus(root);
   });
+  /*
+   * Arrows walk it, the way a menu bar has worked since 1984. Left and right
+   * move between menus, up and down through the items, Escape closes and puts
+   * the focus back on the button it came from.
+   */
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeMenus(root);
+    const openWrap = $('.mn.open', root);
+    if (e.key === 'Escape') {
+      if (openWrap) $('.mn-btn', openWrap)?.focus();
+      closeMenus(root);
+      return;
+    }
+    if (!openWrap) return;
+    const items = $$('.mn-item:not([disabled])', openWrap);
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!items.length) return;
+      const at = items.indexOf(document.activeElement);
+      const step = e.key === 'ArrowDown' ? 1 : -1;
+      const next = at < 0 ? (step > 0 ? 0 : items.length - 1)
+        : (at + step + items.length) % items.length;
+      items[next].focus();
+      return;
+    }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault();
+      const all = MENUS.map((m) => m.id);
+      const at = all.indexOf(openWrap.dataset.mn);
+      const next = (at + (e.key === 'ArrowRight' ? 1 : -1) + all.length) % all.length;
+      openMenu(root, all[next]);
+      $(`.mn[data-mn="${all[next]}"] .mn-btn`, root)?.focus();
+    }
   });
 }

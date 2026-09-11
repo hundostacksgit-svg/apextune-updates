@@ -1056,12 +1056,28 @@ input[type=checkbox]{accent-color:var(--blue)}
   font:inherit;font-size:12.5px;border-radius:5px;cursor:pointer;white-space:nowrap;
 }
 .mn-btn:hover,.mn.open .mn-btn{background:var(--surface-2);color:var(--text)}
+/*
+ * The open menu sits above everything except a deliberate takeover.
+ *
+ * It was at 120, under the coach tour (500), the toasts (300), the update bar
+ * (280) and the hover tips (200) — so on a smaller window the tour card landed
+ * squarely over the View menu and the options underneath it could not be read
+ * or reached. "The screen blocks them" was exactly right, and no amount of
+ * tapping was going to get past it. A menu the user just asked for has to win
+ * against anything that merely appeared on its own; it still loses to the
+ * command palette, the render overlay and the splash, which are takeovers the
+ * user asked for instead, and all three close it on the way in.
+ */
 .mn-pop{
-  display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:120;
-  min-width:250px;padding:5px;border-radius:var(--r-m);
+  display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:560;
+  min-width:250px;max-width:min(320px,calc(100vw - 16px));padding:5px;
+  border-radius:var(--r-m);overflow-y:auto;overscroll-behavior:contain;
   background:var(--surface-2);border:1px solid var(--line);
   box-shadow:0 18px 44px rgba(0,0,0,.5);
 }
+/* Open, and the button it belongs to, above the same overlays — otherwise the
+   menu floats free of a bar that is buried behind something. */
+.mn.open{position:relative;z-index:560}
 .mn.open .mn-pop{display:block}
 .mn-item{
   display:flex;align-items:center;gap:16px;width:100%;
@@ -1074,6 +1090,19 @@ input[type=checkbox]{accent-color:var(--blue)}
 .mn-lbl{flex:1;min-width:0}
 .mn-key{color:var(--text-3);font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .mn-sep{height:1px;margin:4px 8px;background:var(--line)}
+
+/*
+ * Fingers need more than a mouse does.
+ *
+ * 29px tall was fine to click and small to tap, on the one piece of chrome
+ * that has no second route to it. Raised to the same 38px minimum every other
+ * touch target in the app has to clear.
+ */
+@media (pointer: coarse) {
+  .mn-btn{padding:10px 13px;font-size:13.5px;min-height:38px}
+  .mn-item{padding:11px 12px;min-height:40px;font-size:13.5px}
+  .mn-pop{min-width:264px}
+}
 
 /* Phones have no room for seven menus next to a project name. Everything in
    them is reachable from the rail and the panels, so the bar steps aside. */

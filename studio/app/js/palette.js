@@ -126,6 +126,11 @@ async function build() {
 }
 
 export async function openPalette() {
+  // A takeover the user asked for beats a menu they opened a moment ago. The
+  // palette sits below the menu in the stack on purpose — menus win against
+  // things that appear by themselves — so it has to say so explicitly.
+  const { closeMenus } = await import('./menubar.js');
+  closeMenus();
   const box = $('#palette');
   const input = $('#pal-input');
   items = await build();
