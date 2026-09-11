@@ -565,16 +565,47 @@ input[type=checkbox]{accent-color:var(--blue)}
  * decoration — a wheel tells you which way you pushed, only a readout tells
  * you how far, and matching one shot to another is done by reading them.
  */
-.wheels{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.wheel{text-align:center}
-.wheel-top{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:5px}
+/*
+ * Three columns that genuinely fit.
+ *
+ * `1fr` alone is not enough: a grid track's default minimum is its content's
+ * size, so the R/G/B readout row — which is wider than the wheel above it —
+ * pushed the whole grid past the panel and cut the third wheel in half.
+ * `minmax(0,1fr)` lets the tracks shrink to the space there actually is, which
+ * is the only reason the readouts can then be told to shrink too.
+ */
+.wheels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.wheel{text-align:center;min-width:0}
+/*
+ * The reset sits over the wheel's corner, not beside the label.
+ *
+ * Sharing a row with the name left too little for it, and the names truncated
+ * to "SHADO…" — which is worse than useless on a control whose entire job is
+ * telling you which part of the range it touches. Out of the flow, the label
+ * gets the whole column.
+ */
+.wheel-top{position:relative;margin-bottom:4px;min-width:0}
 .wheel-reset{
+  position:absolute;right:-2px;top:50%;transform:translateY(-50%);
   border:0;background:transparent;color:var(--text-3);cursor:pointer;
-  font-size:12px;line-height:1;padding:2px 3px;border-radius:4px;
+  font-size:11px;line-height:1;padding:2px;border-radius:4px;opacity:.55;
 }
+.wheel-reset:focus-visible{opacity:1}
+/* Fades up on hover so it is quiet until wanted, but never invisible — a
+   control you cannot see until you touch it is one nobody finds. */
+.wheel:hover .wheel-reset{opacity:1}
 .wheel-reset:hover{color:var(--text);background:var(--surface-3)}
-.wheel-nums{display:flex;gap:5px;justify-content:center;margin-top:5px}
-.wn{display:flex;align-items:baseline;gap:2px;font-family:var(--mono);font-size:9.5px}
+/*
+ * The readouts stack rather than sitting in a row.
+ *
+ * Three signed two-decimal numbers side by side are wider than the wheel they
+ * describe at any font size a person would want to read, so across is the
+ * wrong axis for them in a panel this narrow. Stacked, each line is short, the
+ * column stays the wheel's width, and the three values still read as a group.
+ */
+.wheel-nums{display:flex;flex-direction:column;gap:1px;align-items:center;margin-top:5px;min-width:0}
+.wn{display:flex;align-items:baseline;gap:4px;font-family:var(--mono);font-size:9.5px;
+  justify-content:space-between;width:100%;max-width:72px}
 .wn i{color:var(--text-3);font-style:normal;font-size:8.5px}
 /* Tabular figures, so the numbers do not shuffle sideways as they change —
    a readout you are watching mid-drag is unreadable otherwise. */
@@ -582,7 +613,8 @@ input[type=checkbox]{accent-color:var(--blue)}
 .wn b.off{color:var(--text-3);font-weight:400}
 .wheel canvas{width:100%;max-width:90px;aspect-ratio:1;border-radius:50%;cursor:crosshair;
   border:1px solid var(--line);touch-action:none;display:block;margin:0 auto}
-.wheel .wl{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+.wheel .wl{display:block;font-size:9.5px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;
+  padding-right:12px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   color:var(--text-3);margin-top:6px}
 .wheel .wv{font-family:var(--mono);font-size:10px;color:var(--blue-2)}
 

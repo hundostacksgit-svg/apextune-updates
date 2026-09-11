@@ -16,7 +16,22 @@
 <link rel="stylesheet" href="css/app.css">
 <script>
 (function(){try{
-  var t=localStorage.getItem('omnidx.theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');
+  /*
+   * The editor is dark unless somebody has said otherwise.
+   *
+   * Not a style preference — a bright interface around a picture changes how
+   * that picture reads. Simultaneous contrast is real: the same shot looks
+   * darker and less saturated surrounded by white than surrounded by black,
+   * so a light editor makes you grade brighter and more saturated than you
+   * meant, and the file you deliver is wrong. Every grading and finishing
+   * application is dark for this reason.
+   *
+   * So the system's light-mode preference is honoured on the website, and
+   * deliberately not here. An explicit choice — the toggle in the toolbar —
+   * still wins, because somebody who wants light after being told why should
+   * get light.
+   */
+  var t=localStorage.getItem('omnidx.theme')||'dark';
   document.documentElement.setAttribute('data-theme',t);
   var l=localStorage.getItem('omnidx.studio.level')||'beginner';
   document.documentElement.setAttribute('data-level',l);

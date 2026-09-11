@@ -129,8 +129,26 @@ export function mount(host) {
           <div class="wheels" id="c-wheels">
             ${['lift', 'gamma', 'gain'].map((which) => `
               <div class="wheel">
+                <!--
+                  Lift, Gamma and Gain rather than Shadows, Midtones and
+                  Highlights.
+
+                  These wheels only appear at Professional, and those are the
+                  words the people who see them already use — every tutorial,
+                  every grading conversation and every other application says
+                  lift/gamma/gain. They are also short enough to fit the
+                  column, where "Highlights" was truncating to "HIGHLIGH…" on a
+                  control whose whole job is naming which part of the range it
+                  touches. The plain-English name is on the hover tip.
+                -->
                 <div class="wheel-top">
-                  <span class="wl">${which === 'lift' ? 'Shadows' : which === 'gamma' ? 'Midtones' : 'Highlights'}</span>
+                  <span class="wl" title="${which === 'lift' ? 'Lift — the darkest parts of the picture'
+                    : which === 'gamma' ? 'Gamma — the midtones, where skin lives'
+                    : 'Gain — the brightest parts of the picture'}"
+                    data-tip="${which === 'lift' ? 'Lift moves the shadows. Drag toward a colour to tint the dark parts.'
+                    : which === 'gamma' ? 'Gamma moves the midtones — where faces and skin sit. The one to reach for first.'
+                    : 'Gain moves the highlights. Drag toward a colour to tint the bright parts.'}"
+                    >${which === 'lift' ? 'Lift' : which === 'gamma' ? 'Gamma' : 'Gain'}</span>
                   <button class="wheel-reset" data-wreset="${which}"
                     aria-label="Reset ${which}" title="Reset this wheel">↺</button>
                 </div>
