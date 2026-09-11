@@ -27,6 +27,7 @@ import { tagVideo } from './engine/tags.js';
 import { initMenubar } from './menubar.js';
 import { initHistoryUi, showDid, openHistory, paintUndoButtons } from './history-ui.js';
 import { initTips, applyTipsForLevel, setTips, tipsOn } from './tips.js';
+import { initMoreSheet } from './more-sheet.js';
 import * as media from './engine/media.js';
 import { TimelineUI } from './timeline-ui.js';
 import { openPanel, refreshPanel, closePanel, panelIsOverlay, PANELS } from './panels/index.js';
@@ -897,6 +898,30 @@ function paintLevel() {
 
   initTips();
   applyTipsForLevel(levels.current());
+
+  // The phone's overflow sheet. Everything in it is a second route to a
+  // control that exists elsewhere — never the only one — so a desktop loses
+  // nothing and nothing has to be maintained twice.
+  initMoreSheet({
+    openPanel,
+    palette: () => openPalette(),
+    openHistory,
+    theme: () => $('#btn-theme')?.click(),
+    levelName: () => levels.DESCRIPTIONS[levels.current()]?.name || 'Beginner',
+    accountLine: () => {
+      const who = auth.session();
+      return who?.email ? `${who.email} — ${licence.editionName()}` : `Not signed in — ${licence.editionName()}`;
+    },
+    cycleLevel: () => {
+      const order = levels.LEVELS;
+      const next = order[(order.indexOf(levels.current()) + 1) % order.length];
+      levels.set(next);
+      applyTipsForLevel(next);
+      paintLevel();
+      refreshPanel();
+      toast(`${levels.DESCRIPTIONS[next].name} — ${levels.DESCRIPTIONS[next].line}`, '', 3200);
+    },
+  });
 
   // No-op in a browser; hooks up the native menus in the desktop build.
   wireDesktop({

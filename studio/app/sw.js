@@ -87,6 +87,7 @@ const SHELL = [
   './js/menubar.js',
   './js/history-ui.js',
   './js/tips.js',
+  './js/more-sheet.js',
   './js/palette.js',
   './js/panels/ai.js',
   './js/panels/audio.js',

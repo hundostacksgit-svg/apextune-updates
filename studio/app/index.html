@@ -72,6 +72,18 @@
   </div>
 
   <div class="tb-right">
+    <!--
+      Phones get a different set of controls here, not a smaller version of
+      the same ones. Six buttons plus a project name does not fit 390 pixels:
+      measured on an iPhone 13, Export sat at x=590 on a 390-wide screen —
+      completely unreachable. You could not export from a phone at all.
+
+      So on a phone this collapses to what somebody actually needs at the top
+      — undo and export — and everything else moves into the overflow sheet,
+      which is reachable with a thumb rather than in a corner.
+    -->
+    <button class="tb-btn tb-more" id="btn-more" title="More" aria-haspopup="true" aria-expanded="false">
+      <span class="ico">⋯</span></button>
     <button class="tb-btn tb-undo" id="btn-undo" title="Undo (Ctrl+Z)" disabled>
       <span class="ico">↶</span><span class="lbl">Undo</span></button>
     <button class="tb-btn" id="btn-redo" title="Redo (Ctrl+Shift+Z)" disabled><span class="ico">↷</span></button>

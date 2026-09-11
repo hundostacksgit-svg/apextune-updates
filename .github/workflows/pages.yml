@@ -47,7 +47,7 @@ jobs:
                    studio/app/js/store.js studio/app/js/licence.js studio/app/js/levels.js \
                    studio/app/js/timeline-ui.js studio/app/js/palette.js studio/app/js/tutorial.js \
                    studio/app/js/mobile.js studio/app/js/menubar.js \
-                   studio/app/js/history-ui.js studio/app/js/tips.js \
+                   studio/app/js/history-ui.js studio/app/js/tips.js studio/app/js/more-sheet.js \
                    studio/app/js/desktop.js studio/app/js/updates.js version.json \
                    studio/app/js/engine/effects.js studio/app/js/engine/stickers.js \
                    studio/app/js/engine/templates-library.js studio/app/js/engine/templates.js studio/app/js/engine/tracking.js \
