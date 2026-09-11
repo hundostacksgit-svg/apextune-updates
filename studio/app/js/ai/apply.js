@@ -10,10 +10,11 @@
 
 import {
   addClip, addTrack, clipsOn, clipById, mediaById, duration,
-  removeClips, closeGaps, setKeyframe, sourceSpan, RATIOS,
+  removeClips, closeGaps, setKeyframe, sourceSpan, RATIOS, defaultTransform,
 } from '../engine/project.js';
 import { decode, detectSilence, detectBeats, energyCurve } from '../engine/media.js';
 import { defaultText, TITLE_PRESETS } from '../engine/titles.js';
+import { LOOK_BY_ID } from '../engine/filters.js';
 import { defaultSticker } from '../engine/stickers.js';
 import { makeEffect, EFFECTS } from '../engine/effects.js';
 
@@ -113,6 +114,94 @@ function clearStory(p) {
 /* ------------------------------------------------------------------ */
 /* the operations                                                      */
 /* ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------ *
+ * Saying which clips
+ * ------------------------------------------------------------------ */
+
+/*
+ * Why this exists.
+ *
+ * Every operation used to mean "do this to everything", and that — not the
+ * language parsing — was the real reason the assistant could not follow a
+ * specific instruction. "Make the third clip black and white" is not a hard
+ * sentence to understand; it was a sentence with no way to say it. There was
+ * no vocabulary for *which* clip, so no amount of intelligence upstream could
+ * produce a plan that did it.
+ *
+ * So every op now takes an optional `target`, and the shapes it accepts are
+ * the ways people actually refer to parts of an edit:
+ *
+ *   "all"            everything (the default, so nothing that worked breaks)
+ *   "selected"       whatever is highlighted on the timeline right now
+ *   "first" / "last" the obvious ones
+ *   3                the third clip, counting from one like a person does
+ *   [1, 3, 5]        those clips
+ *   "2-4"            a range, inclusive
+ *   "odd" / "even"   alternating, for accents
+ *   { from, to }     everything overlapping those seconds on the timeline
+ *
+ * One-based, deliberately. Somebody saying "the third clip" means the third
+ * one, and an assistant that silently applies things to the fourth because the
+ * code counts from zero is worse than one that cannot do it at all.
+ */
+export function resolveTarget(p, target, { selection = [] } = {}) {
+  const clips = storyClips(p);
+  if (!clips.length) return [];
+  if (target === undefined || target === null || target === 'all') return clips;
+
+  if (target === 'selected') {
+    const picked = clips.filter((c) => selection.includes(c.id));
+    // Falling back to everything would be the wrong kind of helpful: somebody
+    // who said "this clip" and had nothing selected wants to be told, not to
+    // have the whole timeline changed under them.
+    if (!picked.length) throw new Error('Nothing is selected — click a clip on the timeline first.');
+    return picked;
+  }
+  if (target === 'first') return clips.slice(0, 1);
+  if (target === 'last') return clips.slice(-1);
+  if (target === 'odd') return clips.filter((_, i) => i % 2 === 0);
+  if (target === 'even') return clips.filter((_, i) => i % 2 === 1);
+
+  if (typeof target === 'number') {
+    const one = clips[Math.round(target) - 1];
+    if (!one) throw new Error(`There is no clip ${target} — there ${clips.length === 1 ? 'is' : 'are'} ${clips.length}.`);
+    return [one];
+  }
+
+  if (Array.isArray(target)) {
+    const out = target.map((n) => clips[Math.round(n) - 1]).filter(Boolean);
+    if (!out.length) throw new Error('None of those clip numbers exist.');
+    return out;
+  }
+
+  if (typeof target === 'string') {
+    const range = target.match(/^\s*(\d+)\s*[-–to]+\s*(\d+)\s*$/i);
+    if (range) {
+      const lo = Math.min(Number(range[1]), Number(range[2]));
+      const hi = Math.max(Number(range[1]), Number(range[2]));
+      const out = clips.slice(lo - 1, hi);
+      if (!out.length) throw new Error(`There are no clips ${lo} to ${hi}.`);
+      return out;
+    }
+    const single = target.match(/^\s*(\d+)\s*$/);
+    if (single) return resolveTarget(p, Number(single[1]), { selection });
+  }
+
+  if (typeof target === 'object') {
+    const from = Number(target.from ?? 0);
+    const to = Number(target.to ?? Infinity);
+    // Overlap, not containment: "the bit from 3 to 8 seconds" means the shots
+    // you can see during that stretch, including one that starts at 2 and runs
+    // to 6. Requiring a clip to sit entirely inside the range would skip
+    // exactly the shot somebody was pointing at.
+    const out = clips.filter((c) => c.start < to && c.start + c.dur > from);
+    if (!out.length) throw new Error(`Nothing is on the timeline between ${from}s and ${to}s.`);
+    return out;
+  }
+
+  return clips;
+}
 
 const OPS = {
 
@@ -391,6 +480,138 @@ const OPS = {
     return 'Faded in and out.';
   },
 
+  /* ---------------- one clip at a time ---------------- */
+  /*
+   * The operations below are what make a specific instruction expressible.
+   *
+   * Everything above this line acts on the whole edit, which is right for
+   * "make it an anime edit" and useless for "slow the second shot down and
+   * mute it". These take a target, so the sentence has somewhere to land.
+   */
+
+  /** Colour on chosen clips: a look, or individual controls, or both. */
+  setColor(p, { target, look, strength = 1, ...values }, ctx = {}) {
+    const clips = resolveTarget(p, target, ctx);
+    const known = ['exposure', 'contrast', 'saturation', 'temperature', 'tint',
+      'highlights', 'shadows', 'vignette', 'grain', 'blur'];
+    for (const clip of clips) {
+      clip.color ||= {};
+      if (look !== undefined) {
+        if (look !== 'none' && !LOOK_BY_ID[look]) throw new Error(`There is no "${look}" look.`);
+        clip.color.look = look;
+        clip.color.strength = strength;
+      }
+      for (const key of known) {
+        if (values[key] !== undefined) clip.color[key] = Number(values[key]);
+      }
+    }
+    return `Colour set on ${clips.length} clip${clips.length === 1 ? '' : 's'}.`;
+  },
+
+  /** Speed on chosen clips, rather than the flat one that hits everything. */
+  setClipSpeed(p, { target, speed = 1 }, ctx = {}) {
+    const clips = resolveTarget(p, target, ctx);
+    const v = Math.max(0.1, Math.min(10, Number(speed) || 1));
+    for (const clip of clips) {
+      // The clip has to get shorter or longer to match, or the speed change is
+      // invisible — the picture runs faster inside a slot of the same length
+      // and the rest of the edit never moves.
+      const was = clip.speed || 1;
+      clip.speed = v;
+      clip.dur = Math.max(0.05, clip.dur * (was / v));
+      clip.speedKeys = null;
+    }
+    return `${v}× on ${clips.length} clip${clips.length === 1 ? '' : 's'}.`;
+  },
+
+  /** Volume, mute and fades on chosen clips. */
+  setVolume(p, { target, volume, mute, fadeIn, fadeOut }, ctx = {}) {
+    const clips = resolveTarget(p, target, ctx);
+    for (const clip of clips) {
+      if (mute !== undefined) clip.muted = Boolean(mute);
+      if (volume !== undefined) clip.volume = Math.max(0, Math.min(2, Number(volume)));
+      if (fadeIn !== undefined) clip.fadeIn = Math.max(0, Math.min(clip.dur / 2, Number(fadeIn)));
+      if (fadeOut !== undefined) clip.fadeOut = Math.max(0, Math.min(clip.dur / 2, Number(fadeOut)));
+    }
+    return `Audio set on ${clips.length} clip${clips.length === 1 ? '' : 's'}.`;
+  },
+
+  /** Position, scale, rotation and opacity on chosen clips. */
+  setTransform(p, { target, scale, x, y, rotate, opacity, blend }, ctx = {}) {
+    const clips = resolveTarget(p, target, ctx);
+    for (const clip of clips) {
+      clip.transform ||= defaultTransform();
+      if (scale !== undefined) clip.transform.scale = Math.max(0.05, Math.min(8, Number(scale)));
+      if (x !== undefined) clip.transform.x = Number(x);
+      if (y !== undefined) clip.transform.y = Number(y);
+      if (rotate !== undefined) clip.transform.rotate = Number(rotate);
+      if (opacity !== undefined) clip.transform.opacity = Math.max(0, Math.min(1, Number(opacity)));
+      if (blend !== undefined) clip.transform.blend = String(blend);
+    }
+    return `Framing set on ${clips.length} clip${clips.length === 1 ? '' : 's'}.`;
+  },
+
+  /** Remove chosen clips and close the gap behind them. */
+  deleteClips(p, { target, ripple = true }, ctx = {}) {
+    const clips = resolveTarget(p, target, ctx);
+    const ids = new Set(clips.map((c) => c.id));
+    const trackIds = [...new Set(clips.map((c) => c.trackId))];
+    p.clips = p.clips.filter((c) => !ids.has(c.id));
+    if (ripple) {
+      // Closing up is almost always what was meant: "delete the third shot"
+      // does not usually mean "leave a hole where it was".
+      for (const trackId of trackIds) {
+        let at = 0;
+        for (const c of clipsOn(p, trackId)) { c.start = at; at += c.dur; }
+      }
+    }
+    return `Removed ${clips.length} clip${clips.length === 1 ? '' : 's'}.`;
+  },
+
+  /** Trim chosen clips to a length, or by an amount off either end. */
+  trimClips(p, { target, dur, head = 0, tail = 0, ripple = true }, ctx = {}) {
+    const clips = resolveTarget(p, target, ctx);
+    for (const clip of clips) {
+      if (dur !== undefined) clip.dur = Math.max(0.05, Number(dur));
+      if (head) { const d = Math.min(Number(head), clip.dur - 0.05); clip.in += d; clip.dur -= d; }
+      if (tail) clip.dur = Math.max(0.05, clip.dur - Number(tail));
+    }
+    if (ripple) {
+      for (const trackId of [...new Set(clips.map((c) => c.trackId))]) {
+        let at = 0;
+        for (const c of clipsOn(p, trackId)) { c.start = at; at += c.dur; }
+      }
+    }
+    return `Trimmed ${clips.length} clip${clips.length === 1 ? '' : 's'}.`;
+  },
+
+  /** Take an effect back off chosen clips. */
+  removeEffect(p, { target, effect }, ctx = {}) {
+    const clips = resolveTarget(p, target, ctx);
+    let n = 0;
+    for (const clip of clips) {
+      if (!clip.effects?.length) continue;
+      const before = clip.effects.length;
+      clip.effects = effect ? clip.effects.filter((f) => f.id !== effect) : [];
+      n += before - clip.effects.length;
+    }
+    return `Removed ${n} effect${n === 1 ? '' : 's'}.`;
+  },
+
+  /** Put the clips in a given order, by their current numbers. */
+  reorderClips(p, { order }, ctx = {}) {
+    const clips = storyClips(p);
+    if (!Array.isArray(order) || !order.length) throw new Error('No new order was given.');
+    const picked = order.map((n) => clips[Math.round(n) - 1]).filter(Boolean);
+    if (picked.length !== clips.length) {
+      throw new Error(`That order lists ${picked.length} clips but there are ${clips.length}.`);
+    }
+    let at = 0;
+    for (const clip of picked) { clip.start = at; at += clip.dur; }
+    void ctx;
+    return `Reordered ${picked.length} clips.`;
+  },
+
   /* ---------------- effects ---------------- */
 
   /**
@@ -657,4 +878,39 @@ export const OP_SPEC = {
   captions: { args: 'style?: "tiktok"|"youtube"|"bold"|"karaoke"|"clean"', does: 'Caption cues timed to the speech.' },
   fitMusic: { args: 'fadeOut?: seconds, duck?: bool', does: 'Trim the music to the edit length. Always last but one.' },
   fadeEnds: { args: 'dur?: seconds', does: 'Fade the first and last shot.' },
+
+  /*
+   * Everything below takes a `target`, which is how a specific instruction
+   * gets said at all. Without it every operation meant "do this to the whole
+   * timeline", and a sentence like "slow the third shot down" had nowhere to
+   * land no matter how well it was understood.
+   *
+   * target: "all" | "selected" | "first" | "last" | "odd" | "even"
+   *       | 3 (the third clip, counting from one)
+   *       | [1,3,5] | "2-4" | { from: seconds, to: seconds }
+   */
+  setColor: {
+    args: 'target?, look?: id, strength?: 0-1.5, exposure?/contrast?/saturation?/temperature?/tint?/highlights?/shadows?/vignette?/grain?/blur?: -100..100',
+    does: 'Grade chosen clips. Use for "make clip 2 black and white", "warm up the first half".' },
+  setClipSpeed: {
+    args: 'target?, speed: multiplier',
+    does: 'Speed on chosen clips only, and the clip is re-timed to match so the edit actually moves.' },
+  setVolume: {
+    args: 'target?, volume?: 0-2, mute?: bool, fadeIn?: seconds, fadeOut?: seconds',
+    does: 'Loudness, muting and fades on chosen clips. Use for "mute the third one".' },
+  setTransform: {
+    args: 'target?, scale?: 0.05-8, x?/y?: fraction of frame, rotate?: degrees, opacity?: 0-1, blend?: mode',
+    does: 'Framing and opacity on chosen clips. Use for "zoom into the second shot", "make the overlay half transparent".' },
+  deleteClips: {
+    args: 'target, ripple?: bool (default true)',
+    does: 'Remove chosen clips and close the gap. Use for "get rid of the last two".' },
+  trimClips: {
+    args: 'target, dur?: seconds, head?: seconds off the front, tail?: seconds off the end, ripple?: bool',
+    does: 'Shorten chosen clips. Use for "make every shot two seconds", "cut a second off the start of clip 4".' },
+  removeEffect: {
+    args: 'target?, effect?: id (omit to clear everything on them)',
+    does: 'Take effects back off chosen clips.' },
+  reorderClips: {
+    args: 'order: [clip numbers in the new order]',
+    does: 'Rearrange the timeline. Use for "put the last shot first".' },
 };

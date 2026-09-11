@@ -40,6 +40,7 @@ const SHELL = [
   './js/ai/apply.js',
   './js/ai/planner.js',
   './js/ai/remote.js',
+  './js/ai/direct.js',
   './js/desktop.js',
   './js/engine/audio-fx.js',
   './js/engine/audio-render.js',

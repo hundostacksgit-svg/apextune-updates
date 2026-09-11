@@ -41,6 +41,39 @@ export function mount(host) {
       Describe the edit. It plans it, you approve it, it lands on the timeline as normal clips.
     </p>
 
+    <!--
+      Which brain is answering, said out loud.
+
+      There are two. With a Worker configured, the request goes to a real
+      language model that understands anything you type. Without one it falls
+      back to the on-device reader, which handles direct instructions — "mute
+      clip 2", "slow the last shot to half speed" — and recognised styles, and
+      nothing else.
+
+      That gap used to be invisible, which is the worst possible way to ship
+      it: people typed something specific, got a generic template back, and
+      concluded the assistant was stupid rather than switched off.
+    -->
+    ${cloudAvailable() ? `
+      <p class="tiny muted" style="margin:-4px 0 12px">
+        <b style="color:var(--ok)">●</b> Full language understanding — say anything.
+      </p>`
+    : `
+      <details class="note tiny" style="margin:0 0 12px">
+        <summary><b>Running on the on-device reader</b> — direct instructions only</summary>
+        <p style="margin:8px 0 0">
+          It follows things like <em>"mute clip 2"</em>, <em>"make the third one black
+          and white"</em>, <em>"slow the last clip to half speed"</em>, <em>"delete the last
+          two"</em>, <em>"brighten clips 2 to 4"</em> — a target and a change. It also knows
+          the named styles.
+        </p>
+        <p style="margin:8px 0 0">
+          For free-form requests it needs the server switched on, which is where the
+          language model lives. Paste your Worker URL in
+          <b>Settings → Advanced</b> and this panel changes to full understanding.
+        </p>
+      </details>`}
+
     ${locked ? `<div class="note info">
       <b>AI editing is a paid feature.</b> It starts at
       ${esc(licence.requires('ai-edit')?.name || 'Creator')} —
@@ -187,7 +220,7 @@ async function runReference(host, file) {
 
     $('#ref-apply', out).addEventListener('click', async () => {
       if (!plan.steps.length) { toast(plan.summary, 'bad'); return; }
-      const report = await applyPlan(S.project, plan, { beats: S.beats });
+      const report = await applyPlan(S.project, plan, { beats: S.beats, selection: [...S.sel] });
       if (report.failed.length) { toast(report.failed[0].why, 'bad', 5000); return; }
       actions.commit('Copy an edit');
       toast(plan.summary, 'ok', 5000);
@@ -297,6 +330,9 @@ async function doApply(host, plan) {
   try {
     const ctx = {
       beats: S.beats,
+      // What is highlighted right now, so "this clip" and "the selected ones"
+      // mean something rather than quietly applying to the whole timeline.
+      selection: [...S.sel],
       transcribe: cloudAvailable() ? (project) => transcribeProject(project) : null,
     };
     const report = await applyPlan(S.project, { ...plan, steps: chosen }, ctx);

@@ -159,7 +159,7 @@ async function run(host, id) {
       onTimeline: S.project.clips.length,
       rebuild: rebuildChoice ?? !S.project.clips.length,
     });
-    const report = await applyPlan(S.project, { steps: built.steps }, { beats: S.beats });
+    const report = await applyPlan(S.project, { steps: built.steps }, { beats: S.beats, selection: [...S.sel] });
 
     actions.commit(`Style: ${built.template.name}`);
     actions.seek(0);

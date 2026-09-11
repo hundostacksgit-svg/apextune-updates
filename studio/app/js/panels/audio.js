@@ -317,7 +317,7 @@ async function beatCut(music) {
   if (!S.beats) return;
   const report = await applyPlan(S.project, {
     steps: [{ op: 'beatCut', args: { every: 4 }, label: 'Cut on the beat' }],
-  }, { beats: S.beats });
+  }, { beats: S.beats, selection: [...S.sel] });
   if (report.failed.length) { toast(report.failed[0].why, 'bad', 5000); return; }
   actions.commit('Cut to the beat');
   toast(report.done[0]?.note || 'Cut to the beat', 'ok', 4000);

@@ -71,6 +71,7 @@ jobs:
                    studio/app/js/engine/audio.js studio/app/js/engine/playback.js \
                    studio/app/js/engine/exporter.js studio/app/js/engine/history.js \
                    studio/app/js/ai/planner.js studio/app/js/ai/apply.js studio/app/js/ai/remote.js \
+                   studio/app/js/ai/direct.js \
                    studio/app/js/panels/index.js studio/app/js/panels/media.js \
                    studio/app/js/panels/ai.js studio/app/js/panels/effects.js \
                    studio/app/js/panels/color.js studio/app/js/panels/text.js \

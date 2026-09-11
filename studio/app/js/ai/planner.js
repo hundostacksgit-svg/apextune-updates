@@ -18,6 +18,7 @@
  */
 
 import { matchTemplate, buildTemplate, TEMPLATES } from '../engine/templates.js';
+import { readInstructions } from './direct.js';
 import { EFFECTS } from '../engine/effects.js';
 
 const NUM_WORDS = {
@@ -273,6 +274,36 @@ export function plan(prompt, context) {
 
   let steps = [];
   let source = null;
+
+  /* ---------------- 0. a direct instruction ---------------- */
+  /*
+   * Checked before anything else, because a specific instruction must beat a
+   * style match on the same words.
+   *
+   * "Slow the last clip down" contains "slow", which the style matcher reads
+   * as a pace and happily turns into a whole cinematic re-edit. Somebody who
+   * named one clip and one property wants that done to that clip and nothing
+   * else — treating it as a style request is exactly the behaviour that made
+   * the assistant feel like it only followed premade lines.
+   */
+  const direct = readInstructions(prompt, { clipCount: onTimeline });
+  if (direct && onTimeline > 0) {
+    return {
+      intent, steps: direct.steps,
+      warnings: direct.unhandled.length
+        // Said plainly rather than swallowed. Somebody who asked for three
+        // things and got two needs to know which one was missed, or they will
+        // assume it all worked and find out at export.
+        ? [`I did not follow: "${direct.unhandled.join('", "')}". Try naming the clip and what to change, `
+           + 'like "mute clip 2" or "slow the last shot to half speed".']
+        : [],
+      questions: [],
+      summary: direct.steps.length === 1
+        ? direct.steps[0].label
+        : `${direct.steps.length} changes to specific clips.`,
+      source: { id: 'direct', name: 'Direct instruction' },
+    };
+  }
 
   /* ---------------- 1. a named style ---------------- */
   if (intent.template) {
