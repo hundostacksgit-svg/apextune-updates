@@ -73,7 +73,20 @@ eyeballed.
   new overlay layer, as many as you like
 - Undo that names what it will take back, plus a full history you can jump
   into at any point
-- 316 effects, 107 transitions, 118 looks, 200 typefaces, 130 styles
+- 317 effects, 107 transitions, 118 looks, 200 typefaces, 130 styles
+- **Keyframes you can see.** Unfold a clip and it becomes its properties —
+  position, scale, rotation, opacity, volume, the grade, every parameter of
+  every effect on it. Each has a stopwatch and a lane of draggable diamonds at
+  the same scale as the clip, and a graph editor behind them for the shape of
+  a move. This is the thing that separates a finishing tool from a phone
+  editor, and it is the one that was missing
+- **Follow a face** and pin a blur, a pixelate, a background blur, a spotlight,
+  a skin soften or a light to it. Runs on your device, no model downloaded, and
+  measured across six skin tones: found in all of them, confidence varying by
+  0.002 between the palest and the deepest
+- **B-roll matching** — which of your own clips suits the moment at the
+  playhead, read from the caption line, the tempo and what is already on
+  screen, with the reasoning shown. No stock library, nothing fetched
 - Every effect, look and transition previews on your own footage. Nothing is a
   shipped screenshot, so nothing can drift from what it actually does — and it
   adds zero bytes to the download
@@ -112,6 +125,11 @@ you were going to send. Send them and it gets made.
 
 **Multi-lingual captions.** The transcription runs on the server, so it turns
 on with step 2.
+
+**Shape masks and nesting.** After Effects has both; this does not. Masking is
+covered for the common cases — chroma key, a tracked oval, background removal —
+but there is no pen tool and no way to nest one composition inside another.
+Neither is faked anywhere in the interface.
 
 ---
 
