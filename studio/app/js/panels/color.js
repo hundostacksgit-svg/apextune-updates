@@ -8,6 +8,7 @@ import { S, actions, engine } from '../main.js';
 import { attachPreviews } from '../engine/preview.js';
 import { curvesMarkup, drawCurve, wireCurves, curvesOpen, setCurvesOpen } from './curves.js';
 import { SCOPES, drawScope } from '../engine/scopes.js';
+import { masksMarkup, handleMaskClick, handleMaskInput } from './masks.js';
 
 /*
  * Which scope is showing, remembered for the session.
@@ -115,6 +116,8 @@ export function mount(host) {
       </div>
     </details>
 
+    ${masksMarkup(clip)}
+
     <details class="group" data-min="expert" ${clip ? 'open' : ''}>
       <summary>Colour wheels</summary>
       <div class="gbody">
@@ -218,6 +221,27 @@ export function mount(host) {
       if (q) grp.open = true;
     }
   });
+
+  /*
+   * The windows and qualifier section handles its own events.
+   *
+   * Delegated from the panel rather than bound per control: the section is
+   * rebuilt whenever a window is added, removed or picked, and a listener per
+   * slider would pile up one set per rebuild.
+   */
+  const remount = () => mount(host);
+  /*
+   * Bound once. mount() replaces the panel's contents but not the panel, so a
+   * listener added on every mount survives every rebuild — and this section
+   * rebuilds on each window added, removed or picked, which would mean one
+   * extra handler per click until a single slider fired forty times.
+   */
+  if (!host.dataset.maskWired) {
+    host.dataset.maskWired = '1';
+    host.addEventListener('click', (e) => { handleMaskClick(e, remount); });
+    host.addEventListener('input', (e) => { handleMaskInput(e, { live: true, refresh: null }); });
+    host.addEventListener('change', (e) => { handleMaskInput(e, { live: false, refresh: remount }); });
+  }
 
   $('#c-looks', host).addEventListener('click', (e) => {
     const btn = e.target.closest('[data-look]');

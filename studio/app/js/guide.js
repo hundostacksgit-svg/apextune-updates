@@ -120,6 +120,22 @@ export const GUIDE = [
     ],
   },
   {
+    id: 'windows',
+    group: 'Colour',
+    title: 'Windows and the qualifier: grading one thing, not the shot',
+    body: [
+      ['What they are for', 'Every grade so far covered the whole frame, which is right for a look and useless for "brighten his face" or "take the sky down two stops". A **window** says where a grade happens. The **qualifier** says what colour. Use both and you are grading one jacket in a crowd.'],
+      ['Add a window', 'Colour panel → **Windows & qualifier** → Rectangle, Oval or Free shape. Drag it on the picture: the body moves it, the corners resize it about its centre so it stays over what you put it over, and the arm on top turns it. Hold **Shift** while turning to snap to fifteen degrees.'],
+      ['Soften it', 'A hard-edged oval on somebody\u2019s face reads as a mistake from across the room. **Softness** feathers the edge; most windows want a good deal of it.'],
+      ['Inside or outside', '**Everything outside it instead** inverts a window. Several windows add together, and an inverted one cuts a hole in the others — so an oval plus a smaller inverted oval is a ring.'],
+      ['Cut the picture instead', 'The dropdown on each window switches it from limiting the grade to cutting the layer itself. That is the compositing use: everything outside the shape becomes transparent and the layer below shows through.'],
+      ['The qualifier', 'Switch it on and pick a colour — either with the picker, by clicking the picture, or with the hue, saturation and brightness ranges by hand. Only that colour gets the grade.'],
+      ['Watch the matte', 'Press **Show the matte** and you are looking at the selection rather than the picture: white is selected, black is not, grey is a soft edge. This is how the job is actually done — get the edges clean here first, then look at what the grade did. **Soften the edges** is the control for the speckle a compressed frame leaves behind.'],
+      ['Both together', 'A window limits a qualifier rather than competing with it. "This colour, but only over there" is what makes a secondary usable on a busy frame.'],
+      ['They animate', 'Every setting on a window has a stopwatch in the layer properties, so a window can follow a moving subject — and a motion track can be pinned straight onto one.'],
+    ],
+  },
+  {
     id: 'effects',
     group: 'Effects',
     title: 'Finding an effect among three hundred',

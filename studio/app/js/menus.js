@@ -311,7 +311,7 @@ export function viewerMenu(api = {}) {
   ];
 }
 
-function canvasNow() { return document.querySelector('#stage-canvas, #preview, canvas.stage'); }
+function canvasNow() { return document.querySelector('#preview'); }
 
 async function copyFrame() {
   const cv = canvasNow();

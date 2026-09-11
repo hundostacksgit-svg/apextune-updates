@@ -351,6 +351,62 @@ html[data-level="expert"] .card-hint{display:none}
 .tl-track.audio{background:color-mix(in srgb,var(--surface-2) 70%,var(--surface))}
 .tl-track.drop{background:color-mix(in srgb,var(--blue) 12%,var(--surface-2))}
 
+/* ---------- windows and the qualifier ---------- */
+/*
+ * The handles live over the picture in the picture's own box, not the stage's.
+ * The two differ whenever the frame is letterboxed, and a handle in the black
+ * bars is a handle nowhere near the shape it belongs to.
+ */
+.mask-layer{position:absolute;inset:0;z-index:7;pointer-events:none}
+.mask-shape{
+  position:absolute;pointer-events:auto;cursor:move;
+  border:1.5px dashed var(--blue-2);
+  box-shadow:0 0 0 1px rgba(0,0,0,.55), inset 0 0 0 1px rgba(0,0,0,.45);
+}
+.mask-shape.ellipse{border-radius:50%}
+.mask-shape.polygon{border-style:dotted}
+.mask-shape .mg{
+  position:absolute;width:13px;height:13px;border-radius:3px;
+  background:var(--blue-2);border:1.5px solid rgba(0,0,0,.6);pointer-events:auto;
+}
+.mask-shape .tl{left:-7px;top:-7px;cursor:nwse-resize}
+.mask-shape .tr{right:-7px;top:-7px;cursor:nesw-resize}
+.mask-shape .bl{left:-7px;bottom:-7px;cursor:nesw-resize}
+.mask-shape .br{right:-7px;bottom:-7px;cursor:nwse-resize}
+/* The turn handle stands off the top on a stalk, so it is never confused with
+   a corner and never sits under one. */
+.mask-shape .rot{
+  left:50%;top:-30px;margin-left:-6.5px;border-radius:50%;cursor:grab;
+  background:var(--warn);
+}
+.mask-shape .rot::before{
+  content:'';position:absolute;left:50%;top:100%;width:1.5px;height:17px;
+  margin-left:-0.75px;background:var(--warn);opacity:.8;
+}
+@media (pointer: coarse){
+  .mask-shape .mg{width:20px;height:20px}
+  .mask-shape .tl{left:-10px;top:-10px} .mask-shape .tr{right:-10px;top:-10px}
+  .mask-shape .bl{left:-10px;bottom:-10px} .mask-shape .br{right:-10px;bottom:-10px}
+  .mask-shape .rot{margin-left:-10px;top:-36px}
+}
+
+.mk-row{border:1px solid var(--line-soft);border-radius:var(--r-s);margin-bottom:7px;
+  background:color-mix(in srgb,var(--surface-2) 55%,transparent)}
+.mk-row.on{border-color:color-mix(in srgb,var(--blue) 55%,var(--line))}
+.mk-head{display:flex;align-items:center;gap:6px;padding:6px 8px}
+.mk-name{flex:1;min-width:0;text-align:left;border:0;background:transparent;color:var(--text);
+  font:inherit;font-size:12.5px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mk-eye,.mk-del{width:22px;height:22px;border:0;border-radius:5px;background:transparent;
+  color:var(--text-3);font-size:12px;cursor:pointer;flex:0 0 auto;padding:0}
+.mk-eye:hover,.mk-del:hover{background:var(--surface-3);color:var(--text)}
+.mk-eye.off{color:var(--text-3);opacity:.5}
+.mk-del:hover{color:var(--bad)}
+.mk-body{padding:2px 9px 10px;border-top:1px solid var(--line-soft)}
+.mk-target{width:100%;margin-bottom:8px}
+.mk-sep{height:1px;margin:14px 0 10px;background:var(--line)}
+.q-swatch{height:26px;border-radius:var(--r-s);border:1px solid var(--line);margin:4px 0 10px}
+@media (pointer: coarse){ .mk-eye,.mk-del{width:34px;height:34px} }
+
 /* ---------- the trim tool ---------- */
 /*
  * A cursor per trim. The four are one gesture with four meanings, so the

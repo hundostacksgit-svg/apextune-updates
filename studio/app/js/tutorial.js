@@ -70,13 +70,18 @@ let active = false;
 export function startTour() {
   index = 0;
   active = true;
-  $('#coach').hidden = false;
+  // Optional: the overlay can legitimately be absent — a host page that never
+  // shipped it, or one that removed it — and the tour is not worth a crash.
+  const box = $('#coach');
+  if (!box) return;
+  box.hidden = false;
   paint();
 }
 
 export function endTour(completed = false) {
   active = false;
-  $('#coach').hidden = true;
+  const box = $('#coach');
+  if (box) box.hidden = true;
   try { localStorage.setItem(SEEN_KEY, completed ? 'done' : 'skipped'); } catch { /* private mode */ }
 }
 

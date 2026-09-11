@@ -12,6 +12,7 @@
  */
 
 import { activeAt, clipsOn, valueAt, animatedColor, mediaById, sourceTime, speedAt } from './project.js';
+import { hasMask, combinedMatte, qualifierIsOn, maskMatte } from './mask.js';
 import {
   resolved, cssFilter, applyPasses, isIdentity,
   wheelFilter, applyWheelsFallback, wheelsAreNeutral, supportsUrlFilters,
@@ -41,7 +42,19 @@ export class Renderer {
   }
 
   resize(w, h) {
-    if (this.canvas.width === w && this.canvas.height === h) return;
+    /*
+     * The guard checks the scratch as well as the output.
+     *
+     * It used to test the output canvas alone and return early, which assumes
+     * the scratch is always in step with it — true once the app is running,
+     * and false the first time, when the output has already been sized by
+     * whoever created it and the scratch is still at the HTML default of
+     * 300x150. Everything then rendered at 300x150 and was sampled at the real
+     * size, so every measurement landed somewhere else on the picture.
+     */
+    const sized = this.canvas.width === w && this.canvas.height === h
+      && this.scratch.every((c) => c.width === w && c.height === h);
+    if (sized) return;
     this.canvas.width = w;
     this.canvas.height = h;
     for (const c of this.scratch) { c.width = w; c.height = h; }
@@ -70,6 +83,19 @@ export class Renderer {
   draw(project, t, { playing = false, forExport = false } = {}) {
     const { ctx } = this;
     const w = this.canvas.width, h = this.canvas.height;
+
+    /*
+     * Looking at the matte instead of the picture.
+     *
+     * Not a debugging view — it is how a qualifier is actually set. Nobody
+     * keys a colour by looking at the picture; you look at the selection, get
+     * its edges clean, and only then look at what the grade did. Never used
+     * for export, which is why it is checked here and not stored on the clip.
+     */
+    if (this.showMatte && !forExport) {
+      const drawn = this._drawMatte(project, t, w, h);
+      if (drawn) return;
+    }
 
     ctx.save();
     ctx.globalCompositeOperation = 'source-over';
@@ -105,6 +131,55 @@ export class Renderer {
 
     this._drawCaptions(project, t, w, h);
     ctx.restore();
+  }
+
+  /**
+   * Paint the selection of whatever clip is under the playhead, in black and
+   * white. Returns false when there is nothing selected to show, so the normal
+   * draw carries on rather than leaving a black screen with no explanation.
+   */
+  _drawMatte(project, t, w, h) {
+    const clip = activeAt(project, t).find((c) => {
+      const track = project.tracks.find((tr) => tr.id === c.trackId);
+      return track && track.kind === 'video' && !track.hidden
+        && (hasMask(c, 'grade') || hasMask(c, 'clip') || qualifierIsOn(c.color?.qualifier));
+    });
+    if (!clip) return false;
+
+    // The qualifier keys off the picture, so the picture has to exist first.
+    const src = this._clipCanvas(project, clip, t, 0, false, false, true);
+    if (!src) return false;
+    const target = this._gradeCtx(w, h);
+    target.clearRect(0, 0, w, h);
+    target.drawImage(src, 0, 0);
+
+    const matte = combinedMatte(clip, hasMask(clip, 'clip') ? 'clip' : 'grade',
+      target, w, h, t - clip.start);
+    const { ctx } = this;
+    ctx.save();
+    ctx.filter = 'none';
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, w, h);
+    if (matte) {
+      // The matte carries its shape in alpha; painted white on black it is the
+      // black-and-white picture a colourist expects to see.
+      ctx.drawImage(matte, 0, 0);
+    }
+    ctx.restore();
+    return true;
+  }
+
+  /** The off-screen canvas a windowed grade is built on. One, reused. */
+  _gradeCtx(w, h) {
+    if (!this._gradeCanvas || this._gradeCanvas.width !== w || this._gradeCanvas.height !== h) {
+      this._gradeCanvas = document.createElement('canvas');
+      this._gradeCanvas.width = w;
+      this._gradeCanvas.height = h;
+      this._gradeCtxCache = this._gradeCanvas.getContext('2d', { willReadFrequently: true });
+    }
+    return this._gradeCtxCache;
   }
 
   /* ---------------- one clip, fully graded, on a scratch canvas -------- */
@@ -181,30 +256,92 @@ export class Renderer {
     // grade can ramp across a clip the same way a position can.
     const graded = animatedColor(clip, local);
     const grade = resolved(graded);
+
+    /*
+     * A windowed grade is two renders, not one.
+     *
+     * The grade is a filter on the draw, so limiting it to a shape means
+     * drawing the clip twice — once plain, once graded — and letting the mask
+     * decide which one you see where. There is no cheaper way round it in
+     * Canvas 2D, and it only happens when a window or a qualifier is actually
+     * switched on, which for most clips is never.
+     */
+    const windowed = hasMask(clip, 'grade') || qualifierIsOn(clip.color?.qualifier);
+
+    if (windowed) {
+      // Pass one: the ungraded picture, which is what shows outside the window.
+      ctx.save();
+      if (rotate) {
+        ctx.translate(w / 2, h / 2);
+        ctx.rotate((rotate * Math.PI) / 180);
+        ctx.translate(-w / 2, -h / 2);
+      }
+      try { ctx.drawImage(node, cx, cy, cw, ch, dx, dy, dw, dh); }
+      catch { ctx.restore(); return null; }
+      ctx.restore();
+    }
+
     // The wheels are an SVG filter chained onto the CSS one, so both stages
     // happen in a single GPU pass rather than a read-back.
     const wheels = wheelFilter(clip.id, clip.color.wheels);
     const css = cssFilter(grade);
+    const target = windowed ? this._gradeCtx(w, h) : ctx;
+    if (windowed) target.clearRect(0, 0, w, h);
     ctx.save();
+    if (windowed) { /* the graded pass is built off screen and masked back on */ }
     ctx.filter = wheels ? (css === 'none' ? wheels : `${css} ${wheels}`) : css;
     if (rotate) {
       ctx.translate(w / 2, h / 2);
       ctx.rotate((rotate * Math.PI) / 180);
       ctx.translate(-w / 2, -h / 2);
     }
-    try {
-      ctx.drawImage(node, cx, cy, cw, ch, dx, dy, dw, dh);
-    } catch {
+    if (windowed) {
+      target.save();
+      target.filter = ctx.filter;
+      if (rotate) {
+        target.translate(w / 2, h / 2);
+        target.rotate((rotate * Math.PI) / 180);
+        target.translate(-w / 2, -h / 2);
+      }
+      try { target.drawImage(node, cx, cy, cw, ch, dx, dy, dw, dh); }
+      catch { target.restore(); ctx.restore(); return null; }
+      target.restore();
+      target.filter = 'none';
       ctx.restore();
-      return null;                                   // frame not decoded yet
+      ctx.filter = 'none';
+    } else {
+      try {
+        ctx.drawImage(node, cx, cy, cw, ch, dx, dy, dw, dh);
+      } catch {
+        ctx.restore();
+        return null;                                 // frame not decoded yet
+      }
+      ctx.restore();
+      ctx.filter = 'none';
     }
-    ctx.restore();
-    ctx.filter = 'none';
 
-    if (!isIdentity(graded)) applyPasses(ctx, w, h, grade);
+    if (!isIdentity(graded)) applyPasses(target, w, h, grade);
     // Only when the GPU path is unavailable — otherwise this would double up.
     if (!supportsUrlFilters() && !wheelsAreNeutral(clip.color.wheels)) {
-      applyWheelsFallback(ctx, w, h, clip.color.wheels);
+      applyWheelsFallback(target, w, h, clip.color.wheels);
+    }
+
+    if (windowed) {
+      /*
+       * The qualifier reads the *graded* pass on purpose.
+       *
+       * Keying off the original would mean the selection drifts as soon as you
+       * touch the grade — you pick the sky, push the blue, and the key you
+       * picked no longer describes what is on screen. Reading the result keeps
+       * what you selected and what you are looking at the same thing.
+       */
+      const matte = combinedMatte(clip, 'grade', target, w, h, local);
+      if (matte) {
+        target.globalCompositeOperation = 'destination-in';
+        target.drawImage(matte, 0, 0);
+        target.globalCompositeOperation = 'source-over';
+      }
+      ctx.drawImage(target.canvas, 0, 0);
     }
 
     if (!skipEffects && clip.effects?.length) {
@@ -227,6 +364,23 @@ export class Renderer {
           return this._blur;
         },
       });
+    }
+
+    /*
+     * A mask aimed at the clip cuts the picture itself, not the grade.
+     *
+     * This is the compositing use — the shape of a layer rather than the reach
+     * of a treatment — so it runs after the effects, where what is left is the
+     * finished picture. Anything outside it becomes transparent and whatever
+     * is on the layer below shows through.
+     */
+    if (hasMask(clip, 'clip')) {
+      const cut = maskMatte(clip, 'clip', w, h, local);
+      if (cut) {
+        ctx.globalCompositeOperation = 'destination-in';
+        ctx.drawImage(cut, 0, 0);
+        ctx.globalCompositeOperation = 'source-over';
+      }
     }
 
     // Clip-level fades sit on top of everything, including the grade.

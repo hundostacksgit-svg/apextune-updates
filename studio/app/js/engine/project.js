@@ -215,6 +215,9 @@ export function addClip(p, {
     reversed: false,
     transform: defaultTransform(),
     color: defaultColor(),
+    /* Shape masks: power windows for the grade, or the outline of the layer
+       itself. Empty on every clip until somebody draws one. */
+    masks: [],
     volume: 1,
     fadeIn: 0,
     fadeOut: 0,
@@ -749,6 +752,9 @@ function migrate(p) {
   for (const c of p.clips) {
     c.transform = { ...defaultTransform(), ...(c.transform || {}) };
     c.color = { ...defaultColor(), ...(c.color || {}) };
+    // Projects saved before masks existed have neither; both are optional
+    // everywhere they are read, so the default is simply "none".
+    c.masks ||= [];
     c.keyframes ||= {};
     c.effects ||= [];
     c.audioFx ??= null;

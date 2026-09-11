@@ -29,6 +29,8 @@ import { initMenubar } from './menubar.js';
 import { initHistoryUi, showDid, openHistory, paintUndoButtons } from './history-ui.js';
 import { initTips, applyTipsForLevel, setTips, tipsOn } from './tips.js';
 import { initMoreSheet } from './more-sheet.js';
+import { initMaskUi, paintMaskUi } from './mask-ui.js';
+import { mattePreview } from './panels/masks.js';
 import { initContextMenus, attach as attachMenu } from './context-menu.js';
 import { mediaMenu, viewerMenu } from './menus.js';
 import * as media from './engine/media.js';
@@ -661,7 +663,11 @@ function drawFrame(scrub = false) {
   // being handed it on every one of sixty frames a second.
   renderer.beats = S.beats;
   renderer.fps = S.project.settings.fps;
+  renderer.showMatte = mattePreview();
   renderer.draw(S.project, S.time, { playing: S.playing || scrub });
+  // The handles follow the picture: a window drawn on one frame has to sit in
+  // the same place on the next, and the canvas can be resized underneath it.
+  paintMaskUi();
   if (!$('#ratio-check')?.hidden) paintRatioCheck();
 }
 
@@ -1208,6 +1214,7 @@ function paintLevel() {
   initMenubar(document, menubarApi);
 
   initContextMenus();
+  initMaskUi({ refreshPanel });
 
   /*
    * The picture and the media pool get menus too. The pool is delegated from
