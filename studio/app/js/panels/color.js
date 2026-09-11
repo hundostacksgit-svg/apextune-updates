@@ -5,11 +5,44 @@
 
 import { $, $$, esc, toast, empty, slider } from '../ui.js';
 import { S, actions, engine } from '../main.js';
-import { LOOKS, CONTROLS, neutralWheels, supportsUrlFilters } from '../engine/filters.js';
+import { LOOKS, LOOK_GROUPS_ALL, CONTROLS, neutralWheels, supportsUrlFilters } from '../engine/filters.js';
 import * as licence from '../licence.js';
 import { current as currentLevel } from '../levels.js';
 
 let scopeTimer = null;
+
+/**
+ * Looks, grouped and collapsible.
+ *
+ * Essentials is open and everything else is closed, so the panel opens at the
+ * same size it always did and the library is one press away rather than a wall
+ * of a hundred chips between you and the sliders underneath.
+ */
+function lookGroups(clip) {
+  const current = clip?.color?.look;
+  const chip = (l) => {
+    const locked = !licence.can(l.tier === 'free' ? 'basic-filters' : 'all-filters');
+    const on = current === l.id;
+    return `<button class="chip ${on ? 'on' : ''} ${locked ? 'locked' : ''}"
+      data-look="${esc(l.id)}" data-tier="${esc(l.tier)}"
+      data-search="${esc(`${l.name} ${l.group || ''} ${l.id}`.toLowerCase())}"
+      title="${esc(l.name)}">
+      <span class="sw" style="background:${esc(l.swatch)}"></span>${esc(l.name)}</button>`;
+  };
+
+  const none = LOOKS.find((l) => l.id === 'none');
+  const groups = Object.entries(LOOK_GROUPS_ALL);
+  // Whichever group holds the current look opens with the panel, so you can
+  // always see what is selected without hunting for it.
+  const owning = groups.find(([, list]) => list.some((l) => l.id === current))?.[0];
+
+  return `<div class="chips" style="margin-bottom:10px">${none ? chip(none) : ''}</div>`
+    + groups.map(([name, list]) => `
+      <details class="group" ${name === (owning || 'Essentials') ? 'open' : ''}>
+        <summary>${esc(name)} <span class="tiny muted">${list.length}</span></summary>
+        <div class="gbody"><div class="chips">${list.map(chip).join('')}</div></div>
+      </details>`).join('');
+}
 
 export function mount(host) {
   const sel = [...S.sel];
@@ -33,15 +66,12 @@ export function mount(host) {
         </p>
       </div>` : ''}
 
-    <div class="chips" id="c-looks">
-      ${LOOKS.map((l) => {
-        const locked = !licence.can(l.tier === 'free' ? 'basic-filters' : 'all-filters');
-        const on = clip?.color?.look === l.id;
-        return `<button class="chip ${on ? 'on' : ''} ${locked ? 'locked' : ''}"
-          data-look="${esc(l.id)}" data-tier="${esc(l.tier)}">
-          <span class="sw" style="background:${esc(l.swatch)}"></span>${esc(l.name)}</button>`;
-      }).join('')}
-    </div>
+    <!-- A hundred-odd looks is only useful if you can find one. Search first,
+         then groups — a flat list this long is a list nobody reads past the
+         first screen. -->
+    <input class="input" id="c-look-search" placeholder="Search looks — film, mood, mono…"
+           style="margin-bottom:10px">
+    <div id="c-looks">${lookGroups(clip)}</div>
 
     <details class="group" data-min="expert" ${clip ? 'open' : ''}>
       <summary>Colour wheels</summary>
@@ -82,6 +112,23 @@ export function mount(host) {
     <div class="btn-row">
       <button class="btn btn-sm btn-ghost" id="c-reset">Reset</button>
     </div>`;
+
+  // Filter as you type. Typing narrows every group and opens the ones that
+  // still have something in them, so a search never leaves you staring at a
+  // collapsed heading.
+  $('#c-look-search', host)?.addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    for (const grp of $$('#c-looks details', host)) {
+      let shown = 0;
+      for (const chip of $$('[data-look]', grp)) {
+        const hit = !q || chip.dataset.search.includes(q);
+        chip.hidden = !hit;
+        if (hit) shown++;
+      }
+      grp.hidden = shown === 0;
+      if (q) grp.open = true;
+    }
+  });
 
   $('#c-looks', host).addEventListener('click', (e) => {
     const btn = e.target.closest('[data-look]');

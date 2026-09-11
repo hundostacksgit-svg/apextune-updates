@@ -19,7 +19,9 @@
 /* ------------------------------------------------------------------ */
 /* tier is what the licence check reads: 'free' looks are always available. */
 
-export const LOOKS = [
+import { LOOK_PACKS, LOOK_GROUPS } from './looks-library.js';
+
+const CORE_LOOKS = [
   { id: 'none', name: 'None', tier: 'free', swatch: 'linear-gradient(135deg,#2a3550,#4a5878)', color: {} },
 
   { id: 'punch', name: 'Punch', tier: 'free', swatch: 'linear-gradient(135deg,#ff8a3d,#ffd166)',
@@ -67,6 +69,27 @@ export const LOOKS = [
   { id: 'infra', name: 'Infrared', tier: 'creator', swatch: 'linear-gradient(135deg,#ff3d7a,#ffe066)',
     color: { saturation: 40, contrast: 20 }, hue: 140 },
 ];
+
+/*
+ * The starter set above, then the full library.
+ *
+ * They are kept apart because they answer different questions. The first
+ * twenty are the ones worth showing someone who has never graded anything —
+ * one obvious choice per direction. The library is for someone who knows what
+ * they want and needs it to exist.
+ *
+ * Concatenated rather than merged so `LOOKS[0]` is still None and the first
+ * screenful of the panel is unchanged for anyone who already knows where things
+ * are.
+ */
+export const LOOKS = [...CORE_LOOKS, ...LOOK_PACKS];
+
+/** Looks arranged by group, with the starter set first under its own heading. */
+export const LOOK_GROUPS_ALL = {
+  Essentials: CORE_LOOKS.filter((l) => l.id !== 'none'),
+  ...LOOK_GROUPS,
+};
+
 
 export const LOOK_BY_ID = Object.fromEntries(LOOKS.map((l) => [l.id, l]));
 

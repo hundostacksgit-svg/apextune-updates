@@ -40,6 +40,7 @@ const SHELL = [
   './js/engine/exporter-wc.js',
   './js/engine/exporter.js',
   './js/engine/filters.js',
+  './js/engine/looks-library.js',
   './js/engine/history.js',
   './js/engine/media.js',
   './js/engine/muxer.js',
