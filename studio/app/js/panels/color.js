@@ -7,6 +7,25 @@ import { $, $$, esc, toast, empty, slider } from '../ui.js';
 import { S, actions, engine } from '../main.js';
 import { attachPreviews } from '../engine/preview.js';
 import { curvesMarkup, drawCurve, wireCurves, curvesOpen, setCurvesOpen } from './curves.js';
+import { SCOPES, drawScope } from '../engine/scopes.js';
+
+/*
+ * Which scope is showing, remembered for the session.
+ *
+ * A colourist picks one and lives in it. Resetting to a default every time the
+ * panel re-renders — which it does on every slider move — would mean choosing
+ * the parade again after every adjustment.
+ */
+let scopeKind = 'parade';
+
+/* What each one is for, in one line. The scopes are the part of this panel
+   most likely to be unfamiliar, and an instrument nobody can read is furniture. */
+const SCOPE_NOTES = {
+  parade: 'Red, green and blue side by side. Level them and the shot is neutral — one channel high at the bottom is a colour cast in the shadows.',
+  waveform: 'Brightness against position across the frame. A flat line jammed at the top is blown highlights; jammed at the bottom is crushed blacks.',
+  vector: 'Hue as direction, saturation as distance. The dotted line is where skin tones of every complexion fall — get faces onto it.',
+  histogram: 'How many pixels sit at each brightness. Piled against either edge means detail has been lost there.',
+};
 import { LOOKS, LOOK_GROUPS_ALL, CONTROLS, neutralWheels, supportsUrlFilters } from '../engine/filters.js';
 import * as licence from '../licence.js';
 import { current as currentLevel } from '../levels.js';
@@ -59,12 +78,22 @@ export function mount(host) {
     <p class="panel-sub">Applies to ${esc(target)}.</p>
 
     ${currentLevel() === 'expert' ? `
-      <div class="group" style="padding:10px">
-        <canvas id="scope" width="256" height="90" style="width:100%;height:90px;border-radius:8px;
-          background:var(--surface-3);display:block"></canvas>
-        <p class="tiny muted" style="margin:7px 0 0">
-          Histogram of the frame on screen. Bunched at the left means crushed blacks;
-          piled at the right means blown highlights.
+      <div class="group scope-box" style="padding:10px">
+        <!--
+          Scopes read the file, not your screen. A monitor that runs warm makes
+          every shot look warm, so you correct toward blue and everything you
+          deliver is blue — which is why a grade is judged here and not by eye.
+        -->
+        <div class="scope-head">
+          <span class="scope-title">Scopes</span>
+          <select class="tp-select" id="scope-kind" aria-label="Which scope">
+            ${SCOPES.map((sc) => `<option value="${esc(sc.id)}"
+              ${sc.id === scopeKind ? 'selected' : ''}>${esc(sc.name)}</option>`).join('')}
+          </select>
+        </div>
+        <canvas id="scope" width="512" height="200" class="scope-cv"></canvas>
+        <p class="tiny muted" style="margin:7px 0 0" id="scope-note">
+          ${esc(SCOPE_NOTES[scopeKind] || '')}
         </p>
       </div>` : ''}
 
@@ -90,19 +119,34 @@ export function mount(host) {
       <summary>Colour wheels</summary>
       <div class="gbody">
         ${clip ? `
+          <!--
+            Laid out the way every grading suite lays them out: the name above
+            the wheel, its own reset on the same row, and the numbers it is
+            producing underneath. The numbers matter — a wheel tells you the
+            direction you pushed, only a readout tells you how far, and "match
+            this shot to that one" is a job you do with numbers.
+          -->
           <div class="wheels" id="c-wheels">
             ${['lift', 'gamma', 'gain'].map((which) => `
               <div class="wheel">
+                <div class="wheel-top">
+                  <span class="wl">${which === 'lift' ? 'Shadows' : which === 'gamma' ? 'Midtones' : 'Highlights'}</span>
+                  <button class="wheel-reset" data-wreset="${which}"
+                    aria-label="Reset ${which}" title="Reset this wheel">↺</button>
+                </div>
                 <canvas data-wheel="${which}" width="128" height="128"
                   title="Drag to push ${which} toward a colour. Double-click to reset."></canvas>
-                <div class="wl">${which === 'lift' ? 'Shadows' : which === 'gamma' ? 'Midtones' : 'Highlights'}</div>
-                <div class="wv" data-wv="${which}">neutral</div>
+                <div class="wheel-nums">
+                  <span class="wn"><i>R</i><b data-wn="${which}-r">0.00</b></span>
+                  <span class="wn"><i>G</i><b data-wn="${which}-g">0.00</b></span>
+                  <span class="wn"><i>B</i><b data-wn="${which}-b">0.00</b></span>
+                </div>
               </div>`).join('')}
           </div>
           ${slider({ key: 'offset', label: 'Overall', value: (clip.color.wheels?.offset ?? 0),
             min: -1, max: 1, step: 0.01, fmt: (v) => Number(v).toFixed(2) })}
           <div class="btn-row" style="margin-top:6px">
-            <button class="btn btn-sm btn-ghost" id="c-wheels-reset">Reset wheels</button>
+            <button class="btn btn-sm btn-ghost" id="c-wheels-reset">Reset all wheels</button>
           </div>
           ${supportsUrlFilters() ? '' : `<p class="tiny muted" style="margin:9px 0 0">
             This browser does not support the filter these wheels use, so they fall back to a
@@ -202,6 +246,18 @@ export function mount(host) {
     toast('Grade copied to every clip', 'ok');
   });
 
+  // Each wheel's own reset. Resetting all three when you only wanted one back
+  // is the kind of thing that makes people stop using the reset at all.
+  for (const btn of $$('[data-wreset]', host)) {
+    btn.addEventListener('click', () => {
+      const which = btn.dataset.wreset;
+      actions.patchSelected((c) => {
+        c.color.wheels = { ...(c.color.wheels || neutralWheels()) };
+        c.color.wheels[which] = { r: 0, g: 0, b: 0 };
+      }, `Reset ${which}`);
+    });
+  }
+
   $('#c-wheels-reset', host)?.addEventListener('click', () => {
     actions.patchSelected((c) => { c.color.wheels = null; }, 'Reset colour wheels');
   });
@@ -225,47 +281,30 @@ function videoClipIds() {
     .map((c) => c.id);
 }
 
-/* A histogram sampled from the preview canvas — cheap, and it tells you more
-   about a grade than any number in a box. */
+/*
+ * Keep the scope showing the frame that is on screen.
+ *
+ * Polled rather than driven from drawFrame, because the scope only has to be
+ * roughly live: repainting it on every one of sixty frames a second would cost
+ * more than the grade it is measuring. Four times a second is fast enough to
+ * feel connected to the playhead and cheap enough to leave running.
+ */
 function startScope(host) {
   clearInterval(scopeTimer);
   const scope = $('#scope', host);
   if (!scope) return;
-  const ctx = scope.getContext('2d');
 
-  const paint = () => {
-    const src = engine.renderer?.canvas;
-    if (!src || !src.width) return;
-    const step = Math.max(1, Math.floor(src.width / 160));
-    let data;
-    try {
-      data = src.getContext('2d').getImageData(0, 0, src.width, src.height).data;
-    } catch { return; }
-
-    const bins = new Uint32Array(64);
-    for (let y = 0; y < src.height; y += step * 2) {
-      for (let x = 0; x < src.width; x += step) {
-        const i = (y * src.width + x) * 4;
-        const lum = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114) / 255;
-        bins[Math.min(63, Math.floor(lum * 64))]++;
-      }
-    }
-    const peak = Math.max(...bins, 1);
-    ctx.clearRect(0, 0, scope.width, scope.height);
-    const grad = ctx.createLinearGradient(0, 0, scope.width, 0);
-    grad.addColorStop(0, '#7a5cff');
-    grad.addColorStop(0.5, '#2f7dff');
-    grad.addColorStop(1, '#00d1ff');
-    ctx.fillStyle = grad;
-    const bw = scope.width / bins.length;
-    for (let i = 0; i < bins.length; i++) {
-      const h = (bins[i] / peak) * scope.height;
-      ctx.fillRect(i * bw, scope.height - h, bw - 1, h);
-    }
-  };
+  const paint = () => drawScope(scope, engine.renderer?.canvas, scopeKind);
 
   paint();
-  scopeTimer = setInterval(paint, 400);
+  scopeTimer = setInterval(paint, 250);
+
+  $('#scope-kind', host)?.addEventListener('change', (e) => {
+    scopeKind = e.target.value;
+    const note = $('#scope-note', host);
+    if (note) note.textContent = SCOPE_NOTES[scopeKind] || '';
+    paint();
+  });
 }
 
 
@@ -385,11 +424,23 @@ function wireWheels(host, clip) {
   }
 }
 
+/*
+ * The three numbers under a wheel.
+ *
+ * Per channel rather than one summary string, because that is what a wheel
+ * actually produces and what you compare between shots. "Match this to that
+ * one" is a job done by reading R, G and B off one and typing them into the
+ * other; a line saying "warm" cannot be matched to anything.
+ *
+ * Always two decimals, always signed, tabular figures — so the numbers do not
+ * jump sideways as they change, which makes a readout you are watching during
+ * a drag unreadable.
+ */
 function updateReadout(host, which, offset) {
-  const el = host.querySelector(`[data-wv="${which}"]`);
-  if (!el) return;
-  const push = Math.hypot(offset.r, offset.g, offset.b);
-  el.textContent = push < 0.01
-    ? 'neutral'
-    : `${offset.r >= 0 ? '+' : ''}${offset.r.toFixed(2)} ${offset.g >= 0 ? '+' : ''}${offset.g.toFixed(2)} ${offset.b >= 0 ? '+' : ''}${offset.b.toFixed(2)}`;
+  for (const [ch, value] of [['r', offset.r], ['g', offset.g], ['b', offset.b]]) {
+    const el = host.querySelector(`[data-wn="${which}-${ch}"]`);
+    if (!el) continue;
+    el.textContent = `${value >= 0 ? '+' : '−'}${Math.abs(value).toFixed(2)}`;
+    el.classList.toggle('off', Math.abs(value) < 0.005);
+  }
 }

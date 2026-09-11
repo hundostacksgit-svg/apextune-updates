@@ -559,8 +559,27 @@ input[type=checkbox]{accent-color:var(--blue)}
 .fx-item.off{opacity:.5}
 
 /* ============ colour wheels ============ */
+/*
+ * Laid out the way a grading suite lays them out: name and reset on a row
+ * above the wheel, the numbers it produces underneath. The numbers are not
+ * decoration — a wheel tells you which way you pushed, only a readout tells
+ * you how far, and matching one shot to another is done by reading them.
+ */
 .wheels{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .wheel{text-align:center}
+.wheel-top{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:5px}
+.wheel-reset{
+  border:0;background:transparent;color:var(--text-3);cursor:pointer;
+  font-size:12px;line-height:1;padding:2px 3px;border-radius:4px;
+}
+.wheel-reset:hover{color:var(--text);background:var(--surface-3)}
+.wheel-nums{display:flex;gap:5px;justify-content:center;margin-top:5px}
+.wn{display:flex;align-items:baseline;gap:2px;font-family:var(--mono);font-size:9.5px}
+.wn i{color:var(--text-3);font-style:normal;font-size:8.5px}
+/* Tabular figures, so the numbers do not shuffle sideways as they change —
+   a readout you are watching mid-drag is unreadable otherwise. */
+.wn b{color:var(--blue-2);font-weight:600;font-variant-numeric:tabular-nums}
+.wn b.off{color:var(--text-3);font-weight:400}
 .wheel canvas{width:100%;max-width:90px;aspect-ratio:1;border-radius:50%;cursor:crosshair;
   border:1px solid var(--line);touch-action:none;display:block;margin:0 auto}
 .wheel .wl{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
@@ -984,3 +1003,18 @@ input[type=checkbox]{accent-color:var(--blue)}
   opacity:0;pointer-events:none;transition:opacity .12s ease;
 }
 .tip-bubble.on{opacity:1}
+
+/* ============ scopes ============ */
+.scope-box{padding:10px}
+.scope-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.scope-title{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
+.scope-head .tp-select{margin-left:auto;font-size:11.5px;padding:3px 6px}
+/*
+ * Black, not surface-coloured. A scope is read against its own graticule and a
+ * grey background lifts the trace's apparent black level — which is precisely
+ * the measurement people open a scope to check.
+ */
+.scope-cv{
+  width:100%;height:auto;aspect-ratio:512/200;display:block;
+  border-radius:6px;background:#05070c;border:1px solid var(--line);
+}
