@@ -12,6 +12,7 @@ import { $, $$, toast, tc, confirmDialog, clamp } from './ui.js';
 import * as store from './store.js';
 import * as levels from './levels.js';
 import * as licence from './licence.js';
+import * as auth from '../../assets/auth.js';
 import { History } from './engine/history.js';
 import {
   newProject, deserialize, serialize, duration, clipById, mediaById,
@@ -546,7 +547,22 @@ function paintName() {
 }
 
 export function paintAccount() {
-  $('#acct-lbl').textContent = licence.editionName();
+  /*
+   * The editor's account button shows who you are, then what you have.
+   *
+   * It showed only the edition, so a signed-in person and a stranger on the
+   * same machine saw the identical button — which is exactly when you want to
+   * know whose account is about to be charged, or whose licence you are using.
+   */
+  const who = auth.session();
+  const name = (who?.name || '').trim().split(/\s+/)[0]
+    || (who?.email || '').split('@')[0];
+  const el = $('#acct-lbl');
+  el.textContent = name || licence.editionName();
+  el.closest('button')?.setAttribute('title',
+    who?.email
+      ? `${who.email} — ${licence.editionName()}`
+      : `Not signed in — ${licence.editionName()}`);
 }
 
 /* ------------------------------------------------------------------ */

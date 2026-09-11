@@ -7,10 +7,10 @@
  * are converted at the edge and nowhere else.
  */
 
-import { $, $$, el, esc, drag, clamp, dur as fmtDur } from './ui.js';
+import { $, $$, el, esc, drag, clamp, toast, dur as fmtDur } from './ui.js';
 import {
   clipsOn, clipById, mediaById, trackById, duration,
-  splitClip, trimClip, moveClip, snapPoints, snapTo,
+  splitClip, trimClip, moveClip, snapPoints, snapTo, addTrack, removeTrack,
 } from './engine/project.js';
 
 const SNAP_PX = 8;          // how close a drag has to get before it sticks
@@ -348,7 +348,7 @@ export class TimelineUI {
           else if (tail.snapped) { start = tail.value - startState.dur; this._showSnap(tail.value); }
           else this._hideSnap();
         }
-        const targetTrack = this._trackAtY(dy, startState.trackId);
+        const targetTrack = this._trackAtY(dy, startState.trackId, { allowNew: true });
         moveClip(this.project, clip.id, { start: Math.max(0, start), trackId: targetTrack });
         moved = true;
         this._renderTracks();
@@ -356,20 +356,56 @@ export class TimelineUI {
       end: () => {
         node.classList.remove('dragging');
         this._hideSnap();
+        /*
+         * A layer created during a drag that ended up unused is removed again.
+         * Dragging up, changing your mind and dragging back down should leave
+         * the project exactly as it was, not littered with an empty track.
+         */
+        if (this._madeTrack) {
+          const used = this.project.clips.some((c) => c.trackId === this._madeTrack);
+          if (!used) removeTrack(this.project, this._madeTrack);
+          this._madeTrack = null;
+        }
         if (moved) this.actions.commit('Move clip', `move:${clip.id}`);
         else this.render();
       },
     });
   }
 
-  /** Which track a vertical drag has landed on. */
-  _trackAtY(dy, fromTrackId) {
+  /**
+   * Which track a vertical drag has landed on.
+   *
+   * Dragging above the top video track makes a new one, the way every layer-
+   * based editor works: you do not go and add a track and then drag onto it,
+   * you drag up and the layer appears. Overlays are the whole reason anybody
+   * stacks video, and making somebody find a menu first is what stops them
+   * discovering that the app can do it at all.
+   *
+   * Only one is ever created per drag. Without that guard, holding the pointer
+   * above the top edge would spawn a track on every pointermove — dozens of
+   * them in a second, and no obvious way back.
+   *
+   * Downward has no equivalent: the audio tracks are down there and dropping a
+   * clip onto one is already meaningful (it becomes audio only), so the bottom
+   * is a real destination rather than an edge to grow past.
+   */
+  _trackAtY(dy, fromTrackId, { allowNew = false } = {}) {
     const tracks = this.project.tracks;
     const index = tracks.findIndex((t) => t.id === fromTrackId);
     if (index < 0) return fromTrackId;
     const rowHeight = tracks[index].height || 60;
     const shift = Math.round(dy / rowHeight);
-    const target = tracks[clamp(index + shift, 0, tracks.length - 1)];
+    const wanted = index + shift;
+
+    if (wanted < 0 && allowNew && !this._madeTrack) {
+      const track = addTrack(this.project, 'video');
+      this._madeTrack = track.id;
+      toast('New overlay layer', 'ok', 1600);
+      return track.id;
+    }
+    // Once a layer has been made this drag, the top of the stack is that layer
+    // rather than the edge — so pulling further up does not keep adding more.
+    const target = tracks[clamp(wanted, 0, tracks.length - 1)];
     return target.id;
   }
 

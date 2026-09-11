@@ -199,10 +199,27 @@ export function edition() {
   return s.edition && RANK[s.edition] !== undefined ? s.edition : 'free';
 }
 
-/* A device that bought before making an account still gets what it paid for. */
+/**
+ * What this device is entitled to when nobody is signed in.
+ *
+ * The account record is checked first, then the purchase record — and the
+ * second half matters more than it looks. Somebody who paid without ever
+ * making an account has no account record for the edition to live in, so
+ * before this their unlock lasted exactly until something cleared the session,
+ * and then quietly reverted them to free. They paid, and the app forgot.
+ *
+ * A purchase that belongs to an account is deliberately not honoured here:
+ * signing out has to actually take the licence off the machine, or a shared
+ * laptop hands the next person a paid copy.
+ */
 function localEdition() {
   const acc = get(K.account);
-  return acc?.edition && RANK[acc.edition] !== undefined ? acc.edition : 'free';
+  if (acc?.edition && RANK[acc.edition] !== undefined && acc.edition !== 'free') return acc.edition;
+
+  const bought = get(K_PURCHASE);
+  if (bought?.edition && RANK[bought.edition] !== undefined && !bought.account) return bought.edition;
+
+  return 'free';
 }
 
 export async function signUp({ email, password, name }) {
@@ -309,6 +326,23 @@ export async function signOut() {
   if (online() && s?.token) { try { await api('/v1/auth/logout', {}, s.token); } catch { /* leaving anyway */ } }
   drop(K.session);
   drop(K.remember);
+
+  /*
+   * A licence bought under an account leaves with that account.
+   *
+   * Otherwise signing out on a shared or borrowed machine hands the next
+   * person a paid copy — they never signed in, so nothing asks who they are,
+   * and the entitlement is just sitting there on the device. Somebody who paid
+   * without ever making an account keeps their unlock, because there is no
+   * account for it to belong to and taking it away would punish them for the
+   * thing this app told them was optional.
+   */
+  const bought = get(K_PURCHASE);
+  const acc = get(K.account);
+  if (bought?.account && bought.account === acc?.email) {
+    drop(K_PURCHASE);
+    if (acc) put(K.account, { ...acc, edition: 'free', purchase: null });
+  }
 }
 
 export async function devices() {
@@ -448,6 +482,9 @@ export function grantEdition(edition, { order = '', source = 'square' } = {}) {
     source,
     at: Date.now(),
     device: deviceId(),
+    // Who it belongs to, when there is somebody to belong to. This is what
+    // lets it leave with them on sign-out rather than staying on the machine.
+    account: session()?.email || get(K.account)?.email || null,
   };
   put(K_PURCHASE, record);
 

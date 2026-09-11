@@ -94,24 +94,77 @@ function renderUnlocked(edition, order, verified) {
     ${supportBlock(`OmniDx Studio — ${ed.name} activation`)}`;
 }
 
+/*
+ * Arriving with no order reference.
+ *
+ * This page used to unlock on nothing but a query string, which meant
+ * /activate/?e=studio was a free copy for anybody who found it. That was a
+ * hole I opened, and it is closed here: without an order from Square's
+ * redirect, the receipt number has to be typed in.
+ *
+ * What that buys, honestly:
+ *
+ *   • It stops the URL being shareable on its own. Passing this around now
+ *     means passing your receipt around with it.
+ *   • It leaves a trail. The order is recorded, and an order showing up
+ *     somewhere it should not is visible in the Square dashboard and can be
+ *     refunded or chased.
+ *
+ * What it does not buy is real enforcement, and pretending otherwise would be
+ * worse than saying it: every entitlement check in this app runs on the
+ * buyer's own machine and can be switched off with dev tools. The one thing
+ * that genuinely cannot be freeloaded is the AI, because that runs on the
+ * server and the server checks — which is also the only feature that costs
+ * money per use. Deploying the Worker is what turns the rest of this from
+ * friction into enforcement.
+ */
 function renderUnknown() {
   $('#card').innerHTML = `
-    <h1>Which edition did you buy?</h1>
-    <p class="act-sub">The payment went through, but this link did not say what it was for.
-      Pick it below and you are unlocked — no key needed.</p>
-    <div class="act-actions">
-      ${Object.entries(EDITIONS).filter(([, e]) => e.once).map(([id, e]) =>
-        `<button class="btn ${id === 'creator' ? '' : 'btn-ghost'}" data-pick="${esc(id)}">
-          ${esc(e.name)} — $${e.once.toFixed(2)}</button>`).join('')}
+    <h1>Unlock your copy</h1>
+    <p class="act-sub">Paying normally does this for you. If it did not,
+      your Square receipt number will sort it.</p>
+
+    <div class="field" style="margin-top:20px;text-align:left">
+      <label for="act-order" class="small"><b>Order or receipt number</b></label>
+      <input class="input" id="act-order" placeholder="From your Square receipt email"
+        autocomplete="off" spellcheck="false">
+      <p class="tiny muted" style="margin:7px 0 0">
+        It is on the confirmation email from Square, near the top.
+      </p>
     </div>
-    <p class="act-note">Pick the one on your Square receipt. If you pick the wrong one,
-      come back to this page and choose again — it never takes anything away.</p>
-    ${supportBlock('OmniDx Studio — activation, edition unclear')}`;
+
+    <div class="field" style="margin-top:16px;text-align:left">
+      <label class="small"><b>What did you buy?</b></label>
+      <div class="act-actions" style="margin-top:8px">
+        ${Object.entries(EDITIONS).filter(([, e]) => e.once).map(([id, e]) =>
+          `<button class="btn btn-ghost" data-pick="${esc(id)}">
+            ${esc(e.name)} — $${e.once.toFixed(2)}</button>`).join('')}
+      </div>
+    </div>
+
+    <p class="act-note" id="act-err" hidden style="color:var(--bad)"></p>
+    <p class="act-note">Picking the wrong one is not a problem — come back and
+      choose again, it never takes anything away.</p>
+    ${supportBlock('OmniDx Studio — cannot unlock, have receipt')}`;
 
   $('#card').addEventListener('click', (e) => {
     const pick = e.target.closest('[data-pick]');
     if (!pick) return;
-    go(pick.dataset.pick, '');
+    const order = String($('#act-order')?.value || '').trim();
+    const err = $('#act-err');
+    // Deliberately loose: Square's references vary in shape and change over
+    // time, and a validator that rejects a real receipt is far worse than one
+    // that accepts a fake. This is a speed bump with a paper trail, not a lock.
+    if (order.length < 6) {
+      if (err) {
+        err.hidden = false;
+        err.textContent = 'Put in the order number from your Square receipt first — '
+          + 'it is what ties this unlock to your payment.';
+      }
+      $('#act-order')?.focus();
+      return;
+    }
+    go(pick.dataset.pick, order);
   });
 }
 

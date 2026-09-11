@@ -319,10 +319,24 @@ export function moveClip(p, clipId, { start, trackId }) {
   const target = trackId || c.trackId;
   const track = trackById(p, target);
   if (!track) return;
-  // A video clip on an audio track (or the reverse) is almost always a slip of
-  // the hand, so it just doesn't happen.
-  const wants = c.kind === 'audio' ? 'audio' : 'video';
-  if (c.kind !== 'audio' && track.kind !== 'video' && wants === 'video') return;
+  /*
+   * A video clip dropped on an audio track becomes audio only.
+   *
+   * This is not a special mode — it falls out of how the app already works.
+   * The renderer only draws clips whose track is a video track, and the audio
+   * engine plays anything with sound wherever it sits. So a clip on an audio
+   * track is silent-picture-free by construction: you hear it, you do not see
+   * it. Drag it back up and the picture returns, because nothing was thrown
+   * away.
+   *
+   * It is also the single most common thing people want from a timeline —
+   * take the sound off this shot and keep it under the others — and it used to
+   * be refused outright as though it were a slip of the hand.
+   *
+   * The reverse still is one. A music file on a video track would draw
+   * nothing, so all it can produce is a black hole in the picture with no clue
+   * why, which is never what anybody meant.
+   */
   if (c.kind === 'audio' && track.kind !== 'audio') return;
 
   c.trackId = target;

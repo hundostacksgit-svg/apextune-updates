@@ -623,6 +623,47 @@ function initDownloads() {
 }
 
 /* ------------------------------------------------------------------ */
+/* the nav's account link                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Show who is signed in, on every page.
+ *
+ * "Log in" sitting there permanently while you are already signed in is the
+ * thing every site gets right and this one did not: the resume only ran on the
+ * account page, so the rest of the site had no idea who you were and offered
+ * to log you in again.
+ *
+ * Now the remembered session is picked up before anything paints, and the link
+ * becomes your name. Clicking it goes to the account page — which, being
+ * already signed in, shows the account rather than a form.
+ */
+async function initNavAccount() {
+  const links = $$('.nav-login');
+  if (!links.length) return;
+
+  try { await auth.resumeRemembered(); } catch { /* no session to resume */ }
+  const session = auth.session();
+  if (!session?.email && !session?.name) return;
+
+  // First name, or the part of the email before the @. Full email addresses in
+  // a nav bar wrap, truncate badly, and tell everyone looking over a shoulder
+  // more than they need to know.
+  const shown = (session.name || '').trim().split(/\s+/)[0]
+    || (session.email || '').split('@')[0]
+    || 'Account';
+  const edition = EDITIONS[auth.edition()]?.name;
+
+  for (const link of links) {
+    link.textContent = shown;
+    link.classList.add('signed-in');
+    link.title = edition
+      ? `${session.email || shown} — ${edition}`
+      : (session.email || shown);
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /* account screens                                                     */
 /* ------------------------------------------------------------------ */
 async function initAccount() {
@@ -657,7 +698,11 @@ async function initAccount() {
             <p class="tiny muted" id="shint" data-only="up" style="margin:7px 0 0"></p>
           </div>
           <label class="tiny muted" data-only="in" style="display:flex;gap:8px;align-items:center;margin-bottom:18px">
-            <input type="checkbox" id="remember"> Stay signed in on this device
+            <!-- Ticked by default. Somebody signing into a video editor on
+                 their own laptop expects it to remember them the way every
+                 other site does; making them ask for that each time is a
+                 papercut they feel on every single visit. -->
+            <input type="checkbox" id="remember" checked> Stay signed in on this device
           </label>
           <button class="btn btn-primary btn-lg" style="width:100%" id="go">Sign in</button>
           <p class="tiny muted" id="err" style="margin:14px 0 0;color:var(--bad)"></p>
@@ -718,8 +763,15 @@ async function initAccount() {
       err.textContent = ''; btn.disabled = true; btn.textContent = 'Working…';
       try {
         const payload = { email: $('#email').value, password: $('#pw').value, name: $('#name')?.value };
-        if (mode === 'up') await auth.signUp(payload);
-        else await auth.signIn({ ...payload, remember: $('#remember')?.checked });
+        if (mode === 'up') {
+          await auth.signUp(payload);
+          // Signing up signs you in and remembers you. Being asked to log in
+          // immediately after creating an account is the most pointless step
+          // on the web.
+          await auth.signIn({ ...payload, remember: true });
+        } else {
+          await auth.signIn({ ...payload, remember: $('#remember')?.checked !== false });
+        }
         toast(mode === 'up' ? 'Account created' : 'Signed in', 'ok');
         signedInView();
       } catch (ex) {
@@ -809,6 +861,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCompare();
   initAiDemo();
   initDownloads();
+  initNavAccount();
   initAccount();
 
   // Mark the current page in the nav without hard-coding it per page.
