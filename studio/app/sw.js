@@ -54,6 +54,8 @@ const SHELL = [
   './js/engine/lut.js',
   './js/engine/multiframe.js',
   './js/engine/matte.js',
+  './js/engine/tags.js',
+  './js/engine/brand.js',
   './js/panels/curves.js',
   './js/engine/exporter-wc.js',
   './js/engine/exporter.js',

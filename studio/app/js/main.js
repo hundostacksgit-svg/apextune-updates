@@ -22,6 +22,7 @@ import { Transport } from './engine/playback.js';
 import { AudioEngine } from './engine/audio.js';
 import * as preview from './engine/preview.js';
 import { CHECK_RATIOS, drawCheck, lossFor } from './engine/multiframe.js';
+import { tagVideo } from './engine/tags.js';
 import * as media from './engine/media.js';
 import { TimelineUI } from './timeline-ui.js';
 import { openPanel, refreshPanel, closePanel, panelIsOverlay, PANELS } from './panels/index.js';
@@ -144,6 +145,14 @@ export const actions = {
      * which is the question anyone is actually asking when they open the
      * colour panel. Costs nothing — the frame already exists as the poster.
      */
+    /*
+     * Work out what each clip contains, after the import has already
+     * finished. Deliberately not awaited: tagging seeks through the file a
+     * few times, and making somebody wait for that before they can start
+     * cutting would trade a real second of their time for a convenience.
+     */
+    tagNewMedia(files.length);
+
     const firstPoster = S.project.media.find((m) => m.poster)?.poster;
     if (firstPoster) {
       const img = new Image();
@@ -483,6 +492,28 @@ function paintRatioCheck() {
       ? `${ratio} — ${Math.round(loss * 100)}% cut off`
       : `${ratio} — fits`;
     cap.classList.toggle('rc-warn', loss > 0.25);
+  }
+}
+
+/**
+ * Tag the most recently imported clips in the background.
+ *
+ * Failures are silent on purpose. A tag is a convenience for finding things
+ * later; a clip that could not be analysed still imports, still plays and
+ * still cuts, and interrupting somebody with an error about a label would be
+ * out of all proportion to what was lost.
+ */
+async function tagNewMedia(count) {
+  const recent = S.project.media.slice(-count).filter((m) => m.kind === 'video' && !m.tags);
+  for (const rec of recent) {
+    try {
+      const node = media.elementFor(rec, `tag_${rec.id}`);
+      // eslint-disable-next-line no-await-in-loop -- one file at a time
+      const { tags, stats } = await tagVideo(node);
+      rec.tags = tags;
+      rec.stats = stats;
+      refreshPanel();
+    } catch { /* a clip without tags is still a clip */ }
   }
 }
 
