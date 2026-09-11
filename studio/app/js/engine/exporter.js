@@ -40,6 +40,26 @@ export const PRESETS = [
     note: 'Vertical, at full resolution.' },
   { id: 'draft',   name: 'Draft 540p',              w: 540,  h: 960,  fps: 30, tier: 'free',
     note: 'Fast, small, for showing someone.' },
+
+  /* The rest of the ladder. Kept below the everyday presets because most people
+     want "TikTok" rather than a resolution, and a list that opens with 2560×1440
+     makes the common choice harder to find. */
+  { id: 'yt720',   name: 'YouTube 720p',            w: 1280, h: 720,  fps: 30, tier: 'free',
+    note: 'Small file, still sharp on a phone.' },
+  { id: 'tiktok60', name: 'Vertical 1080p60',       w: 1080, h: 1920, fps: 60, tier: 'creator',
+    note: 'Vertical, for fast motion.' },
+  { id: 'qhd',     name: 'QHD 1440p',               w: 2560, h: 1440, fps: 30, tier: 'creator',
+    note: 'Between 1080 and 4K. YouTube treats it well.' },
+  { id: 'qhd60',   name: 'QHD 1440p60',             w: 2560, h: 1440, fps: 60, tier: 'creator',
+    note: 'Gameplay that deserves more than 1080.' },
+  { id: 'uhd60',   name: '4K UHD 60fps',            w: 3840, h: 2160, fps: 60, tier: 'creator',
+    note: 'The most a consumer platform will take.' },
+  { id: 'uhdv60',  name: '4K vertical 60fps',       w: 2160, h: 3840, fps: 60, tier: 'creator',
+    note: 'Vertical, full resolution, smooth.' },
+  { id: 'dci4k',   name: 'DCI 4K',                  w: 4096, h: 2160, fps: 24, tier: 'studio',
+    note: 'Cinema width, 24fps. For a festival or a grade.' },
+  { id: 'cine24',  name: 'Cinematic 1080p24',       w: 1920, h: 1080, fps: 24, tier: 'free',
+    note: 'The film look, at a size anything will play.' },
 ];
 
 export const QUALITY = {

@@ -16,6 +16,7 @@ import {
   PRESETS, QUALITY, exportProject, download, safeName, pickMime, extensionFor, hasAudio,
 } from '../engine/exporter.js';
 import * as licence from '../licence.js';
+import { canShareFile, toFile, shareFile, suggestFor } from '../engine/share.js';
 import { saveBytes, isDesktop, proResAvailable, transcode } from '../desktop.js';
 import {
   available as codecsAvailable, probe as probeCodecs, selfTest, exportWithCodecs,
@@ -263,6 +264,7 @@ function finishWith(handle, overlay, preview, proResFormat) {
     const name = safeName(S.project.name, ext);
     // On the desktop this is a real Save dialog; in a browser it's a download.
     if (!await saveBytes(blob, name)) download(blob, name);
+    if (!out.partial) offerToPost(blob, name);
     if (out.partial) {
       modal(`<h3>Export stopped early</h3>
         <p>It stopped because ${esc(out.reason || 'it was cancelled')}. The part that had already
@@ -282,6 +284,81 @@ function finishWith(handle, overlay, preview, proResFormat) {
         <button class="btn btn-primary" data-x="ok">OK</button></div>`);
     $('[data-x="ok"]')?.addEventListener('click', closeModal);
   }).finally(() => { running = null; });
+}
+
+/* ------------------------------------------------------------------ */
+/* where it goes next                                                  */
+/* ------------------------------------------------------------------ */
+/*
+ * The moment after an export finishes is the one moment someone definitely
+ * wants to post the thing, and it is the moment every editor drops them back
+ * into a file manager instead.
+ *
+ * On a phone this really is one press: the system share sheet takes the file
+ * and lists every app installed, TikTok and YouTube among them, and the video
+ * never leaves the device on its way there. On a desktop the browser has no
+ * such sheet, so the file is already saved and each platform's own upload page
+ * is one click — which is where a desktop upload happens anyway.
+ *
+ * Posting *directly* — this app holding the account and pushing the file — is
+ * not offered, because it cannot be done honestly from a page with no server:
+ * it needs OAuth secrets and a reviewed developer application per platform. The
+ * dialog says so rather than pretending.
+ */
+function offerToPost(blob, name) {
+  const { width, height } = S.project.settings;
+  const seconds = duration(S.project);
+  const file = toFile(blob, name);
+  const canShare = canShareFile(file);
+  const picks = suggestFor(width, height, seconds);
+
+  modal(`
+    <h3>Saved. Where is it going?</h3>
+    <p class="small" style="margin-top:0">
+      <span class="mono">${esc(name)}</span> — ${width}×${height},
+      ${seconds < 60 ? `${seconds.toFixed(1)}s` : `${Math.floor(seconds / 60)}:${String(Math.round(seconds % 60)).padStart(2, '0')}`}
+    </p>
+
+    ${canShare ? `
+      <button class="btn btn-primary btn-lg btn-full" id="x-share">
+        Share to an app on this device</button>
+      <p class="tiny muted" style="margin:8px 0 16px">
+        Opens your share sheet with the video attached — TikTok, YouTube, Instagram, Messages,
+        anything installed. It goes straight from this device to that app.
+      </p>` : `
+      <div class="note tiny" style="margin-top:0">
+        Your browser cannot hand a file to another app, so the video has been saved instead.
+        Open one of these and drop it in. On a phone, the same export offers a one-press share.
+      </div>`}
+
+    <div class="post-links">
+      ${picks.map((p) => `
+        <a class="post-link" href="${esc(p.url)}" target="_blank" rel="noopener">
+          <span class="pl-ico">${p.icon}</span>
+          <span class="pl-txt"><b>${esc(p.name)}</b>
+            <span>${esc(p.warnings[0] || p.note)}</span></span>
+          <span class="pl-go">↗</span>
+        </a>`).join('')}
+    </div>
+
+    <p class="tiny muted" style="margin:14px 0 0">
+      We do not post on your behalf and never ask for your accounts. Doing that would mean
+      holding your login and running your video through our server — neither of which happens here.
+    </p>
+    <div class="btn-row" style="justify-content:flex-end">
+      <button class="btn btn-ghost" data-x="ok">Done</button>
+    </div>`);
+
+  $('[data-x="ok"]')?.addEventListener('click', closeModal);
+  $('#x-share')?.addEventListener('click', async () => {
+    try {
+      const result = await shareFile(file, { title: S.project.name, text: 'Made with OmniDx Studio' });
+      if (result === 'shared') { toast('Shared', 'ok'); closeModal(); }
+      // A cancel is someone changing their mind, not a failure — say nothing.
+    } catch (err) {
+      toast(`Could not share — ${err.message}`, 'bad', 5000);
+    }
+  });
 }
 
 /** Listed in the command palette. */

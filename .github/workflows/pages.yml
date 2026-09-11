@@ -52,7 +52,7 @@ jobs:
                    studio/app/js/engine/muxer.js studio/app/js/engine/exporter-wc.js \
                    studio/app/js/engine/audio-render.js studio/app/js/engine/audio-repair.js \
                    studio/app/js/engine/audio-fx.js studio/app/js/engine/reference.js \
-                   studio/app/js/engine/looks-library.js \
+                   studio/app/js/engine/looks-library.js studio/app/js/engine/share.js \
                    studio/app/js/engine/bundle.js studio/app/js/engine/proxy.js \
                    studio/app/js/panels/templates.js studio/app/js/panels/tracking.js \
                    studio/app/js/engine/project.js studio/app/js/engine/render.js \

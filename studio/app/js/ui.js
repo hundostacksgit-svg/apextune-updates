@@ -73,9 +73,27 @@ export function closeModal() { $('#modal')?.close(); }
 /** Timecode as HH:MM:SS:FF. Editors count frames, not milliseconds. */
 export function tc(seconds, fps = 30) {
   const s = Math.max(0, Number(seconds) || 0);
-  const total = Math.round(s * fps);
-  const f = total % fps;
-  const secs = Math.floor(total / fps);
+
+  /*
+   * Frames are counted against a whole-number timebase, which is not the same
+   * thing as the frame rate.
+   *
+   * 23.976 and 29.97 are real rates — anything that has been near American
+   * broadcast runs at them — but a timecode has 24 or 30 frame slots per
+   * second, never 23.976 of them. Taking a modulo by a fractional rate returns
+   * a fraction, and the clock reads "00:00:04:07.04". Rounding to the timebase
+   * is what every professional timecode does, and it is why 23.976 material is
+   * labelled 24fps everywhere you look.
+   *
+   * This is non-drop: the number shown counts frames, so over a long programme
+   * it drifts from the wall clock by the same 0.1% the rate itself does. Drop
+   * frame trades an honest frame count for an honest duration, and for edits
+   * this length the frame count is the more useful of the two.
+   */
+  const base = Math.max(1, Math.round(fps || 30));
+  const total = Math.round(s * base);
+  const f = total % base;
+  const secs = Math.floor(total / base);
   const pad = (n) => String(n).padStart(2, '0');
   return `${pad(Math.floor(secs / 3600))}:${pad(Math.floor((secs % 3600) / 60))}:${pad(secs % 60)}:${pad(f)}`;
 }

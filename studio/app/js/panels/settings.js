@@ -7,6 +7,28 @@
  */
 
 import { $, $$, esc, toast, bytes, confirmDialog, selectRow } from '../ui.js';
+
+/*
+ * Frame rates worth offering, and why each is here.
+ *
+ * 23.976 and 29.97 are not rounding errors — they are the real rates of
+ * anything that has been near American broadcast, and editing 23.976 footage on
+ * a 24 timeline drifts by a frame every 41 seconds. Anyone who has been handed
+ * a camera original knows to look for them, and their absence is the first sign
+ * a tool is not serious.
+ */
+const FPS_OPTIONS = [
+  [23.976, '23.976 — film, NTSC'],
+  [24, '24 — film'],
+  [25, '25 — PAL, Europe'],
+  [29.97, '29.97 — NTSC broadcast'],
+  [30, '30 — the safe default'],
+  [48, '48 — high frame rate film'],
+  [50, '50 — PAL, smooth'],
+  [59.94, '59.94 — NTSC, smooth'],
+  [60, '60 — gaming and sport'],
+  [120, '120 — for slowing down later'],
+];
 import { S, actions, paintAccount } from '../main.js';
 import * as store from '../store.js';
 import * as levels from '../levels.js';
@@ -30,7 +52,11 @@ export function mount(host) {
         ${selectRow({ key: 'ratio', label: 'Aspect ratio', value: st.ratio,
           options: Object.entries(RATIOS).map(([id, r]) => [id, `${id} — ${r.label}`]) })}
         ${selectRow({ key: 'fps', label: 'Frame rate', value: st.fps,
-          options: [[24, '24 — film'], [25, '25 — PAL'], [30, '30 — the safe default'], [60, '60 — smooth motion']] })}
+          options: FPS_OPTIONS })}
+        <p class="tiny muted" style="margin:-6px 0 12px">
+          This is the timeline's own rate — what a frame step moves by, what the timecode counts,
+          and what motion blur uses as its shutter. Export can still be any rate you like.
+        </p>
         <div class="field"><label for="s-bg">Background</label>
           <input class="input" type="color" id="s-bg" value="${esc(st.background)}"></div>
         <div class="btn-row">

@@ -48,6 +48,7 @@ const SHELL = [
   './js/engine/project.js',
   './js/engine/proxy.js',
   './js/engine/reference.js',
+  './js/engine/share.js',
   './js/engine/render.js',
   './js/engine/stickers.js',
   './js/engine/templates.js',
