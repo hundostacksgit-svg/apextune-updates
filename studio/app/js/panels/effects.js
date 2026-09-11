@@ -11,7 +11,9 @@ import { S, actions } from '../main.js';
 import { EFFECT_LIST, EFFECTS, EFFECT_GROUPS, makeEffect } from '../engine/effects.js';
 import { pickerMarkup, wirePicker } from './transition-picker.js';
 import { attachPreviews } from '../engine/preview.js';
-import { clipsOn, clipById } from '../engine/project.js';
+import { clipsOn, clipById, mediaById, sourceTime } from '../engine/project.js';
+import { elementFor } from '../engine/media.js';
+import { buildPlate, registerPlate, hasPlate } from '../engine/matte.js';
 import * as licence from '../licence.js';
 
 export function mount(host) {
@@ -206,6 +208,44 @@ function addEffect(id) {
   }
   actions.commit(`Add ${EFFECTS[id].name}`);
   toast(`${EFFECTS[id].name} on ${targets.length} clip${targets.length === 1 ? '' : 's'}`, 'ok');
+
+  // Removing a background needs a background to compare against, and the only
+  // place to get one is the clip itself. Adding the effect starts that, rather
+  // than leaving an effect on the clip that silently does nothing.
+  if (id === 'removeBackground') ensurePlates(targets);
+}
+
+/**
+ * Work out what the background of each clip looks like.
+ *
+ * Runs after the effect is on, so the person sees it appear and then sees it
+ * start working, rather than waiting on a spinner before anything happens.
+ * One clip at a time: each is several seeks and a median, and running four at
+ * once on a phone is how a tab gets killed.
+ */
+async function ensurePlates(clipIds) {
+  for (const clipId of clipIds) {
+    const clip = clipById(S.project, clipId);
+    if (!clip || clip.matte?.plateId && hasPlate(clip.matte.plateId)) continue;
+    const media = mediaById(S.project, clip.mediaId);
+    if (media?.kind !== 'video') {
+      toast('Removing a background needs a video clip — a still has no moving subject to separate.', 'bad', 6000);
+      continue;
+    }
+    try {
+      const node = elementFor(media, clip.id);
+      const from = sourceTime(clip, clip.start);
+      const to = sourceTime(clip, clip.start + clip.dur - 0.02);
+      toast('Working out what the background is…', '', 2500);
+      // eslint-disable-next-line no-await-in-loop -- one at a time, deliberately
+      const plate = registerPlate(await buildPlate(node, { from, to: Math.max(from + 0.3, to) }));
+      clip.matte = { ...(clip.matte || {}), plateId: plate.id };
+      actions.commit('Background plate');
+      toast('Background found. Tune the sensitivity in the effect if the edge is rough.', 'ok', 5000);
+    } catch (err) {
+      toast(err.message, 'bad', 6000);
+    }
+  }
 }
 
 function setTransition(type) {

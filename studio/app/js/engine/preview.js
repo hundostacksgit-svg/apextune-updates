@@ -219,7 +219,7 @@ const liveliest = new Map();
 function bestTime(id) {
   if (liveliest.has(id)) return liveliest.get(id);
   const def = EFFECTS[id];
-  if (!def) { liveliest.set(id, 0.55); return 0.55; }
+  if (!def || def.needsSetup) { liveliest.set(id, 0.55); return 0.55; }
 
   const src = sourceFrame();
   const probe = document.createElement('canvas');
@@ -254,10 +254,43 @@ function bestTime(id) {
   return best;
 }
 
+/**
+ * A chip for an effect that cannot run until it is set up.
+ *
+ * Drawing the plain sample frame would be worse than useless — it would say
+ * "this effect does nothing", which is the one thing it must not say about an
+ * effect that works perfectly once it has what it needs.
+ */
+function setupThumb(def) {
+  const out = blank();
+  const ctx = out.getContext('2d');
+  const W = out.width, H = out.height;
+  ctx.drawImage(sourceFrame(), 0, 0, W, H);
+  ctx.fillStyle = 'rgba(5,8,15,.62)';
+  ctx.fillRect(0, 0, W, H);
+  // A transparency checkerboard through the middle: the universal sign for
+  // "this is where the picture gets cut away".
+  const s = Math.round(H / 9);
+  for (let y = Math.round(H * 0.28); y < H * 0.72; y += s) {
+    for (let x = Math.round(W * 0.22); x < W * 0.78; x += s) {
+      ctx.fillStyle = ((x / s | 0) + (y / s | 0)) % 2 ? 'rgba(255,255,255,.30)' : 'rgba(255,255,255,.14)';
+      ctx.fillRect(x, y, s, s);
+    }
+  }
+  ctx.fillStyle = 'rgba(255,255,255,.94)';
+  ctx.font = `600 ${Math.round(H * 0.13)}px system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(def.icon || '✂', W / 2, H / 2);
+  return out;
+}
+
 /** One effect at its default settings, drawn on the sample frame. */
 export function effectThumb(id, t) {
   if (t === undefined) t = bestTime(id);
   return cached(`fx:${id}:${t}:${userFrame ? 'u' : 'b'}`, () => {
+    const def0 = EFFECTS[id];
+    if (def0?.needsSetup) return setupThumb(def0);
     const out = blank();
     const ctx = out.getContext('2d', { willReadFrequently: true });
     ctx.drawImage(sourceFrame(), 0, 0, out.width, out.height);

@@ -19,6 +19,7 @@
 import { valueAt } from './project.js';
 import { scratch, snapshot, channel, noise, clamp01, hexToRgba, pixels, cellSize, blurred, edgeMap, stretch } from './fx-utils.js';
 import { EFFECT_PACKS } from './effects-library.js';
+import { chromaKey, keyAgainstPlate, plateById } from './matte.js';
 
 /* ------------------------------------------------------------------ */
 /* the effects                                                         */
@@ -552,6 +553,70 @@ export const EFFECTS = {
  * ones projects already reference by id, and a generated effect quietly taking
  * over one of those ids would change what every existing project looks like.
  */
+/*
+ * Background removal, as ordinary effects.
+ *
+ * Deliberately not a separate pipeline stage. Going through the effect stack
+ * means the preview and the exporter run identical code, the strength is
+ * keyframeable like anything else, and it can be reordered against a grade —
+ * which matters, because keying before a heavy grade and keying after it give
+ * genuinely different edges.
+ */
+Object.assign(EFFECTS, {
+  chromaKey: {
+    name: 'Green screen key', group: 'Matte', tier: 'free', icon: '🟩',
+    params: {
+      colour: { label: 'Screen colour', type: 'colour', def: '#00b140' },
+      tolerance: { label: 'Tolerance', min: 1, max: 100, def: 30 },
+      softness: { label: 'Edge softness', min: 1, max: 60, def: 12 },
+      spill: { label: 'Kill the colour spill', min: 0, max: 100, def: 60 },
+    },
+    draw(ctx, w, h, p) {
+      chromaKey(ctx, w, h, {
+        colour: p.colour || '#00b140',
+        tolerance: p.tolerance ?? 30,
+        softness: p.softness ?? 12,
+        spill: p.spill ?? 60,
+      });
+    },
+  },
+
+  removeBackground: {
+    name: 'Remove background', group: 'Matte', tier: 'creator', icon: '✂️',
+    /*
+     * This effect cannot do anything until the clip has a background plate,
+     * which is built from the clip when the effect is added.
+     *
+     * `needsSetup` is how the rest of the app knows that. Without it the chip
+     * previews as an untouched frame and reads as an effect that does nothing,
+     * which is exactly the impression to avoid — so the preview draws the
+     * label instead of a picture, and the test suite knows this one is
+     * legitimately inert rather than broken.
+     */
+    needsSetup: 'Finds the background from the clip itself when you add it',
+    params: {
+      tolerance: { label: 'Sensitivity', min: 2, max: 90, def: 26 },
+      softness: { label: 'Edge softness', min: 1, max: 60, def: 14 },
+      feather: { label: 'Feather', min: 0, max: 10, def: 2 },
+    },
+    /*
+     * Needs a background plate, which the Matte panel builds from the clip.
+     * Without one this does nothing at all rather than guessing — a key that
+     * silently invents a matte is worse than a button that has not been
+     * pressed yet, and the panel is what says so.
+     */
+    draw(ctx, w, h, p, { clip }) {
+      const plate = plateById(clip?.matte?.plateId);
+      if (!plate) return;
+      keyAgainstPlate(ctx, w, h, plate, {
+        tolerance: p.tolerance ?? 26,
+        softness: p.softness ?? 14,
+        feather: p.feather ?? 2,
+      });
+    },
+  },
+});
+
 Object.assign(EFFECTS, { ...EFFECT_PACKS, ...EFFECTS });
 
 export const EFFECT_LIST = Object.entries(EFFECTS).map(([id, e]) => ({ id, ...e }));

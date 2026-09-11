@@ -59,7 +59,7 @@ jobs:
                    studio/app/js/engine/effects-library.js studio/app/js/engine/fx-utils.js \
                    studio/app/js/engine/fonts-library.js studio/app/js/engine/preview.js \
                    studio/app/js/engine/lut.js studio/app/js/panels/curves.js \
-                   studio/app/js/engine/multiframe.js \
+                   studio/app/js/engine/multiframe.js studio/app/js/engine/matte.js \
                    studio/app/js/engine/bundle.js studio/app/js/engine/proxy.js \
                    studio/app/js/panels/templates.js studio/app/js/panels/tracking.js \
                    studio/app/js/engine/project.js studio/app/js/engine/render.js \
