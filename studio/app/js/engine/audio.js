@@ -12,7 +12,7 @@
  * says so rather than pretending.
  */
 
-import { activeAt, mediaById, sourceTime, speedAt } from './project.js';
+import { activeAt, audibleAt, mediaById, sourceTime, speedAt } from './project.js';
 import { elementFor } from './media.js';
 import { buildAudioChain, fxSignature } from './audio-fx.js';
 import { buildStrip, stripSignature, warmStrip, makeupMeasured } from './audio-strip.js';
@@ -177,7 +177,8 @@ export class AudioEngine {
     this.ensure();
 
     const now = this.ctx.currentTime;
-    const active = activeAt(project, t);
+    // Compounds opened out, or a grouped sequence plays silent.
+    const active = audibleAt(project, t);
     const wanted = new Set();
 
     // Work out ducking first: how loud is the loudest un-ducked voice right now.

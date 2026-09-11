@@ -13,7 +13,7 @@
  * the same fields rather than each having their own idea of a mix.
  */
 
-import { activeAt, mediaById, speedAt, sourceTime } from './project.js';
+import { activeAt, audibleAt, mediaById, speedAt, sourceTime } from './project.js';
 import { decode } from './media.js';
 import { buildAudioChain } from './audio-fx.js';
 import { buildStrip, warmStrip } from './audio-strip.js';
@@ -22,6 +22,36 @@ import { buildStrip, warmStrip } from './audio-strip.js';
  * Render the whole timeline's audio.
  * Returns an AudioBuffer, or null when nothing on the timeline makes a sound.
  */
+/**
+ * Every clip whose sound has to be scheduled, with compounds opened out and
+ * shifted into the outer timeline's clock.
+ */
+function flattenForAudio(project, { offset = 0, speed = 1, gain = 1, depth = 0 } = {}) {
+  const out = [];
+  for (const clip of project.clips) {
+    if (clip.kind !== 'compound') {
+      out.push(speed === 1 && offset === 0 && gain === 1 ? clip : {
+        ...clip,
+        id: `${offset}:${clip.id}`,
+        start: offset + clip.start / speed,
+        dur: clip.dur / speed,
+        speed: (clip.speed || 1) * speed,
+        volume: (clip.volume ?? 1) * gain,
+      });
+      continue;
+    }
+    if (!clip.inner?.clips?.length || depth > 6) continue;
+    const s = (clip.speed || 1) * speed;
+    out.push(...flattenForAudio(clip.inner, {
+      offset: offset + clip.start / speed - (clip.in || 0) / s,
+      speed: s,
+      gain: gain * (clip.volume ?? 1),
+      depth: depth + 1,
+    }));
+  }
+  return out;
+}
+
 export async function renderAudio(project, { duration, sampleRate = 48000, onProgress } = {}) {
   /*
    * Measure every compressor before building anything.
@@ -30,8 +60,17 @@ export async function renderAudio(project, { duration, sampleRate = 48000, onPro
    * render gets one pass, so an uncorrected compressor here would be baked
    * into the file fifteen decibels loud with nothing to notice it.
    */
-  await Promise.all(project.clips.map((c) => warmStrip(c.strip)));
-  const clips = project.clips.filter((c) => {
+  /*
+   * Compounds opened out before anything else happens.
+   *
+   * The renderer draws a compound by rendering its inner timeline; sound has
+   * no equivalent, so its clips have to be reached individually and shifted
+   * into this timeline's clock. Done once, here, so every line below sees a
+   * flat list and none of them has to know compounds exist.
+   */
+  const flat = flattenForAudio(project);
+  await Promise.all(flat.map((c) => warmStrip(c.strip)));
+  const clips = flat.filter((c) => {
     if (c.kind === 'title' || c.kind === 'sticker' || c.reversed) return false;
     const track = project.tracks.find((t) => t.id === c.trackId);
     if (!track || track.muted) return false;

@@ -83,6 +83,19 @@ export const GUIDE = [
     ],
   },
   {
+    id: 'compound',
+    group: 'The timeline',
+    title: 'Grouping clips into one',
+    body: [
+      ['Why', 'A sequence you have finished with should behave like one thing. Ten shots that make a title sequence want to be dragged, graded, sped up and reused as a unit — and doing any of that to ten clips is ten chances to get one of them wrong.'],
+      ['How', 'Select two or more clips and press **Ctrl+G**, or right-click → *Group into one*. They become a single clip on the timeline, marked with a folder edge.'],
+      ['Getting them back', '**Ctrl+Shift+G**, or right-click → *Ungroup*. Everything comes back exactly where it was, with its own trims, grades and volumes intact.'],
+      ['Treat the whole thing at once', 'A grade, an effect or a window on the group applies to everything inside it. That is most of the point: one look over a sequence instead of the same look pasted onto every shot in it.'],
+      ['Groups can hold groups', 'A group inside a group is a real thing people build, and it works — the picture is rendered by rendering the inner timeline, however many levels deep it goes.'],
+      ['Nothing is copied', 'The footage stays in your media pool. Grouping does not duplicate a file, and ungrouping does not have to find one again.'],
+    ],
+  },
+  {
     id: 'adjust',
     group: 'The timeline',
     title: 'Adjustment layers, and getting your cuts back out of a flat video',

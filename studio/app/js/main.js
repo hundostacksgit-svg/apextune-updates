@@ -17,7 +17,7 @@ import { History } from './engine/history.js';
 import {
   newProject, deserialize, serialize, duration, clipById, mediaById,
   splitClip, removeClips, duplicateClips, addClip, addTrack, RATIOS, nextFreeStart,
-  trackById, removeTrack, closeGaps, clipsOn, moveClip,
+  trackById, removeTrack, closeGaps, clipsOn, moveClip, makeCompound, breakCompound,
 } from './engine/project.js';
 import { Renderer } from './engine/render.js';
 import { Transport } from './engine/playback.js';
@@ -401,6 +401,36 @@ export const actions = {
       if (!/stopped/i.test(err.message || '')) toast(err.message || 'Could not scan that clip', 'bad', 5000);
       return 0;
     }
+  },
+
+  /**
+   * Gather the selection into one clip.
+   *
+   * A sequence you have finished with should behave like one thing: dragged,
+   * graded, sped up and reused as a unit. Doing any of that to ten clips is
+   * ten chances to get one of them wrong.
+   */
+  groupSelected() {
+    const ids = [...S.sel];
+    if (ids.length < 2) { toast('Select at least two clips to group', 'bad'); return null; }
+    const host = makeCompound(S.project, ids, { name: `Compound ${S.project.clips.length}` });
+    if (!host) { toast('Those clips cannot be grouped', 'bad'); return null; }
+    S.sel = new Set([host.id]);
+    actions.commit(`Group ${ids.length} clips`);
+    toast('Grouped. Everything inside is still there — ungroup puts it straight back.', 'ok', 4200);
+    return host;
+  },
+
+  /** Put a compound's clips back on the timeline. */
+  ungroupSelected(clipId = null) {
+    const ids = clipId ? [clipId] : [...S.sel];
+    const hosts = ids.map((id) => clipById(S.project, id)).filter((c) => c?.kind === 'compound');
+    if (!hosts.length) { toast('Select a grouped clip first', 'bad'); return 0; }
+    let made = [];
+    for (const host of hosts) made = made.concat(breakCompound(S.project, host.id));
+    S.sel = new Set(made.map((c) => c.id));
+    actions.commit(`Ungroup ${hosts.length} clip${hosts.length === 1 ? '' : 's'}`);
+    return made.length;
   },
 
   /* ---------------- tracks ---------------- */
@@ -890,23 +920,28 @@ function onKey(e) {
     if (k === 'e') { e.preventDefault(); openExport(); return; }
     if (k === 'o') { e.preventDefault(); openPanel('settings'); return; }
     if (k === 'a') { e.preventDefault(); actions.select(S.project.clips.map((c) => c.id)); return; }
+
+    /*
+     * Cut, copy, paste and group.
+     *
+     * These live here, in the one block that handles modifier keys, and not in
+     * a second block further down — which is where they were, behind this
+     * block's unconditional return, doing nothing at all. The context menus
+     * called the same actions directly, so every test passed and the keys were
+     * simply dead.
+     */
+    if (k === 'x' && S.sel.size) { e.preventDefault(); actions.cutSelected(); return; }
+    if (k === 'c' && S.sel.size) { e.preventDefault(); actions.copySelected(); return; }
+    if (k === 'v' && actions.hasClipboard()) { e.preventDefault(); actions.pasteAt(S.time); return; }
+    if (k === 'g') {
+      e.preventDefault();
+      if (e.shiftKey) actions.ungroupSelected(); else actions.groupSelected();
+      return;
+    }
     return;
   }
 
   const fps = S.project.settings.fps;
-  /*
-   * Cut, copy and paste on the timeline.
-   *
-   * Handled before the switch because they carry a modifier, and because the
-   * browser's own copy would otherwise take a clip selection to mean "copy the
-   * page text", which is nothing anybody wanted.
-   */
-  if (e.ctrlKey || e.metaKey) {
-    const k = e.key.toLowerCase();
-    if (k === 'x' && S.sel.size) { e.preventDefault(); actions.cutSelected(); return; }
-    if (k === 'c' && S.sel.size) { e.preventDefault(); actions.copySelected(); return; }
-    if (k === 'v' && actions.hasClipboard()) { e.preventDefault(); actions.pasteAt(S.time); return; }
-  }
 
   switch (e.key) {
     case ' ': e.preventDefault(); togglePlay(); break;
@@ -1211,6 +1246,10 @@ function paintLevel() {
     duplicate: () => actions.duplicateSelected(),
     addLayer: (kind) => actions.addLayer(kind),
     addAdjustment: () => actions.addAdjustment(),
+    group: () => actions.groupSelected(),
+    ungroup: () => actions.ungroupSelected(),
+    canUngroup: () => [...S.sel].some((id) => clipById(S.project, id)?.kind === 'compound'),
+    canGroup: () => S.sel.size >= 2,
     detectScenes: () => actions.detectScenes(),
     remove: () => actions.deleteSelected(),
     hasSelection: () => S.sel.size > 0,

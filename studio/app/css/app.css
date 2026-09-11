@@ -351,6 +351,22 @@ html[data-level="expert"] .card-hint{display:none}
 .tl-track.audio{background:color-mix(in srgb,var(--surface-2) 70%,var(--surface))}
 .tl-track.drop{background:color-mix(in srgb,var(--blue) 12%,var(--surface-2))}
 
+/* ---------- compound clips ---------- */
+/* A folder edge, so a clip that is really a timeline does not look like a clip
+   whose thumbnail failed to arrive. */
+.clip.compound{
+  background:linear-gradient(160deg,
+    color-mix(in srgb,var(--blue) 46%,var(--surface-2)),
+    color-mix(in srgb,var(--blue) 22%,var(--surface-2)));
+  border-color:color-mix(in srgb,var(--blue) 60%,transparent);
+}
+.clip.compound::before{
+  content:'';position:absolute;left:0;right:0;top:0;height:5px;
+  background:color-mix(in srgb,var(--blue) 70%,transparent);
+  border-radius:5px 5px 0 0;
+}
+.clip.compound .cname::before{content:'▣ '}
+
 /* ---------- adjustment layers ---------- */
 /*
  * Striped and washed out, so a layer with no picture of its own does not read

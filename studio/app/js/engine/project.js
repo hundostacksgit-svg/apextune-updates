@@ -101,6 +101,45 @@ export function activeAt(p, t) {
     .sort((a, b) => (order.get(b.trackId) ?? 0) - (order.get(a.trackId) ?? 0));
 }
 
+/*
+ * Every clip alive at a moment, with compounds opened out.
+ *
+ * The renderer draws a compound by rendering its inner timeline, so it never
+ * needs this. The audio graph does: sound has no equivalent of "draw this
+ * canvas", so a compound's clips have to be reached individually and shifted
+ * into the outer timeline's clock. Without it a grouped sequence looks right
+ * and plays silent, which is the kind of bug people find after exporting.
+ */
+export function audibleAt(p, t, { depth = 0 } = {}) {
+  const out = [];
+  for (const clip of activeAt(p, t)) {
+    if (clip.kind !== 'compound') { out.push(clip); continue; }
+    if (!clip.inner?.clips?.length || depth > 6) continue;
+    const speed = clip.speed || 1;
+    const innerT = (t - clip.start) * speed + (clip.in || 0);
+    for (const child of audibleAt(clip.inner, innerT, { depth: depth + 1 })) {
+      /*
+       * A copy, shifted and scaled into the outer clock, not the clip itself.
+       *
+       * The audio engine keys its graph on the clip object, and handing it the
+       * same object at two different times is how one of them ends up playing
+       * at the other's offset.
+       */
+      out.push({
+        ...child,
+        id: `${clip.id}/${child.id}`,
+        start: clip.start + (child.start - (clip.in || 0)) / speed,
+        dur: child.dur / speed,
+        speed: (child.speed || 1) * speed,
+        trackId: clip.trackId,
+        volume: (child.volume ?? 1) * (clip.volume ?? 1),
+        _fromCompound: clip.id,
+      });
+    }
+  }
+  return out;
+}
+
 /**
  * Speed at a moment inside a clip.
  *
@@ -308,6 +347,105 @@ export function trimClip(p, clipId, edge, delta, { ripple = false, minDur = 0.08
     c.dur += d;
     if (ripple) shiftAfter(p, c.trackId, c.start + c.dur - d, d, c.id);
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* compound clips                                                      */
+/* ------------------------------------------------------------------ */
+
+/*
+ * A compound clip is a timeline inside a clip.
+ *
+ * The job it does is not "tidiness": it is that a sequence you have finished
+ * with should behave like one thing. Ten shots that make a title sequence want
+ * to be dragged, graded, sped up and reused as a unit, and doing any of that to
+ * ten clips is ten chances to get one of them wrong.
+ *
+ * The inner timeline is a real project — same shape, same clips, same tracks —
+ * so everything that already works on a project works inside one, including
+ * another compound. It carries no media of its own; the media stays in the
+ * outer project's pool, which is what stops grouping from duplicating a file
+ * and what lets ungrouping put the clips straight back.
+ */
+
+/** Everything selected, gathered into one clip on the timeline. */
+export function makeCompound(p, ids, { name = 'Compound' } = {}) {
+  const picked = ids.map((id) => clipById(p, id)).filter(Boolean);
+  if (picked.length < 2) return null;
+
+  const from = Math.min(...picked.map((c) => c.start));
+  const to = Math.max(...picked.map((c) => c.start + c.dur));
+
+  /*
+   * Which tracks come along: the ones the clips are actually on, in the same
+   * order. Copying every track would leave empty layers inside a compound that
+   * exist for no reason and show up as rows in the timeline when it is opened.
+   */
+  const usedIds = new Set(picked.map((c) => c.trackId));
+  const tracks = p.tracks.filter((t) => usedIds.has(t.id)).map((t) => ({ ...t }));
+
+  const inner = {
+    schema: SCHEMA,
+    name,
+    settings: { ...p.settings },
+    tracks,
+    // Rebased to zero, so the inside of a compound starts at its own start
+    // rather than carrying the outer timeline's offset around forever.
+    clips: picked.map((c) => ({ ...structuredClone(c), start: c.start - from })),
+    markers: (p.markers || [])
+      .filter((m) => m.t >= from && m.t <= to)
+      .map((m) => ({ ...m, t: m.t - from })),
+    captions: [],
+  };
+
+  // The clips leave the outer timeline; the media does not.
+  removeClips(p, picked.map((c) => c.id));
+
+  const host = addClip(p, {
+    mediaId: null,
+    trackId: tracks.find((t) => t.kind === 'video')?.id || picked[0].trackId,
+    start: from,
+    dur: Math.max(0.08, to - from),
+    in: 0,
+    kind: 'compound',
+  });
+  host.inner = inner;
+  host.label = name;
+  return host;
+}
+
+/** Put a compound's clips back on the timeline and remove the wrapper. */
+export function breakCompound(p, clipId) {
+  const host = clipById(p, clipId);
+  if (!host || host.kind !== 'compound' || !host.inner) return [];
+
+  const made = [];
+  for (const c of host.inner.clips) {
+    // Any layer the compound used that no longer exists outside comes back.
+    let track = trackById(p, c.trackId);
+    if (!track) {
+      const spec = host.inner.tracks.find((t) => t.id === c.trackId);
+      track = addTrack(p, spec?.kind || 'video', spec?.name);
+    }
+    const fresh = addClip(p, {
+      mediaId: c.mediaId, trackId: track.id,
+      start: host.start + c.start, dur: c.dur, in: c.in,
+      kind: c.kind, text: c.text, sticker: c.sticker,
+    });
+    Object.assign(fresh, structuredClone({
+      ...c, id: fresh.id, trackId: fresh.trackId, start: fresh.start,
+    }));
+    made.push(fresh);
+  }
+  removeClips(p, [host.id]);
+  return made;
+}
+
+/** How long a compound's contents run, ignoring where the wrapper was trimmed. */
+export function innerDuration(clip) {
+  const inner = clip?.inner;
+  if (!inner?.clips?.length) return 0;
+  return Math.max(...inner.clips.map((c) => c.start + c.dur));
 }
 
 /* ------------------------------------------------------------------ */

@@ -158,7 +158,10 @@ export class Renderer {
    * rather than a second implementation that would drift from it.
    */
   _applyAdjustment(project, clip, t, w, h) {
-    const { ctx } = this;
+    this._applyAdjustmentOn(this.ctx, project, clip, t, w, h);
+  }
+
+  _applyAdjustmentOn(ctx, project, clip, t, w, h) {
     const local = t - clip.start;
     const opacity = valueAt(clip, 'transform.opacity', local, clip.transform?.opacity ?? 1);
     if (opacity <= 0.001) return;
@@ -258,6 +261,89 @@ export class Renderer {
     return true;
   }
 
+  /*
+   * One canvas per nesting depth.
+   *
+   * A compound inside a compound needs two canvases alive at once, and sharing
+   * one would mean the inner render wipes the outer one halfway through.
+   */
+  _innerCtx(w, h, depth) {
+    this._inners ||= [];
+    let pad = this._inners[depth];
+    if (!pad || pad.canvas.width !== w || pad.canvas.height !== h) {
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      pad = { canvas, ctx: canvas.getContext('2d', { willReadFrequently: true }) };
+      this._inners[depth] = pad;
+    }
+    return pad;
+  }
+
+  /** Draw a project's video clips onto a context. The body of draw(), reusable. */
+  _drawInto(ctx, project, t, w, h, playing, forExport) {
+    const visible = activeAt(project, t).filter((c) => {
+      const track = project.tracks.find((tr) => tr.id === c.trackId);
+      return track && track.kind === 'video' && !track.hidden;
+    });
+    for (const clip of visible) {
+      if (clip.kind === 'adjust') { this._applyAdjustmentOn(ctx, project, clip, t, w, h); continue; }
+      const cv = this._clipCanvas(project, clip, t, 0, playing, forExport);
+      if (!cv) continue;
+      const local = t - clip.start;
+      const op = valueAt(clip, 'transform.opacity', local, clip.transform?.opacity ?? 1);
+      ctx.globalAlpha = Math.max(0, Math.min(1, op));
+      ctx.globalCompositeOperation = blendOf(clip.transform?.blend);
+      ctx.drawImage(cv, 0, 0);
+      ctx.globalAlpha = 1;
+      ctx.globalCompositeOperation = 'source-over';
+    }
+  }
+
+  /** The grade, effects and windows a clip carries, applied to a finished frame. */
+  _treatFrame(project, clip, t, w, h, ctx, skipEffects) {
+    const local = t - clip.start;
+    const graded = animatedColor(clip, local);
+    if (!isIdentity(graded)) {
+      /*
+       * The CSS half of a grade has to go through a draw.
+       *
+       * Exposure, contrast and saturation are a ctx.filter on the drawImage,
+       * not one of the composited passes — so applyPasses alone applies the
+       * half of a grade that is drawn on top and silently drops the half that
+       * is a filter. A grade on a compound looked like it did nothing.
+       */
+      const css = cssFilter(resolved(graded));
+      const wheels = wheelFilter(clip.id, clip.color?.wheels);
+      if (css !== 'none' || wheels) {
+        const via = this._innerCtx(w, h, 7);      // a pad nothing else uses
+        via.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        via.ctx.globalAlpha = 1;
+        via.ctx.globalCompositeOperation = 'source-over';
+        via.ctx.filter = wheels ? (css === 'none' ? wheels : `${css} ${wheels}`) : css;
+        via.ctx.clearRect(0, 0, w, h);
+        via.ctx.drawImage(ctx.canvas, 0, 0);
+        via.ctx.filter = 'none';
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(via.canvas, 0, 0);
+      }
+      applyPasses(ctx, w, h, resolved(graded));
+    }
+    if (!skipEffects && clip.effects?.length) {
+      applyEffects(ctx, w, h, clip, {
+        clip, local, time: t,
+        fps: project.settings.fps || this.fps,
+        beatPhase: this._beatPhase(t),
+        redrawClip: () => null,
+      });
+    }
+    const matte = combinedMatte(clip, 'grade', ctx, w, h, local);
+    if (matte) {
+      ctx.globalCompositeOperation = 'destination-in';
+      ctx.drawImage(matte, 0, 0);
+      ctx.globalCompositeOperation = 'source-over';
+    }
+  }
+
   /** The off-screen canvas a windowed grade is built on. One, reused. */
   _gradeCtx(w, h) {
     if (!this._gradeCanvas || this._gradeCanvas.width !== w || this._gradeCanvas.height !== h) {
@@ -289,6 +375,50 @@ export class Renderer {
        path, and returning null is how that surfaces as nothing rather than as
        a black rectangle over the edit. */
     if (clip.kind === 'adjust') return null;
+
+    /*
+     * A compound renders its own timeline into the scratch canvas.
+     *
+     * Recursive on purpose: a compound inside a compound is a real thing
+     * people build, and the alternative is a special case that works one level
+     * deep and fails silently at two. Depth is capped rather than trusted,
+     * because a project file that somehow refers to itself would otherwise
+     * take the tab down instead of drawing something wrong.
+     */
+    if (clip.kind === 'compound') {
+      if (!clip.inner?.clips?.length) return null;
+      this._depth = (this._depth || 0) + 1;
+      try {
+        if (this._depth > 6) return null;
+        const local = t - clip.start;
+        const inner = this._innerCtx(w, h, this._depth);
+        inner.ctx.setTransform(1, 0, 0, 1, 0, 0);
+        inner.ctx.globalAlpha = 1;
+        inner.ctx.globalCompositeOperation = 'source-over';
+        inner.ctx.filter = 'none';
+        inner.ctx.clearRect(0, 0, w, h);
+        /*
+         * The inner timeline borrows the outer pool.
+         *
+         * A compound deliberately carries no media of its own — that is what
+         * stops grouping from duplicating a file and what lets ungrouping put
+         * the clips straight back. So the render is handed a view of the inner
+         * project with the outer project's media on it, rather than the inner
+         * project itself, which has nowhere to look a file up.
+         */
+        const view = { ...clip.inner, media: project.media };
+        this._drawInto(inner.ctx, view, local * (clip.speed || 1) + (clip.in || 0),
+          w, h, playing, forExport);
+        // Then the wrapper's own grade and effects, over the whole thing —
+        // which is the point of grouping: treat ten shots as one.
+        ctx.clearRect(0, 0, w, h);
+        ctx.drawImage(inner.canvas, 0, 0);
+        this._treatFrame(project, clip, t, w, h, ctx, skipEffects);
+        return cv;
+      } finally {
+        this._depth -= 1;
+      }
+    }
 
     if (clip.kind === 'sticker') {
       const local = t - clip.start;
