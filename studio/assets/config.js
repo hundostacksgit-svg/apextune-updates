@@ -213,6 +213,46 @@ export function priceOf(edition) {
   return `$${e.once.toFixed(2)}`;
 }
 
+/* ------------------------------------------------------------------ *
+ * Downloads.
+ *
+ * Installers are served from this domain, not from a code-hosting site. A
+ * visitor who wants the app should get the app, not a repository page with a
+ * list of files and a wall of release notes.
+ *
+ * Set `file` for a platform and its button becomes a direct download of that
+ * file. Leave it empty and the page says so plainly and offers the install that
+ * does work today — adding the web app to the home screen, which is instant on
+ * every platform and needs no build at all.
+ *
+ * Paths are relative to studio/download/, so dropping a built installer into
+ * studio/download/files/ and naming it here is the whole job. See
+ * docs/STUDIO-BUILD.md for producing them — they have to be built on each OS,
+ * which is why they cannot simply be committed.
+ * ------------------------------------------------------------------ */
+export const DOWNLOADS = {
+  mac:     { file: '', version: '', size: '', label: 'macOS',          note: 'Apple silicon & Intel · macOS 11 or newer' },
+  windows: { file: '', version: '', size: '', label: 'Windows',        note: 'Windows 10 & 11 · 64-bit' },
+  linux:   { file: '', version: '', size: '', label: 'Linux',          note: 'AppImage · deb · rpm' },
+  ios:     { file: '', version: '', size: '', label: 'iPhone & iPad',  note: 'iOS 16.4 or newer', install: 'safari' },
+  android: { file: '', version: '', size: '', label: 'Android',        note: 'Android 10 or newer', install: 'prompt' },
+  web:     { file: '', version: '', size: '', label: 'Browser',        note: 'Chrome, Edge, Safari, Firefox', install: 'prompt' },
+};
+
+/**
+ * The direct download URL for a platform, or '' when there is not one yet.
+ *
+ * A bare filename is served from studio/download/files/. A full URL is used as
+ * given, which is the escape hatch for builds too large for this host — an
+ * Electron installer sits right on the 100 MB limit GitHub Pages enforces, and
+ * silently failing to serve it would be worse than pointing somewhere else.
+ */
+export function downloadUrl(os) {
+  const d = DOWNLOADS[os];
+  if (!d || !d.file) return '';
+  return /^https?:\/\//.test(d.file) ? d.file : `files/${d.file}`;
+}
+
 export const SITE = {
   name: 'OmniDx Studio',
   domain: 'omnidx.net',

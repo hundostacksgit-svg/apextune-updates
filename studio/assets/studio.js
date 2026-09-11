@@ -5,7 +5,7 @@
  * follows.
  */
 
-import { EDITIONS, priceOf, buyUrl, PAY, DEVICE_LIMIT, SEATS } from './config.js';
+import { EDITIONS, priceOf, buyUrl, PAY, DEVICE_LIMIT, SEATS, DOWNLOADS, downloadUrl } from './config.js';
 import * as auth from './auth.js';
 
 export const $  = (s, r = document) => r.querySelector(s);
@@ -433,9 +433,8 @@ function initCompare() {
   if (note) {
     note.innerHTML = 'Rows marked <b>Building</b> are not in the app yet. They are '
       + 'listed because a Studio licence includes them the day they land, at no extra cost — '
-      + 'but do not buy today for something on that list. '
-      + '<a href="https://github.com/hundostacksgit-svg/apextune-updates/blob/claude/omnidx-editing-platform-9phdcc/docs/STUDIO-COMPLAINTS.md">'
-      + 'The full built / not-built list is here.</a>';
+      + 'but do not buy today for something on that list. Everything else in this table '
+      + 'is in the build you can open right now, for free, without giving us anything.';
   }
   body.innerHTML = COMPARE.map(([label, a, b, c]) => {
     if (a === null) {
@@ -531,22 +530,92 @@ function initDownloads() {
   const host = $('#downloads');
   if (!host) return;
   const me = detectPlatform();
-  const card = $(`[data-os="${me}"]`) || $('[data-os="web"]');
-  if (card) {
-    card.classList.add('detected');
-    card.insertAdjacentHTML('afterbegin', '<span class="you">Your device</span>');
-    host.prepend(card);
+
+  /*
+   * The install prompt only exists in browsers that offer it, and it only fires
+   * from a real click. So it is captured when the browser announces it and
+   * replayed on a press — a button that would silently do nothing is worse than
+   * one that is not there.
+   */
+  let deferred = null;
+  let installed = matchMedia('(display-mode: standalone)').matches;
+  window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; paint(); });
+  window.addEventListener('appinstalled', () => { installed = true; deferred = null; paint(); });
+
+  /** iOS has no prompt API at all: Safari's Share menu is the only route. */
+  const iosSteps = `
+    <ol class="steps">
+      <li>Open this page in <b>Safari</b> — Chrome on an iPhone cannot install apps.</li>
+      <li>Press <b>Share</b> <span class="kbd">↑</span> at the bottom of the screen.</li>
+      <li>Scroll down and choose <b>Add to Home Screen</b>.</li>
+    </ol>`;
+
+  function action(os) {
+    const url = downloadUrl(os);
+    const d = DOWNLOADS[os] || {};
+
+    // A real installer to hand: give them the file and nothing else.
+    if (url) {
+      return `<a class="btn btn-primary" href="${esc(url)}" download>
+        Download${d.version ? ` ${esc(d.version)}` : ''}</a>
+        ${d.size ? `<div class="tiny muted" style="margin-top:6px">${esc(d.size)}</div>` : ''}`;
+    }
+
+    if (installed && (os === me || os === 'web')) {
+      return `<div class="note ok tiny" style="margin:0">Already installed on this device.</div>`;
+    }
+
+    // No installer built yet. The web app is not a consolation prize — it is
+    // the same editor, it installs in one press, and it works offline.
+    if (d.install === 'safari' || (os === 'ios')) {
+      return `<button class="btn btn-primary" data-ios>Add to Home Screen</button>`;
+    }
+    if (deferred) {
+      return `<button class="btn btn-primary" data-install-now>Install the app</button>`;
+    }
+    return `<a class="btn btn-primary" href="../app/">Open the editor</a>
+      <div class="tiny muted" style="margin-top:6px">Then choose <b>Install</b> in your browser</div>`;
   }
 
-  // The install prompt only exists in browsers that offer it; everywhere else
-  // we tell people the actual menu path instead of a button that does nothing.
-  let deferred = null;
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault(); deferred = e;
-    $$('[data-install]').forEach((b) => { b.hidden = false; });
-  });
+  function card(os) {
+    const d = DOWNLOADS[os];
+    const icon = { mac: '🍎', windows: '🪟', linux: '🐧', ios: '📱', android: '🤖', web: '🌐' }[os];
+    const mine = os === me;
+    return `<div class="dl ${mine ? 'detected' : ''}" data-os="${os}">
+      ${mine ? '<span class="you">Your device</span>' : ''}
+      <div class="os">${icon}</div><h3>${esc(d.label)}</h3>
+      <div class="meta">${esc(d.note)}</div>
+      ${action(os)}
+    </div>`;
+  }
+
+  function paint() {
+    // The visitor's own platform first — nobody should have to hunt for it.
+    const order = ['mac', 'windows', 'ios', 'android', 'linux', 'web']
+      .sort((a, b) => (b === me ? 1 : 0) - (a === me ? 1 : 0));
+    host.innerHTML = order.map(card).join('');
+
+    $$('[data-install-now]', host).forEach((b) => b.addEventListener('click', async () => {
+      if (!deferred) { toast('Use your browser menu → Install'); return; }
+      deferred.prompt();
+      const { outcome } = await deferred.userChoice;
+      deferred = null;
+      if (outcome === 'accepted') { installed = true; toast('Installing…', 'ok'); }
+      paint();
+    }));
+
+    $$('[data-ios]', host).forEach((b) => b.addEventListener('click', () => {
+      const box = b.closest('.dl');
+      if (box.querySelector('.steps')) { box.querySelector('.ios-steps').remove(); return; }
+      b.insertAdjacentHTML('afterend', `<div class="ios-steps">${iosSteps}</div>`);
+    }));
+  }
+
+  paint();
+
+  // The banner at the top of the page gets the same treatment.
   $$('[data-install]').forEach((b) => b.addEventListener('click', async () => {
-    if (!deferred) { toast('Use your browser menu → Add to Home Screen'); return; }
+    if (!deferred) { toast('Use your browser menu → Install, or Share → Add to Home Screen'); return; }
     deferred.prompt();
     await deferred.userChoice;
     deferred = null;

@@ -17,3 +17,8 @@ studio/desktop/out/
 server/.wrangler/
 server/node_modules/
 package-lock.json
+
+# Built installers are large, platform-specific and rebuilt per release.
+# studio/download/files/README.md explains how to publish one.
+studio/download/files/*
+!studio/download/files/README.md

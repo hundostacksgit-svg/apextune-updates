@@ -568,3 +568,20 @@ footer{border-top:1px solid var(--line-soft);padding:52px 0 60px;background:var(
 .tier .anchor{display:block;font-size:12.5px;color:var(--text-3);margin:-2px 0 6px}
 .tier .anchor s{color:var(--bad);opacity:.85;margin-right:5px}
 .tiers{grid-template-columns:repeat(auto-fit,minmax(260px,1fr));max-width:1200px}
+
+/* ================= download cards ================= */
+.dl .you{position:absolute;top:12px;right:12px;font-size:10.5px;font-weight:750;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--blue-2);
+  padding:4px 9px;border-radius:99px;border:1px solid var(--line);background:var(--surface-2)}
+.dl.detected{border-color:var(--blue);box-shadow:0 16px 44px -20px var(--glow)}
+.dl .btn{width:100%}
+
+/* The iPhone route is three steps in Safari's own menu, because Apple gives a
+   web app no install API at all. Shown on request rather than always, so the
+   card stays a single clear action for everyone else. */
+.ios-steps{margin-top:12px;text-align:left}
+.steps{margin:0;padding-left:20px;font-size:13px;color:var(--text-2);line-height:1.6}
+.steps li{margin-bottom:6px}
+.steps b{color:var(--text)}
+.kbd{display:inline-block;padding:1px 6px;border-radius:5px;border:1px solid var(--line);
+  background:var(--surface-2);font-size:12px;font-family:var(--mono)}

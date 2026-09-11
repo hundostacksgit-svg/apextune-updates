@@ -46,7 +46,10 @@ LOGO_SVG = (
     '<path d="M43 24.5 L54 32 L43 39.5 Z" fill="#fff"/></svg>'
 )
 
-# Links into the repository must name a branch that exists. This project has
+# Kept for anything that genuinely needs to point at the source. Nothing the
+# public menu or footer links to should use it: a visitor came here for a video
+# editor, not for a repository. Links into the repository must name a branch
+# that exists. This project has
 # no "main": the default branch is the diagnostics one, and the Studio files
 # live only here. A /blob/main/ link therefore 404s, and so does /blob/HEAD/,
 # because HEAD resolves to a default branch without these files. If this branch
@@ -86,10 +89,10 @@ MENU = [
         'label': 'Help',
         'items': [
             ('🚀', 'Getting started', 'The walkthrough, five minutes', '{s}app/'),
-            ('✅', "What's built", 'The honest built / not-built list', DOCS + 'STUDIO-COMPLAINTS.md'),
+            ('✅', "What's built", 'Line by line, honestly', '{s}pricing/#compare'),
             ('💬', 'FAQ', 'Payments, devices, refunds', '{s}pricing/#faq'),
             ('🔑', 'Redeem a key', 'Unlock with a licence key', '{s}account/#redeem'),
-            ('🛠️', 'Set up payments', 'Take money in about ten minutes', DOCS + 'SQUARE-SETUP.md'),
+            ('📥', 'Install the app', 'Every platform, one press', '{s}download/'),
         ],
     },
 ]
@@ -219,7 +222,7 @@ def build_footer(s: str) -> str:
         <h4>More</h4>
         <a href="{s}pricing/#faq">FAQ</a>
         <a href="{s}account/#redeem">Redeem a key</a>
-        <a href="{DOCS}STUDIO-COMPLAINTS.md">What's built</a>
+        <a href="{s}pricing/#compare">What's built</a>
         <span class="foot-support" data-support="OmniDx Studio — help" hidden></span>
       </div>
     </div>
