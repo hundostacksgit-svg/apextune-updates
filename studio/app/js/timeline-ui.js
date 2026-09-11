@@ -159,6 +159,7 @@ export class TimelineUI {
     const selected = this.state.sel.has(clip.id);
     const kindClass = clip.kind === 'title' ? 'title'
       : clip.kind === 'sticker' ? 'sticker'
+      : clip.kind === 'adjust' ? 'adjust'
       : track.kind === 'audio' ? 'audio'
       : media?.kind === 'image' ? 'image' : '';
 

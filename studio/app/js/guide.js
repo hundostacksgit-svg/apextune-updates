@@ -83,6 +83,20 @@ export const GUIDE = [
     ],
   },
   {
+    id: 'adjust',
+    group: 'The timeline',
+    title: 'Adjustment layers, and getting your cuts back out of a flat video',
+    body: [
+      ['One grade over many clips', 'Timeline menu → **Add an adjustment layer**, or right-click empty track space. It sits on its own layer and grades and treats everything composited below it — so a look over a nine-shot sequence is one thing to change instead of nine.'],
+      ['What it reaches', 'Everything on lower layers, for as long as it lasts. Anything on a layer above it is drawn afterwards and stays untouched, which is how you keep a title or a logo out of the grade.'],
+      ['Everything works on it', 'The same grade, the same effects, the same windows. Put a window on an adjustment layer and you are grading one corner of a whole sequence; fade its opacity and the treatment fades with it.'],
+      ['Finding the cuts in a flat video', 'Select a clip that used to be an edit — an export, a download — and Clip menu → **Find the cuts in this clip**, or right-click it. It scans the footage, finds the hard cuts and splits there.'],
+      ['What it can and cannot see', 'Hard cuts only. A dissolve is the same change spread over twenty frames and is indistinguishable from a fast pan, so claiming to find both would mean cutting in the middle of every whip pan in the file. It says when it finds nothing rather than guessing.'],
+      ['It decides what counts from your footage', 'A locked-off interview and a handheld skate video have completely different amounts of ordinary frame-to-frame change. It measures what normal looks like in your file and only calls something a cut when it stands well clear of that.'],
+      ['Undo takes it all back', 'However many splits it makes, it is one entry in the history.'],
+    ],
+  },
+  {
     id: 'trim',
     group: 'The timeline',
     title: 'The four trims: ripple, roll, slip and slide',

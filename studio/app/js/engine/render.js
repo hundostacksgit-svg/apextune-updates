@@ -110,6 +110,22 @@ export class Renderer {
     });
 
     for (const clip of visible) {
+      /*
+       * An adjustment layer treats what is already on the frame.
+       *
+       * It has no media of its own; it grades and applies effects to
+       * everything composited below it, which is the whole point — one grade
+       * over a cut sequence instead of the same grade pasted onto nine clips
+       * and re-pasted every time it changes. Because it runs inside the same
+       * loop as everything else, track order decides what it reaches: clips on
+       * layers above it are drawn afterwards and are untouched, exactly as in
+       * every other editor.
+       */
+      if (clip.kind === 'adjust') {
+        this._applyAdjustment(project, clip, t, w, h);
+        continue;
+      }
+
       const trans = this._transitionAt(project, clip, t);
       if (trans) {
         const to = this._clipCanvas(project, clip, t, 0, playing, forExport);
@@ -130,6 +146,77 @@ export class Renderer {
     }
 
     this._drawCaptions(project, t, w, h);
+    ctx.restore();
+  }
+
+  /**
+   * Grade and treat whatever is already on the frame.
+   *
+   * The frame is copied off, treated on the scratch canvas the clip pipeline
+   * already uses, and drawn back — so an adjustment layer gets the same grade,
+   * the same effects and the same windows as any clip, from the same code,
+   * rather than a second implementation that would drift from it.
+   */
+  _applyAdjustment(project, clip, t, w, h) {
+    const { ctx } = this;
+    const local = t - clip.start;
+    const opacity = valueAt(clip, 'transform.opacity', local, clip.transform?.opacity ?? 1);
+    if (opacity <= 0.001) return;
+
+    const scratch = this.scratch[0];
+    const sctx = this.scratchCtx[0];
+    sctx.setTransform(1, 0, 0, 1, 0, 0);
+    sctx.globalAlpha = 1;
+    sctx.globalCompositeOperation = 'source-over';
+    sctx.filter = 'none';
+    sctx.clearRect(0, 0, w, h);
+    sctx.drawImage(this.canvas, 0, 0);
+
+    const graded = animatedColor(clip, local);
+    if (!isIdentity(graded)) {
+      const css = cssFilter(resolved(graded));
+      const wheels = wheelFilter(clip.id, clip.color?.wheels);
+      if (css !== 'none' || wheels) {
+        // Filtering a canvas onto itself is not defined, so it goes via the
+        // second scratch and comes back.
+        const tmp = this.scratchCtx[1];
+        tmp.setTransform(1, 0, 0, 1, 0, 0);
+        tmp.globalAlpha = 1;
+        tmp.globalCompositeOperation = 'source-over';
+        tmp.filter = wheels ? (css === 'none' ? wheels : `${css} ${wheels}`) : css;
+        tmp.clearRect(0, 0, w, h);
+        tmp.drawImage(scratch, 0, 0);
+        tmp.filter = 'none';
+        sctx.clearRect(0, 0, w, h);
+        sctx.drawImage(this.scratch[1], 0, 0);
+      }
+      applyPasses(sctx, w, h, resolved(graded));
+    }
+
+    if (clip.effects?.length) {
+      applyEffects(sctx, w, h, clip, {
+        clip,
+        local,
+        time: t,
+        fps: project.settings.fps || this.fps,
+        beatPhase: this._beatPhase(t),
+        redrawClip: () => null,          // nothing to re-render: it has no media
+      });
+    }
+
+    // A window on an adjustment layer is how you grade one corner of a cut
+    // sequence, which is most of what they are used for.
+    const matte = combinedMatte(clip, 'grade', sctx, w, h, local);
+    if (matte) {
+      sctx.globalCompositeOperation = 'destination-in';
+      sctx.drawImage(matte, 0, 0);
+      sctx.globalCompositeOperation = 'source-over';
+    }
+
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, Math.min(1, opacity));
+    ctx.globalCompositeOperation = blendOf(clip.transform?.blend);
+    ctx.drawImage(scratch, 0, 0);
     ctx.restore();
   }
 
@@ -196,6 +283,12 @@ export class Renderer {
       if (!skipEffects && clip.effects?.length) this._runEffects(ctx, w, h, clip, t, project);
       return cv;
     }
+
+    /* An adjustment layer has no picture of its own — it is handled in draw(),
+       against the frame. Asking for one here means something called the wrong
+       path, and returning null is how that surfaces as nothing rather than as
+       a black rectangle over the edit. */
+    if (clip.kind === 'adjust') return null;
 
     if (clip.kind === 'sticker') {
       const local = t - clip.start;

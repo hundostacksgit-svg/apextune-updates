@@ -115,6 +115,7 @@ const SHELL = [
   './js/engine/audio-strip.js',
   './js/engine/loudness.js',
   './js/panels/strip.js',
+  './js/engine/scenes.js',
   './js/timeline-ui.js',
   './js/tutorial.js',
   './js/guide.js',

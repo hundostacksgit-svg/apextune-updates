@@ -57,6 +57,7 @@ jobs:
                    studio/app/js/engine/templates-library.js studio/app/js/engine/templates.js studio/app/js/engine/tracking.js studio/app/js/engine/broll.js \
                    studio/app/js/engine/mask.js studio/app/js/mask-ui.js studio/app/js/panels/masks.js \
                    studio/app/js/engine/audio-strip.js studio/app/js/engine/loudness.js studio/app/js/panels/strip.js \
+                   studio/app/js/engine/scenes.js \
                    studio/app/js/engine/muxer.js studio/app/js/engine/exporter-wc.js \
                    studio/app/js/engine/audio-render.js studio/app/js/engine/audio-repair.js \
                    studio/app/js/engine/audio-fx.js studio/app/js/engine/reference.js \

@@ -330,17 +330,98 @@ export const actions = {
     return made.length;
   },
 
+  /**
+   * An adjustment layer over whatever is selected, or over the whole edit.
+   *
+   * Goes on its own layer above the clips it treats, because that is what
+   * decides what it reaches — anything on a higher layer is drawn afterwards
+   * and stays untouched.
+   */
+  addAdjustment() {
+    const spans = [...S.sel].map((id) => clipById(S.project, id)).filter(Boolean);
+    const from = spans.length ? Math.min(...spans.map((c) => c.start)) : 0;
+    const to = spans.length
+      ? Math.max(...spans.map((c) => c.start + c.dur))
+      : Math.max(1, duration(S.project));
+
+    // Straight to the top: an adjustment layer treats everything below it, so
+    // "below it" should mean the whole edit unless somebody moves it.
+    const track = actions.addLayer('video');
+    track.name = 'Adjustment';
+
+    const clip = addClip(S.project, {
+      mediaId: null, trackId: track.id, start: from, dur: Math.max(0.2, to - from),
+      in: 0, kind: 'adjust',
+    });
+    clip.label = 'Adjustment';
+    S.sel = new Set([clip.id]);
+    actions.commit('Add an adjustment layer');
+    openPanel('color');
+    return clip;
+  },
+
+  /**
+   * Find the cuts inside a clip and split it at them.
+   *
+   * For footage that was already edited once: an export, a download, anything
+   * flat that used to be a sequence. Scans it, shows what it found, and only
+   * then cuts — a tool that silently puts forty splits into a timeline is one
+   * you have to undo before you can judge it.
+   */
+  async detectScenes(clipId = null) {
+    const clip = clipId ? clipById(S.project, clipId)
+      : [...S.sel].map((id) => clipById(S.project, id)).find(Boolean);
+    if (!clip) { toast('Select a clip first', 'bad'); return 0; }
+    const rec = mediaById(S.project, clip.mediaId);
+    if (rec?.kind !== 'video') { toast('Scene detection needs a video clip', 'bad'); return 0; }
+
+    const node = media.elementFor(rec, clip.id);
+    if (!node?.videoWidth) { toast('That clip is still loading', 'bad'); return 0; }
+
+    toast('Looking for cuts…');
+    try {
+      const { findCuts, splitAtCuts } = await import('./engine/scenes.js');
+      const cuts = await findCuts(node, {
+        from: clip.in,
+        to: clip.in + clip.dur * (clip.speed || 1),
+      });
+      if (!cuts.length) {
+        toast('No hard cuts found in that clip. Dissolves and fades are not detected.', '', 5200);
+        return 0;
+      }
+      const made = splitAtCuts(S.project, clip.id, cuts, splitClip);
+      if (made) {
+        actions.commit(`Split at ${made} cut${made === 1 ? '' : 's'}`);
+        toast(`Found ${made} cut${made === 1 ? '' : 's'} and split there. Undo takes it all back.`, 'ok', 4600);
+      } else {
+        toast('The cuts it found are all outside this clip\u2019s trimmed range.', '', 4600);
+      }
+      return made;
+    } catch (err) {
+      if (!/stopped/i.test(err.message || '')) toast(err.message || 'Could not scan that clip', 'bad', 5000);
+      return 0;
+    }
+  },
+
   /* ---------------- tracks ---------------- */
 
   addLayer(kind = 'video', { above = null } = {}) {
     const track = addTrack(S.project, kind);
     if (above) {
-      const at = S.project.tracks.findIndex((t) => t.id === above);
+      /*
+       * Pull it out first, then find the target, then put it back.
+       *
+       * The index of the target is not the same before and after the removal —
+       * taking the new track out of the list shifts everything after it down
+       * by one, so an index read beforehand lands the layer one place too low.
+       * The symptom was an "above" that put the layer below.
+       */
       const now = S.project.tracks.indexOf(track);
-      if (at >= 0 && now >= 0) {
-        S.project.tracks.splice(now, 1);
-        S.project.tracks.splice(at, 0, track);
-      }
+      if (now >= 0) S.project.tracks.splice(now, 1);
+      const at = S.project.tracks.findIndex((t) => t.id === above);
+      // Lower index is higher on screen, so "above" means at the target's index.
+      if (at >= 0) S.project.tracks.splice(at, 0, track);
+      else S.project.tracks.unshift(track);
     }
     actions.commit(`Add ${kind} layer`);
     return track;
@@ -1129,6 +1210,8 @@ function paintLevel() {
     canPaste: () => actions.hasClipboard(),
     duplicate: () => actions.duplicateSelected(),
     addLayer: (kind) => actions.addLayer(kind),
+    addAdjustment: () => actions.addAdjustment(),
+    detectScenes: () => actions.detectScenes(),
     remove: () => actions.deleteSelected(),
     hasSelection: () => S.sel.size > 0,
     selectAll: () => actions.select(S.project.clips.map((c) => c.id)),

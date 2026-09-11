@@ -351,6 +351,20 @@ html[data-level="expert"] .card-hint{display:none}
 .tl-track.audio{background:color-mix(in srgb,var(--surface-2) 70%,var(--surface))}
 .tl-track.drop{background:color-mix(in srgb,var(--blue) 12%,var(--surface-2))}
 
+/* ---------- adjustment layers ---------- */
+/*
+ * Striped and washed out, so a layer with no picture of its own does not read
+ * as a clip whose thumbnail failed to load. It is a treatment, and it looks
+ * like one.
+ */
+.clip.adjust{
+  background:repeating-linear-gradient(135deg,
+    color-mix(in srgb,var(--warn) 34%,var(--surface-2)) 0 9px,
+    color-mix(in srgb,var(--warn) 18%,var(--surface-2)) 9px 18px);
+  border-color:color-mix(in srgb,var(--warn) 55%,transparent);
+}
+.clip.adjust .cname{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+
 /* ---------- the channel strip ---------- */
 .st-h{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);
   font-weight:700;margin:14px 0 7px;padding-top:9px;border-top:1px solid var(--line-soft)}
