@@ -2,6 +2,7 @@
 
 import { $, esc } from '../ui.js';
 import { startTour } from '../tutorial.js';
+import { GUIDE_GROUPS, searchGuide } from '../guide.js';
 import * as levels from '../levels.js';
 import { PAY } from '../../../assets/config.js';
 import { BUILD } from '../updates.js';
@@ -28,6 +29,47 @@ export const SHORTCUTS = [
   ['Esc', 'Deselect'],
 ];
 
+/**
+ * The guide, as collapsible articles.
+ *
+ * Closed by default. Thirteen articles open at once is a wall of text nobody
+ * reads past the first screen, and the titles are written to be skimmable so
+ * the closed state works as a table of contents.
+ */
+function guideMarkup(list = null) {
+  const groups = list
+    ? list.reduce((acc, a) => { (acc[a.group] ||= []).push(a); return acc; }, {})
+    : GUIDE_GROUPS;
+  const entries = Object.entries(groups);
+  if (!entries.length) {
+    return '<p class="tiny muted" style="margin:0 0 14px">Nothing in the guide matches that.</p>';
+  }
+  return entries.map(([group, articles]) => `
+    <div class="guide-group">
+      <h5 class="guide-h">${esc(group)}</h5>
+      ${articles.map((a) => `
+        <details class="group guide-a">
+          <summary>${esc(a.title)}</summary>
+          <div class="gbody">
+            ${a.body.map(([head, text]) => `
+              <p class="guide-p"><b>${esc(head)}</b><br>${fmt(text)}</p>`).join('')}
+          </div>
+        </details>`).join('')}
+    </div>`).join('');
+}
+
+/*
+ * **bold**, and nothing else.
+ *
+ * The guide names real controls — "press **+ Import**" — and those have to
+ * stand out from the sentence around them or the instruction gets read twice.
+ * Everything is escaped first, so an article can contain a < or an & without
+ * breaking the panel.
+ */
+function fmt(text) {
+  return esc(text).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+}
+
 export function mount(host) {
   const level = levels.current();
 
@@ -39,6 +81,17 @@ export function mount(host) {
     <p class="tiny muted" style="margin:9px 0 18px">
       Eight steps, skippable at any point, and it never touches your project.
     </p>
+
+    <!--
+      The tour points at eight things and gets out of the way, which is right
+      for a first run and useless three days later when somebody wants to know
+      how speed ramping works. This is the other half: the whole app, written
+      out and searchable, in the app rather than on a website to go and find.
+    -->
+    <h4 style="font-size:12px;margin:0 0 8px;color:var(--text-2)">The guide</h4>
+    <input class="input" id="h-search" placeholder="Search — luts, overlay, captions, export…"
+           style="margin-bottom:10px">
+    <div id="h-guide">${guideMarkup()}</div>
 
     <div class="group" style="padding:12px">
       <b style="font-size:12.5px">You're on ${esc(levels.DESCRIPTIONS[level].name)}</b>
@@ -66,6 +119,13 @@ export function mount(host) {
       If this tab crashes, reopening it offers to put you back exactly where you were.
     </div>
     ${supportBlock()}`;
+
+  // Filter the guide as you type. Rebuilt rather than hidden, so the group
+  // headings disappear with their articles instead of standing over nothing.
+  $('#h-search', host)?.addEventListener('input', (e) => {
+    const box = $('#h-guide', host);
+    if (box) box.innerHTML = guideMarkup(searchGuide(e.target.value));
+  });
 
   $('#h-tour', host).addEventListener('click', startTour);
 }

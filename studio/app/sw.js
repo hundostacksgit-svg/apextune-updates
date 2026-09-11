@@ -107,6 +107,7 @@ const SHELL = [
   './js/store.js',
   './js/timeline-ui.js',
   './js/tutorial.js',
+  './js/guide.js',
   './js/ui.js',
   './js/updates.js',
   '../assets/icons/icon-192.png',

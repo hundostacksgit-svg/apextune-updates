@@ -1,0 +1,178 @@
+/*
+ * The walkthrough guide.
+ *
+ * The first-run tour points at eight things and gets out of the way, which is
+ * right for a first run and useless three days later when somebody wants to
+ * know how speed ramping works. This is the other half: the whole app,
+ * written out, searchable, in the app rather than on a website somebody has to
+ * find.
+ *
+ * Written as answers to questions people actually have, in the order they
+ * have them. Not a feature list — a feature list tells you what exists, which
+ * is the one thing somebody staring at the screen already knows.
+ *
+ * Every article names the real control, the real menu, the real shortcut. A
+ * guide that says "use the colour tools" rather than "Colour panel → Curves &
+ * LUTs → Load a .cube file" is a guide that has to be read twice and followed
+ * once.
+ */
+
+export const GUIDE = [
+  {
+    id: 'start',
+    group: 'Getting going',
+    title: 'Your first edit, in five minutes',
+    body: [
+      ['Bring your clips in', 'Press **+ Import** on the timeline bar, or drag files onto the window. Video, photos and music all go in the same way. Nothing is uploaded — the files stay on your device and the editor reads them from there.'],
+      ['Put them on the timeline', 'Double-click a clip in the Media panel to drop it at the end, or drag it where you want it. Clips snap to each other so there are no one-frame gaps.'],
+      ['Cut', 'Move the playhead and press **S** to split. Or press **C** for the razor and click the clip where you want the cut. **V** goes back to normal.'],
+      ['Make it look like something', 'Open **Styles** and press one. It puts the grade, effects and transitions on what you already have without touching your cuts.'],
+      ['Get it out', 'Press **Export**, pick where it is going, and it renders. Nothing leaves your device unless you choose to share it.'],
+    ],
+  },
+  {
+    id: 'undo',
+    group: 'Getting going',
+    title: 'Undoing something',
+    body: [
+      ['The quick way', '**Ctrl+Z** (**⌘Z** on a Mac). The Undo button in the top bar tells you what it will take back before you press it — "Undo Add clip", not just an arrow.'],
+      ['If it was a few steps ago', 'Menu bar → **Edit → History**. Every change is listed, newest first, with the time. Click any one and the project goes back to exactly how it was then. Nothing is thrown away, so you can come forward again.'],
+      ['The bar that appears', 'After every change a short bar shows what just happened with an Undo on it. It is there for about six seconds and it is the fastest way back from a mistake you noticed immediately.'],
+    ],
+  },
+  {
+    id: 'tracks',
+    group: 'The timeline',
+    title: 'Layers, overlays and taking the sound off a clip',
+    body: [
+      ['Stacking video', 'Drag a clip **above** the top video track and a new overlay layer appears under it. Higher tracks draw on top. You can keep going — there is no limit.'],
+      ['Taking just the sound', 'Drag a clip **down** onto an audio track. The picture stops being drawn and the sound keeps playing, which is how you put a voice or a bit of atmosphere under other shots. Drag it back up and the picture returns; nothing was thrown away.'],
+      ['Muting a whole track', 'The speaker icon on the track header. The eye hides a video track from the picture without deleting anything.'],
+      ['Ripple', 'With **Ripple** ticked on the timeline bar, deleting or shortening a clip slides everything after it back to close the gap. Untick it to leave holes on purpose.'],
+    ],
+  },
+  {
+    id: 'speed',
+    group: 'The timeline',
+    title: 'Speed, slow motion and ramps',
+    body: [
+      ['A flat change', 'Select a clip and use **Speed** in the Inspector. The clip gets shorter or longer to match — otherwise the picture runs faster inside a slot of the same length and the edit never actually moves.'],
+      ['A ramp', 'Styles → **Velocity** puts a real speed curve inside each shot: slow head, fast tail. That is the look people mean by a velocity edit, and it is a curve rather than a single number.'],
+      ['Ask for it', 'AI panel: *"slow the last clip to half speed"*. It applies to that clip and nothing else.'],
+    ],
+  },
+  {
+    id: 'colour',
+    group: 'Colour',
+    title: 'Grading: looks, wheels, curves and LUTs',
+    body: [
+      ['Start with a look', 'Colour panel → search or browse. There are 118, each previewed on your own footage rather than a stock frame, so you are judging what it does to *your* shot.'],
+      ['Then fine-tune', 'The sliders under the looks are the standard set. A look is just a bundle of those values, so you can take any of them apart.'],
+      ['Wheels', 'Professional level only. **Lift** moves the shadows, **Gamma** the midtones — where faces live, and usually the one to reach for first — and **Gain** the highlights. The R, G and B numbers under each wheel are how you match one shot to another: read them off one, type them into the next.'],
+      ['Curves', 'Colour → **Curves & LUTs**. Drag the line to bend it, click it to add a point, drag a point off the edge to remove it. The histogram behind the grid is your actual frame, so you can see where the picture sits in the range.'],
+      ['LUTs', 'Same panel → **Load a .cube file**. Any LUT pack works — it is the format Resolve and Premiere export. The file is read on your device and never uploaded. Most film LUTs are too strong at 100%; around 60 is usually where they land.'],
+      ['Scopes', 'Professional level. Parade, waveform, vectorscope and histogram. Worth using because eyes lie: a monitor running warm makes every shot look warm, so you correct toward blue and everything you deliver is blue. A scope reads the file, not your screen.'],
+    ],
+  },
+  {
+    id: 'effects',
+    group: 'Effects',
+    title: 'Finding an effect among three hundred',
+    body: [
+      ['Search first', 'The Effects panel has a search box. Type what you want — *glitch*, *grain*, *leak*, *mirror*, *rain* — rather than scrolling.'],
+      ['Every chip shows what it does', 'The picture on each chip is the real effect running on your own footage. Hover or press one and it animates. Nothing is a stock screenshot, so what you see is exactly what you get.'],
+      ['Transitions', 'Same panel, further down. 107 of them, grouped. A transition goes *into* the selected clip — it blends from whatever is before it on the same track.'],
+      ['Taking one off', 'Select the clip and remove it from the stack in the Inspector, or ask: *"clear the effects on clip 3"*.'],
+    ],
+  },
+  {
+    id: 'ai',
+    group: 'The AI',
+    title: 'Telling it what to do',
+    body: [
+      ['Be specific', 'It follows a target and a change: *"mute clip 2"*, *"make the third one black and white"*, *"slow the last clip to half speed"*, *"delete the last two"*, *"brighten clips 2 to 4"*, *"make the first 5 seconds black and white"*.'],
+      ['Several at once', '*"mute clip 2 and slow the last one down"* becomes two separate steps, and you see both before anything runs.'],
+      ['Nothing happens without you', 'It shows the plan first. You approve it, and the whole thing undoes in one keystroke.'],
+      ['Two brains', 'With a server configured it uses a full language model and you can say anything. Without one it uses the on-device reader, which handles direct instructions and named styles. The panel tells you which one is answering — if it says "on-device reader", free-form requests will not work until the Worker is switched on.'],
+    ],
+  },
+  {
+    id: 'copy',
+    group: 'The AI',
+    title: 'Copying another video’s edit',
+    body: [
+      ['What it does', 'AI panel → paste or pick a finished video. It watches it, finds where every cut lands, how long the shots are, how fast the camera moves and how the colour sits, then builds a plan in that shape for your footage.'],
+      ['What it does not do', 'It does not copy the video itself or anything in it. It measures the edit and reproduces the pattern.'],
+      ['It stays on your device', 'The analysis runs in the browser. The video you paste is never uploaded.'],
+    ],
+  },
+  {
+    id: 'audio',
+    group: 'Audio',
+    title: 'Levels, cleaning up and effects',
+    body: [
+      ['Reading the meter', 'Green to −18 is comfortable, amber to −6 is loud but fine, red is asking the encoder to make a decision you will not like. The thin line that lags behind is the peak hold — a clip lasts one sample and you would never see it otherwise. A red strip across the top means something clipped in the last couple of seconds.'],
+      ['The fader', 'Unity (0 dB) sits three-quarters up, where a mixing desk puts it. Double-click it to go back there.'],
+      ['Cleaning up', 'Audio panel → **Repair**. It learns the noise from a quiet moment and subtracts it, finds mains hum and notches it out, and takes out clicks. It works on the decoded audio, not the file, so the original is untouched.'],
+      ['Creative filters', '17 of them — underwater, telephone, radio, megaphone, cathedral, slowed, nightcore and the rest. They apply to a clip, and they are rendered the same way in the export as in the preview.'],
+    ],
+  },
+  {
+    id: 'text',
+    group: 'Text',
+    title: 'Titles, captions and 200 typefaces',
+    body: [
+      ['Adding a title', 'Text panel → tap a style. It lands at the playhead as a normal clip you can drag and trim.'],
+      ['Choosing a typeface', 'Search the font list — every name is set in its own typeface, because a list of names in the system font tells you nothing. Picking one fetches it; the offline fallbacks are chosen to look like the real thing, so text still renders sensibly with no signal.'],
+      ['Captions', 'Captions panel. Styles match what each platform produces, so a video posted from here does not look out of place next to native ones.'],
+      ['Tracking text to something', 'Inspector → track a point in the clip, then pin the title to it. It follows.'],
+    ],
+  },
+  {
+    id: 'export',
+    group: 'Finishing',
+    title: 'Exporting and posting',
+    body: [
+      ['Pick a preset', 'Export → 16 presets from 720p to DCI 4K, including vertical 4K. Frame rate is set in Settings, including 23.976, 29.97 and 59.94 for anyone who needs them.'],
+      ['Straight to a platform', 'After it renders it offers to post. On a phone that is the system share sheet, so TikTok, YouTube, Instagram and everything else installed is one press away and the file never goes through anyone else’s server. On a desktop it is the file plus a direct link to the platform’s own upload page.'],
+      ['Check the framing first', 'Tick **All platforms** under the viewer to see the same frame cropped for TikTok, YouTube and a square post at once. It tells you how much of the picture each one throws away.'],
+    ],
+  },
+  {
+    id: 'levels',
+    group: 'Finishing',
+    title: 'The three skill levels',
+    body: [
+      ['Beginner', 'Nine tools and hover tips on everything. Nothing on screen you do not need yet.'],
+      ['Intermediate', 'The full timeline and inspector at a working density — ripple, roll, slip, transitions, markers, motion tracking.'],
+      ['Professional', 'Everything: keyframes with bezier easing, curves, scopes, colour wheels, LUT slots, speed ramping, frame-accurate timecode, and the raw project JSON.'],
+      ['Switching', 'Top bar, or Settings menu. It changes what is on screen, never what your project contains — moving down a level hides controls, it does not remove anything you made with them.'],
+    ],
+  },
+  {
+    id: 'privacy',
+    group: 'Finishing',
+    title: 'Where your files actually go',
+    body: [
+      ['Nowhere, by default', 'Footage, audio and projects are held on your device. Editing, effects, colour, export and the reference analysis all run in the browser.'],
+      ['The exceptions, in full', 'Free-form AI phrasing and transcription send your text and a short description of your media to a server, if one is configured. Never the footage, never the audio, never a frame. Web fonts are fetched from Google Fonts when you pick one.'],
+      ['Sharing', 'Only when you press share or open a platform’s upload page yourself.'],
+    ],
+  },
+];
+
+/** Every article flattened for searching. */
+export function searchGuide(query) {
+  const q = String(query || '').trim().toLowerCase();
+  if (!q) return GUIDE;
+  return GUIDE.filter((a) => {
+    const hay = `${a.title} ${a.group} ${a.body.map(([h, t]) => `${h} ${t}`).join(' ')}`.toLowerCase();
+    return hay.includes(q);
+  });
+}
+
+/** Group -> articles, in declaration order. */
+export const GUIDE_GROUPS = GUIDE.reduce((acc, a) => {
+  (acc[a.group] ||= []).push(a);
+  return acc;
+}, {});
