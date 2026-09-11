@@ -22,19 +22,27 @@ export function mount(host) {
     <div class="panel-h"><h2>Effects</h2></div>
     <p class="panel-sub">Adding applies to ${esc(target)}.</p>
 
-    ${EFFECT_GROUPS.map((group) => `
-      <details class="group" ${group === 'Motion' || group === 'Anime' ? 'open' : ''}>
-        <summary>${esc(group)}</summary>
-        <div class="gbody">
-          <div class="chips">
-            ${EFFECT_LIST.filter((e) => e.group === group).map((e) => {
-              const locked = e.tier !== 'free' && !licence.can('all-filters');
-              return `<button class="chip ${locked ? 'locked' : ''}" data-fx="${esc(e.id)}"
-                data-tier="${esc(e.tier)}" title="${esc(e.name)}">${e.icon} ${esc(e.name)}</button>`;
-            }).join('')}
+    <!-- Three hundred effects is only a library if you can find one in it.
+         Search first, groups second: a flat wall of chips is a list nobody
+         reads past the first screen. -->
+    <input class="input" id="fx-search" placeholder="Search effects — glitch, grain, leak, mirror…"
+           style="margin-bottom:10px">
+    <div id="fx-lib">
+      ${EFFECT_GROUPS.map((group) => `
+        <details class="group" ${group === 'Motion' ? 'open' : ''}>
+          <summary>${esc(group)} <span class="tiny muted">${EFFECT_LIST.filter((e) => e.group === group).length}</span></summary>
+          <div class="gbody">
+            <div class="chips">
+              ${EFFECT_LIST.filter((e) => e.group === group).map((e) => {
+                const locked = e.tier !== 'free' && !licence.can('all-filters');
+                return `<button class="chip ${locked ? 'locked' : ''}" data-fx="${esc(e.id)}"
+                  data-tier="${esc(e.tier)}" data-search="${esc(`${e.name} ${e.group} ${e.id}`.toLowerCase())}"
+                  title="${esc(e.name)}">${e.icon} ${esc(e.name)}</button>`;
+              }).join('')}
+            </div>
           </div>
-        </div>
-      </details>`).join('')}
+        </details>`).join('')}
+    </div>
 
     <details class="group" data-min="intermediate">
       <summary>Transitions</summary>
@@ -51,6 +59,23 @@ export function mount(host) {
     </div>`;
 
   wirePicker(host, 'fx-tp');
+
+  // Filter as you type: narrow every group, open the ones that still have
+  // something in them, and hide the ones that do not — so a search never
+  // leaves you looking at a screen of collapsed headings.
+  $('#fx-search', host)?.addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    for (const grp of $$('#fx-lib details', host)) {
+      let shown = 0;
+      for (const chip of $$('[data-fx]', grp)) {
+        const hit = !q || chip.dataset.search.includes(q);
+        chip.hidden = !hit;
+        if (hit) shown++;
+      }
+      grp.hidden = shown === 0;
+      if (q) grp.open = true;
+    }
+  });
 
   host.addEventListener('click', (e) => {
     const add = e.target.closest('[data-fx]');
@@ -103,7 +128,6 @@ export function mount(host) {
     if (label) label.textContent = String(Math.round(Number(input.value) * 100) / 100);
   });
 
-  void $$;
 }
 
 function stackMarkup(clip) {

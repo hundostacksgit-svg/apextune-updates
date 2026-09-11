@@ -55,6 +55,7 @@ jobs:
                    studio/app/js/engine/looks-library.js studio/app/js/engine/share.js \
                    studio/app/js/engine/transitions-library.js \
                    studio/app/js/panels/transition-picker.js \
+                   studio/app/js/engine/effects-library.js studio/app/js/engine/fx-utils.js \
                    studio/app/js/engine/bundle.js studio/app/js/engine/proxy.js \
                    studio/app/js/panels/templates.js studio/app/js/panels/tracking.js \
                    studio/app/js/engine/project.js studio/app/js/engine/render.js \

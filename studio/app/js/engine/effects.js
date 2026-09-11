@@ -17,58 +17,8 @@
  */
 
 import { valueAt } from './project.js';
-
-/* ------------------------------------------------------------------ */
-/* scratch pool                                                        */
-/* ------------------------------------------------------------------ */
-
-const pool = [];
-function scratch(w, h, index = 0) {
-  while (pool.length <= index) {
-    const c = document.createElement('canvas');
-    pool.push({ canvas: c, ctx: c.getContext('2d', { willReadFrequently: false }) });
-  }
-  const slot = pool[index];
-  if (slot.canvas.width !== w || slot.canvas.height !== h) {
-    slot.canvas.width = w;
-    slot.canvas.height = h;
-  } else {
-    slot.ctx.clearRect(0, 0, w, h);
-  }
-  return slot;
-}
-
-/** Copy the current frame out so an effect can composite against itself. */
-function snapshot(ctx, w, h, index = 0) {
-  const s = scratch(w, h, index);
-  s.ctx.clearRect(0, 0, w, h);
-  s.ctx.drawImage(ctx.canvas, 0, 0);
-  return s.canvas;
-}
-
-/* ------------------------------------------------------------------ */
-/* helpers                                                             */
-/* ------------------------------------------------------------------ */
-
-/** Isolate one colour channel of `src` onto a scratch canvas. */
-function channel(src, w, h, which, index) {
-  const s = scratch(w, h, index);
-  s.ctx.clearRect(0, 0, w, h);
-  s.ctx.drawImage(src, 0, 0);
-  s.ctx.globalCompositeOperation = 'multiply';
-  s.ctx.fillStyle = which === 'r' ? '#ff0000' : which === 'g' ? '#00ff00' : '#0000ff';
-  s.ctx.fillRect(0, 0, w, h);
-  s.ctx.globalCompositeOperation = 'source-over';
-  return s.canvas;
-}
-
-/** A repeatable pseudo-random from a seed, so shake doesn't jitter on redraw. */
-function noise(seed) {
-  const x = Math.sin(seed * 127.1) * 43758.5453;
-  return (x - Math.floor(x)) * 2 - 1;
-}
-
-const clamp01 = (v) => Math.max(0, Math.min(1, v));
+import { scratch, snapshot, channel, noise, clamp01, hexToRgba, pixels, cellSize, blurred, edgeMap, stretch } from './fx-utils.js';
+import { EFFECT_PACKS } from './effects-library.js';
 
 /* ------------------------------------------------------------------ */
 /* the effects                                                         */
@@ -203,18 +153,18 @@ export const EFFECTS = {
       const amount = (p.amount ?? 40) / 100;
       if (amount <= 0.01) return;
       const src = snapshot(ctx, w, h, 0);
-      const s = scratch(w, h, 1);
       // Crush everything below the threshold to black so only the bright parts
-      // bloom — otherwise the whole frame just goes milky.
+      // bloom — otherwise the whole frame just goes milky. Computed at a
+      // capped size: a bloom is blurred light, so the resolution buys nothing,
+      // and the radius scales with the frame so the glow a person tunes
+      // against the preview is the glow that comes out of the export.
       const cut = (p.threshold ?? 45) / 100;
-      s.ctx.clearRect(0, 0, w, h);
-      s.ctx.filter = `brightness(${(1 + cut * 1.6).toFixed(2)}) contrast(${(1 + cut * 3).toFixed(2)}) blur(${p.radius ?? 18}px)`;
-      s.ctx.drawImage(src, 0, 0);
-      s.ctx.filter = 'none';
+      const bloom = blurred(src, w, h, p.radius ?? 18,
+        `brightness(${(1 + cut * 1.6).toFixed(2)}) contrast(${(1 + cut * 3).toFixed(2)})`, 1);
 
       ctx.globalCompositeOperation = 'lighter';
       ctx.globalAlpha = amount;
-      ctx.drawImage(s.canvas, 0, 0);
+      stretch(ctx, bloom, w, h);
       ctx.globalAlpha = 1;
       ctx.globalCompositeOperation = 'source-over';
     },
@@ -319,24 +269,35 @@ export const EFFECTS = {
       const amount = (p.amount ?? 60) / 100;
       if (amount <= 0.02) return;
       const src = snapshot(ctx, w, h, 0);
-      const step = Math.max(2, p.size ?? 6);
-      const s = scratch(w, h, 1);
-      s.ctx.clearRect(0, 0, w, h);
-      s.ctx.drawImage(src, 0, 0);
+      /*
+       * The dot size scales with the frame and the count is capped.
+       *
+       * Before, a 6px dot chosen against a 640-wide preview came out three
+       * times smaller in a 1080p export — the person exported a different
+       * effect from the one they approved. Capping the count is the other
+       * half: one cell per 6 pixels of 4K is two million arcs a frame.
+       */
+      const step = cellSize(p.size ?? 6, w, h);
+      const cols = Math.ceil(w / step), rows = Math.ceil(h / step);
+      // One downscale gives every cell's average brightness in a single draw,
+      // instead of reading the full frame and then sampling one pixel per cell.
+      const s = scratch(cols, rows, 1);
+      s.ctx.clearRect(0, 0, cols, rows);
+      s.ctx.drawImage(src, 0, 0, cols, rows);
       let data;
-      try { data = s.ctx.getImageData(0, 0, w, h).data; } catch { return; }
+      try { data = s.ctx.getImageData(0, 0, cols, rows).data; } catch { return; }
 
       const dots = scratch(w, h, 2);
       dots.ctx.clearRect(0, 0, w, h);
       dots.ctx.fillStyle = '#000';
-      for (let y = 0; y < h; y += step) {
-        for (let x = 0; x < w; x += step) {
-          const i = (y * w + x) * 4;
+      for (let y = 0; y < rows; y++) {
+        for (let x = 0; x < cols; x++) {
+          const i = (y * cols + x) * 4;
           const lum = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114) / 255;
           const r = (1 - lum) * step * 0.62;
           if (r < 0.4) continue;
           dots.ctx.beginPath();
-          dots.ctx.arc(x + step / 2, y + step / 2, r, 0, Math.PI * 2);
+          dots.ctx.arc(x * step + step / 2, y * step + step / 2, r, 0, Math.PI * 2);
           dots.ctx.fill();
         }
       }
@@ -353,38 +314,32 @@ export const EFFECTS = {
     draw(ctx, w, h, p) {
       const levels = Math.max(2, Math.round(p.levels ?? 5));
       const src = snapshot(ctx, w, h, 0);
-      const s = scratch(w, h, 1);
-      s.ctx.clearRect(0, 0, w, h);
-      s.ctx.drawImage(src, 0, 0);
-      let img;
-      try { img = s.ctx.getImageData(0, 0, w, h); } catch { return; }
-      const d = img.data;
-      const stepSize = 255 / (levels - 1);
-      for (let i = 0; i < d.length; i += 4) {
-        d[i] = Math.round(d[i] / stepSize) * stepSize;
-        d[i + 1] = Math.round(d[i + 1] / stepSize) * stepSize;
-        d[i + 2] = Math.round(d[i + 2] / stepSize) * stepSize;
-      }
-      s.ctx.putImageData(img, 0, 0);
+      // Quantised at a capped size: flattening colour to five levels throws
+      // away every detail finer than a band, so running the loop over eight
+      // million pixels of 4K produces exactly the same picture as running it
+      // over one million, eight times slower.
+      const flat = pixels(src, w, h, 1400, (d) => {
+        const stepSize = 255 / (levels - 1);
+        for (let i = 0; i < d.length; i += 4) {
+          d[i] = Math.round(d[i] / stepSize) * stepSize;
+          d[i + 1] = Math.round(d[i + 1] / stepSize) * stepSize;
+          d[i + 2] = Math.round(d[i + 2] / stepSize) * stepSize;
+        }
+      }, 1);
+      if (!flat) return;
       ctx.clearRect(0, 0, w, h);
-      ctx.drawImage(s.canvas, 0, 0);
+      ctx.drawImage(flat, 0, 0, flat.width, flat.height, 0, 0, w, h);
 
       const outline = (p.outline ?? 35) / 100;
       if (outline > 0.02) {
         // Cheap edge detect: the difference between the frame and a blurred
-        // copy of itself is where the detail is.
-        const e = scratch(w, h, 2);
-        e.ctx.clearRect(0, 0, w, h);
-        e.ctx.filter = 'blur(2px)';
-        e.ctx.drawImage(src, 0, 0);
-        e.ctx.filter = 'none';
-        e.ctx.globalCompositeOperation = 'difference';
-        e.ctx.drawImage(src, 0, 0);
-        e.ctx.globalCompositeOperation = 'source-over';
+        // copy of itself is where the detail is. Done at a capped size, since
+        // the difference of two blurs holds nothing finer than the blur.
+        const e = edgeMap(src, w, h, 2, 2);
         ctx.globalAlpha = outline;
         ctx.globalCompositeOperation = 'multiply';
         ctx.filter = 'grayscale(1) invert(1) contrast(3)';
-        ctx.drawImage(e.canvas, 0, 0);
+        stretch(ctx, e, w, h);
         ctx.filter = 'none';
         ctx.globalCompositeOperation = 'source-over';
         ctx.globalAlpha = 1;
@@ -589,11 +544,15 @@ export const EFFECTS = {
   },
 };
 
-function hexToRgba(hex, alpha) {
-  const h = String(hex).replace('#', '');
-  const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16);
-  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${clamp01(alpha)})`;
-}
+/*
+ * The library folds in underneath the hand-written set.
+ *
+ * Spreading the packs first and the originals second means a hand-written
+ * effect always wins a name collision. That matters: the originals are the
+ * ones projects already reference by id, and a generated effect quietly taking
+ * over one of those ids would change what every existing project looks like.
+ */
+Object.assign(EFFECTS, { ...EFFECT_PACKS, ...EFFECTS });
 
 export const EFFECT_LIST = Object.entries(EFFECTS).map(([id, e]) => ({ id, ...e }));
 

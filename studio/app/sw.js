@@ -37,6 +37,8 @@ const SHELL = [
   './js/engine/audio.js',
   './js/engine/bundle.js',
   './js/engine/effects.js',
+  './js/engine/effects-library.js',
+  './js/engine/fx-utils.js',
   './js/engine/exporter-wc.js',
   './js/engine/exporter.js',
   './js/engine/filters.js',
