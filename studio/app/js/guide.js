@@ -125,6 +125,20 @@ export const GUIDE = [
     ],
   },
   {
+    id: 'broll',
+    group: 'The AI',
+    title: 'Finding a cutaway for a moment',
+    body: [
+      ['Where it is', 'Media panel → **Find a cutaway for here**. It ranks your own clips against whatever is happening at the playhead.'],
+      ['What it reads', 'The caption line under the playhead, if there is one — words like *running*, *quiet*, *at night*, *the whole valley* each imply a kind of picture. Failing that, the tempo of your music. And either way, it steers away from a second face when there is already one on screen, because that is what a cutaway is for.'],
+      ['Name your files', 'A clip called **kitchen.mp4** wins a line about a kitchen. Measurement can tell it a shot is indoors and still; only the name can tell it what the thing is.'],
+      ['It says why', 'Every suggestion lists what it matched on, and the panel says what it was looking for before it says what it found. If the reasoning is not convincing, ignore it — that is the difference between a suggestion and a shuffle.'],
+      ['What it never does', 'It never suggests the clip already on screen, never a file that has gone missing, never music, and never fills the list out with something that does not fit. "Nothing here suits this" is a real answer.'],
+      ['Accepting one', 'It goes **over** the top on an overlay layer, muted, so the take underneath keeps talking. Drag it, trim it, or one undo and it is gone. Nothing under it was touched.'],
+      ['Your own footage only', 'There is no stock library and nothing is fetched. It ranks what you imported, using measurements taken once when you imported it, so it answers instantly.'],
+    ],
+  },
+  {
     id: 'copy',
     group: 'The AI',
     title: 'Copying another video’s edit',

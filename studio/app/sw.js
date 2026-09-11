@@ -46,6 +46,7 @@ const SHELL = [
   './js/engine/audio-render.js',
   './js/engine/audio-repair.js',
   './js/engine/audio.js',
+  './js/engine/broll.js',
   './js/engine/bundle.js',
   './js/engine/effects.js',
   './js/engine/effects-library.js',
