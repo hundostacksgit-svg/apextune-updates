@@ -15,6 +15,7 @@
 import { activeAt, mediaById, sourceTime, speedAt } from './project.js';
 import { elementFor } from './media.js';
 import { buildAudioChain, fxSignature } from './audio-fx.js';
+import { buildStrip, stripSignature, warmStrip, makeupMeasured } from './audio-strip.js';
 
 export class AudioEngine {
   constructor() {
@@ -88,8 +89,28 @@ export class AudioEngine {
    * rebuild per distinct value, which is the cheapest correct answer.
    */
   _applyFx(rec, clip) {
-    const sig = fxSignature(clip.audioFx);
+    /*
+     * One signature for both halves of the chain.
+     *
+     * The creative filter and the channel strip sit in series, so a change to
+     * either one means the same rebuild — and comparing them separately would
+     * rebuild twice for a change that touched both.
+     */
+    const sig = `${fxSignature(clip.audioFx)}~${stripSignature(clip.strip)}`;
     if (sig === rec.fxSig) return;
+
+    /*
+     * The compressor's built-in gain has to be measured before it can be
+     * cancelled, and measuring is asynchronous. Kick it off here and rebuild
+     * once it lands: the alternative is a graph built with no correction,
+     * which is fifteen decibels loud for as long as it takes to notice.
+     */
+    if (!makeupMeasured(clip.strip?.comp)) {
+      warmStrip(clip.strip).then(() => {
+        // Only if nothing else has changed in the meantime.
+        if (rec.fxSig === sig) { rec.fxSig = ''; this._applyFx(rec, clip); }
+      });
+    }
 
     try { rec.source.disconnect(); } catch { /* not connected yet */ }
     if (rec.chain) {
@@ -109,14 +130,39 @@ export class AudioEngine {
       }
     }
 
-    if (chain) {
-      rec.source.connect(chain.input);
-      chain.output.connect(rec.gain);
-      chain.start(this.ctx.currentTime);
-      rec.chain = chain;
-    } else {
-      rec.source.connect(rec.gain);
+    if (rec.strip) {
+      try { rec.strip.output.disconnect(); } catch { /* already gone */ }
+      rec.strip = null;
     }
+    let strip = null;
+    try {
+      strip = buildStrip(this.ctx, clip.strip);
+    } catch {
+      // Same rule as the creative filter: a strip that cannot be built must
+      // not silence the clip.
+      strip = null;
+    }
+
+    /*
+     * Creative filter first, then the strip.
+     *
+     * The strip is the technical pass — EQ, compression, the limiter — and it
+     * belongs last, over whatever the creative filter did, for the same reason
+     * a limiter goes on the master and not in front of the reverb.
+     */
+    let tail = rec.source;
+    if (chain) {
+      tail.connect(chain.input);
+      chain.start(this.ctx.currentTime);
+      tail = chain.output;
+      rec.chain = chain;
+    }
+    if (strip) {
+      tail.connect(strip.input);
+      tail = strip.output;
+      rec.strip = strip;
+    }
+    tail.connect(rec.gain);
     rec.fxSig = sig;
   }
 

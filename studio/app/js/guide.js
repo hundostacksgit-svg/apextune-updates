@@ -205,6 +205,21 @@ export const GUIDE = [
     ],
   },
   {
+    id: 'strip',
+    group: 'Audio',
+    title: 'The channel strip, and getting the loudness right',
+    body: [
+      ['Where it is', 'Audio panel → **Channel strip**, with one clip selected. Six bands of EQ, a compressor, pan and a trim.'],
+      ['The EQ', 'A **low cut** takes the rumble out of a voice — traffic, air conditioning, a hand on the desk — and is the single most useful thing here. **Presence** around 4kHz is what makes speech clear. The rest are there when you need them.'],
+      ['The compressor', 'Evens out the loud and quiet parts so a whisper is audible without a shout hurting. It only turns the loud parts down, so the clip ends up quieter overall — **level it back up** is how you get it back.'],
+      ['No limiter, deliberately', 'A limiter was built, measured and taken out: the browser\u2019s own dynamics node does not hold a ceiling, and a control that promises a number it cannot meet is worse than no control. The ceiling is enforced where it can be exact — at the loudness check, below.'],
+      ['Loudness', 'Audio panel → **Loudness** → pick where you are posting → **Measure my mix**. It renders your actual mix and measures it the way the platforms do (ITU-R BS.1770), then tells you how far off you are and offers to fix it in one press.'],
+      ['Why it matters', 'Every platform turns anything louder than its target down. Mastering louder than YouTube\u2019s -14 LUFS does not play louder — it plays turned down, with your dynamics squashed for nothing. Being too quiet is the opposite problem: it sounds weak beside everything around it.'],
+      ['When it cannot fix it', 'If your peaks are already near the ceiling it will only raise the level as far as it safely can, and say so. Compress the loudest clips to make room for the rest.'],
+      ['It is free', 'The strip is part of Creator. The loudness check is not gated, because it only tells you the truth about your own mix.'],
+    ],
+  },
+  {
     id: 'text',
     group: 'Text',
     title: 'Titles, captions and 200 typefaces',

@@ -228,6 +228,9 @@ export function addClip(p, {
     /* One creative audio filter per clip — underwater, telephone, cathedral.
        Null means the clip is heard as recorded. See engine/audio-fx.js. */
     audioFx: null,
+    /* The technical half: EQ, compressor, limiter, pan. Null until somebody
+       touches it, so a clip costs nothing to carry. See audio-strip.js. */
+    strip: null,
     text,
     sticker,
     label: null,

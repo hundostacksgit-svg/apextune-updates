@@ -351,6 +351,15 @@ html[data-level="expert"] .card-hint{display:none}
 .tl-track.audio{background:color-mix(in srgb,var(--surface-2) 70%,var(--surface))}
 .tl-track.drop{background:color-mix(in srgb,var(--blue) 12%,var(--surface-2))}
 
+/* ---------- the channel strip ---------- */
+.st-h{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);
+  font-weight:700;margin:14px 0 7px;padding-top:9px;border-top:1px solid var(--line-soft)}
+.st-band{border-bottom:1px solid var(--line-soft);padding-bottom:6px;margin-bottom:6px}
+.st-band:last-child{border-bottom:0}
+.st-bandhead{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:5px 0;cursor:pointer}
+.st-bandhead span:first-of-type{flex:1;min-width:0}
+@media (pointer: coarse){ .st-bandhead{min-height:38px} }
+
 /* ---------- windows and the qualifier ---------- */
 /*
  * The handles live over the picture in the picture's own box, not the stage's.

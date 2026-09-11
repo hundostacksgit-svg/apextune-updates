@@ -7,6 +7,7 @@
 import { $, $$, esc, toast, slider } from '../ui.js';
 import { MeterState, drawMeter, gainLabel, gainToFader, faderToGain } from '../engine/meters.js';
 import { S, actions, engine } from '../main.js';
+import { stripMarkup, loudnessMarkup, handleStripInput, handleStripClick } from './strip.js';
 import { decode, detectBeats, detectSilence, peaks } from '../engine/media.js';
 import { repair, describeRepair, detectHum } from '../engine/audio-repair.js';
 import { AUDIO_FX, makeAudioFx } from '../engine/audio-fx.js';
@@ -114,7 +115,10 @@ export function mount(host) {
         Turn a track's <span class="mono">⤓</span> button on in the timeline headers and it drops
         under any voice automatically. No keyframes needed.
       </p>
-    </div>`;
+    </div>
+
+    ${stripMarkup(S.sel.size === 1 ? S.project.clips.find((c) => c.id === [...S.sel][0]) : null)}
+    ${loudnessMarkup()}`;
 
   // Guarded: the panel host outlives its contents, so an unguarded listener
   // here would be added again on every re-render and fire N times per drag.
@@ -127,6 +131,20 @@ export function mount(host) {
       const label = host.querySelector('[data-val="master"]');
       if (label) label.textContent = `${Math.round(v * 100)}%`;
     });
+  }
+
+  /*
+   * The strip and the loudness check handle their own events, delegated from
+   * the panel and bound once — both sections rebuild themselves on nearly
+   * every interaction, and a listener per control would stack one set per
+   * rebuild.
+   */
+  if (!host.dataset.stripWired) {
+    host.dataset.stripWired = '1';
+    const remount = () => mount(host);
+    host.addEventListener('click', (e) => { handleStripClick(e, remount); });
+    host.addEventListener('input', (e) => { handleStripInput(e, { live: true }); });
+    host.addEventListener('change', (e) => { handleStripInput(e, { live: false, refresh: remount }); });
   }
 
   wireFx(host);

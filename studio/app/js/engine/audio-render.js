@@ -16,12 +16,21 @@
 import { activeAt, mediaById, speedAt, sourceTime } from './project.js';
 import { decode } from './media.js';
 import { buildAudioChain } from './audio-fx.js';
+import { buildStrip, warmStrip } from './audio-strip.js';
 
 /**
  * Render the whole timeline's audio.
  * Returns an AudioBuffer, or null when nothing on the timeline makes a sound.
  */
 export async function renderAudio(project, { duration, sampleRate = 48000, onProgress } = {}) {
+  /*
+   * Measure every compressor before building anything.
+   *
+   * The live graph can rebuild itself when the measurement lands; an offline
+   * render gets one pass, so an uncorrected compressor here would be baked
+   * into the file fifteen decibels loud with nothing to notice it.
+   */
+  await Promise.all(project.clips.map((c) => warmStrip(c.strip)));
   const clips = project.clips.filter((c) => {
     if (c.kind === 'title' || c.kind === 'sticker' || c.reversed) return false;
     const track = project.tracks.find((t) => t.id === c.trackId);
@@ -72,15 +81,29 @@ export async function renderAudio(project, { duration, sampleRate = 48000, onPro
     } catch {
       chain = null;                    // never lose a clip's audio to a filter
     }
+    let strip = null;
+    try {
+      strip = buildStrip(ctx, clip.strip);
+    } catch {
+      strip = null;                    // nor to a channel strip
+    }
+
+    // Creative filter, then the channel strip, then the clip's gain — the
+    // same order the preview builds, from the same two modules, so the export
+    // cannot sound different from what you heard.
+    let tail = source;
     if (chain) {
-      source.connect(chain.input);
-      chain.output.connect(gain);
+      tail.connect(chain.input);
       // Offline, every generator starts at zero: the context's clock begins
       // at the top of the timeline, not at the clip.
       chain.start(0);
-    } else {
-      source.connect(gain);
+      tail = chain.output;
     }
+    if (strip) {
+      tail.connect(strip.input);
+      tail = strip.output;
+    }
+    tail.connect(gain);
 
     scheduleGain(project, clip, gain, ctx);
 
