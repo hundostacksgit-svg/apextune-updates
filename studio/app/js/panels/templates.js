@@ -8,7 +8,7 @@
 
 import { $, $$, esc, toast, empty } from '../ui.js';
 import { S, actions } from '../main.js';
-import { TEMPLATES, buildTemplate } from '../engine/templates.js';
+import { TEMPLATES, TEMPLATE_GROUPS_ALL, buildTemplate } from '../engine/templates.js';
 import { applyPlan } from '../ai/apply.js';
 import { duration } from '../engine/project.js';
 
@@ -39,19 +39,46 @@ export function mount(host) {
       No music imported. The beat-based styles will space the cuts evenly instead.
     </div>`}
 
-    <div id="t-list" style="margin-top:14px">
-      ${TEMPLATES.map((t) => `
-        <button class="tpl" data-tpl="${esc(t.id)}">
-          <span class="te">${t.emoji}</span>
-          <span class="tt">
-            <b>${esc(t.name)}</b>
-            <span>${esc(t.blurb)}</span>
-            <em>Needs: ${esc(t.wants)}</em>
-          </span>
-        </button>`).join('')}
+    <!-- A hundred and thirty styles is only a library if you can find one.
+         Search first, then groups — the same treatment the effect, look and
+         transition libraries got, for the same reason. -->
+    <input class="input" id="t-search" placeholder="Search styles — noir, vhs, karaoke, drone…"
+           style="margin:14px 0 10px">
+    <div id="t-list">
+      ${Object.entries(TEMPLATE_GROUPS_ALL).map(([group, list]) => `
+        <details class="group" ${group === 'Originals' ? 'open' : ''}>
+          <summary>${esc(group)} <span class="tiny muted">${list.length}</span></summary>
+          <div class="gbody">
+            ${list.map((t) => `
+              <button class="tpl" data-tpl="${esc(t.id)}"
+                data-search="${esc(`${t.name} ${t.blurb} ${(t.tags || []).join(' ')}`.toLowerCase())}">
+                <span class="te">${t.emoji}</span>
+                <span class="tt">
+                  <b>${esc(t.name)}</b>
+                  <span>${esc(t.blurb)}</span>
+                  <em>Needs: ${esc(t.wants)}</em>
+                </span>
+              </button>`).join('')}
+          </div>
+        </details>`).join('')}
     </div>
 
     <div id="t-plan" style="margin-top:14px"></div>`;
+
+  // Filter as you type, opening the groups that still have something in them.
+  $('#t-search', host)?.addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    for (const grp of $$('#t-list details', host)) {
+      let shown = 0;
+      for (const card of $$('[data-tpl]', grp)) {
+        const hit = !q || card.dataset.search.includes(q);
+        card.hidden = !hit;
+        if (hit) shown++;
+      }
+      grp.hidden = shown === 0;
+      if (q) grp.open = true;
+    }
+  });
 
   $('#t-import', host)?.addEventListener('click', () => $('#file-input').click());
   $('#t-beats', host)?.addEventListener('click', async () => {
@@ -68,7 +95,6 @@ export function mount(host) {
   });
 
   if (pending) preview(host, pending.id, true);
-  void $$;
 }
 
 /*

@@ -13,6 +13,8 @@
  * sensible edit instead of a shrug.
  */
 
+import { TEMPLATE_PACKS } from './templates-library.js';
+
 /* Cut lengths, in beats, for a given energy. Beats rather than seconds so the
    same template works at 90bpm and 170bpm without feeling different. */
 const PACE_BEATS = { frantic: 1, fast: 2, medium: 4, slow: 8 };
@@ -484,6 +486,24 @@ export const TEMPLATES = [
     },
   },
 ];
+
+/*
+ * The generated library folds in after the hand-written twelve.
+ *
+ * Order matters for two reasons. The originals stay at the top of the panel,
+ * which is where people who already know this app expect them. And a hand-
+ * written style wins an id collision, because projects and the AI both
+ * reference styles by id — a generated one quietly taking over "anime-amv"
+ * would change what an existing request does.
+ */
+const seen = new Set(TEMPLATES.map((t) => t.id));
+TEMPLATES.push(...TEMPLATE_PACKS.filter((t) => !seen.has(t.id)));
+
+/** Group -> styles, for browsing a library this size. */
+export const TEMPLATE_GROUPS_ALL = TEMPLATES.reduce((acc, t) => {
+  (acc[t.group || 'Originals'] ||= []).push(t);
+  return acc;
+}, {});
 
 export const TEMPLATE_BY_ID = Object.fromEntries(TEMPLATES.map((t) => [t.id, t]));
 

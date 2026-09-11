@@ -75,6 +75,7 @@ const SHELL = [
   './js/engine/render.js',
   './js/engine/stickers.js',
   './js/engine/templates.js',
+  './js/engine/templates-library.js',
   './js/engine/titles.js',
   './js/engine/tracking.js',
   './js/engine/transitions.js',
