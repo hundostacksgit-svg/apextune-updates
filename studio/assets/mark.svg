@@ -1,15 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="OmniDx Studio">
+  <!--
+    The mark: one frame, three shapes.
+
+    The idea is the thing this app actually does that others do not — you cut
+    once and it comes out right for every place you post it. So the mark is a
+    single play triangle sitting inside three nested frames in the three
+    aspect ratios people publish in: 9:16 upright, 1:1 square, 16:9 wide.
+
+    Built to survive 16 pixels. At a favicon's size the outer frames merge into
+    one soft edge and what is left is a bold triangle in a rounded square,
+    which is still unmistakably this and not a generic play button — the
+    silhouette is a portrait rectangle, which almost no app icon is.
+  -->
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+    <linearGradient id="omni-g" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#7a5cff"/>
       <stop offset="0.45" stop-color="#2f7dff"/>
       <stop offset="1" stop-color="#00d1ff"/>
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="15" fill="url(#g)"/>
-  <!-- a play head over three timeline bars: the app in one glyph -->
-  <rect x="13" y="18" width="26" height="6" rx="3" fill="#fff" opacity=".92"/>
-  <rect x="13" y="29" width="18" height="6" rx="3" fill="#fff" opacity=".68"/>
-  <rect x="13" y="40" width="30" height="6" rx="3" fill="#fff" opacity=".45"/>
-  <path d="M43 24.5 L54 32 L43 39.5 Z" fill="#fff"/>
+
+  <!-- 16:9, widest and faintest — the outermost ring -->
+  <rect x="2" y="18" width="60" height="28" rx="7" fill="none"
+        stroke="url(#omni-g)" stroke-width="2.5" opacity=".38"/>
+  <!-- 1:1 -->
+  <rect x="10" y="10" width="44" height="44" rx="9" fill="none"
+        stroke="url(#omni-g)" stroke-width="2.5" opacity=".62"/>
+  <!-- 9:16, the one most of this is made for, and the solid one -->
+  <rect x="19" y="2" width="26" height="60" rx="9" fill="url(#omni-g)"/>
+
+  <!-- The play triangle, knocked out of the solid frame so it reads as a hole
+       rather than a sticker. Rounded, because a hard point at 16px turns into
+       an aliased spike. -->
+  <path d="M27.5 23.4c0-1.9 2.1-3.1 3.7-2.1l9.6 6.0c1.5 1.0 1.5 3.2 0 4.2l-9.6 6.0
+           c-1.6 1.0-3.7-.2-3.7-2.1z" fill="#05070c"/>
+  <!-- A playhead tick at the base: the timeline, in one stroke. -->
+  <rect x="29" y="45" width="6" height="9" rx="3" fill="#05070c" opacity=".75"/>
 </svg>

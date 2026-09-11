@@ -42,6 +42,8 @@ jobs:
                    studio/assets/icons/icon-192.png studio/assets/icons/icon-512.png \
                    studio/assets/icons/maskable-192.png studio/assets/icons/maskable-512.png \
                    studio/assets/icons/apple-touch-icon.png \
+                   studio/assets/mark-small.svg studio/assets/avatar.svg \
+                   studio/assets/avatar-512.png studio/assets/avatar-400.png \
                    studio/app/index.html studio/app/manifest.webmanifest studio/app/sw.js \
                    studio/app/css/app.css studio/app/js/main.js studio/app/js/ui.js \
                    studio/app/js/store.js studio/app/js/licence.js studio/app/js/levels.js \

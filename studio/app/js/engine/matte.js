@@ -40,10 +40,25 @@
  * corner as two different colours — so you get a hole in the middle and an
  * uncut fringe at the edges.
  */
-export function chromaKey(ctx, w, h, {
-  colour = '#00b140', tolerance = 30, softness = 12, spill = 60,
-} = {}) {
-  const hex = String(colour).replace('#', '');
+export function chromaKey(ctx, w, h, opts = {}) {
+  /*
+   * `colour`, `color` and `key` all mean the same thing here.
+   *
+   * Not indulgence — silently ignoring an option nobody spelled the way this
+   * file happens to spell it is the worst kind of failure. Passing `key` or
+   * the US `color` used to fall through to the default green, which keys
+   * nothing against most footage and reports no error at all: the caller sees
+   * a picture that did not change and has no way to find out why.
+   *
+   * Three names, one meaning, and none of them can be wrong.
+   */
+  const {
+    colour, color, key,
+    tolerance = 30, softness = 12, spill = 60,
+  } = opts;
+  const keyColour = colour ?? color ?? key ?? '#00b140';
+
+  const hex = String(keyColour).replace('#', '');
   const n = parseInt(hex.length === 3 ? hex.split('').map((c) => c + c).join('') : hex, 16);
   const kr = (n >> 16) & 255, kg = (n >> 8) & 255, kb = n & 255;
 
