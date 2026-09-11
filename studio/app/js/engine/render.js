@@ -11,7 +11,7 @@
  * those finished clip canvases and combine them.
  */
 
-import { activeAt, clipsOn, valueAt, mediaById, sourceTime, speedAt } from './project.js';
+import { activeAt, clipsOn, valueAt, animatedColor, mediaById, sourceTime, speedAt } from './project.js';
 import {
   resolved, cssFilter, applyPasses, isIdentity,
   wheelFilter, applyWheelsFallback, wheelsAreNeutral, supportsUrlFilters,
@@ -177,7 +177,10 @@ export class Renderer {
     const dy = (h - dh) / 2 + valueAt(clip, 'transform.y', local, clip.transform.y || 0) * h;
     const rotate = valueAt(clip, 'transform.rotate', local, clip.transform.rotate || 0);
 
-    const grade = resolved(clip.color);
+    // Keyframed exposure, contrast, saturation and the rest resolve here, so a
+    // grade can ramp across a clip the same way a position can.
+    const graded = animatedColor(clip, local);
+    const grade = resolved(graded);
     // The wheels are an SVG filter chained onto the CSS one, so both stages
     // happen in a single GPU pass rather than a read-back.
     const wheels = wheelFilter(clip.id, clip.color.wheels);
@@ -198,7 +201,7 @@ export class Renderer {
     ctx.restore();
     ctx.filter = 'none';
 
-    if (!isIdentity(clip.color)) applyPasses(ctx, w, h, grade);
+    if (!isIdentity(graded)) applyPasses(ctx, w, h, grade);
     // Only when the GPU path is unavailable — otherwise this would double up.
     if (!supportsUrlFilters() && !wheelsAreNeutral(clip.color.wheels)) {
       applyWheelsFallback(ctx, w, h, clip.color.wheels);

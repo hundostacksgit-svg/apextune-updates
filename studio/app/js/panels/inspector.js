@@ -355,6 +355,25 @@ function writeProp(clip, path, value) {
   // 'crop.t' is shorthand for transform.crop.t — the panel says what a user
   // would call it, not where it happens to live.
   const parts = path.startsWith('crop.') ? ['transform', 'crop', path.split('.')[1]] : path.split('.');
+
+  /*
+   * Once a property is animated, its slider sets a key at the playhead rather
+   * than one value for the whole clip.
+   *
+   * Without this, turning a stopwatch on quietly breaks every slider it
+   * touches: you drag exposure, the number moves, and the picture does not —
+   * because the animation is read after the static value and overrules it on
+   * the very next frame. The slider looks broken, and nothing tells you why.
+   * This is also the gesture itself, and the only one there is: park the
+   * playhead, move the slider, and that is a key.
+   */
+  const prop = parts.join('.');
+  if (clip.keyframes?.[prop]?.length) {
+    const local = Math.max(0, Math.min(clip.dur, S.time - clip.start));
+    setKeyframe(clip, prop, local, value);
+    return;
+  }
+
   let target = clip;
   for (let i = 0; i < parts.length - 1; i++) {
     target[parts[i]] ||= {};

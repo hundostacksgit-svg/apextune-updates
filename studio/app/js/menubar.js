@@ -71,6 +71,17 @@ export const MENUS = [
       { label: 'Effects', when: () => api.hasSelection?.(), run: () => api.openPanel?.('effects') },
       { label: 'Audio', run: () => api.openPanel?.('audio') },
       { sep: true },
+      {
+        label: () => (api.layerPropsOpen?.() ? 'Hide layer properties' : 'Show layer properties'),
+        when: () => api.hasSelection?.(),
+        run: () => (api.layerPropsOpen?.() ? api.hideLayerProps?.() : api.layerProps?.()),
+      },
+      {
+        label: () => `${api.graphOpen?.() ? '✓ ' : ''}Graph editor`,
+        when: () => api.hasSelection?.(),
+        run: () => api.toggleGraph?.(),
+      },
+      { sep: true },
       { label: 'Track something in this clip', when: () => api.hasSelection?.(), run: () => api.track?.() },
     ],
   },

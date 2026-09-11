@@ -52,6 +52,22 @@ export const GUIDE = [
     ],
   },
   {
+    id: 'keyframes',
+    group: 'The timeline',
+    title: 'Animating anything: keyframes and the graph editor',
+    body: [
+      ['What a keyframe is', 'A keyframe is a note saying "at this moment, this value". Two of them make a move: the app fills in every frame in between. That is all animation is, in any program.'],
+      ['Open a layer up', 'Press the small **▸** in the corner of a clip on the timeline. The clip unfolds into its properties — position, scale, rotation, opacity, volume, the grade, and every parameter of every effect on it.'],
+      ['Make something move', 'Press the **⏲ stopwatch** next to a property. That drops the first key where the playhead is. Now move the playhead somewhere else and change the value — drag the scale slider, or the exposure — and a second key appears there on its own. Play it back and it moves.'],
+      ['Once a stopwatch is on', 'That property\u2019s slider sets a value **at the playhead** rather than for the whole clip. That is deliberate, and it is the entire gesture: park, drag, park, drag.'],
+      ['The diamonds', 'Every key is a diamond in its lane. Drag one sideways to change **when** it happens. Click one and press **Delete** to remove it — the clip itself is not touched. Double-click one to change its easing, which cycles through linear, ease, ease in, ease out and hold; the shape of the diamond tells you which it is.'],
+      ['The graph editor', 'The **∿** button at the top of the unfolded layer. Diamonds tell you when something changes; the graph tells you how fast, which is the part that reads as good or cheap. Each property is its own coloured curve. Drag a dot up or down to change its value and sideways to change its timing, both at once.'],
+      ['Seeing only what moves', 'The **◆** button next to ∿ switches between every property and only the ones that are actually animated. On a clip with four effects on it that is the difference between six rows and forty.'],
+      ['Where it also lives', 'Clip menu → **Show layer properties**, and **Graph editor** beside it, for when the clip is too narrow to carry a caret.'],
+      ['What it costs', 'Unfolding a layer and reading its properties is free on every edition. Laying a key down is part of Creator and above.'],
+    ],
+  },
+  {
     id: 'speed',
     group: 'The timeline',
     title: 'Speed, slow motion and ramps',

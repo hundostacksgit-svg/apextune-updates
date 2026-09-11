@@ -30,6 +30,7 @@ import { initTips, applyTipsForLevel, setTips, tipsOn } from './tips.js';
 import { initMoreSheet } from './more-sheet.js';
 import * as media from './engine/media.js';
 import { TimelineUI } from './timeline-ui.js';
+import * as kf from './keyframes-ui.js';
 import { openPanel, refreshPanel, closePanel, panelIsOverlay, PANELS } from './panels/index.js';
 import { initMobile } from './mobile.js';
 import { openPalette } from './palette.js';
@@ -850,6 +851,30 @@ function paintLevel() {
     /* clip */
     split: () => actions.splitAtPlayhead(),
     track: () => openPanel('effects'),
+    /*
+     * Unfolding a layer from the menu, not only from the caret on the clip.
+     * The caret is 15px square and only exists on clips wide enough to hold
+     * it — a menu item is how somebody finds the feature in the first place.
+     */
+    layerProps: () => {
+      const ids = [...S.sel];
+      if (!ids.length) { toast('Select a clip first'); return; }
+      for (const id of ids) if (!kf.isExpanded(id)) kf.toggleExpanded(id);
+      timeline.render();
+    },
+    hideLayerProps: () => {
+      for (const id of [...S.sel]) if (kf.isExpanded(id)) kf.toggleExpanded(id);
+      timeline.render();
+    },
+    layerPropsOpen: () => [...S.sel].some((id) => kf.isExpanded(id)),
+    graphOpen: () => kf.isGraphOpen(),
+    toggleGraph: () => {
+      const ids = [...S.sel];
+      if (!ids.length) { toast('Select a clip first'); return; }
+      for (const id of ids) if (!kf.isExpanded(id)) kf.toggleExpanded(id);
+      kf.setGraph(!kf.isGraphOpen());
+      timeline.render();
+    },
 
     /* timeline */
     togglePlay: () => togglePlay(),

@@ -105,6 +105,7 @@ const SHELL = [
   './js/panels/text.js',
   './js/panels/tracking.js',
   './js/store.js',
+  './js/keyframes-ui.js',
   './js/timeline-ui.js',
   './js/tutorial.js',
   './js/guide.js',

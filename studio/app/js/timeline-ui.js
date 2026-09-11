@@ -12,6 +12,8 @@ import {
   clipsOn, clipById, mediaById, trackById, duration,
   splitClip, trimClip, moveClip, snapPoints, snapTo, addTrack, removeTrack,
 } from './engine/project.js';
+import * as kf from './keyframes-ui.js';
+import * as licence from './licence.js';
 
 const SNAP_PX = 8;          // how close a drag has to get before it sticks
 const MIN_CLIP = 0.08;
@@ -28,6 +30,7 @@ export class TimelineUI {
     this.playhead = $('#playhead');
     this.snapLine = null;
     this._wireStatic();
+    this._wireKeyframes();
   }
 
   get project() { return this.state.project; }
@@ -42,6 +45,11 @@ export class TimelineUI {
 
   render() {
     const p = this.project;
+    kf.prune(p);
+    // Only wide enough for property names while there are property names.
+    this.body ||= $('#tl-body');
+    this.body?.classList.toggle('props', kf.anyExpanded());
+    document.documentElement.classList.toggle('kf-graph-open', kf.isGraphOpen());
     // Always leave a screen of empty space past the end so there's somewhere to
     // drag a clip to. A timeline you can't extend feels broken.
     const total = Math.max(duration(p) + 4, this.scroll.clientWidth / this.zoom);
@@ -76,6 +84,7 @@ export class TimelineUI {
 
   _renderHeads() {
     const frag = document.createDocumentFragment();
+    const ctx = { time: this.state.time };
     for (const track of this.project.tracks) {
       const head = el('div', { class: 'tl-head', 'data-track': track.id });
       head.style.height = `${track.height}px`;
@@ -96,6 +105,23 @@ export class TimelineUI {
           }, '⤓'),
       );
       frag.appendChild(head);
+
+      /*
+       * An unfolded clip puts its properties directly under its own track, in
+       * both columns at once. The two columns are separate scrollers that are
+       * kept in step by row height alone, so a row added on one side and not
+       * the other does not misalign a little — it misaligns everything below
+       * it, for the rest of the session.
+       */
+      for (const clip of clipsOn(this.project, track.id)) {
+        if (!kf.isExpanded(clip.id)) continue;
+        for (const row of kf.headRows(clip, ctx)) frag.appendChild(row);
+        if (kf.isGraphOpen()) {
+          frag.appendChild(el('div', {
+            class: 'kf-head kf-graph-head', style: `height:${kf.GRAPH_H}px`,
+          }, el('span', { class: 'kf-name' }, 'Graph')));
+        }
+      }
     }
     this.heads.innerHTML = '';
     this.heads.appendChild(frag);
@@ -110,6 +136,13 @@ export class TimelineUI {
         row.appendChild(this._clipNode(clip, track));
       }
       frag.appendChild(row);
+
+      const laneCtx = { toPx: (t) => this.toPx(t), time: this.state.time };
+      for (const clip of clipsOn(this.project, track.id)) {
+        if (!kf.isExpanded(clip.id)) continue;
+        for (const lane of kf.laneRows(clip, laneCtx)) frag.appendChild(lane);
+        if (kf.isGraphOpen()) frag.appendChild(kf.graphRow(clip, laneCtx));
+      }
     }
     this.tracks.innerHTML = '';
     this.tracks.appendChild(frag);
@@ -166,6 +199,27 @@ export class TimelineUI {
     const ramped = clip.speedKeys?.length;
     node.appendChild(el('span', { class: 'cname' },
       `${clipLabel(clip, media)}${ramped ? ' · ramp' : clip.speed !== 1 ? ` · ${clip.speed}×` : ''}`));
+    /*
+     * The disclosure triangle: the one control that turns a strip of film into
+     * a layer with properties. Only drawn once the clip is wide enough to hold
+     * it without covering the name, because a 12px clip with a caret on it is
+     * just a caret.
+     */
+    if (width > 44) {
+      const animated = Object.keys(clip.keyframes || {}).length;
+      node.classList.add('folds');
+      node.appendChild(el('button', {
+        class: `cfold ${kf.isExpanded(clip.id) ? 'open' : ''} ${animated ? 'anim' : ''}`,
+        'data-fold': clip.id,
+        'data-tip': 'Opens this clip up into its properties — position, scale, '
+          + 'opacity, colour, every effect on it. Anything with a stopwatch can '
+          + 'be animated over time.',
+        title: kf.isExpanded(clip.id)
+          ? 'Hide this layer\u2019s properties'
+          : `Show this layer\u2019s properties${animated ? ` \u2014 ${animated} animated` : ''}`,
+      }, kf.isExpanded(clip.id) ? '\u25BE' : '\u25B8'));
+    }
+
     node.appendChild(el('div', { class: 'handle l', 'data-handle': 'l' }));
     node.appendChild(el('div', { class: 'handle r', 'data-handle': 'r' }));
     return node;
@@ -227,6 +281,7 @@ export class TimelineUI {
 
     // Track header buttons.
     this.heads.addEventListener('click', (e) => {
+      if (kf.handleHeadClick(e, this._kfCtx())) return;
       const btn = e.target.closest('[data-act]');
       if (!btn) return;
       const track = trackById(this.project, btn.dataset.track);
@@ -245,12 +300,22 @@ export class TimelineUI {
       this._scrollIdle = setTimeout(() => { this._userScrolling = false; }, 1200);
     });
 
+    this.tracks.addEventListener('click', (e) => {
+      const fold = e.target.closest('[data-fold]');
+      if (!fold) return;
+      e.stopPropagation();
+      kf.toggleExpanded(fold.dataset.fold);
+      this.render();
+    });
+
     // Clips: select, move, trim, razor.
     this.tracks.addEventListener('pointerdown', (e) => this._onClipPointerDown(e));
 
     // Clicking empty track space clears the selection and parks the playhead.
     this.tracks.addEventListener('click', (e) => {
       if (e.target.closest('.clip')) return;
+      // A click inside a property lane is aimed at a keyframe, not the playhead.
+      if (e.target.closest('.kf-lane, .kf-graph')) return;
       const rect = this.inner.getBoundingClientRect();
       this.actions.select([]);
       this.actions.seek(Math.max(0, this.toSec(e.clientX - rect.left)));
@@ -276,7 +341,66 @@ export class TimelineUI {
     });
   }
 
+  /*
+   * The bridge the keyframe editor works through.
+   *
+   * It knows seconds and pixels and nothing else about this class — no zoom,
+   * no undo stack, no project — so it can be tested on its own and cannot
+   * drift out of step with the rest of the timeline.
+   */
+  _kfCtx() {
+    return {
+      toPx: (t) => this.toPx(t),
+      toSec: (px) => this.toSec(px),
+      time: () => this.state.time,
+      clip: (id) => clipById(this.project, id),
+      seek: (t) => this.actions.seek(t),
+      repaint: () => this.render(),
+      /*
+       * Every write goes through the licence.
+       *
+       * Looking at the lanes is free — you can unfold a layer, read what is
+       * animated and watch the values move at the playhead on any edition,
+       * because seeing what the tool does is how anyone decides to buy it.
+       * Putting a key down is the paid half.
+       */
+      change: (fn, clipId, label) => {
+        const clip = clipById(this.project, clipId);
+        if (!clip) return;
+        licence.gate('keyframes', () => {
+          fn(clip);
+          this.actions.commit(label);
+        }, { what: 'Keyframes' });
+      },
+    };
+  }
+
+  _wireKeyframes() {
+    kf.wire(this.tracks, this._kfCtx());
+
+    /*
+     * Delete removes the selected keys rather than the clip they sit on.
+     *
+     * Captured, so it runs before the app-wide Delete handler — pressing
+     * Delete with a keyframe picked and watching the whole clip disappear is
+     * the kind of thing you only forgive an editor once.
+     */
+    window.addEventListener('keydown', (e) => {
+      if (e.key !== 'Delete' && e.key !== 'Backspace') return;
+      if (!kf.pickedCount()) return;
+      const tag = e.target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.isContentEditable) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const gone = kf.deletePicked(this.project);
+      if (gone) this.actions.commit(`Delete ${gone} keyframe${gone === 1 ? '' : 's'}`);
+    }, true);
+  }
+
   _onClipPointerDown(e) {
+    // The fold caret is a button that happens to sit on a draggable thing.
+    // Without this, opening a layer nudges the clip a few frames sideways.
+    if (e.target.closest('[data-fold]')) return;
     const node = e.target.closest('.clip');
     if (!node) return;
     const clip = clipById(this.project, node.dataset.clip);

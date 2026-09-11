@@ -458,6 +458,81 @@ export function clearKeyframes(clip, prop) {
   else clip.keyframes = {};
 }
 
+/**
+ * The clip's grade at a moment, with any keyframed channel resolved.
+ *
+ * Returns the very same object when nothing on the grade is animated, which is
+ * almost always — the renderer calls this once per clip per frame, and a
+ * spread there would allocate a fresh object sixty times a second for every
+ * layer on screen, for nothing.
+ */
+export function animatedColor(clip, t) {
+  const keys = clip.keyframes;
+  if (!keys) return clip.color;
+  let out = null;
+  for (const prop in keys) {
+    if (!prop.startsWith('color.')) continue;
+    const field = prop.slice(6);
+    out ||= { ...clip.color };
+    out[field] = valueAt(clip, prop, t, clip.color[field]);
+  }
+  return out || clip.color;
+}
+
+/**
+ * Read whatever `transform.x` or `color.exposure` or `effects.glow.amount`
+ * points at. One dotted path resolver, so the keyframe UI never has to know
+ * the shape of a clip.
+ */
+export function readPath(clip, path) {
+  const parts = path.split('.');
+  if (parts[0] === 'effects') {
+    const fx = clip.effects?.find((f) => f.id === parts[1]);
+    return fx?.params?.[parts[2]];
+  }
+  let node = clip;
+  for (const part of parts) {
+    if (node == null) return undefined;
+    node = node[part];
+  }
+  return node;
+}
+
+/** The writing half of readPath. Used when a keyframe is scrubbed onto a clip. */
+export function writePath(clip, path, value) {
+  const parts = path.split('.');
+  if (parts[0] === 'effects') {
+    const fx = clip.effects?.find((f) => f.id === parts[1]);
+    if (fx) (fx.params ||= {})[parts[2]] = value;
+    return;
+  }
+  let node = clip;
+  for (let i = 0; i < parts.length - 1; i++) node = node[parts[i]] ||= {};
+  node[parts[parts.length - 1]] = value;
+}
+
+/** Move one keyframe in time, keeping the list sorted. */
+export function moveKeyframe(clip, prop, from, to) {
+  const list = clip.keyframes?.[prop];
+  if (!list) return;
+  const k = list.find((x) => Math.abs(x.t - from) < 0.0005);
+  if (!k) return;
+  k.t = Math.max(0, Math.min(clip.dur, to));
+  list.sort((a, b) => a.t - b.t);
+}
+
+/** Remove one keyframe, and the property itself once its last key is gone. */
+export function removeKeyframe(clip, prop, t) {
+  const list = clip.keyframes?.[prop];
+  if (!list) return;
+  const i = list.findIndex((k) => Math.abs(k.t - t) < 0.0005);
+  if (i >= 0) list.splice(i, 1);
+  if (!list.length) delete clip.keyframes[prop];
+}
+
+/** The list of eases a key can carry, in the order the UI cycles them. */
+export const EASE_NAMES = ['linear', 'ease', 'in', 'out', 'hold'];
+
 /* ------------------------------------------------------------------ */
 /* serialisation                                                       */
 /* ------------------------------------------------------------------ */

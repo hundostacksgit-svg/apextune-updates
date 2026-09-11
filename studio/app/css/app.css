@@ -108,6 +108,19 @@ html[data-level="beginner"] .inspector{display:none}
   }
 }
 
+/*
+ * The graph editor needs room, so opening it takes some.
+ *
+ * A hundred and fifty pixels of curve inside a two-hundred-and-ten pixel
+ * timeline is a slot you have to scroll to see, which is no use for the one
+ * thing the graph is for — looking at the shape of a move. This has to sit
+ * *after* every html[data-level] block above: those are (0,1,1) and so is
+ * this, so at equal specificity the later rule is the one that wins. Put it
+ * before them and the Beginner height would quietly override it, with nothing
+ * to show for the class but a name in the DOM.
+ */
+html.kf-graph-open{--tl-h:min(58dvh,540px)}
+
 html[data-level="expert"]{
   --r-s:6px;--r-m:9px;--r-l:12px;
   font-size:12.75px;
@@ -293,7 +306,21 @@ html[data-level="expert"] .card-hint{display:none}
 @media(max-width:700px){.tl-zoom input[type=range]{width:70px}}
 
 .tl-body{flex:1;display:grid;grid-template-columns:132px 1fr;min-height:0}
-@media(max-width:700px){.tl-body{grid-template-columns:88px 1fr}}
+/*
+ * Unfolding a layer widens the header column.
+ *
+ * 132px holds "Video 1" and two icons and not a character more, which is
+ * right until a property row needs to say "Position X" and "Saturation" and
+ * show a number next to each. Property names truncated to nothing are the
+ * same as no property names, and a list of stopwatches with no labels is not
+ * a layer panel. It goes back when the last layer folds shut, so the timeline
+ * is only as wide as what is open in it.
+ */
+.tl-body.props{grid-template-columns:232px 1fr}
+@media(max-width:700px){
+  .tl-body{grid-template-columns:88px 1fr}
+  .tl-body.props{grid-template-columns:168px 1fr}
+}
 .tl-heads{border-right:1px solid var(--line);overflow:hidden;background:var(--surface);
   padding-top:26px}
 .tl-head{display:flex;align-items:center;gap:5px;padding:0 8px;border-bottom:1px solid var(--line-soft);
@@ -323,6 +350,81 @@ html[data-level="expert"] .card-hint{display:none}
   background:linear-gradient(var(--surface-2),var(--surface-2)) padding-box}
 .tl-track.audio{background:color-mix(in srgb,var(--surface-2) 70%,var(--surface))}
 .tl-track.drop{background:color-mix(in srgb,var(--blue) 12%,var(--surface-2))}
+
+/* ---------- keyframes: property lanes and the graph editor ---------- */
+/*
+ * Two columns, one row height. The heads and the lanes are separate scrollers
+ * kept in step by nothing but agreeing on how tall a row is, so every height
+ * below comes from LANE_H in keyframes-ui.js and must not be set here.
+ */
+.kf-head{display:flex;align-items:center;gap:5px;padding:0 6px 0 10px;
+  border-bottom:1px solid var(--line-soft);background:var(--surface);
+  font-size:11px;color:var(--text-3);box-sizing:border-box}
+.kf-head.grp{border-top:1px solid var(--line)}
+.kf-head.live{color:var(--text-2)}
+.kf-head.kf-title{background:color-mix(in srgb,var(--blue) 10%,var(--surface));
+  color:var(--text-2);font-weight:600;padding-left:6px}
+.kf-head .kf-caret{opacity:.6;font-size:10px}
+.kf-head .kf-dot{width:6px;height:6px;border-radius:50%;flex:0 0 auto;opacity:.85}
+.kf-head:not(.live) .kf-dot{opacity:.28}
+.kf-head .kf-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.kf-head .kf-val{font-variant-numeric:tabular-nums;font-size:10.5px;color:var(--text-2);
+  min-width:44px;text-align:right}
+.kf-watch{width:18px;height:18px;flex:0 0 auto;border:0;border-radius:4px;background:transparent;
+  color:var(--text-3);font-size:11px;line-height:1;cursor:pointer;padding:0}
+.kf-watch:hover{background:var(--surface-3);color:var(--text)}
+.kf-watch.on{color:var(--blue-2);background:color-mix(in srgb,var(--blue) 18%,transparent)}
+.kf-nav{display:flex;gap:1px;flex:0 0 auto}
+.kf-nav button{width:16px;height:17px;border:0;border-radius:3px;background:transparent;
+  color:var(--text-3);font-size:8px;line-height:1;cursor:pointer;padding:0}
+.kf-nav button:hover{background:var(--surface-3);color:var(--text)}
+.kf-nav button.on{color:var(--blue-2)}
+.kf-mini{height:16px;padding:0 5px;border:0;border-radius:4px;background:var(--surface-3);
+  color:var(--text-3);font-size:9.5px;line-height:16px;cursor:pointer;flex:0 0 auto}
+.kf-mini:hover{color:var(--text)}
+.kf-mini.on{background:color-mix(in srgb,var(--blue) 26%,transparent);color:var(--blue-2)}
+.kf-graph-head{align-items:flex-start;padding-top:6px;
+  background:color-mix(in srgb,var(--surface) 90%,#000)}
+
+.kf-lane{position:relative;border-bottom:1px solid var(--line-soft);
+  background:color-mix(in srgb,var(--surface-2) 55%,var(--surface));box-sizing:border-box}
+.kf-lane-title{background:color-mix(in srgb,var(--blue) 7%,var(--surface-2))}
+.kf-bed{position:absolute;top:50%;height:1px;transform:translateY(-50%);
+  background:var(--line);pointer-events:none}
+.kf-span{position:absolute;top:4px;bottom:4px;border-radius:3px;
+  background:color-mix(in srgb,var(--blue) 18%,transparent);
+  border:1px solid color-mix(in srgb,var(--blue) 32%,transparent);pointer-events:none}
+.kf-run{position:absolute;top:50%;height:2px;transform:translateY(-50%);border-radius:1px;
+  background:color-mix(in srgb,var(--blue) 55%,transparent);pointer-events:none}
+/* The diamond. Centred on its own time, not starting at it — a key drawn from
+   its left edge reads half a diamond late, which at 400px/s is four frames. */
+.kf-key{position:absolute;top:50%;width:13px;height:13px;margin-left:-6.5px;
+  transform:translateY(-50%);display:flex;align-items:center;justify-content:center;
+  font-size:9px;color:var(--blue-2);cursor:ew-resize;border-radius:3px;
+  text-shadow:0 1px 2px rgba(0,0,0,.6);touch-action:none;user-select:none}
+.kf-key:hover{color:#fff;background:color-mix(in srgb,var(--blue) 30%,transparent)}
+.kf-key.sel{color:#fff !important;background:var(--blue);box-shadow:0 0 0 1px rgba(255,255,255,.5)}
+
+.kf-graph{position:relative;border-bottom:1px solid var(--line);
+  background:color-mix(in srgb,var(--surface) 92%,#000);box-sizing:border-box}
+.kf-graph-box{position:absolute;top:6px;bottom:6px;border-radius:5px;overflow:visible;
+  background:rgba(0,0,0,.22);border:1px solid var(--line-soft)}
+.kf-graph-cv{display:block;border-radius:4px}
+.kf-gk{position:absolute;width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;
+  border:1.5px solid rgba(0,0,0,.55);cursor:move;touch-action:none}
+.kf-gk.sel{box-shadow:0 0 0 2px #fff}
+.kf-graph-empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  padding:0 18px;text-align:center;font-size:11px;color:var(--text-3);line-height:1.5}
+
+/* The fold caret lives on the clip, so it has to beat the filmstrip to a click. */
+.clip .cfold{position:absolute;left:3px;top:3px;z-index:4;width:15px;height:15px;padding:0;
+  border:0;border-radius:4px;background:rgba(0,0,0,.42);color:rgba(255,255,255,.72);
+  font-size:9px;line-height:15px;cursor:pointer}
+.clip .cfold:hover{background:rgba(0,0,0,.7);color:#fff}
+.clip .cfold.open{background:var(--blue);color:#fff}
+.clip .cfold.anim::after{content:'';position:absolute;right:-2px;top:-2px;width:5px;height:5px;
+  border-radius:50%;background:var(--blue-2);box-shadow:0 0 0 1px rgba(0,0,0,.5)}
+.clip.folds .cname{left:22px}
 
 .clip{position:absolute;top:3px;bottom:3px;border-radius:6px;overflow:hidden;
   background:var(--grad);border:1px solid rgba(255,255,255,.14);cursor:grab;
@@ -693,6 +795,8 @@ input[type=checkbox]{accent-color:var(--blue)}
     --tl-h:min(38dvh,300px);--top-h:52px;
     --tabbar-h:calc(58px + env(safe-area-inset-bottom));
   }
+  /* On a phone the picture matters more, so the graph takes less. */
+  html.kf-graph-open{--tl-h:min(56dvh,420px)}
   html,body{height:100dvh;overflow:hidden;overscroll-behavior:none}
   body{grid-template-rows:var(--top-h) 1fr var(--tl-h);padding-bottom:var(--tabbar-h)}
 
@@ -1090,6 +1194,27 @@ input[type=checkbox]{accent-color:var(--blue)}
   .mixer-help{padding-top:0;align-self:stretch}
   .ms-meter{height:150px}
   .ms-fader{height:120px}
+}
+
+/*
+ * Keyframes on a touch screen.
+ *
+ * The row heights are set inline from LANE_H so the two columns stay in step;
+ * only what you actually press grows here. A 13px diamond is a perfectly good
+ * mouse target and an impossible thumb one, so on a coarse pointer each key
+ * gets a hit area twice the size without the diamond itself changing — the
+ * lane would turn into a row of blobs otherwise, and the point of the lane is
+ * seeing the spacing between keys.
+ */
+@media (pointer: coarse) {
+  .clip .cfold{width:26px;height:26px;font-size:12px;line-height:26px}
+  .clip.folds .cname{left:33px}
+  .kf-key{width:26px;height:22px;margin-left:-13px;font-size:12px}
+  .kf-key::before{content:'';position:absolute;inset:-6px}
+  .kf-gk{width:15px;height:15px;margin:-7.5px 0 0 -7.5px}
+  .kf-watch{width:26px;height:20px}
+  .kf-nav button{width:24px;height:20px;font-size:9px}
+  .kf-mini{height:20px;padding:0 8px;line-height:20px}
 }
 
 /*
