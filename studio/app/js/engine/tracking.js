@@ -55,6 +55,12 @@ class FrameReader {
     });
   }
 
+  /** Raw RGBA for the current frame. Only the face finder wants colour. */
+  rgba() {
+    this.ctx.drawImage(this.video, 0, 0, this.w, this.h);
+    return this.ctx.getImageData(0, 0, this.w, this.h).data;
+  }
+
   /** Luma plane for the current frame. Tracking on brightness alone is both
    *  faster and steadier than tracking on colour. */
   luma() {
@@ -476,12 +482,163 @@ function cellMotion(a, b, w, h, x0, y0, cw, ch) {
  * a locked-off shot of a blank wall genuinely has nothing to follow, and
  * saying so beats producing a track that drifts.
  */
+/* ------------------------------------------------------------------ */
+/* finding a face                                                      */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Skin, in a form that works on everybody.
+ *
+ * Written in YCbCr rather than RGB on purpose. In RGB, "skin" means a band of
+ * brightness, and a band of brightness is a rule about how pale somebody is —
+ * it finds one group of people and misses everyone else, which is both wrong
+ * and the classic way this gets built. Skin of every complexion sits in
+ * roughly the same small region of *chroma*; what changes between people is
+ * luma, and luma is exactly the axis this ignores. The same reason the
+ * vectorscope carries a skin-tone line at 123° rather than a brightness range.
+ *
+ * The luma bounds that remain are only there to throw out pure black and
+ * blown-out white, where chroma is meaningless because there is none.
+ */
+function isSkin(r, g, b) {
+  const y = 0.299 * r + 0.587 * g + 0.114 * b;
+  if (y < 26 || y > 247) return false;
+  const cb = 128 - 0.168736 * r - 0.331264 * g + 0.5 * b;
+  const cr = 128 + 0.5 * r - 0.418688 * g - 0.081312 * b;
+  return cb >= 77 && cb <= 133 && cr >= 133 && cr <= 180;
+}
+
+/**
+ * The largest head-shaped run of skin in a frame.
+ *
+ * Deliberately not a neural face detector. One would be more accurate and
+ * would also be twenty megabytes of weights fetched before anybody could press
+ * the button — on an app whose whole promise is that nothing is uploaded and
+ * nothing is waited for. This finds the biggest connected region of skin
+ * chroma and checks it is shaped like a head: taller than it is wide, roughly
+ * filled in, and not a whole wall of it.
+ *
+ * It will happily lock onto a large hand, and says so through `confidence`
+ * rather than pretending. For the thing people actually do with it — keeping a
+ * blur or a filter on somebody's face through a shot — a head-sized box that
+ * is occasionally a shoulder is worth far more than a download.
+ */
+export function findFaceIn(rgba, w, h) {
+  const mask = new Uint8Array(w * h);
+  let skinCount = 0;
+  for (let i = 0, p = 0; p < mask.length; i += 4, p++) {
+    if (isSkin(rgba[i], rgba[i + 1], rgba[i + 2])) { mask[p] = 1; skinCount++; }
+  }
+  // Nothing, or everything — a close-up of an arm filling the frame is not a
+  // face and neither is a beige wall.
+  if (skinCount < w * h * 0.004 || skinCount > w * h * 0.72) return null;
+
+  /*
+   * Flood fill, iteratively.
+   *
+   * A recursive fill is three lines shorter and blows the stack on a large
+   * region — which is precisely the region this is looking for.
+   */
+  const seen = new Uint8Array(w * h);
+  const stack = new Int32Array(w * h);
+  let best = null;
+
+  for (let start = 0; start < mask.length; start++) {
+    if (!mask[start] || seen[start]) continue;
+    let top = 0;
+    stack[top++] = start;
+    seen[start] = 1;
+    let n = 0, minX = w, maxX = 0, minY = h, maxY = 0;
+
+    while (top) {
+      const p = stack[--top];
+      const x = p % w, y = (p / w) | 0;
+      n++;
+      if (x < minX) minX = x; if (x > maxX) maxX = x;
+      if (y < minY) minY = y; if (y > maxY) maxY = y;
+      if (x > 0 && mask[p - 1] && !seen[p - 1]) { seen[p - 1] = 1; stack[top++] = p - 1; }
+      if (x < w - 1 && mask[p + 1] && !seen[p + 1]) { seen[p + 1] = 1; stack[top++] = p + 1; }
+      if (y > 0 && mask[p - w] && !seen[p - w]) { seen[p - w] = 1; stack[top++] = p - w; }
+      if (y < h - 1 && mask[p + w] && !seen[p + w]) { seen[p + w] = 1; stack[top++] = p + w; }
+    }
+
+    const bw = maxX - minX + 1, bh = maxY - minY + 1;
+    if (n < w * h * 0.004) continue;
+    const aspect = bh / bw;                     // heads are taller than wide
+    const fill = n / (bw * bh);                 // and roughly solid
+    if (aspect < 0.72 || aspect > 2.6) continue;
+    if (fill < 0.38) continue;
+
+    // Size first, then how head-like it is, then how central. A face at the
+    // edge of frame is still a face; a cheek-sized patch in the middle is not.
+    const size = n / (w * h);
+    const shape = 1 - Math.min(1, Math.abs(aspect - 1.28) / 1.0);
+    const cx = (minX + maxX) / 2 / w, cy = (minY + maxY) / 2 / h;
+    const centre = 1 - Math.min(1, Math.hypot(cx - 0.5, cy - 0.42) * 1.5);
+    const score = Math.sqrt(size) * (0.5 + 0.34 * shape + 0.16 * centre) * (0.6 + 0.4 * fill);
+    if (!best || score > best.score) {
+      best = { score, n, minX, maxX, minY, maxY, bw, bh, size, shape, fill, centre };
+    }
+  }
+  if (!best) return null;
+
+  /*
+   * Grow the box upward and outward before handing it over.
+   *
+   * Skin chroma finds the face and stops at the hairline, so a box drawn on
+   * the mask alone cuts the top of the head off — which looks exactly like a
+   * mistake when a blur is pinned to it, because it is one.
+   */
+  const padX = best.bw * 0.22, padTop = best.bh * 0.42, padBottom = best.bh * 0.1;
+  const x0 = Math.max(0, best.minX - padX), x1 = Math.min(w, best.maxX + padX);
+  const y0 = Math.max(0, best.minY - padTop), y1 = Math.min(h, best.maxY + padBottom);
+
+  return {
+    box: {
+      x: (x0 + x1) / 2 / w,
+      y: (y0 + y1) / 2 / h,
+      w: Math.min(0.9, (x1 - x0) / w),
+      h: Math.min(0.9, (y1 - y0) / h),
+    },
+    confidence: Math.min(1, best.shape * 0.5 + best.fill * 0.3 + Math.min(1, best.size * 14) * 0.2),
+    coverage: best.size,
+  };
+}
+
+/** The same thing, against a video element at a given moment. */
+export async function findFace(video, { at = 0 } = {}) {
+  if (!video?.videoWidth) throw new Error('That clip has not finished loading yet.');
+  const reader = new FrameReader(video);
+  await reader.seek(at);
+  return findFaceIn(reader.rgba(), reader.w, reader.h);
+}
+
 export async function findTarget(video, { at = 0, gap = 0.25 } = {}) {
   if (!video?.videoWidth) throw new Error('That clip has not finished loading yet.');
   const reader = new FrameReader(video);
   const w = reader.w, h = reader.h;
 
   await reader.seek(at);
+
+  /*
+   * A face wins, when there is one.
+   *
+   * When somebody presses "find it for me" on a shot with a person in it, they
+   * mean the person — every time. The corner detector below is very good at
+   * finding the highest-contrast thing in frame and that is routinely a
+   * doorframe. Checked first, and only trusted when it is confident: a weak
+   * face guess is worse than an honest edge.
+   */
+  const face = findFaceIn(reader.rgba(), w, h);
+  if (face && face.confidence > 0.42 && face.coverage < 0.45) {
+    return {
+      box: face.box,
+      why: 'the face in the shot',
+      confidence: face.confidence,
+      kind: 'face',
+    };
+  }
+
   const first = reader.luma();
   // A second frame a little later is what separates the subject from the set.
   // If the clip is too short for one, trackability alone still works.
@@ -550,7 +707,10 @@ export async function findTarget(video, { at = 0, gap = 0.25 } = {}) {
       ? 'the most trackable detail near the middle of the frame'
       : 'the strongest trackable detail in the frame';
 
-  return { box, why, confidence: Math.min(1, best.track * (0.5 + best.distinct * 0.5)) };
+  return {
+    box, why, kind: 'detail',
+    confidence: Math.min(1, best.track * (0.5 + best.distinct * 0.5)),
+  };
 }
 
 /**

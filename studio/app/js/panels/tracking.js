@@ -13,11 +13,15 @@ import { $, esc, toast, drag, modal, closeModal } from '../ui.js';
 import { S, actions, engine } from '../main.js';
 import { clipById, mediaById, sourceTime } from '../engine/project.js';
 import { elementFor } from '../engine/media.js';
-import { trackBox, smoothTrack, applyTrack, describeTrack, findTarget } from '../engine/tracking.js';
+import { trackBox, smoothTrack, applyTrack, describeTrack, findTarget, findFace } from '../engine/tracking.js';
 import { makeEffect } from '../engine/effects.js';
 import * as licence from '../licence.js';
 
 let abort = null;
+/* Whether the box currently on screen was put there by the face finder. It
+   only changes which options the "what should follow it" sheet offers, so a
+   stale value costs a wrong menu and never a wrong edit. */
+let faceBox = false;
 
 /* ------------------------------------------------------------------ */
 /* the box overlay                                                     */
@@ -41,6 +45,7 @@ export function openTracker(clip) {
     const rect = layer.getBoundingClientRect();
     const x0 = ((e.clientX - rect.left) / rect.width) * 100;
     const y0 = ((e.clientY - rect.top) / rect.height) * 100;
+    faceBox = false;
     drag(e, {
       move: (dx, dy) => {
         const w = Math.abs(dx / rect.width) * 100;
@@ -53,12 +58,59 @@ export function openTracker(clip) {
     });
   };
   layer.addEventListener('pointerdown', onDown);
+  // A box you drew yourself is not a face until something says it is.
+  faceBox = false;
 
   hint.innerHTML = `
     <button class="btn btn-sm btn-primary" id="tk-go">Track it</button>
+    <button class="btn btn-sm" id="tk-face" title="Put the box on the face in this shot">🙂 Follow the face</button>
     <button class="btn btn-sm" id="tk-auto" title="Find something worth following and put the box on it">✨ Find it for me</button>
     <button class="btn btn-sm btn-ghost" id="tk-cancel">Cancel</button>
     <span class="tiny muted" style="margin-left:8px">Drag anywhere to redraw the box</span>`;
+
+  const putBox = (b) => Object.assign(box.style, {
+    left: `${Math.max(0, (b.x - b.w / 2) * 100)}%`,
+    top: `${Math.max(0, (b.y - b.h / 2) * 100)}%`,
+    width: `${b.w * 100}%`,
+    height: `${b.h * 100}%`,
+  });
+
+  /*
+   * The face button, separate from "find it for me".
+   *
+   * They do overlap — the general finder checks for a face first — but when
+   * somebody presses a button that says face and gets a doorframe, the right
+   * answer is "there is no face in this shot", not a silent fallback onto the
+   * nearest hard edge. Two buttons, two honest answers.
+   */
+  $('#tk-face')?.addEventListener('click', async () => {
+    const btn = $('#tk-face');
+    btn.disabled = true;
+    btn.textContent = 'Looking…';
+    try {
+      const node = elementFor(mediaById(S.project, clip.mediaId), clip.id);
+      const at = sourceTime(clip, S.time >= clip.start && S.time < clip.start + clip.dur
+        ? S.time : clip.start);
+      const face = await findFace(node, { at });
+      if (!face || face.confidence < 0.3) {
+        toast('No face found at this moment. Move the playhead to a frame where '
+          + 'somebody is facing the camera and try again, or draw the box yourself.',
+          'bad', 6000);
+        return;
+      }
+      faceBox = true;
+      putBox(face.box);
+      toast(face.confidence > 0.6
+        ? 'Found the face. Press Track it and pick what should follow it.'
+        : 'Found something face-shaped — check the box before tracking.',
+        face.confidence > 0.6 ? 'ok' : '', 5200);
+    } catch (err) {
+      toast(err.message, 'bad', 5000);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '🙂 Follow the face';
+    }
+  });
 
   /*
    * Put the box on something automatically.
@@ -82,12 +134,8 @@ export function openTracker(clip) {
           + 'around something with a hard edge instead.', 'bad', 6000);
         return;
       }
-      Object.assign(box.style, {
-        left: `${Math.max(0, (found.box.x - found.box.w / 2) * 100)}%`,
-        top: `${Math.max(0, (found.box.y - found.box.h / 2) * 100)}%`,
-        width: `${found.box.w * 100}%`,
-        height: `${found.box.h * 100}%`,
-      });
+      faceBox = found.kind === 'face';
+      putBox(found.box);
       // Say what it picked and why. A box that appears with no explanation
       // gives you nothing to judge it against.
       toast(`Locked onto ${found.why}. Press Track it, or drag to move the box.`, 'ok', 5000);
@@ -195,10 +243,26 @@ async function run(clip, box, layer, hint, close) {
 /* ------------------------------------------------------------------ */
 
 function offerToPin(record, verdict) {
+  /*
+   * A face track gets the flattering options as well as the hiding ones.
+   *
+   * Blur and pixelate are what you do to a face you want gone. Everything in
+   * the second row is what you do to a face you want kept — and that is what
+   * most people are tracking a face for. Offered only on a face track, because
+   * "soften the skin" on a number plate is nonsense.
+   */
   const body = modal(`
     <h3>Tracked</h3>
     <p>${esc(verdict.text)}</p>
     <p class="small">What should follow it?</p>
+    ${faceBox ? `
+    <div class="btn-row" style="margin-top:6px">
+      <button class="btn" data-pin="portrait">📸 Blur the background</button>
+      <button class="btn" data-pin="spotlight">🔦 Darken everything else</button>
+      <button class="btn" data-pin="soften">✨ Soften the skin</button>
+      <button class="btn" data-pin="glow">💡 Light the face</button>
+    </div>
+    <p class="tiny muted" style="margin:10px 0 4px">Or hide it instead:</p>` : ''}
     <div class="btn-row" style="margin-top:6px">
       <button class="btn" data-pin="blur">Blur this spot</button>
       <button class="btn" data-pin="pixel">Pixelate this spot</button>
@@ -236,6 +300,32 @@ export function pin(record, what) {
   }
 
   if (!source) { toast('The clip this was tracked on has gone', 'bad'); return; }
+
+  const FACE_MODES = {
+    portrait: { label: 'Background blurred', size: 34, strength: 70, feather: 46 },
+    spotlight: { label: 'Spotlight on the face', size: 40, strength: 66, feather: 62 },
+    soften: { label: 'Skin softened', size: 26, strength: 48, feather: 54 },
+    glow: { label: 'Face lit', size: 30, strength: 55, feather: 66 },
+  };
+  if (FACE_MODES[what]) {
+    const preset = FACE_MODES[what];
+    const fx = makeEffect('focusRegion');
+    fx.params.mode = what;
+    fx.params.size = preset.size;
+    fx.params.strength = preset.strength;
+    fx.params.feather = preset.feather;
+    source.effects ||= [];
+    source.effects = source.effects.filter((f) => f.id !== 'focusRegion');
+    source.effects.push(fx);
+    applyTrack(source, record, {
+      mode: 'effect', effectId: 'focusRegion', clipStart: sourceOffsetFor(source, record),
+    });
+    actions.commit(preset.label);
+    toast(`${preset.label} — it follows the face through the shot. `
+      + 'Size and strength are in the Effects panel.', 'ok', 4600);
+    return;
+  }
+
   const fx = makeEffect('blurRegion');
   fx.params.shape = what === 'pixel' ? 'pixel' : 'ellipse';
   fx.params.size = 22;

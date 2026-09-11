@@ -489,6 +489,99 @@ export const EFFECTS = {
 
   /* ---------------- utility ---------------- */
 
+  /*
+   * The other half of "blur a spot": everything a spot should do besides hide.
+   *
+   * blurRegion exists to conceal — a face, a plate, an address. This one
+   * exists to flatter, and the difference is which side of the oval gets the
+   * treatment. Pinned to a face track it is a portrait mode, a spotlight or a
+   * skin softener that follows somebody through a shot, which is the thing
+   * people actually want a face tracker for.
+   *
+   * Same x/y/size parameters as blurRegion, on purpose: the tracker writes
+   * keyframes onto `effects.<id>.x` and `.y` and does not care which effect is
+   * on the other end.
+   */
+  focusRegion: {
+    name: 'Focus on a spot', group: 'Utility', tier: 'creator', icon: '◎',
+    params: { x: { label: 'X', min: 0, max: 100, def: 50 },
+              y: { label: 'Y', min: 0, max: 100, def: 50 },
+              size: { label: 'Size', min: 2, max: 100, def: 26 },
+              feather: { label: 'Softness', min: 0, max: 100, def: 40 },
+              strength: { label: 'Strength', min: 0, max: 100, def: 60 },
+              mode: { label: 'What it does', type: 'select', def: 'portrait',
+                      options: [['portrait', 'Blur the background'],
+                                ['spotlight', 'Darken everything else'],
+                                ['soften', 'Soften the skin'],
+                                ['glow', 'Light the face']] } },
+    draw(ctx, w, h, p) {
+      const src = snapshot(ctx, w, h, 0);
+      const cx = ((p.x ?? 50) / 100) * w;
+      const cy = ((p.y ?? 50) / 100) * h;
+      const r = ((p.size ?? 26) / 100) * w * 0.5;
+      if (r < 1) return;
+      const amount = (p.strength ?? 60) / 100;
+      const feather = (p.feather ?? 40) / 100;
+      const mode = p.mode || 'portrait';
+
+      /*
+       * The soft edge is a radial gradient used as a mask, not a blurred
+       * ellipse. A hard oval on somebody's face reads as a mistake from across
+       * a room; the whole effect lives or dies on this one gradient.
+       */
+      const soft = (inner, on = ctx) => {
+        // Made on the context that will paint it. A gradient does travel
+        // between contexts in every engine I have tried, but nothing in the
+        // spec says it must, and this costs nothing.
+        const g = on.createRadialGradient(cx, cy, Math.max(0.5, r * (1 - feather)), cx, cy, r);
+        g.addColorStop(0, inner ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0)');
+        g.addColorStop(1, inner ? 'rgba(255,255,255,0)' : 'rgba(255,255,255,1)');
+        return g;
+      };
+
+      if (mode === 'spotlight') {
+        // Black, everywhere the mask says "outside". The gradient carries the
+        // falloff, so there is nothing to composite and nothing to read back.
+        const dark = scratch(w, h, 1);
+        dark.ctx.clearRect(0, 0, w, h);
+        dark.ctx.fillStyle = '#000';
+        dark.ctx.fillRect(0, 0, w, h);
+        dark.ctx.globalCompositeOperation = 'destination-in';
+        dark.ctx.fillStyle = soft(false, dark.ctx);
+        dark.ctx.fillRect(0, 0, w, h);
+        dark.ctx.globalCompositeOperation = 'source-over';
+        ctx.save();
+        ctx.globalAlpha = amount * 0.82;
+        ctx.drawImage(dark.canvas, 0, 0);
+        ctx.restore();
+        return;
+      }
+
+      // The treated copy of the whole frame, then masked back over the top.
+      const s = scratch(w, h, 1);
+      s.ctx.clearRect(0, 0, w, h);
+      if (mode === 'portrait') {
+        s.ctx.filter = `blur(${(2 + amount * 26).toFixed(1)}px)`;
+      } else if (mode === 'soften') {
+        s.ctx.filter = `blur(${(0.5 + amount * 4).toFixed(2)}px) saturate(${1 + amount * 0.12})`;
+      } else {
+        s.ctx.filter = `brightness(${1 + amount * 0.34}) saturate(${1 + amount * 0.18}) blur(${(amount * 1.6).toFixed(2)}px)`;
+      }
+      s.ctx.drawImage(src, 0, 0);
+      s.ctx.filter = 'none';
+
+      s.ctx.globalCompositeOperation = 'destination-in';
+      s.ctx.fillStyle = soft(mode !== 'portrait', s.ctx);
+      s.ctx.fillRect(0, 0, w, h);
+      s.ctx.globalCompositeOperation = 'source-over';
+
+      ctx.save();
+      if (mode === 'glow') ctx.globalAlpha = 0.55 + amount * 0.45;
+      ctx.drawImage(s.canvas, 0, 0);
+      ctx.restore();
+    },
+  },
+
   blurRegion: {
     name: 'Blur a spot', group: 'Utility', tier: 'free', icon: '◍',
     params: { x: { label: 'X', min: 0, max: 100, def: 50 },

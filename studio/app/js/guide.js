@@ -102,6 +102,18 @@ export const GUIDE = [
     ],
   },
   {
+    id: 'faces',
+    group: 'Effects',
+    title: 'Following a face through a shot',
+    body: [
+      ['One press', 'Select a video clip, Inspector → Motion tracking → **Track something in this clip**, then **🙂 Follow the face** in the viewer. It puts the box on the face; press **Track it** and it follows through the shot.'],
+      ['What you can pin to it', 'Blur the background, darken everything but the face, soften the skin, or light the face — and the hiding options, blur or pixelate, for when you want somebody unrecognisable.'],
+      ['It is only keyframes', 'What comes back is ordinary keyframes on the clip. Unfold the layer and you can drag any of them, or change the effect\u2019s size and strength in the Effects panel, exactly like anything you keyframed by hand.'],
+      ['It runs on your device', 'No model is downloaded and nothing is uploaded — the face is found from skin chroma in the frame itself. That means it is not a neural detector: it will occasionally lock onto a large hand, and it works on every complexion equally because it measures colour rather than brightness.'],
+      ['When it says it cannot find one', 'Move the playhead to a frame where somebody is facing the camera and press it again, or drag the box yourself — a hand-drawn box tracks just as well. **✨ Find it for me** is the fallback for shots with no person in them; it picks the most trackable thing instead.'],
+    ],
+  },
+  {
     id: 'ai',
     group: 'The AI',
     title: 'Telling it what to do',
