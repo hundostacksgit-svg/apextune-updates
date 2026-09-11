@@ -14,6 +14,8 @@ import {
 } from './engine/project.js';
 import * as kf from './keyframes-ui.js';
 import * as licence from './licence.js';
+import { attach as attachMenu } from './context-menu.js';
+import { clipMenu, trackSpaceMenu, trackHeadMenu, rulerMenu } from './menus.js';
 
 const SNAP_PX = 8;          // how close a drag has to get before it sticks
 const MIN_CLIP = 0.08;
@@ -31,6 +33,7 @@ export class TimelineUI {
     this.snapLine = null;
     this._wireStatic();
     this._wireKeyframes();
+    this._wireMenus();
   }
 
   get project() { return this.state.project; }
@@ -269,6 +272,7 @@ export class TimelineUI {
   _wireStatic() {
     // Scrubbing on the ruler.
     this.ruler.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0 && e.pointerType === 'mouse') return;   // right-click is the menu
       const marker = e.target.closest('[data-marker]');
       if (marker) { this.actions.seek(Number(marker.dataset.marker)); return; }
       const scrubTo = (clientX) => {
@@ -313,6 +317,7 @@ export class TimelineUI {
 
     // Clicking empty track space clears the selection and parks the playhead.
     this.tracks.addEventListener('click', (e) => {
+      if (e.button !== 0) return;                    // the menu handles the rest
       if (e.target.closest('.clip')) return;
       // A click inside a property lane is aimed at a keyframe, not the playhead.
       if (e.target.closest('.kf-lane, .kf-graph')) return;
@@ -375,6 +380,47 @@ export class TimelineUI {
     };
   }
 
+  /*
+   * Right-click, and long-press, everywhere on the timeline.
+   *
+   * Three surfaces, three menus: a clip, the empty space on a layer, and the
+   * layer header. Built when the menu opens so every item knows what is
+   * selected, where the playhead is and what is on the clipboard.
+   */
+  _wireMenus() {
+    attachMenu(this.tracks, (e) => {
+      const node = e.target.closest('.clip');
+      const rect = this.inner.getBoundingClientRect();
+      const at = this.toSec(e.clientX - rect.left);
+
+      if (node) {
+        const clip = clipById(this.project, node.dataset.clip);
+        if (!clip) return null;
+        // Right-clicking outside the selection selects what you clicked, the
+        // way it does in every file manager. Right-clicking inside it leaves
+        // the selection alone, so a menu on six clips still acts on six.
+        if (!this.state.sel.has(clip.id)) this.actions.select([clip.id]);
+        return clipMenu(clip.id, at);
+      }
+
+      const row = e.target.closest('.tl-track');
+      if (!row) return null;
+      return trackSpaceMenu(row.dataset.track, Math.max(0, at));
+    });
+
+    attachMenu(this.heads, (e) => {
+      const head = e.target.closest('[data-track]');
+      return head ? trackHeadMenu(head.dataset.track) : null;
+    });
+
+    attachMenu(this.ruler, (e) => {
+      const rect = this.ruler.getBoundingClientRect();
+      const at = Math.max(0, this.toSec(e.clientX - rect.left));
+      const marker = e.target.closest('[data-marker]');
+      return rulerMenu(at, marker ? Number(marker.dataset.marker) : null);
+    });
+  }
+
   _wireKeyframes() {
     kf.wire(this.tracks, this._kfCtx());
 
@@ -398,6 +444,17 @@ export class TimelineUI {
   }
 
   _onClipPointerDown(e) {
+    /*
+     * The right button is for the menu, not for moving things.
+     *
+     * A contextmenu event is preceded by a pointerdown, so without this a
+     * right-click ran the whole selection-and-drag path first: right-clicking
+     * one of six selected clips collapsed the selection to that one, and the
+     * menu that opened a moment later offered to delete a single clip instead
+     * of the six that were selected when the user aimed at them.
+     */
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+
     // The fold caret is a button that happens to sit on a draggable thing.
     // Without this, opening a layer nudges the clip a few frames sideways.
     if (e.target.closest('[data-fold]')) return;

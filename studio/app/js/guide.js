@@ -52,6 +52,21 @@ export const GUIDE = [
     ],
   },
   {
+    id: 'rightclick',
+    group: 'The timeline',
+    title: 'Right-click menus, layers and the full-screen timeline',
+    body: [
+      ['Right-click anything', 'A clip, the empty space on a layer, a layer header, the ruler, a file in the media pool, or the picture itself — each has its own menu, and each starts with **Undo**, naming the thing it will take back.'],
+      ['On a phone', 'Hold your finger on it for half a second. Same menus, bigger rows. A press that turns into a drag never opens one, so moving a clip still just moves it.'],
+      ['On a clip', 'Split here (where you clicked, not where the playhead is), split at the playhead, cut, copy, paste, duplicate, delete, take the sound off, mute, hold this frame, speed, colour, effects, audio, tracking, layer properties, the graph editor, nudge a frame either way, rename, and select everything on that layer.'],
+      ['Cut, copy and paste', '**Ctrl+X**, **Ctrl+C**, **Ctrl+V** work on clips now, and paste drops them at the playhead — or, from a right-click, exactly where you clicked. A pasted clip is its own clip: grading the copy does not touch the original.'],
+      ['Taking the sound off', '**Take the sound off this clip** puts the audio on its own layer, lined up with the picture, and mutes the picture so nothing is heard twice. That is how you hold a line of dialogue over the shot that comes after it.'],
+      ['More layers', 'The **＋ Video layer** and **＋ Audio layer** buttons on the timeline bar, or right-click a layer header for *Add a layer above this one*. Dragging a clip above the top video track still makes one on its own — the buttons just say the feature is there.'],
+      ['Layer headers', 'Right-click one to mute, hide, lock, rename, make it taller or shorter, select everything on it, close its gaps, or delete it. The last video layer cannot be deleted, and the option says so by being greyed rather than by vanishing.'],
+      ['The timeline full screen', 'The **⤢** button at the right of the timeline bar, or **Shift+F**. The timeline fills the window and the picture steps aside; the top bar stays, so undo, export and the menus are still there. **Escape** or Shift+F brings it back.'],
+    ],
+  },
+  {
     id: 'keyframes',
     group: 'The timeline',
     title: 'Animating anything: keyframes and the graph editor',

@@ -221,12 +221,27 @@
         <input type="checkbox" id="tg-ripple" checked> Ripple
       </label>
       <button class="tl-btn" id="tl-marker" title="Add marker (M)" data-min="intermediate">⚑</button>
+      <span class="tl-div"></span>
+      <!--
+        Layers, as buttons and not only as a gesture.
+
+        Dragging a clip above the top track has always made an overlay layer,
+        and nobody finds a gesture they have not been told about. These say the
+        feature exists.
+      -->
+      <button class="tl-btn" id="tl-add-video" title="Add a video layer for overlays">＋ Video layer</button>
+      <button class="tl-btn" id="tl-add-audio" title="Add an audio layer">＋ Audio layer</button>
     </div>
     <div class="tl-zoom">
       <button class="tl-btn" id="zoom-fit" title="Fit the whole timeline (Shift+Z)">Fit</button>
       <button class="tl-btn" id="zoom-out" title="Zoom out (−)">−</button>
       <input type="range" id="zoom" min="8" max="400" value="60" aria-label="Timeline zoom">
       <button class="tl-btn" id="zoom-in" title="Zoom in (+)">+</button>
+      <span class="tl-div"></span>
+      <!-- The timeline over the whole window, for when the edit is the thing
+           you are looking at rather than the picture. -->
+      <button class="tl-btn" id="tl-full" title="Timeline full screen (Shift+F)"
+        aria-pressed="false">⤢</button>
     </div>
   </div>
   <div class="tl-body" id="tl-body">

@@ -351,6 +351,76 @@ html[data-level="expert"] .card-hint{display:none}
 .tl-track.audio{background:color-mix(in srgb,var(--surface-2) 70%,var(--surface))}
 .tl-track.drop{background:color-mix(in srgb,var(--blue) 12%,var(--surface-2))}
 
+/* ---------- right-click menus ---------- */
+/*
+ * Above the menu bar's dropdown, because it is the more specific gesture: if
+ * both are somehow open, the one aimed at a particular clip is the one being
+ * read. Below the splash, which is the only thing that should ever cover it.
+ */
+.ctx{
+  position:fixed;z-index:600;min-width:232px;max-width:min(320px,calc(100vw - 12px));
+  padding:5px;border-radius:var(--r-m);overflow-y:auto;overscroll-behavior:contain;
+  background:var(--surface-2);border:1px solid var(--line);
+  box-shadow:0 20px 50px rgba(0,0,0,.55);
+  opacity:0;transform:scale(.97);transform-origin:top left;
+  transition:opacity .1s ease,transform .1s ease;
+}
+.ctx.on{opacity:1;transform:scale(1)}
+.ctx:focus{outline:none}
+.ctx-title{
+  padding:7px 10px 5px;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-3);font-weight:700;
+}
+.ctx-item{
+  display:flex;align-items:center;gap:16px;width:100%;
+  padding:7px 10px;border:0;background:transparent;color:var(--text);
+  font:inherit;font-size:12.5px;text-align:left;border-radius:5px;cursor:pointer;
+}
+.ctx-item:hover:not([disabled]),.ctx-item:focus-visible:not([disabled]){
+  background:color-mix(in srgb,var(--blue) 22%,transparent);outline:none;
+}
+/* Unavailable, not absent — the same rule the menu bar follows, for the same
+   reason: a menu whose items come and go cannot be learned. */
+.ctx-item[disabled]{opacity:.36;cursor:default}
+.ctx-bad{color:var(--bad)}
+.ctx-bad:hover:not([disabled]){background:color-mix(in srgb,var(--bad) 20%,transparent)}
+.ctx-on .ctx-lbl::before{content:'✓ ';color:var(--blue-2)}
+.ctx-lbl{flex:1;min-width:0}
+.ctx-key{color:var(--text-3);font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ctx-sep{height:1px;margin:4px 8px;background:var(--line)}
+@media (pointer: coarse){
+  .ctx{min-width:248px}
+  .ctx-item{padding:11px 12px;min-height:42px;font-size:13.5px}
+}
+
+/* ---------- the timeline over the whole window ---------- */
+/*
+ * Row heights rather than a fixed overlay: the app is a three-row grid, so
+ * giving the timeline every pixel is one line, and everything inside it — the
+ * heads column, the lane scroller, the playhead — keeps working exactly as it
+ * did because none of them knew how tall they were anyway.
+ */
+html.tl-full body{grid-template-rows:var(--top-h) 0px 1fr}
+/*
+ * Collapsed, not removed.
+ *
+ * display:none takes the workspace out of the grid entirely, and then the
+ * three declared rows land on two items — the timeline inherits the workspace's
+ * 0px row and the 1fr goes to nothing at all, so "full screen" made the
+ * timeline vanish. Zero height with hidden visibility keeps it a grid item, so
+ * the rows still line up with the things that sit in them.
+ */
+html.tl-full .workspace{height:0;min-height:0;overflow:hidden;visibility:hidden}
+html.tl-full .timeline{border-top:0}
+html.tl-full #tl-full{background:var(--blue);color:#fff}
+/* The toast and update bars sit above the timeline's height; with the timeline
+   filling the window they would be pinned off the top of it. */
+html.tl-full .toast-host{bottom:18px}
+html.tl-full .update-bar{bottom:16px}
+/* With the timeline filling the window there is nowhere above it to park, so
+   the undo bar comes back to the bottom where it started. */
+html.tl-full .undo-bar{bottom:calc(20px + env(safe-area-inset-bottom))}
+
 /* ---------- keyframes: property lanes and the graph editor ---------- */
 /*
  * Two columns, one row height. The heads and the lanes are separate scrollers
@@ -847,6 +917,9 @@ input[type=checkbox]{accent-color:var(--blue)}
   .panel > *:first-child,.inspector > *:first-child{padding-top:2px}
 
   /* one sheet at a time — two stacked is unreadable on a phone */
+  /* The shared backdrop rides up with the sheet it is behind, and only then —
+     the panel sheets still want it below them at 43. */
+  .sheet-scrim.for-more{z-index:555;inset:0}
   .sheet-scrim{position:fixed;inset:0 0 var(--tabbar-h);z-index:43;background:rgba(0,0,0,.45);
     opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s}
   .sheet-scrim.on{opacity:1;visibility:visible}
@@ -1313,7 +1386,19 @@ input[type=checkbox]{accent-color:var(--blue)}
      mistake. It is the worst possible place for a small target. */
   .ub-undo{ min-height:42px; padding:0 18px; font-size:14px }
   .ub-x{ min-width:42px; min-height:42px }
-  .undo-bar{ padding:8px 8px 8px 16px }
+  /*
+   * Above the timeline, not inside it.
+   *
+   * 96px from the bottom is clear of everything on a desktop and lands right
+   * on the first track on a phone, where it spent six seconds swallowing taps
+   * aimed at the clip you had just edited — which is exactly when somebody is
+   * most likely to reach for that clip again. Parked over the viewer instead,
+   * where there is nothing to hit.
+   */
+  .undo-bar{
+    padding:8px 8px 8px 16px;
+    bottom:calc(var(--tl-h) + var(--tabbar-h) + 12px + env(safe-area-inset-bottom));
+  }
 
   /* The timeline buttons get their minimum in the block above, where the
      .tl-tools button rule lives — a bare .tl-btn here could never out-specify
@@ -1328,7 +1413,13 @@ input[type=checkbox]{accent-color:var(--blue)}
 
   /* ---- the overflow sheet ---- */
   .more-sheet{
-    position:fixed; left:0; right:0; bottom:0; z-index:130;
+    /*
+     * Above the tutorial card and the toasts, for the same reason the menu
+     * bar's dropdown is: this sheet *is* the menu bar on a phone, and at 130
+     * the coach tour (500) covered it — so the one route a phone has to File,
+     * Clip and View could be sitting right there and refuse every tap.
+     */
+    position:fixed; left:0; right:0; bottom:0; z-index:560;
     background:var(--surface-2); border-top:1px solid var(--line);
     border-radius:var(--r-l) var(--r-l) 0 0;
     padding:10px 12px calc(14px + env(safe-area-inset-bottom));
@@ -1347,6 +1438,22 @@ input[type=checkbox]{accent-color:var(--blue)}
   .more-row:active{ background:var(--surface-3) }
   .more-row .ico{ font-size:18px; width:24px; text-align:center }
   .more-row em{ display:block; font-style:normal; font-size:11.5px; color:var(--text-3) }
+  .more-row[disabled]{ opacity:.38 }
+  /* A menu's own items: no icon column, so the labels line up under the title. */
+  .more-row.slim{ padding:12px 16px }
+  .more-row.slim em{ display:inline; margin-left:8px; color:var(--text-3); font-size:11px }
+  .more-back{
+    display:flex; align-items:center; gap:8px; width:100%; min-height:44px;
+    padding:12px 14px; border:0; background:transparent; color:var(--text-2);
+    font:inherit; font-size:14px; text-align:left; cursor:pointer;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .more-back b{ color:var(--text) }
+  .more-sep{ height:1px; margin:6px 14px; background:var(--line) }
+  .more-h{
+    padding:8px 16px 4px; font-size:10.5px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--text-3); font-weight:700;
+  }
 }
 
 

@@ -426,6 +426,7 @@ function drawGraph(ctx, clip, specs, w, h, palette) {
  */
 export function wire(root, ctx) {
   root.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
     const dot = e.target.closest('[data-kf-key]');
     if (dot) { dragKey(e, dot, ctx); return; }
     const gk = e.target.closest('[data-kf-gk]');
@@ -443,6 +444,7 @@ export function wire(root, ctx) {
   // property already has at that moment — so the first click never changes
   // the picture, it only marks it.
   root.addEventListener('click', (e) => {
+    if (e.button !== 0) return;
     if (e.target.closest('[data-kf-key]')) return;
     const lane = e.target.closest('[data-kf-lane]');
     if (!lane) return;

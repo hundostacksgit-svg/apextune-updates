@@ -17,6 +17,7 @@ import { History } from './engine/history.js';
 import {
   newProject, deserialize, serialize, duration, clipById, mediaById,
   splitClip, removeClips, duplicateClips, addClip, addTrack, RATIOS, nextFreeStart,
+  trackById, removeTrack, closeGaps, clipsOn, moveClip,
 } from './engine/project.js';
 import { Renderer } from './engine/render.js';
 import { Transport } from './engine/playback.js';
@@ -28,6 +29,8 @@ import { initMenubar } from './menubar.js';
 import { initHistoryUi, showDid, openHistory, paintUndoButtons } from './history-ui.js';
 import { initTips, applyTipsForLevel, setTips, tipsOn } from './tips.js';
 import { initMoreSheet } from './more-sheet.js';
+import { initContextMenus, attach as attachMenu } from './context-menu.js';
+import { mediaMenu, viewerMenu } from './menus.js';
 import * as media from './engine/media.js';
 import { TimelineUI } from './timeline-ui.js';
 import * as kf from './keyframes-ui.js';
@@ -75,6 +78,10 @@ export const engine = {
 /* ------------------------------------------------------------------ */
 /* actions — the only way the project changes                          */
 /* ------------------------------------------------------------------ */
+
+/* Clips cut or copied, as plain data. Lives for the session only — a clipboard
+   that survived a reload would paste clips whose media is no longer loaded. */
+let clipboard = [];
 
 export const actions = {
 
@@ -252,6 +259,210 @@ export const actions = {
   addMarker() {
     S.project.markers.push({ t: S.time, label: `Marker ${S.project.markers.length + 1}`, color: '#ffc247' });
     actions.commit('Add marker');
+  },
+
+  /* ---------------- clipboard ---------------- */
+
+  /*
+   * Clips are copied as plain data, not as references.
+   *
+   * A reference would paste a clip that shares its effects object with the
+   * original, so grading the copy would silently grade the thing it came from
+   * — the kind of bug that looks like the app forgetting your work. The media
+   * itself is not copied, only the id: pasting is cheap and nothing is
+   * duplicated on disk.
+   */
+  copySelected() {
+    if (!S.sel.size) return 0;
+    const picked = [...S.sel].map((id) => clipById(S.project, id)).filter(Boolean);
+    if (!picked.length) return 0;
+    const base = Math.min(...picked.map((c) => c.start));
+    clipboard = picked.map((c) => ({
+      ...structuredClone({ ...c, id: undefined }),
+      offset: c.start - base,
+    }));
+    toast(`${clipboard.length} clip${clipboard.length === 1 ? '' : 's'} copied`);
+    return clipboard.length;
+  },
+
+  cutSelected() {
+    const n = actions.copySelected();
+    if (!n) return 0;
+    removeClips(S.project, [...S.sel], { ripple: S.ripple });
+    S.sel.clear();
+    actions.commit(`Cut ${n} clip${n === 1 ? '' : 's'}`);
+    return n;
+  },
+
+  hasClipboard() { return clipboard.length > 0; },
+
+  /**
+   * Paste at a time, on a track — defaulting to the playhead and the track the
+   * clips came from. Lands somewhere free rather than on top of what is there.
+   */
+  pasteAt(at = S.time, trackId = null) {
+    if (!clipboard.length) return 0;
+    const made = [];
+    for (const rec of clipboard) {
+      const { offset, ...rest } = rec;
+      const target = trackId || rec.trackId;
+      const track = trackById(S.project, target) || S.project.tracks[0];
+      const want = Math.max(0, at + offset);
+      const clip = addClip(S.project, {
+        mediaId: rest.mediaId, trackId: track.id,
+        start: nextFreeStart(S.project, track.id, want, rest.dur),
+        dur: rest.dur, in: rest.in, kind: rest.kind,
+        text: rest.text, sticker: rest.sticker,
+      });
+      // Everything the clip carried, over the fresh identity.
+      Object.assign(clip, structuredClone({
+        ...rest, id: clip.id, trackId: clip.trackId, start: clip.start,
+      }));
+      made.push(clip);
+    }
+    S.sel = new Set(made.map((c) => c.id));
+    actions.commit(`Paste ${made.length} clip${made.length === 1 ? '' : 's'}`);
+    return made.length;
+  },
+
+  /* ---------------- tracks ---------------- */
+
+  addLayer(kind = 'video', { above = null } = {}) {
+    const track = addTrack(S.project, kind);
+    if (above) {
+      const at = S.project.tracks.findIndex((t) => t.id === above);
+      const now = S.project.tracks.indexOf(track);
+      if (at >= 0 && now >= 0) {
+        S.project.tracks.splice(now, 1);
+        S.project.tracks.splice(at, 0, track);
+      }
+    }
+    actions.commit(`Add ${kind} layer`);
+    return track;
+  },
+
+  removeLayer(trackId) {
+    const track = trackById(S.project, trackId);
+    if (!track) return;
+    const kindLeft = S.project.tracks.filter((t) => t.kind === track.kind).length;
+    if (kindLeft <= 1) { toast(`That is the last ${track.kind} layer`, 'bad'); return; }
+    removeTrack(S.project, trackId);
+    actions.commit(`Delete ${track.name}`);
+  },
+
+  renameTrack(trackId, name) {
+    const track = trackById(S.project, trackId);
+    if (!track || !name?.trim()) return;
+    track.name = name.trim().slice(0, 40);
+    actions.commit('Rename layer');
+  },
+
+  toggleTrack(trackId, what) {
+    const track = trackById(S.project, trackId);
+    if (!track) return;
+    track[what] = !track[what];
+    actions.commit(`${track[what] ? '' : 'Un'}${what} ${track.name}`);
+  },
+
+  selectTrack(trackId) {
+    actions.select(clipsOn(S.project, trackId).map((c) => c.id));
+  },
+
+  closeGapsOn(trackId) {
+    closeGaps(S.project, trackId);
+    actions.commit('Close gaps');
+  },
+
+  /* ---------------- clip operations ---------------- */
+
+  /**
+   * Split every selected clip wherever the playhead crosses it — or, given a
+   * time, there instead. Right-clicking a clip splits where you clicked, which
+   * is what every editor does and what the hand expects.
+   */
+  splitAt(t = S.time, ids = null) {
+    const targets = ids || [...S.sel];
+    let count = 0;
+    for (const id of targets) if (splitClip(S.project, id, t)) count++;
+    if (count) actions.commit(`Split ${count} clip${count === 1 ? '' : 's'}`);
+    else toast('The playhead is not over a selected clip', 'bad');
+    return count;
+  },
+
+  /**
+   * Take the sound off a clip and put it on its own audio layer.
+   *
+   * The picture keeps playing silently and the sound becomes a clip you can
+   * slide, fade or replace — which is the whole reason anybody does this: to
+   * hold a line of dialogue over the shot that comes after it.
+   */
+  detachAudio(ids = null) {
+    const targets = (ids || [...S.sel]).map((id) => clipById(S.project, id)).filter(Boolean);
+    const usable = targets.filter((c) => {
+      const m = mediaById(S.project, c.mediaId);
+      return m && m.kind === 'video' && trackById(S.project, c.trackId)?.kind === 'video';
+    });
+    if (!usable.length) { toast('Select a video clip with sound in it', 'bad'); return 0; }
+
+    let audioTrack = S.project.tracks.find((t) => t.kind === 'audio'
+      && !clipsOn(S.project, t.id).some((c) => usable.some((u) =>
+        u.start < c.start + c.dur - 0.001 && u.start + u.dur > c.start + 0.001)));
+    if (!audioTrack) audioTrack = addTrack(S.project, 'audio');
+
+    for (const c of usable) {
+      const made = addClip(S.project, {
+        mediaId: c.mediaId, trackId: audioTrack.id,
+        start: c.start, dur: c.dur, in: c.in, kind: 'audio',
+      });
+      made.speed = c.speed;
+      made.volume = c.volume;
+      made.fadeIn = c.fadeIn;
+      made.fadeOut = c.fadeOut;
+      made.label = 'Detached audio';
+      c.volume = 0;               // the picture keeps playing, silently
+    }
+    actions.commit(`Detach audio from ${usable.length} clip${usable.length === 1 ? '' : 's'}`);
+    return usable.length;
+  },
+
+  /**
+   * Hold the frame under the playhead.
+   *
+   * Built as a split either side plus a speed of nearly zero on the middle,
+   * rather than as a new kind of clip — so it trims, grades and exports like
+   * anything else, and undo takes it back in one step.
+   */
+  freezeFrame(at = S.time, hold = 2) {
+    const clip = [...S.sel].map((id) => clipById(S.project, id)).find((c) =>
+      c && at > c.start + 0.02 && at < c.start + c.dur - 0.02);
+    if (!clip) { toast('Put the playhead over a selected clip first', 'bad'); return null; }
+
+    const right = splitClip(S.project, clip.id, at);
+    if (!right) return null;
+    const tail = splitClip(S.project, right.id, at + Math.min(hold, right.dur - 0.05));
+    const frozen = tail ? right : right;
+    frozen.speed = 0.0001;
+    frozen.dur = hold;
+    frozen.label = 'Freeze';
+    if (tail) {
+      // Everything after the hold slides along, or it would play over itself.
+      for (const c of clipsOn(S.project, frozen.trackId)) {
+        if (c.start >= tail.start - 0.0001 && c.id !== frozen.id) c.start += hold - (tail.start - frozen.start);
+      }
+    }
+    S.sel = new Set([frozen.id]);
+    actions.commit('Freeze frame');
+    return frozen;
+  },
+
+  /** Nudge the selection by seconds — arrow keys and the menu both use this. */
+  nudge(by) {
+    if (!S.sel.size) return;
+    for (const id of S.sel) {
+      const clip = clipById(S.project, id);
+      if (clip) moveClip(S.project, id, { start: Math.max(0, clip.start + by) });
+    }
+    actions.commit(by > 0 ? 'Nudge later' : 'Nudge earlier', 'nudge');
   },
 
   /** Change one field on every selected clip. Used by every inspector control. */
@@ -593,6 +804,20 @@ function onKey(e) {
   }
 
   const fps = S.project.settings.fps;
+  /*
+   * Cut, copy and paste on the timeline.
+   *
+   * Handled before the switch because they carry a modifier, and because the
+   * browser's own copy would otherwise take a clip selection to mean "copy the
+   * page text", which is nothing anybody wanted.
+   */
+  if (e.ctrlKey || e.metaKey) {
+    const k = e.key.toLowerCase();
+    if (k === 'x' && S.sel.size) { e.preventDefault(); actions.cutSelected(); return; }
+    if (k === 'c' && S.sel.size) { e.preventDefault(); actions.copySelected(); return; }
+    if (k === 'v' && actions.hasClipboard()) { e.preventDefault(); actions.pasteAt(S.time); return; }
+  }
+
   switch (e.key) {
     case ' ': e.preventDefault(); togglePlay(); break;
     case 'ArrowLeft': e.preventDefault(); transport.step(e.shiftKey ? -fps : -1, fps); syncAfterStep(); break;
@@ -606,7 +831,15 @@ function onKey(e) {
     case 'm': case 'M': actions.addMarker(); break;
     case '+': case '=': setZoom(S.zoom * 1.4); break;
     case '-': case '_': setZoom(S.zoom / 1.4); break;
-    case 'Escape': actions.select([]); break;
+    case 'f': case 'F':
+      // Shift+F only, so pressing f while reaching for something else does not
+      // rearrange the window.
+      if (e.shiftKey) { e.preventDefault(); toggleTimelineFull(); }
+      break;
+    case 'Escape':
+      if (isTimelineFull()) { toggleTimelineFull(false); break; }
+      actions.select([]);
+      break;
     default:
       if (/^[1-9]$/.test(e.key)) openPanel(PANEL_KEYS[Number(e.key) - 1]);
   }
@@ -634,6 +867,35 @@ function setZoom(v) {
 /* ------------------------------------------------------------------ */
 /* wiring                                                              */
 /* ------------------------------------------------------------------ */
+
+/*
+ * The timeline over the whole window.
+ *
+ * Not the browser's fullscreen API — that takes the whole screen and hides the
+ * top bar with it, and the top bar is where undo, export and the menus live.
+ * This grows the timeline row to fill the app instead, which is what an editor
+ * means by "maximise the timeline": the same window, all of it given to the
+ * thing being worked on. Escape and the same button both bring it back.
+ */
+let timelineFull = false;
+/* Filled in at boot; the right-click menus read it, so it cannot be a const
+   inside the boot function. */
+let menubarApi = {};
+
+export function toggleTimelineFull(on = !timelineFull) {
+  timelineFull = Boolean(on);
+  document.documentElement.classList.toggle('tl-full', timelineFull);
+  $('#tl-full')?.setAttribute('aria-pressed', timelineFull ? 'true' : 'false');
+  const btn = $('#tl-full');
+  if (btn) btn.title = timelineFull ? 'Back to the editor (Shift+F)' : 'Timeline full screen (Shift+F)';
+  // The canvas and the tracks both measure themselves against the space they
+  // have, and both just changed.
+  sizeCanvas();
+  timeline.render();
+  if (timelineFull) toast('Timeline full screen — Shift+F or Escape to come back', '', 3200);
+}
+
+export function isTimelineFull() { return timelineFull; }
 
 function wireChrome() {
   // panels
@@ -678,6 +940,9 @@ function wireChrome() {
   $('#tl-delete').addEventListener('click', () => actions.deleteSelected());
   $('#tl-dup').addEventListener('click', () => actions.duplicateSelected());
   $('#tl-marker').addEventListener('click', () => actions.addMarker());
+  $('#tl-add-video')?.addEventListener('click', () => actions.addLayer('video'));
+  $('#tl-add-audio')?.addEventListener('click', () => actions.addLayer('audio'));
+  $('#tl-full')?.addEventListener('click', () => toggleTimelineFull());
   $('#tg-snap').addEventListener('change', (e) => { S.snap = e.target.checked; });
   $('#tg-ripple').addEventListener('change', (e) => { S.ripple = e.target.checked; });
   $$('[data-tool]').forEach((b) => b.addEventListener('click', () => actions.setTool(b.dataset.tool)));
@@ -825,7 +1090,13 @@ function paintLevel() {
     goTo: (i) => actions.historyGoTo(i),
   });
 
-  initMenubar(document, {
+  /*
+   * One table of things the chrome can do, shared by the menu bar, the phone
+   * sheet and the right-click menus. A second copy would drift — and the first
+   * symptom of drift is a menu item that works in one place and not another,
+   * which reads as the app being flaky rather than as a duplicated table.
+   */
+  menubarApi = {
     /* file */
     newProject: () => actions.newProject(),
     openProject: () => openPanel('settings'),
@@ -842,7 +1113,12 @@ function paintLevel() {
     undoLabel: () => S.history.undoLabel,
     redoLabel: () => S.history.redoLabel,
     openHistory,
+    cut: () => actions.cutSelected(),
+    copy: () => actions.copySelected(),
+    paste: () => actions.pasteAt(S.time),
+    canPaste: () => actions.hasClipboard(),
     duplicate: () => actions.duplicateSelected(),
+    addLayer: (kind) => actions.addLayer(kind),
     remove: () => actions.deleteSelected(),
     hasSelection: () => S.sel.size > 0,
     selectAll: () => actions.select(S.project.clips.map((c) => c.id)),
@@ -919,6 +1195,25 @@ function paintLevel() {
     palette: () => openPalette(),
     support: () => openPanel('help'),
     openUrl: (href) => window.open(href, '_blank', 'noopener'),
+
+    /* the timeline over the whole window, and a way straight to export */
+    timelineFull: () => toggleTimelineFull(),
+    isTimelineFull,
+    exportNow: () => openExport(),
+  };
+  initMenubar(document, menubarApi);
+
+  initContextMenus();
+
+  /*
+   * The picture and the media pool get menus too. The pool is delegated from
+   * the panel rather than from each tile, because the tiles are rebuilt on
+   * every import and a listener per tile would pile up.
+   */
+  attachMenu($('#stage') || $('.stage'), () => viewerMenu(menubarApi));
+  attachMenu($('#panel'), (e) => {
+    const tile = e.target.closest('[data-media]');
+    return tile ? mediaMenu(tile.dataset.media) : null;
   });
 
   initTips();
