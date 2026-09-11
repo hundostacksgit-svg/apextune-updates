@@ -771,3 +771,34 @@ input[type=checkbox]{accent-color:var(--blue)}
  */
 .chip.loading { opacity: .55; animation: chip-wait 1s ease-in-out infinite; }
 @keyframes chip-wait { 50% { opacity: .95; } }
+
+/*
+ * The file picker input.
+ *
+ * One pixel, fixed, effectively invisible — but rendered, which is the whole
+ * point. See the comment on the element in index.html: a display:none file
+ * input will not open a picker on iOS Safari or inside the TikTok and
+ * Instagram browsers, which is how importing came to do nothing on a phone.
+ *
+ * opacity:0 rather than visibility:hidden, because visibility:hidden counts as
+ * not-rendered for this purpose too.
+ */
+.file-hidden{
+  position:fixed; left:0; bottom:0; width:1px; height:1px;
+  opacity:0; pointer-events:none; z-index:-1; overflow:hidden;
+}
+
+/*
+ * Import, given the weight it earns.
+ *
+ * It sits first on the timeline bar and is the only tool there that is tinted,
+ * because it is the one control a person needs before anything else on this
+ * screen means anything — and on a phone it is now the only import button that
+ * is always on screen.
+ */
+.tl-btn.tl-import{
+  border-color:color-mix(in srgb,var(--blue) 55%,var(--line));
+  background:color-mix(in srgb,var(--blue) 16%,transparent);
+  color:var(--text); font-weight:600;
+}
+.tl-btn.tl-import:hover{background:color-mix(in srgb,var(--blue) 26%,transparent)}

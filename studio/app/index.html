@@ -144,6 +144,18 @@
 <section class="timeline" id="timeline">
   <div class="tl-bar">
     <div class="tl-tools">
+      <!--
+        Import, always here, never conditional.
+
+        The only import control a phone used to have was the big button on the
+        empty-state hint, and that hint hides itself the moment you have any
+        media — so on a phone you could add a first clip and then had no way to
+        add a second, short of finding the Media sheet and scrolling it. The
+        one action every edit starts and continues with belongs on the bar
+        that is always on screen.
+      -->
+      <button class="tl-btn tl-import" id="tl-import" title="Import video, photos or music (I)">＋ Import</button>
+      <span class="tl-div"></span>
       <button class="tl-btn" data-tool="select" title="Select (V)">▣</button>
       <button class="tl-btn" data-tool="razor" title="Razor (C)">✂</button>
       <button class="tl-btn" id="tl-split" title="Split at playhead (S)">⌗ Split</button>
@@ -216,7 +228,31 @@
   </div>
 </div>
 
-<input type="file" id="file-input" multiple accept="video/*,audio/*,image/*" hidden>
+<!--
+  The file picker.
+
+  Deliberately NOT `hidden`, and not display:none.
+
+  A display:none file input is the standard trick for styling an upload button,
+  and it is the reason importing did nothing at all on phones: iOS Safari and
+  the in-app browsers inside TikTok and Instagram — which is exactly how people
+  arrive from a promo link — refuse to open a picker for an input that is not
+  rendered. The tap registers, the click fires, and nothing happens, with no
+  error to go on.
+
+  So it is rendered, at one pixel, pinned out of sight and out of the tab order.
+  The browser considers it a real control and opens the picker; nobody ever
+  sees it.
+
+  There is also no `accept` list any more. Android pickers treat `video/*` as a
+  filter on some devices and a hard restriction on others, and a phone that
+  hands over a .mov from Photos with an empty MIME type — which they do — could
+  be refused its own camera roll. kindOf() in media.js already identifies files
+  properly by type and extension, and rejects what it cannot read with a
+  sentence that says so. Better to accept the file and explain than to have the
+  picker silently hide it.
+-->
+<input type="file" id="file-input" multiple class="file-hidden" tabindex="-1" aria-hidden="true">
 <div id="media-pool" class="media-pool" aria-hidden="true"></div>
 
 <script type="module" src="js/main.js"></script>

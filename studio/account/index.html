@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Your account — OmniDx Studio</title>
-<meta name="description" content="Sign in to move your OmniDx Studio licence between devices, manage linked devices, or redeem a licence key.">
+<meta name="description" content="Sign in to move your OmniDx Studio licence between devices and manage where it is installed.">
 <meta name="theme-color" content="#04060d">
 <link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
@@ -21,10 +21,10 @@
 <meta property="og:image:alt" content="OmniDx Studio: a video editor timeline with clips cut to the beat of a music track.">
 <meta name="twitter:image" content="https://omnidx.net/studio/assets/og-card.png">
 <meta name="twitter:title" content="Your account — OmniDx Studio">
-<meta name="twitter:description" content="Sign in to move your OmniDx Studio licence between devices, manage linked devices, or redeem a licence key.">
+<meta name="twitter:description" content="Sign in to move your OmniDx Studio licence between devices and manage where it is installed.">
 <meta property="og:site_name" content="OmniDx Studio">
 <meta property="og:title" content="Your account — OmniDx Studio">
-<meta property="og:description" content="Sign in to move your OmniDx Studio licence between devices, manage linked devices, or redeem a licence key.">
+<meta property="og:description" content="Sign in to move your OmniDx Studio licence between devices and manage where it is installed.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="../assets/studio.css">
@@ -55,7 +55,7 @@
       <a class="mb-btn" href="../pricing/">Pricing</a>
       <div class="mb" data-mb>
         <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp3">Help<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-        <div class="mb-pop" id="mbp3" role="menu"><a class="mb-link" href="../app/" role="menuitem"><span class="mb-ico" aria-hidden="true">🚀</span><span class="mb-txt"><b>Getting started</b><span>The walkthrough, five minutes</span></span></a><a class="mb-link" href="../pricing/#compare" role="menuitem"><span class="mb-ico" aria-hidden="true">✅</span><span class="mb-txt"><b>What's built</b><span>Line by line, honestly</span></span></a><a class="mb-link" href="../pricing/#faq" role="menuitem"><span class="mb-ico" aria-hidden="true">💬</span><span class="mb-txt"><b>FAQ</b><span>Payments, devices, refunds</span></span></a><a class="mb-link" href="../account/#redeem" role="menuitem"><span class="mb-ico" aria-hidden="true">🔑</span><span class="mb-txt"><b>Redeem a key</b><span>Unlock with a licence key</span></span></a><a class="mb-link" href="../download/" role="menuitem"><span class="mb-ico" aria-hidden="true">📥</span><span class="mb-txt"><b>Install the app</b><span>Every platform, one press</span></span></a></div>
+        <div class="mb-pop" id="mbp3" role="menu"><a class="mb-link" href="../app/" role="menuitem"><span class="mb-ico" aria-hidden="true">🚀</span><span class="mb-txt"><b>Getting started</b><span>The walkthrough, five minutes</span></span></a><a class="mb-link" href="../pricing/#compare" role="menuitem"><span class="mb-ico" aria-hidden="true">✅</span><span class="mb-txt"><b>What's built</b><span>Line by line, honestly</span></span></a><a class="mb-link" href="../pricing/#faq" role="menuitem"><span class="mb-ico" aria-hidden="true">💬</span><span class="mb-txt"><b>FAQ</b><span>Payments, devices, refunds</span></span></a><a class="mb-link" href="../activate/" role="menuitem"><span class="mb-ico" aria-hidden="true">🔓</span><span class="mb-txt"><b>Paid but locked?</b><span>Unlock your copy, no key needed</span></span></a><a class="mb-link" href="../download/" role="menuitem"><span class="mb-ico" aria-hidden="true">📥</span><span class="mb-txt"><b>Install the app</b><span>Every platform, one press</span></span></a></div>
       </div>
     </div>
 
@@ -112,7 +112,7 @@
         <a href="../app/"><span aria-hidden="true">🚀</span>Getting started<em>The walkthrough, five minutes</em></a>
         <a href="../pricing/#compare"><span aria-hidden="true">✅</span>What's built<em>Line by line, honestly</em></a>
         <a href="../pricing/#faq"><span aria-hidden="true">💬</span>FAQ<em>Payments, devices, refunds</em></a>
-        <a href="../account/#redeem"><span aria-hidden="true">🔑</span>Redeem a key<em>Unlock with a licence key</em></a>
+        <a href="../activate/"><span aria-hidden="true">🔓</span>Paid but locked?<em>Unlock your copy, no key needed</em></a>
         <a href="../download/"><span aria-hidden="true">📥</span>Install the app<em>Every platform, one press</em></a>
       </div>
     </div>
@@ -134,17 +134,23 @@
   <div class="wrap">
     <div id="account"></div>
 
-    <!-- The one message that must always get through. Licence keys are sent
-         by hand, so somebody who has paid and is holding a receipt with no key
-         needs a route to a person from the exact screen where they noticed. -->
+    <!-- Somebody who paid and is not unlocked has already had one thing go
+         wrong. This is the screen where they notice, so this is where the fix
+         has to be: one button that unlocks them, then a person, in that order.
+         Sending them away to wait for an email is what lost them last time. -->
     <div class="card" id="support" style="max-width:560px;margin:22px auto 0">
-      <h3 style="margin-bottom:8px">Paid, but no licence key yet?</h3>
+      <h3 style="margin-bottom:8px">Paid, but still locked?</h3>
       <p class="small" style="margin-top:0">
-        Keys are sent by hand, so there can be a wait. If it has been more than
-        24&nbsp;hours, email us with the address you paid with and we will sort it out.
+        There are no licence keys any more — paying unlocks the app by itself.
+        If something went wrong on the way back from Square, unlock it here:
       </p>
-      <p class="small" data-support="OmniDx Studio — I paid but have no key" hidden
-         style="margin:0;font-weight:600"></p>
+      <p style="margin:14px 0 0"><a class="btn" href="../activate/">Unlock my copy</a></p>
+      <p class="small" style="margin:14px 0 0">
+        Pick what you bought and you are in, straight away. Still stuck? Email
+        with the address you paid with and it gets sorted.
+      </p>
+      <p class="small" data-support="OmniDx Studio — paid but still locked" hidden
+         style="margin:10px 0 0;font-weight:600"></p>
     </div>
   </div>
 </section>
@@ -209,7 +215,7 @@
       <div>
         <h4>More</h4>
         <a href="../pricing/#faq">FAQ</a>
-        <a href="../account/#redeem">Redeem a key</a>
+        <a href="../activate/">Unlock my copy</a>
         <a href="../pricing/#compare">What's built</a>
         <span class="foot-support" data-support="OmniDx Studio — help" hidden></span>
       </div>

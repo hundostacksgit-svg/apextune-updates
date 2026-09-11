@@ -668,14 +668,28 @@ async function initAccount() {
             : 'This account lives on this device only — your password never leaves it, and nothing is uploaded.'}
         </p>
       </div>
+      <!--
+        Keys are no longer how anybody buys this — paying unlocks the app
+        directly. The box stays, collapsed, because keys still exist for the
+        cases they are good for: a reviewer, a gift, a refund settled by handing
+        somebody the app. Leading with it would send a paying customer looking
+        for something they were never sent.
+      -->
       <div class="form-card" style="margin-top:22px">
-        <h3 style="margin-bottom:8px">Have a licence key?</h3>
-        <p class="small" style="margin-top:0">Paste it here to unlock without signing in.</p>
-        <form id="redeemform">
-          <input class="input mono" id="key" placeholder="OMNIDX-STU-XXXX-XXXX-XXXX" style="text-transform:uppercase">
-          <button class="btn" style="width:100%;margin-top:12px">Unlock</button>
-        </form>
-        <p class="tiny muted" id="rerr" style="margin:12px 0 0"></p>
+        <h3 style="margin-bottom:8px">Paid but still locked?</h3>
+        <p class="small" style="margin-top:0">
+          There is no key to wait for — paying unlocks it by itself. If that did not happen,
+          unlock it here and you are in straight away.
+        </p>
+        <a class="btn" href="../activate/" style="width:100%;justify-content:center">Unlock my copy</a>
+        <details style="margin-top:14px">
+          <summary class="small">Been given a licence key?</summary>
+          <form id="redeemform" style="margin-top:10px">
+            <input class="input mono" id="key" placeholder="OMNIDX-STU-XXXX-XXXX-XXXX" style="text-transform:uppercase">
+            <button class="btn" style="width:100%;margin-top:12px">Unlock</button>
+          </form>
+          <p class="tiny muted" id="rerr" style="margin:12px 0 0"></p>
+        </details>
       </div>`;
 
     let mode = 'in';

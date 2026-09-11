@@ -572,6 +572,7 @@ function wireChrome() {
     e.target.value = '';
   });
   $('#btn-import-hero').addEventListener('click', () => $('#file-input').click());
+  $('#tl-import')?.addEventListener('click', () => $('#file-input').click());
 
   const wrap = $('#canvas-wrap');
   ['dragenter', 'dragover'].forEach((type) => wrap.addEventListener(type, (e) => {

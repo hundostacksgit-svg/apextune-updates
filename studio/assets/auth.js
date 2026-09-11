@@ -243,8 +243,29 @@ export async function signIn({ email, password, remember = false }) {
     return out;
   }
 
+  /*
+   * Local mode holds accounts on the device that made them, so signing in on a
+   * second device genuinely has nothing to check against.
+   *
+   * The old message stated that fact and stopped, which reads as "your account
+   * is gone" to the person it happens to. It is the single most common thing
+   * anyone sees on this screen — you sign up on a phone, open the site on a
+   * laptop, and get told you do not exist. What people need here is what to do
+   * next, and the honest answer is: making one here takes a moment and costs
+   * nothing, and a paid licence is not tied to it either way.
+   */
   const acc = get(K.account);
-  if (!acc || acc.email !== email) throw new Error('No account on this device with that email.');
+  if (!acc) {
+    throw new Error(
+      'There is no account on this device yet. Accounts live on the device that made them '
+      + 'until the sync server is switched on — so if you signed up somewhere else, create one '
+      + 'here with the same email. It takes a second, and anything you have bought stays unlocked.');
+  }
+  if (acc.email !== email) {
+    throw new Error(
+      `This device has an account for ${acc.email}, not ${email}. Sign in with that one, `
+      + 'or sign out of it first to use a different email here.');
+  }
   const key = await deriveKey(password, b64.to(acc.salt), acc.rounds || PBKDF2_ROUNDS);
   if (await verifierFor(key) !== acc.verifier) throw new Error('Wrong password.');
 
@@ -378,3 +399,104 @@ export function resetLocalAccount() {
 }
 
 export const MODE = { get server() { return online(); } };
+
+/* ------------------------------------------------------------------ *
+ * Activation after payment
+ * ------------------------------------------------------------------ */
+
+const K_PURCHASE = 'omnidx.studio.purchase.v1';
+
+/**
+ * Unlock this copy because a payment went through.
+ *
+ * Why this exists, and what it replaces
+ * -------------------------------------
+ * The old flow was: pay Square, wait for a human to generate a licence key,
+ * wait for that key to arrive, type it in. Every one of those steps is a place
+ * to lose somebody who has already given you money — and the first person it
+ * failed was the person who built it, who paid and got nothing, because there
+ * was no automation behind "somebody issues a key".
+ *
+ * So payment now unlocks the app directly, the way every other editor does it.
+ * No key, no email, no waiting.
+ *
+ * What this does and does not prove
+ * ---------------------------------
+ * Called from the page Square redirects to after a successful payment, this
+ * grants the edition on this device and records the order. It is trust on
+ * arrival: it believes the redirect. Someone who copies that URL can unlock a
+ * copy too.
+ *
+ * That is a real limit and it is worth being plain about it, but it is not a
+ * new one. Every entitlement check in this app already runs on the buyer's
+ * machine and can be switched off with dev tools — licence.js says so at the
+ * top of the file. This adds no weakness that was not already there, and it
+ * fixes a failure that was costing every single paying customer.
+ *
+ * When the Worker is deployed, `redeemPurchase` below also verifies the order
+ * with Square server-side and binds it to the account, which closes the gap
+ * properly. This function is the floor, not the ceiling.
+ */
+export function grantEdition(edition, { order = '', source = 'square' } = {}) {
+  if (!RANK[edition] && edition !== 'free') {
+    throw new Error(`Unknown edition: ${edition}`);
+  }
+
+  const record = {
+    edition,
+    order: String(order || '').slice(0, 120),
+    source,
+    at: Date.now(),
+    device: deviceId(),
+  };
+  put(K_PURCHASE, record);
+
+  // Never downgrade. Somebody who owns Studio and lands on a Creator link —
+  // by revisiting an old receipt, say — must not lose what they paid for.
+  const acc = get(K.account);
+  const s = session();
+  const held = Math.max(RANK[acc?.edition || 'free'] || 0, RANK[s?.edition || 'free'] || 0);
+  if (RANK[edition] < held) return { edition: s?.edition || acc?.edition, kept: true };
+
+  if (acc) put(K.account, { ...acc, edition, purchase: record });
+
+  /*
+   * A session is created if there is not one.
+   *
+   * Buying must not put a login wall between the payment and the app. Someone
+   * who has just paid opens the editor and it is unlocked — whether or not
+   * they ever made an account. An account is for moving the licence to a
+   * second device, which is a thing you do later, not a toll on the way in.
+   */
+  if (s) put(K.session, { ...s, edition });
+  else put(K.session, { email: acc?.email || '', token: 'local', edition, at: Date.now() });
+
+  return { edition, local: true };
+}
+
+/** The recorded purchase on this device, if there is one. */
+export function purchase() { return get(K_PURCHASE); }
+
+/**
+ * Tell the server about a purchase, when there is a server.
+ *
+ * With the Worker deployed this is what turns trust-on-arrival into a verified
+ * entitlement: the Worker asks Square whether the order is real and paid,
+ * binds it to the account, and from then on the licence follows the person
+ * rather than the device.
+ *
+ * It never throws and never blocks the unlock. A server that is down, or not
+ * deployed at all, must not stand between somebody and the thing they bought.
+ */
+export async function redeemPurchase({ edition, order }) {
+  const local = grantEdition(edition, { order });
+  if (!online()) return { ...local, verified: false, reason: 'no server configured' };
+  const s = session();
+  try {
+    const out = await api('/v1/licence/activate', { order, edition, device: deviceInfo() }, s?.token);
+    if (out?.edition) put(K.session, { ...(session() || {}), edition: out.edition });
+    return { ...out, verified: true };
+  } catch (err) {
+    return { ...local, verified: false, reason: err.message };
+  }
+}

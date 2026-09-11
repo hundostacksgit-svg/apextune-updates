@@ -35,7 +35,8 @@ jobs:
             [ -f "$f" ] || { echo "missing required file: $f"; exit 1; }
           done
           for f in studio/index.html studio/pricing/index.html studio/download/index.html \
-                   studio/account/index.html studio/assets/studio.css studio/assets/studio.js \
+                   studio/account/index.html studio/activate/index.html studio/activate/activate.js \
+                   studio/assets/studio.css studio/assets/studio.js \
                    studio/assets/config.js studio/assets/auth.js studio/assets/mark.svg \
                    studio/assets/og-card.png \
                    studio/assets/icons/icon-192.png studio/assets/icons/icon-512.png \

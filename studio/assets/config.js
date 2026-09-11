@@ -194,9 +194,10 @@ export const PAY = {
   methods: ['Card', 'Apple Pay', 'Google Pay', 'Cash App Pay', 'PayPal', 'Klarna'],
 
   /* Shown wherever a buyer might need to reach a human — the footer, the
-     pricing page, the account screen and the in-app licence dialogs. It
-     matters more than it looks: licence keys are sent by hand, so this is the
-     only route someone has when they have paid and nothing has arrived. */
+     pricing page, the account screen, the activation receipt and the in-app
+     licence dialogs. Unlocking is automatic now, so this is no longer the
+     critical path it was; it is the backstop for the cases automation cannot
+     reach, like a fourth device or a refund. */
   supportEmail: 'ahmirpierce36@gmail.com',
 };
 

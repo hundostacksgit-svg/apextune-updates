@@ -128,7 +128,7 @@ in.
 |---|---|
 | Item / service name | `OmniDx Studio — Creator` |
 | Amount | `19.99` |
-| Description | `Unlocks AI editing, auto-captions, the full filter library, studio audio repair and 4K export. One payment, nothing renews. Your licence key is emailed to you after purchase.` |
+| Description | `Unlocks AI editing, auto-captions, the full filter library, studio audio repair and 4K export. Unlocks instantly after payment on up to 3 devices. One payment, nothing renews.` |
 
 ### Link 2 of 3
 
@@ -136,7 +136,7 @@ in.
 |---|---|
 | Item / service name | `OmniDx Studio — Studio` |
 | Amount | `39.99` |
-| Description | `Everything in Creator, plus unlimited AI, Apple ProRes and DNxHR export, scopes, unlimited LUT slots and 10 devices. One payment, nothing renews. Your licence key is emailed to you after purchase.` |
+| Description | `Everything in Creator, plus unlimited AI, Apple ProRes and DNxHR export, scopes, unlimited LUT slots and 10 devices. Unlocks instantly after payment on up to 3 devices. One payment, nothing renews.` |
 
 ### Link 3 of 3
 
@@ -144,7 +144,7 @@ in.
 |---|---|
 | Item / service name | `OmniDx Studio — Team (3 people)` |
 | Amount | `69.99` |
-| Description | `Everything in Studio for exactly 3 people, with a shared licence and shared projects. Three separate Studio licences would be $119.97. One payment, nothing renews. Three licence keys are emailed to you after purchase.` |
+| Description | `Everything in Studio for exactly 3 people, with a shared licence and shared projects. Three separate Studio licences would be $119.97. Unlocks instantly after payment. One payment, nothing renews.` |
 
 ### The settings that matter
 
@@ -159,19 +159,52 @@ Most of the toggles on that screen do not apply to software. These four do:
   three seats on one licence — a buyer should not be able to order "2 × Team"
   and expect six.)
 
-If the form offers **"Redirect to a URL after payment"**, point it at your
-account page so a buyer lands somewhere that explains what happens next:
+## The one field that matters: the redirect
+
+**"Redirect to a URL after payment" is no longer optional. It is how the buyer
+gets what they paid for.**
+
+There are no licence keys any more. Paying unlocks the app, the way CapCut Pro
+and Resolve Studio work. That happens because Square sends the buyer to an
+activation page the moment the payment clears, and that page unlocks their copy
+on the spot — no key, no email, nothing for you to do by hand, nothing for them
+to wait on.
+
+Set the redirect on **each** payment link to its own URL. The `?e=` on the end
+is the only thing that tells the page which edition was bought, so they are
+different for each link and it matters that you paste the right one:
+
+| Payment link | Redirect URL to paste |
+| --- | --- |
+| Creator — $19.99 | `https://omnidx.net/studio/activate/?e=creator` |
+| Studio — $39.99 | `https://omnidx.net/studio/activate/?e=studio` |
+| Team — $69.99 | `https://omnidx.net/studio/activate/?e=team` |
+
+Square adds its own order id to the end of whatever you set, so the buyer's
+receipt shows it and you can match a support question to a real payment without
+asking them for anything.
+
+> **If you paste the wrong one** the buyer still gets in — they land on a page
+> that asks which edition they bought and unlocks that. It is a worse first
+> impression than getting it right, not a broken sale.
+
+> **If you forget the redirect entirely**, the buyer lands on Square's own
+> receipt and has to find the site again. They can still unlock themselves at
+> `https://omnidx.net/studio/activate/` by choosing what they bought. Again:
+> recoverable, but do not rely on it.
+
+### What the description should say now
+
+The old description promised an emailed key "within 24 hours". Delete that.
+Nothing is emailed, and nothing takes 24 hours. Say what actually happens:
 
 ```
-https://hundostacksgit-svg.github.io/apextune-updates/studio/account/
+Unlocks instantly after payment. One payment, no subscription, nothing renews.
+Works on up to 3 devices.
 ```
 
-> **The description promises an email.** That email is you, by hand, running
-> `tools/make-studio-key.py` — see below. Square notifies you on every sale, but
-> nothing sends the key on its own yet. If you are going to be asleep for eight
-> hours, say "within 24 hours" in the description rather than implying it is
-> instant. A buyer who pays and hears nothing files a chargeback, and that costs
-> far more than the sale.
+A buyer who is told to expect an email and does not get one files a chargeback.
+A buyer who is unlocked before they finish reading the receipt does not.
 
 ---
 
@@ -195,13 +228,13 @@ While you are in that file, put your support email in too:
   supportEmail: 'you@example.com',
 ```
 
-This one is not decoration. Licence keys are sent by hand, so the gap between
-someone paying and being unlocked is exactly when they need a person — and a
-buyer holding a receipt with no key and no way to ask about it charges back.
-Setting it puts the address in the footer of every page, in the pricing FAQ, on
-the account screen under "Paid, but no licence key yet?", and in the editor's
-own upgrade dialogs and Help panel. Leave it empty and every one of those spots
-removes itself rather than showing a dead link.
+This one is not decoration. Unlocking is automatic now, so the common case
+needs no human at all — but the uncommon one still does: a payment that went
+through on a phone that then ran out of battery, someone who wants it on a
+fourth device, a refund. Setting it puts the address in the footer of every
+page, in the pricing FAQ, on the account screen, on the activation receipt, and
+in the editor's own upgrade dialogs and Help panel. Leave it empty and every one
+of those spots removes itself rather than showing a dead link.
 
 Save the file, commit it, push it. Every buy button on the website and inside
 the editor switches over the moment that lands — there is nothing else to
@@ -242,21 +275,34 @@ returned too on a full refund.
 
 ## "How do I send someone their licence key?"
 
-Right now, by hand, and that is fine until you are selling more than a few a
-day.
+You do not. There are no keys any more.
+
+Paying redirects the buyer to the activation page and their copy unlocks on the
+spot — see the redirect section above, which is the one piece of setup this
+depends on. Nothing is emailed, nothing is generated, and there is nothing
+sitting in your inbox waiting for you to act on it at two in the morning.
+
+`tools/make-studio-key.py` still exists and still works, for the cases where you
+want to hand somebody access without a payment: a reviewer, a friend, a refund
+you would rather settle by giving them the app. It is no longer part of selling.
 
 ```bash
-python3 tools/make-studio-key.py --edition creator --email buyer@example.com
+python3 tools/make-studio-key.py --edition creator --email reviewer@example.com
 ```
 
-That prints a key like `OMNIDX-CRE-4F2A-91BC-77D3`. Email it to the buyer.
-They paste it at `omnidx.net/studio/account/` and the app unlocks.
+**Someone paid and is still not unlocked.** Almost always the redirect on that
+payment link is missing or wrong. Check it first. Meanwhile send them to
+`https://omnidx.net/studio/activate/` — they pick what they bought and they are
+in, immediately, no key involved.
 
-Square emails you on every sale, so you will know when to do it.
-
-To automate it later, see the webhook section of
-[STUDIO-PAYMENTS.md](STUDIO-PAYMENTS.md). Don't bother until the manual version
-is annoying you.
+**How solid is this?** The activation page trusts the redirect: someone who
+copies that URL could unlock a copy too. Worth knowing, and worth keeping in
+proportion — every entitlement check in this app already runs on the buyer's own
+machine and can be switched off with dev tools, which the source says plainly at
+the top of `licence.js`. This gives up nothing that was not already given up,
+and it fixes a failure that was hitting every single person who paid. When the
+Worker in `server/` is deployed, the same page also verifies the order with
+Square server-side and binds it to the account, which closes the gap properly.
 
 ## "What does Square take?"
 

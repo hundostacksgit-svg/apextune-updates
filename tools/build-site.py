@@ -91,7 +91,7 @@ MENU = [
             ('🚀', 'Getting started', 'The walkthrough, five minutes', '{s}app/'),
             ('✅', "What's built", 'Line by line, honestly', '{s}pricing/#compare'),
             ('💬', 'FAQ', 'Payments, devices, refunds', '{s}pricing/#faq'),
-            ('🔑', 'Redeem a key', 'Unlock with a licence key', '{s}account/#redeem'),
+            ('🔓', 'Paid but locked?', 'Unlock your copy, no key needed', '{s}activate/'),
             ('📥', 'Install the app', 'Every platform, one press', '{s}download/'),
         ],
     },
@@ -221,7 +221,7 @@ def build_footer(s: str) -> str:
       <div>
         <h4>More</h4>
         <a href="{s}pricing/#faq">FAQ</a>
-        <a href="{s}account/#redeem">Redeem a key</a>
+        <a href="{s}activate/">Unlock my copy</a>
         <a href="{s}pricing/#compare">What's built</a>
         <span class="foot-support" data-support="OmniDx Studio — help" hidden></span>
       </div>
