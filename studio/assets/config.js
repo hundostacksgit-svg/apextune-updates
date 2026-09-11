@@ -107,7 +107,15 @@ export const ENTITLEMENTS = {
   'autosave':        'free',
   'projects':        'free',
 
+  /* Tone curves are free.
+     A curve is how you learn what a grade is, and locking the one control
+     that teaches colour behind a paywall trains people to think the app
+     cannot do it. LUTs — somebody else's finished look, applied exactly —
+     are the paid half of the same panel. */
+  'curves':          'free',
+
   /* creator */
+  'luts':            'creator',
   'ai-edit':         'creator',
   'ai-captions':     'creator',
   'audio-fx-pro':    'creator',

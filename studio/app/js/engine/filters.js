@@ -14,6 +14,8 @@
  * preset apart.
  */
 
+import { applyLut, applyCurves, curveIsNeutral, lutById } from './lut.js';
+
 /* ------------------------------------------------------------------ */
 /* looks                                                               */
 /* ------------------------------------------------------------------ */
@@ -95,14 +97,25 @@ export const LOOK_BY_ID = Object.fromEntries(LOOKS.map((l) => [l.id, l]));
 
 /** A look's values merged over the clip's own, scaled by strength. */
 export function resolved(color) {
+  /*
+   * A clip stores a LUT's id, never the table itself.
+   *
+   * A 33-cube is 36,000 floats. Putting that in the clip would put it in the
+   * project file, in every undo step and in every autosave — megabytes per
+   * clip, for something that is the same table every time. The id is stored
+   * and the table is looked up from the registry the file was loaded into.
+   * A project opened on a machine that has not loaded that LUT simply grades
+   * without it rather than failing to open.
+   */
+  const lut = color.lut ? lutById(color.lut) : null;
   const look = LOOK_BY_ID[color.look];
-  if (!look || look.id === 'none') return { ...color, _look: null };
+  if (!look || look.id === 'none') return { ...color, _look: null, _lut: lut };
   const k = color.strength ?? 1;
   const out = { ...color };
   for (const [key, v] of Object.entries(look.color || {})) {
     out[key] = (out[key] || 0) + v * k;
   }
-  return { ...out, _look: look, _strength: k };
+  return { ...out, _look: look, _lut: lut, _strength: k };
 }
 
 /* ------------------------------------------------------------------ */
@@ -239,12 +252,29 @@ export function applyPasses(ctx, w, h, c) {
 
   ctx.globalCompositeOperation = save;
   ctx.globalAlpha = 1;
+
+  /*
+   * Curves, then the LUT, last.
+   *
+   * Order matters and this is the order every grading application uses. The
+   * sliders and the look above are the primary grade — what the shot should
+   * look like. A curve shapes that result, and a LUT is somebody's finished
+   * look stamped on top of it. Run a LUT first and every slider afterwards is
+   * fighting a transform it cannot see, which is why a LUT applied early feels
+   * like the controls stopped working.
+   */
+  if (c.curves) applyCurves(ctx, w, h, c.curves);
+  if (c._lut && (c.lutAmount ?? 1) > 0.002) applyLut(ctx, w, h, c._lut, c.lutAmount ?? 1);
 }
 
 /** True when a clip's colour settings do anything at all — lets the renderer
  *  skip the whole scratch-canvas path for untouched clips. */
 export function isIdentity(c) {
   if (c.look && c.look !== 'none') return false;
+  if (c._lut && (c.lutAmount ?? 1) > 0.002) return false;
+  // A curve that is still a straight line is not a grade, so a clip carrying
+  // an untouched curve is still identity and still skips the whole path.
+  if (c.curves && Object.values(c.curves).some((pts) => pts && !curveIsNeutral(pts))) return false;
   return ['exposure', 'contrast', 'saturation', 'temperature', 'tint',
     'highlights', 'shadows', 'vignette', 'grain', 'blur'].every((k) => Math.abs(c[k] || 0) < 0.5);
 }

@@ -6,6 +6,7 @@
 import { $, $$, esc, toast, empty, slider } from '../ui.js';
 import { S, actions, engine } from '../main.js';
 import { attachPreviews } from '../engine/preview.js';
+import { curvesMarkup, drawCurve, wireCurves, curvesOpen, setCurvesOpen } from './curves.js';
 import { LOOKS, LOOK_GROUPS_ALL, CONTROLS, neutralWheels, supportsUrlFilters } from '../engine/filters.js';
 import * as licence from '../licence.js';
 import { current as currentLevel } from '../levels.js';
@@ -74,6 +75,17 @@ export function mount(host) {
            style="margin-bottom:10px">
     <div id="c-looks">${lookGroups(clip)}</div>
 
+    <!-- Curves and LUTs were on the pricing page before they were in the app.
+         They are the two things a colourist reaches for first, and the reason
+         a grading panel gets called a toy without them. -->
+    <details class="group" data-min="expert" id="c-curves-group" ${curvesOpen() ? 'open' : ''}>
+      <summary>Curves &amp; LUTs</summary>
+      <div class="gbody">
+        ${clip ? curvesMarkup(clip)
+          : '<p class="tiny muted" style="margin:0">Select one clip to put a curve or a LUT on it.</p>'}
+      </div>
+    </details>
+
     <details class="group" data-min="expert" ${clip ? 'open' : ''}>
       <summary>Colour wheels</summary>
       <div class="gbody">
@@ -120,6 +132,16 @@ export function mount(host) {
   // A look is a colour decision, so the chip shows the colour on a real frame
   // rather than a swatch guessing at it.
   attachPreviews($('#c-looks', host), 'look');
+
+  wireCurves(host);
+  // The curve canvas is only meaningful once it has a size, and it sits inside
+  // a <details> that may be closed. Draw it now for the open case, and again
+  // when the section is opened.
+  drawCurve(host);
+  $('#c-curves-group', host)?.addEventListener('toggle', (e) => {
+    setCurvesOpen(e.target.open);
+    if (e.target.open) drawCurve(host);
+  });
 
   $('#c-look-search', host)?.addEventListener('input', (e) => {
     const q = e.target.value.trim().toLowerCase();

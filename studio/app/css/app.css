@@ -825,3 +825,30 @@ input[type=checkbox]{accent-color:var(--blue)}
    point of an upsell. It is dimmed, not hidden. */
 .chip.locked .chip-prev{ opacity:.62; filter:saturate(.7) }
 .chip:hover .chip-prev{ opacity:1 }
+
+/*
+ * The curve editor.
+ *
+ * Square, because a tone curve maps 0..1 to 0..1 and a stretched one lies
+ * about its own slope — a 45° line that does not look like 45° is the one
+ * thing this control must not do.
+ */
+.curve-cv{
+  width:100%; aspect-ratio:1/1; display:block;
+  border:1px solid var(--line); border-radius:var(--r-s);
+  background:var(--surface-3); touch-action:none; cursor:crosshair;
+}
+.curve-head{display:flex;gap:6px;align-items:center;margin-bottom:9px;flex-wrap:wrap}
+.curve-tab{
+  padding:5px 10px;border-radius:var(--r-s);border:1px solid var(--line);
+  background:var(--surface-2);color:var(--text-2);font-size:12px;cursor:pointer;
+}
+.curve-tab.on{border-color:var(--ch);color:var(--text);background:color-mix(in srgb,var(--ch) 16%,transparent)}
+.curve-head .btn{margin-left:auto}
+.curve-presets{margin-bottom:16px}
+.curve-presets .chip{padding:7px 8px;font-size:11.5px}
+.curve-h4{font-size:12px;margin:18px 0 6px;color:var(--text-2)}
+
+/* On a phone the editor would otherwise take the whole sheet and leave no room
+   for the presets underneath it. */
+@media (max-width:760px){ .curve-cv{max-height:52vh;aspect-ratio:auto;height:52vw} }
