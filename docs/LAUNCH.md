@@ -87,6 +87,19 @@ eyeballed.
 - **B-roll matching** — which of your own clips suits the moment at the
   playhead, read from the caption line, the tempo and what is already on
   screen, with the reasoning shown. No stock library, nothing fetched
+- **The four trims** — ripple, roll, slip and slide, on one smart-trim tool
+  that picks which by where you grab. The vocabulary every professional edit
+  is built on, and the largest single gap against Resolve and Premiere
+- **Windows and the qualifier** — shape masks that feather, rotate, invert and
+  animate, plus HSL colour selection, intersecting the way a colourist expects.
+  Grade one jacket in a crowd rather than the whole shot
+- **A real audio chain** — six-band EQ, a compressor, pan and trim, and
+  loudness measured to ITU-R BS.1770 against the platform targets. Verified
+  against EBU Tech 3341's published conformance figure: it reads -22.99 where
+  the answer is -23.0
+- **Adjustment layers**, **compound clips** with real nesting, and **scene edit
+  detection** that finds the cuts in an already-flattened video and splits
+  there
 - Every effect, look and transition previews on your own footage. Nothing is a
   shipped screenshot, so nothing can drift from what it actually does — and it
   adds zero bytes to the download
@@ -126,10 +139,23 @@ you were going to send. Send them and it gets made.
 **Multi-lingual captions.** The transcription runs on the server, so it turns
 on with step 2.
 
-**Shape masks and nesting.** After Effects has both; this does not. Masking is
-covered for the common cases — chroma key, a tracked oval, background removal —
-but there is no pen tool and no way to nest one composition inside another.
-Neither is faked anywhere in the interface.
+**Multicam.** Syncing several camera angles and cutting between them live is
+the one substantial thing on the research list that is not built. Nothing in
+the interface pretends otherwise.
+
+**A limiter.** Written, measured, and taken out again. The browser's dynamics
+node does not hold a ceiling — set to -12dB it let a hot tone through at
+-4.2dBTP — and a control whose whole promise is a number it cannot meet is
+worse than no control. The ceiling is enforced where it can be exact instead:
+at the loudness check, by measuring true peak and clamping the gain.
+
+**A noise gate.** Same reason. Web Audio has no gate node, and a gate faked out
+of a compressor is a compressor with a confusing label. Noise, hum and click
+repair do that job properly on the samples.
+
+**A pen tool.** Masks come as rectangles, ovals and polygons, all feathered,
+rotatable and animatable. There is no bezier pen for drawing an arbitrary
+outline by hand.
 
 ---
 
