@@ -852,3 +852,32 @@ input[type=checkbox]{accent-color:var(--blue)}
 /* On a phone the editor would otherwise take the whole sheet and leave no room
    for the presets underneath it. */
 @media (max-width:760px){ .curve-cv{max-height:52vh;aspect-ratio:auto;height:52vw} }
+
+/*
+ * The all-platforms strip.
+ *
+ * Sits under the viewer and above the transport, so the comparison is next to
+ * the thing being compared rather than in a panel you have to look away to
+ * reach.
+ */
+.ratio-check{
+  border-top:1px solid var(--line); background:var(--surface-2);
+  padding:10px 12px 12px; flex:0 0 auto;
+}
+.rc-head{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.rc-head b{font-size:12px}
+.rc-head .btn{margin-left:auto}
+.rc-row{display:flex;gap:14px;align-items:flex-end;justify-content:center;flex-wrap:wrap}
+.rc-box{display:flex;flex-direction:column;align-items:center;gap:5px}
+.rc-box canvas{
+  display:block; max-height:132px; width:auto;
+  border-radius:5px; border:1px solid var(--line); background:#000;
+}
+.rc-cap{font-size:10.5px;color:var(--text-2);font-variant-numeric:tabular-nums}
+/* A crop that throws away a quarter of the shot is a decision, not a detail. */
+.rc-cap.rc-warn{color:var(--warn,#ffb020);font-weight:600}
+
+@media (max-width:760px){
+  .rc-box canvas{max-height:92px}
+  .rc-head .tiny{display:none}   /* the room is better spent on the pictures */
+}

@@ -52,6 +52,7 @@ const SHELL = [
   './js/engine/fonts-library.js',
   './js/engine/preview.js',
   './js/engine/lut.js',
+  './js/engine/multiframe.js',
   './js/panels/curves.js',
   './js/engine/exporter-wc.js',
   './js/engine/exporter.js',

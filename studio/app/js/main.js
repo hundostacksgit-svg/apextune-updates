@@ -21,6 +21,7 @@ import { Renderer } from './engine/render.js';
 import { Transport } from './engine/playback.js';
 import { AudioEngine } from './engine/audio.js';
 import * as preview from './engine/preview.js';
+import { CHECK_RATIOS, drawCheck, lossFor } from './engine/multiframe.js';
 import * as media from './engine/media.js';
 import { TimelineUI } from './timeline-ui.js';
 import { openPanel, refreshPanel, closePanel, panelIsOverlay, PANELS } from './panels/index.js';
@@ -423,6 +424,66 @@ function drawFrame(scrub = false) {
   renderer.beats = S.beats;
   renderer.fps = S.project.settings.fps;
   renderer.draw(S.project, S.time, { playing: S.playing || scrub });
+  if (!$('#ratio-check')?.hidden) paintRatioCheck();
+}
+
+/* ------------------------------------------------------------------ *
+ * The all-platforms strip
+ * ------------------------------------------------------------------ */
+
+/**
+ * Build the boxes once.
+ *
+ * Each is a canvas at a fixed small size with the target ratio's own shape, so
+ * a 9:16 check is tall and a 16:9 one is wide — seeing the actual shape is half
+ * of what makes the comparison land.
+ */
+function buildRatioCheck() {
+  const row = $('#rc-row');
+  if (!row || row.childElementCount) return;
+  for (const ratio of CHECK_RATIOS) {
+    const [rw, rh] = ratio.split(':').map(Number);
+    const box = document.createElement('div');
+    box.className = 'rc-box';
+    const cv = document.createElement('canvas');
+    // A fixed area rather than a fixed width, so a tall 9:16 and a wide 16:9
+    // take comparable room instead of the vertical one towering over the rest.
+    const area = 128 * 128;
+    const scale = Math.sqrt(area / (rw * rh));
+    cv.width = Math.round(rw * scale) * 2;
+    cv.height = Math.round(rh * scale) * 2;
+    cv.dataset.ratio = ratio;
+    box.append(cv);
+    const cap = document.createElement('span');
+    cap.className = 'rc-cap';
+    box.append(cap);
+    row.append(box);
+  }
+}
+
+/**
+ * Repaint them from the frame that is already on screen.
+ *
+ * The viewer's canvas is the source, so this costs three small draws rather
+ * than three more renders of the timeline — which is what makes it cheap
+ * enough to leave on during playback.
+ */
+function paintRatioCheck() {
+  const src = renderer?.canvas || $('#preview');
+  if (!src || !src.width) return;
+  for (const cv of $$('#rc-row canvas')) {
+    const ratio = cv.dataset.ratio;
+    drawCheck(cv, src, ratio);
+    const cap = cv.parentElement.querySelector('.rc-cap');
+    if (!cap) continue;
+    const loss = lossFor(src.width, src.height, ratio);
+    // Only mention the loss when it is worth acting on. "0% cut" on the ratio
+    // you are already working in is noise on every single frame.
+    cap.textContent = loss > 0.02
+      ? `${ratio} — ${Math.round(loss * 100)}% cut off`
+      : `${ratio} — fits`;
+    cap.classList.toggle('rc-warn', loss > 0.25);
+  }
 }
 
 function paintTransport() {
@@ -533,6 +594,24 @@ function wireChrome() {
   $('#tp-back').addEventListener('click', () => { transport.step(-1, S.project.settings.fps); syncAfterStep(); });
   $('#tp-fwd').addEventListener('click', () => { transport.step(1, S.project.settings.fps); syncAfterStep(); });
   $('#tg-safe').addEventListener('change', (e) => { $('#safe').hidden = !e.target.checked; });
+
+  /*
+   * The all-platforms strip.
+   *
+   * Built once when it is first switched on and then only repainted, because
+   * rebuilding three canvases and their labels on every frame of playback is
+   * work the browser does not need to do to show the same three boxes.
+   */
+  $('#tg-ratios')?.addEventListener('change', (e) => {
+    const panel = $('#ratio-check');
+    panel.hidden = !e.target.checked;
+    if (e.target.checked) { buildRatioCheck(); paintRatioCheck(); }
+  });
+  $('#rc-close')?.addEventListener('click', () => {
+    $('#ratio-check').hidden = true;
+    const box = $('#tg-ratios');
+    if (box) box.checked = false;
+  });
   $('#ratio').addEventListener('change', (e) => actions.setRatio(e.target.value));
   $('#quality').addEventListener('change', sizeCanvas);
 
