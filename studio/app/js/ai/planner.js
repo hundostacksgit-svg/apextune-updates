@@ -123,6 +123,9 @@ export function understand(prompt) {
     /* Keep what is already on the timeline and only re-time it. This is a
        different request from "build me an edit" and getting them confused
        throws away someone's work, so the test is deliberately generous. */
+    // Asking outright for the edit to be rebuilt. Without one of these, a
+    // style applied to work already on the timeline leaves the cuts alone.
+    rebuild: /\bre-?(cut|edit|build|arrange)\b|start (again|over|from scratch)|lay (it|them) out again|redo the (cut|edit)|from scratch\b/i.test(s) ? true : undefined,
     syncExisting: /\bsync\b|re-?time|match (the )?(beat|music|audio|song|track)|(to|with|on) the (beat|music|audio|song|track)\b|line (them |it )?up (to|with)|on beat\b/i.test(s)
       && !/\bmake me\b|\bbuild\b|\bcreate\b|\bnew edit\b/i.test(s),
 
@@ -254,6 +257,15 @@ export function plan(prompt, context) {
     shuffle: intent.shuffle,
     clipCount: videos.length,
     onTimeline,
+    /*
+     * Whether a named style should rebuild the cut or only style it.
+     *
+     * Same rule the Styles panel uses: an empty timeline gets built, an edited
+     * one gets styled. "Make it an anime edit" on an edit somebody has already
+     * made means put the anime look on it, not throw it away and start again —
+     * and the words that mean otherwise are asked for explicitly.
+     */
+    rebuild: intent.rebuild ?? !onTimeline,
     hookText: intent.hook || intent.title || null,
     ctaText: intent.ctaText || null,
     captionStyle: intent.captionStyle,

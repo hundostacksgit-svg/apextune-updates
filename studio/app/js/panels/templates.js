@@ -71,6 +71,15 @@ export function mount(host) {
   void $$;
 }
 
+/*
+ * Whether a style should also build the cut.
+ *
+ * Remembered per session rather than per template: somebody who wants styles
+ * to leave their edit alone wants that for every style, and being asked again
+ * on each one is the same annoyance in smaller pieces.
+ */
+let rebuildChoice = null;
+
 function preview(host, id, quiet = false) {
   const ctx = {
     ratio: S.project.settings.ratio,
@@ -82,6 +91,11 @@ function preview(host, id, quiet = false) {
     clipCount: S.project.media.filter((m) => m.kind !== 'audio').length,
     onTimeline: S.project.clips.length,
   };
+  // Default: build the cut only when there is nothing to preserve. An edited
+  // timeline gets styled, not rebuilt.
+  const hasEdit = S.project.clips.length > 0;
+  ctx.rebuild = rebuildChoice ?? !hasEdit;
+
   const built = buildTemplate(id, ctx);
   if (!built) return;
   pending = { id, built };
@@ -96,14 +110,33 @@ function preview(host, id, quiet = false) {
       <div class="tiny" style="padding:8px 0;border-bottom:1px solid var(--line-soft)">
         <b>${esc(s.label)}</b><br><span class="muted">${esc(s.detail || '')}</span>
       </div>`).join('')}
+    ${hasEdit ? `
+      <label class="tp-toggle" style="margin:12px 0 4px;display:flex;gap:8px;align-items:flex-start">
+        <input type="checkbox" id="t-rebuild" ${ctx.rebuild ? 'checked' : ''}>
+        <span class="tiny">Re-cut my timeline as well
+          <span class="muted" style="display:block">
+            Off: your cuts stay exactly as they are and only the style goes on.
+            On: the clips are laid out again from scratch.</span></span>
+      </label>` : ''}
     <div class="btn-row">
-      <button class="btn btn-primary btn-full" id="t-run">Build it</button>
+      <button class="btn btn-primary btn-full" id="t-run">
+        ${ctx.rebuild ? 'Build it' : 'Apply the style'}</button>
     </div>
     <p class="tiny muted" style="margin-top:8px">
-      ${S.project.clips.length && id !== 'sync-only'
-        ? 'This replaces what is on your video tracks. Undo puts it straight back.'
-        : 'Everything lands as normal clips you can drag, trim or change.'}
+      ${!hasEdit
+        ? 'Everything lands as normal clips you can drag, trim or change.'
+        : ctx.rebuild
+          ? 'This replaces what is on your video tracks. Undo puts it straight back.'
+          : 'Your cuts are left alone — this puts the effects, grade and transitions on top of them.'}
     </p>`;
+
+  // Changing the switch rebuilds the plan, so the list of steps shown is
+  // always the list that will actually run. A preview that does not match what
+  // the button does is worse than no preview.
+  $('#t-rebuild', box)?.addEventListener('change', (e) => {
+    rebuildChoice = e.target.checked;
+    preview(host, id, true);
+  });
 
   $('#t-run', box).addEventListener('click', () => run(host, id));
   if (!quiet) box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -124,6 +157,7 @@ async function run(host, id) {
       hasMusic: S.project.media.some((m) => m.kind === 'audio'),
       bpm: S.beats?.bpm || null,
       onTimeline: S.project.clips.length,
+      rebuild: rebuildChoice ?? !S.project.clips.length,
     });
     const report = await applyPlan(S.project, { steps: built.steps }, { beats: S.beats });
 

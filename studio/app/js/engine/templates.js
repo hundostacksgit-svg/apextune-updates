@@ -17,18 +17,58 @@
    same template works at 90bpm and 170bpm without feeling different. */
 const PACE_BEATS = { frantic: 1, fast: 2, medium: 4, slow: 8 };
 
+/**
+ * Should this template build the cut, or only style what is already there?
+ *
+ * Explicit beats implicit: if the caller said, that is the answer. Otherwise
+ * an empty timeline is built (pressing a style with nothing on the timeline
+ * must do something) and an edited one is left alone.
+ */
+function wantsRebuild(ctx) {
+  if (ctx.rebuild !== undefined) return Boolean(ctx.rebuild);
+  if (ctx.alwaysRebuild) return true;
+  return !(ctx.onTimeline > 0);
+}
+
+/**
+ * Wrap a step that changes the edit rather than the look.
+ *
+ * Removing silence, re-syncing to a track, re-laying-out — all of these move
+ * or delete clips, and all of them belong on the same switch as the layout
+ * itself. Returned as an empty list when styling, so the caller can spread it
+ * unconditionally.
+ */
+function structural(ctx, step) {
+  return wantsRebuild(ctx) ? [step] : [];
+}
+
 function beatsToSeconds(beats, bpm) {
   return (60 / (bpm || 120)) * beats;
 }
 
 /**
- * Every template starts by getting the canvas and the footage in order.
+ * The structural half of a template: the canvas shape and the cut itself.
+ *
+ * This only runs when there is nothing to preserve, or when somebody asks for
+ * it outright.
+ *
+ * A style is a look. "Anime AMV" means impact frames, chromatic hits and speed
+ * lines — it does not mean "throw away the edit I just spent an hour on and
+ * lay my clips out again". Rebuilding by default made every style unusable on
+ * a real edit: you could not try one to see what it looked like, because
+ * trying it destroyed the thing you were trying it on.
+ *
+ * So the rule is: an empty timeline gets built, an edited one gets styled.
+ * Somebody who genuinely wants a template to construct the cut can still ask,
+ * and templates that exist purely to cut — the beat-sync one — always do it,
+ * because that is what they say they are.
  *
  * `prefer` is the template's natural shape. An explicit request always wins
  * over it — asking for "a cinematic edit in 9:16" must not quietly produce
  * 16:9 because that is what the template usually does.
  */
 function foundation(ctx, { prefer, pace, targetDur, shuffle = false }) {
+  if (!wantsRebuild(ctx)) return [];
   const steps = [];
   const ratio = ctx.wantRatio || prefer;
   if (ratio && ratio !== ctx.ratio) {
@@ -239,13 +279,30 @@ export const TEMPLATES = [
     wants: 'One clip of someone talking.',
     tags: ['talking', 'podcast', 'vlog talking', 'jump cut', 'silence', 'youtuber', 'explain', 'tutorial', 'face cam'],
     build(ctx) {
-      const steps = [];
-      if (ctx.wantRatio && ctx.wantRatio !== ctx.ratio) steps.push(...foundation(ctx, { prefer: ctx.wantRatio, pace: 'medium' }).slice(0, 1));
-      steps.push({
+      /*
+       * Lay the clips out first when there is nothing on the timeline.
+       *
+       * This template is built around removing silences, which only means
+       * something once there is something to remove — so on an empty timeline
+       * it produced a plan that did nothing at all. A talking-head cut wants
+       * the takes in order at a slow pace, not shuffled and not chopped to a
+       * beat, which is what it asks for here.
+       */
+      const steps = [...foundation(ctx, {
+        prefer: ctx.wantRatio || ctx.ratio,
+        pace: 'slow',
+        targetDur: ctx.targetDur,
+        shuffle: false,
+      })];
+      // Deleting every pause rewrites the edit, so it belongs with the layout
+      // rather than with the look. Styling an edit that has already had its
+      // silences cut — or one that was cut by hand on purpose — must not go
+      // back through and cut it again.
+      steps.push(...structural(ctx, {
         op: 'removeSilence', args: { minLen: 0.3, pad: 0.06 },
         label: 'Cut out the silences',
         detail: 'Every pause longer than a third of a second goes and the timeline closes up. This is the jump-cut look, done in one press.',
-      });
+      }));
       steps.push({
         op: 'autoZoomSpeech', args: { amount: 0.09, alternate: true },
         label: 'Punch in and out as you talk',
