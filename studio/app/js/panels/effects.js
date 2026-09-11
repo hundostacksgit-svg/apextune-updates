@@ -9,7 +9,7 @@
 import { $, $$, esc, toast, empty, slider, selectRow } from '../ui.js';
 import { S, actions } from '../main.js';
 import { EFFECT_LIST, EFFECTS, EFFECT_GROUPS, makeEffect } from '../engine/effects.js';
-import { TRANSITION_LIST } from '../engine/transitions.js';
+import { pickerMarkup, wirePicker } from './transition-picker.js';
 import { clipsOn, clipById } from '../engine/project.js';
 import * as licence from '../licence.js';
 
@@ -40,13 +40,7 @@ export function mount(host) {
       <summary>Transitions</summary>
       <div class="gbody">
         <p class="tiny muted" style="margin:0 0 9px">Sets the transition <em>into</em> the selected clips.</p>
-        <div class="chips" id="fx-trans">
-          ${TRANSITION_LIST.map((t) => {
-            const locked = !licence.can(t.tier === 'free' ? 'transitions' : 'all-filters');
-            return `<button class="chip ${locked ? 'locked' : ''}" data-trans="${esc(t.id)}"
-              data-tier="${esc(t.tier)}">${t.icon} ${esc(t.name)}</button>`;
-          }).join('')}
-        </div>
+        <div id="fx-trans">${pickerMarkup(one?.transitionIn?.type, 'fx-tp')}</div>
       </div>
     </details>
 
@@ -55,6 +49,8 @@ export function mount(host) {
       ${one ? stackMarkup(one) : empty('🎛', sel.length ? 'Select one clip' : 'Nothing selected',
         sel.length ? 'Pick a single clip to tune its effects.' : 'Click a clip on the timeline to see its stack.')}
     </div>`;
+
+  wirePicker(host, 'fx-tp');
 
   host.addEventListener('click', (e) => {
     const add = e.target.closest('[data-fx]');

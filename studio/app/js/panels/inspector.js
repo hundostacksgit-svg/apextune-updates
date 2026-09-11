@@ -11,7 +11,7 @@ import { $, $$, esc, group, slider, selectRow, toggleRow, empty, dur, tc } from 
 import { S, actions, drawFrame } from '../main.js';
 import { clipById, mediaById, valueAt, setKeyframe, clearKeyframes } from '../engine/project.js';
 import { CONTROLS, LOOKS } from '../engine/filters.js';
-import { TRANSITION_LIST } from '../engine/transitions.js';
+import { pickerMarkup, wirePicker } from './transition-picker.js';
 import { BLEND_MODES } from '../engine/render.js';
 import * as licence from '../licence.js';
 import { trackSection, handleInspectorClick } from './tracking.js';
@@ -29,6 +29,7 @@ export function mount(host) {
       <p class="panel-sub">Changes apply to all of them.</p>
       ${transformSection(null)}${colourSection(null)}${audioSection(null)}`;
     wire(host);
+  wirePicker(host, 'ins-tp');
     return;
   }
 
@@ -54,6 +55,7 @@ export function mount(host) {
     ${keyframeSection(clip, local)}`;
 
   wire(host);
+  wirePicker(host, 'ins-tp');
 }
 
 /* ------------------------------------------------------------------ */
@@ -154,14 +156,9 @@ function audioSection(clip, mediaRec) {
 
 function transitionSection(clip) {
   const current = clip.transitionIn;
-  const options = TRANSITION_LIST.map((t) => {
-    const locked = !licence.can(t.tier === 'free' ? 'transitions' : 'all-filters');
-    return `<button class="chip ${current?.type === t.id ? 'on' : ''} ${locked ? 'locked' : ''}"
-      data-trans="${esc(t.id)}" data-tier="${esc(t.tier)}">${esc(t.icon)} ${esc(t.name)}</button>`;
-  }).join('');
   return group('Transition in', `
     <p class="tiny muted" style="margin:0 0 9px">Blends from whatever is before this clip on the same track.</p>
-    <div class="chips">${options}</div>
+    ${pickerMarkup(current?.type, 'ins-tp')}
     ${current ? slider({ key: 'transitionIn.dur', label: 'Length', value: current.dur, min: 0.08, max: 2, step: 0.02,
       fmt: (v) => `${v.toFixed(2)}s` }) : ''}
     ${current ? '<div class="btn-row"><button class="btn btn-sm btn-ghost" data-act="no-trans">Remove</button></div>' : ''}

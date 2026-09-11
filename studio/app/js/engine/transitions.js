@@ -10,6 +10,8 @@
  * transform. Either may be null at the very start or end of the timeline.
  */
 
+import { TRANSITION_PACKS } from './transitions-library.js';
+
 const ease = (t) => t * t * (3 - 2 * t);
 const easeOut = (t) => 1 - (1 - t) ** 3;
 
@@ -144,10 +146,25 @@ export const TRANSITIONS = {
       if (!base) return;
       const bands = 7;
       const intensity = Math.sin(p * Math.PI);
+      /*
+       * Seeded scatter, not Math.random.
+       *
+       * A transition has to paint the same frame every time it is asked for
+       * one. The preview draws it while you scrub and the exporter draws it
+       * again later, and with random offsets those two disagree — the video you
+       * approved is not the video you get, and scrubbing back over the same
+       * frame shows something different each time. Seeding from the band index
+       * and the frame gives the same scatter on every pass while still looking
+       * like noise.
+       */
+      const noise = (n) => {
+        const v = Math.sin(n * 12.9898 + Math.round(p * 60) * 78.233) * 43758.5453;
+        return v - Math.floor(v);
+      };
       for (let i = 0; i < bands; i++) {
-        const y = Math.random() * h;
-        const bh = (h / bands) * (0.3 + Math.random() * 0.7);
-        const dx = (Math.random() - 0.5) * w * 0.22 * intensity;
+        const y = noise(i) * h;
+        const bh = (h / bands) * (0.3 + noise(i + 100) * 0.7);
+        const dx = (noise(i + 200) - 0.5) * w * 0.22 * intensity;
         ctx.drawImage(base, 0, y, w, bh, dx, y, w, bh);
       }
       // Chromatic split on top, which is the part that reads as "digital".
@@ -193,8 +210,23 @@ export const TRANSITIONS = {
   },
 };
 
+/*
+ * The thirteen above, then the generated library.
+ *
+ * Merged in this order so the hand-written ones win on any id collision: they
+ * are the ones people already have in projects, and a saved edit must not
+ * change because a library grew.
+ */
+Object.assign(TRANSITIONS, { ...TRANSITION_PACKS, ...TRANSITIONS });
+
 export const TRANSITION_LIST = Object.entries(TRANSITIONS)
   .map(([id, t]) => ({ id, ...t }));
+
+/** Grouped for a picker, with the originals first under their own heading. */
+export const TRANSITION_GROUPS_ALL = TRANSITION_LIST.reduce((acc, t) => {
+  (acc[t.group || 'Essentials'] ||= []).push(t);
+  return acc;
+}, {});
 
 export function drawTransition(id, ctx, w, h, from, to, p) {
   const t = TRANSITIONS[id] || TRANSITIONS.dissolve;
