@@ -26,6 +26,8 @@ import { Renderer } from './render.js';
 import { renderAudio, toPlanar } from './audio-render.js';
 import { duration as projectDuration, activeAt, mediaById } from './project.js';
 import { tc } from '../ui.js';
+import { fontsUsedBy } from './titles.js';
+import { preloadFonts } from './fonts-library.js';
 
 export function available() {
   return typeof VideoEncoder !== 'undefined' && typeof VideoFrame !== 'undefined';
@@ -268,6 +270,25 @@ export function exportWithCodecs(project, { preset, quality = 'medium', codec, a
         error: (err) => { encodeError = err; },
       });
       audioEncoder.configure({ codec: audioCodec, sampleRate: 48000, numberOfChannels: 2, bitrate: 192000 });
+    }
+
+    /*
+     * Wait for the project's typefaces before the first frame.
+     *
+     * Canvas draws in a fallback, silently, for any font it does not yet have.
+     * Without this the opening seconds of an export come back in the wrong
+     * face while the rest is right — invisible in the preview, and only
+     * discovered after the whole render.
+     *
+     * Never blocks: a font that will not load is reported and the fallback in
+     * its stack draws instead.
+     */
+    const fonts = await preloadFonts(fontsUsedBy(project));
+    if (fonts.missing.length) {
+      onProgress?.({
+        done: 0, total, phase: 'rendering', seconds: 0,
+        note: `Could not load ${fonts.missing.length} font${fonts.missing.length === 1 ? '' : 's'} — using the closest match on this device.`,
+      });
     }
 
     /* ---- video ---- */

@@ -761,3 +761,13 @@ input[type=checkbox]{accent-color:var(--blue)}
 .pl-txt b{font-size:13.5px;font-weight:650}
 .pl-txt span{font-size:11.5px;color:var(--text-3);line-height:1.4}
 .pl-go{color:var(--text-3);font-size:14px}
+
+/*
+ * A font chip while its typeface is on its way.
+ *
+ * Fetching a face takes a moment on a slow connection, and without a sign the
+ * chip looks like it did nothing — so people tap it again, and again. The
+ * pulse says "heard you, working on it" without moving anything on the page.
+ */
+.chip.loading { opacity: .55; animation: chip-wait 1s ease-in-out infinite; }
+@keyframes chip-wait { 50% { opacity: .95; } }

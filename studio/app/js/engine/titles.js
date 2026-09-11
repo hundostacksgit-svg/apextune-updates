@@ -7,15 +7,55 @@
  * are all here.
  */
 
-export const FONTS = [
-  { id: 'sans',    name: 'Inter / system',  stack: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif' },
-  { id: 'impact',  name: 'Impact',          stack: 'Impact,"Haettenschweiler","Arial Narrow Bold",sans-serif' },
-  { id: 'serif',   name: 'Serif',           stack: 'Georgia,"Times New Roman",serif' },
-  { id: 'mono',    name: 'Mono',            stack: 'ui-monospace,"SF Mono",Menlo,Consolas,monospace' },
-  { id: 'rounded', name: 'Rounded',         stack: '"SF Pro Rounded","Segoe UI",Verdana,sans-serif' },
-  { id: 'cond',    name: 'Condensed',       stack: '"Arial Narrow","Helvetica Neue",sans-serif' },
+import { WEB_FONTS } from './fonts-library.js';
+
+/*
+ * The six system stacks stay at the top of the list and keep their ids.
+ *
+ * They are the ones that need no network and never fail, so they stay the
+ * defaults and the fallbacks — and projects already reference them by id, so
+ * renaming or reordering them would change what existing work looks like.
+ */
+export const SYSTEM_FONTS = [
+  { id: 'sans',    name: 'Inter / system',  group: 'On this device', stack: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif' },
+  { id: 'impact',  name: 'Impact',          group: 'On this device', stack: 'Impact,"Haettenschweiler","Arial Narrow Bold",sans-serif' },
+  { id: 'serif',   name: 'Serif',           group: 'On this device', stack: 'Georgia,"Times New Roman",serif' },
+  { id: 'mono',    name: 'Mono',            group: 'On this device', stack: 'ui-monospace,"SF Mono",Menlo,Consolas,monospace' },
+  { id: 'rounded', name: 'Rounded',         group: 'On this device', stack: '"SF Pro Rounded","Segoe UI",Verdana,sans-serif' },
+  { id: 'cond',    name: 'Condensed',       group: 'On this device', stack: '"Arial Narrow","Helvetica Neue",sans-serif' },
 ];
+
+export const FONTS = [...SYSTEM_FONTS, ...WEB_FONTS];
 export const FONT_BY_ID = Object.fromEntries(FONTS.map((f) => [f.id, f]));
+
+/** Group -> fonts, so two hundred typefaces can be browsed rather than scrolled. */
+export const FONT_GROUPS = FONTS.reduce((acc, f) => {
+  (acc[f.group || 'More'] ||= []).push(f);
+  return acc;
+}, {});
+
+/**
+ * Every font id a project's text and captions actually use.
+ *
+ * The exporter calls this to wait for those faces before drawing anything.
+ * Only the fonts in use, never the whole library — two hundred families is
+ * tens of megabytes, and a project with one title needs exactly one of them.
+ */
+export function fontsUsedBy(project) {
+  const ids = new Set();
+  for (const clip of project?.clips || []) {
+    if (clip.text?.font) ids.add(clip.text.font);
+    for (const t of clip.texts || []) if (t.font) ids.add(t.font);
+  }
+  // A cue names a style, and the style names the font — so resolve through it
+  // rather than looking for a font on the cue that is not there.
+  for (const cue of project?.captions || []) {
+    const style = CAPTION_STYLES[cue?.style || 'tiktok'];
+    if (cue?.font) ids.add(cue.font);
+    else if (style?.font) ids.add(style.font);
+  }
+  return [...ids];
+}
 
 /* Caption styles that match what each platform's own editor produces, so a
    video posted from here doesn't look out of place next to native ones. */

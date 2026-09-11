@@ -22,6 +22,8 @@
 import { Renderer } from './render.js';
 import { duration as projectDuration, activeAt, mediaById } from './project.js';
 import { tc } from '../ui.js';
+import { fontsUsedBy } from './titles.js';
+import { preloadFonts } from './fonts-library.js';
 
 export const PRESETS = [
   { id: 'tiktok',  name: 'TikTok / Reels / Shorts', w: 1080, h: 1920, fps: 30, tier: 'free',
@@ -186,11 +188,39 @@ export function exportProject(project, {
       });
     };
 
-    // A timeslice means chunks land continuously rather than in one lump at the
-    // end. That is what makes a partial file possible after a failure.
-    recorder.start(1000);
-
-    if (withAudio) runRealtime(); else runPrecise();
+    /*
+     * Wait for every typeface the project uses before recording a single frame.
+     *
+     * A font that has not finished loading does not exist as far as canvas is
+     * concerned: `fillText` silently draws in something else. Start without
+     * this and the first seconds of the export come back in a fallback face
+     * while the rest is correct — a mismatch the person only sees after
+     * waiting for the whole render, and cannot tell from the preview.
+     *
+     * It never blocks: a font that will not load resolves as missing, the
+     * fallback in its stack draws, and the export goes ahead. Waiting forever
+     * on fonts.googleapis.com would be a worse failure than the wrong face.
+     */
+    preloadFonts(fontsUsedBy(project)).then(({ missing }) => {
+      // Cancelled while the fonts were loading. Nothing was ever recorded, so
+      // there is no onstop to resolve this — say so here, or the export dialog
+      // waits forever on a job that is already over.
+      if (cancelled) {
+        reject(new Error(stopReason === 'cancelled' || !stopReason
+          ? 'Export cancelled.' : stopReason));
+        return;
+      }
+      if (missing.length) {
+        onProgress?.({
+          done: 0, total, phase: 'rendering', seconds: 0, mode,
+          note: `Could not load ${missing.length} font${missing.length === 1 ? '' : 's'} — using the closest match on this device.`,
+        });
+      }
+      // A timeslice means chunks land continuously rather than in one lump at
+      // the end. That is what makes a partial file possible after a failure.
+      recorder.start(1000);
+      if (withAudio) runRealtime(); else runPrecise();
+    });
 
     /* -------- realtime: play the timeline and record what comes out ------- */
     function runRealtime() {

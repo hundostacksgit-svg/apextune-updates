@@ -10,7 +10,17 @@
  * origin's storage quota for no benefit.
  */
 
-const VERSION = 'omnidx-studio-v1.3.0';
+const VERSION = 'omnidx-studio-v1.4.0';
+
+/*
+ * Fonts live in their own cache, outside the versioned one.
+ *
+ * The shell cache is wiped on every release, which is right for code and
+ * wrong for typefaces: a font file at a versioned URL never changes, and
+ * re-downloading two hundred families on every app update would be a lot of
+ * somebody's data for no benefit.
+ */
+const FONT_CACHE = 'omnidx-fonts-v1';
 /*
  * Every module the editor loads, listed exhaustively and generated from the
  * directory rather than remembered.
@@ -39,6 +49,7 @@ const SHELL = [
   './js/engine/effects.js',
   './js/engine/effects-library.js',
   './js/engine/fx-utils.js',
+  './js/engine/fonts-library.js',
   './js/engine/exporter-wc.js',
   './js/engine/exporter.js',
   './js/engine/filters.js',
@@ -112,7 +123,12 @@ self.addEventListener('message', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k)));
+    // The font cache survives a release on purpose — see FONT_CACHE above.
+    // Sweeping it with the rest would re-download every typeface in use on
+    // every update, and leave a freshly-updated app with no fonts offline.
+    await Promise.all(keys
+      .filter((k) => k !== VERSION && k !== FONT_CACHE)
+      .map((k) => caches.delete(k)));
     await self.clients.claim();
   })());
 });
@@ -121,6 +137,37 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
+
+  /*
+   * Typefaces are the one thing worth caching from somewhere else.
+   *
+   * A title in a web font is part of the project, and an editor that loses its
+   * fonts the moment the signal drops is an editor that renders a different
+   * video offline than online. Cache-first and kept forever: a released font
+   * file at a versioned URL never changes, so there is nothing to go stale.
+   *
+   * Only the two Google Fonts hosts, and only GET — nothing else from another
+   * origin goes anywhere near this cache.
+   */
+  if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
+    event.respondWith((async () => {
+      const cache = await caches.open(FONT_CACHE);
+      const hit = await cache.match(request);
+      if (hit) return hit;
+      try {
+        const fresh = await fetch(request);
+        // Opaque responses are cached too: a font served without CORS still
+        // renders, and refusing to keep it means it is fetched again every
+        // launch and missing entirely offline.
+        if (fresh.ok || fresh.type === 'opaque') cache.put(request, fresh.clone());
+        return fresh;
+      } catch {
+        return new Response('', { status: 504, statusText: 'Offline' });
+      }
+    })());
+    return;
+  }
+
   if (url.origin !== self.location.origin) return;      // never cache other origins
 
   const isCode = request.mode === 'navigate'

@@ -1,9 +1,10 @@
 /* Titles: add one, then style it. Text is a clip like any other. */
 
 import { $, $$, esc, toast, slider, selectRow, toggleRow, group } from '../ui.js';
-import { S, actions } from '../main.js';
+import { S, actions, drawFrame } from '../main.js';
 import { addClip, addTrack, clipById, duration } from '../engine/project.js';
-import { TITLE_PRESETS, FONTS, ANIMS, defaultText } from '../engine/titles.js';
+import { TITLE_PRESETS, FONT_GROUPS, ANIMS, defaultText } from '../engine/titles.js';
+import { loadFont, isLoaded } from '../engine/fonts-library.js';
 import { EMOJI, SHAPES, STICKER_ANIMS, defaultSticker } from '../engine/stickers.js';
 import * as licence from '../licence.js';
 
@@ -109,7 +110,77 @@ export function mount(host) {
     }
   });
 
-  void $$;
+  /*
+   * Picking a font fetches it, then redraws.
+   *
+   * The set happens first so the panel responds at once, and the redraw
+   * happens again when the face lands — canvas draws in a fallback until the
+   * font is really loaded, so without that second draw the viewer keeps
+   * showing the old typeface until something else happens to trigger a frame.
+   */
+  host.addEventListener('click', async (e) => {
+    const pick = e.target.closest('[data-font]');
+    if (!pick) return;
+    const id = pick.dataset.font;
+    actions.patchSelected((c) => { if (c.kind === 'title') c.text.font = id; }, 'Change font');
+    if (isLoaded(id)) return;
+    pick.classList.add('loading');
+    const ok = await loadFont(id);
+    pick.classList.remove('loading');
+    if (!ok) { toast('That font needs a connection — using the closest match on this device'); return; }
+    drawFrame?.();
+  });
+
+  // Filter as you type, the same way the effect and look libraries do.
+  $('#t-font-search', host)?.addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    for (const grp of $$('#t-fonts details', host)) {
+      let shown = 0;
+      for (const chip of $$('[data-font]', grp)) {
+        const hit = !q || chip.dataset.search.includes(q);
+        chip.hidden = !hit;
+        if (hit) shown++;
+      }
+      grp.hidden = shown === 0;
+      if (q) grp.open = true;
+    }
+  });
+}
+
+/*
+ * The font picker.
+ *
+ * Two hundred typefaces in a flat dropdown is a list nobody scrolls, so it is
+ * a search box over grouped options — and each option is rendered *in its own
+ * typeface*, which is the only way to choose one. A list of names in the
+ * system font tells you nothing about what you are picking.
+ *
+ * The names that are still loading show in their fallback until the face
+ * arrives, which is honest: that is exactly what a title would look like right
+ * now too.
+ */
+function fontRow(current) {
+  const chip = (f) => `<button class="chip ${current === f.id ? 'on' : ''}"
+    data-font="${esc(f.id)}"
+    data-search="${esc(`${f.name} ${f.group} ${f.id}`.toLowerCase())}"
+    style="font-family:${esc(f.stack)}"
+    title="${esc(f.name)}">${esc(f.name)}</button>`;
+
+  const groups = Object.entries(FONT_GROUPS);
+  const owning = groups.find(([, list]) => list.some((f) => f.id === current))?.[0];
+
+  return `
+    <div class="field" style="margin-top:14px">
+      <label for="t-font-search">Font</label>
+      <input class="input" id="t-font-search" placeholder="Search typefaces — bold, script, mono…">
+    </div>
+    <div id="t-fonts">
+      ${groups.map(([name, list]) => `
+        <details class="group" ${name === (owning || 'On this device') ? 'open' : ''}>
+          <summary>${esc(name)} <span class="tiny muted">${list.length}</span></summary>
+          <div class="gbody"><div class="chips">${list.map(chip).join('')}</div></div>
+        </details>`).join('')}
+    </div>`;
 }
 
 function styleEditor(clip) {
@@ -119,7 +190,7 @@ function styleEditor(clip) {
       <label for="t-content">Words</label>
       <textarea class="input" id="t-content" data-k="content" rows="3">${esc(t.content)}</textarea>
     </div>
-    ${selectRow({ key: 'font', label: 'Font', value: t.font, options: FONTS.map((f) => [f.id, f.name]) })}
+    ${fontRow(t.font)}
     ${selectRow({ key: 'anim', label: 'Animation', value: t.anim, options: ANIMS })}
     ${slider({ key: 'size', label: 'Size', value: t.size, min: 0.02, max: 0.2, step: 0.002,
       fmt: (v) => `${Math.round(v * 1000)}` })}
