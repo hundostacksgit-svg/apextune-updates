@@ -50,6 +50,7 @@ const SHELL = [
   './js/engine/effects-library.js',
   './js/engine/fx-utils.js',
   './js/engine/fonts-library.js',
+  './js/engine/preview.js',
   './js/engine/exporter-wc.js',
   './js/engine/exporter.js',
   './js/engine/filters.js',

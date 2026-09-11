@@ -5,6 +5,7 @@
 
 import { $, $$, esc, toast, empty, slider } from '../ui.js';
 import { S, actions, engine } from '../main.js';
+import { attachPreviews } from '../engine/preview.js';
 import { LOOKS, LOOK_GROUPS_ALL, CONTROLS, neutralWheels, supportsUrlFilters } from '../engine/filters.js';
 import * as licence from '../licence.js';
 import { current as currentLevel } from '../levels.js';
@@ -116,6 +117,10 @@ export function mount(host) {
   // Filter as you type. Typing narrows every group and opens the ones that
   // still have something in them, so a search never leaves you staring at a
   // collapsed heading.
+  // A look is a colour decision, so the chip shows the colour on a real frame
+  // rather than a swatch guessing at it.
+  attachPreviews($('#c-looks', host), 'look');
+
   $('#c-look-search', host)?.addEventListener('input', (e) => {
     const q = e.target.value.trim().toLowerCase();
     for (const grp of $$('#c-looks details', host)) {

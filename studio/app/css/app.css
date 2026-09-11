@@ -802,3 +802,26 @@ input[type=checkbox]{accent-color:var(--blue)}
   color:var(--text); font-weight:600;
 }
 .tl-btn.tl-import:hover{background:color-mix(in srgb,var(--blue) 26%,transparent)}
+
+/*
+ * The picture on a chip.
+ *
+ * A preview is the whole reason to have a library this big — a name like
+ * "Bleach bypass" or "Rubik Moonrocks" tells nobody anything, and scrolling
+ * three hundred names is not choosing, it is guessing. The picture is the
+ * control; the label underneath is how you find it again.
+ *
+ * Sized by aspect-ratio rather than a fixed height so it holds its shape in
+ * every column width, from a phone's two-up to a wide desktop panel.
+ */
+.chip .chip-prev{
+  display:block; width:100%; aspect-ratio:120/68;
+  border-radius:5px; margin-bottom:6px;
+  background:var(--surface-3);
+  object-fit:cover;
+}
+.chip:has(.chip-prev){ padding:6px 6px 8px; line-height:1.25; text-align:center; font-size:11.5px }
+/* A locked chip still shows its preview — seeing what you would get is the
+   point of an upsell. It is dimmed, not hidden. */
+.chip.locked .chip-prev{ opacity:.62; filter:saturate(.7) }
+.chip:hover .chip-prev{ opacity:1 }

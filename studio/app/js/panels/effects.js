@@ -10,6 +10,7 @@ import { $, $$, esc, toast, empty, slider, selectRow } from '../ui.js';
 import { S, actions } from '../main.js';
 import { EFFECT_LIST, EFFECTS, EFFECT_GROUPS, makeEffect } from '../engine/effects.js';
 import { pickerMarkup, wirePicker } from './transition-picker.js';
+import { attachPreviews } from '../engine/preview.js';
 import { clipsOn, clipById } from '../engine/project.js';
 import * as licence from '../licence.js';
 
@@ -59,6 +60,12 @@ export function mount(host) {
     </div>`;
 
   wirePicker(host, 'fx-tp');
+
+  // Every chip shows what it actually does. Nothing is shipped to make this
+  // work — see engine/preview.js — and nothing renders until it is scrolled
+  // into view, so a panel of three hundred costs what the visible dozen cost.
+  attachPreviews($('#fx-lib', host), 'fx');
+  attachPreviews($('#fx-trans', host), 'transition');
 
   // Filter as you type: narrow every group, open the ones that still have
   // something in them, and hide the ones that do not — so a search never

@@ -20,6 +20,7 @@ import {
 import { Renderer } from './engine/render.js';
 import { Transport } from './engine/playback.js';
 import { AudioEngine } from './engine/audio.js';
+import * as preview from './engine/preview.js';
 import * as media from './engine/media.js';
 import { TimelineUI } from './timeline-ui.js';
 import { openPanel, refreshPanel, closePanel, panelIsOverlay, PANELS } from './panels/index.js';
@@ -134,6 +135,20 @@ export const actions = {
     }
     if (!added) return;
     actions.commit(`Import ${added} file${added === 1 ? '' : 's'}`);
+    /*
+     * Point the effect and look previews at the footage that was just added.
+     *
+     * A preview of a stock frame tells you what a grade does in general. A
+     * preview of your own shot tells you whether it suits *this* footage,
+     * which is the question anyone is actually asking when they open the
+     * colour panel. Costs nothing — the frame already exists as the poster.
+     */
+    const firstPoster = S.project.media.find((m) => m.poster)?.poster;
+    if (firstPoster) {
+      const img = new Image();
+      img.onload = () => preview.useProjectFrame(img);
+      img.src = firstPoster;
+    }
     $('#drop-hint')?.classList.add('hide');
     if (!silent) {
       if (S.panel !== 'media') openPanel('media');
