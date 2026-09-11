@@ -80,16 +80,35 @@ html[data-level="intermediate"] [data-min="expert"]{display:none!important}
  * numbers and comparing frames, and saturated blue furniture next to the image
  * lies to your eye about what the image is doing.
  */
-html[data-level="beginner"]{--insp-w:0px;--tl-h:210px}
 html[data-level="beginner"] .inspector{display:none}
 
-html[data-level="intermediate"]{
-  --panel-w:296px;--insp-w:310px;--tl-h:310px;--top-h:52px;
+/*
+ * The per-level metrics are desktop metrics, and they are fenced off from
+ * phones on purpose.
+ *
+ * `html[data-level="beginner"]` is more specific than `:root`, so without this
+ * fence it beats anything a media query sets — a phone in landscape inherited a
+ * fixed 210px timeline on a 360px-tall screen, leaving 52px for the workspace
+ * and a video preview measuring literally zero by zero. Nothing looked broken;
+ * the picture was simply not there.
+ *
+ * Density is a desktop idea anyway. A phone has one layout and it is driven by
+ * how much screen there is, not by how experienced the person is.
+ */
+@media(min-width:761px){
+  html[data-level="beginner"]{--insp-w:0px;--tl-h:210px}
+
+  html[data-level="intermediate"]{
+    --panel-w:296px;--insp-w:310px;--tl-h:310px;--top-h:52px;
+  }
+
+  html[data-level="expert"]{
+    --panel-w:300px;--insp-w:322px;--tl-h:348px;--top-h:48px;
+    --rail-w:60px;
+  }
 }
 
 html[data-level="expert"]{
-  --panel-w:300px;--insp-w:322px;--tl-h:348px;--top-h:48px;
-  --rail-w:60px;
   --r-s:6px;--r-m:9px;--r-l:12px;
   font-size:12.75px;
   /* A calmer surface stack. The picture is the only thing on screen allowed
@@ -206,17 +225,6 @@ html[data-level="expert"] .card-hint{display:none}
     box-shadow:-20px 0 50px rgba(0,0,0,.45)}
   .inspector.open{transform:none}
 }
-@media(max-width:760px){
-  :root{--rail-w:54px;--panel-w:0px;--tl-h:230px;--top-h:50px}
-  .workspace{grid-template-columns:var(--rail-w) 1fr}
-  .panel{position:fixed;left:var(--rail-w);top:var(--top-h);bottom:var(--tl-h);width:270px;
-    z-index:40;transform:translateX(-110%);transition:transform .25s cubic-bezier(.2,.8,.3,1);
-    box-shadow:20px 0 50px rgba(0,0,0,.45)}
-  .panel.open{transform:none}
-  .rail button i{display:none}
-  .rail button span{font-size:19px}
-}
-
 /* ============ viewer ============ */
 .stage{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg-2)}
 .viewer{flex:1;display:grid;place-items:center;padding:16px;min-height:0;position:relative;
@@ -606,3 +614,137 @@ input[type=checkbox]{accent-color:var(--blue)}
   letter-spacing:.06em;color:var(--blue-2)}
 .fx-active{margin-top:13px;padding:12px;border-radius:var(--r-m);
   border:1px solid var(--line);background:var(--surface-2)}
+
+/* ============ phones ============ *
+ *
+ * Below this width the desktop shape stops working, and not by a little: four
+ * columns cannot share 390 pixels, and a 270px drawer sliding in from the side
+ * covers the video you are editing. The whole layout is rebuilt rather than
+ * squeezed.
+ *
+ * What changes:
+ *   - The icon rail becomes a tab bar along the bottom, where a thumb is. On a
+ *     phone the top of the screen is the hardest place to reach and the rail is
+ *     the most-tapped control in the app.
+ *   - Panels and the inspector become bottom sheets that scroll inside
+ *     themselves and can be dragged between half and full height, instead of
+ *     fixed-size boxes with content trapped inside them.
+ *   - Heights are dvh, not %. On iOS the address bar grows and shrinks as you
+ *     scroll, so 100% resolves to a box taller than what you can see and the
+ *     bottom of the app sits permanently under the browser chrome. This is the
+ *     single biggest cause of "I can't reach anything".
+ *   - Everything gets safe-area padding, so the home indicator does not sit on
+ *     top of the transport.
+ */
+@media(max-width:760px){
+  :root{
+    --rail-w:0px;--panel-w:0px;--insp-w:0px;
+    --tl-h:min(38dvh,300px);--top-h:52px;
+    --tabbar-h:calc(58px + env(safe-area-inset-bottom));
+  }
+  html,body{height:100dvh;overflow:hidden;overscroll-behavior:none}
+  body{grid-template-rows:var(--top-h) 1fr var(--tl-h);padding-bottom:var(--tabbar-h)}
+
+  /* the workspace is just the viewer now */
+  .workspace{display:block;min-height:0;position:relative}
+  .stage{height:100%}
+
+  /* rail -> bottom tab bar, scrolled sideways rather than truncated */
+  .rail{position:fixed;left:0;right:0;bottom:0;z-index:45;
+    flex-direction:row;gap:0;padding:4px 4px env(safe-area-inset-bottom);
+    height:var(--tabbar-h);border-right:0;border-top:1px solid var(--line);
+    overflow-x:auto;overflow-y:hidden;scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;background:var(--surface)}
+  .rail::-webkit-scrollbar{display:none}
+  .rail button{flex:0 0 auto;min-width:58px;padding:6px 4px;gap:2px;border-radius:12px}
+  .rail button i{display:block;font-size:9.5px}
+  .rail button span{font-size:17px}
+  .rail button.on::before{left:8px;right:8px;top:auto;bottom:-4px;width:auto;height:3px;
+    border-radius:3px 3px 0 0}
+  .rail-end{margin-top:0;margin-left:auto}
+
+  /* panels and inspector -> bottom sheets */
+  .panel,.inspector{position:fixed;left:0;right:0;bottom:var(--tabbar-h);top:auto;
+    width:auto;z-index:44;height:var(--sheet-h,52dvh);max-height:calc(100dvh - var(--top-h) - var(--tabbar-h));
+    border:1px solid var(--line);border-bottom:0;border-radius:18px 18px 0 0;
+    padding:0 14px 18px;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
+    transform:translateY(calc(100% + var(--tabbar-h)));
+    transition:transform .26s cubic-bezier(.2,.8,.3,1);
+    box-shadow:0 -18px 50px rgba(0,0,0,.5)}
+  .panel.open,.inspector.open{transform:none}
+
+  /* the grab handle, drawn by CSS and made draggable in mobile.js */
+  .panel::before,.inspector::before{content:"";position:sticky;top:0;z-index:2;
+    display:block;height:22px;margin:0 -14px 4px;background:var(--surface);
+    border-radius:18px 18px 0 0;
+    background-image:radial-gradient(circle at 50% 11px,var(--line) 0 2px,transparent 2px);
+    background-repeat:no-repeat;background-size:44px 22px;background-position:center}
+  .panel > *:first-child,.inspector > *:first-child{padding-top:2px}
+
+  /* one sheet at a time — two stacked is unreadable on a phone */
+  .sheet-scrim{position:fixed;inset:0 0 var(--tabbar-h);z-index:43;background:rgba(0,0,0,.45);
+    opacity:0;visibility:hidden;transition:opacity .2s,visibility .2s}
+  .sheet-scrim.on{opacity:1;visibility:visible}
+
+  /* viewer and transport */
+  .viewer{padding:8px}
+  .transport{padding:6px 8px calc(6px + env(safe-area-inset-bottom) * 0);gap:4px}
+  .tp{width:38px;height:38px}       /* 38px is the smallest comfortable touch target */
+  .tp.play{width:48px}
+
+  /* timeline: horizontally scrollable, with room to breathe */
+  .timeline{padding-bottom:0}
+  .tl-bar{padding:6px 8px;gap:6px;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}
+  .tl-bar::-webkit-scrollbar{display:none}
+  /* 38px square is about the smallest a fingertip hits reliably. Several of
+     these are a single glyph, which padding alone leaves too narrow. */
+  .tl-btn{padding:7px 10px;font-size:13px;flex:0 0 auto;min-width:38px;min-height:38px}
+  .tl-zoom button,.tl-tools button{min-width:38px;min-height:38px}
+  .tl-body{grid-template-columns:76px 1fr}
+  .tl-scroll{-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+
+  /* the topbar loses everything that is not essential */
+  .proj-name{max-width:38vw}
+  .tb-btn{min-width:38px;min-height:38px}
+}
+
+@media(max-width:420px){
+  :root{--tl-h:min(34dvh,240px)}
+  .proj-name{max-width:30vw}
+  .rail button{min-width:52px}
+}
+
+/*
+ * A phone held sideways is a different problem, not a smaller one.
+ *
+ * There is almost no height — 360px, minus a toolbar, a timeline and a tab bar
+ * — so a sheet rising from the bottom covers the entire picture no matter how
+ * short you make it. There is, however, plenty of width. So in landscape the
+ * sheets come in from the side instead and take a column, which is the one
+ * arrangement that leaves the video on screen while you work on it.
+ */
+@media(max-width:900px) and (orientation:landscape) and (max-height:560px){
+  :root{--tl-h:min(30dvh,128px);--top-h:44px;--tabbar-h:calc(48px + env(safe-area-inset-bottom))}
+  .transport{padding:3px 8px}
+  .tp{width:34px;height:34px}
+  .tp.play{width:42px}
+  .viewer{padding:4px}
+
+  .panel,.inspector{
+    left:auto;right:0;top:var(--top-h);bottom:var(--tabbar-h);
+    width:min(340px,52vw);height:auto;max-height:none;
+    border-radius:16px 0 0 16px;border:1px solid var(--line);border-right:0;
+    padding:14px;
+    transform:translateX(105%);
+    box-shadow:-18px 0 50px rgba(0,0,0,.5)}
+  .panel.open,.inspector.open{transform:none}
+  /* The grab handle is a bottom-sheet idea; there is nothing to drag here. */
+  .panel::before,.inspector::before{display:none}
+  .sheet-scrim{inset:0 0 var(--tabbar-h) 0}
+  .rail button{min-width:52px}
+
+  /* Make room for the side sheet rather than hiding the picture under it. */
+  body.sheet-open .viewer{padding-right:calc(min(340px,52vw) + 8px);
+    transition:padding-right .26s cubic-bezier(.2,.8,.3,1)}
+}

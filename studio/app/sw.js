@@ -56,6 +56,7 @@ const SHELL = [
   './js/levels.js',
   './js/licence.js',
   './js/main.js',
+  './js/mobile.js',
   './js/palette.js',
   './js/panels/ai.js',
   './js/panels/audio.js',

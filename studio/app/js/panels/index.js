@@ -42,6 +42,7 @@ export function panelIsOverlay() {
 
 export function closePanel() {
   $('#panel').classList.remove('open');
+  import('../mobile.js').then((m) => m.syncScrim()).catch(() => { /* desktop */ });
 }
 
 export function openPanel(name) {
@@ -57,6 +58,10 @@ export function openPanel(name) {
   $$('#rail [data-panel]').forEach((b) => b.classList.toggle('on', b.dataset.panel === name));
   const host = $('#panel');
   host.classList.add('open');           // matters only on phone-width layouts
+  // On a phone both sheets come up from the same edge, so two open at once
+  // means one is buried under the other with no way to reach it.
+  if (panelIsOverlay()) $('#inspector')?.classList.remove('open');
+  import('../mobile.js').then((m) => m.syncScrim()).catch(() => { /* desktop */ });
   host.innerHTML = '';
   entry.mod.mount(host);
   host.classList.add('fade-in');

@@ -23,6 +23,7 @@ import { AudioEngine } from './engine/audio.js';
 import * as media from './engine/media.js';
 import { TimelineUI } from './timeline-ui.js';
 import { openPanel, refreshPanel, closePanel, panelIsOverlay, PANELS } from './panels/index.js';
+import { initMobile } from './mobile.js';
 import { openPalette } from './palette.js';
 import { maybeOfferTour, startTour } from './tutorial.js';
 import { openExport } from './panels/export.js';
@@ -643,7 +644,16 @@ function paintLevel() {
 
   wireChrome();
   sizeCanvas();
+
+  /*
+   * On a desktop the media panel is a column beside the video, so opening it is
+   * free. On a phone it is a sheet over the video, so opening it at launch
+   * greets someone with their own footage hidden behind a file list — and the
+   * way out is to press the same tab again, which nobody thinks to try.
+   * The panel is still mounted and one tap away; it just is not in the way.
+   */
   openPanel('media');
+  if (panelIsOverlay()) closePanel();
 
   // No-op in a browser; hooks up the native menus in the desktop build.
   wireDesktop({
@@ -690,6 +700,11 @@ function paintLevel() {
   actions.refresh();
   paintName();
   paintSaved('ok');
+
+  // Touch gestures and bottom-sheet behaviour. Only does anything on a phone,
+  // and is handed the zoom controls so a pinch can drive the same state the
+  // toolbar slider does rather than keeping a second copy of it.
+  initMobile({ setZoom, getZoom: () => S.zoom });
 
   maybeOfferTour();
   startUpdateChecks();
