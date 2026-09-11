@@ -1050,3 +1050,35 @@ input[type=checkbox]{accent-color:var(--blue)}
   width:100%;height:auto;aspect-ratio:512/200;display:block;
   border-radius:6px;background:#05070c;border:1px solid var(--line);
 }
+
+/* ============ audio mixer ============ */
+.mixer{display:flex;gap:14px;padding:12px}
+.mixer-strip{display:flex;flex-direction:column;align-items:center;gap:8px;flex:0 0 auto}
+.ms-name{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
+.ms-meter{
+  width:60px;height:180px;display:block;border-radius:4px;
+  background:#0a0d14;border:1px solid var(--line);
+}
+/*
+ * A vertical fader, which is what a fader is. `appearance:slider-vertical` is
+ * gone from modern browsers, so the travel is rotated — the alternative is a
+ * horizontal slider under a vertical meter, and a mixer where those disagree
+ * about which way is louder is a mixer that gets misread.
+ */
+.ms-fader{
+  writing-mode:vertical-lr; direction:rtl;
+  width:22px;height:150px;margin:0;accent-color:var(--blue);cursor:ns-resize;
+}
+.ms-db{
+  font-family:var(--mono);font-size:11px;font-weight:600;color:var(--blue-2);
+  font-variant-numeric:tabular-nums;min-width:58px;text-align:center;
+  padding:3px 6px;border-radius:4px;background:var(--surface-3);
+}
+.mixer-help{flex:1;min-width:0;align-self:flex-start;padding-top:16px}
+
+@media (max-width:760px){
+  .mixer{flex-direction:column;align-items:center}
+  .mixer-help{padding-top:0;align-self:stretch}
+  .ms-meter{height:150px}
+  .ms-fader{height:120px}
+}

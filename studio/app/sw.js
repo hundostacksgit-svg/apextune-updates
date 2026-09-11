@@ -55,6 +55,7 @@ const SHELL = [
   './js/engine/multiframe.js',
   './js/engine/matte.js',
   './js/engine/scopes.js',
+  './js/engine/meters.js',
   './js/engine/tags.js',
   './js/engine/brand.js',
   './js/panels/curves.js',

@@ -5,6 +5,7 @@
  */
 
 import { $, $$, esc, toast, slider } from '../ui.js';
+import { MeterState, drawMeter, gainLabel, gainToFader, faderToGain } from '../engine/meters.js';
 import { S, actions, engine } from '../main.js';
 import { decode, detectBeats, detectSilence, peaks } from '../engine/media.js';
 import { repair, describeRepair, detectHum } from '../engine/audio-repair.js';
@@ -23,14 +24,40 @@ export function mount(host) {
     <div class="panel-h"><h2>Audio</h2></div>
     <p class="panel-sub">Levels, music and the two tools that save the most time.</p>
 
-    <div class="group" style="padding:12px">
-      ${slider({ key: 'master', label: 'Master volume', value: engine.audio?.masterVolume ?? 1,
-        min: 0, max: 1.6, step: 0.02, fmt: (v) => `${Math.round(v * 100)}%` })}
-      <div style="height:6px;border-radius:99px;background:var(--surface-3);overflow:hidden;margin-top:6px">
-        <i id="a-meter" style="display:block;height:100%;width:0;background:var(--grad);
-          border-radius:99px;transition:width .08s"></i>
+    <!--
+      A mixer, not a volume slider.
+
+      The question an editor has about audio is never "how loud is it" on a
+      scale of nothing to full — it is "am I going to clip" and "is this loud
+      enough to survive what the platform does to it". Both are questions about
+      decibels, which is why the meter is in dB with the zones marked, and why
+      the fader reads out in dB with unity where a desk puts it.
+    -->
+    <div class="group mixer">
+      <div class="mixer-strip">
+        <div class="ms-name">Master</div>
+        <canvas id="a-meter-cv" class="ms-meter" width="120" height="360"
+          aria-label="Master level meter"></canvas>
+        <input type="range" class="ms-fader" id="a-master-fader"
+          min="0" max="1" step="0.001" orient="vertical"
+          value="${gainToFader(engine.audio?.masterVolume ?? 1)}"
+          aria-label="Master fader">
+        <div class="ms-db" id="a-master-db">${gainLabel(engine.audio?.masterVolume ?? 1)} dB</div>
       </div>
-      <p class="tiny muted" style="margin:7px 0 0">Peaks touching the right edge will clip. Aim for three-quarters.</p>
+      <div class="mixer-help">
+        <p class="tiny muted" style="margin:0 0 8px">
+          <b>Green to −18</b> is comfortable. <b>Amber to −6</b> is loud but fine.
+          <b>Red</b> is asking the encoder to make a decision you will not like.
+        </p>
+        <p class="tiny muted" style="margin:0">
+          The thin line that lags behind is the peak hold — a clip lasts one sample
+          and you would never catch it otherwise. If the strip across the top turns
+          red, something clipped in the last couple of seconds.
+        </p>
+        <div class="btn-row" style="margin-top:10px">
+          <button class="btn btn-sm btn-ghost" id="a-master-reset">Back to 0 dB</button>
+        </div>
+      </div>
     </div>
 
     ${music ? `
@@ -308,15 +335,49 @@ async function cutSilence() {
   void detectSilence;
 }
 
+/*
+ * The meter runs on animation frames, not a timer.
+ *
+ * A peak lasts one sample. A meter sampled every ninetieth of a second misses
+ * most of them, and the whole point of the thing is catching the transient
+ * that will clip the export — so it reads as often as the browser will paint,
+ * and stops entirely when the panel is gone rather than running forever behind
+ * a closed sheet.
+ */
 function startMeter(host) {
-  clearInterval(meterTimer);
-  const bar = $('#a-meter', host);
-  if (!bar) return;
-  meterTimer = setInterval(() => {
-    if (!document.body.contains(bar)) { clearInterval(meterTimer); return; }
-    const level = engine.audio?.level?.() ?? 0;
-    bar.style.width = `${Math.min(100, level * 100)}%`;
-  }, 90);
+  cancelAnimationFrame(meterTimer);
+  const cv = $('#a-meter-cv', host);
+  if (!cv) return;
+  const ctx = cv.getContext('2d');
+  const state = new MeterState();
+
+  const tick = () => {
+    if (!document.body.contains(cv)) return;
+    state.push(engine.audio?.level?.() ?? 0);
+    drawMeter(ctx, 0, 0, cv.width, cv.height, [state]);
+    meterTimer = requestAnimationFrame(tick);
+  };
+  tick();
+
+  const fader = $('#a-master-fader', host);
+  const readout = $('#a-master-db', host);
+  const applyFader = (pos) => {
+    const gain = faderToGain(pos);
+    engine.audio?.setMasterVolume?.(gain);
+    if (readout) readout.textContent = `${gainLabel(gain)} dB`;
+  };
+  fader?.addEventListener('input', (e) => applyFader(Number(e.target.value)));
+  // Double-click a fader to return it to unity. Every desk does this, and
+  // hunting for exactly 0.0 dB by dragging is miserable.
+  fader?.addEventListener('dblclick', () => {
+    fader.value = String(gainToFader(1));
+    applyFader(gainToFader(1));
+  });
+  $('#a-master-reset', host)?.addEventListener('click', () => {
+    if (!fader) return;
+    fader.value = String(gainToFader(1));
+    applyFader(gainToFader(1));
+  });
 }
 
 
