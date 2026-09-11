@@ -23,6 +23,9 @@ import { AudioEngine } from './engine/audio.js';
 import * as preview from './engine/preview.js';
 import { CHECK_RATIOS, drawCheck, lossFor } from './engine/multiframe.js';
 import { tagVideo } from './engine/tags.js';
+import { initMenubar } from './menubar.js';
+import { initHistoryUi, showDid, openHistory, paintUndoButtons } from './history-ui.js';
+import { initTips, applyTipsForLevel, setTips, tipsOn } from './tips.js';
 import * as media from './engine/media.js';
 import { TimelineUI } from './timeline-ui.js';
 import { openPanel, refreshPanel, closePanel, panelIsOverlay, PANELS } from './panels/index.js';
@@ -79,6 +82,15 @@ export const actions = {
     store.markDirty(S.project);
     actions.refresh();
     scheduleSave();
+    /*
+     * Tell the person what just happened, with a way back.
+     *
+     * Not for the continuous things. A coalesce key means this is one frame of
+     * a drag, and a bar that reappears sixty times a second is a flicker, not
+     * reassurance — those land as one history entry anyway, so the bar shows
+     * once when the drag is over.
+     */
+    if (!coalesceKey) showDid(label);
   },
 
   /** Repaint everything that reads from the project. */
@@ -525,11 +537,8 @@ function paintTransport() {
 }
 
 function paintUndo() {
-  const u = $('#btn-undo'), r = $('#btn-redo');
-  u.disabled = !S.history.canUndo;
-  r.disabled = !S.history.canRedo;
-  u.title = S.history.canUndo ? `Undo ${S.history.undoLabel} (Ctrl+Z)` : 'Nothing to undo';
-  r.title = S.history.canRedo ? `Redo ${S.history.redoLabel} (Ctrl+Shift+Z)` : 'Nothing to redo';
+  // The button carries the name of what it will undo — see history-ui.js.
+  paintUndoButtons();
 }
 
 function paintName() {
@@ -667,7 +676,10 @@ function wireChrome() {
   $('#btn-redo').addEventListener('click', () => actions.redo());
   $('#btn-palette').addEventListener('click', openPalette);
   $('#btn-export').addEventListener('click', openExport);
-  $('#btn-projects').addEventListener('click', () => openPanel('settings'));
+  // Projects moved into the File menu. Optional-chained rather than deleted:
+  // the desktop shell and older cached shells may still carry the button, and
+  // one missing element must not take the whole boot down with it.
+  $('#btn-projects')?.addEventListener('click', () => openPanel('settings'));
   $('#btn-account').addEventListener('click', () => openPanel('settings'));
   $('#btn-theme').addEventListener('click', () => {
     const next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
@@ -686,6 +698,7 @@ function wireChrome() {
   // level switch
   $$('#level-switch button').forEach((b) => b.addEventListener('click', () => {
     levels.set(b.dataset.level);
+    applyTipsForLevel(b.dataset.level);
     paintLevel();
     refreshPanel();
     toast(`${levels.DESCRIPTIONS[b.dataset.level].name} — ${levels.DESCRIPTIONS[b.dataset.level].line}`, '', 3400);
@@ -780,6 +793,94 @@ function paintLevel() {
    */
   openPanel('media');
   if (panelIsOverlay()) closePanel();
+
+  /*
+   * The menu bar, wired to the same actions the buttons and shortcuts use.
+   *
+   * One set of verbs behind three ways of reaching them. A menu item that ran
+   * its own slightly different code is how a menu ends up doing something
+   * subtly unlike the button next to it.
+   */
+  initHistoryUi({
+    history: () => S.history,
+    undo: () => actions.undo(),
+    goTo: (i) => actions.historyGoTo(i),
+  });
+
+  initMenubar(document, {
+    /* file */
+    newProject: () => actions.newProject(),
+    openProject: () => openPanel('settings'),
+    importMedia: () => $('#file-input').click(),
+    importProjectFile: () => $('#file-input').click(),
+    exportProjectFile: () => actions.exportProjectFile(),
+    exportVideo: () => openExport(),
+
+    /* edit */
+    undo: () => actions.undo(),
+    redo: () => actions.redo(),
+    canUndo: () => S.history.canUndo,
+    canRedo: () => S.history.canRedo,
+    undoLabel: () => S.history.undoLabel,
+    redoLabel: () => S.history.redoLabel,
+    openHistory,
+    duplicate: () => actions.duplicateSelected(),
+    remove: () => actions.deleteSelected(),
+    hasSelection: () => S.sel.size > 0,
+    selectAll: () => actions.select(S.project.clips.map((c) => c.id)),
+    deselect: () => actions.select([]),
+
+    /* clip */
+    split: () => actions.splitAtPlayhead(),
+    track: () => openPanel('effects'),
+
+    /* timeline */
+    togglePlay: () => togglePlay(),
+    goStart: () => actions.seek(0),
+    goEnd: () => actions.seek(duration(S.project)),
+    marker: () => actions.addMarker(),
+    zoomIn: () => setZoom(S.zoom * 1.4),
+    zoomOut: () => setZoom(S.zoom / 1.4),
+    zoomFit: () => $('#zoom-fit')?.click(),
+    tool: (t) => actions.setTool(t),
+
+    /* view and settings */
+    openPanel,
+    isOn: (what) => {
+      if (what === 'safe') return Boolean($('#tg-safe')?.checked);
+      if (what === 'ratios') return Boolean($('#tg-ratios')?.checked);
+      if (what === 'scopes') return Boolean($('#scope'));
+      if (what === 'tips') return tipsOn();
+      return false;
+    },
+    toggle: (what) => {
+      if (what === 'tips') { setTips(!tipsOn()); return; }
+      if (what === 'scopes') { openPanel('color'); return; }
+      const box = what === 'safe' ? $('#tg-safe') : $('#tg-ratios');
+      if (!box) return;
+      box.checked = !box.checked;
+      box.dispatchEvent(new Event('change', { bubbles: true }));
+    },
+    theme: () => $('#btn-theme')?.click(),
+    fullscreen: () => {
+      if (document.fullscreenElement) document.exitFullscreen?.();
+      else document.documentElement.requestFullscreen?.();
+    },
+    level: () => levels.current(),
+    setLevel: (level) => {
+      levels.set(level);
+      applyTipsForLevel(level);
+      paintLevel();
+      refreshPanel();
+    },
+    account: () => openPanel('settings'),
+    palette: () => openPalette(),
+    support: () => openPanel('help'),
+    openUrl: (href) => window.open(href, '_blank', 'noopener'),
+  });
+
+  initTips();
+  applyTipsForLevel(levels.current());
 
   // No-op in a browser; hooks up the native menus in the desktop build.
   wireDesktop({

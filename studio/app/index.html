@@ -37,9 +37,13 @@
     <a class="brand" href="../" title="Back to omnidx.net/studio">
       <span class="mark"></span><span class="bname">OmniDx <b>Studio</b></span>
     </a>
-    <button class="tb-btn" id="btn-projects" title="Projects (Ctrl+O)">
-      <span class="ico">🗂</span><span class="lbl">Projects</span>
-    </button>
+    <!--
+      The menu bar. File, Edit, Clip, Timeline, View, Settings, Help — the same
+      seven every editing application has, in the order people already expect
+      them. Contents are built in menubar.js when each one opens, so labels
+      like "Undo Add clip" name the thing that will actually happen.
+    -->
+    <nav class="menubar" id="menubar" aria-label="Menus"></nav>
     <input class="proj-name" id="proj-name" value="Untitled project" aria-label="Project name" spellcheck="false">
     <span class="saved" id="saved-dot" title="Saved">Saved</span>
   </div>
@@ -53,7 +57,8 @@
   </div>
 
   <div class="tb-right">
-    <button class="tb-btn" id="btn-undo" title="Undo (Ctrl+Z)" disabled><span class="ico">↶</span></button>
+    <button class="tb-btn tb-undo" id="btn-undo" title="Undo (Ctrl+Z)" disabled>
+      <span class="ico">↶</span><span class="lbl">Undo</span></button>
     <button class="tb-btn" id="btn-redo" title="Redo (Ctrl+Shift+Z)" disabled><span class="ico">↷</span></button>
     <button class="tb-btn" id="btn-palette" title="Find anything (Ctrl+K)"><span class="ico">⌘</span><span class="lbl">Find</span></button>
     <button class="tb-btn" id="btn-theme" title="Dark / light"><span class="ico">◐</span></button>

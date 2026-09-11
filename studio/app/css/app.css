@@ -881,3 +881,106 @@ input[type=checkbox]{accent-color:var(--blue)}
   .rc-box canvas{max-height:92px}
   .rc-head .tiny{display:none}   /* the room is better spent on the pictures */
 }
+
+/* ===================================================================
+   Menu bar
+   =================================================================== */
+.menubar{display:flex;align-items:center;gap:1px;margin-left:4px}
+.mn{position:relative}
+.mn-btn{
+  padding:6px 10px;border:0;background:transparent;color:var(--text-2);
+  font:inherit;font-size:12.5px;border-radius:5px;cursor:pointer;white-space:nowrap;
+}
+.mn-btn:hover,.mn.open .mn-btn{background:var(--surface-2);color:var(--text)}
+.mn-pop{
+  display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:120;
+  min-width:250px;padding:5px;border-radius:var(--r-m);
+  background:var(--surface-2);border:1px solid var(--line);
+  box-shadow:0 18px 44px rgba(0,0,0,.5);
+}
+.mn.open .mn-pop{display:block}
+.mn-item{
+  display:flex;align-items:center;gap:16px;width:100%;
+  padding:7px 10px;border:0;background:transparent;color:var(--text);
+  font:inherit;font-size:12.5px;text-align:left;border-radius:5px;cursor:pointer;
+}
+.mn-item:hover:not([disabled]){background:color-mix(in srgb,var(--blue) 22%,transparent)}
+/* Unavailable, not absent. A menu whose items come and go cannot be learned. */
+.mn-item[disabled]{opacity:.38;cursor:default}
+.mn-lbl{flex:1;min-width:0}
+.mn-key{color:var(--text-3);font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.mn-sep{height:1px;margin:4px 8px;background:var(--line)}
+
+/* Phones have no room for seven menus next to a project name. Everything in
+   them is reachable from the rail and the panels, so the bar steps aside. */
+@media (max-width:760px){ .menubar{display:none} }
+
+/* ===================================================================
+   Undo
+   =================================================================== */
+.tb-undo .lbl{max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/*
+ * The bar that says what just happened.
+ *
+ * Above the transport rather than at the very bottom: that is where the eye
+ * already is after dropping a clip, and the bottom edge of a phone is where
+ * the home indicator lives.
+ */
+.undo-bar{
+  position:fixed;left:50%;transform:translate(-50%,14px);
+  bottom:calc(96px + env(safe-area-inset-bottom));
+  z-index:90;display:flex;align-items:center;gap:12px;
+  padding:9px 10px 9px 15px;border-radius:999px;
+  background:var(--surface-2);border:1px solid var(--line);
+  box-shadow:0 12px 34px rgba(0,0,0,.45);
+  font-size:13px;opacity:0;pointer-events:none;
+  transition:opacity .18s ease,transform .18s ease;
+  max-width:min(92vw,520px);
+}
+.undo-bar.on{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.ub-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ub-undo{
+  border:1px solid color-mix(in srgb,var(--blue) 55%,var(--line));
+  background:color-mix(in srgb,var(--blue) 20%,transparent);
+  color:var(--text);font:inherit;font-size:12.5px;font-weight:600;
+  padding:5px 13px;border-radius:999px;cursor:pointer;flex:0 0 auto;
+}
+.ub-undo:hover{background:color-mix(in srgb,var(--blue) 32%,transparent)}
+.ub-x{border:0;background:transparent;color:var(--text-3);cursor:pointer;font-size:13px;padding:4px}
+.ub-x:hover{color:var(--text)}
+@media (prefers-reduced-motion:reduce){ .undo-bar{transition:opacity .18s ease} }
+
+/* The history list */
+.hist-list{max-height:52vh;overflow:auto;margin-bottom:14px;
+  border:1px solid var(--line);border-radius:var(--r-s)}
+.hist-row{
+  display:flex;align-items:center;gap:10px;width:100%;
+  padding:9px 11px;border:0;border-bottom:1px solid var(--line-soft);
+  background:transparent;color:var(--text);font:inherit;font-size:12.5px;
+  text-align:left;cursor:pointer;
+}
+.hist-row:last-child{border-bottom:0}
+.hist-row:hover{background:var(--surface-3)}
+.hist-dot{width:7px;height:7px;border-radius:50%;background:var(--line);flex:0 0 auto}
+.hist-row.now .hist-dot{background:var(--blue);box-shadow:0 0 0 3px color-mix(in srgb,var(--blue) 25%,transparent)}
+.hist-row.now{background:color-mix(in srgb,var(--blue) 10%,transparent);font-weight:600}
+/* Undone steps stay listed and faded — they are exactly what you might want
+   back, and hiding them makes redo feel like a trapdoor. */
+.hist-row.undone{opacity:.45}
+.hist-lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist-when{color:var(--text-3);font-size:11px;font-variant-numeric:tabular-nums}
+.hist-tag{color:var(--blue);font-size:10.5px;font-weight:600}
+
+/* ===================================================================
+   Hover tips
+   =================================================================== */
+.tip-bubble{
+  position:fixed;z-index:200;max-width:286px;
+  padding:9px 12px;border-radius:var(--r-s);
+  background:var(--surface-2);border:1px solid var(--line);
+  box-shadow:0 12px 30px rgba(0,0,0,.5);
+  font-size:12.5px;line-height:1.45;color:var(--text);
+  opacity:0;pointer-events:none;transition:opacity .12s ease;
+}
+.tip-bubble.on{opacity:1}
