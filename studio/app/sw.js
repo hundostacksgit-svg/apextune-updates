@@ -46,6 +46,7 @@ const SHELL = [
   './js/engine/playback.js',
   './js/engine/project.js',
   './js/engine/proxy.js',
+  './js/engine/reference.js',
   './js/engine/render.js',
   './js/engine/stickers.js',
   './js/engine/templates.js',

@@ -46,9 +46,10 @@ export function mount(host) {
       ${esc(licence.requires('ai-edit')?.name || 'Creator')} —
       $${(licence.requires('ai-edit')?.once ?? 19.99).toFixed(2)}, paid once, no subscription.
       <br><br>
-      <b>The free way to do the same job:</b> the <b>Styles</b> panel builds a complete edit —
-      cuts on the beat, a look, transitions, captions — entirely on this device, with no AI and
-      no charge. Most people never need more than that.
+      <b>Two free ways to do the same job,</b> both running entirely on this device:
+      <b>Copy an edit you like</b> just below — drop in any video and it rebuilds that edit's
+      shape with your clips — and the <b>Styles</b> panel, which builds a complete edit with
+      cuts on the beat, a look, transitions and captions. Neither costs anything, ever.
       <div class="btn-row" style="margin-top:10px">
         <button class="btn btn-sm btn-primary" id="ai-styles">Open Styles instead</button>
         <button class="btn btn-sm" id="ai-upgrade">What's in ${esc(licence.requires('ai-edit')?.name || 'Creator')}?</button>
@@ -59,6 +60,23 @@ export function mount(host) {
       <b>Import something first.</b> The AI edits your footage — it doesn't generate any.
       <button class="btn btn-sm" id="ai-import" style="margin-top:9px">Choose files</button>
     </div>`}
+
+    <!-- Copy an edit you like. Free, because it runs entirely on this device —
+         no request leaves the machine, so there is nothing to meter. -->
+    <details class="group" id="ai-ref" style="margin-bottom:12px">
+      <summary>Copy an edit you like</summary>
+      <div class="gbody">
+        <p class="tiny muted" style="margin:0 0 10px">
+          Drop in a video whose style you want — a TikTok you saved, a trailer, anything.
+          It works out how that edit was cut and rebuilds the same shape with <b>your</b> clips.
+          Nothing from the video you drop in ends up in yours: not a frame, not a sound.
+          Runs on this device, so it is free and works offline.
+        </p>
+        <button class="btn btn-sm btn-full" id="ref-pick">Choose a video to copy</button>
+        <input type="file" id="ref-file" accept="video/*" hidden>
+        <div id="ref-out" style="margin-top:10px"></div>
+      </div>
+    </details>
 
     <textarea class="input" id="ai-prompt" rows="4"
       placeholder="Make a 30 second TikTok trailer, fast cuts on the beat, teal and orange, big captions"></textarea>
@@ -98,12 +116,89 @@ export function mount(host) {
     $('#ai-prompt', host).focus();
   }));
 
+  $('#ref-pick', host)?.addEventListener('click', () => $('#ref-file', host).click());
+  $('#ref-file', host)?.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (file) runReference(host, file);
+    e.target.value = '';          // so choosing the same file twice still fires
+  });
+
   $('#ai-plan', host).addEventListener('click', () => runPlan(host));
   $('#ai-prompt', host).addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') runPlan(host);
   });
 
   if (lastPlan) paintPlan(host, lastPlan);
+}
+
+/* ------------------------------------------------------------------ */
+/* copying an edit from a reference video                              */
+/* ------------------------------------------------------------------ */
+/*
+ * Deliberately free and deliberately local. Everything here is arithmetic over
+ * frames this device already decoded, so there is no request to charge for —
+ * and it keeps working on a plane, which an AI feature never does.
+ */
+
+let refBusy = false;
+
+async function runReference(host, file) {
+  if (refBusy) return;
+  refBusy = true;
+  const out = $('#ref-out', host);
+  const started = performance.now();
+
+  const bar = (p, label) => {
+    out.innerHTML = `<div class="note tiny" style="margin:0">
+      <b>${esc(label)}</b>
+      <div style="height:5px;border-radius:99px;background:var(--surface-3);overflow:hidden;margin-top:7px">
+        <i style="display:block;height:100%;width:${Math.round(p * 100)}%;background:var(--grad)"></i>
+      </div></div>`;
+  };
+
+  try {
+    const { analyseReference, describeReference, planFromReference } =
+      await import('../engine/reference.js');
+
+    bar(0.02, 'Opening the video');
+    const profile = await analyseReference(file, { onProgress: (p, label) => bar(p, label) });
+
+    const plan = planFromReference(profile, {
+      media: S.project.media,
+      beats: S.beats,
+      targetDur: null,
+    });
+
+    const took = ((performance.now() - started) / 1000).toFixed(1);
+    out.innerHTML = `
+      <div class="note ok tiny" style="margin:0 0 10px">
+        <b>Read it in ${took}s.</b> Here is what that edit is doing:
+      </div>
+      <ul style="margin:0 0 12px;padding-left:18px;font-size:12px;color:var(--text-2)">
+        ${describeReference(profile).map((l) => `<li>${esc(l)}</li>`).join('')}
+      </ul>
+      ${(plan.warnings || []).map((w) => `<div class="note tiny">${esc(w)}</div>`).join('')}
+      <button class="btn btn-sm btn-primary btn-full" id="ref-apply">
+        Rebuild this with my clips</button>
+      <p class="tiny muted" style="margin:9px 0 0">
+        It copies the <b>shape</b> of the edit — the rhythm, the pacing, the ratio, roughly the
+        grade. It cannot copy the footage, and does not try to.
+      </p>`;
+
+    $('#ref-apply', out).addEventListener('click', async () => {
+      if (!plan.steps.length) { toast(plan.summary, 'bad'); return; }
+      const report = await applyPlan(S.project, plan, { beats: S.beats });
+      if (report.failed.length) { toast(report.failed[0].why, 'bad', 5000); return; }
+      actions.commit('Copy an edit');
+      toast(plan.summary, 'ok', 5000);
+    });
+  } catch (err) {
+    // Cancelling is not a failure and should not read like one.
+    out.innerHTML = err.message === 'cancelled' ? ''
+      : `<div class="note tiny" style="margin:0;color:var(--bad)">${esc(err.message)}</div>`;
+  } finally {
+    refBusy = false;
+  }
 }
 
 /* ------------------------------------------------------------------ */
