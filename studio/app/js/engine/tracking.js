@@ -400,3 +400,175 @@ export function describeTrack(track) {
     text: 'The match was weak the whole way through. Pick a box with more detail in it — an eye, a logo, a corner — rather than a flat area.',
   };
 }
+
+/* ------------------------------------------------------------------ *
+ * Finding something worth tracking, without being told
+ * ------------------------------------------------------------------ */
+
+/*
+ * "Smart tracking" means you press one button instead of drawing a box.
+ *
+ * There is no model here and none is needed. What makes a region trackable is
+ * a measurable property of the pixels, and it is the same property professional
+ * trackers use to place their own points: a patch you can locate again next
+ * frame must have detail running in *two* directions. A flat wall has none and
+ * slides anywhere. A straight edge has one, so a patch on it can slide along
+ * that edge without the match getting any worse — the aperture problem, and the
+ * reason a tracker placed on the side of a building drifts sideways forever.
+ *
+ * The measure is the smaller eigenvalue of the structure tensor over the patch
+ * (Shi and Tomasi, 1994). Large in both directions means a corner, which is the
+ * one thing that can be located unambiguously.
+ *
+ * Trackability alone would happily pick a corner of the wallpaper. So it is
+ * weighted by two more things:
+ *
+ *   • How differently the region moves from the frame as a whole. The subject
+ *     is the part that does not move with the background.
+ *   • How close it is to the middle, gently — people frame what they mean.
+ */
+
+/** Shi–Tomasi cornerness over a cell: the smaller eigenvalue of [[gxx,gxy],[gxy,gyy]]. */
+function cornerness(plane, w, h, x0, y0, cw, ch) {
+  let gxx = 0, gyy = 0, gxy = 0, n = 0;
+  const x1 = Math.min(w - 1, x0 + cw), y1 = Math.min(h - 1, y0 + ch);
+  for (let y = Math.max(1, y0); y < y1; y += 2) {
+    for (let x = Math.max(1, x0); x < x1; x += 2) {
+      const i = y * w + x;
+      const gx = plane[i + 1] - plane[i - 1];
+      const gy = plane[i + w] - plane[i - w];
+      gxx += gx * gx; gyy += gy * gy; gxy += gx * gy;
+      n++;
+    }
+  }
+  if (!n) return 0;
+  gxx /= n; gyy /= n; gxy /= n;
+  const tr = gxx + gyy;
+  const det = gxx * gyy - gxy * gxy;
+  // The smaller root of the characteristic polynomial. Guarded, because
+  // floating point can make the discriminant very slightly negative.
+  const disc = Math.max(0, tr * tr / 4 - det);
+  return tr / 2 - Math.sqrt(disc);
+}
+
+/** Mean absolute difference over a cell — how much this part of the frame moved. */
+function cellMotion(a, b, w, h, x0, y0, cw, ch) {
+  let sum = 0, n = 0;
+  const x1 = Math.min(w, x0 + cw), y1 = Math.min(h, y0 + ch);
+  for (let y = y0; y < y1; y += 2) {
+    for (let x = x0; x < x1; x += 2) {
+      const i = y * w + x;
+      sum += Math.abs(a[i] - b[i]);
+      n++;
+    }
+  }
+  return n ? sum / n : 0;
+}
+
+/**
+ * Pick something worth tracking in this clip.
+ *
+ * Returns a box in the same 0..1 coordinates `trackBox` takes, plus why it was
+ * chosen — the panel shows that, because a tracker that silently picks the
+ * wrong thing is far more annoying than one that says what it locked onto.
+ *
+ * Returns null rather than guessing when nothing in the frame is trackable —
+ * a locked-off shot of a blank wall genuinely has nothing to follow, and
+ * saying so beats producing a track that drifts.
+ */
+export async function findTarget(video, { at = 0, gap = 0.25 } = {}) {
+  if (!video?.videoWidth) throw new Error('That clip has not finished loading yet.');
+  const reader = new FrameReader(video);
+  const w = reader.w, h = reader.h;
+
+  await reader.seek(at);
+  const first = reader.luma();
+  // A second frame a little later is what separates the subject from the set.
+  // If the clip is too short for one, trackability alone still works.
+  let second = null;
+  const later = Math.min(at + gap, (video.duration || at) - 0.02);
+  if (later > at + 0.01) {
+    await reader.seek(later);
+    second = reader.luma();
+  }
+
+  const COLS = 12, ROWS = 12;
+  const cw = Math.floor(w / COLS), ch = Math.floor(h / ROWS);
+  if (cw < 4 || ch < 4) return null;
+
+  const cells = [];
+  let maxCorner = 0, maxMotion = 0;
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const x0 = c * cw, y0 = r * ch;
+      const corner = cornerness(first, w, h, x0, y0, cw, ch);
+      const motion = second ? cellMotion(first, second, w, h, x0, y0, cw, ch) : 0;
+      maxCorner = Math.max(maxCorner, corner);
+      maxMotion = Math.max(maxMotion, motion);
+      cells.push({ c, r, corner, motion });
+    }
+  }
+  if (maxCorner < 12) return null;          // genuinely nothing to hold onto
+
+  // The typical motion, so "moves differently from the background" has a
+  // baseline. The median rather than the mean: one violently moving cell
+  // should not redefine what normal is.
+  const sorted = cells.map((x) => x.motion).sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)] || 0;
+
+  let best = null;
+  for (const cell of cells) {
+    const track = cell.corner / maxCorner;
+    // How much this cell stands out from the background's motion, either by
+    // moving when the frame is still or by holding still when it pans.
+    const distinct = maxMotion > 2
+      ? Math.min(1, Math.abs(cell.motion - median) / (maxMotion - median || 1))
+      : 0;
+    const dx = (cell.c + 0.5) / COLS - 0.5;
+    const dy = (cell.r + 0.5) / ROWS - 0.5;
+    const centre = 1 - Math.min(1, Math.hypot(dx, dy) * 1.6);
+
+    // Trackability is the veto: a region that cannot be followed is useless no
+    // matter how interesting it is, so it multiplies rather than adds.
+    const score = track * (0.45 + 0.4 * distinct + 0.25 * centre);
+    if (!best || score > best.score) best = { ...cell, score, track, distinct, centre };
+  }
+  if (!best || best.track < 0.28) return null;
+
+  // A box around the winning cell, a little larger than the cell itself: the
+  // matcher wants some context around the feature, not the feature alone.
+  const box = {
+    x: (best.c + 0.5) / COLS,
+    y: (best.r + 0.5) / ROWS,
+    w: Math.min(0.35, (cw * 2.2) / w),
+    h: Math.min(0.35, (ch * 2.2) / h),
+  };
+
+  const why = best.distinct > 0.5
+    ? 'the part of the frame moving differently from the background'
+    : best.centre > 0.7
+      ? 'the most trackable detail near the middle of the frame'
+      : 'the strongest trackable detail in the frame';
+
+  return { box, why, confidence: Math.min(1, best.track * (0.5 + best.distinct * 0.5)) };
+}
+
+/**
+ * Find something and track it, in one call.
+ *
+ * This is what the one-press button runs. Failures are separated on purpose:
+ * "there is nothing here to follow" and "I lost it half way" need different
+ * answers from the person, and collapsing them into "tracking failed" tells
+ * them nothing about which.
+ */
+export async function autoTrack(video, opts = {}) {
+  const target = await findTarget(video, { at: opts.from || 0 });
+  if (!target) {
+    throw new Error(
+      'Nothing in this shot is distinct enough to follow — it is too flat, too '
+      + 'blurred or too evenly lit. Drawing a box by hand around something with '
+      + 'a hard edge will work where this cannot.');
+  }
+  const track = await trackBox(video, { ...opts, box: target.box });
+  return { ...track, auto: true, why: target.why, confidence: target.confidence };
+}

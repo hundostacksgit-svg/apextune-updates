@@ -13,7 +13,7 @@ import { $, esc, toast, drag, modal, closeModal } from '../ui.js';
 import { S, actions, engine } from '../main.js';
 import { clipById, mediaById, sourceTime } from '../engine/project.js';
 import { elementFor } from '../engine/media.js';
-import { trackBox, smoothTrack, applyTrack, describeTrack } from '../engine/tracking.js';
+import { trackBox, smoothTrack, applyTrack, describeTrack, findTarget } from '../engine/tracking.js';
 import { makeEffect } from '../engine/effects.js';
 import * as licence from '../licence.js';
 
@@ -56,8 +56,48 @@ export function openTracker(clip) {
 
   hint.innerHTML = `
     <button class="btn btn-sm btn-primary" id="tk-go">Track it</button>
+    <button class="btn btn-sm" id="tk-auto" title="Find something worth following and put the box on it">✨ Find it for me</button>
     <button class="btn btn-sm btn-ghost" id="tk-cancel">Cancel</button>
     <span class="tiny muted" style="margin-left:8px">Drag anywhere to redraw the box</span>`;
+
+  /*
+   * Put the box on something automatically.
+   *
+   * It moves the box rather than tracking straight away, on purpose: you see
+   * what it chose and can accept or redraw before spending the time. A tracker
+   * that silently picks the wrong thing and then grinds through the clip is
+   * worse than one that asks.
+   */
+  $('#tk-auto')?.addEventListener('click', async () => {
+    const btn = $('#tk-auto');
+    btn.disabled = true;
+    btn.textContent = 'Looking…';
+    try {
+      const node = elementFor(mediaById(S.project, clip.mediaId), clip.id);
+      const at = sourceTime(clip, S.time >= clip.start && S.time < clip.start + clip.dur
+        ? S.time : clip.start);
+      const found = await findTarget(node, { at });
+      if (!found) {
+        toast('Nothing in this shot is distinct enough to lock onto — draw a box '
+          + 'around something with a hard edge instead.', 'bad', 6000);
+        return;
+      }
+      Object.assign(box.style, {
+        left: `${Math.max(0, (found.box.x - found.box.w / 2) * 100)}%`,
+        top: `${Math.max(0, (found.box.y - found.box.h / 2) * 100)}%`,
+        width: `${found.box.w * 100}%`,
+        height: `${found.box.h * 100}%`,
+      });
+      // Say what it picked and why. A box that appears with no explanation
+      // gives you nothing to judge it against.
+      toast(`Locked onto ${found.why}. Press Track it, or drag to move the box.`, 'ok', 5000);
+    } catch (err) {
+      toast(err.message, 'bad', 5000);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '✨ Find it for me';
+    }
+  });
   hint.style.pointerEvents = 'auto';
 
   const close = () => {
@@ -236,6 +276,8 @@ export function trackSection(clip) {
       </p>
       ${canTrack
         ? '<button class="btn btn-sm btn-full" data-act="track">Track something in this clip</button>'
+          + '<p class="tiny muted" style="margin:7px 0 0">'
+          + 'Or press <b>✨ Find it for me</b> in the viewer and it picks the subject itself.</p>'
         : '<p class="tiny muted" style="margin:0">Tracking needs a video clip — this one is a '
           + `${clip.kind === 'title' ? 'title' : clip.kind === 'sticker' ? 'sticker' : 'still'}. `
           + 'Track the video underneath, then pin this to it.</p>'}
