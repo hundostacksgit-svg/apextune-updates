@@ -11,6 +11,7 @@ import { $, $$, el, esc, drag, clamp, toast, dur as fmtDur } from './ui.js';
 import {
   clipsOn, clipById, mediaById, trackById, duration,
   splitClip, trimClip, moveClip, snapPoints, snapTo, addTrack, removeTrack,
+  rollEdit, slipClip, slideClip, rippleTrim, handles, neighbourBefore, neighbourAfter,
 } from './engine/project.js';
 import * as kf from './keyframes-ui.js';
 import * as licence from './licence.js';
@@ -34,6 +35,7 @@ export class TimelineUI {
     this._wireStatic();
     this._wireKeyframes();
     this._wireMenus();
+    this._wireTrimCursor();
   }
 
   get project() { return this.state.project; }
@@ -387,6 +389,27 @@ export class TimelineUI {
    * layer header. Built when the menu opens so every item knows what is
    * selected, where the playhead is and what is on the clipboard.
    */
+  /*
+   * The cursor names the trim before you start it.
+   *
+   * Four operations behind one gesture is only usable if the pointer tells you
+   * which one you are about to get — the difference between rolling a cut and
+   * rippling it is the difference between an edit that stays in sync and one
+   * that does not.
+   */
+  _wireTrimCursor() {
+    this.tracks.addEventListener('pointermove', (e) => {
+      if (this.state.tool !== 'trim') return;
+      const node = e.target.closest('.clip');
+      if (!node) { this.tracks.dataset.trim = ''; return; }
+      const clip = clipById(this.project, node.dataset.clip);
+      if (!clip) return;
+      const pick = this.trimKindAt(clip, e.clientX, e.altKey);
+      this.tracks.dataset.trim = pick?.kind || '';
+    });
+    this.tracks.addEventListener('pointerleave', () => { this.tracks.dataset.trim = ''; });
+  }
+
   _wireMenus() {
     attachMenu(this.tracks, (e) => {
       const node = e.target.closest('.clip');
@@ -464,6 +487,18 @@ export class TimelineUI {
     if (!clip) return;
     const track = trackById(this.project, clip.trackId);
     if (track?.locked) return;
+
+    /*
+     * The trim tool: which of the four you get depends on where you grabbed.
+     *
+     * Resolve calls this smart trim and it is the right idea — one tool, and
+     * the part of the clip under the cursor picks the operation, so the four
+     * trims are one gesture with four meanings rather than four modes to
+     * remember. The readout says which one is happening while you drag,
+     * because a tool that silently picks between four behaviours has to tell
+     * you which it picked.
+     */
+    if (this.state.tool === 'trim') { this._trimDrag(e, clip); return; }
 
     // Razor cuts where you click instead of selecting.
     if (this.state.tool === 'razor') {
@@ -570,6 +605,85 @@ export class TimelineUI {
    * clip onto one is already meaningful (it becomes audio only), so the bottom
    * is a real destination rather than an edge to grow past.
    */
+  /** Which trim a point on a clip means. Also used to paint the cursor. */
+  trimKindAt(clip, clientX, altKey = false) {
+    const node = this.tracks.querySelector(`[data-clip="${CSS.escape(clip.id)}"]`);
+    if (!node) return null;
+    const r = node.getBoundingClientRect();
+    const grab = Math.min(22, Math.max(8, r.width * 0.22));
+
+    if (clientX - r.left < grab) {
+      const touching = neighbourBefore(this.project, clip);
+      const isCut = touching
+        && Math.abs(touching.start + touching.dur - clip.start) < 0.002;
+      return { kind: isCut && !altKey ? 'roll' : 'ripple', edge: 'l' };
+    }
+    if (r.right - clientX < grab) {
+      const touching = neighbourAfter(this.project, clip);
+      const isCut = touching && Math.abs(clip.start + clip.dur - touching.start) < 0.002;
+      return { kind: isCut && !altKey ? 'roll' : 'ripple', edge: 'r' };
+    }
+    return { kind: altKey ? 'slide' : 'slip', edge: null };
+  }
+
+  _trimDrag(e, clip) {
+    const pick = this.trimKindAt(clip, e.clientX, e.altKey);
+    if (!pick) return;
+    this.actions.select([clip.id]);
+
+    const before = JSON.parse(JSON.stringify(
+      this.project.clips.map((c) => ({ id: c.id, start: c.start, dur: c.dur, in: c.in }))));
+    const restore = () => {
+      for (const rec of before) {
+        const c = clipById(this.project, rec.id);
+        if (c) { c.start = rec.start; c.dur = rec.dur; c.in = rec.in; }
+      }
+    };
+
+    const LABEL = { roll: 'Roll', ripple: 'Ripple', slip: 'Slip', slide: 'Slide' };
+    let applied = 0;
+
+    drag(e, {
+      move: (dx) => {
+        const want = this.toSec(dx);
+        restore();
+        if (pick.kind === 'roll') applied = rollEdit(this.project, clip.id, pick.edge, want, { minDur: MIN_CLIP });
+        else if (pick.kind === 'ripple') applied = rippleTrim(this.project, clip.id, pick.edge, want, { minDur: MIN_CLIP });
+        else if (pick.kind === 'slip') applied = slipClip(this.project, clip.id, want);
+        else applied = slideClip(this.project, clip.id, want, { minDur: MIN_CLIP });
+
+        this._renderTracks();
+        /*
+         * "Slip −1.20s" while you drag, and how much handle is left.
+         *
+         * Without it the four trims are indistinguishable from each other
+         * until you let go, and the one that ran out of source looks the same
+         * as the one that did what you asked.
+         */
+        const h = handles(this.project, clip);
+        const room = Number.isFinite(h.head)
+          ? ` · handles ${h.head.toFixed(1)}s / ${h.tail.toFixed(1)}s` : '';
+        this._trimReadout(`${LABEL[pick.kind]} ${applied >= 0 ? '+' : ''}${applied.toFixed(2)}s${
+          Math.abs(applied - want) > 0.01 ? ' (out of source)' : ''}${room}`);
+      },
+      end: () => {
+        this._trimReadout(null);
+        if (Math.abs(applied) > 0.0005) this.actions.commit(`${LABEL[pick.kind]} trim`);
+        else { restore(); this.render(); }
+      },
+    });
+  }
+
+  _trimReadout(text) {
+    let box = $('#tl-trim-readout');
+    if (!text) { box?.remove(); return; }
+    if (!box) {
+      box = el('div', { class: 'tl-readout', id: 'tl-trim-readout' });
+      document.body.appendChild(box);
+    }
+    box.textContent = text;
+  }
+
   _trackAtY(dy, fromTrackId, { allowNew = false } = {}) {
     const tracks = this.project.tracks;
     const index = tracks.findIndex((t) => t.id === fromTrackId);

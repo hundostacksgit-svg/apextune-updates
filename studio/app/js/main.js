@@ -130,6 +130,9 @@ export const actions = {
   setTool(tool) {
     S.tool = tool;
     $$('[data-tool]').forEach((b) => b.classList.toggle('on', b.dataset.tool === tool));
+    // The timeline carries the class so the cursor can change per region —
+    // one cursor for the whole document cannot say "roll here, slip there".
+    $('#timeline')?.classList.toggle('trimming', tool === 'trim');
     document.body.style.cursor = tool === 'razor' ? 'crosshair' : '';
   },
 
@@ -827,6 +830,7 @@ function onKey(e) {
     case 'Delete': case 'Backspace': e.preventDefault(); actions.deleteSelected(); break;
     case 's': case 'S': actions.splitAtPlayhead(); break;
     case 'c': case 'C': actions.setTool(S.tool === 'razor' ? 'select' : 'razor'); break;
+    case 't': case 'T': actions.setTool(S.tool === 'trim' ? 'select' : 'trim'); break;
     case 'v': case 'V': actions.setTool('select'); break;
     case 'm': case 'M': actions.addMarker(); break;
     case '+': case '=': setZoom(S.zoom * 1.4); break;

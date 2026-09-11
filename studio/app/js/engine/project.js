@@ -304,6 +304,187 @@ export function trimClip(p, clipId, edge, delta, { ripple = false, minDur = 0.08
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* the four trims                                                      */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Ripple, roll, slip and slide.
+ *
+ * These four are the whole vocabulary of editing, and an editor without them
+ * is a toy no matter how many effects it ships with. Each answers a different
+ * question, and the difference between them is exactly which of three things
+ * is allowed to change — what you see, where it sits, and how long everything
+ * after it is:
+ *
+ *   ripple  the clip gets longer or shorter and everything after it moves.
+ *           The edit changes length. This is "make this shot longer".
+ *   roll    the cut between two clips moves. One grows by what the other
+ *           loses, so nothing after it moves at all. This is "cut a beat
+ *           later" — the single most common trim in a finished edit.
+ *   slip    the clip stays exactly where it is and exactly as long, and a
+ *           different part of the source plays in it. This is "same hole,
+ *           different moment".
+ *   slide   the clip keeps its content and length and moves in time, while
+ *           its neighbours absorb the movement. This is "this reaction lands
+ *           too early".
+ *
+ * All four refuse rather than approximate when the media runs out. A trim that
+ * silently gives you less than you asked for leaves you checking every edit by
+ * eye, which is worse than being told no.
+ */
+
+/** How much handle a clip has either side: unused source before and after. */
+export function handles(p, clip) {
+  const media = mediaById(p, clip.mediaId);
+  const speed = clip.speed || 1;
+  if (clip.kind !== 'clip' || !media?.duration) return { head: Infinity, tail: Infinity };
+  return {
+    head: Math.max(0, clip.in / speed),
+    tail: Math.max(0, (media.duration - clip.in) / speed - clip.dur),
+  };
+}
+
+/** The clip immediately before this one on its track, touching or not. */
+export function neighbourBefore(p, clip) {
+  return clipsOn(p, clip.trackId)
+    .filter((c) => c.id !== clip.id && c.start + c.dur <= clip.start + 0.0005)
+    .sort((a, b) => (b.start + b.dur) - (a.start + a.dur))[0] || null;
+}
+
+export function neighbourAfter(p, clip) {
+  return clipsOn(p, clip.trackId)
+    .filter((c) => c.id !== clip.id && c.start >= clip.start + clip.dur - 0.0005)
+    .sort((a, b) => a.start - b.start)[0] || null;
+}
+
+/**
+ * Move the cut between this clip and its neighbour.
+ *
+ * The one trim that changes nothing downstream: whatever one clip gains the
+ * other gives up, so every frame after the pair stays exactly where it was.
+ * Returns how far it actually moved, which is not always how far you asked.
+ */
+export function rollEdit(p, clipId, edge, delta, { minDur = 0.08 } = {}) {
+  const c = clipById(p, clipId);
+  if (!c) return 0;
+  const other = edge === 'l' ? neighbourBefore(p, c) : neighbourAfter(p, c);
+  if (!other) return 0;
+  // Only a real cut can be rolled. Two clips with a gap between them share no
+  // edit point, and pretending otherwise would silently close the gap.
+  const touching = edge === 'l'
+    ? Math.abs(other.start + other.dur - c.start) < 0.002
+    : Math.abs(c.start + c.dur - other.start) < 0.002;
+  if (!touching) return 0;
+
+  const cHandles = handles(p, c);
+  const oHandles = handles(p, other);
+  const speed = c.speed || 1;
+  const oSpeed = other.speed || 1;
+
+  let d = delta;
+  if (edge === 'l') {
+    // Moving left: this clip grows off its head, the one before gives up tail.
+    d = clamp(d, Math.max(-cHandles.head, -(other.dur - minDur)),
+                 Math.min(oHandles.tail, c.dur - minDur));
+    c.start += d; c.dur -= d; c.in += d * speed;
+    other.dur += d;
+  } else {
+    d = clamp(d, Math.max(-(c.dur - minDur), -oHandles.head),
+                 Math.min(cHandles.tail, other.dur - minDur));
+    c.dur += d;
+    other.start += d; other.dur -= d; other.in += d * oSpeed;
+  }
+  return d;
+}
+
+/**
+ * Change which part of the source plays, without moving the clip.
+ *
+ * Positive slips the source later — you see a moment further into the take, in
+ * the same slot. Bounded by the handles either side, because there is no
+ * footage outside the file.
+ */
+export function slipClip(p, clipId, delta) {
+  const c = clipById(p, clipId);
+  if (!c || c.kind !== 'clip') return 0;
+  const { head, tail } = handles(p, c);
+  const d = clamp(delta, -head, tail);
+  c.in += d * (c.speed || 1);
+  return d;
+}
+
+/**
+ * Move the clip in time while its neighbours absorb it.
+ *
+ * The clip's own content and length never change; the one before gets longer
+ * or shorter and the one after does the opposite. Needs a neighbour on both
+ * sides with handles to spend, and says how far it got.
+ */
+export function slideClip(p, clipId, delta, { minDur = 0.08 } = {}) {
+  const c = clipById(p, clipId);
+  if (!c) return 0;
+  const before = neighbourBefore(p, c);
+  const after = neighbourAfter(p, c);
+  const touchBefore = before && Math.abs(before.start + before.dur - c.start) < 0.002;
+  const touchAfter = after && Math.abs(c.start + c.dur - after.start) < 0.002;
+
+  let lo = -Infinity, hi = Infinity;
+  if (touchBefore) {
+    lo = Math.max(lo, -(before.dur - minDur));
+    hi = Math.min(hi, handles(p, before).tail);
+  } else {
+    lo = Math.max(lo, -c.start);                 // nothing before: stop at zero
+  }
+  if (touchAfter) {
+    const h = handles(p, after);
+    lo = Math.max(lo, -h.head);
+    hi = Math.min(hi, after.dur - minDur);
+  }
+  if (!touchBefore && !touchAfter) return 0;     // nothing to slide against
+
+  const d = clamp(delta, lo, hi);
+  if (!d) return 0;
+  c.start += d;
+  if (touchBefore) before.dur += d;
+  if (touchAfter) {
+    after.start += d;
+    after.dur -= d;
+    after.in += d * (after.speed || 1);
+  }
+  return d;
+}
+
+/**
+ * Ripple: trim an edge and move everything after it by the same amount.
+ *
+ * The existing trimClip rippled on the right edge only, which meant trimming a
+ * head left a hole that had to be closed by hand — and closing it by hand is
+ * how sync gets lost on a long timeline.
+ */
+export function rippleTrim(p, clipId, edge, delta, { minDur = 0.08 } = {}) {
+  const c = clipById(p, clipId);
+  if (!c) return 0;
+  const { head, tail } = handles(p, c);
+
+  if (edge === 'l') {
+    const d = clamp(delta, -head, c.dur - minDur);
+    if (!d) return 0;
+    c.start += d; c.dur -= d;
+    if (c.kind === 'clip') c.in += d * (c.speed || 1);
+    // The head moved, so everything from here on moves with it — including
+    // this clip, which is why it slides back to where its head now is.
+    c.start -= d;
+    shiftAfter(p, c.trackId, c.start + c.dur + 0.0001, -d, c.id);
+    return d;
+  }
+  const d = clamp(delta, minDur - c.dur, tail);
+  if (!d) return 0;
+  c.dur += d;
+  shiftAfter(p, c.trackId, c.start + c.dur - d + 0.0001, d, c.id);
+  return d;
+}
+
 /** Push every clip on a track that starts at or after `from` by `delta`. */
 export function shiftAfter(p, trackId, from, delta, exceptId = null) {
   for (const c of p.clips) {

@@ -73,6 +73,9 @@ export const TIPS = {
 
   /* tools by data-tool */
   'tool:select': 'Normal mode — click a clip to select it, drag to move it.',
+  'tool:trim': 'Trim — grab a cut between two clips to move it without changing the total length, '
+    + 'an outer edge to make a shot longer or shorter, or the middle to keep the slot and change '
+    + 'which part of the take plays in it.',
   'tool:razor': 'Razor — click anywhere on a clip to cut it in two there.',
 };
 

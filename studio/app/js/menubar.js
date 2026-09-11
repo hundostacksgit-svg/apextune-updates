@@ -108,6 +108,7 @@ export const MENUS = [
       },
       { sep: true },
       { label: 'Select tool', key: 'V', run: () => api.tool?.('select') },
+      { label: 'Trim tool', key: 'T', run: () => api.tool?.('trim') },
       { label: 'Razor tool', key: 'C', run: () => api.tool?.('razor') },
     ],
   },

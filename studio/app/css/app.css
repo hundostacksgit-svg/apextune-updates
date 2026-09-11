@@ -351,6 +351,32 @@ html[data-level="expert"] .card-hint{display:none}
 .tl-track.audio{background:color-mix(in srgb,var(--surface-2) 70%,var(--surface))}
 .tl-track.drop{background:color-mix(in srgb,var(--blue) 12%,var(--surface-2))}
 
+/* ---------- the trim tool ---------- */
+/*
+ * A cursor per trim. The four are one gesture with four meanings, so the
+ * pointer is the only thing that can say which meaning is under it — and it
+ * has to say so before the drag, not after.
+ */
+.timeline.trimming .clip{cursor:ew-resize}
+.timeline.trimming .tl-tracks[data-trim="roll"] .clip{cursor:col-resize}
+.timeline.trimming .tl-tracks[data-trim="ripple"] .clip{cursor:e-resize}
+.timeline.trimming .tl-tracks[data-trim="slip"] .clip{cursor:grab}
+.timeline.trimming .tl-tracks[data-trim="slide"] .clip{cursor:move}
+/* The handles are the Select tool's plain trim; in Trim mode the whole clip is
+   the target, so they must not steal the edges back. */
+.timeline.trimming .clip .handle{pointer-events:none}
+
+/* What the drag is doing, and how much source is left to do it with. */
+.tl-readout{
+  position:fixed;left:50%;bottom:calc(var(--tl-h) + 14px);transform:translateX(-50%);
+  z-index:320;padding:7px 14px;border-radius:999px;pointer-events:none;
+  background:var(--surface-2);border:1px solid var(--line);
+  box-shadow:0 10px 28px rgba(0,0,0,.45);
+  font-size:12.5px;font-variant-numeric:tabular-nums;color:var(--text);white-space:nowrap;
+}
+html.tl-full .tl-readout{bottom:18px}
+@media (max-width:760px){ .tl-readout{bottom:calc(var(--tl-h) + var(--tabbar-h) + 12px)} }
+
 /* ---------- right-click menus ---------- */
 /*
  * Above the menu bar's dropdown, because it is the more specific gesture: if

@@ -83,6 +83,20 @@ export const GUIDE = [
     ],
   },
   {
+    id: 'trim',
+    group: 'The timeline',
+    title: 'The four trims: ripple, roll, slip and slide',
+    body: [
+      ['Why four', 'These are the whole vocabulary of editing. Each changes a different one of three things — what you see, where it sits, and how long everything after it is — and knowing which one you want is most of the craft.'],
+      ['Turn it on', 'Press **T**, or the **⇹** button on the timeline bar. Press **V** to go back to normal dragging. The cursor tells you which trim you are about to get before you start, and a readout tells you what it is doing while you drag.'],
+      ['Roll — grab a cut', 'Drag the join between two clips. One grows by exactly what the other loses, so **nothing after it moves**. This is "cut a beat later", and it is the most common trim in a finished edit precisely because it cannot knock anything out of sync.'],
+      ['Ripple — grab an outer edge', 'Drag an edge with no clip against it, or hold **Alt** on a cut. The shot gets longer or shorter and everything after it moves with it. The edit changes length.'],
+      ['Slip — grab the middle', 'The clip stays exactly where it is and exactly as long, and a different part of the take plays in it. "Same hole, different moment."'],
+      ['Slide — Alt and the middle', 'The clip keeps its content and length and moves in time, while the clips either side absorb the movement. "This reaction lands too early."'],
+      ['Handles', 'The readout shows how much unused footage sits either side of the clip. When a trim runs out of it, it stops and says **out of source** rather than quietly giving you less than you asked for.'],
+    ],
+  },
+  {
     id: 'speed',
     group: 'The timeline',
     title: 'Speed, slow motion and ramps',
