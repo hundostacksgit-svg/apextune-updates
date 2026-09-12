@@ -15,6 +15,10 @@ import { clipsOn, clipById, mediaById, sourceTime } from '../engine/project.js';
 import { elementFor } from '../engine/media.js';
 import { buildPlate, registerPlate, hasPlate } from '../engine/matte.js';
 import * as licence from '../licence.js';
+import {
+  presetGroups, presetById, applyPreset, presetFromClip,
+  saveUserPreset, deleteUserPreset, loadUserPresets, describePreset, presetTouches,
+} from '../engine/presets.js';
 
 export function mount(host) {
   const sel = [...S.sel].map((id) => clipById(S.project, id)).filter(Boolean);
@@ -22,8 +26,29 @@ export function mount(host) {
   const target = sel.length ? `${sel.length} selected clip${sel.length === 1 ? '' : 's'}` : 'every clip';
 
   host.innerHTML = `
-    <div class="panel-h"><h2>Effects</h2></div>
+    <div class="panel-h">
+      <h2>Effects</h2>
+      <button class="btn btn-sm btn-ghost" id="pr-save"
+        title="Save what this clip is doing as a preset you can drop on others">＋ Save preset</button>
+    </div>
     <p class="panel-sub">Adding applies to ${esc(target)}.</p>
+
+    <!--
+      Presets first, and effects under them.
+
+      A single effect at its default settings is rarely what anybody wanted —
+      the thing people are after is four of them in an order somebody worked
+      out, which is what a preset is. Putting the library of tuned stacks above
+      the library of raw ingredients is putting the answer above the parts.
+    -->
+    <details class="group" id="pr-group" open>
+      <summary>Presets <span class="tiny muted" id="pr-count">…</span></summary>
+      <div class="gbody">
+        <input class="input" id="pr-search"
+               placeholder="Search presets — vhs, teal, leak, anime…" style="margin-bottom:9px">
+        <div id="pr-lib"><p class="tiny muted" style="margin:0">Loading…</p></div>
+      </div>
+    </details>
 
     <!-- Three hundred effects is only a library if you can find one in it.
          Search first, groups second: a flat wall of chips is a list nobody
@@ -69,6 +94,33 @@ export function mount(host) {
   attachPreviews($('#fx-lib', host), 'fx');
   attachPreviews($('#fx-trans', host), 'transition');
 
+  /*
+   * The preset library is filled in after the panel is on screen.
+   *
+   * Somebody's own presets come out of the database, which is asynchronous,
+   * and blocking the whole panel on it would mean the effects library — which
+   * needs nothing — appears late because the preset list is slow. So the
+   * section renders a line of placeholder text and replaces itself.
+   */
+  paintPresets(host);
+
+  $('#pr-search', host)?.addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    let total = 0;
+    for (const grp of $$('#pr-lib details', host)) {
+      let shown = 0;
+      for (const chip of $$('[data-preset]', grp)) {
+        const hit = !q || chip.dataset.search.includes(q);
+        chip.hidden = !hit;
+        if (hit) { shown++; total++; }
+      }
+      grp.hidden = shown === 0;
+      if (q) grp.open = true;
+    }
+    const count = $('#pr-count', host);
+    if (count) count.textContent = q ? String(total) : count.dataset.all || '';
+  });
+
   // Filter as you type: narrow every group, open the ones that still have
   // something in them, and hide the ones that do not — so a search never
   // leaves you looking at a screen of collapsed headings.
@@ -87,6 +139,24 @@ export function mount(host) {
   });
 
   host.addEventListener('click', (e) => {
+    const save = e.target.closest('#pr-save');
+    if (save) { savePresetFromSelection(host); return; }
+
+    const kill = e.target.closest('[data-prdel]');
+    if (kill) {
+      e.stopPropagation();
+      deleteUserPreset(kill.dataset.prdel).then(() => paintPresets(host));
+      return;
+    }
+
+    const pr = e.target.closest('[data-preset]');
+    if (pr) {
+      const feature = pr.dataset.tier === 'free' ? 'basic-filters' : 'all-filters';
+      licence.gate(feature, () => usePreset(pr.dataset.preset),
+        { what: presetById(pr.dataset.preset)?.name || 'That preset' });
+      return;
+    }
+
     const add = e.target.closest('[data-fx]');
     if (add) {
       const feature = add.dataset.tier === 'free' ? 'basic-filters' : 'all-filters';
@@ -183,6 +253,112 @@ function writeParam(path, value) {
     const fx = (c.effects || []).find((f) => f.id === id);
     if (fx) fx.params[key] = value;
   }, `Change ${key}`, `fx:${path}`);
+}
+
+/* ------------------------------------------------------------------ */
+/* presets                                                             */
+/* ------------------------------------------------------------------ */
+
+async function paintPresets(host) {
+  await loadUserPresets();
+  const lib = $('#pr-lib', host);
+  if (!lib) return;                       // the panel was closed while we waited
+
+  const groups = presetGroups();
+  const all = Object.values(groups).reduce((n, g) => n + g.length, 0);
+  const count = $('#pr-count', host);
+  if (count) { count.textContent = String(all); count.dataset.all = String(all); }
+
+  lib.innerHTML = Object.entries(groups).map(([group, list], i) => `
+    <details class="group" ${i === 0 ? 'open' : ''}>
+      <summary>${esc(group)} <span class="tiny muted">${list.length}</span></summary>
+      <div class="gbody">
+        <div class="chips">
+          ${list.map((p) => {
+            const locked = p.tier !== 'free' && !licence.can('all-filters');
+            const why = describePreset(p);
+            return `<button class="chip preset-chip ${locked ? 'locked' : ''}"
+              data-preset="${esc(p.id)}" data-tier="${esc(p.tier || 'free')}"
+              data-search="${esc(`${p.name} ${group} ${p.id} ${(p.tags || []).join(' ')}`.toLowerCase())}"
+              title="${esc(why ? `${p.name} — ${why}` : p.name)}">
+              ${p.emoji || '✨'} ${esc(p.name)}
+              ${p.mine ? `<span class="pr-del" data-prdel="${esc(p.id)}"
+                title="Delete this preset">✕</span>` : ''}
+            </button>`;
+          }).join('')}
+        </div>
+      </div>
+    </details>`).join('');
+
+  attachPreviews(lib, 'preset');
+}
+
+/**
+ * Put a preset on the selection.
+ *
+ * Says what it replaced rather than just "done". A preset overwrites the
+ * effect stack by design — two stacked is almost never what somebody meant —
+ * and being told which parts changed is the difference between an undo you
+ * reach for confidently and one you reach for in a panic.
+ */
+function usePreset(id) {
+  const preset = presetById(id);
+  if (!preset) return;
+
+  const targets = S.sel.size
+    ? [...S.sel]
+    : S.project.clips.filter((c) => {
+      const track = S.project.tracks.find((t) => t.id === c.trackId);
+      return track?.kind === 'video';
+    }).map((c) => c.id);
+
+  if (!targets.length) { toast('Put a clip on the timeline first', 'bad'); return; }
+
+  for (const clipId of targets) {
+    const clip = clipById(S.project, clipId);
+    if (clip) applyPreset(clip, preset);
+  }
+  actions.commit(`Preset: ${preset.name}`);
+  const touched = presetTouches(preset).join(', ');
+  toast(`${preset.name} — replaced ${touched || 'nothing'} on ${targets.length} clip${targets.length === 1 ? '' : 's'}`,
+    'ok', 3200);
+}
+
+/**
+ * Save what one clip is doing, as a preset.
+ *
+ * One clip, deliberately. A preset made from six clips at once would have to
+ * either pick one of them or merge them, and both are guesses about which
+ * treatment was meant.
+ */
+async function savePresetFromSelection(host) {
+  const sel = [...S.sel].map((id) => clipById(S.project, id)).filter(Boolean);
+  if (sel.length !== 1) {
+    toast('Select exactly one clip — the one whose look you want to keep', 'bad', 3600);
+    return;
+  }
+  const clip = sel[0];
+  const draft = presetFromClip(clip, '');
+  if (!draft?.apply || !Object.keys(draft.apply).length) {
+    toast('That clip has no grade, effects or audio settings to save yet', 'bad', 3600);
+    return;
+  }
+
+  const name = window.prompt('Name this preset', suggestName(clip));
+  if (name === null) return;                      // cancelled, not an empty name
+  draft.name = String(name).trim() || 'My preset';
+  await saveUserPreset(draft);
+  await paintPresets(host);
+  toast(`Saved "${draft.name}" — it is in Presets under Mine`, 'ok', 3400);
+}
+
+/** A starting name, from whatever the clip is most obviously doing. */
+function suggestName(clip) {
+  const look = clip.color?.look;
+  if (look && look !== 'none') return `${look[0].toUpperCase()}${look.slice(1)} look`;
+  const first = clip.effects?.[0]?.id;
+  if (first && EFFECTS[first]) return EFFECTS[first].name;
+  return 'My preset';
 }
 
 function addEffect(id) {

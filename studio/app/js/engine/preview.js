@@ -36,6 +36,7 @@
 import { EFFECTS, makeEffect } from './effects.js';
 import { LOOK_BY_ID, resolved, cssFilter, applyPasses } from './filters.js';
 import { TRANSITIONS } from './transitions.js';
+import { presetById } from './presets.js';
 
 export const PREVIEW_W = 120;
 export const PREVIEW_H = 68;
@@ -347,6 +348,69 @@ export function lookThumb(id) {
 }
 
 /**
+ * A whole preset: its grade, then its effects, in order.
+ *
+ * The order is the reason this is not three thumbnails side by side. A grain
+ * that goes on before a blur gets blurred and stops being grain; a duotone
+ * after a glow is a different picture from a glow after a duotone. A preset is
+ * a stack, so its preview has to be the stack — otherwise the chip is telling
+ * you about a treatment nobody will ever get.
+ *
+ * The grade uses the same `resolved`/`cssFilter`/`applyPasses` the viewer and
+ * the exporter use, for the same reason `lookThumb` does: a preview that
+ * quietly disagrees with the thing it previews is the failure a live preview
+ * exists to avoid.
+ */
+export function presetThumb(id, t = 0.55) {
+  return cached(`preset:${id}:${t}:${userFrame ? 'u' : 'b'}`, () => {
+    const out = blank();
+    const ctx = out.getContext('2d', { willReadFrequently: true });
+    const preset = presetById(id);
+    const a = preset?.apply;
+    if (!a) { ctx.drawImage(sourceFrame(), 0, 0, out.width, out.height); return out; }
+
+    const colour = resolved({ ...(a.color || {}), look: a.look || 'none', strength: a.strength ?? 1 });
+    try {
+      ctx.filter = cssFilter(colour) || 'none';
+      ctx.drawImage(sourceFrame(), 0, 0, out.width, out.height);
+      ctx.filter = 'none';
+      applyPasses(ctx, out.width, out.height, colour);
+    } catch {
+      ctx.filter = 'none';
+      ctx.drawImage(sourceFrame(), 0, 0, out.width, out.height);
+    }
+
+    for (const spec of a.effects || []) {
+      const def = EFFECTS[spec.id];
+      if (!def || def.needsSetup) continue;
+      const inst = makeEffect(spec.id);
+      if (!inst) continue;
+      inst.params = { ...inst.params, ...(spec.params || {}) };
+      try {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.filter = 'none';
+        def.draw(ctx, out.width, out.height, inst.params, {
+          local: t, fps: 30,
+          clip: { id: `preset:${id}`, start: 0, dur: 3, effects: [inst] },
+          redrawClip: () => sourceFrame(),
+          beatPhase: (t * 2) % 1,
+        });
+      } catch {
+        // One effect that will not draw at thumbnail size must not cost the
+        // whole chip its picture — the rest of the stack still says something.
+      }
+    }
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.filter = 'none';
+    return out;
+  });
+}
+
+/**
  * One transition, at a given point through it.
  *
  * Two versions of the sample frame are used as the outgoing and incoming
@@ -422,7 +486,8 @@ function observer() {
  * leaves, so a panel is never running two hundred animation loops.
  */
 export function attachPreviews(host, kind = 'fx', selector = null) {
-  const attr = { fx: 'data-fx', look: 'data-look', transition: 'data-trans' }[kind];
+  const attr = { fx: 'data-fx', look: 'data-look', transition: 'data-trans',
+    preset: 'data-preset' }[kind];
   if (!attr || !host) return;
 
   for (const chip of host.querySelectorAll(selector || `[${attr}]`)) {
@@ -449,23 +514,30 @@ export function attachPreviews(host, kind = 'fx', selector = null) {
       try {
         if (kind === 'fx') paint(effectThumb(id));
         else if (kind === 'look') paint(lookThumb(id));
+        else if (kind === 'preset') paint(presetThumb(id));
         else paint(transitionThumb(id, 0.45));
       } catch { /* a chip without a picture still works */ }
     });
     observer().observe(chip);
 
-    if (kind === 'transition' || kind === 'fx') {
+    if (kind === 'transition' || kind === 'fx' || kind === 'preset') {
       let raf = 0, t0 = 0;
+      const still = () => (kind === 'fx' ? effectThumb(id)
+        : kind === 'preset' ? presetThumb(id)
+          : transitionThumb(id, 0.45));
       const stop = () => {
         if (!raf) return;
         cancelAnimationFrame(raf); raf = 0;
-        try { paint(kind === 'fx' ? effectThumb(id) : transitionThumb(id, 0.45)); } catch { /* keep the last frame */ }
+        try { paint(still()); } catch { /* keep the last frame */ }
       };
       const tick = (now) => {
         if (!t0) t0 = now;
         const secs = (now - t0) / 1000;
         try {
           if (kind === 'transition') paint(transitionThumb(id, (secs / 1.1) % 1));
+          // Quantised to twelfths so a hover renders about a dozen distinct
+          // frames a second and every one of them is a cache hit next time.
+          else if (kind === 'preset') paint(presetThumb(id, Math.round(secs * 12) / 12));
           else paint(effectThumb(id, Math.round(secs * 12) / 12));
         } catch { stop(); return; }
         raf = requestAnimationFrame(tick);

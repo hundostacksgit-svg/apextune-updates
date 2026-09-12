@@ -59,6 +59,22 @@ const seeking = new WeakSet(); // currentTime assignments still in flight
 let blocked = false;
 let listeners = new Set();
 
+/*
+ * The transport's own rate, on top of each clip's.
+ *
+ * A clip at half speed inside a timeline shuttling at 4x has to run at 2x, and
+ * neither the compositor nor the audio engine knows about the shuttle — they
+ * ask for the clip's own speed, which is the only thing either of them should
+ * have an opinion about. Multiplying here is what keeps that true, and without
+ * it a shuttle leaves every decoder at 1x while the playhead runs away, so
+ * drift correction fires on every single frame.
+ */
+let transportRate = 1;
+
+export function setRate(rate) {
+  transportRate = Math.max(0.0625, Math.min(16, Math.abs(rate) || 1));
+}
+
 /** True once the browser has refused a play() — see `commit`. */
 export function isBlocked() { return blocked; }
 
@@ -104,7 +120,7 @@ export function commit(playing) {
   }
 
   for (const [node, req] of wanted) {
-    const rate = Math.max(0.0625, Math.min(16, req.rate || 1));
+    const rate = Math.max(0.0625, Math.min(16, (req.rate || 1) * transportRate));
     if (node.playbackRate !== rate) {
       // Some browsers throw rather than clamp on a rate they will not do.
       try { node.playbackRate = rate; } catch { /* the default rate still plays */ }

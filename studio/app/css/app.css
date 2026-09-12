@@ -1390,9 +1390,19 @@ input[type=checkbox]{accent-color:var(--blue)}
  * command palette, the render overlay and the splash, which are takeovers the
  * user asked for instead, and all three close it on the way in.
  */
+/*
+ * A menu taller than the window scrolls rather than running off the bottom.
+ *
+ * `overflow-y:auto` was already here and did nothing without a height to
+ * overflow, so the Timeline menu quietly grew past the viewport the moment
+ * three shuttle commands were added to it and the last item became
+ * unreachable. Capped against the top bar it hangs from, so the cap is right
+ * at any window height rather than a number that happens to suit one.
+ */
 .mn-pop{
   display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:560;
   min-width:250px;max-width:min(320px,calc(100vw - 16px));padding:5px;
+  max-height:calc(100dvh - var(--top-h) - 24px);
   border-radius:var(--r-m);overflow-y:auto;overscroll-behavior:contain;
   background:var(--surface-2);border:1px solid var(--line);
   box-shadow:0 18px 44px rgba(0,0,0,.5);
@@ -1767,9 +1777,21 @@ input[type=checkbox]{accent-color:var(--blue)}
    * whole grid — which is what keeps the viewer from jumping half a second
    * after you press a button.
    */
+  /*
+   * The picture gets a floor.
+   *
+   * Every other row is a fixed height, so the workspace row is whatever is
+   * left — and on a page with a tall timeline and a band open, what was left
+   * came to 59 pixels. A viewer that size is not a viewer. `minmax` gives the
+   * row a minimum it will not go below, and the page scrolls in the extreme
+   * case rather than crushing the one thing everybody is looking at.
+   */
   html[data-level="intermediate"] body,html[data-level="expert"] body{
-    grid-template-rows:var(--top-h) 1fr var(--strip-h) var(--prim-h) var(--tl-h) var(--pb-h);
+    grid-template-rows:var(--top-h) minmax(200px,1fr) var(--strip-h) var(--prim-h) var(--tl-h) var(--pb-h);
   }
+  /* Cutting wants a long timeline; it does not want the only one. */
+  html[data-page="cut"].ws-angles[data-level="intermediate"],
+  html[data-page="cut"].ws-angles[data-level="expert"]{--tl-h:300px}
   html[data-level="intermediate"] .workspace,html[data-level="expert"] .workspace{
     grid-template-columns:var(--gal-w) var(--rail-w) var(--panel-w) 1fr var(--insp-w) var(--dockr-w);
   }
@@ -2154,3 +2176,85 @@ html.ws-primaries[data-page="colour"] #c-wheels-group{display:none}
   .split-handle::before{inset:0 -18px}
   .sh-grip{width:34px;height:34px;font-size:14px}
 }
+
+/* ---- preset chips ---- */
+/*
+ * A preset chip is an effect chip with a delete on it, and the delete only
+ * exists on the ones somebody made. Shipped presets are not deletable and the
+ * absence of the control is how that is said — a greyed-out ✕ would invite
+ * the click and then refuse it.
+ */
+.preset-chip{position:relative}
+.pr-del{position:absolute;top:3px;right:3px;width:17px;height:17px;border-radius:5px;
+  background:rgba(4,6,13,.8);color:#fff;font-size:9px;display:grid;place-items:center;
+  opacity:0;transition:opacity .12s;z-index:3}
+.preset-chip:hover .pr-del,.preset-chip:focus-within .pr-del{opacity:1}
+.pr-del:hover{background:var(--red,#ff5d6c)}
+@media (pointer: coarse){
+  /* No hover on a touch screen, so it is always there and thumb-sized. */
+  .pr-del{opacity:1;width:26px;height:26px;font-size:11px}
+}
+
+/*
+ * Small buttons are only small on a mouse.
+ *
+ * `.btn-sm` is 31px tall, which is a comfortable click and an uncomfortable
+ * tap — under the 36px a thumb needs, and used all over the panel headers
+ * where the phone puts them under a sheet. Caught by the phone suite on a new
+ * button and fixed for every one of them rather than that one.
+ */
+@media (pointer: coarse){
+  .btn-sm{padding:9px 13px;min-height:38px}
+}
+
+/* ---- the angle viewer ---- */
+/*
+ * Row four, the same row the primaries band uses.
+ *
+ * They are the bottom dock, and only one of them is ever up: primaries belong
+ * to the grading pages and angles to the cutting ones. Sharing the row means
+ * sharing `--prim-h`, which is why that variable is set for both — one band
+ * slot, two things that can be in it.
+ */
+.dock-angles{grid-row:4;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  background:var(--surface-2)}
+.ang-live{font-family:var(--mono);font-size:9.5px;color:var(--text-2);background:var(--surface-3);
+  border:1px solid var(--line);border-radius:4px;padding:0 6px;line-height:1.6;max-width:180px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ang-row{flex:1;display:flex;gap:8px;padding:8px 12px;overflow-x:auto;align-items:flex-start}
+.ang-tile{position:relative;flex:0 0 auto;width:168px;padding:0;border:1px solid var(--line);
+  border-radius:6px;overflow:hidden;background:#000;display:flex;flex-direction:column;
+  transition:border-color .1s,box-shadow .1s}
+.ang-tile:hover{border-color:var(--text-3)}
+/*
+ * The live angle is unmistakable, because the whole point of the grid is
+ * knowing which one is going out while you are looking at the others.
+ */
+.ang-tile.on{border-color:var(--blue-2);box-shadow:0 0 0 2px var(--blue-2)}
+html[data-level="expert"] .ang-tile.on{border-color:#8d97ab;box-shadow:0 0 0 2px #8d97ab}
+.ang-cv{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#000}
+.ang-tile i{font-style:normal;font-size:9.5px;color:var(--text-3);padding:3px 5px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;
+  background:var(--surface-3)}
+.ang-num{position:absolute;top:3px;left:4px;z-index:2;font-family:var(--mono);font-size:10px;
+  font-weight:700;color:#fff;background:rgba(4,6,13,.78);border-radius:4px;padding:0 5px;
+  line-height:1.6}
+/* An angle the sound could not place: said on the tile, not only in a toast. */
+.ang-warn{position:absolute;top:3px;right:4px;z-index:2;width:16px;height:16px;border-radius:50%;
+  background:var(--amber,#ffc14a);color:#120c00;font-size:10px;font-weight:800;
+  display:grid;place-items:center}
+@media(min-width:761px){
+  html[data-level="intermediate"].ws-angles,html[data-level="expert"].ws-angles{--prim-h:158px}
+  html.ws-angles[data-level="intermediate"] .dock-angles,
+  html.ws-angles[data-level="expert"] .dock-angles{display:flex}
+}
+
+/*
+ * The wrapper each panel is mounted into.
+ *
+ * `display: contents` so it lays nothing out — its children are, for every
+ * purpose CSS cares about, direct children of the panel. It exists only to be
+ * thrown away, taking that mount's event listeners with it. See freshInner in
+ * panels/index.js.
+ */
+.panel-inner{display:contents}

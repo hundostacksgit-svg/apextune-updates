@@ -23,6 +23,7 @@ import { applyEffects } from './effects.js';
 import { drawSticker } from './stickers.js';
 import { elementFor } from './media.js';
 import * as clock from './media-clock.js';
+import { angleView } from './multicam.js';
 
 export class Renderer {
   constructor(canvas) {
@@ -526,10 +527,33 @@ export class Renderer {
       return cv;
     }
 
-    const media = mediaById(project, clip.mediaId);
+    /*
+     * A multicam clip is whichever angle is live at this moment.
+     *
+     * Resolved to a plain media id and in point here, once, so everything
+     * below — the pool, the seek, the grade, the effects — is the ordinary
+     * clip path and has never heard of multicam. The alternative is a second
+     * rendering path that drifts from the first.
+     */
+    let source = clip;
+    if (clip.kind === 'multicam') {
+      const live = angleView(clip, t);
+      if (!live) return null;
+      source = { ...clip, mediaId: live.mediaId, in: live.in };
+    }
+
+    const media = mediaById(project, source.mediaId);
     if (!media || media.missing) return null;
+    /*
+     * Keyed on the angle, not just the clip.
+     *
+     * Two angles of a multicam clip are two different files; sharing one
+     * decoder between them means every switch is a full source change and the
+     * first frame after every cut is whatever the other angle was showing.
+     */
+    const poolKey = clip.kind === 'multicam' ? `${clip.id}:${source.mediaId}` : clip.id;
     // forExport is the only thing that decides this, and it must stay that way.
-    const node = elementFor(media, clip.id, { preferProxy: !forExport });
+    const node = elementFor(media, poolKey, { preferProxy: !forExport });
     if (!node) return null;
 
     // Where in the source we want to be. Deliberately not clamped to the clip:
@@ -542,8 +566,8 @@ export class Renderer {
     // dissolve look like a dissolve rather than a freeze held against the
     // incoming shot. sourceTime handles the ramp; this handles the overrun.
     const src = local < 0 || local > clip.dur
-      ? clip.in + local * speedAt(clip, Math.max(0, Math.min(clip.dur, local)))
-      : sourceTime(clip, t);
+      ? source.in + local * speedAt(clip, Math.max(0, Math.min(clip.dur, local)))
+      : sourceTime(source, t);
 
     if (media.kind === 'video') {
       if (!node.videoWidth) { this._whenReady(node); return null; }
@@ -556,7 +580,13 @@ export class Renderer {
          * to run one backwards is a frame at a time.
          */
         clock.want(node, src, speedAt(clip, Math.max(0, Math.min(clip.dur, local))), {
-          seekOnly: Boolean(clip.reversed),
+          /*
+           * Parked, not played, for the two clips that cannot roll forward:
+           * a reversed one, because no browser does a negative rate, and a
+           * frozen one, because every frame of it is the same frame and a
+           * decoder left running would slowly drift off it.
+           */
+          seekOnly: Boolean(clip.reversed || clip.frozen),
         });
       } else {
         this._seek(node, src, forExport);

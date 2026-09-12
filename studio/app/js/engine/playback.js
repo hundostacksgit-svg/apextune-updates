@@ -59,6 +59,24 @@ export class Transport {
     this.seek(this.time + frames / fps);
   }
 
+  /**
+   * Change the playback rate without the clock jumping.
+   *
+   * `_tick` measures elapsed wall time since `_startedAt` and multiplies by
+   * the rate, so changing the rate in place would retroactively rescale every
+   * second already played — shuttle up to 4x a minute in and the playhead
+   * leaps to four minutes. Re-anchoring makes the new rate apply from now.
+   */
+  setRate(rate) {
+    const next = Math.max(0.0625, Math.min(16, rate || 1));
+    if (next === this.rate) return;
+    if (this.playing) {
+      this._startedFrom = this.time;
+      this._startedAt = performance.now();
+    }
+    this.rate = next;
+  }
+
   setDuration(d) {
     this.duration = Math.max(0, d);
     if (this.time > this.duration) this.seek(this.duration);

@@ -128,6 +128,23 @@ eyeballed.
   audio byte is decoded. One media clock now owns play, pause, rate and
   position for every element, and when a browser refuses to start an unmuted
   one the picture is driven by seeking instead of freezing
+- **128 presets** — a grade, a stack of effects with their parameters tuned to
+  each other, a transform and an audio strip, applied to a clip in one tap.
+  Not the same thing as the effect library: a single effect at its defaults is
+  a guitar pedal, and what people actually want is four of them in an order
+  somebody worked out. You can save your own from any clip you got right, and
+  they sit beside the shipped ones under **Mine**
+- **Multicam** — angles lined up by correlating what each camera *heard
+  happen*, not the waveform, which two different microphones never agree on.
+  Measured against a known answer: two angles started exactly 1.2 seconds apart
+  are placed at 1.196s, and an angle it could not place says so on its own tile
+  instead of being quietly stacked at zero. The angle viewer shows every angle
+  live while the timeline runs, 1–9 cut between them as it plays, and Flatten
+  turns the switches into ordinary clips
+- **The commands that make it feel like an editor** — freeze frame (E), match
+  frame (Y), three-point insert and overwrite, and J/K/L shuttle with the rate
+  reaching the decoders so picture and sound keep up at 8x. Reverse shuttle
+  moves the picture and says plainly that it cannot move the sound
 - Every effect, look and transition previews on your own footage. Nothing is a
   shipped screenshot, so nothing can drift from what it actually does — and it
   adds zero bytes to the download
@@ -167,9 +184,11 @@ you were going to send. Send them and it gets made.
 **Multi-lingual captions.** The transcription runs on the server, so it turns
 on with step 2.
 
-**Multicam.** Syncing several camera angles and cutting between them live is
-the one substantial thing on the research list that is not built. Nothing in
-the interface pretends otherwise.
+**Stabilisation.** Not built. The motion tracker in the app could drive it —
+it already estimates where a region moved between frames — but a stabiliser
+that only counters translation makes rolling-shutter wobble worse rather than
+better, and doing it properly means solving rotation and scale too. Left out
+rather than shipped as something that helps some shots and ruins others.
 
 **A limiter.** Written, measured, and taken out again. The browser's dynamics
 node does not hold a ceiling — set to -12dB it let a hot tone through at

@@ -312,7 +312,16 @@ function runAction(act) {
     case 'speed-1': setSpeed(1); break;
     case 'speed-2': setSpeed(2); break;
     case 'freeze':
-      actions.patchSelected((c) => { c.speed = 0.001; c.dur = Math.min(c.dur, 2); }, 'Freeze frame');
+      /*
+       * The one freeze frame, not a third one.
+       *
+       * This used to set the whole clip to a near-zero speed, which is a
+       * different thing from freezing a frame — it turns the shot into a
+       * still and throws the rest of it away. Both this and a duplicate in
+       * main.js have been replaced by the action, which cuts either side and
+       * holds only the frame you are on.
+       */
+      actions.freezeFrame();
       break;
     case 'upgrade-speed': licence.upgradePrompt('speed-ramp', 'Speed ramping'); break;
     case 'upgrade-kf': licence.upgradePrompt('keyframes', 'Keyframes'); break;

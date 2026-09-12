@@ -73,6 +73,12 @@ export function clipMenu(clipId, at) {
     { label: `Split here`, hint: 'S', when: () => inside, run: () => actions.splitAt(at, [clip.id]) },
     { label: 'Split at the playhead', when: () => S.time > clip.start && S.time < clip.start + clip.dur,
       run: () => actions.splitAt(S.time, [clip.id]) },
+    { label: 'Freeze this frame', hint: 'E',
+      when: () => S.time > clip.start && S.time < clip.start + clip.dur,
+      run: () => actions.freezeFrame() },
+    { label: 'Find this frame in its file', hint: 'Y',
+      when: () => Boolean(clip.mediaId) && S.time >= clip.start && S.time < clip.start + clip.dur,
+      run: () => actions.matchFrame() },
     { sep: true },
 
     { label: () => (many ? `Cut ${plural(selCount(), 'clip')}` : 'Cut'), hint: `${MOD}+X`,
@@ -266,11 +272,19 @@ export function mediaMenu(mediaId) {
   return [
     ...editTop(),
     { label: 'Add to the end of the timeline', run: () => actions.appendMedia(mediaId) },
-    { label: 'Insert at the playhead', run: () => {
-      const track = S.project.tracks.find((t) =>
-        t.kind === (m.kind === 'audio' ? 'audio' : 'video'));
-      if (track) actions.dropMedia(mediaId, track.id, S.time);
-    } },
+    /*
+     * Insert and overwrite, as two entries rather than one.
+     *
+     * There was one called "Insert at the playhead" and it did neither: it
+     * found the next free gap, which is a third behaviour and the one nobody
+     * asks for by name. Overwriting when you meant to insert loses work;
+     * inserting when you meant to overwrite pushes the whole cut out of sync
+     * with the music. Both are on the menu because the choice is the point.
+     */
+    { label: 'Insert here — push everything later', hint: 'Makes room',
+      run: () => actions.placeMedia(mediaId, 'insert') },
+    { label: 'Overwrite here', hint: 'Lands on top',
+      run: () => actions.placeMedia(mediaId, 'overwrite') },
     { label: 'Lay it over the top as B-roll', when: () => m.kind !== 'audio',
       run: async () => {
         const { insertBroll } = await import('./engine/broll.js');

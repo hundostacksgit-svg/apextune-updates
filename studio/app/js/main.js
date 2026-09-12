@@ -32,6 +32,12 @@ import { initTips, applyTipsForLevel, setTips, tipsOn } from './tips.js';
 import { initMoreSheet } from './more-sheet.js';
 import { initMaskUi, paintMaskUi } from './mask-ui.js';
 import { chooseProject } from './start.js';
+import {
+  freezeFrame, matchFrame, insertAt, overwriteAt, shuttleNext, shuttleLabel,
+} from './engine/edits.js';
+import {
+  syncAngles, makeMulticam, cutTo, angleView, flattenMulticam,
+} from './engine/multicam.js';
 import * as ws from './workspace.js';
 import { mattePreview } from './panels/masks.js';
 import { initContextMenus, attach as attachMenu } from './context-menu.js';
@@ -250,6 +256,161 @@ export const actions = {
     }
     if (!count) { toast('Park the playhead over a clip to split it'); return; }
     actions.commit(`Split ${count} clip${count === 1 ? '' : 's'}`);
+  },
+
+  /**
+   * Hold the frame under the playhead.
+   *
+   * Cuts either side and makes the middle a zero-speed clip, which is how
+   * every editor does it and the only version that stays editable: the frozen
+   * part can be trimmed, graded and moved like anything else.
+   */
+  freezeFrame(at = S.time, hold = 2) {
+    const under = S.project.clips
+      .filter((c) => {
+        const track = S.project.tracks.find((t) => t.id === c.trackId);
+        return track?.kind === 'video' && at > c.start && at < c.start + c.dur;
+      });
+    // Prefer a selected clip, but do not insist on one: pressing E while
+    // watching a shot means freeze *that*, and demanding a selection first is
+    // a step nobody performs in any other editor.
+    const selected = under.filter((c) => S.sel.has(c.id));
+    const target = (selected[0] || under[under.length - 1]);
+    if (!target) { toast('Park the playhead over a clip to freeze it', 'bad'); return null; }
+    const frozen = freezeFrame(S.project, target.id, at, { hold });
+    if (!frozen) { toast('Too close to the edge of the clip to freeze there', 'bad'); return null; }
+    S.sel = new Set([frozen.id]);
+    actions.commit('Freeze frame');
+    return frozen;
+  },
+
+  /**
+   * Find the frame you are looking at, in the file it came from.
+   *
+   * Selects the clip and says where in the source it is. Speed ramps and
+   * reversal sit between the timeline and the file, so the answer comes from
+   * sourceTime rather than from subtracting the clip's start.
+   */
+  matchFrame() {
+    const hit = matchFrame(S.project, S.time);
+    if (!hit) { toast('Nothing under the playhead to match', 'bad'); return; }
+    const rec = mediaById(S.project, hit.mediaId);
+    actions.select([hit.clip.id]);
+    openPanel('media');
+    toast(`${rec?.name || 'Clip'} at ${tc(hit.at, S.project.settings.fps)} in the file`, 'ok', 4200);
+    return hit;
+  },
+
+  /**
+   * Three-point editing: put the media in at the playhead.
+   *
+   * `mode` is 'insert' (make room, push everything later) or 'overwrite' (land
+   * on top of whatever is there). They are not a preference — overwriting when
+   * you meant to insert loses work, and inserting when you meant to overwrite
+   * pushes the whole cut out of sync with the music.
+   */
+  placeMedia(mediaId, mode = 'overwrite') {
+    const rec = mediaById(S.project, mediaId);
+    if (!rec) return;
+    const kind = rec.kind === 'audio' ? 'audio' : 'video';
+    let track = S.project.tracks.find((t) => t.kind === kind);
+    if (!track) track = addTrack(S.project, kind);
+    const spec = { mediaId, trackId: track.id, start: S.time, dur: rec.duration, in: 0 };
+    const made = mode === 'insert' ? insertAt(S.project, spec) : overwriteAt(S.project, spec);
+    if (!made) { toast('That could not be placed here', 'bad'); return; }
+    S.sel = new Set([made.id]);
+    actions.commit(`${mode === 'insert' ? 'Insert' : 'Overwrite'} ${rec.name}`);
+  },
+
+  /* ---------------- multicam ---------------- */
+
+  /**
+   * Line several files up by sound and put them on the timeline as one clip.
+   *
+   * The sync is the part worth having: two cameras recording the same room
+   * heard the same door close, and correlating when things happened is exact
+   * where lining up a clap by eye is not.
+   */
+  async makeMulticam(mediaIds) {
+    const ids = (mediaIds && mediaIds.length ? mediaIds : S.project.media
+      .filter((m) => m.kind === 'video').map((m) => m.id));
+    if (ids.length < 2) {
+      toast('Multicam needs at least two angles — import them first', 'bad', 4000);
+      return null;
+    }
+
+    toast('Listening to the angles…', '', 2400);
+    let synced;
+    try {
+      synced = await syncAngles(S.project, ids);
+    } catch {
+      toast('Those angles could not be lined up by sound', 'bad', 4000);
+      return null;
+    }
+
+    const angles = synced.map((a) => ({
+      ...a,
+      label: mediaById(S.project, a.mediaId)?.name || null,
+    }));
+    let track = S.project.tracks.find((t) => t.kind === 'video');
+    if (!track) track = addTrack(S.project, 'video');
+    const clip = makeMulticam(S.project, {
+      angles, trackId: track.id, start: nextFreeStart(S.project, track.id, 0, 1),
+    });
+    if (!clip) { toast('Those angles do not overlap in time', 'bad', 4000); return null; }
+
+    S.sel = new Set([clip.id]);
+    actions.commit(`Multicam — ${angles.length} angles`);
+
+    /*
+     * Say which ones it was not sure about.
+     *
+     * A confidence figure nobody sees is a figure that does no work. An angle
+     * the correlation could not place is stacked at zero, and finding that out
+     * during an export is far worse than being told now.
+     */
+    const shaky = angles.filter((a) => !a.reference && (a.confidence ?? 0) < 0.25);
+    if (shaky.length) {
+      toast(`${shaky.length} angle${shaky.length === 1 ? '' : 's'} could not be lined up by sound — check ${shaky.map((a) => a.label).join(', ')}`,
+        'warn', 6000);
+    } else {
+      toast(`${angles.length} angles lined up. Press 1–9 while it plays to cut.`, 'ok', 5000);
+    }
+    return clip;
+  },
+
+  /** Cut the live multicam clip to an angle at the playhead. */
+  cutToAngle(index) {
+    const clip = S.project.clips.find((c) => c.kind === 'multicam'
+      && S.time >= c.start && S.time < c.start + c.dur);
+    if (!clip) return false;
+    if (!clip.angles?.[index]) return false;
+    cutTo(clip, S.time - clip.start, index, { fps: S.project.settings.fps });
+    /*
+     * Coalesced, because live switching is one gesture.
+     *
+     * Somebody watching a take and tapping angles as it plays is making one
+     * edit, not forty. Forty undo steps to get back to the start of a pass is
+     * not an undo stack anybody uses.
+     */
+    actions.commit(`Cut to angle ${index + 1}`, `multicam:${clip.id}`);
+    return true;
+  },
+
+  /** Turn a multicam clip into ordinary clips, one per cut. */
+  flattenMulticam(clipId) {
+    const id = clipId || [...S.sel].find((x) => clipById(S.project, x)?.kind === 'multicam');
+    if (!id) { toast('Select a multicam clip first', 'bad'); return; }
+    const made = flattenMulticam(S.project, id);
+    if (!made.length) { toast('Nothing to flatten', 'bad'); return; }
+    S.sel = new Set(made.map((c) => c.id));
+    actions.commit(`Flatten multicam into ${made.length} clips`);
+  },
+
+  /** The multicam clip under the playhead, for the angle viewer. */
+  liveMulticam() {
+    return S.project.clips.find((c) => c.kind === 'multicam'
+      && S.time >= c.start && S.time < c.start + c.dur) || null;
   },
 
   deleteSelected() {
@@ -544,36 +705,6 @@ export const actions = {
     }
     actions.commit(`Detach audio from ${usable.length} clip${usable.length === 1 ? '' : 's'}`);
     return usable.length;
-  },
-
-  /**
-   * Hold the frame under the playhead.
-   *
-   * Built as a split either side plus a speed of nearly zero on the middle,
-   * rather than as a new kind of clip — so it trims, grades and exports like
-   * anything else, and undo takes it back in one step.
-   */
-  freezeFrame(at = S.time, hold = 2) {
-    const clip = [...S.sel].map((id) => clipById(S.project, id)).find((c) =>
-      c && at > c.start + 0.02 && at < c.start + c.dur - 0.02);
-    if (!clip) { toast('Put the playhead over a selected clip first', 'bad'); return null; }
-
-    const right = splitClip(S.project, clip.id, at);
-    if (!right) return null;
-    const tail = splitClip(S.project, right.id, at + Math.min(hold, right.dur - 0.05));
-    const frozen = tail ? right : right;
-    frozen.speed = 0.0001;
-    frozen.dur = hold;
-    frozen.label = 'Freeze';
-    if (tail) {
-      // Everything after the hold slides along, or it would play over itself.
-      for (const c of clipsOn(S.project, frozen.trackId)) {
-        if (c.start >= tail.start - 0.0001 && c.id !== frozen.id) c.start += hold - (tail.start - frozen.start);
-      }
-    }
-    S.sel = new Set([frozen.id]);
-    actions.commit('Freeze frame');
-    return frozen;
   },
 
   /** Nudge the selection by seconds — arrow keys and the menu both use this. */
@@ -1045,13 +1176,31 @@ function onKey(e) {
   const fps = S.project.settings.fps;
 
   switch (e.key) {
-    case ' ': e.preventDefault(); togglePlay(); break;
+    case ' ':
+      e.preventDefault();
+      // Space is the plain transport, so it takes the shuttle out of whatever
+      // rate it was in rather than playing at 8x with no way to tell.
+      if (shuttleRate) { stopShuttle(); break; }
+      togglePlay();
+      break;
     case 'ArrowLeft': e.preventDefault(); transport.step(e.shiftKey ? -fps : -1, fps); syncAfterStep(); break;
     case 'ArrowRight': e.preventDefault(); transport.step(e.shiftKey ? fps : 1, fps); syncAfterStep(); break;
     case 'Home': e.preventDefault(); actions.seek(0); break;
     case 'End': e.preventDefault(); actions.seek(duration(S.project)); break;
     case 'Delete': case 'Backspace': e.preventDefault(); actions.deleteSelected(); break;
     case 's': case 'S': actions.splitAtPlayhead(); break;
+    /*
+     * J, K, L and the three commands that live beside them.
+     *
+     * Upper case is not a different command: Shift is how you reach some of
+     * these on some layouts, and a key that works unshifted and not shifted is
+     * the kind of thing that reads as the app being broken.
+     */
+    case 'l': case 'L': e.preventDefault(); shuttle(1); break;
+    case 'j': case 'J': e.preventDefault(); shuttle(-1); break;
+    case 'k': case 'K': e.preventDefault(); stopShuttle(); break;
+    case 'e': case 'E': e.preventDefault(); actions.freezeFrame(); break;
+    case 'y': case 'Y': e.preventDefault(); actions.matchFrame(); break;
     case 'c': case 'C': actions.setTool(S.tool === 'razor' ? 'select' : 'razor'); break;
     case 't': case 'T': actions.setTool(S.tool === 'trim' ? 'select' : 'trim'); break;
     case 'v': case 'V': actions.setTool('select'); break;
@@ -1068,7 +1217,20 @@ function onKey(e) {
       actions.select([]);
       break;
     default:
-      if (/^[1-9]$/.test(e.key)) openPanel(PANEL_KEYS[Number(e.key) - 1]);
+      if (/^[1-9]$/.test(e.key)) {
+        /*
+         * Numbers cut angles when there is a multicam clip under the playhead,
+         * and open panels otherwise.
+         *
+         * Not a mode and not a modifier: while a multicam clip is live, the
+         * numbers are the only thing anybody wants them to be, and reaching
+         * for a modifier mid-take is how you miss the cut. Away from one they
+         * go back to being panel shortcuts, which is what they have always
+         * been.
+         */
+        if (actions.cutToAngle(Number(e.key) - 1)) { e.preventDefault(); break; }
+        openPanel(PANEL_KEYS[Number(e.key) - 1]);
+      }
   }
 }
 
@@ -1078,6 +1240,69 @@ function syncAfterStep() {
   drawFrame();
   paintTransport();
 }
+
+/*
+ * J, K and L: the shuttle.
+ *
+ * The oldest transport controls there are — anybody trained on tape has them
+ * in their hands, and their absence is one of the first things such a person
+ * notices. L plays forward and doubles the rate each press, J does the same
+ * backwards, K stops. Pressing J while running forward slows down rather than
+ * reversing, which is what makes it a shuttle instead of two play buttons.
+ */
+let shuttleRate = 0;
+
+function shuttle(direction) {
+  audio.ensure();
+  audio.resume();
+  unlockPlayback();
+  shuttleRate = shuttleNext(shuttleRate, direction);
+  transport.setRate(Math.abs(shuttleRate));
+  clock.setRate(Math.abs(shuttleRate));
+
+  if (shuttleRate < 0) {
+    /*
+     * Backwards, honestly.
+     *
+     * No browser plays a media element at a negative rate, so reverse is the
+     * playhead stepping rather than the decoder running — picture moves, sound
+     * does not. That is the same limitation the app already states for
+     * reversed clips, and pretending otherwise would mean silent playback that
+     * looks like a bug instead of a stated one.
+     */
+    transport.pause();
+    stopReverse();
+    const fps = S.project.settings.fps || 30;
+    const step = Math.abs(shuttleRate);
+    reverseTimer = setInterval(() => {
+      const next = S.time - step / fps;
+      if (next <= 0) { actions.seek(0); stopShuttle(); return; }
+      actions.seek(next);
+    }, 1000 / fps);
+  } else {
+    stopReverse();
+    if (!transport.playing) transport.play();
+  }
+  paintTransport();
+  toast(shuttleLabel(shuttleRate) || 'Playing', '', 900);
+}
+
+let reverseTimer = null;
+function stopReverse() {
+  if (reverseTimer) { clearInterval(reverseTimer); reverseTimer = null; }
+}
+
+function stopShuttle() {
+  stopReverse();
+  shuttleRate = 0;
+  transport.setRate(1);
+  clock.setRate(1);
+  transport.pause();
+  paintTransport();
+}
+
+/** The rate the transport is shuttling at, for the UI and the tests. */
+export function shuttleState() { return shuttleRate; }
 
 function togglePlay() {
   audio.ensure();
@@ -1457,6 +1682,10 @@ async function openingScreen() {
     // corrector-aware path the Colour panel uses, so a wheel dragged in the
     // band and the same wheel dragged in the panel land in the same place.
     patchGrade: (fn, label, key) => actions.patchGrade(fn, label, key),
+    liveMulticam: () => actions.liveMulticam(),
+    cutToAngle: (i) => actions.cutToAngle(i),
+    makeMulticam: () => actions.makeMulticam(),
+    flattenMulticam: () => actions.flattenMulticam(),
     select: (ids) => actions.select(ids),
     seek: (t) => actions.seek(t),
     openStart: (opts) => actions.openStart(opts),
@@ -1534,6 +1763,14 @@ async function openingScreen() {
 
     /* timeline */
     togglePlay: () => togglePlay(),
+    freezeFrame: () => actions.freezeFrame(),
+    makeMulticam: () => actions.makeMulticam(),
+    flattenMulticam: () => actions.flattenMulticam(),
+    hasMulticam: () => S.project.clips.some((c) => c.kind === 'multicam'),
+    matchFrame: () => actions.matchFrame(),
+    shuttleForward: () => shuttle(1),
+    shuttleBack: () => shuttle(-1),
+    shuttleStop: () => stopShuttle(),
     goStart: () => actions.seek(0),
     goEnd: () => actions.seek(duration(S.project)),
     marker: () => actions.addMarker(),

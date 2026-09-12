@@ -17,6 +17,7 @@ import { elementFor } from './media.js';
 import { buildAudioChain, fxSignature } from './audio-fx.js';
 import { buildStrip, stripSignature, warmStrip, makeupMeasured } from './audio-strip.js';
 import * as clock from './media-clock.js';
+import { angleView } from './multicam.js';
 
 /**
  * Does this element actually carry sound?
@@ -218,11 +219,28 @@ export class AudioEngine {
     for (const clip of active) {
       const track = project.tracks.find((tr) => tr.id === clip.trackId);
       if (!track) continue;
-      const media = mediaById(project, clip.mediaId);
+      /*
+       * A multicam clip is heard through whichever angle is live.
+       *
+       * The same resolution the compositor does, for the same reason: below
+       * this line it is an ordinary clip with a media id and an in point, and
+       * nothing about the mixing has to know that six cameras were involved.
+       */
+      let source = clip;
+      if (clip.kind === 'multicam') {
+        const live = angleView(clip, t);
+        if (!live) continue;
+        source = { ...clip, mediaId: live.mediaId, in: live.in };
+      }
+
+      const media = mediaById(project, source.mediaId);
       if (!media || media.missing) continue;
       if (media.kind === 'image') continue;
       if (clip.reversed) continue;                 // no backwards playback
-      const node = elementFor(media, clip.id);
+      // Keyed on the angle: two angles are two files and must not share one
+      // decoder, or a switch swaps the source out from under the other.
+      const node = elementFor(media,
+        clip.kind === 'multicam' ? `${clip.id}:${source.mediaId}` : clip.id);
       if (!node || node.tagName === 'IMG') continue;
 
       /*
@@ -274,7 +292,7 @@ export class AudioEngine {
        * clip was inaudible. Whoever ran last won, and which one that was
        * depended on a file's metadata.
        */
-      const src = sourceTime(clip, t);
+      const src = sourceTime(source, t);
       // Follows a ramp, so audio stays with the picture through a speed change.
       clock.want(node, Math.max(0, src), speedAt(clip, local));
       this.playingNodes.add(node);

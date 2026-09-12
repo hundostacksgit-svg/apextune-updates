@@ -35,6 +35,41 @@ export const PANELS = {
 
 let currentName = null;
 
+/*
+ * Hand every mount an element nobody has ever bound a listener to.
+ *
+ * Panels attach their handlers to the host they are given — one delegated
+ * click listener on the panel is the right shape, and seven of them do it.
+ * The host used to be the same `#panel` element every time, and a refresh
+ * cleared its *children* and mounted again. The listeners are on the parent,
+ * so they survived, and after N refreshes one click ran the handler N times.
+ *
+ * It is not theoretical and it was not subtle once measured: a single click on
+ * a preset chip, after the boot sequence had refreshed the panel a few times,
+ * applied the preset five times and pushed five entries onto the undo stack.
+ * Undo then appeared broken, because one press took back one of five identical
+ * changes.
+ *
+ * The obvious fix — replace `#panel` itself — is wrong, and wrong in a way
+ * that only shows up somewhere else. The rest of the app binds to `#panel` as
+ * a stable region: main.js attaches the right-click menu for the media pool to
+ * it once at boot. Swapping the element out from under that took the media
+ * pool's context menu away entirely.
+ *
+ * So the region stays and its contents are swapped. A wrapper is created fresh
+ * for each mount and the panel binds to that; anything bound to `#panel` from
+ * outside is untouched, because `#panel` never goes anywhere. The wrapper is
+ * `display: contents`, so it lays nothing out and the panel's children are
+ * still, for every purpose that matters to CSS, direct children of the panel.
+ */
+function freshInner(outer) {
+  if (!outer) return outer;
+  const inner = document.createElement('div');
+  inner.className = 'panel-inner';
+  outer.replaceChildren(inner);
+  return inner;
+}
+
 /** True when the panel is an overlay rather than a column. */
 export function panelIsOverlay() {
   return window.matchMedia('(max-width: 760px)').matches;
@@ -62,8 +97,7 @@ export function openPanel(name) {
   // means one is buried under the other with no way to reach it.
   if (panelIsOverlay()) $('#inspector')?.classList.remove('open');
   import('../mobile.js').then((m) => m.syncScrim()).catch(() => { /* desktop */ });
-  host.innerHTML = '';
-  entry.mod.mount(host);
+  entry.mod.mount(freshInner(host));
   host.classList.add('fade-in');
   setTimeout(() => host.classList.remove('fade-in'), 300);
 
@@ -82,20 +116,21 @@ export function openPanel(name) {
  * value once and the control is gone from under your finger.
  */
 export function refreshPanel() {
-  const panelHost = $('#panel');
   const entry = PANELS[currentName];
   if (entry) {
-    const scrolled = panelHost.scrollTop;
-    const keep = captureFocus(panelHost);
-    panelHost.innerHTML = '';
-    entry.mod.mount(panelHost);
-    panelHost.scrollTop = scrolled;          // keep the reading position across edits
+    const outer = $('#panel');
+    const scrolled = outer.scrollTop;
+    const keep = captureFocus(outer);
+    // Swap the contents, not the region. See freshInner above for both halves
+    // of why: listeners that must die, and listeners that must not.
+    entry.mod.mount(freshInner(outer));
+    outer.scrollTop = scrolled;              // keep the reading position across edits
     restoreFocus(keep);
   }
 
   const inspectorHost = $('#inspector');
   const keep = captureFocus(inspectorHost);
-  inspector.mount(inspectorHost);
+  inspector.mount(freshInner(inspectorHost));
   restoreFocus(keep);
 }
 

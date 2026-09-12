@@ -184,6 +184,21 @@ function consumed(clip, fromLocal, toLocal, samples = 48) {
  * downstream has to think about them.
  */
 export function sourceTime(clip, t) {
+  /*
+   * A frozen clip is one frame, however long it is on the timeline.
+   *
+   * A flag rather than `speed: 0`, which was the first attempt and is a trap:
+   * twenty-eight places in this codebase read `clip.speed || 1`, and zero is
+   * falsy, so every one of them quietly turned the freeze back into normal
+   * playback. Several others divide by the speed. Setting it to 0.0001 to slip
+   * past the falsy check — which is what the earlier freeze frame did — is not
+   * a fix either; it is a clip that drifts, slowly, for reasons nobody reading
+   * the code later would guess.
+   *
+   * So the freeze says what it is, and this is the only place that has to know.
+   */
+  if (clip.frozen) return clip.in;
+
   const local = clamp(t - clip.start, 0, clip.dur);
 
   if (clip.speedKeys?.length) {

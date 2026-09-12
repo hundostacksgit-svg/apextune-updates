@@ -71,6 +71,8 @@ export const MENUS = [
   {
     id: 'clip', label: 'Clip', items: [
       { label: 'Split at playhead', key: 'S', run: () => api.split?.() },
+      { label: 'Freeze this frame', key: 'E', run: () => api.freezeFrame?.() },
+      { label: 'Find this frame in its file', key: 'Y', run: () => api.matchFrame?.() },
       { label: 'Set a transition…', when: () => api.hasSelection?.(), run: () => api.openPanel?.('effects') },
       { sep: true },
       { label: 'Colour and grade', when: () => api.hasSelection?.(), run: () => api.openPanel?.('color') },
@@ -88,6 +90,10 @@ export const MENUS = [
         run: () => api.toggleGraph?.(),
       },
       { sep: true },
+      { label: 'Line up angles by sound — multicam', run: () => api.makeMulticam?.() },
+      { label: 'Flatten the multicam into clips', when: () => api.hasMulticam?.(),
+        run: () => api.flattenMulticam?.() },
+      { sep: true },
       { label: 'Find the cuts in this clip', when: () => api.hasSelection?.(), run: () => api.detectScenes?.() },
       { label: 'Track something in this clip', when: () => api.hasSelection?.(), run: () => api.track?.() },
     ],
@@ -95,6 +101,17 @@ export const MENUS = [
   {
     id: 'timeline', label: 'Timeline', items: [
       { label: 'Play / pause', key: 'Space', run: () => api.togglePlay?.() },
+      /*
+       * J, K and L, named rather than left as folklore.
+       *
+       * Anybody trained on tape already knows them; everybody else never finds
+       * out a shuttle exists unless a menu says so, which is the whole reason
+       * to list a shortcut somebody would otherwise have to be told.
+       */
+      { label: 'Shuttle forward — faster each press', key: 'L', run: () => api.shuttleForward?.() },
+      { label: 'Shuttle back', key: 'J', run: () => api.shuttleBack?.() },
+      { label: 'Stop shuttling', key: 'K', run: () => api.shuttleStop?.() },
+      { sep: true },
       { label: 'Go to start', key: 'Home', run: () => api.goStart?.() },
       { label: 'Go to end', key: 'End', run: () => api.goEnd?.() },
       { sep: true },

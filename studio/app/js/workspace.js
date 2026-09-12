@@ -35,6 +35,8 @@ import * as levels from './levels.js';
 import { gradeNodes, addGradeNode, removeGradeNode, liveGradeNode, mediaById, clipById } from './engine/project.js';
 import { SCOPES, drawScope } from './engine/scopes.js';
 import { CONTROLS } from './engine/filters.js';
+import { angleAt } from './engine/multicam.js';
+import { elementFor, urlOf } from './engine/media.js';
 import { wheelsMarkup, wireWheels, refreshWheels } from './wheels-ui.js';
 
 /* ------------------------------------------------------------------ */
@@ -84,6 +86,7 @@ const DOCKS = [
   { id: 'strip',   name: 'Strip',    pages: ['colour', 'cut', 'fusion'], side: 'bottom' },
   { id: 'lightbox',name: 'Lightbox', pages: ['colour', 'cut', 'media'],  side: 'over', off: true },
   { id: 'primaries', name: 'Primaries', pages: ['colour', 'fusion'],   side: 'bottom' },
+  { id: 'angles',    name: 'Angles',    pages: ['cut', 'edit'],        side: 'bottom' },
 ];
 
 const PAGE_KEY = 'omnidx.studio.page';
@@ -726,6 +729,121 @@ function paintPrimaries() {
 }
 
 /* ------------------------------------------------------------------ */
+/* the angle viewer                                                    */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Every angle at once, live, while the timeline plays.
+ *
+ * This is the half of multicam that makes it worth having. Without it you can
+ * only see the angle you already chose, so choosing a different one means
+ * stopping, switching, playing again, and deciding from memory. With it you
+ * watch the take once, tapping numbers as you go, and the cut is done.
+ *
+ * The tiles are canvases painted from the same pooled decoders the compositor
+ * uses — no second copy of any file, and no second decoder per angle beyond
+ * the one that already exists because the angle is in the project.
+ */
+function buildAngles() {
+  const dock = el('section', { class: 'dock dock-angles', id: 'angles', 'aria-label': 'Camera angles' });
+  dock.append(
+    el('div', { class: 'dock-h' },
+      el('b', {}, 'Angles'),
+      el('span', { class: 'ang-live', id: 'ang-live' }, ''),
+      el('span', { class: 'dock-sp' }),
+      button('Sync angles', 'ang-make', 'Line every video file up by its sound and make one multicam clip'),
+      button('Flatten', 'ang-flat', 'Turn the angle switches into ordinary clips'),
+    ),
+    el('div', { class: 'ang-row', id: 'ang-row' }),
+  );
+  dock.addEventListener('click', (e) => {
+    if (e.target.closest('#ang-make')) { api?.makeMulticam?.(); return; }
+    if (e.target.closest('#ang-flat')) { api?.flattenMulticam?.(); return; }
+    const tile = e.target.closest('[data-angle]');
+    if (tile) api?.cutToAngle?.(Number(tile.dataset.angle));
+  });
+  return dock;
+}
+
+let angleTiles = [];
+
+function paintAngles() {
+  const host = $('#ang-row');
+  if (!host || !document.documentElement.classList.contains('ws-angles')) return;
+  const clip = api?.liveMulticam?.();
+  const live = $('#ang-live');
+
+  if (!clip) {
+    if (host.dataset.state !== 'empty') {
+      host.dataset.state = 'empty';
+      host.innerHTML = '';
+      host.append(el('p', { class: 'dock-empty' },
+        'Import two or more angles of the same take, then press Sync angles. '
+        + 'They are lined up by their sound, not by hand.'));
+      angleTiles = [];
+    }
+    if (live) live.textContent = '';
+    return;
+  }
+
+  const key = `${clip.id}:${clip.angles.length}`;
+  if (host.dataset.state !== key) {
+    /*
+     * Rebuilt only when the clip or its angle count changes.
+     *
+     * These tiles are painted every frame while the transport runs. Rebuilding
+     * the DOM at that rate would be absurd, and would also throw away the
+     * canvas each tile is drawing into sixty times a second.
+     */
+    host.dataset.state = key;
+    host.innerHTML = '';
+    angleTiles = clip.angles.map((angle, i) => {
+      const tile = el('button', { class: 'ang-tile', type: 'button', 'data-angle': String(i),
+        title: `${angle.label || `Angle ${i + 1}`} — press ${i + 1} to cut here` });
+      const cv = el('canvas', { class: 'ang-cv', width: '192', height: '108' });
+      tile.append(
+        el('span', { class: 'ang-num' }, String(i + 1)),
+        cv,
+        el('i', {}, angle.label || `Angle ${i + 1}`),
+      );
+      if ((angle.confidence ?? 1) < 0.25 && !angle.reference) {
+        tile.append(el('span', { class: 'ang-warn', title:
+          'The sound in this angle did not match the others, so it may not be lined up' }, '!'));
+      }
+      host.append(tile);
+      return { tile, cv: cv.getContext('2d'), angle };
+    });
+  }
+
+  const S = api?.state?.();
+  const local = S ? S.time - clip.start : 0;
+  const liveIndex = angleAt(clip, local);
+  if (live) live.textContent = clip.angles[liveIndex]?.label || `Angle ${liveIndex + 1}`;
+
+  angleTiles.forEach((t, i) => {
+    t.tile.classList.toggle('on', i === liveIndex);
+    const rec = S ? S.project.media.find((m) => m.id === t.angle.mediaId) : null;
+    if (!rec) return;
+    /*
+     * Painted from the pooled decoder, and only when it has a frame.
+     *
+     * `elementFor` is the same pool the compositor uses, so an angle already
+     * on screen costs nothing extra and one that is not gets a decoder that
+     * gets torn down again by the pool's own LRU when it stops being drawn.
+     */
+    const node = elementFor(rec, `angle:${clip.id}:${t.angle.mediaId}`, { preferProxy: true });
+    if (!node || !node.videoWidth) return;
+    const want = Math.max(0, t.angle.in + Math.max(0, local));
+    if (!S.playing && Math.abs(node.currentTime - want) > 0.12) {
+      try { node.currentTime = want; } catch { /* not seekable yet */ }
+    }
+    try {
+      t.cv.drawImage(node, 0, 0, 192, 108);
+    } catch { /* nothing decoded yet; the tile keeps its last frame */ }
+  });
+}
+
+/* ------------------------------------------------------------------ */
 /* the viewer bar                                                      */
 /* ------------------------------------------------------------------ */
 
@@ -960,6 +1078,7 @@ export function initWorkspace(actions) {
   const tl = $('#timeline');
   tl?.parentNode.insertBefore(buildStrip(), tl);
   tl?.parentNode.insertBefore(buildPrimaries(), tl);
+  tl?.parentNode.insertBefore(buildAngles(), tl);
   document.body.append(buildLightbox(), buildPageBar());
 
   /*
@@ -1066,6 +1185,7 @@ export function refresh() {
   paintScope();
   paintViewerBar();
   paintPrimaries();
+  paintAngles();
   if (document.documentElement.classList.contains('ws-nodes')) paintNodes();
   if (document.documentElement.classList.contains('ws-gallery')) paintGallery();
   if (document.documentElement.classList.contains('ws-strip')) paintStrip();
@@ -1076,6 +1196,8 @@ export function refresh() {
 export function onFrame() {
   paintScope();
   paintViewerBar();
+  // Live, because that is the entire point of an angle viewer.
+  paintAngles();
   if (document.documentElement.classList.contains('ws-strip')) {
     // Only the highlight moves during playback; rebuilding the strip sixty
     // times a second would be absurd for a row of static thumbnails.
