@@ -73,7 +73,7 @@ eyeballed.
   new overlay layer, as many as you like
 - Undo that names what it will take back, plus a full history you can jump
   into at any point
-- 317 effects, 107 transitions, 118 looks, 200 typefaces, 130 styles
+- 319 effects, 107 transitions, 118 looks, 194 typefaces, 176 styles
 - **Keyframes you can see.** Unfold a clip and it becomes its properties —
   position, scale, rotation, opacity, volume, the grade, every parameter of
   every effect on it. Each has a stopwatch and a lane of draggable diamonds at
@@ -128,12 +128,20 @@ eyeballed.
   audio byte is decoded. One media clock now owns play, pause, rate and
   position for every element, and when a browser refuses to start an unmuted
   one the picture is driven by seeking instead of freezing
-- **128 presets** — a grade, a stack of effects with their parameters tuned to
+- **290 presets** — a grade, a stack of effects with their parameters tuned to
   each other, a transform and an audio strip, applied to a clip in one tap.
   Not the same thing as the effect library: a single effect at its defaults is
   a guitar pedal, and what people actually want is four of them in an order
-  somebody worked out. You can save your own from any clip you got right, and
-  they sit beside the shipped ones under **Mine**
+  somebody worked out. Forty-nine groups, searchable, from film stocks and
+  light leaks to datamosh, kaleidoscope and the unglamorous Grade tools a
+  colourist actually starts from. You can save your own from any clip you got
+  right, and they sit beside the shipped ones under **Mine**.
+  Every preset and every style is checked against the real libraries at load —
+  including parameter names, because `{ id: 'fog', params: { height: 60 } }`
+  is not an error to anybody: the fog is built, the unknown key is ignored, and
+  the preset quietly runs at the default depth it was tuned away from. That
+  check found four of mine and one shipped style that had been rendering 9:16
+  while promising 4:3
 - **Multicam** — angles lined up by correlating what each camera *heard
   happen*, not the waveform, which two different microphones never agree on.
   Measured against a known answer: two angles started exactly 1.2 seconds apart

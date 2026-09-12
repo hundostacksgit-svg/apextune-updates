@@ -249,7 +249,7 @@ export const GUIDE = [
   {
     id: 'text',
     group: 'Text',
-    title: 'Titles, captions and 200 typefaces',
+    title: 'Titles, captions and 194 typefaces',
     body: [
       ['Adding a title', 'Text panel → tap a style. It lands at the playhead as a normal clip you can drag and trim.'],
       ['Choosing a typeface', 'Search the font list — every name is set in its own typeface, because a list of names in the system font tells you nothing. Picking one fetches it; the offline fallbacks are chosen to look like the real thing, so text still renders sensibly with no signal.'],
@@ -305,7 +305,7 @@ export const GUIDE = [
     group: 'Effects',
     title: 'Presets: a whole treatment in one tap',
     body: [
-      ['What a preset is', 'A grade, a stack of effects with their settings tuned to each other, a transform and an audio strip — saved together under a name. **Effects** panel, top section. There are over a hundred and twenty.'],
+      ['What a preset is', 'A grade, a stack of effects with their settings tuned to each other, a transform and an audio strip — saved together under a name. **Effects** panel, top section. There are nearly three hundred, in forty-nine groups, with a search box.'],
       ['Why not just add the effects', 'The settings are the whole thing. Scanlines at 40 with a chroma shift at 8 and a tape wobble at 12 reads as a VHS tape; the same three effects at their defaults read as a mess. Somebody has to dial them in, and a preset is that work, saved.'],
       ['Using one', 'Select a clip and click a preset. Nothing selected means every video clip. The chip shows the real stack running on a real frame — on your own footage once you have imported some — so what you see is what you get.'],
       ['They replace, they do not pile up', 'Trying a second preset takes the first one off. Two stacked is almost never what anybody meant, and the result looks like neither. Undo takes the whole thing back in one press.'],

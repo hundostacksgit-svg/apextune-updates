@@ -20,6 +20,7 @@
 import { EFFECTS } from './effects.js';
 import { LOOK_BY_ID } from './filters.js';
 import { TRANSITIONS } from './transitions.js';
+import { RATIOS } from './project.js';
 
 /*
  * A family is a shape of edit. Each entry names the ingredients and the
@@ -143,24 +144,24 @@ const FAMILIES = [
     ] },
 
   /* ---------------- retro ---------------- */
-  { group: 'Retro', emoji: '📼', pace: 'medium', ratio: '4:3',
+  { group: 'Retro', emoji: '📼', pace: 'medium', ratio: '16:9',
     base: { look: 'none', transition: 'glitch', transDur: 0.2 },
     tags: ['retro', 'vintage', 'old', 'vhs', 'film', '80s', '90s'],
     variants: [
       ['VHS 1987', 'Tape bleed, tracking errors, scanlines.',
-        { effects: [['vhs', { amount: 55 }], ['tvStatic', { amount: 20 }]] }],
+        { effects: [['vhs', { amount: 55 }], ['tvStatic', { amount: 20 }], ['crop133', { amount: 100 }]] }],
       ['Camcorder 1994', 'Home video, soft and warm.',
-        { effects: [['camcorder', { amount: 50 }], ['dustScratches', { amount: 25 }]] }],
+        { effects: [['camcorder', { amount: 50 }], ['dustScratches', { amount: 25 }], ['crop133', { amount: 100 }]] }],
       ['Super 8', 'Grainy film with gate weave.',
-        { effects: [['super8', { amount: 70 }], ['gateWeave', { amount: 35 }], ['projectorFlicker', { amount: 30 }]] }],
+        { effects: [['super8', { amount: 70 }], ['gateWeave', { amount: 35 }], ['projectorFlicker', { amount: 30 }], ['crop133', { amount: 100 }]] }],
       ['16mm', 'Cleaner film, still clearly film.',
-        { effects: [['mm16', { amount: 65 }], ['filmGrain', { amount: 30 }]] }],
+        { effects: [['mm16', { amount: 65 }], ['filmGrain', { amount: 30 }], ['crop133', { amount: 100 }]] }],
       ['Old print', 'Faded, scratched, been in a drawer.',
-        { effects: [['faded', { amount: 70 }], ['dustScratches', { amount: 45 }], ['filmBurn', { amount: 40 }]] }],
+        { effects: [['faded', { amount: 70 }], ['dustScratches', { amount: 45 }], ['filmBurn', { amount: 40 }], ['crop133', { amount: 100 }]] }],
       ['CRT', 'Watched on a tube television.',
-        { effects: [['crtTube', { amount: 55 }], ['scanlines', { amount: 30 }]] }],
+        { effects: [['crtTube', { amount: 55 }], ['scanlines', { amount: 30 }], ['crop133', { amount: 100 }]] }],
       ['Polaroid', 'Washed out with a white frame.',
-        { effects: [['polaroidStock', { amount: 65 }], ['polaroidFrame', { amount: 100 }]] }],
+        { effects: [['polaroidStock', { amount: 65 }], ['polaroidFrame', { amount: 100 }], ['crop100', { amount: 100 }]] }],
     ] },
 
   /* ---------------- stylised ---------------- */
@@ -323,6 +324,297 @@ const FAMILIES = [
       ['Paper', 'Warm off-white, printed.',
         { effects: [['duoSepiaprint', { amount: 70 }], ['filmGrain', { amount: 25 }]] }],
     ] },
+
+  /* ---------------- the loud ones ---------------- */
+  { group: 'Horror', emoji: '🩸', pace: 'medium', ratio: '16:9',
+    base: { look: 'horror', transition: 'dipBlack', transDur: 0.4 },
+    tags: ['horror', 'scary', 'creepy', 'analog horror', 'found footage', 'halloween'],
+    variants: [
+      ['Found footage', 'A tape somebody should not have kept.',
+        { effects: [['vhsWorn', { amount: 70 }], ['signalLoss', { amount: 40 }],
+          ['handheldRun', { amount: 45 }], ['vignetteHard', { amount: 55 }]] }],
+      ['Analog horror', 'Broadcast that is going wrong.',
+        { effects: [['tvStatic', { amount: 45 }], ['crtTube', { amount: 60 }],
+          ['ghostEcho', { amount: 50 }], ['scanlines', { amount: 40 }]] }],
+      ['Night vision', 'Green, grainy, watched.',
+        { look: 'none', effects: [['nightVision', { amount: 85 }], ['filmGrain', { amount: 45 }],
+          ['vignetteHard', { amount: 65 }]] }],
+      ['Thermal', 'Heat only. Nothing else survives.',
+        { look: 'none', effects: [['thermal', { amount: 90 }], ['blockGlitch', { amount: 20 }]] }],
+      ['Dread', 'Cold, slow, closing in.',
+        { look: 'thriller', pace: 'slow', transition: 'blurDissolveSoft', transDur: 0.9,
+          effects: [['fog', { amount: 45 }], ['movePushIn', { amount: 30 }],
+            ['vignetteHard', { amount: 60 }]] }],
+      ['Jumpscare', 'Frames that hit you.',
+        { transition: 'flashWhite', transDur: 0.08,
+          effects: [['flash', { amount: 85, every: 1.6, length: 0.05 }],
+            ['invertPulse', { at: 0.6, length: 0.1, mode: 'white' }],
+            ['shake', { amount: 55 }]] }],
+    ] },
+
+  { group: 'Y2K & vaporwave', emoji: '💿', pace: 'medium', ratio: '9:16',
+    base: { look: 'y2k', transition: 'glitchFine', transDur: 0.18 },
+    tags: ['y2k', 'vaporwave', '2000s', 'aesthetic', 'retrowave', 'nostalgia'],
+    variants: [
+      ['Chrome', 'Cold metal and blown highlights.',
+        { effects: [['glow', { amount: 50, radius: 24 }], ['prism', { amount: 30 }]] }],
+      ['Vapour', 'Pink and cyan, dreaming.',
+        { look: 'vaporwave', effects: [['rampVapour', { amount: 70 }], ['dreamy', { amount: 40 }]] }],
+      ['Mall CRT', 'Watched off a shop television.',
+        { effects: [['crtTube', { amount: 65 }], ['scanlines', { amount: 40 }],
+          ['compressionLight', { amount: 35 }]] }],
+      ['Bubblegum', 'Sweet, bright, plastic.',
+        { look: 'pastel', effects: [['duoRose', { amount: 55 }], ['sparkles', { amount: 40 }]] }],
+      ['Burnt disc', 'A file that has been copied too many times.',
+        { effects: [['compressionHeavy', { amount: 65 }], ['microGlitch', { amount: 45 }],
+          ['chanSwapRB', { amount: 25 }]] }],
+    ] },
+
+  { group: 'Sci-fi & HUD', emoji: '🛰', pace: 'medium', ratio: '16:9',
+    base: { look: 'scifi', transition: 'glitchFine', transDur: 0.2 },
+    tags: ['sci-fi', 'scifi', 'futuristic', 'hud', 'tech', 'space', 'cyber'],
+    variants: [
+      ['Cold future', 'Blue steel and clean glass.',
+        { effects: [['flareAnamorphic', { amount: 45 }], ['bleachBypass', { amount: 35 }]] }],
+      ['Blueprint', 'Everything reduced to a schematic.',
+        { look: 'none', effects: [['blueprint', { amount: 85 }], ['linesHorizontal', { amount: 30 }]] }],
+      ['Scan', 'Read by a machine.',
+        { look: 'none', effects: [['xray', { amount: 70 }], ['scanlines', { amount: 45 }],
+          ['microGlitch', { amount: 30 }]] }],
+      ['Cyberpunk street', 'Neon through the rain.',
+        { look: 'cyberpunk', effects: [['rain', { amount: 45 }], ['glow', { amount: 55 }],
+          ['flareAnamorphic', { amount: 50 }]] }],
+      ['Deep space', 'Black, cold, enormous.',
+        { look: 'midnight', pace: 'slow', transition: 'dipBlack', transDur: 0.8,
+          effects: [['duoDeepsea', { amount: 55 }], ['vignetteWide', { amount: 50 }],
+            ['moveCraneUp', { amount: 25 }]] }],
+    ] },
+
+  { group: 'Trailer', emoji: '🎞', pace: 'slow', ratio: '2.39:1',
+    base: { look: 'blockbuster', transition: 'dipBlack', transDur: 0.5 },
+    tags: ['trailer', 'teaser', 'epic', 'blockbuster', 'promo', 'cinema'],
+    variants: [
+      ['Three beats', 'Slow, slower, then everything at once.',
+        { effects: [['crop239', { amount: 100 }], ['filmGrain', { amount: 18 }],
+          ['movePushIn', { amount: 25 }]] }],
+      ['Hard cuts to black', 'Silence between the hits.',
+        { transition: 'dipBlack', transDur: 0.7,
+          effects: [['crop239', { amount: 100 }], ['flash', { amount: 45, every: 2.2, length: 0.08 }]] }],
+      ['Epic warm', 'Gold light and dust.',
+        { look: 'sunburn', effects: [['goldenHour', { amount: 45 }], ['godRays', { amount: 50 }],
+          ['dustScratches', { amount: 20 }], ['crop239', { amount: 100 }]] }],
+      ['Cold open', 'Blue, quiet, ominous.',
+        { look: 'thriller', effects: [['fog', { amount: 35 }], ['crop239', { amount: 100 }],
+          ['vignetteHard', { amount: 45 }]] }],
+      ['Title card', 'Type-first, everything holds.',
+        { transition: 'flashBlack', transDur: 0.3, captions: 'bold',
+          effects: [['crop239', { amount: 100 }], ['letterbox', { amount: 100 }]] }],
+    ] },
+
+  /* ---------------- the ones people actually get paid for ---------------- */
+  { group: 'Wedding', emoji: '💍', pace: 'slow', ratio: '16:9',
+    base: { look: 'romance', transition: 'blurDissolveSoft', transDur: 0.8 },
+    tags: ['wedding', 'romance', 'love', 'ceremony', 'anniversary', 'engagement'],
+    variants: [
+      ['Golden', 'Warm, soft, late afternoon.',
+        { look: 'sunburn', effects: [['goldenHour', { amount: 40 }], ['softFocus', { amount: 35 }],
+          ['leakTRGold', { amount: 35 }], ['bokehLights', { amount: 30 }]] }],
+      ['Film', 'Shot on stock, printed warm.',
+        { look: 'portra400', effects: [['filmGrain', { amount: 22 }], ['gateWeave', { amount: 15 }]] }],
+      ['Airy', 'Bright, pale, weightless.',
+        { look: 'highkey', effects: [['dreamy', { amount: 40 }], ['glow', { amount: 30 }]] }],
+      ['Timeless mono', 'Black and white, no tricks.',
+        { look: 'silver', effects: [['filmGrain', { amount: 20 }]] }],
+      ['Confetti', 'The loud two minutes.',
+        { pace: 'medium', effects: [['confetti', { amount: 45 }], ['sparkles', { amount: 30 }]] }],
+    ] },
+
+  { group: 'Food', emoji: '🍜', pace: 'medium', ratio: '9:16',
+    base: { look: 'food', transition: 'dissolve', transDur: 0.22 },
+    tags: ['food', 'recipe', 'cooking', 'restaurant', 'menu', 'kitchen'],
+    variants: [
+      ['Appetite', 'Warm, saturated, close.',
+        { effects: [['movePushIn', { amount: 25 }], ['softFocus', { amount: 20 }]] }],
+      ['Steam', 'Hot, hazy, just plated.',
+        { effects: [['mist', { amount: 35 }], ['glow', { amount: 25 }]] }],
+      ['Dark and moody', 'Restaurant at night.',
+        { look: 'lowkey', effects: [['spotlight', { amount: 45 }], ['vignetteHard', { amount: 50 }]] }],
+      ['Fresh', 'Bright, clean, market stall.',
+        { look: 'vivid', effects: [['softFocus', { amount: 15 }]] }],
+      ['Sizzle', 'Fast cuts on the cooking.',
+        { pace: 'fast', transition: 'whipPan', transDur: 0.14,
+          effects: [['motionBlur', { amount: 45 }], ['zoomPunch', { amount: 35, every: 0.8 }]] }],
+    ] },
+
+  { group: 'Property', emoji: '🏠', pace: 'slow', ratio: '16:9',
+    base: { look: 'ytclean', transition: 'dissolve', transDur: 0.5 },
+    tags: ['property', 'real estate', 'house', 'tour', 'listing', 'interior', 'architecture'],
+    variants: [
+      ['Walkthrough', 'Even, bright, glides through.',
+        { effects: [['moveDollyRight', { amount: 25 }], ['softFocus', { amount: 10 }]] }],
+      ['Bright and clean', 'Lifted, neutral, estate-agent white.',
+        { look: 'highkey', effects: [['crop178', { amount: 100 }]] }],
+      ['Golden listing', 'Sold on the light.',
+        { look: 'sunburn', effects: [['goldenHour', { amount: 35 }], ['godRays', { amount: 30 }],
+          ['movePushIn', { amount: 20 }]] }],
+      ['Architectural', 'Straight lines, cool grade, no drama.',
+        { look: 'techcold', effects: [['perspectiveUp', { amount: 15 }], ['crop239', { amount: 100 }]] }],
+    ] },
+
+  { group: 'Fitness', emoji: '🏋', pace: 'fast', ratio: '9:16',
+    base: { look: 'fitness', transition: 'flashWhite', transDur: 0.12 },
+    tags: ['fitness', 'gym', 'workout', 'training', 'lifting', 'transformation'],
+    variants: [
+      ['Hard', 'Contrast, sweat, grain.',
+        { effects: [['bleachBypass', { amount: 60 }], ['filmGrain', { amount: 30 }],
+          ['vignetteHard', { amount: 45 }]] }],
+      ['Chalk', 'Cold, dusty, heavy.',
+        { look: 'concrete', effects: [['dustMotes', { amount: 35 }], ['spotlight', { amount: 35 }]] }],
+      ['Rep counter', 'Cut on every lift.',
+        { pace: 'frantic', effects: [['hitSpark', { amount: 45 }], ['shake', { amount: 30 }]] }],
+      ['Transformation', 'Before and after, side by side.',
+        { pace: 'medium', effects: [['split2V', { gap: 3, colour: '#000000' }],
+          ['crop100', { amount: 100 }]] }],
+    ] },
+
+  { group: 'Automotive', emoji: '🏎', pace: 'fast', ratio: '16:9',
+    base: { look: 'blockbuster', transition: 'whipPan', transDur: 0.16 },
+    tags: ['car', 'automotive', 'jdm', 'rolling shot', 'motorsport', 'bike'],
+    variants: [
+      ['Rolling shot', 'Speed you can feel through the frame.',
+        { effects: [['motionBlur', { amount: 60 }], ['moveDollyLeft', { amount: 30 }],
+          ['crop239', { amount: 100 }]] }],
+      ['Night run', 'Streetlights and wet tarmac.',
+        { look: 'neonnights', effects: [['flareAnamorphic', { amount: 55 }], ['rain', { amount: 30 }],
+          ['glow', { amount: 40 }]] }],
+      ['Track day', 'Hard, hot, bright.',
+        { look: 'sports', effects: [['zoomBlur', { amount: 35 }], ['godRays', { amount: 30 }],
+          ['filmGrain', { amount: 18 }]] }],
+      ['Detail', 'Slow pans across the paint.',
+        { pace: 'slow', transition: 'dissolve', transDur: 0.6,
+          effects: [['movePanRight', { amount: 20 }], ['glow', { amount: 25 }]] }],
+      ['Drift', 'Smoke, crush, chaos.',
+        { look: 'phonkdark', effects: [['smoke', { amount: 45 }], ['shake', { amount: 40 }],
+          ['rgbSplit', { amount: 20, pulse: 70 }]] }],
+    ] },
+
+  /* ---------------- the experimental end ---------------- */
+  { group: 'Datamosh', emoji: '🧬', pace: 'fast', ratio: '9:16',
+    base: { look: 'none', transition: 'glitchChunky', transDur: 0.22 },
+    tags: ['datamosh', 'experimental', 'broken', 'corrupt', 'art', 'weird'],
+    variants: [
+      ['Melt', 'Frames bleeding into each other.',
+        { effects: [['datamosh', { amount: 70 }], ['smearDown', { amount: 40 }]] }],
+      ['Pixel sort', 'The image sorted into streaks.',
+        { effects: [['pixelSort', { amount: 75 }], ['chanRGBtoGBR', { amount: 30 }]] }],
+      ['Slice', 'Torn horizontally and put back wrong.',
+        { effects: [['sliceShiftH', { amount: 60 }], ['signalLoss', { amount: 30 }]] }],
+      ['Overcooked', 'Compressed until it falls apart.',
+        { effects: [['compressionHeavy', { amount: 85 }], ['deepFried', { amount: 50 }]] }],
+      ['Echo chamber', 'Every frame haunted by the last five.',
+        { effects: [['afterImage5', { amount: 60 }], ['ghostEcho', { amount: 45 }]] }],
+    ] },
+
+  { group: 'Kaleidoscope', emoji: '🔮', pace: 'medium', ratio: '9:16',
+    base: { look: 'euphoric', transition: 'spin', transDur: 0.3 },
+    tags: ['kaleidoscope', 'trippy', 'psychedelic', 'visualiser', 'symmetry', 'festival'],
+    variants: [
+      ['Six-fold', 'Symmetry out of anything.',
+        { effects: [['kaleido6', { amount: 100 }], ['swirlCW', { amount: 25 }],
+          ['acid', { amount: 45 }]] }],
+      ['Mirror quad', 'Four of everything.',
+        { effects: [['mirrorQuad', { amount: 100 }], ['glow', { amount: 30 }]] }],
+      ['Liquid', 'The frame breathing.',
+        { effects: [['warpRipple', { amount: 45 }], ['warpJelly', { amount: 35 }]] }],
+      ['Tunnel', 'Pulled into the middle.',
+        { effects: [['lensTunnel', { amount: 55 }], ['zoomBlur', { amount: 40 }]] }],
+      ['Tiles', 'A grid of the same moment.',
+        { effects: [['tile4', { amount: 100 }], ['chanSwapRG', { amount: 25 }]] }],
+    ] },
+
+  { group: 'Weather', emoji: '🌧', pace: 'medium', ratio: '16:9',
+    base: { look: 'monsoon', transition: 'dissolve', transDur: 0.45 },
+    tags: ['weather', 'rain', 'snow', 'seasonal', 'winter', 'storm', 'atmosphere'],
+    variants: [
+      ['Downpour', 'Heavy rain, cold grade.',
+        { effects: [['heavyRain', { amount: 60 }], ['fog', { amount: 25 }]] }],
+      ['First snow', 'Quiet and white.',
+        { look: 'arctic', pace: 'slow', effects: [['snow', { amount: 45 }], ['glow', { amount: 25 }]] }],
+      ['Whiteout', 'A blizzard eating the frame.',
+        { look: 'frostbite', effects: [['blizzardFall', { amount: 70 }], ['mist', { amount: 40 }]] }],
+      ['Embers', 'Warm ash drifting up.',
+        { look: 'ember', effects: [['embers', { amount: 55 }], ['godRays', { amount: 30 }]] }],
+      ['Heat', 'Dry, bright, shimmering.',
+        { look: 'heatwave', effects: [['sandstorm', { amount: 30 }], ['dustMotes', { amount: 35 }]] }],
+    ] },
+
+  { group: 'Reaction', emoji: '🖥', pace: 'medium', ratio: '9:16',
+    base: { look: 'ytclean', transition: 'dissolve', transDur: 0.2, captions: 'tiktok' },
+    tags: ['reaction', 'split screen', 'stitch', 'duet', 'commentary', 'react'],
+    variants: [
+      ['Stacked', 'You on top, them underneath.',
+        { effects: [['split2V', { gap: 3, colour: '#000000' }]] }],
+      ['Side by side', 'Two frames, one row.',
+        { effects: [['split2H', { gap: 3, colour: '#000000' }]] }],
+      ['Corner cam', 'Small face, big content.',
+        { effects: [['split4', { gap: 3, colour: '#000000' }]] }],
+      ['Nine up', 'Everything at once.',
+        { effects: [['split9', { gap: 2, colour: '#000000' }]] }],
+    ] },
+
+  { group: 'Archive', emoji: '📽', pace: 'medium', ratio: '16:9',
+    base: { look: 'fade', transition: 'filmBurn', transDur: 0.4 },
+    tags: ['archive', 'old film', 'vintage', 'super 8', 'home movie', 'historic'],
+    variants: [
+      ['Super 8', 'Home movie, warm and jumpy.',
+        { effects: [['super8', { amount: 70 }], ['gateWeave', { amount: 40 }],
+          ['dustScratches', { amount: 45 }], ['faded', { amount: 30 }], ['crop133', { amount: 100 }]] }],
+      ['16mm', 'Grainier, cooler, documentary.',
+        { look: 'documentary', effects: [['mm16', { amount: 70 }], ['filmGrain', { amount: 35 }],
+          ['crop133', { amount: 100 }]] }],
+      ['Silent era', 'Flickering black and white.',
+        { look: 'hp5', effects: [['projectorFlicker', { amount: 55 }], ['dustScratches', { amount: 60 }],
+          ['crop133', { amount: 100 }]] }],
+      ['Newsreel', 'Printed, high contrast, urgent.',
+        { look: 'newsprint', effects: [['newsprint', { amount: 55 }], ['filmPerfs', { amount: 40 }],
+          ['crop133', { amount: 100 }]] }],
+      ['Family tape', 'A camcorder in a drawer since 1994.',
+        { look: 'vhs', effects: [['camcorder', { amount: 65 }], ['vhsWobble', { amount: 35 }],
+          ['crop133', { amount: 100 }]] }],
+    ] },
+
+  { group: 'Beauty & fashion', emoji: '💄', pace: 'medium', ratio: '9:16',
+    base: { look: 'beauty', transition: 'dissolve', transDur: 0.25 },
+    tags: ['beauty', 'fashion', 'makeup', 'skincare', 'grwm', 'model', 'lookbook'],
+    variants: [
+      ['Clean skin', 'Soft, even, flattering.',
+        { effects: [['softFocus', { amount: 30 }], ['glow', { amount: 20 }]] }],
+      ['Editorial', 'Cool, sharp, magazine.',
+        { look: 'fashion', effects: [['bleachBypass', { amount: 30 }], ['crop178', { amount: 100 }]] }],
+      ['Glitter', 'Light catching everything.',
+        { effects: [['sparkles', { amount: 45 }], ['flareStar', { amount: 35 }]] }],
+      ['Runway', 'Hard flashes, fast cuts.',
+        { pace: 'fast', transition: 'flashWhite', transDur: 0.1,
+          effects: [['flash', { amount: 55, every: 0.6, length: 0.06 }]] }],
+      ['Film beauty', 'Portra skin, soft grain.',
+        { look: 'portra160', effects: [['filmGrain', { amount: 18 }], ['softFocus', { amount: 25 }]] }],
+    ] },
+
+  { group: 'Nature', emoji: '🌿', pace: 'slow', ratio: '16:9',
+    base: { look: 'wildlife', transition: 'dissolve', transDur: 0.7 },
+    tags: ['nature', 'wildlife', 'landscape', 'outdoors', 'hiking', 'ocean', 'forest'],
+    variants: [
+      ['Forest light', 'Beams through the canopy.',
+        { look: 'jungle', effects: [['godRays', { amount: 45 }], ['dustMotes', { amount: 30 }]] }],
+      ['Ocean', 'Deep blue, wide, slow.',
+        { effects: [['duoDeepsea', { amount: 40 }], ['crop239', { amount: 100 }]] }],
+      ['Mountain', 'Cold air and clean contrast.',
+        { look: 'arctic', effects: [['mist', { amount: 35 }], ['crop239', { amount: 100 }]] }],
+      ['Desert', 'Heat, dust and long shadows.',
+        { look: 'desert', effects: [['sandstorm', { amount: 30 }], ['godRays', { amount: 25 }]] }],
+      ['Macro', 'Close, shallow, quiet.',
+        { effects: [['rackFocus', { from: 65, to: 0, over: 1.2 }], ['bokehLights', { amount: 30 }]] }],
+    ] },
 ];
 
 /* ------------------------------------------------------------------ *
@@ -472,6 +764,12 @@ export const TEMPLATE_GROUPS = TEMPLATE_PACKS.reduce((acc, t) => {
  */
 const problems = [];
 for (const family of FAMILIES) {
+  /* A canvas ratio the project does not have is the quietest failure of the
+     lot: setRatio falls back to 9:16, so a landscape style silently makes a
+     vertical video. Checked here with everything else. */
+  if (family.ratio && !RATIOS[family.ratio]) {
+    problems.push(`${family.group}: no ratio "${family.ratio}"`);
+  }
   for (const [name, , over] of family.variants) {
     const spec = { ...family.base, ...over };
     const where = `${family.group} — ${name}`;
@@ -481,8 +779,12 @@ for (const family of FAMILIES) {
     if (spec.transition && !TRANSITIONS[spec.transition]) {
       problems.push(`${where}: no transition "${spec.transition}"`);
     }
-    for (const [effect] of spec.effects || []) {
-      if (!EFFECTS[effect]) problems.push(`${where}: no effect "${effect}"`);
+    for (const [effect, params] of spec.effects || []) {
+      if (!EFFECTS[effect]) { problems.push(`${where}: no effect "${effect}"`); continue; }
+      const known = EFFECTS[effect].params || {};
+      for (const key of Object.keys(params || {})) {
+        if (!(key in known)) problems.push(`${where}: "${effect}" has no parameter "${key}"`);
+      }
     }
   }
 }

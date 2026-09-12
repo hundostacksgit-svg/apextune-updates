@@ -26,6 +26,9 @@
  * grain. Read these top to bottom as the signal path they are.
  */
 
+import { EFFECTS } from './effects.js';
+import { LOOK_BY_ID } from './filters.js';
+
 /* ------------------------------------------------------------------ */
 /* hand-built                                                           */
 /* ------------------------------------------------------------------ */
@@ -626,6 +629,252 @@ const HAND = [
       ],
     },
   },
+
+  /* ---------------- Y2K ---------------- */
+  {
+    id: 'y2k-chrome', name: 'Y2K Chrome', group: 'Y2K', emoji: '💿', tier: 'pro',
+    tags: ['y2k', '2000s', 'chrome', 'metal', 'shiny', 'millennium'],
+    apply: {
+      look: 'y2k', strength: 0.8,
+      color: { exposure: 4, contrast: 16, saturation: -8, highlights: 14 },
+      effects: [
+        { id: 'glow', params: { amount: 48, radius: 26, threshold: 60 } },
+        { id: 'prism', params: { amount: 22 } },
+        { id: 'flareStar', params: { amount: 34, x: 72, y: 24, size: 70 } },
+      ],
+    },
+  },
+  {
+    id: 'mall-crt', name: 'Mall CRT', group: 'Y2K', emoji: '📺', tier: 'free',
+    tags: ['y2k', 'crt', 'shop', 'tube', 'display', '2000s'],
+    apply: {
+      look: 'vaporwave', strength: 0.65,
+      color: { contrast: 8, saturation: 14, temperature: -6 },
+      effects: [
+        { id: 'crtTube', params: { amount: 58 } },
+        { id: 'scanlines', params: { amount: 34, gap: 3, curve: 16 } },
+        { id: 'compressionLight', params: { amount: 32 } },
+      ],
+    },
+  },
+
+  /* ---------------- Horror ---------------- */
+  {
+    id: 'analog-horror', name: 'Analog Horror', group: 'Horror', emoji: '📡', tier: 'pro',
+    tags: ['horror', 'analog', 'broadcast', 'creepy', 'signal', 'liminal'],
+    /* The tube goes on last. Static that gets bent by the tube curve reads as
+       a screen; static painted over the top reads as a filter. */
+    apply: {
+      look: 'horror', strength: 0.85,
+      color: { exposure: -6, contrast: 18, saturation: -26 },
+      effects: [
+        { id: 'ghostEcho', params: { amount: 42, count: 3, spread: 38 } },
+        { id: 'signalLoss', params: { amount: 44, rate: 5, hold: 40 } },
+        { id: 'tvStatic', params: { amount: 38 } },
+        { id: 'crtTube', params: { amount: 52 } },
+        { id: 'vignetteHard', params: { amount: 58, size: 62 } },
+      ],
+    },
+  },
+
+  /* ---------------- Trailer ---------------- */
+  {
+    id: 'trailer-scope', name: 'Trailer Scope', group: 'Trailer', emoji: '🎞', tier: 'pro',
+    tags: ['trailer', 'scope', 'blockbuster', 'epic', 'cinema', 'teaser'],
+    apply: {
+      look: 'blockbuster', strength: 0.9,
+      color: { contrast: 14, saturation: 6, shadows: -8, highlights: -6 },
+      effects: [
+        { id: 'flareAnamorphic', params: { amount: 38, x: 74, y: 32, size: 110 } },
+        { id: 'filmGrain', params: { amount: 16, size: 1 } },
+        { id: 'crop239', params: { colour: '#000000', amount: 100 } },
+      ],
+    },
+  },
+  {
+    id: 'trailer-cold-open', name: 'Cold Open', group: 'Trailer', emoji: '🧊', tier: 'pro',
+    tags: ['trailer', 'thriller', 'cold', 'tense', 'ominous', 'open'],
+    apply: {
+      look: 'thriller', strength: 0.85,
+      color: { exposure: -5, contrast: 16, saturation: -14, temperature: -18 },
+      effects: [
+        { id: 'fog', params: { amount: 32, depth: 60 } },
+        { id: 'vignetteHard', params: { amount: 48, size: 66 } },
+        { id: 'crop239', params: { colour: '#000000', amount: 100 } },
+      ],
+    },
+  },
+
+  /* ---------------- Wedding ---------------- */
+  {
+    id: 'wedding-golden', name: 'Wedding Golden', group: 'Wedding', emoji: '💍', tier: 'free',
+    tags: ['wedding', 'romance', 'warm', 'soft', 'ceremony', 'love'],
+    apply: {
+      look: 'romance', strength: 0.7,
+      color: { exposure: 5, contrast: -4, saturation: 6, temperature: 16, shadows: 10 },
+      effects: [
+        { id: 'goldenHour', params: { amount: 40 } },
+        { id: 'softFocus', params: { amount: 30, radius: 12 } },
+        { id: 'leakTRGold', params: { amount: 26, size: 66, drift: 12 } },
+        { id: 'bokehLights', params: { amount: 26, count: 14, colour: '#ffe7b0' } },
+      ],
+    },
+  },
+  {
+    id: 'wedding-film', name: 'Wedding Film', group: 'Wedding', emoji: '🎞', tier: 'free',
+    tags: ['wedding', 'film', 'portra', 'stock', 'timeless', 'skin'],
+    apply: {
+      look: 'portra400', strength: 0.8,
+      color: { contrast: 4, saturation: -2, temperature: 8 },
+      effects: [
+        { id: 'filmGrain', params: { amount: 20, size: 1 } },
+        { id: 'gateWeave', params: { amount: 12 } },
+      ],
+    },
+  },
+
+  /* ---------------- Food ---------------- */
+  {
+    id: 'food-appetite', name: 'Appetite', group: 'Food', emoji: '🍜', tier: 'free',
+    tags: ['food', 'recipe', 'warm', 'saturated', 'delicious', 'cooking'],
+    /* Saturation stays modest and the warmth does the work. Food pushed hard
+       on saturation goes plastic, and plastic food does not sell. */
+    apply: {
+      look: 'food', strength: 0.75,
+      color: { exposure: 4, contrast: 10, saturation: 12, temperature: 10, sharpen: 14 },
+      effects: [
+        { id: 'softFocus', params: { amount: 16, radius: 8 } },
+        { id: 'vignetteSoft', params: { amount: 22, size: 55 } },
+      ],
+    },
+  },
+  {
+    id: 'food-dark', name: 'Dark Kitchen', group: 'Food', emoji: '🕯', tier: 'pro',
+    tags: ['food', 'moody', 'restaurant', 'dark', 'low key', 'night'],
+    apply: {
+      look: 'lowkey', strength: 0.85,
+      color: { exposure: -6, contrast: 18, saturation: 4, shadows: -12 },
+      effects: [
+        { id: 'spotlight', params: { amount: 46, size: 42 } },
+        { id: 'vignetteHard', params: { amount: 50, size: 60 } },
+      ],
+    },
+  },
+
+  /* ---------------- Automotive ---------------- */
+  {
+    id: 'car-night-run', name: 'Night Run', group: 'Automotive', emoji: '🏎', tier: 'pro',
+    tags: ['car', 'night', 'neon', 'street', 'rolling', 'jdm'],
+    apply: {
+      look: 'neonnights', strength: 0.85,
+      color: { exposure: -4, contrast: 20, saturation: 14, temperature: -12 },
+      effects: [
+        { id: 'flareAnamorphic', params: { amount: 52, x: 30, y: 40, size: 120 } },
+        { id: 'glow', params: { amount: 38, radius: 22, threshold: 62 } },
+        { id: 'motionBlur', params: { amount: 34, samples: 5 } },
+        { id: 'crop239', params: { colour: '#000000', amount: 100 } },
+      ],
+    },
+  },
+  {
+    id: 'car-drift-smoke', name: 'Drift Smoke', group: 'Automotive', emoji: '💨', tier: 'pro',
+    tags: ['drift', 'smoke', 'phonk', 'car', 'chaos', 'tyre'],
+    apply: {
+      look: 'phonkdark', strength: 0.9,
+      color: { exposure: -5, contrast: 24, saturation: -12, shadows: -18 },
+      effects: [
+        { id: 'smoke', params: { amount: 42, depth: 55 } },
+        { id: 'shake', params: { amount: 32, speed: 60 } },
+        { id: 'rgbSplit', params: { amount: 16, angle: 0, pulse: 60 } },
+        { id: 'filmGrain', params: { amount: 24, size: 1.4 } },
+      ],
+    },
+  },
+
+  /* ---------------- Kaleidoscope ---------------- */
+  {
+    id: 'kaleido-bloom', name: 'Kaleido Bloom', group: 'Kaleidoscope', emoji: '🔮', tier: 'pro',
+    tags: ['kaleidoscope', 'trippy', 'psychedelic', 'symmetry', 'visualiser', 'festival'],
+    apply: {
+      look: 'euphoric', strength: 0.8,
+      color: { contrast: 12, saturation: 26 },
+      effects: [
+        { id: 'kaleido6', params: { amount: 100, spin: 12, zoom: 125 } },
+        { id: 'swirlCW', params: { amount: 26, spin: 14 } },
+        { id: 'glow', params: { amount: 36, radius: 24, threshold: 50 } },
+      ],
+    },
+  },
+
+  /* ---------------- Sci-fi ---------------- */
+  {
+    id: 'scifi-deep-space', name: 'Deep Space', group: 'Sci-fi', emoji: '🛰', tier: 'pro',
+    tags: ['sci-fi', 'space', 'cold', 'dark', 'stars', 'void'],
+    apply: {
+      look: 'midnight', strength: 0.9,
+      color: { exposure: -8, contrast: 18, saturation: -8, temperature: -20 },
+      effects: [
+        { id: 'duoDeepsea', params: { amount: 46 } },
+        { id: 'vignetteWide', params: { amount: 46, size: 82 } },
+        { id: 'filmGrain', params: { amount: 14, size: 1 } },
+      ],
+    },
+  },
+  {
+    id: 'scifi-scan', name: 'Machine Scan', group: 'Sci-fi', emoji: '🔬', tier: 'pro',
+    tags: ['sci-fi', 'scan', 'hud', 'tech', 'xray', 'analysis'],
+    apply: {
+      look: 'techcold', strength: 0.8,
+      color: { contrast: 14, saturation: -18, temperature: -14 },
+      effects: [
+        { id: 'xray', params: { amount: 68 } },
+        { id: 'scanlines', params: { amount: 42, gap: 4, curve: 0 } },
+        { id: 'microGlitch', params: { amount: 26, rate: 12, hold: 14 } },
+      ],
+    },
+  },
+
+  /* ---------------- Nature ---------------- */
+  {
+    id: 'nature-forest-light', name: 'Forest Light', group: 'Nature', emoji: '🌿', tier: 'free',
+    tags: ['nature', 'forest', 'green', 'rays', 'outdoors', 'wildlife'],
+    apply: {
+      look: 'jungle', strength: 0.75,
+      color: { exposure: 3, contrast: 8, saturation: 10, tint: -6 },
+      effects: [
+        { id: 'godRays', params: { amount: 42, x: 68, y: 12, rays: 18 } },
+        { id: 'dustMotes', params: { amount: 28, speed: 100, size: 100 } },
+      ],
+    },
+  },
+  {
+    id: 'nature-mountain', name: 'Mountain Air', group: 'Nature', emoji: '🏔', tier: 'free',
+    tags: ['nature', 'mountain', 'cold', 'landscape', 'wide', 'hike'],
+    apply: {
+      look: 'arctic', strength: 0.7,
+      color: { contrast: 12, saturation: -4, temperature: -10, sharpen: 10 },
+      effects: [
+        { id: 'mist', params: { amount: 30, depth: 70 } },
+        { id: 'crop239', params: { colour: '#000000', amount: 100 } },
+      ],
+    },
+  },
+
+  /* ---------------- Archive ---------------- */
+  {
+    id: 'archive-newsreel', name: 'Newsreel', group: 'Archive', emoji: '📽', tier: 'free',
+    tags: ['archive', 'newsreel', 'historic', 'old', 'print', 'wartime'],
+    apply: {
+      look: 'hp5', strength: 0.85,
+      color: { contrast: 22, saturation: -100 },
+      effects: [
+        { id: 'projectorFlicker', params: { amount: 42, rate: 18 } },
+        { id: 'dustScratches', params: { amount: 52, rate: 14 } },
+        { id: 'gateWeave', params: { amount: 30 } },
+        { id: 'crop133', params: { colour: '#000000', amount: 100 } },
+      ],
+    },
+  },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -887,6 +1136,375 @@ const FAMILIES = [
       return { effects: fx };
     },
   },
+  {
+    group: 'Grade tools',
+    emoji: '🩹',
+    tier: 'free',
+    tags: ['fix', 'utility', 'correct', 'log', 'flat', 'rescue', 'neutral', 'base'],
+    base: {},
+    /* The unglamorous half of a preset library, and the half a colourist
+       actually reaches for. Every one of these is a starting point rather
+       than a look: nothing here is trying to be interesting. */
+    variants: [
+      ['Fix · Log to Rec.709', 'logto709', 1, { contrast: 6, saturation: 8 }],
+      ['Fix · Flatten', 'flat', 1, { contrast: -18, saturation: -12 }],
+      ['Fix · Neutral', 'neutral', 1, {}],
+      ['Fix · Punch up', 'punchup', 0.9, { contrast: 10, saturation: 8 }],
+      ['Fix · Rescue shadows', 'rescueshadow', 1, { shadows: 26, contrast: -4 }],
+      ['Fix · Rescue highlights', 'rescuehigh', 1, { highlights: -30 }],
+      ['Fix · Skin safe', 'skinsafe', 0.85, { saturation: -4, temperature: 4 }],
+      ['Fix · Day for night', 'dayfornight', 1, { exposure: -14, temperature: -22, saturation: -18 }],
+    ],
+    make(name, look, strength, colour) {
+      return { look, strength, color: colour };
+    },
+  },
+  {
+    group: 'Hue shift',
+    emoji: '🌈',
+    tier: 'free',
+    tags: ['hue', 'shift', 'rotate', 'colour', 'wheel'],
+    base: {},
+    variants: [
+      ['Hue · +30°', 'hue30'], ['Hue · +60°', 'hue60'], ['Hue · +90°', 'hue90'],
+      ['Hue · +120°', 'hue120'], ['Hue · +150°', 'hue150'], ['Hue · +180°', 'hue180'],
+      ['Hue · +210°', 'hue210'], ['Hue · +240°', 'hue240'], ['Hue · +270°', 'hue270'],
+      ['Hue · +300°', 'hue300'], ['Hue · +330°', 'hue330'],
+    ],
+    make(name, fxId) {
+      return { effects: [{ id: fxId, params: { amount: 100 } }] };
+    },
+  },
+  {
+    group: 'Gradient map',
+    emoji: '🎨',
+    tier: 'pro',
+    tags: ['gradient', 'ramp', 'map', 'two tone', 'colour'],
+    base: { color: { contrast: 10 } },
+    variants: [
+      ['Ramp · sunset', 'rampSunset', 82],
+      ['Ramp · vapour', 'rampVapour', 78],
+      ['Ramp · toxic', 'rampToxic', 74],
+      ['Ramp · inferno', 'rampInferno', 80],
+      ['Ramp · arctic', 'rampArctic', 76],
+      ['Ramp · copper', 'rampCopper', 78],
+      ['Ramp · bruise', 'rampBruise', 74],
+      ['Ramp · matrix', 'rampMatrix', 84],
+    ],
+    make(name, fxId, amount) {
+      return { ...this.base, effects: [{ id: fxId, params: { amount } }] };
+    },
+  },
+  {
+    group: 'Channel swap',
+    emoji: '🔀',
+    tier: 'pro',
+    tags: ['channel', 'swap', 'rgb', 'wrong colour', 'glitch'],
+    base: {},
+    variants: [
+      ['Channels · RGB to GBR', 'chanRGBtoGBR'],
+      ['Channels · RGB to BRG', 'chanRGBtoBRG'],
+      ['Channels · swap red and blue', 'chanSwapRB'],
+      ['Channels · swap red and green', 'chanSwapRG'],
+      ['Channels · swap green and blue', 'chanSwapGB'],
+    ],
+    make(name, fxId) {
+      return { effects: [{ id: fxId, params: { amount: 100 } }] };
+    },
+  },
+  {
+    group: 'Lens flare',
+    emoji: '✨',
+    tier: 'pro',
+    tags: ['flare', 'lens', 'anamorphic', 'sun', 'god rays', 'light'],
+    base: { color: { contrast: 6 } },
+    /* Placed off-centre on purpose. A flare in the middle of the frame reads
+       as a mistake in the render rather than light in the room. */
+    variants: [
+      ['Flare · anamorphic streak', 'flareAnamorphic', 55, 72, 30],
+      ['Flare · star', 'flareStar', 50, 68, 26],
+      ['Flare · ring', 'flareRing', 45, 62, 34],
+      ['Flare · sun', 'flareSun', 60, 78, 18],
+      ['Flare · god rays', 'godRays', 50, 50, 8],
+    ],
+    make(name, fxId, amount, x, y) {
+      const params = fxId === 'godRays' ? { amount, x, y, rays: 16 } : { amount, x, y, size: 90 };
+      return { ...this.base, effects: [{ id: fxId, params }] };
+    },
+  },
+  {
+    group: 'Vignette',
+    emoji: '⭕',
+    tier: 'free',
+    tags: ['vignette', 'edge', 'darken', 'spotlight', 'focus'],
+    base: {},
+    variants: [
+      ['Vignette · soft', 'vignetteSoft', 40, 48],
+      ['Vignette · hard', 'vignetteHard', 58, 62],
+      ['Vignette · wide', 'vignetteWide', 34, 80],
+      ['Vignette · white', 'vignetteWhite', 44, 55],
+      ['Vignette · warm', 'vignetteWarm', 46, 55],
+      ['Vignette · cool', 'vignetteCool', 46, 55],
+      ['Vignette · spotlight', 'spotlight', 55, 40],
+    ],
+    make(name, fxId, amount, size) {
+      return { effects: [{ id: fxId, params: { amount, size } }] };
+    },
+  },
+  {
+    group: 'Focus',
+    emoji: '🔎',
+    tier: 'free',
+    tags: ['focus', 'blur', 'bokeh', 'tilt shift', 'dreamy', 'depth'],
+    base: {},
+    variants: [
+      ['Focus · soft', 'softFocus', { amount: 42, radius: 14 }],
+      ['Focus · dreamy', 'dreamy', { amount: 55 }],
+      ['Focus · rack in', 'rackFocus', { from: 70, to: 0, over: 1.2 }],
+      ['Focus · rack out', 'rackFocus', { from: 0, to: 70, over: 1.2 }],
+      ['Focus · bokeh lights', 'bokehLights', { amount: 50, count: 22, colour: '#ffe7b0' }],
+      ['Focus · zoom blur', 'zoomBlur', { amount: 45, cx: 50, cy: 50 }],
+      ['Focus · spin blur', 'spinBlur', { amount: 38, samples: 12 }],
+      ['Focus · tilt-shift centre', 'tiltCentre', { amount: 62, width: 26 }],
+      ['Focus · tilt-shift top', 'tiltTop', { amount: 58, width: 34 }],
+      ['Focus · tilt-shift bottom', 'tiltBottom', { amount: 58, width: 34 }],
+    ],
+    make(name, fxId, params) {
+      return { effects: [{ id: fxId, params }] };
+    },
+  },
+  {
+    group: 'Warp',
+    emoji: '🌊',
+    tier: 'pro',
+    tags: ['warp', 'distort', 'lens', 'ripple', 'swirl', 'bend'],
+    base: {},
+    variants: [
+      ['Warp · wave', 'warpWave', { amount: 38, speed: 40 }],
+      ['Warp · wave vertical', 'warpWaveV', { amount: 38, speed: 40 }],
+      ['Warp · ripple', 'warpRipple', { amount: 42, speed: 45 }],
+      ['Warp · zigzag', 'warpZigzag', { amount: 40, speed: 50 }],
+      ['Warp · flag', 'warpFlag', { amount: 44, speed: 35 }],
+      ['Warp · jelly', 'warpJelly', { amount: 46, speed: 55 }],
+      ['Lens · bulge', 'lensBulge', { amount: 45 }],
+      ['Lens · pinch', 'lensPinch', { amount: 45 }],
+      ['Lens · fisheye', 'lensFisheye', { amount: 55 }],
+      ['Lens · barrel', 'lensBarrel', { amount: 40 }],
+      ['Lens · tunnel', 'lensTunnel', { amount: 50 }],
+      ['Swirl · clockwise', 'swirlCW', { amount: 45, spin: 20 }],
+      ['Swirl · anticlockwise', 'swirlCCW', { amount: 45, spin: 20 }],
+    ],
+    make(name, fxId, params) {
+      return { effects: [{ id: fxId, params }] };
+    },
+  },
+  {
+    group: 'Broken',
+    emoji: '🧬',
+    tier: 'pro',
+    tags: ['glitch', 'datamosh', 'corrupt', 'broken', 'error', 'digital'],
+    base: { color: { contrast: 10, saturation: 6 } },
+    variants: [
+      ['Broken · datamosh', 'datamosh', { amount: 65, blocks: 42 }],
+      ['Broken · pixel sort', 'pixelSort', { amount: 70, threshold: 52 }],
+      ['Broken · slice across', 'sliceShiftH', { amount: 55, slices: 18, speed: 45 }],
+      ['Broken · slice down', 'sliceShiftV', { amount: 55, slices: 18, speed: 45 }],
+      ['Broken · overcompressed', 'compressionHeavy', { amount: 72 }],
+      ['Broken · signal loss', 'signalLoss', { amount: 55, rate: 6, hold: 34 }],
+      ['Broken · block glitch', 'blockGlitch', { amount: 52, rate: 7, hold: 28 }],
+      ['Broken · heavy glitch', 'heavyGlitch', { amount: 68, rate: 9, hold: 32 }],
+      ['Broken · micro glitch', 'microGlitch', { amount: 38, rate: 14, hold: 16 }],
+      ['Broken · dead channel', 'tvStatic', { amount: 55 }],
+      ['Broken · echo chamber', 'ghostEcho', { amount: 50, count: 5, spread: 45 }],
+    ],
+    make(name, fxId, params) {
+      return { ...this.base, effects: [{ id: fxId, params }] };
+    },
+  },
+  {
+    group: 'Ink & print',
+    emoji: '🖋',
+    tier: 'pro',
+    tags: ['ink', 'print', 'sketch', 'comic', 'paint', 'drawn', 'halftone'],
+    base: { color: { contrast: 12 } },
+    variants: [
+      ['Ink · pencil sketch', 'sketch', { amount: 88, detail: 3 }],
+      ['Ink · outline', 'inkOutline', { amount: 72, detail: 2 }],
+      ['Ink · emboss', 'emboss', { amount: 70 }],
+      ['Ink · oil paint', 'oilPaint', { amount: 72, brush: 9 }],
+      ['Ink · watercolour', 'watercolour', { amount: 70 }],
+      ['Ink · threshold', 'threshold', { amount: 100, level: 52 }],
+      ['Ink · crosshatch', 'crosshatch', { amount: 68, spacing: 7 }],
+      ['Print · newsprint', 'newsprint', { amount: 88, size: 5 }],
+      ['Print · halftone', 'halftone', { amount: 64, size: 6 }],
+      ['Print · manga screentone', 'screentone', { amount: 72, size: 4 }],
+    ],
+    make(name, fxId, params) {
+      return { ...this.base, effects: [{ id: fxId, params }] };
+    },
+  },
+  {
+    group: 'Posterise',
+    emoji: '🟪',
+    tier: 'free',
+    tags: ['posterise', 'poster', 'flat', 'bands', 'cel', 'levels'],
+    base: { color: { contrast: 14, saturation: 10 } },
+    variants: [
+      ['Poster · 2 levels', 'poster2'], ['Poster · 3 levels', 'poster3'],
+      ['Poster · 4 levels', 'poster4'], ['Poster · 6 levels', 'poster6'],
+      ['Poster · 8 levels', 'poster8'], ['Poster · 12 levels', 'poster12'],
+    ],
+    make(name, fxId) {
+      return { ...this.base, effects: [{ id: fxId, params: { amount: 100 } }] };
+    },
+  },
+  {
+    group: 'Mosaic',
+    emoji: '🔳',
+    tier: 'free',
+    tags: ['mosaic', 'pixelate', 'censor', 'blocks', 'tiles'],
+    base: {},
+    variants: [
+      ['Mosaic · square', 'mosaicSquare', { size: 20, gap: 10 }],
+      ['Mosaic · round', 'mosaicRound', { size: 20, gap: 12 }],
+      ['Mosaic · diamond', 'mosaicDiamond', { size: 22, gap: 10 }],
+      ['Mosaic · hex', 'mosaicHex', { size: 22, gap: 8 }],
+      ['Mosaic · pixelate', 'pixelate', { size: 16 }],
+    ],
+    make(name, fxId, params) {
+      return { effects: [{ id: fxId, params }] };
+    },
+  },
+  {
+    group: 'Frame',
+    emoji: '🖼',
+    tier: 'free',
+    tags: ['frame', 'border', 'edge', 'polaroid', 'film', 'letterbox'],
+    base: {},
+    variants: [
+      ['Frame · thin white', 'borderThin', { width: 1.4, colour: '#ffffff', radius: 0 }],
+      ['Frame · thick white', 'borderThick', { width: 4.5, colour: '#ffffff', radius: 0 }],
+      ['Frame · black', 'borderBlack', { width: 3, colour: '#000000', radius: 0 }],
+      ['Frame · film paper', 'borderFilm', { width: 2.8, colour: '#e8e2d4', radius: 0 }],
+      ['Frame · rounded card', 'borderThick', { width: 3.5, colour: '#ffffff', radius: 28 }],
+      ['Frame · film perforations', 'filmPerfs', { amount: 100, size: 9 }],
+      ['Frame · polaroid', 'polaroidFrame', { amount: 100 }],
+      ['Frame · letterbox bars', 'letterbox', { amount: 14, colour: '#000000' }],
+    ],
+    make(name, fxId, params) {
+      return { effects: [{ id: fxId, params }] };
+    },
+  },
+  {
+    group: 'Trails',
+    emoji: '💫',
+    tier: 'pro',
+    tags: ['trail', 'smear', 'echo', 'afterimage', 'motion', 'ghost'],
+    base: {},
+    variants: [
+      ['Trail · smear left', 'smearLeft', { amount: 40, samples: 12 }],
+      ['Trail · smear right', 'smearRight', { amount: 40, samples: 12 }],
+      ['Trail · smear up', 'smearUp', { amount: 40, samples: 12 }],
+      ['Trail · smear down', 'smearDown', { amount: 40, samples: 12 }],
+      ['Trail · afterimage ×2', 'afterImage2', { amount: 45, spread: 30, angle: 0 }],
+      ['Trail · afterimage ×3', 'afterImage3', { amount: 50, spread: 38, angle: 0 }],
+      ['Trail · afterimage ×5', 'afterImage5', { amount: 55, spread: 46, angle: 0 }],
+    ],
+    make(name, fxId, params) {
+      return { effects: [{ id: fxId, params }] };
+    },
+  },
+  {
+    group: 'Perspective',
+    emoji: '📐',
+    tier: 'free',
+    tags: ['perspective', 'flip', 'mirror', 'tilt', 'skew', 'spin'],
+    base: {},
+    variants: [
+      ['Flip · horizontal', 'flipH', {}],
+      ['Flip · vertical', 'flipV', {}],
+      ['Flip · both', 'flipBoth', {}],
+      ['Perspective · left', 'perspectiveLeft', { amount: 35 }],
+      ['Perspective · right', 'perspectiveRight', { amount: 35 }],
+      ['Perspective · up', 'perspectiveUp', { amount: 30 }],
+      ['Perspective · down', 'perspectiveDown', { amount: 30 }],
+      ['Spin · slow turn', 'rotateSpin', { speed: 0.2, zoom: 145 }],
+      ['Skew · horizontal', 'shearX', { amount: 28 }],
+      ['Stretch · pull', 'stretchPull', { amount: 42, axis: 'x' }],
+    ],
+    make(name, fxId, params) {
+      return { effects: [{ id: fxId, params }] };
+    },
+  },
+  {
+    group: 'Reframe',
+    emoji: '🔍',
+    tier: 'free',
+    tags: ['punch in', 'zoom', 'reframe', 'scale', 'crop in', 'position'],
+    base: {},
+    /* Transform rather than an effect, because a punch-in that a later effect
+       can blur is a punch-in that reads as soft footage. This is the frame
+       itself moving. */
+    variants: [
+      ['Reframe · punch 105%', { scale: 1.05, x: 0, y: 0 }],
+      ['Reframe · punch 110%', { scale: 1.1, x: 0, y: 0 }],
+      ['Reframe · punch 120%', { scale: 1.2, x: 0, y: 0 }],
+      ['Reframe · punch 140%', { scale: 1.4, x: 0, y: 0 }],
+      ['Reframe · left third', { scale: 1.2, x: 12, y: 0 }],
+      ['Reframe · right third', { scale: 1.2, x: -12, y: 0 }],
+      ['Reframe · headroom up', { scale: 1.15, x: 0, y: 8 }],
+      ['Reframe · headroom down', { scale: 1.15, x: 0, y: -8 }],
+    ],
+    make(name, transform) {
+      return { transform };
+    },
+  },
+  {
+    group: 'Aura',
+    emoji: '🔆',
+    tier: 'pro',
+    tags: ['aura', 'energy', 'anime', 'glow', 'power', 'edge light'],
+    base: { color: { contrast: 10, saturation: 8 } },
+    variants: [
+      ['Aura · white', 'auraWhite', 55],
+      ['Aura · gold', 'auraGold', 58],
+      ['Aura · blue', 'auraBlue', 58],
+      ['Aura · red', 'auraRed', 60],
+      ['Aura · purple', 'auraPurple', 58],
+      ['Aura · green', 'auraGreen', 55],
+    ],
+    make(name, fxId, amount) {
+      return {
+        ...this.base,
+        effects: [
+          { id: fxId, params: { amount, pulse: 45 } },
+          { id: 'glow', params: { amount: 32, radius: 20, threshold: 55 } },
+        ],
+      };
+    },
+  },
+  {
+    group: 'Vision',
+    emoji: '🥽',
+    tier: 'pro',
+    tags: ['vision', 'thermal', 'night vision', 'xray', 'infrared', 'scan', 'sci-fi'],
+    base: {},
+    variants: [
+      ['Vision · night vision', 'nightVision', 100, 40],
+      ['Vision · thermal', 'thermal', 100, 0],
+      ['Vision · x-ray', 'xray', 100, 0],
+      ['Vision · infrared', 'infrared', 100, 0],
+      ['Vision · blueprint', 'blueprint', 100, 0],
+      ['Vision · negative', 'negative', 100, 0],
+      ['Vision · solarise', 'solarise', 85, 0],
+    ],
+    make(name, fxId, amount, grain) {
+      const fx = [{ id: fxId, params: { amount } }];
+      if (grain) fx.push({ id: 'filmGrain', params: { amount: grain, size: 2 } });
+      fx.push({ id: 'vignetteHard', params: { amount: 40, size: 65 } });
+      return { effects: fx };
+    },
+  },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -920,9 +1538,16 @@ export const PRESET_PACKS = [...HAND, ...generated];
  * applyPreset skips what it cannot make, so the stack would come out short
  * with nothing said. Caught here at module load instead, where it is a
  * developer's problem rather than a user's.
+ *
+ * Parameter names are checked as well, and they are the ones that actually
+ * catch mistakes. `{ id: 'fog', params: { height: 60 } }` is not an error to
+ * anybody: makeEffect builds a fog, applyPreset merges an ignored key over the
+ * defaults, and the fog comes out at its default depth. The preset works, it
+ * just does not do the thing it was tuned to do — which is the worst kind of
+ * wrong, because nothing anywhere says so.
  */
 export const PRESET_PROBLEMS = [];
-export function checkPresets(effectIds, lookIds) {
+export function checkPresets(effectIds = Object.keys(EFFECTS), lookIds = Object.keys(LOOK_BY_ID)) {
   PRESET_PROBLEMS.length = 0;
   const fx = new Set(effectIds);
   const looks = new Set(lookIds);
@@ -931,13 +1556,25 @@ export function checkPresets(effectIds, lookIds) {
     if (seen.has(p.id)) PRESET_PROBLEMS.push(`${p.id}: duplicate id`);
     seen.add(p.id);
     for (const e of p.apply.effects || []) {
-      if (!fx.has(e.id)) PRESET_PROBLEMS.push(`${p.id}: no such effect "${e.id}"`);
+      if (!fx.has(e.id)) { PRESET_PROBLEMS.push(`${p.id}: no such effect "${e.id}"`); continue; }
+      const known = EFFECTS[e.id]?.params || {};
+      for (const key of Object.keys(e.params || {})) {
+        if (!(key in known)) PRESET_PROBLEMS.push(`${p.id}: "${e.id}" has no parameter "${key}"`);
+      }
     }
     if (p.apply.look && p.apply.look !== 'none' && !looks.has(p.apply.look)) {
       PRESET_PROBLEMS.push(`${p.id}: no such look "${p.apply.look}"`);
     }
   }
   return PRESET_PROBLEMS;
+}
+
+/* Run it here rather than waiting for a test to. Two hundred and ninety of
+   these is well past the number anybody can eyeball. */
+checkPresets();
+if (PRESET_PROBLEMS.length) {
+  // eslint-disable-next-line no-console -- a build-time mistake shipped to runtime
+  console.warn(`[presets] ${PRESET_PROBLEMS.length} problem(s):\n  ${PRESET_PROBLEMS.join('\n  ')}`);
 }
 
 export const PRESET_GROUPS = PRESET_PACKS.reduce((acc, p) => {

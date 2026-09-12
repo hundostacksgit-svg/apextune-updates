@@ -4,7 +4,7 @@
  * Why these are drawn and not shipped
  * -----------------------------------
  * The obvious way to show what a filter does is to ship a picture of it. With
- * 316 effects, 118 looks, 107 transitions and a wall of text animations, that
+ * 319 effects, 118 looks, 107 transitions and a wall of text animations, that
  * is well over five hundred images — and if any of them is to be legible it is
  * not a small one. That is tens of megabytes in the repository, on every
  * install, and in every phone's cache, for pictures.
@@ -171,7 +171,7 @@ const cache = new Map();
 /*
  * Sized above the whole library, on purpose.
  *
- * There are ~316 effects, ~118 looks and ~107 transitions, and a preview is
+ * There are ~319 effects, ~118 looks and ~107 transitions, and a preview is
  * about 32KB of canvas. Cap the cache below that total and scrolling a panel
  * evicts the chips you are about to scroll back to, so every pass re-renders
  * everything and the cache does nothing. 1400 covers the lot with headroom for
