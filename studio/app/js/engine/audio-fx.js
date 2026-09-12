@@ -29,6 +29,8 @@
  * one piece of this that is genuinely expensive to run. The other thirteen are
  * free.
  * ------------------------------------------------------------------ */
+import { AUDIO_FX_LIBRARY } from './audio-fx-library.js';
+
 export const AUDIO_FX = {
   underwater: {
     name: 'Underwater',
@@ -169,8 +171,23 @@ export const AUDIO_FX = {
   },
 };
 
+/*
+ * The rest of the library — a hundred and more, written as recipes over the
+ * same building blocks the switch below uses. Merged rather than kept apart so
+ * the panel, the planner and the export see one catalogue. A recipe that
+ * collides with a hand-built id would silently replace it, so that is refused.
+ */
+for (const [id, spec] of Object.entries(AUDIO_FX_LIBRARY)) {
+  if (AUDIO_FX[id]) throw new Error(`audio-fx: library id "${id}" collides with a hand-built effect`);
+  AUDIO_FX[id] = spec;
+}
+
 export const FX_IDS = Object.keys(AUDIO_FX);
 export const FREE_FX = FX_IDS.filter((id) => !AUDIO_FX[id].pro);
+export const FX_GROUPS = FX_IDS.reduce((acc, id) => {
+  (acc[AUDIO_FX[id].group] ||= []).push(id);
+  return acc;
+}, {});
 
 /** A fresh effect record for a clip, with the catalogue's defaults filled in. */
 export function makeAudioFx(id) {
@@ -208,7 +225,7 @@ function p(fx, key, fallback = 0) {
  * decay is the standard synthetic reverb and it is convincing enough that
  * nobody asks where the church was.
  */
-function impulse(ctx, seconds, decay, { bright = 0.5 } = {}) {
+function impulse(ctx, seconds, decay, { bright = 0.5, dense = false } = {}) {
   const rate = ctx.sampleRate;
   const len = Math.max(1, Math.floor(seconds * rate));
   const buf = ctx.createBuffer(2, len, rate);
@@ -225,7 +242,7 @@ function impulse(ctx, seconds, decay, { bright = 0.5 } = {}) {
     }
     // Two early reflections give the tail a size. Without them a long reverb
     // sounds like a synthesiser pad rather than a space.
-    const early = [0.013, 0.029];
+    const early = dense ? [0.004, 0.009, 0.013, 0.019, 0.029, 0.041] : [0.013, 0.029];
     for (const t of early) {
       const at = Math.floor(t * rate * (1 + ch * 0.17));
       if (at < len) data[at] += 0.45 * (1 - ch * 0.2);
@@ -435,6 +452,296 @@ export function buildAudioChain(ctx, fx) {
     head.connect(unit.input);
     head = unit.output;
     return head;
+  };
+
+  /*
+   * Anything with a time in it — a filter that opens over four seconds, a
+   * tape stop, a swell — cannot be scheduled here, because this function does
+   * not know when the clip starts: the live engine starts at currentTime and
+   * the export at 0. So a recipe registers a callback and `start(when)` runs
+   * it with the real moment.
+   */
+  const scheduled = [];
+
+  /* An LFO with the amplitude scaled, wired into an AudioParam. */
+  const lfo = (rate, amount, param, shape = 'sine') => {
+    const osc = ctx.createOscillator();
+    if (shape === 'sine' || shape === 'square' || shape === 'sawtooth' || shape === 'triangle') osc.type = shape;
+    else osc.setPeriodicWave(shape);
+    osc.frequency.value = Math.max(0.01, rate);
+    const g = ctx.createGain();
+    g.gain.value = amount;
+    osc.connect(g).connect(param);
+    started.push(osc);
+    return osc;
+  };
+
+  /*
+   * A pulse wave with a chosen duty cycle, for gates and stutters.
+   *
+   * OscillatorNode's square is fixed at 50%, and a stutter that is on half
+   * the time is a different effect from one that is on a fifth of the time.
+   * Fourier coefficients of a pulse: a_n = (2/nπ)·sin(nπd).
+   */
+  const pulseWave = (duty) => {
+    const n = 32;
+    const real = new Float32Array(n), imag = new Float32Array(n);
+    real[0] = 2 * duty - 1;                        // the DC offset: mean of the wave
+    for (let i = 1; i < n; i++) real[i] = (2 / (i * Math.PI)) * Math.sin(i * Math.PI * duty);
+    return ctx.createPeriodicWave(real, imag, { disableNormalization: true });
+  };
+
+  /* Split the path: `fn` builds a branch off `head`, returned mixed with the
+     straight-through at `mix`. Used by delays, harmonies and modulations that
+     need the original alongside the treated copy. */
+  const parallel = (fn, mix = 0.5) => {
+    const sum = ctx.createGain();
+    const straight = ctx.createGain();
+    straight.gain.value = 1 - mix;
+    head.connect(straight).connect(sum);
+    const branchIn = ctx.createGain();
+    const branchOut = ctx.createGain();
+    branchOut.gain.value = mix;
+    head.connect(branchIn);
+    fn(branchIn, branchOut);
+    branchOut.connect(sum);
+    head = sum;
+    return sum;
+  };
+
+  const R = {
+    lp, hp, peak, trim, pitch,
+    bp: (freq, q = 1) => { const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q; return add(f); },
+    notch: (freq, q = 4) => { const f = ctx.createBiquadFilter(); f.type = 'notch'; f.frequency.value = freq; f.Q.value = q; return add(f); },
+    lowshelf: (freq, db) => { const f = ctx.createBiquadFilter(); f.type = 'lowshelf'; f.frequency.value = freq; f.gain.value = db; return add(f); },
+    highshelf: (freq, db) => { const f = ctx.createBiquadFilter(); f.type = 'highshelf'; f.frequency.value = freq; f.gain.value = db; return add(f); },
+    drive: (amt) => shape(driveCurve(amt)),
+    /* Offset before the tanh, so the two half-waves clip differently. That
+       asymmetry is where a valve's even harmonics come from. */
+    driveAsym: (amt) => {
+      const k = 1 + amt * 40, n = 1024, curve = new Float32Array(n);
+      for (let i = 0; i < n; i++) { const x = (i / (n - 1)) * 2 - 1; curve[i] = Math.tanh(k * (x + 0.18 * amt)) / Math.tanh(k) - Math.tanh(k * 0.18 * amt) / Math.tanh(k); }
+      return shape(curve);
+    },
+    clip: (level) => {
+      const n = 1024, curve = new Float32Array(n), lim = Math.max(0.05, level);
+      for (let i = 0; i < n; i++) { const x = (i / (n - 1)) * 2 - 1; curve[i] = Math.max(-lim, Math.min(lim, x)) / lim; }
+      return shape(curve);
+    },
+    crush: (amt) => shape(crushCurve(2 + (1 - amt) ** 2 * 46)),
+    /*
+     * Sample-rate reduction without a worklet: multiply by a square wave at
+     * the target rate, which folds the spectrum the way aliasing does, then
+     * band-limit. Not a true decimator, but it produces the inharmonic
+     * splatter people mean by "sample-rate crush", on both contexts, with no
+     * module to load first.
+     */
+    decimate: (amt) => {
+      const ring = ctx.createGain();
+      ring.gain.value = 0.55;
+      lfo(1200 + (1 - amt) * 9000, 0.45, ring.gain, 'square');
+      add(ring);
+      return lp(9000 - amt * 6000, 0.8);
+    },
+    reverb: (seconds, decay, bright, { pre = 0, dense = false } = {}) => {
+      if (pre > 0) { const d = ctx.createDelay(1); d.delayTime.value = pre; add(d); }
+      const c = ctx.createConvolver();
+      c.buffer = impulse(ctx, seconds, decay, { bright, dense });
+      c.normalize = true;
+      return add(c);
+    },
+    delay: ({ time, feedback = 0.3, tone = 4000, hp: hpf = 0, wobble = 0, pingpong = false, mix = 0.5 }) => parallel((from, to) => {
+      const t = Math.max(0.001, Math.min(5, time));
+      const fb = ctx.createGain(); fb.gain.value = Math.min(0.95, feedback);
+      const lpf = ctx.createBiquadFilter(); lpf.type = 'lowpass'; lpf.frequency.value = tone;
+      let loopIn = lpf;
+      if (hpf) { const h = ctx.createBiquadFilter(); h.type = 'highpass'; h.frequency.value = hpf; lpf.connect(h); loopIn = h; }
+      if (pingpong) {
+        // Left feeds right, right feeds left. The bounce is the cross-feed.
+        const dl = ctx.createDelay(6), dr = ctx.createDelay(6);
+        dl.delayTime.value = t; dr.delayTime.value = t;
+        const merge = ctx.createChannelMerger(2);
+        from.connect(dl);
+        dl.connect(merge, 0, 0);
+        dr.connect(merge, 0, 1);
+        dl.connect(fb).connect(dr);
+        dr.connect(loopIn); loopIn === lpf ? lpf.connect(dl) : (lpf.connect(loopIn), loopIn.connect(dl));
+        merge.connect(to);
+      } else {
+        const d = ctx.createDelay(6);
+        d.delayTime.value = t;
+        if (wobble > 0) lfo(0.9, wobble, d.delayTime);
+        from.connect(d);
+        d.connect(lpf);
+        loopIn.connect(fb).connect(d);
+        d.connect(to);
+      }
+    }, mix),
+    swell: (seconds) => {
+      const g = ctx.createGain();
+      g.gain.value = 0;
+      add(g);
+      scheduled.push((when) => { g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(1, when + seconds); });
+    },
+    chorus: ({ rate = 0.8, depth = 0.5, voices = 2 }) => parallel((from, to) => {
+      for (let i = 0; i < voices; i++) {
+        const d = ctx.createDelay(0.1);
+        d.delayTime.value = 0.014 + i * 0.005;
+        lfo(rate * (1 + i * 0.17), 0.0015 + depth * 0.003, d.delayTime);
+        const g = ctx.createGain(); g.gain.value = 1 / voices;
+        from.connect(d).connect(g).connect(to);
+      }
+    }, 0.5),
+    flanger: ({ rate = 0.3, feedback = 0.5, depth = 0.0025 }) => parallel((from, to) => {
+      const d = ctx.createDelay(0.05);
+      d.delayTime.value = 0.001 + depth;
+      lfo(rate, depth, d.delayTime);
+      const fb = ctx.createGain(); fb.gain.value = Math.min(0.92, feedback);
+      from.connect(d); d.connect(fb).connect(d); d.connect(to);
+    }, 0.5),
+    phaser: ({ rate = 0.4, depth = 0.7, stages = 4 }) => parallel((from, to) => {
+      let node = from;
+      for (let i = 0; i < stages; i++) {
+        const ap = ctx.createBiquadFilter();
+        ap.type = 'allpass'; ap.frequency.value = 500 + i * 300; ap.Q.value = 0.6;
+        lfo(rate, 250 + depth * 1400, ap.frequency);
+        node.connect(ap); node = ap;
+      }
+      node.connect(to);
+    }, 0.5),
+    tremolo: ({ rate = 5, depth = 0.6, shape: sh = 'sine', duty = 0.5 }) => {
+      const g = ctx.createGain();
+      g.gain.value = 1 - depth / 2;
+      const wave = sh === 'square' && Math.abs(duty - 0.5) > 0.01 ? pulseWave(duty) : sh;
+      lfo(rate, depth / 2, g.gain, wave);
+      return add(g);
+    },
+    vibrato: ({ rate = 5.5, depth = 0.002 }) => {
+      const d = ctx.createDelay(0.1);
+      d.delayTime.value = 0.012;
+      lfo(rate, depth, d.delayTime);
+      return add(d);
+    },
+    autowah: ({ rate = 2, depth = 0.7 }) => {
+      const f = ctx.createBiquadFilter();
+      f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 3.5;
+      lfo(rate, 300 + depth * 900, f.frequency);
+      return add(f);
+    },
+    doubler: ({ spread = 0.5 }) => parallel((from, to) => {
+      const d = ctx.createDelay(0.1); d.delayTime.value = 0.016 + spread * 0.02;
+      const unit = pitchShift(ctx, 0.12 + spread * 0.2, started);
+      from.connect(d).connect(unit.input); unit.output.connect(to);
+    }, 0.45),
+    detune: ({ cents = 15 }) => parallel((from, to) => {
+      for (const sign of [1, -1]) {
+        const unit = pitchShift(ctx, (sign * cents) / 100, started);
+        const g = ctx.createGain(); g.gain.value = 0.5;
+        from.connect(unit.input); unit.output.connect(g).connect(to);
+      }
+    }, 0.6),
+    ring: (freq, depth = 1) => {
+      const g = ctx.createGain();
+      g.gain.value = 1 - depth;
+      lfo(freq, depth, g.gain);
+      return add(g);
+    },
+    compress: ({ threshold = -24, ratio = 4, attack = 0.005, release = 0.15, knee = 12 }) => {
+      const c = ctx.createDynamicsCompressor();
+      c.threshold.value = threshold; c.ratio.value = ratio; c.attack.value = attack; c.release.value = release; c.knee.value = knee;
+      return add(c);
+    },
+    width: (width) => {
+      const split = ctx.createChannelSplitter(2), merge = ctx.createChannelMerger(2);
+      const dr = ctx.createDelay(0.05); dr.delayTime.value = 0.003 + width * 0.014;
+      head.connect(split); split.connect(merge, 0, 0); split.connect(dr, 1); dr.connect(merge, 0, 1);
+      head = merge;
+      return merge;
+    },
+    harmony: ({ semitones, mix = 0.5 }) => parallel((from, to) => {
+      const unit = pitchShift(ctx, semitones, started);
+      from.connect(unit.input); unit.output.connect(to);
+    }, mix),
+    /* A layer under the signal rather than a stage in it: the voice is not
+       filtered by the rain, it just has rain under it. Goes straight to wet. */
+    noise: ({ kind = 'white', gain = 0.05, lp: lpf = 0, hp: hpf = 0, lfoRate = 0, lfoDepth = 0, invert = false }) => {
+      let src;
+      if (kind === 'hum') {
+        src = ctx.createOscillator(); src.type = 'sawtooth'; src.frequency.value = 50;
+      } else if (kind === 'crackle') {
+        src = noiseSource(ctx, 3);
+      } else {
+        const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 2), ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        let last = 0;
+        for (let i = 0; i < data.length; i++) {
+          const w = Math.random() * 2 - 1;
+          // Brown is integrated white, pink sits between; both by a one-pole.
+          if (kind === 'brown') { last = last * 0.985 + w * 0.05; data[i] = last * 6; }
+          else if (kind === 'pink') { last = last * 0.93 + w * 0.12; data[i] = last * 2.4; }
+          else data[i] = w;
+        }
+        src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+      }
+      started.push(src);
+      let node = src;
+      if (hpf) { const h = ctx.createBiquadFilter(); h.type = 'highpass'; h.frequency.value = hpf; node.connect(h); node = h; }
+      if (lpf) { const l = ctx.createBiquadFilter(); l.type = 'lowpass'; l.frequency.value = lpf; node.connect(l); node = l; }
+      const g = ctx.createGain();
+      g.gain.value = gain * (lfoDepth ? (1 - lfoDepth / 2) : 1);
+      if (lfoRate && lfoDepth) lfo(lfoRate, (invert ? -1 : 1) * gain * lfoDepth / 2, g.gain, lfoDepth >= 0.95 ? 'square' : 'sine');
+      node.connect(g).connect(wet);
+    },
+    /* A sawtooth on the gain: drops on the beat, climbs back before the next. */
+    pump: ({ rate = 2, depth = 0.8 }) => {
+      const g = ctx.createGain();
+      g.gain.value = 1 - depth / 2;
+      lfo(rate, depth / 2, g.gain, 'sawtooth');
+      return add(g);
+    },
+    sweep: ({ type = 'lowpass', from, to, over = 4, at = 0 }) => {
+      const f = ctx.createBiquadFilter();
+      f.type = type; f.frequency.value = from; f.Q.value = 0.9;
+      add(f);
+      scheduled.push((when) => {
+        f.frequency.setValueAtTime(from, when + at);
+        f.frequency.exponentialRampToValueAtTime(Math.max(20, to), when + at + Math.max(0.02, over));
+      });
+    },
+    /*
+     * Pitch that changes over time, from a delay whose length changes over
+     * time: a delay growing at r seconds per second plays the source at 1−r.
+     * Quadratic curve, so the rate of growth — the pitch — moves linearly.
+     */
+    sweepPitch: ({ from = -5, to = 0, over = 3 }) => {
+      const r0 = 2 ** (from / 12), r1 = 2 ** (to / 12);
+      const d = ctx.createDelay(Math.max(1, over + 1));
+      add(d);
+      scheduled.push((when) => {
+        const N = 64, curve = new Float32Array(N);
+        for (let i = 0; i < N; i++) {
+          const t = (i / (N - 1)) * over;
+          const r = r0 + (r1 - r0) * (t / over);
+          // ∫(1−r(t))dt from 0 to t, with r linear in t
+          curve[i] = Math.max(0, (1 - r0) * t - ((r1 - r0) * t * t) / (2 * over));
+        }
+        d.delayTime.setValueCurveAtTime(curve, when, over);
+      });
+    },
+    tapeStop: (over = 1.2) => {
+      const d = ctx.createDelay(Math.max(2, over * 2 + 1));
+      const g = ctx.createGain();
+      add(d); add(g);
+      scheduled.push((when) => {
+        // Delay grows ever faster: rate falls from 1 to 0 across `over`, and
+        // the gain follows it down so the stopped tape is silent, not looping.
+        const N = 64, curve = new Float32Array(N);
+        for (let i = 0; i < N; i++) { const t = (i / (N - 1)) * over; curve[i] = (t * t) / (2 * over); }
+        d.delayTime.setValueCurveAtTime(curve, when, over);
+        g.gain.setValueAtTime(1, when);
+        g.gain.linearRampToValueAtTime(0, when + over);
+      });
+    },
   };
 
   switch (fx.id) {
@@ -661,8 +968,12 @@ export function buildAudioChain(ctx, fx) {
       break;
     }
 
-    default:
-      return null;
+    default: {
+      const spec = AUDIO_FX[fx.id];
+      if (!spec?.recipe) return null;
+      spec.recipe((key, fallback) => p(fx, key, fallback), R);
+      break;
+    }
   }
 
   head.connect(wet);
@@ -674,6 +985,9 @@ export function buildAudioChain(ctx, fx) {
     start(when = 0) {
       for (const node of started) {
         try { node.start(when); } catch { /* already running */ }
+      }
+      for (const fn of scheduled) {
+        try { fn(when); } catch { /* a param that cannot be scheduled on this context */ }
       }
     },
     stop() {

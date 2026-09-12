@@ -192,23 +192,44 @@ function fxSection() {
   for (const [id, def] of Object.entries(AUDIO_FX)) {
     (groups[def.group] ||= []).push([id, def]);
   }
+  const total = Object.keys(AUDIO_FX).length;
+  const groupCount = Object.keys(groups).length;
 
-  const chips = Object.entries(groups).map(([group, list]) => `
-    <div class="fx-group-h">${esc(group)}</div>
-    <div class="fx-chips">${list.map(([id, def]) => `
-      <button class="fx-chip ${fx?.id === id ? 'on' : ''} ${def.pro && !canPro ? 'locked' : ''}"
-              data-fx="${esc(id)}" title="${esc(def.blurb)}">
-        ${esc(def.name)}${def.pro && !canPro ? '<i>Pro</i>' : ''}
-      </button>`).join('')}</div>`).join('');
+  /*
+   * A hundred and fifty chips in one column is a wall. Each group folds, the
+   * one holding the current filter starts open, and the search box narrows
+   * every group and opens the ones with something left in them — the same
+   * shape the effect library uses, so it is one habit rather than two.
+   */
+  const chips = Object.entries(groups).map(([group, list]) => {
+    const holds = list.some(([id]) => fx?.id === id);
+    return `
+    <details class="group fx-grp" ${holds ? 'open' : ''}>
+      <summary>${esc(group)} <span class="tiny muted">${list.length}</span></summary>
+      <div class="gbody">
+        <div class="fx-chips">${list.map(([id, def]) => `
+          <button class="fx-chip ${fx?.id === id ? 'on' : ''} ${def.pro && !canPro ? 'locked' : ''}"
+                  data-fx="${esc(id)}" title="${esc(def.blurb)}"
+                  data-search="${esc(`${def.name} ${group} ${def.blurb} ${id}`.toLowerCase())}">
+            ${esc(def.name)}${def.pro && !canPro ? '<i>Pro</i>' : ''}
+          </button>`).join('')}</div>
+      </div>
+    </details>`;
+  }).join('');
 
   return `
     <details class="group" ${fx ? 'open' : ''} id="a-fx">
-      <summary>Audio filters</summary>
+      <summary>Audio filters <span class="tiny muted">${total}</span></summary>
       <div class="gbody">
         <p class="tiny muted" style="margin:0 0 10px">
-          Underwater, telephone, cathedral, robot — seventeen of them. They play live while
+          ${total} of them in ${groupCount} groups — rooms, echoes, modulation, distortion,
+          lo-fi, voices, machines, beat tools, atmospheres and pitch. They play live while
           you scrub and are rendered into the export, not stuck on afterwards.
         </p>
+        <div class="field" style="margin:0 0 10px">
+          <input class="input" id="a-fx-search" placeholder="Search filters — hall, tape echo, radio, monster…"
+                 aria-label="Search audio filters">
+        </div>
 
         ${clips.length ? '' : `<div class="note tiny" style="margin-bottom:10px">
           <b>Select a clip first.</b> Filters belong to a clip, so the same timeline can have a
@@ -239,6 +260,20 @@ function fxSection() {
 }
 
 function wireFx(host) {
+  $('#a-fx-search', host)?.addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    for (const grp of $$('.fx-grp', host)) {
+      let shown = 0;
+      for (const chip of $$('[data-fx]', grp)) {
+        const hit = !q || chip.dataset.search.includes(q);
+        chip.hidden = !hit;
+        if (hit) shown++;
+      }
+      grp.hidden = shown === 0;
+      if (q) grp.open = true;
+    }
+  });
+
   $$('[data-fx]', host).forEach((b) => b.addEventListener('click', () => {
     const id = b.dataset.fx;
     const spec = AUDIO_FX[id];

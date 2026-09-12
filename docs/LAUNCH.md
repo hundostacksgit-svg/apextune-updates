@@ -163,8 +163,10 @@ eyeballed.
   shipped screenshot, so nothing can drift from what it actually does — and it
   adds zero bytes to the download
 - Curves and LUTs (any `.cube` file), colour wheels, four broadcast scopes
-- Audio in decibels with peak hold and clip latching, 17 creative filters,
-  noise/hum/click repair
+- Audio in decibels with peak hold and clip latching, **148 audio filters in
+  12 groups** — rooms, echoes, modulation, distortion, lo-fi, voices, machines,
+  beat tools, atmospheres, pitch — every one rendered and measured: finite,
+  audible, bounded, and different from dry. Noise/hum/click repair
 - Export to 16 presets up to DCI 4K, then straight to TikTok, YouTube,
   Instagram or X
 

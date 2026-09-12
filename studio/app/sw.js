@@ -43,6 +43,7 @@ const SHELL = [
   './js/ai/direct.js',
   './js/desktop.js',
   './js/engine/audio-fx.js',
+  './js/engine/audio-fx-library.js',
   './js/engine/audio-render.js',
   './js/engine/audio-repair.js',
   './js/engine/audio.js',
