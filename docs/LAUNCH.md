@@ -80,6 +80,22 @@ eyeballed.
   the same scale as the clip, and a graph editor behind them for the shape of
   a move. This is the thing that separates a finishing tool from a phone
   editor, and it is the one that was missing
+- **A tracker measured against a known answer.** A textured subject on a
+  path we drew — slow, then a fast sweep, turning fifteen degrees, growing a
+  quarter, and passing behind a bar for half a second. Mean error 0.65px at
+  640 wide, worst 1.5px; it predicts along the last motion, reads rotation
+  against the original appearance, scales cumulatively, and when the subject
+  vanishes it coasts, looks for the original in a wide ring, and fills the
+  hidden stretch with a straight line marked as guessed. Two real bugs found
+  by the measurement: a flat candidate patch scored thousands (dividing by
+  a variance of nearly nothing), and one bad jump poisoned the velocity the
+  box then coasted on for ever — two thousand pixels off the frame
+- **Sixteen speed ramps** drawn as curves in the Inspector, written in
+  fractions of the clip so they refit after a trim, and shortened to what the
+  file can cover rather than running off its end
+- **Nine tracked transitions** — zoom through, iris, spin, whip, portal,
+  radial wipe, glitch, blur — that take an anchor from a motion track at the
+  moment of the cut. "Cut through it" on a finished track sets one up
 - **Follow a face** and pin a blur, a pixelate, a background blur, a spotlight,
   a skin soften or a light to it. Runs on your device, no model downloaded, and
   measured across six skin tones: found in all of them, confidence varying by

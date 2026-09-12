@@ -22,8 +22,12 @@
 const ANALYSIS_WIDTH = 480;      // everything below works at this width
 const SEARCH_RADIUS = 0.55;      // of the template size, per level
 const SCALE_STEPS = [0.94, 1, 1.06];
+const ROT_STEPS = [-0.14, 0.14]; // radians, tried only when the match weakens
 const TEMPLATE_BLEND = 0.12;     // how fast the template adapts
 const LOST_THRESHOLD = 0.32;     // NCC below this for several frames = lost
+const RECOVER_THRESHOLD = 0.5;   // NCC needed to say "found it again"
+const MAX_LOST_FRAMES = 14;      // how long to keep predicting before giving up (~1s at 15fps)
+const VELOCITY_DAMP = 0.85;      // prediction trusts the last motion this much
 
 /* ------------------------------------------------------------------ */
 /* frame access                                                        */
@@ -78,16 +82,36 @@ class FrameReader {
 /* patches and correlation                                             */
 /* ------------------------------------------------------------------ */
 
-/** Pull a w×h patch centred on (cx, cy), sampled at `scale`. */
-function patchAt(plane, planeW, planeH, cx, cy, pw, ph, scale = 1) {
+/**
+ * Pull a w×h patch centred on (cx, cy), sampled at `scale`, turned by `angle`.
+ *
+ * Rotation is sampled here rather than by rotating the template, so the
+ * template stays what it was and only the place we look changes — a subject
+ * that turns its head twenty degrees is still the same subject.
+ */
+function patchAt(plane, planeW, planeH, cx, cy, pw, ph, scale = 1, angle = 0) {
   const out = new Float32Array(pw * ph);
   const sw = pw * scale, sh = ph * scale;
-  const x0 = cx - sw / 2, y0 = cy - sh / 2;
+  if (!angle) {
+    const x0 = cx - sw / 2, y0 = cy - sh / 2;
+    for (let y = 0; y < ph; y++) {
+      const sy = Math.round(y0 + (y / ph) * sh);
+      const row = Math.max(0, Math.min(planeH - 1, sy)) * planeW;
+      for (let x = 0; x < pw; x++) {
+        const sx = Math.round(x0 + (x / pw) * sw);
+        out[y * pw + x] = plane[row + Math.max(0, Math.min(planeW - 1, sx))];
+      }
+    }
+    return out;
+  }
+  const cos = Math.cos(angle), sin = Math.sin(angle);
   for (let y = 0; y < ph; y++) {
-    const sy = Math.round(y0 + (y / ph) * sh);
-    const row = Math.max(0, Math.min(planeH - 1, sy)) * planeW;
+    const ly = (y / ph - 0.5) * sh;
     for (let x = 0; x < pw; x++) {
-      const sx = Math.round(x0 + (x / pw) * sw);
+      const lx = (x / pw - 0.5) * sw;
+      const sx = Math.round(cx + lx * cos - ly * sin);
+      const sy = Math.round(cy + lx * sin + ly * cos);
+      const row = Math.max(0, Math.min(planeH - 1, sy)) * planeW;
       out[y * pw + x] = plane[row + Math.max(0, Math.min(planeW - 1, sx))];
     }
   }
@@ -103,12 +127,22 @@ function stats(patch) {
   return { mean, norm: Math.sqrt(ss) || 1e-6 };
 }
 
-/** Normalised cross-correlation of two equal-sized patches, −1..1. */
+/**
+ * Normalised cross-correlation of two equal-sized patches, −1..1.
+ *
+ * A candidate with no detail in it — a wall, the inside of a passing bar —
+ * has a variance of nearly nothing, and dividing by it turned the score into
+ * whatever the rounding noise happened to be, often thousands. The search
+ * then took the flat patch as the best match in the frame and the box ran
+ * away along a velocity it had never actually seen. Flat means "no match",
+ * and says so.
+ */
 function ncc(a, aStats, b) {
   const bStats = stats(b);
+  if (bStats.norm / Math.sqrt(b.length) < 2) return 0;
   let acc = 0;
   for (let i = 0; i < a.length; i++) acc += (a[i] - aStats.mean) * (b[i] - bStats.mean);
-  return acc / (aStats.norm * bStats.norm);
+  return Math.max(-1, Math.min(1, acc / (aStats.norm * bStats.norm)));
 }
 
 /**
@@ -127,16 +161,16 @@ function subpixel(left, centre, right) {
 /* the search                                                          */
 /* ------------------------------------------------------------------ */
 
-function searchAround(plane, planeW, planeH, template, tStats, pw, ph, cx, cy, radius, step, scale) {
-  let best = { score: -2, x: cx, y: cy, scale };
+function searchAround(plane, planeW, planeH, template, tStats, pw, ph, cx, cy, radius, step, scale, angle = 0) {
+  let best = { score: -2, x: cx, y: cy, scale, angle };
   const scores = new Map();
   for (let dy = -radius; dy <= radius; dy += step) {
     for (let dx = -radius; dx <= radius; dx += step) {
       const x = cx + dx, y = cy + dy;
-      const candidate = patchAt(plane, planeW, planeH, x, y, pw, ph, scale);
+      const candidate = patchAt(plane, planeW, planeH, x, y, pw, ph, scale, angle);
       const score = ncc(template, tStats, candidate);
       scores.set(`${dx},${dy}`, score);
-      if (score > best.score) best = { score, x, y, scale };
+      if (score > best.score) best = { score, x, y, scale, angle };
     }
   }
 
@@ -223,11 +257,17 @@ export async function trackBox(video, {
   const original = template.slice();
   const originalStats = { ...tStats };
 
-  const points = [{ t: from, x: box.x, y: box.y, scale: 1, confidence: 1 }];
+  const points = [{ t: from, x: box.x, y: box.y, scale: 1, rot: 0, confidence: 1 }];
   let lostRun = 0;
   let lostAt = null;
   let scoreSum = 0;
   let scoreCount = 0;
+  let angle = 0;
+  let vx = 0, vy = 0;                 // analysis pixels per step, from the last accepted move
+  let lastGood = 0;                   // index into `points` of the last confident point
+  let recovered = 0;                  // how many times the subject came back after being lost
+  let emaScore = 1;                   // how well this subject normally matches
+  const maxStep = Math.max(pw, ph) * 0.6;   // no real subject moves further than this in one step
 
   for (let i = 1; i <= total; i++) {
     if (signal?.aborted) break;
@@ -238,43 +278,164 @@ export async function trackBox(video, {
     // eslint-disable-next-line no-await-in-loop
     const plane = reader.luma();
 
+    /*
+     * Look where the subject is heading, not where it was.
+     *
+     * A fast pan moves a subject further per frame than the search radius,
+     * and a search centred on the old position finds the background instead.
+     * Centring it on the predicted position — last position plus damped
+     * velocity — is what lets the same radius follow a car, or a hand.
+     */
+    const px = cx + vx * VELOCITY_DAMP, py = cy + vy * VELOCITY_DAMP;
+
     // Coarse pass over a wide radius on a big step, then a fine pass. This is
     // the pyramid: it finds fast movement without correlating every pixel.
     const radius = Math.max(6, Math.round(Math.max(pw, ph) * SEARCH_RADIUS));
-    let best = searchAround(plane, reader.w, reader.h, template, tStats, pw, ph, cx, cy, radius, 3, scale);
-    best = searchAround(plane, reader.w, reader.h, template, tStats, pw, ph, best.x, best.y, 3, 1, scale);
+    let best = searchAround(plane, reader.w, reader.h, template, tStats, pw, ph, px, py, radius, 3, scale, angle);
+    best = searchAround(plane, reader.w, reader.h, template, tStats, pw, ph, best.x, best.y, 3, 1, scale, angle);
 
-    // Every few frames, allow the box to grow or shrink.
-    if (i % 4 === 0) {
-      for (const s of SCALE_STEPS) {
-        if (s === scale) continue;
-        const candidate = patchAt(plane, reader.w, reader.h, best.x, best.y, pw, ph, s);
+    /*
+     * Every other frame, allow the box to grow or shrink — cumulatively.
+     *
+     * The steps used to be absolute (0.94, 1, 1.06), so the box could never
+     * be more than six percent off its starting size; a subject walking
+     * towards the camera doubles, and the template ended up matching a
+     * quarter of it, off-centre. Each step now multiplies the current scale,
+     * within sane bounds.
+     */
+    if (i % 2 === 0) {
+      for (const f of SCALE_STEPS) {
+        if (f === 1) continue;
+        const s2 = Math.max(0.35, Math.min(3, scale * f));
+        if (s2 === scale) continue;
+        const candidate = patchAt(plane, reader.w, reader.h, best.x, best.y, pw, ph, s2, angle);
         const score = ncc(template, tStats, candidate);
-        if (score > best.score + 0.02) { best = { ...best, score, scale: s }; }
+        if (score > best.score + 0.015) { best = { ...best, score, scale: s2 }; }
+      }
+    }
+
+    /*
+     * Has the subject turned?
+     *
+     * Read against the original appearance, never the adapted template: a
+     * template that has been blending in frames at a slightly wrong angle
+     * agrees with itself at that angle, and the estimate sticks. Every few
+     * frames, and whenever the match weakens, two angles either side of the
+     * current one are tried against the original and the best is kept.
+     */
+    if (i % 3 === 0 || best.score < 0.62) {
+      let bestRot = { score: ncc(original, originalStats, patchAt(plane, reader.w, reader.h, best.x, best.y, pw, ph, best.scale, angle)), angle };
+      for (const dr of [-0.2, -0.1, 0.1, 0.2]) {
+        const a1 = angle + dr;
+        const score = ncc(original, originalStats, patchAt(plane, reader.w, reader.h, best.x, best.y, pw, ph, best.scale, a1));
+        if (score > bestRot.score + 0.015) bestRot = { score, angle: a1 };
+      }
+      if (bestRot.angle !== angle) {
+        best = { ...best, angle: bestRot.angle };
+        // The adapted template was built at the old angle; start it again.
+        template = original.slice();
+        tStats = { ...originalStats };
+        best.score = Math.max(best.score, bestRot.score);
       }
     }
 
     // If the adapted template has drifted onto something else, the original
     // frame is usually still the better match — check and snap back.
     const againstOriginal = ncc(original, originalStats,
-      patchAt(plane, reader.w, reader.h, best.x, best.y, pw, ph, best.scale));
+      patchAt(plane, reader.w, reader.h, best.x, best.y, pw, ph, best.scale, best.angle));
     if (againstOriginal > best.score + 0.08) {
       template = original.slice();
       tStats = { ...originalStats };
       best.score = againstOriginal;
     }
 
-    cx = best.x; cy = best.y; scale = best.scale;
-    scoreSum += best.score; scoreCount++;
-
-    if (best.score < LOST_THRESHOLD) {
+    /*
+     * Lost, or hidden?
+     *
+     * A subject that walks behind a lamp post is gone for four frames and
+     * back. The old tracker stopped there and called the whole rest of the
+     * shot lost. Now it keeps moving the box along the last known velocity
+     * and, each frame, looks for the *original* appearance in a wide ring
+     * around where the subject ought to be. When it turns up again, the
+     * frames in between are filled by a straight line between the two ends
+     * — which is what a subject behind a post actually did.
+     */
+    const lostIf = Math.max(LOST_THRESHOLD, emaScore * 0.55);
+    let jumped = false;
+    if (best.score < lostIf) {
       lostRun++;
-      if (lostRun >= 4) { lostAt = t; break; }
-    } else {
+      const wide = Math.round(Math.max(pw, ph) * 1.6);
+      const again = searchAround(plane, reader.w, reader.h, original, originalStats, pw, ph, px, py, wide, 4, scale, angle);
+      if (again.score >= RECOVER_THRESHOLD) {
+        best = searchAround(plane, reader.w, reader.h, original, originalStats, pw, ph, again.x, again.y, 4, 1, scale, angle);
+        template = original.slice();
+        tStats = { ...originalStats };
+        // Straighten the guessed points between the last sure one and here.
+        const gap = points.length - 1 - lastGood;
+        if (gap > 0) {
+          const a = points[lastGood];
+          for (let g = 1; g <= gap; g++) {
+            const f = g / (gap + 1);
+            const pt = points[lastGood + g];
+            pt.x = Number((a.x + (best.x / reader.w - a.x) * f).toFixed(5));
+            pt.y = Number((a.y + (best.y / reader.h - a.y) * f).toFixed(5));
+            pt.confidence = 0.25;
+            pt.filled = true;
+          }
+        }
+        lostRun = 0;
+        recovered++;
+        jumped = true;
+      } else if (lostRun > MAX_LOST_FRAMES) {
+        lostAt = t;
+        break;
+      } else {
+        // Keep the box coasting as it was — and slowing, so a subject that
+        // has genuinely gone does not take the box off the frame with it.
+        best = { ...best, x: px, y: py, score: 0 };
+        vx *= 0.8; vy *= 0.8;
+      }
+    }
+
+    if (best.score >= lostIf && lostRun > 0) {
+      // Found again by the ordinary search after a stretch of guessing.
+      const gap = points.length - 1 - lastGood;
+      if (gap > 0) {
+        const a0 = points[lastGood];
+        for (let g = 1; g <= gap; g++) {
+          const f = g / (gap + 1);
+          const pt = points[lastGood + g];
+          pt.x = Number((a0.x + (best.x / reader.w - a0.x) * f).toFixed(5));
+          pt.y = Number((a0.y + (best.y / reader.h - a0.y) * f).toFixed(5));
+          pt.confidence = 0.25;
+          pt.filled = true;
+        }
+        recovered++;
+      }
+      lostRun = 0;
+    }
+    /*
+     * Velocity is learned only from ordinary, confident moves — smoothed, and
+     * capped at what a real subject can do in one step. A recovery jump is
+     * the box catching up, not the subject moving, and one frame of a bad
+     * match must not become the direction the box coasts in when the subject
+     * next disappears: that is exactly how it ended up two thousand pixels
+     * off the frame.
+     */
+    if (best.score >= lostIf && !jumped) {
+      const dx = Math.max(-maxStep, Math.min(maxStep, best.x - cx));
+      const dy = Math.max(-maxStep, Math.min(maxStep, best.y - cy));
+      vx = vx * 0.5 + dx * 0.5; vy = vy * 0.5 + dy * 0.5;
+      emaScore = emaScore * 0.9 + best.score * 0.1;
+    }
+    cx = best.x; cy = best.y; scale = best.scale; angle = best.angle ?? angle;
+    scoreSum += Math.max(0, best.score); scoreCount++;
+
+    if (best.score >= lostIf) {
       lostRun = 0;
       // Blend the current appearance in slowly so lighting and angle changes
       // don't accumulate into a lost track.
-      const fresh = patchAt(plane, reader.w, reader.h, cx, cy, pw, ph, scale);
+      const fresh = patchAt(plane, reader.w, reader.h, cx, cy, pw, ph, scale, angle);
       for (let k = 0; k < template.length; k++) {
         template[k] = template[k] * (1 - TEMPLATE_BLEND) + fresh[k] * TEMPLATE_BLEND;
       }
@@ -286,8 +447,10 @@ export async function trackBox(video, {
       x: Number((cx / reader.w).toFixed(5)),
       y: Number((cy / reader.h).toFixed(5)),
       scale: Number(scale.toFixed(4)),
+      rot: Number(angle.toFixed(4)),
       confidence: Number(Math.max(0, best.score).toFixed(3)),
     });
+    if (best.score >= lostIf) lastGood = points.length - 1;
 
     if (i % 3 === 0) {
       onProgress?.({ done: i, total, t, confidence: best.score });
@@ -296,9 +459,19 @@ export async function trackBox(video, {
     }
   }
 
+  // A run that ended while still guessing: drop the guesses off the tail.
+  // Better to say "lost it here" than to hand back a box sliding on alone.
+  if (lostAt !== null || (points.length - 1 > lastGood)) {
+    const trailing = points.length - 1 - lastGood;
+    if (trailing > 0 && lostAt === null && lostRun > 0) {
+      points.splice(lastGood + 1, trailing);
+    }
+  }
+
   return {
     points,
     lostAt,
+    recovered,
     mean: scoreCount ? scoreSum / scoreCount : 0,
     frames: points.length,
   };
@@ -396,8 +569,9 @@ export function describeTrack(track) {
         + 'That usually means the subject left the frame, turned away, or there is a cut inside the range.',
     };
   }
-  if (track.mean > 0.8) return { ok: true, text: `Locked on — ${track.frames} points, very confident.` };
-  if (track.mean > 0.6) return { ok: true, text: `Tracked ${track.frames} points. Solid.` };
+  const came = track.recovered ? ` It lost the subject and found it again ${track.recovered === 1 ? 'once' : `${track.recovered} times`}, filling the gap.` : '';
+  if (track.mean > 0.8) return { ok: true, text: `Locked on — ${track.frames} points, very confident.${came}` };
+  if (track.mean > 0.6) return { ok: true, text: `Tracked ${track.frames} points. Solid.${came}` };
   if (track.mean > 0.45) {
     return { ok: true, text: `Tracked ${track.frames} points, but it is not certain. Check it, and try a smaller box on something with more contrast if it wanders.` };
   }

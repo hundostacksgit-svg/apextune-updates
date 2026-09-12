@@ -11,7 +11,7 @@
 
 import { $, esc, toast, drag, modal, closeModal } from '../ui.js';
 import { S, actions, engine } from '../main.js';
-import { clipById, mediaById, sourceTime } from '../engine/project.js';
+import { clipById, mediaById, sourceTime, clipsOn } from '../engine/project.js';
 import { elementFor } from '../engine/media.js';
 import { trackBox, smoothTrack, applyTrack, describeTrack, findTarget, findFace } from '../engine/tracking.js';
 import { makeEffect } from '../engine/effects.js';
@@ -267,8 +267,13 @@ function offerToPin(record, verdict) {
       <button class="btn" data-pin="blur">Blur this spot</button>
       <button class="btn" data-pin="pixel">Pixelate this spot</button>
       <button class="btn" data-pin="selected">Pin the selected clip to it</button>
+      <button class="btn" data-pin="transition">Cut through it</button>
       <button class="btn btn-ghost" data-pin="later">Just keep the track</button>
     </div>
+    <p class="tiny muted" style="margin:8px 0 0">
+      <b>Cut through it</b> puts a zoom-through on the cut after this clip, aimed at the tracked
+      spot: the picture dives into whatever you tracked and comes out in the next shot.
+    </p>
     <p class="tiny muted" style="margin-top:14px">
       Whatever you pick becomes ordinary keyframes you can edit by hand. The track stays in
       the Inspector so you can pin something else to it later.
@@ -285,6 +290,29 @@ function offerToPin(record, verdict) {
 
 export function pin(record, what) {
   const source = clipById(S.project, record.sourceClipId);
+
+  /*
+   * A transition that follows the track.
+   *
+   * It goes on the clip *after* the tracked one and is aimed from the
+   * outgoing side: the anchor is read off this track at the moment of the
+   * cut, so the zoom dives into the tracked spot wherever it has got to by
+   * then. Any anchor-aware transition can be swapped in afterwards from the
+   * picker; the track stays attached to the cut.
+   */
+  if (what === 'transition') {
+    if (!source) { toast('The clip this was tracked on has gone', 'bad'); return; }
+    const list = clipsOn(S.project, source.trackId);
+    const idx = list.findIndex((c) => c.id === source.id);
+    const next = idx >= 0 ? list[idx + 1] : null;
+    if (!next) { toast('There is no clip after this one to cut into — put one on the timeline first', 'bad', 4200); return; }
+    const room = Math.min(next.dur, source.dur) / 3;
+    next.transitionIn = { type: 'zoomThrough', dur: Math.min(0.55, room), trackId: record.id, anchorFrom: 'out' };
+    actions.commit('Tracked transition');
+    S.sel = new Set([next.id]);
+    toast('Zoom-through set on the cut, aimed at the tracked spot. Change the type in the Inspector.', 'ok', 4200);
+    return;
+  }
 
   if (what === 'selected') {
     const target = [...S.sel].map((id) => clipById(S.project, id)).find(Boolean);

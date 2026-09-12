@@ -257,6 +257,8 @@ export const GUIDE = [
       ['Choosing a typeface', 'Search the font list — every name is set in its own typeface, because a list of names in the system font tells you nothing. Picking one fetches it; the offline fallbacks are chosen to look like the real thing, so text still renders sensibly with no signal.'],
       ['Captions', 'Captions panel. Styles match what each platform produces, so a video posted from here does not look out of place next to native ones.'],
       ['Tracking text to something', 'Inspector → track a point in the clip, then pin the title to it. It follows.'],
+      ['How good the tracker is', 'Measured against a known path at 640 wide: 0.65px mean error, 1.5px worst, through a fast pan, a fifteen-degree turn and a subject that grows by a quarter. When something passes in front of the subject it keeps the box moving along the last motion, looks for the original appearance in a wide ring, and fills the hidden stretch with a straight line when it finds it again — marked as guessed, so you can see which points it made up.'],
+      ['Cut through it', 'After a track finishes, **Cut through it** puts a zoom-through on the next cut aimed at the tracked spot: the picture dives into the thing you tracked and comes out in the next shot. Nine transitions in the **Tracked** group take an anchor — iris, spin, whip, portal, radial wipe, glitch, blur — and any of them can be swapped in from the Inspector.'],
     ],
   },
   {
@@ -314,6 +316,17 @@ export const GUIDE = [
       ['Save your own', '**＋ Save preset** in the Effects panel header. Select the one clip you got right, name it, and it appears under **Mine** — with a ✕ to delete it, which the shipped ones do not have. It keeps the grade, the effects and their exact settings, and it survives closing the app.'],
       ['Copy the look off one clip onto the rest', 'Get one shot right, then **Ctrl+Alt+C** on it and **Ctrl+Alt+V** on the others — right-click has both as **Copy attributes** and **Paste attributes**. It carries the grade, the effects with their exact settings, the reframe and the audio strip, and it carries none of the edit: nothing moves, nothing retrims. Select twelve clips and one paste does all twelve, as one undo.'],
       ['What they never touch', 'Where a clip sits, how long it is, its in point, its speed, its transitions, its keyframes, its masks. Those are the edit. A preset called Neon Night has no business moving a shot.'],
+    ],
+  },
+  {
+    id: 'speedramps',
+    group: 'The timeline',
+    title: 'Speed ramps',
+    body: [
+      ['What a ramp is', 'Speed that changes through the shot: fast into a moment, slow through it, fast out. Inspector → **Speed & timing** → a row of sixteen curves. The curve is the label — Velocity, Slow-mo hit, Bullet time, Punch, Kickback, Land, Ease in, Ease out, Dip, Double tap, Stutter, Timelapse, Hyperlapse, Reveal, Hold and go, Heartbeat.'],
+      ['It fits the footage', 'A ramp that averages faster than 1× needs more of the file than the clip is long. Rather than running off the end and holding the last frame, the clip is shortened to what the file can cover and the ramp reshaped to it. The toast says so when it happens.'],
+      ['Shapes, not seconds', 'Each ramp is written in fractions of the clip, so the same gesture fits a two-second shot and a ten-second one. Trim the clip and press the ramp again to refit it.'],
+      ['Flat speed and ramps are one control', 'Pressing ½×, 1× or 2× takes a ramp off; pressing a ramp replaces the flat speed. **Remove ramp** puts the clip back to 1×.'],
     ],
   },
   {

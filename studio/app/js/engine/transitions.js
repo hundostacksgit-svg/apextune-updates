@@ -211,6 +211,171 @@ export const TRANSITIONS = {
 };
 
 /*
+ * Transitions that happen *somewhere* in the frame.
+ *
+ * Everything above is centred, because nothing above knows where the subject
+ * is. These take an anchor — a point in 0..1 frame space — and dive into it,
+ * open from it, spin round it, wipe away from it. Handed a motion track's
+ * position at the moment of the cut, the zoom goes through the tracked face
+ * rather than the middle of the frame, which is what a tracked transition
+ * means. With no anchor they fall back to the centre and behave like their
+ * plain cousins, so nothing breaks when a track is deleted.
+ */
+const at = (opts, w, h) => ({ x: (opts?.anchor?.x ?? 0.5) * w, y: (opts?.anchor?.y ?? 0.5) * h });
+
+/* Draw `src` scaled by `scale` about the point (ax, ay), which stays put. */
+function zoomAbout(ctx, src, w, h, ax, ay, scale, alpha = 1) {
+  if (!src) return;
+  ctx.save();
+  ctx.translate(ax, ay); ctx.scale(scale, scale); ctx.translate(-ax, -ay);
+  paint(ctx, src, w, h, alpha);
+  ctx.restore();
+}
+
+const TRACKED = {
+  zoomThrough: {
+    name: 'Zoom through', tier: 'creator', icon: '🎯', group: 'Tracked', anchored: true,
+    draw(ctx, w, h, from, to, p, opts) {
+      const { x, y } = at(opts, w, h);
+      const e = ease(p);
+      // The outgoing shot grows into the anchor until it fills the frame with
+      // it, and the incoming one arrives from far out, landing at 1×.
+      if (p < 0.55) zoomAbout(ctx, from, w, h, x, y, 1 + e * 5, 1);
+      zoomAbout(ctx, to, w, h, x, y, 0.25 + e * 0.75, Math.min(1, Math.max(0, (p - 0.35) / 0.3)));
+    },
+  },
+  irisAt: {
+    name: 'Iris at the spot', tier: 'creator', icon: '◎', group: 'Tracked', anchored: true,
+    draw(ctx, w, h, from, to, p, opts) {
+      const { x, y } = at(opts, w, h);
+      paint(ctx, from, w, h, 1);
+      if (!to) return;
+      const r = ease(p) * Math.hypot(Math.max(x, w - x), Math.max(y, h - y));
+      ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.clip();
+      paint(ctx, to, w, h, 1);
+      ctx.restore();
+    },
+  },
+  irisOutAt: {
+    name: 'Iris out of the spot', tier: 'creator', icon: '◉', group: 'Tracked', anchored: true,
+    draw(ctx, w, h, from, to, p, opts) {
+      const { x, y } = at(opts, w, h);
+      paint(ctx, to, w, h, 1);
+      if (!from) return;
+      const r = (1 - ease(p)) * Math.hypot(Math.max(x, w - x), Math.max(y, h - y));
+      ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.clip();
+      paint(ctx, from, w, h, 1);
+      ctx.restore();
+    },
+  },
+  spinAt: {
+    name: 'Spin round the spot', tier: 'creator', icon: '↻', group: 'Tracked', anchored: true,
+    draw(ctx, w, h, from, to, p, opts) {
+      const { x, y } = at(opts, w, h);
+      const e = ease(p);
+      const put = (src, angle, scale, alpha) => {
+        if (!src) return;
+        ctx.save(); ctx.translate(x, y); ctx.rotate(angle); ctx.scale(scale, scale); ctx.translate(-x, -y);
+        paint(ctx, src, w, h, alpha); ctx.restore();
+      };
+      put(from, e * Math.PI * 0.6, 1 + e * 0.8, 1 - e);
+      put(to, (e - 1) * Math.PI * 0.6, 0.5 + e * 0.5, e);
+    },
+  },
+  whipFrom: {
+    name: 'Whip from the spot', tier: 'creator', icon: '⟿', group: 'Tracked', anchored: true,
+    draw(ctx, w, h, from, to, p, opts) {
+      // The direction runs from the anchor to the centre: a subject on the
+      // left whips right, one at the top whips down.
+      const { x, y } = at(opts, w, h);
+      let dx = w / 2 - x, dy = h / 2 - y;
+      const len = Math.hypot(dx, dy) || 1;
+      if (len < 8) { dx = 1; dy = 0; } else { dx /= len; dy /= len; }
+      const e = ease(p);
+      const blur = Math.sin(p * Math.PI) * 18;
+      ctx.save();
+      ctx.filter = blur > 0.5 ? `blur(${blur.toFixed(1)}px)` : 'none';
+      if (from) { ctx.save(); ctx.translate(dx * w * e, dy * h * e); paint(ctx, from, w, h); ctx.restore(); }
+      if (to) { ctx.save(); ctx.translate(dx * w * (e - 1), dy * h * (e - 1)); paint(ctx, to, w, h); ctx.restore(); }
+      ctx.restore();
+    },
+  },
+  portal: {
+    name: 'Portal', tier: 'creator', icon: '🌀', group: 'Tracked', anchored: true,
+    draw(ctx, w, h, from, to, p, opts) {
+      const { x, y } = at(opts, w, h);
+      const e = ease(p);
+      // A ring opens on the spot and the next shot is seen through it, zooming
+      // in as the ring widens — the doorway is the tracked thing.
+      paint(ctx, from, w, h, 1);
+      if (!to) return;
+      const r = e * Math.hypot(w, h) * 0.7;
+      ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.clip();
+      zoomAbout(ctx, to, w, h, x, y, 1.6 - e * 0.6, 1);
+      ctx.restore();
+      if (p < 0.98) {
+        ctx.save(); ctx.strokeStyle = `rgba(255,255,255,${(0.9 * (1 - p)).toFixed(3)})`; ctx.lineWidth = Math.max(2, w * 0.008);
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+      }
+    },
+  },
+  revealFrom: {
+    name: 'Radial wipe from the spot', tier: 'creator', icon: '◔', group: 'Tracked', anchored: true,
+    draw(ctx, w, h, from, to, p, opts) {
+      const { x, y } = at(opts, w, h);
+      paint(ctx, from, w, h, 1);
+      if (!to) return;
+      const R = Math.hypot(w, h);
+      ctx.save(); ctx.beginPath(); ctx.moveTo(x, y);
+      ctx.arc(x, y, R, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * ease(p)); ctx.closePath(); ctx.clip();
+      paint(ctx, to, w, h, 1);
+      ctx.restore();
+    },
+  },
+  glitchAt: {
+    name: 'Glitch at the spot', tier: 'creator', icon: '▚', group: 'Tracked', anchored: true,
+    draw(ctx, w, h, from, to, p, opts) {
+      const { x, y } = at(opts, w, h);
+      const src = p < 0.5 ? from : to;
+      paint(ctx, src, w, h, 1);
+      // Tearing that starts at the spot and spreads outward, worst at the middle.
+      const strength = Math.sin(p * Math.PI);
+      const reach = strength * Math.max(w, h) * 0.6;
+      const bands = 14;
+      for (let i = 0; i < bands; i++) {
+        const by = y - reach + (i / bands) * reach * 2;
+        if (by < -h * 0.1 || by > h * 1.1) continue;
+        const bh = Math.max(2, (h / bands) * 0.5 * strength);
+        const off = Math.sin(i * 12.9898 + p * 40) * strength * w * 0.12 * (1 - Math.abs(by - y) / (reach || 1));
+        if (!src) continue;
+        ctx.drawImage(src, 0, Math.max(0, by), w, bh, off, Math.max(0, by), w, bh);
+      }
+      if (strength > 0.4) {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = (strength - 0.4) * 0.8;
+        ctx.drawImage(src || from || to, -strength * 8, 0, w, h); ctx.restore();
+      }
+      void x;
+    },
+  },
+  blurThrough: {
+    name: 'Blur through the spot', tier: 'creator', icon: '◌', group: 'Tracked', anchored: true,
+    draw(ctx, w, h, from, to, p, opts) {
+      const { x, y } = at(opts, w, h);
+      const e = ease(p);
+      // Enough zoom that the anchor is where the picture visibly rushes
+      // towards; a 24px blur over a 30% zoom washed the anchor out entirely.
+      const blur = Math.sin(p * Math.PI) * 14;
+      ctx.save();
+      ctx.filter = blur > 0.5 ? `blur(${blur.toFixed(1)}px)` : 'none';
+      zoomAbout(ctx, from, w, h, x, y, 1 + e * 1.4, 1 - e);
+      zoomAbout(ctx, to, w, h, x, y, 2.4 - e * 1.4, e);
+      ctx.restore();
+    },
+  },
+};
+Object.assign(TRANSITIONS, TRACKED);
+
+/*
  * The thirteen above, then the generated library.
  *
  * Merged in this order so the hand-written ones win on any id collision: they
@@ -228,7 +393,8 @@ export const TRANSITION_GROUPS_ALL = TRANSITION_LIST.reduce((acc, t) => {
   return acc;
 }, {});
 
-export function drawTransition(id, ctx, w, h, from, to, p) {
+/** `opts.anchor` is { x, y } in 0..1 frame space, for the tracked ones. */
+export function drawTransition(id, ctx, w, h, from, to, p, opts = undefined) {
   const t = TRANSITIONS[id] || TRANSITIONS.dissolve;
-  t.draw(ctx, w, h, from, to, Math.max(0, Math.min(1, p)));
+  t.draw(ctx, w, h, from, to, Math.max(0, Math.min(1, p)), opts);
 }

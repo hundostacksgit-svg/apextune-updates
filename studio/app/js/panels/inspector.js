@@ -7,7 +7,7 @@
  * should not leave two hundred entries in the history.
  */
 
-import { $, $$, esc, group, slider, selectRow, toggleRow, empty, dur, tc } from '../ui.js';
+import { $, $$, esc, group, slider, selectRow, toggleRow, empty, dur, tc, toast } from '../ui.js';
 import { S, actions, drawFrame } from '../main.js';
 import { clipById, mediaById, valueAt, setKeyframe, clearKeyframes } from '../engine/project.js';
 import { CONTROLS, LOOKS } from '../engine/filters.js';
@@ -15,6 +15,7 @@ import { pickerMarkup, wirePicker } from './transition-picker.js';
 import { BLEND_MODES } from '../engine/render.js';
 import * as licence from '../licence.js';
 import { trackSection, handleInspectorClick } from './tracking.js';
+import { SPEED_RAMPS, RAMP_BY_ID, applyRamp, clearRamp, rampCurve, describeRamp } from '../engine/speed-ramps.js';
 
 export function mount(host) {
   if (!host) return;
@@ -95,21 +96,75 @@ function transformSection(clip) {
 
 function timingSection(clip) {
   const locked = !licence.can('speed-ramp');
+  const ramped = Boolean(clip.speedKeys?.length);
   return group('Speed &amp; timing', `
-    ${slider({ key: 'speed', label: 'Speed', value: clip.speed || 1, min: 0.25, max: 4, step: 0.05,
+    ${ramped ? '' : slider({ key: 'speed', label: 'Speed', value: clip.speed || 1, min: 0.25, max: 4, step: 0.05,
       fmt: (v) => `${v.toFixed(2)}×` })}
     ${toggleRow({ key: 'reversed', label: 'Play backwards', on: clip.reversed,
       hint: clip.reversed ? 'Reversed clips play silent — no browser can play audio backwards.' : '' })}
-    ${locked ? `<div class="note pro tiny">Speed ramps with easing curves are in
-      ${esc(licence.requires('speed-ramp')?.name || 'Creator')}.
-      <button class="btn btn-sm" data-act="upgrade-speed" style="margin-top:8px">See what's included</button></div>` : ''}
     <div class="btn-row">
       <button class="btn btn-sm btn-ghost" data-act="speed-half">½×</button>
       <button class="btn btn-sm btn-ghost" data-act="speed-1">1×</button>
       <button class="btn btn-sm btn-ghost" data-act="speed-2">2×</button>
       <button class="btn btn-sm btn-ghost" data-act="freeze">Freeze frame</button>
     </div>
+    ${rampBlock(clip, locked)}
   `, false, 'data-min="intermediate"');
+}
+
+/*
+ * Speed ramps, as a row of shapes.
+ *
+ * The curve is drawn, not described: "fast in, slow through, fast out" is
+ * a picture, and sixteen of them are far easier to tell apart as pictures
+ * than as sixteen names. The one on the clip is drawn again, large, above
+ * the row, with the speeds it reaches.
+ */
+function rampBlock(clip, locked) {
+  const ramped = Boolean(clip.speedKeys?.length);
+  const chips = SPEED_RAMPS.map((r) => {
+    const on = clip.rampId === r.id;
+    const lock = r.tier !== 'free' && locked;
+    return `<button class="chip ramp-chip ${on ? 'on' : ''} ${lock ? 'locked' : ''}" data-ramp="${esc(r.id)}"
+      data-tier="${esc(r.tier)}" title="${esc(r.blurb)}">
+      <svg class="ramp-svg" viewBox="0 0 100 40" aria-hidden="true"><path d="${rampPath(r.shape)}"/></svg>
+      <span>${esc(r.name)}</span></button>`;
+  }).join('');
+  return `
+    <div class="field" style="margin-top:12px"><label>Speed ramp</label></div>
+    ${ramped ? `<div class="ramp-now">
+      <svg class="ramp-svg big" viewBox="0 0 100 40" aria-hidden="true"><path d="${rampPathFromClip(clip)}"/></svg>
+      <div class="tiny muted">${esc(describeRamp(clip))} · ${clip.dur.toFixed(2)}s
+        <button class="btn btn-sm btn-ghost" data-act="ramp-off" style="margin-left:8px">Remove ramp</button></div>
+    </div>` : ''}
+    ${locked ? `<div class="note pro tiny">Speed ramps are in ${esc(licence.requires('speed-ramp')?.name || 'Creator')} —
+      the free ones below still work.
+      <button class="btn btn-sm" data-act="upgrade-speed" style="margin-top:8px">See what's included</button></div>` : ''}
+    <div class="chips ramp-chips">${chips}</div>`;
+}
+
+/** An SVG path of a ramp shape, log-scaled so ¼× and 4× sit equally far from 1×. */
+function rampPath(shape) {
+  const y = (v) => 20 - (Math.log2(v) / 2) * 16;   // 1× at the middle, 4× at the top, ¼× at the bottom
+  const pts = [];
+  for (let i = 0; i <= 40; i++) {
+    const t = i / 40;
+    // Same smoothstep the engine uses between keys.
+    let v = shape[0].v;
+    for (let k = 0; k < shape.length - 1; k++) {
+      const a = shape[k], b = shape[k + 1];
+      if (t >= a.t && t <= b.t) { const f = (t - a.t) / ((b.t - a.t) || 1); const e = f * f * (3 - 2 * f); v = a.v + (b.v - a.v) * e; break; }
+      if (t > b.t) v = b.v;
+    }
+    pts.push(`${(t * 100).toFixed(1)},${y(v).toFixed(1)}`);
+  }
+  return `M${pts.join(' L')}`;
+}
+
+function rampPathFromClip(clip) {
+  const { points } = rampCurve(clip, 41);
+  const y = (v) => 20 - (Math.log2(Math.max(0.05, v)) / 2) * 16;
+  return `M${points.map((v, i) => `${((i / (points.length - 1)) * 100).toFixed(1)},${y(v).toFixed(1)}`).join(' L')}`;
 }
 
 function colourSection(clip) {
@@ -282,6 +337,8 @@ function wire(host) {
     const pinTrack = e.target.closest('[data-pintrack]');
     if (pinTrack && handleInspectorClick(null, pinTrack.dataset)) return;
 
+    const rampBtn = e.target.closest('[data-ramp]');
+    if (rampBtn) { useRamp(rampBtn.dataset.ramp); return; }
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (!act) return;
     if (handleInspectorClick(act, null)) return;
@@ -311,6 +368,9 @@ function runAction(act) {
     case 'speed-half': setSpeed(0.5); break;
     case 'speed-1': setSpeed(1); break;
     case 'speed-2': setSpeed(2); break;
+    case 'ramp-off':
+      actions.patchSelected((c) => clearRamp(c), 'Remove speed ramp');
+      break;
     case 'freeze':
       /*
        * The one freeze frame, not a third one.
@@ -331,10 +391,35 @@ function runAction(act) {
 
 function setSpeed(v) {
   actions.patchSelected((c) => {
+    if (c.speedKeys?.length) clearRamp(c);
     const old = c.speed || 1;
     c.dur = (c.dur * old) / v;
     c.speed = v;
   }, `Speed ${v}×`);
+}
+
+/**
+ * Put a ramp on the selected clips.
+ *
+ * The file has to cover it: a ramp that averages 2× on a clip that already
+ * uses the last of its footage would run off the end, so applyRamp shortens
+ * the clip to what the file can cover and the toast says by how much.
+ */
+export function useRamp(id) {
+  const ramp = RAMP_BY_ID[id];
+  if (!ramp) return;
+  const feature = ramp.tier === 'free' ? 'basic-filters' : 'speed-ramp';
+  licence.gate(feature, () => {
+    let shortened = 0;
+    actions.patchSelected((c) => {
+      if (c.kind === 'title' || c.kind === 'sticker') return;
+      const media = mediaById(S.project, c.mediaId);
+      const available = media?.duration ? Math.max(0.2, media.duration - c.in) : Infinity;
+      const out = applyRamp(c, id, { available });
+      if (out?.shortened) shortened++;
+    }, `Speed ramp: ${ramp.name}`);
+    if (shortened) toast(`Ramp on — ${shortened === 1 ? 'the clip was' : `${shortened} clips were`} shortened so the footage covers it`, 'ok', 4200);
+  }, { what: `The ${ramp.name} ramp` });
 }
 
 /** Apply a dotted key path to every selected clip, coalescing the undo entry. */

@@ -213,7 +213,7 @@ export class Renderer {
       if (trans) {
         const to = this._clipCanvas(project, clip, t, 0, playing, forExport);
         const from = this._clipCanvas(project, trans.other, t, 1, playing, forExport);
-        drawTransition(trans.type, ctx, w, h, from, to, trans.progress);
+        drawTransition(trans.type, ctx, w, h, from, to, trans.progress, trans.anchor ? { anchor: trans.anchor } : undefined);
       } else {
         const cv = this._clipCanvas(project, clip, t, 0, playing, forExport);
         if (cv) {
@@ -797,7 +797,33 @@ export class Renderer {
     const prev = idx > 0 ? neighbours[idx - 1] : null;
     // A transition with nothing before it becomes a fade from the background,
     // which is what people mean when they put one at the top of a timeline.
-    return { type: tin.type || 'dissolve', progress: into / tin.dur, other: prev };
+    return { type: tin.type || 'dissolve', progress: into / tin.dur, other: prev,
+      anchor: this._transitionAnchor(project, tin, clip, prev, t) };
+  }
+
+  /**
+   * Where a tracked transition is aimed, at this moment.
+   *
+   * A fixed anchor is used as given. A track is read at the source time of
+   * whichever clip it belongs to — the outgoing one by default, since the
+   * spot people track is in the shot they are leaving — and the nearest
+   * point wins. A track that has been deleted means no anchor, so the
+   * transition quietly falls back to the centre rather than the cut breaking.
+   */
+  _transitionAnchor(project, tin, clip, prev, t) {
+    if (tin.anchor && Number.isFinite(tin.anchor.x)) return tin.anchor;
+    if (!tin.trackId) return null;
+    const rec = (project.motionTracks || []).find((r) => r.id === tin.trackId);
+    if (!rec?.points?.length) return null;
+    const owner = tin.anchorFrom === 'in' ? clip : (prev || clip);
+    // A track is measured in its clip's source seconds. Outside the
+    // transition's own clip the hold time is the cut, so the anchor stays
+    // where the subject was when the shot ended.
+    const when = owner === prev ? Math.min(t, prev.start + prev.dur - 0.001) : t;
+    const src = sourceTime(owner, when);
+    let best = rec.points[0], d = Math.abs(best.t - src);
+    for (const pt of rec.points) { const dd = Math.abs(pt.t - src); if (dd < d) { d = dd; best = pt; } }
+    return { x: best.x, y: best.y };
   }
 
   /* ---------------- captions ---------------- */

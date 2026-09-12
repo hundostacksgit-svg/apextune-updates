@@ -48,6 +48,8 @@ export const DESCRIPTIONS = {
       'Copy attributes off one clip and paste them onto the rest',
       'Multicam: angles lined up by sound, cut live with 1–9',
       'Freeze frame, match frame, insert and overwrite, J/K/L shuttle',
+      'Sixteen speed ramps, drawn as curves, that fit the footage',
+      'Tracked transitions: zoom, iris, spin, portal aimed at what you tracked',
       'Multitrack timeline with ripple, roll and slip',
       'Inspector: transform, crop, opacity, blend',
       'A node graph, colour sliders and the whole look library',
