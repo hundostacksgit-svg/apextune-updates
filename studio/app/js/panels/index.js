@@ -23,6 +23,7 @@ import * as transitionsPanel from './transitions.js';
 import * as overlaysPanel from './overlays.js';
 import * as stickersPanel from './stickers.js';
 import * as soundPanel from './sound.js';
+import * as shapesPanel from './shapes.js';
 import * as inspector from './inspector.js';
 
 export const PANELS = {
@@ -38,6 +39,7 @@ export const PANELS = {
   stickers: { title: 'Stickers', mod: stickersPanel },
   audio: { title: 'Audio', mod: audioPanel },
   sound: { title: 'Sound', mod: soundPanel },
+  shapes: { title: 'Shapes', mod: shapesPanel },
   captions: { title: 'Captions', mod: captionsPanel },
   settings: { title: 'Settings', mod: settingsPanel },
   help: { title: 'Learn', mod: helpPanel },

@@ -126,6 +126,15 @@ export const ENTITLEMENTS = {
   'beat-sync':       'creator',
   'silence-cut':     'creator',
   'brand-kit':       'creator',
+  /* Motion design — the After Effects half. Expressions, shape layers, text
+     animators, particles and anything that listens to the music. Paid,
+     because it is the reason to pay; the free editor stays a complete
+     editor without it. */
+  'expressions':     'creator',
+  'shape-layers':    'creator',
+  'text-animators':  'creator',
+  'particles':       'creator',
+  'audio-reactive':  'creator',
 
   /* studio */
   'ai-unlimited':    'studio',

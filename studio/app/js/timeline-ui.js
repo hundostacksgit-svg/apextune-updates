@@ -161,6 +161,8 @@ export class TimelineUI {
       : clip.kind === 'sticker' ? 'sticker'
       : clip.kind === 'adjust' ? 'adjust'
       : clip.kind === 'compound' ? 'compound'
+      : clip.kind === 'null' ? 'null'
+      : clip.kind === 'shape' ? 'shape'
       : track.kind === 'audio' ? 'audio'
       : media?.kind === 'image' ? 'image' : '';
 
@@ -729,6 +731,8 @@ export class TimelineUI {
 /** What to call a clip on the timeline. A sticker is not a title. */
 function clipLabel(clip, media) {
   if (clip.kind === 'compound') return clip.label || 'Compound';
+  if (clip.kind === 'null') return clip.label || 'Null';
+  if (clip.kind === 'shape') return clip.label || clip.shape?.name || 'Shape';
   if (clip.kind === 'sticker') {
     const st = clip.sticker;
     if (!st) return 'Sticker';

@@ -562,6 +562,34 @@ html[data-level="expert"] .tb-upgrade .lbl{background:var(--grad);-webkit-backgr
   border-color:color-mix(in srgb,var(--warn) 55%,transparent);
 }
 .clip.adjust .cname{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7)}
+/* A null: no picture, only a transform, so it is drawn as an outline. */
+.clip.null{background:transparent;border:1px dashed color-mix(in srgb,var(--text-3) 70%,transparent)}
+.clip.null .cname{color:var(--text-2)}
+.clip.null .cname::before{content:'⌖ '}
+/* A shape layer: vector, so a clean flat colour rather than a filmstrip. */
+.clip.shape{background:linear-gradient(120deg,#1b8f6a,#37d39b)}
+.clip.shape .cname::before{content:'◇ '}
+/* The expression button on a keyframe lane. */
+.kf-expr{width:18px;height:18px;flex:0 0 auto;border:0;border-radius:4px;background:transparent;color:var(--text-3);
+  font:italic 600 12px/1 Georgia,serif;cursor:pointer;opacity:.55}
+.kf-head:hover .kf-expr,.kf-expr.on{opacity:1}
+.kf-expr:hover{background:var(--surface-3);color:var(--text)}
+.kf-expr.on{color:var(--warn);background:color-mix(in srgb,var(--warn) 18%,transparent)}
+.kf-head.xp .kf-name{font-style:italic}
+.xp-row .val.mono{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px}
+/* The Shapes panel: pieces with a drawn thumbnail, and rows that can be keyed or driven from the row. */
+.shape-chip{display:inline-flex;flex-direction:column;align-items:center;gap:4px;padding:6px 6px 5px;min-width:78px}
+.shape-chip .shape-thumb{display:block;width:64px;height:36px;border-radius:4px;background:#14161c}
+.shape-chip span{font-size:10.5px;line-height:1.2;text-align:center}
+.sh-row{display:flex;align-items:flex-end;gap:6px}
+.sh-row .field{flex:1;min-width:0}
+.sh-keys{display:flex;gap:2px;flex:0 0 auto;padding-bottom:9px}
+.sh-keys .kf-mini,.sh-keys .kf-expr{width:20px;height:20px;opacity:.7}
+.sh-keys .kf-mini.on{color:var(--blue-2);background:color-mix(in srgb,var(--blue) 18%,transparent);opacity:1}
+.sh-h4{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin:14px 0 6px}
+.sh-colours{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.sh-colours label{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2)}
+.sh-colours input[type=color]{width:30px;height:24px;padding:0;border:1px solid var(--line);border-radius:5px;background:none}
 
 /* ---------- the channel strip ---------- */
 .st-h{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);

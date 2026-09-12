@@ -15,6 +15,9 @@ import { pickerMarkup, wirePicker } from './transition-picker.js';
 import { BLEND_MODES } from '../engine/render.js';
 import * as licence from '../licence.js';
 import { trackSection, handleInspectorClick } from './tracking.js';
+import { propsFor } from '../keyframes-ui.js';
+import { openExpressionEditor, expressionsMarkup } from '../expr-ui.js';
+import { setExpression } from '../engine/project.js';
 import { SPEED_RAMPS, RAMP_BY_ID, applyRamp, clearRamp, rampCurve, describeRamp } from '../engine/speed-ramps.js';
 
 export function mount(host) {
@@ -41,19 +44,21 @@ export function mount(host) {
 
   host.innerHTML = `
     <div class="panel-h">
-      <h2>${esc(media?.name || clip.text?.content || 'Title')}</h2>
+      <h2>${esc(media?.name || clip.text?.content || clip.label || (clip.kind === 'null' ? 'Null' : 'Title'))}</h2>
     </div>
     <p class="panel-sub">
       ${dur(clip.dur)} · starts ${tc(clip.start, S.project.settings.fps)}
       ${media ? ` · ${media.width || '?'}×${media.height || '?'}` : ''}
     </p>
-    ${clip.kind === 'title' ? '' : transformSection(clip)}
-    ${clip.kind === 'title' ? '' : timingSection(clip)}
-    ${clip.kind === 'title' ? '' : colourSection(clip)}
-    ${audioSection(clip, media)}
-    ${transitionSection(clip)}
+    ${transformSection(clip)}
+    ${layerSection(clip)}
+    ${['title', 'null', 'shape'].includes(clip.kind) ? '' : timingSection(clip)}
+    ${['title', 'null', 'shape'].includes(clip.kind) ? '' : colourSection(clip)}
+    ${['null', 'shape'].includes(clip.kind) ? '' : audioSection(clip, media)}
+    ${clip.kind === 'null' ? '' : transitionSection(clip)}
     ${trackSection(clip)}
-    ${keyframeSection(clip, local)}`;
+    ${keyframeSection(clip, local)}
+    ${expressionsSection(clip)}`;
 
   wire(host);
   wirePicker(host, 'ins-tp');
@@ -92,6 +97,73 @@ function transformSection(clip) {
     <div class="btn-row"><button class="btn btn-sm btn-ghost" data-act="reset-transform">Reset</button>
       <button class="btn btn-sm btn-ghost" data-act="fill">Fill frame</button></div>
   `);
+}
+
+/*
+ * Parenting and the anchor point: the two things that turn a stack of clips
+ * into a rig. A parent is any other layer with a picture or a null without
+ * one; a child moves, turns and scales with it. The anchor is the point on
+ * the layer that scale and rotation happen about — off, they happen about
+ * the centre of the frame, as every project made before anchors did.
+ */
+function layerSection(clip) {
+  const t = clip.transform || {};
+  const anchor = t.anchor || null;
+  const below = new Set(descendants(clip.id));
+  const candidates = S.project.clips.filter((c) => c.id !== clip.id && !below.has(c.id)
+    && S.project.tracks.find((tr) => tr.id === c.trackId)?.kind === 'video' && c.kind !== 'adjust');
+  const parent = clip.parentId ? clipById(S.project, clip.parentId) : null;
+  return group('Layer', `
+    ${selectRow({ key: 'parentId', label: 'Parent', value: clip.parentId || '',
+      options: [['', 'None'], ...candidates.map((c) => [c.id, nameOf(c)])] })}
+    <p class="tiny muted" style="margin:-4px 0 10px">${parent
+      ? `Moves, turns and scales with ${esc(nameOf(parent))}.`
+      : 'A child follows its parent\'s move, turn and scale. Add a null object for a parent with no picture.'}</p>
+    ${toggleRow({ key: 'anchorOn', label: 'Anchor point', on: Boolean(anchor),
+      hint: anchor ? 'Scale and rotation happen about this point on the layer.' : 'Off — about the centre of the frame.' })}
+    ${anchor ? `
+      ${slider({ key: 'transform.anchor.x', label: 'Anchor X', value: anchor.x || 0, min: -0.5, max: 0.5, step: 0.01,
+        fmt: (v) => `${Math.round(v * 100)}%` })}
+      ${slider({ key: 'transform.anchor.y', label: 'Anchor Y', value: anchor.y || 0, min: -0.5, max: 0.5, step: 0.01,
+        fmt: (v) => `${Math.round(v * 100)}%` })}
+      <div class="btn-row">
+        <button class="btn btn-sm btn-ghost" data-anchor="-0.5,-0.5">Top left</button>
+        <button class="btn btn-sm btn-ghost" data-anchor="0,0">Centre</button>
+        <button class="btn btn-sm btn-ghost" data-anchor="0.5,0.5">Bottom right</button>
+        <button class="btn btn-sm btn-ghost" data-anchor="0,0.5">Bottom</button>
+      </div>` : ''}
+  `, false, 'data-min="intermediate"');
+}
+
+/* Every clip that has `id` somewhere above it — a parent cannot be its own descendant. */
+function descendants(id) {
+  const out = [];
+  const walk = (pid) => {
+    for (const c of S.project.clips) {
+      if (c.parentId === pid && !out.includes(c.id)) { out.push(c.id); walk(c.id); }
+    }
+  };
+  walk(id);
+  return out;
+}
+
+function nameOf(c) {
+  if (c.label) return c.label;
+  if (c.kind === 'title') return c.text?.content?.slice(0, 24) || 'Title';
+  if (c.kind === 'sticker') return c.sticker?.kind === 'emoji' ? c.sticker.value : (c.sticker?.value || 'Shape');
+  if (c.kind === 'null') return 'Null';
+  if (c.kind === 'shape') return c.shape?.name || 'Shape';
+  return mediaById(S.project, c.mediaId)?.name || c.kind;
+}
+
+/* Expressions: every formula on this clip, and a way to put one on any property. */
+function expressionsSection(clip) {
+  const locked = !licence.can('expressions');
+  return group('Expressions', locked
+    ? `<div class="note pro tiny">Expressions — wiggle, loop, react to the music — are in
+        ${esc(licence.requires('expressions')?.name || 'Creator')}.
+        <button class="btn btn-sm" data-act="upgrade-xp" style="margin-top:8px">See what's included</button></div>`
+    : expressionsMarkup(clip, propsFor(clip)), false, 'data-min="intermediate"');
 }
 
 function timingSection(clip) {
@@ -285,6 +357,23 @@ function wire(host) {
 
   // Mouse-up on a slider, or a keyboard arrow, ends the gesture.
   host.addEventListener('change', (e) => {
+    if (e.target.dataset.k === 'parentId') {
+      const value = e.target.value || null;
+      actions.patchSelected((c) => { c.parentId = value; }, value ? 'Set parent' : 'Remove parent');
+      return;
+    }
+    if (e.target.dataset.k === 'anchorOn') {
+      const on = e.target.checked;
+      actions.patchSelected((c) => { c.transform.anchor = on ? { x: 0, y: 0 } : null; }, on ? 'Anchor point on' : 'Anchor point off');
+      return;
+    }
+    if (e.target.id === 'xp-add' && e.target.value) {
+      const prop = e.target.value;
+      const clip = clipById(S.project, [...S.sel][0]);
+      const spec = clip && propsFor(clip).find((p) => p.prop === prop);
+      if (clip) openExpressionEditor(clip, prop, { label: spec?.label || prop });
+      return;
+    }
     if (e.target.dataset.k && e.target.type === 'range') {
       applyKey(e.target.dataset.k, Number(e.target.value));
     }
@@ -295,6 +384,24 @@ function wire(host) {
   });
 
   host.addEventListener('click', (e) => {
+    const xe = e.target.closest('[data-xp-edit]');
+    if (xe) {
+      const clip = clipById(S.project, [...S.sel][0]);
+      const spec = clip && propsFor(clip).find((p) => p.prop === xe.dataset.xpEdit);
+      if (clip) openExpressionEditor(clip, xe.dataset.xpEdit, { label: spec?.label || xe.dataset.xpEdit });
+      return;
+    }
+    const xc = e.target.closest('[data-xp-clear]');
+    if (xc) {
+      actions.patchSelected((c) => setExpression(c, xc.dataset.xpClear, ''), 'Remove expression');
+      return;
+    }
+    const an = e.target.closest('[data-anchor]');
+    if (an) {
+      const [ax, ay] = an.dataset.anchor.split(',').map(Number);
+      actions.patchSelected((c) => { c.transform.anchor = { x: ax, y: ay }; }, 'Anchor point');
+      return;
+    }
     const look = e.target.closest('[data-look]');
     if (look) {
       const feature = look.dataset.tier === 'free' ? 'basic-filters' : 'all-filters';
@@ -385,6 +492,7 @@ function runAction(act) {
       break;
     case 'upgrade-speed': licence.upgradePrompt('speed-ramp', 'Speed ramping'); break;
     case 'upgrade-kf': licence.upgradePrompt('keyframes', 'Keyframes'); break;
+    case 'upgrade-xp': licence.upgradePrompt('expressions', 'Expressions'); break;
     default: break;
   }
 }

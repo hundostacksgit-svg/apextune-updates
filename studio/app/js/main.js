@@ -588,6 +588,45 @@ export const actions = {
   },
 
   /**
+   * A null object: a layer with no picture, only a transform, for other
+   * layers to follow. Three stickers parented to one null are moved, turned
+   * and scaled as one thing by animating the null — the compositor's way of
+   * building a rig without grouping anything.
+   */
+  addNull() {
+    let track = S.project.tracks.find((t) => t.kind === 'video' && t.name === 'Controls');
+    if (!track) { track = actions.addLayer('video'); track.name = 'Controls'; }
+    const n = S.project.clips.filter((c) => c.kind === 'null').length + 1;
+    const clip = addClip(S.project, {
+      mediaId: null, trackId: track.id, start: 0, dur: Math.max(1, duration(S.project)), in: 0, kind: 'null',
+    });
+    clip.label = `Null ${n}`;
+    S.sel = new Set([clip.id]);
+    actions.commit('Add a null object');
+    toast(`${clip.label} added — pick it as the Parent of any layer in the Inspector`, 'ok', 4200);
+    return clip;
+  },
+
+  /** Make `parentId` the parent of the given clips (null to unparent). Refuses a cycle. */
+  setParent(ids, parentId) {
+    const parent = parentId ? clipById(S.project, parentId) : null;
+    if (parentId && !parent) return;
+    let changed = 0;
+    for (const id of ids) {
+      const clip = clipById(S.project, id);
+      if (!clip || clip.id === parentId) continue;
+      // Walk up from the parent; if it reaches the child, the link would loop.
+      let cur = parent, loops = false;
+      for (let i = 0; cur && i < 16; i++) { if (cur.id === clip.id) { loops = true; break; } cur = cur.parentId ? clipById(S.project, cur.parentId) : null; }
+      if (loops) continue;
+      clip.parentId = parentId || null;
+      changed++;
+    }
+    if (changed) actions.commit(parentId ? `Parent to ${parent.label || 'layer'}` : 'Unparent');
+    return changed;
+  },
+
+  /**
    * Find the cuts inside a clip and split it at them.
    *
    * For footage that was already edited once: an export, a download, anything
@@ -1951,6 +1990,7 @@ async function importProjectJson(file) {
     duplicate: () => actions.duplicateSelected(),
     addLayer: (kind) => actions.addLayer(kind),
     addAdjustment: () => actions.addAdjustment(),
+    addNull: () => actions.addNull(),
     group: () => actions.groupSelected(),
     ungroup: () => actions.ungroupSelected(),
     canUngroup: () => [...S.sel].some((id) => clipById(S.project, id)?.kind === 'compound'),

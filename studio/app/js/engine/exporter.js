@@ -115,6 +115,7 @@ export function hasAudio(project) {
  */
 export function exportProject(project, {
   preset, quality = 'medium', audioEngine, onProgress, onFirstFrame,
+  beats = null,
 } = {}) {
   const total = projectDuration(project);
   if (total <= 0.05) return Promise.reject(new Error('There is nothing on the timeline to export yet.'));
@@ -130,6 +131,8 @@ export function exportProject(project, {
   canvas.width = preset.w;
   canvas.height = preset.h;
   const renderer = new Renderer(canvas);
+  // The beat grid the preview used, so a sticker that pops on the beat pops on the beat in the file too.
+  renderer.beats = beats || null;
   renderer.resize(preset.w, preset.h);
 
   const withAudio = hasAudio(project) && audioEngine;

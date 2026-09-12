@@ -21,9 +21,11 @@
 import { $, el, drag, clamp } from './ui.js';
 import { CONTROLS } from './engine/filters.js';
 import { EFFECTS } from './engine/effects.js';
+import { SHAPE_PROPS } from './engine/shapes.js';
 import {
   readPath, setKeyframe, moveKeyframe, removeKeyframe, clearKeyframes, valueAt, EASE_NAMES,
 } from './engine/project.js';
+import { openExpressionEditor } from './expr-ui.js';
 
 export const LANE_H = 22;          // one property row
 export const GRAPH_H = 150;        // the curve editor, when it is open
@@ -96,7 +98,12 @@ export function propsFor(clip) {
   if (!isAudio) for (const p of TRANSFORM) out.push({ ...p, group: 'Transform' });
   out.push({ ...VOLUME, group: isAudio ? 'Audio' : 'Transform' });
 
-  if (!isAudio) {
+  if (clip.kind === 'shape') for (const p of SHAPE_PROPS) out.push({ ...p, group: 'Shape' });
+
+  // The grade never reaches a title, a sticker, a shape or a null, so a
+  // colour lane on one would animate nothing.
+  const graded = !isAudio && !['title', 'sticker', 'shape', 'null'].includes(clip.kind);
+  if (graded) {
     for (const c of CONTROLS) {
       if (!GRADE_KEYS.includes(c.key)) continue;
       out.push({
@@ -188,7 +195,7 @@ export function headRows(clip, { time }) {
     const local = clamp(time - clip.start, 0, clip.dur);
     const onKey = keys.some((k) => Math.abs(k.t - local) < 0.02);
     const row = el('div', {
-      class: `kf-head ${keys.length ? 'live' : ''}`, style: `height:${LANE_H}px`,
+      class: `kf-head ${keys.length ? 'live' : ''} ${clip.expressions?.[spec.prop] ? 'xp' : ''}`, style: `height:${LANE_H}px`,
       'data-kf-prop': spec.prop, 'data-kf-clip': clip.id,
     });
     if (spec.group !== group) { row.classList.add('grp'); group = spec.group; }
@@ -204,6 +211,10 @@ export function headRows(clip, { time }) {
       el('span', { class: 'kf-dot', style: `background:${palette.get(spec.prop)}` }),
       el('span', { class: 'kf-name', title: spec.label }, spec.label),
       el('span', { class: 'kf-val' }, spec.fmt(valueNow(clip, spec, time))),
+      el('button', {
+        class: `kf-expr ${clip.expressions?.[spec.prop] ? 'on' : ''}`, 'data-kf-expr': spec.prop,
+        title: clip.expressions?.[spec.prop] ? `Expression: ${clip.expressions[spec.prop]}` : 'Drive this with an expression — a wiggle, a loop, the music',
+      }, 'ƒ'),
       el('span', { class: 'kf-nav' },
         el('button', { 'data-kf-prev': spec.prop, title: 'Previous key' }, '◀'),
         el('button', {
@@ -601,6 +612,11 @@ export function handleHeadClick(e, ctx) {
   if (!spec) return false;
   const local = clamp(ctx.time() - clip.start, 0, clip.dur);
   const keys = clip.keyframes?.[spec.prop] || [];
+
+  if (e.target.closest('[data-kf-expr]')) {
+    openExpressionEditor(clip, spec.prop, { label: spec.label });
+    return true;
+  }
 
   const watch = e.target.closest('[data-kf-watch]');
   if (watch) {

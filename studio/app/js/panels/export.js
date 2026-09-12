@@ -221,6 +221,7 @@ async function start(preset, quality, codecId, caps, { project = S.project, file
     if (proved) {
       running = exportWithCodecs(project, {
         preset, quality, codec: picked.codec,
+        beats: S.beats,
         audioCodec: hasAudio(project) && caps.canMuxAudio ? 'mp4a.40.2' : null,
         onFirstFrame: (canvas) => {
           try { preview.srcObject = canvas.captureStream(12); preview.play().catch(() => {}); }
@@ -238,6 +239,7 @@ async function start(preset, quality, codecId, caps, { project = S.project, file
   running = exportProject(project, {
     preset,
     quality,
+    beats: S.beats,
     audioEngine: engine.audio,
     onFirstFrame: (canvas) => {
       // Show the frames going by. It is the difference between a progress bar

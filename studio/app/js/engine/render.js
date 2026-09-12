@@ -11,7 +11,9 @@
  * those finished clip canvases and combine them.
  */
 
-import { activeAt, clipsOn, valueAt, animatedColor, mediaById, sourceTime, speedAt } from './project.js';
+import { activeAt, audibleAt, clipsOn, valueAt, animatedColor, mediaById, sourceTime, speedAt } from './project.js';
+import { setFrame } from './frame-context.js';
+import { analyse, analysisOf, levelAt, spectrumAt, waveAround } from './audio-analysis.js';
 import { hasMask, combinedMatte, qualifierIsOn, maskMatte } from './mask.js';
 import {
   resolved, cssFilter, applyPasses, isIdentity,
@@ -21,6 +23,7 @@ import { drawTransition } from './transitions.js';
 import { drawText, CAPTION_STYLES } from './titles.js';
 import { applyEffects } from './effects.js';
 import { drawSticker } from './stickers.js';
+import { drawShape } from './shapes.js';
 import { elementFor } from './media.js';
 import * as clock from './media-clock.js';
 import { angleView } from './multicam.js';
@@ -113,6 +116,8 @@ export class Renderer {
   draw(project, t, opts = {}) {
     const { forExport = false } = opts;
     const w = this.canvas.width, h = this.canvas.height;
+    // What expressions and audio-reactive effects may ask about this frame.
+    setFrame(this._frameContext(project, t));
 
     /*
      * Looking at the matte instead of the picture.
@@ -221,7 +226,21 @@ export class Renderer {
           const op = valueAt(clip, 'transform.opacity', local, clip.transform.opacity ?? 1);
           ctx.globalAlpha = Math.max(0, Math.min(1, op));
           ctx.globalCompositeOperation = blendOf(clip.transform.blend);
-          ctx.drawImage(cv, 0, 0);
+          if (clip.parentId) {
+            /*
+             * Parenting. The child's own transform is already in its canvas;
+             * the parent's is applied on top as the canvas goes onto the
+             * frame, so the child moves, turns and scales with its parent
+             * exactly as a compositor's pick-whip makes it. A parent may be
+             * a null — a layer with no picture, only a transform.
+             */
+            ctx.save();
+            this._applyParents(ctx, project, clip, t, w, h);
+            ctx.drawImage(cv, 0, 0);
+            ctx.restore();
+          } else {
+            ctx.drawImage(cv, 0, 0);
+          }
           ctx.globalAlpha = 1;
           ctx.globalCompositeOperation = 'source-over';
         }
@@ -465,7 +484,27 @@ export class Renderer {
 
     if (clip.kind === 'title') {
       const local = t - clip.start;
+      ctx.save();
+      this._layerTransform(ctx, clip, Math.max(0, local), w, h, (clip.text?.x ?? 0.5) * w, (clip.text?.y ?? 0.5) * h);
       drawText(ctx, w, h, clip.text, Math.max(0, local), clip.dur);
+      ctx.restore();
+      if (!skipEffects && clip.effects?.length) this._runEffects(ctx, w, h, clip, t, project);
+      return cv;
+    }
+
+    /* A null has no picture. It exists to be a parent: a transform other
+       layers follow. Nothing to draw, and nothing is the right answer. */
+    if (clip.kind === 'null') return null;
+
+    /* A shape layer: vector geometry, every number of it animatable. The
+       reader resolves 'shape.<prop>' through keyframes and expressions. */
+    if (clip.kind === 'shape') {
+      const local = Math.max(0, t - clip.start);
+      const read = (prop, fb) => valueAt(clip, `shape.${prop}`, local, fb);
+      ctx.save();
+      this._layerTransform(ctx, clip, local, w, h, read('x', clip.shape?.x ?? 0.5) * w, read('y', clip.shape?.y ?? 0.5) * h);
+      drawShape(ctx, w, h, clip.shape, local, clip.dur, read, this._beatPhase(t));
+      ctx.restore();
       if (!skipEffects && clip.effects?.length) this._runEffects(ctx, w, h, clip, t, project);
       return cv;
     }
@@ -523,7 +562,10 @@ export class Renderer {
     if (clip.kind === 'sticker') {
       const local = t - clip.start;
       const subject = clip.sticker?.react?.trackId ? this._subjectAt(project, clip.sticker.react.trackId, t) : null;
+      ctx.save();
+      this._layerTransform(ctx, clip, Math.max(0, local), w, h, (clip.sticker?.x ?? 0.5) * w, (clip.sticker?.y ?? 0.5) * h);
       drawSticker(ctx, w, h, clip.sticker, Math.max(0, local), clip.dur, this._beatPhase(t), subject);
+      ctx.restore();
       if (!skipEffects && clip.effects?.length) this._runEffects(ctx, w, h, clip, t, project);
       return cv;
     }
@@ -612,11 +654,35 @@ export class Renderer {
 
     /* ---- fit the cropped source into the frame, then transform ---- */
     const cover = Math.max(w / cw, h / ch);          // fill the frame, no bars
-    const scale = cover * valueAt(clip, 'transform.scale', local, clip.transform.scale ?? 1);
+    const userScale = valueAt(clip, 'transform.scale', local, clip.transform.scale ?? 1);
+    const scale = cover * userScale;
     const dw = cw * scale, dh = ch * scale;
-    const dx = (w - dw) / 2 + valueAt(clip, 'transform.x', local, clip.transform.x || 0) * w;
-    const dy = (h - dh) / 2 + valueAt(clip, 'transform.y', local, clip.transform.y || 0) * h;
+    const offX = valueAt(clip, 'transform.x', local, clip.transform.x || 0) * w;
+    const offY = valueAt(clip, 'transform.y', local, clip.transform.y || 0) * h;
+    let dx = (w - dw) / 2 + offX;
+    let dy = (h - dh) / 2 + offY;
     const rotate = valueAt(clip, 'transform.rotate', local, clip.transform.rotate || 0);
+    /*
+     * The anchor point.
+     *
+     * Without one — every project made before anchors existed — scale and
+     * rotation happen about the centre of the frame, as they always did.
+     * With one, both happen about a point on the layer: the layer's centre
+     * plus the anchor, in fractions of the layer's own drawn size, which is
+     * what a compositor means by an anchor point. A logo scaled about its
+     * top-left corner grows down and to the right; the same logo rotated
+     * about a corner swings from it.
+     */
+    const anchor = clip.transform.anchor;
+    let pvx = w / 2, pvy = h / 2;
+    if (anchor) {
+      const dw0 = cw * cover, dh0 = ch * cover;
+      const ax = anchor.x || 0, ay = anchor.y || 0;
+      pvx = (w - dw0) / 2 + offX + dw0 / 2 + ax * dw0;
+      pvy = (h - dh0) / 2 + offY + dh0 / 2 + ay * dh0;
+      dx = pvx - (dw0 / 2 + ax * dw0) * userScale;
+      dy = pvy - (dh0 / 2 + ay * dh0) * userScale;
+    }
 
     // Keyframed exposure, contrast, saturation and the rest resolve here, so a
     // grade can ramp across a clip the same way a position can.
@@ -641,9 +707,9 @@ export class Renderer {
       // Pass one: the ungraded picture, which is what shows outside the window.
       ctx.save();
       if (rotate) {
-        ctx.translate(w / 2, h / 2);
+        ctx.translate(pvx, pvy);
         ctx.rotate((rotate * Math.PI) / 180);
-        ctx.translate(-w / 2, -h / 2);
+        ctx.translate(-pvx, -pvy);
       }
       try { ctx.drawImage(node, cx, cy, cw, ch, dx, dy, dw, dh); }
       catch { ctx.restore(); return null; }
@@ -660,17 +726,17 @@ export class Renderer {
     if (windowed) { /* the graded pass is built off screen and masked back on */ }
     ctx.filter = wheels ? (css === 'none' ? wheels : `${css} ${wheels}`) : css;
     if (rotate) {
-      ctx.translate(w / 2, h / 2);
+      ctx.translate(pvx, pvy);
       ctx.rotate((rotate * Math.PI) / 180);
-      ctx.translate(-w / 2, -h / 2);
+      ctx.translate(-pvx, -pvy);
     }
     if (windowed) {
       target.save();
       target.filter = ctx.filter;
       if (rotate) {
-        target.translate(w / 2, h / 2);
+        target.translate(pvx, pvy);
         target.rotate((rotate * Math.PI) / 180);
-        target.translate(-w / 2, -h / 2);
+        target.translate(-pvx, -pvy);
       }
       try { target.drawImage(node, cx, cy, cw, ch, dx, dy, dw, dh); }
       catch { target.restore(); ctx.restore(); return null; }
@@ -723,6 +789,7 @@ export class Renderer {
         time: t,
         fps: project.settings.fps || this.fps,
         beatPhase: this._beatPhase(t),
+        ...this._reactive(project, t),
         // Motion blur asks for the clip at other moments in the exposure. It
         // renders into a canvas of its own with effects off, so this cannot
         // recurse.
@@ -775,8 +842,160 @@ export class Renderer {
       time: t,
       fps: project.settings.fps || this.fps,
       beatPhase: this._beatPhase(t),
+      ...this._reactive(project, t),
       redrawClip: null,
     });
+  }
+
+  /* What an audio-reactive or tracked effect may ask for, at timeline time t. */
+  _reactive(project, t) {
+    return {
+      beats: this.beats,
+      audio: (band, smooth) => this._audioAt(project, t, band, smooth),
+      spectrum: (out) => this._spectrumAt(project, t, out),
+      wave: (seconds, n, out) => this._waveAt(project, t, seconds, n, out),
+      subject: (trackId) => this._subjectAt(project, trackId, t),
+    };
+  }
+
+  /* ---------------- what the frame knows ---------------- */
+
+  /**
+   * The context expressions read through frame-context.js: the project, the
+   * beat grid, the music's level and a way to find a layer by name.
+   */
+  _frameContext(project, t) {
+    return {
+      project, t,
+      fps: project.settings.fps || this.fps,
+      beats: this.beats,
+      beatPhase: (tt) => this._beatPhase(tt),
+      audioAt: (tt, band, smooth) => this._audioAt(project, tt, band, smooth),
+      indexOf: (clip) => Math.max(0, clipsOn(project, clip.trackId).findIndex((c) => c.id === clip.id)),
+      nameOf: (clip) => clip.label || clip.text?.content || mediaById(project, clip.mediaId)?.name || '',
+    };
+  }
+
+  /*
+   * The clips heard at t, each with its analysis and the source time it is
+   * at. A file that has not been analysed yet is sent for analysis and reads
+   * as silence until it is done; the analysis then asks for a redraw, so the
+   * picture catches up on its own.
+   */
+  _audioSources(project, t) {
+    const out = [];
+    for (const clip of audibleAt(project, t)) {
+      const track = project.tracks.find((tr) => tr.id === clip.trackId);
+      if (!track || track.muted) continue;
+      const media = mediaById(project, clip.mediaId);
+      if (!media || media.missing || !(media.kind === 'audio' || media.hasAudio)) continue;
+      const local = Math.max(0, Math.min(clip.dur, t - clip.start));
+      const volume = valueAt(clip, 'volume', local, clip.volume ?? 1);
+      if (volume <= 0) continue;
+      let analysis = analysisOf(media);
+      if (!analysis) {
+        this._audioAsked ||= new Set();
+        if (!this._audioAsked.has(media.id)) {
+          this._audioAsked.add(media.id);
+          analyse(media).then((a) => { if (a) this.onNeedsRedraw?.(); }).catch(() => {});
+        }
+        continue;
+      }
+      out.push({ analysis, at: sourceTime(clip, t), volume: Math.min(1, volume) });
+    }
+    return out;
+  }
+
+  /** The level of the music at t, 0..1, for a band, smoothed over `smooth` seconds. */
+  _audioAt(project, t, band = 'all', smooth = 0) {
+    let level = 0;
+    for (const src of this._audioSources(project, t)) level += levelAt(src.analysis, src.at, band, smooth) * src.volume;
+    return Math.min(1, level);
+  }
+
+  /** The 32-band spectrum at t, the loudest source winning per band. */
+  _spectrumAt(project, t, out) {
+    const acc = out || (this._spec ||= new Float32Array(32));
+    acc.fill(0);
+    for (const src of this._audioSources(project, t)) {
+      const s = spectrumAt(src.analysis, src.at, this._specTmp ||= new Float32Array(32));
+      for (let i = 0; i < acc.length; i++) acc[i] = Math.max(acc[i], s[i] * src.volume);
+    }
+    return acc;
+  }
+
+  /** A stretch of the waveform around t. */
+  _waveAt(project, t, seconds = 1, n = 128, out) {
+    const acc = out || (this._waveBuf ||= new Float32Array(n));
+    if (acc.length !== n) return this._waveAt(project, t, seconds, n, new Float32Array(n));
+    acc.fill(0);
+    for (const src of this._audioSources(project, t)) {
+      const s = waveAround(src.analysis, src.at, seconds, n, this._waveTmp ||= new Float32Array(n));
+      if (s.length !== acc.length) continue;
+      for (let i = 0; i < n; i++) acc[i] = Math.max(acc[i], s[i] * src.volume);
+    }
+    return acc;
+  }
+
+  /* ---------------- parenting and anchors ---------------- */
+
+  /** The ancestors of a clip, furthest first. Cycles and runaway chains stop. */
+  _parentChain(project, clip) {
+    const chain = [];
+    const seen = new Set([clip.id]);
+    let cur = clip;
+    while (cur.parentId && chain.length < 8) {
+      const parent = project.clips.find((c) => c.id === cur.parentId);
+      if (!parent || seen.has(parent.id)) break;
+      chain.unshift(parent);
+      seen.add(parent.id);
+      cur = parent;
+    }
+    return chain;
+  }
+
+  /*
+   * Apply every ancestor's transform, outermost first, so a child of a child
+   * ends up where both parents put it. Each parent's move, turn and scale
+   * happen about that parent's own centre — where the layer's anchor sits
+   * unless it has been moved — which is the compositor rule that makes a
+   * child orbit a spinning parent instead of the frame.
+   */
+  _applyParents(ctx, project, clip, t, w, h) {
+    for (const parent of this._parentChain(project, clip)) {
+      const local = Math.max(0, Math.min(parent.dur, t - parent.start));
+      const tr = parent.transform || {};
+      const px = valueAt(parent, 'transform.x', local, tr.x || 0) * w;
+      const py = valueAt(parent, 'transform.y', local, tr.y || 0) * h;
+      const ps = valueAt(parent, 'transform.scale', local, tr.scale ?? 1);
+      const pr = valueAt(parent, 'transform.rotate', local, tr.rotate || 0);
+      const ax = (tr.anchor?.x || 0) * w, ay = (tr.anchor?.y || 0) * h;
+      ctx.translate(w / 2 + px + ax, h / 2 + py + ay);
+      ctx.rotate((pr * Math.PI) / 180);
+      ctx.scale(ps, ps);
+      ctx.translate(-(w / 2 + ax), -(h / 2 + ay));
+    }
+  }
+
+  /*
+   * A layer with no picture of its own — a title, a sticker, a shape — still
+   * has a transform, so it can be keyframed, driven by an expression and
+   * parented like anything else. Applied about the layer's own centre
+   * (`cx, cy`, where the title or sticker has put itself) plus its anchor;
+   * an untouched transform costs nothing.
+   */
+  _layerTransform(ctx, clip, local, w, h, cx, cy) {
+    const tr = clip.transform || {};
+    const x = valueAt(clip, 'transform.x', local, tr.x || 0) * w;
+    const y = valueAt(clip, 'transform.y', local, tr.y || 0) * h;
+    const s = valueAt(clip, 'transform.scale', local, tr.scale ?? 1);
+    const r = valueAt(clip, 'transform.rotate', local, tr.rotate || 0);
+    if (!x && !y && s === 1 && !r) return;
+    const ax = (tr.anchor?.x || 0) * w, ay = (tr.anchor?.y || 0) * h;
+    ctx.translate(cx + ax + x, cy + ay + y);
+    ctx.rotate((r * Math.PI) / 180);
+    ctx.scale(s, s);
+    ctx.translate(-(cx + ax), -(cy + ay));
   }
 
   /* ---------------- transitions ---------------- */

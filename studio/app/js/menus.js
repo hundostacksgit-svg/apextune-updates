@@ -177,6 +177,8 @@ export function trackSpaceMenu(trackId, at) {
     { label: 'Import files…', hint: 'I', run: () => document.querySelector('#file-input')?.click() },
     { label: 'Add an adjustment layer', hint: 'grades everything below it',
       run: () => actions.addAdjustment() },
+    { label: 'Add a null object', hint: 'a parent with no picture',
+      run: () => actions.addNull() },
     { label: 'Add a video layer above', run: () => actions.addLayer('video', { above: trackId }) },
     { label: 'Add an audio layer', run: () => actions.addLayer('audio') },
     { sep: true },

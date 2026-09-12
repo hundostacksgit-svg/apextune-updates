@@ -205,7 +205,7 @@ export async function selfTest(codec) {
  * Returns a handle with .promise and .cancel(), matching the realtime
  * exporter so the dialog does not care which one it got.
  */
-export function exportWithCodecs(project, { preset, quality = 'medium', codec, audioCodec, onProgress, onFirstFrame } = {}) {
+export function exportWithCodecs(project, { preset, quality = 'medium', codec, audioCodec, onProgress, onFirstFrame, beats = null } = {}) {
   const total = projectDuration(project);
   const fps = preset.fps;
   const frames = Math.ceil(total * fps);
@@ -214,6 +214,8 @@ export function exportWithCodecs(project, { preset, quality = 'medium', codec, a
   canvas.width = preset.w;
   canvas.height = preset.h;
   const renderer = new Renderer(canvas);
+  // The beat grid the preview used, so a sticker that pops on the beat pops on the beat in the file too.
+  renderer.beats = beats || null;
   renderer.resize(preset.w, preset.h);
   renderer.fps = fps;
 

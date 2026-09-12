@@ -756,7 +756,7 @@ export function applyEffects(ctx, w, h, clip, context) {
     const params = { ...fx.params };
     for (const key of Object.keys(params)) {
       const prop = `effects.${fx.id}.${key}`;
-      if (clip.keyframes?.[prop]) params[key] = valueAt(clip, prop, context.local, params[key]);
+      if (clip.keyframes?.[prop] || clip.expressions?.[prop]) params[key] = valueAt(clip, prop, context.local, params[key]);
     }
     try {
       def.draw(ctx, w, h, params, context);

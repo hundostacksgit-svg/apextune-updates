@@ -11,6 +11,8 @@
  */
 
 import { uid, clamp } from '../ui.js';
+import { evaluate, seedFor } from './expressions.js';
+import { currentFrame } from './frame-context.js';
 
 export const SCHEMA = 1;
 
@@ -294,6 +296,9 @@ export function addClip(p, {
     transitionIn: null,
     transitionOut: null,
     keyframes: {},
+    /* Expressions, by property path: 'transform.x' -> 'wiggle(2, 0.03)'.
+       See engine/expressions.js. Empty until somebody writes one. */
+    expressions: {},
     effects: [],
     /* One creative audio filter per clip — underwater, telephone, cathedral.
        Null means the clip is heard as recorded. See engine/audio-fx.js. */
@@ -785,6 +790,14 @@ const EASES = {
 
 /** Value of a keyframed property at clip-relative time t, or `fallback`. */
 export function valueAt(clip, prop, t, fallback) {
+  const keyed = keyedValue(clip, prop, t, fallback);
+  const src = clip.expressions?.[prop];
+  if (!src) return keyed;
+  return expressed(clip, prop, t, keyed, fallback, src);
+}
+
+/** The keyframed value alone — what valueAt returned before expressions existed. */
+export function keyedValue(clip, prop, t, fallback) {
   const list = clip.keyframes?.[prop];
   if (!list || !list.length) return fallback;
   const sorted = [...list].sort((a, b) => a.t - b.t);
@@ -799,6 +812,73 @@ export function valueAt(clip, prop, t, fallback) {
     }
   }
   return fallback;
+}
+
+/*
+ * An expression on top of the keys.
+ *
+ * The expression sees the keyframed value as `value`, the property's own
+ * keys for loopOut() and friends, and — through the frame the renderer has
+ * set — the beat, the music and the other layers. Outside a draw there is
+ * no frame, so those read as silence and the formula still evaluates; a
+ * broken formula evaluates to the keyed value. layer() can reach another
+ * clip's properties, which may have expressions of their own, so the depth
+ * is capped: two layers pointing at each other settle rather than recurse.
+ */
+let exprDepth = 0;
+function expressed(clip, prop, local, keyed, fallback, src) {
+  if (exprDepth > 3) return keyed;
+  const f = currentFrame();
+  const list = clip.keyframes?.[prop];
+  const keys = list?.length ? {
+    times: list.map((k) => k.t).sort((a, b) => a - b),
+    at: (tt) => keyedValue(clip, prop, tt, fallback),
+    velocity: (tt) => (keyedValue(clip, prop, tt + 0.02, fallback) - keyedValue(clip, prop, tt - 0.02, fallback)) / 0.04,
+  } : null;
+  const time = clip.start + local;
+  const ctx = {
+    value: keyed,
+    time, local,
+    inPoint: clip.start, outPoint: clip.start + clip.dur, duration: clip.dur,
+    index: f ? f.indexOf(clip) : 0,
+    fps: f?.fps || 30,
+    seed: seedFor(clip.id, prop),
+    keys,
+    beat: f ? f.beatPhase(time) ?? null : null,
+    beatPeriod: f?.beats?.period || 0,
+    bpm: f?.beats?.bpm || 0,
+    audio: f ? (band, smooth) => f.audioAt(time, band, smooth) : null,
+    layer: f ? (name) => layerView(f, name, time) : null,
+  };
+  exprDepth++;
+  try { return evaluate(src, ctx); } finally { exprDepth--; }
+}
+
+/* Another layer's animated transform at `time`, by name — what layer("Logo").x reads. */
+function layerView(f, name, time) {
+  const want = String(name || '').toLowerCase();
+  const other = f.project.clips.find((c) => (c.label || '').toLowerCase() === want)
+    || f.project.clips.find((c) => (c.text?.content || '').toLowerCase() === want)
+    || f.project.clips.find((c) => f.nameOf(c).toLowerCase() === want);
+  if (!other) return null;
+  const local = Math.max(0, Math.min(other.dur, time - other.start));
+  const tr = other.transform || {};
+  return {
+    x: valueAt(other, 'transform.x', local, tr.x || 0),
+    y: valueAt(other, 'transform.y', local, tr.y || 0),
+    scale: valueAt(other, 'transform.scale', local, tr.scale ?? 1),
+    rotate: valueAt(other, 'transform.rotate', local, tr.rotate || 0),
+    opacity: valueAt(other, 'transform.opacity', local, tr.opacity ?? 1),
+    inPoint: other.start, outPoint: other.start + other.dur, duration: other.dur,
+  };
+}
+
+/** Put an expression on a property, or clear it with an empty string. */
+export function setExpression(clip, prop, src) {
+  clip.expressions ||= {};
+  const text = String(src || '').trim();
+  if (!text) delete clip.expressions[prop];
+  else clip.expressions[prop] = text;
 }
 
 export function setKeyframe(clip, prop, t, v, ease = 'ease') {
@@ -1003,6 +1083,7 @@ function migrate(p) {
     // everywhere they are read, so the default is simply "none".
     c.masks ||= [];
     c.keyframes ||= {};
+    c.expressions ||= {};
     c.effects ||= [];
     c.audioFx ??= null;
     c.speed ??= 1;

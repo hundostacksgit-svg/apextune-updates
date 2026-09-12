@@ -60,7 +60,7 @@ jobs:
                    studio/app/js/engine/scenes.js studio/app/js/start.js \
                    studio/app/js/engine/muxer.js studio/app/js/engine/exporter-wc.js \
                    studio/app/js/engine/audio-render.js studio/app/js/engine/audio-repair.js \
-                   studio/app/js/engine/audio-fx.js studio/app/js/engine/audio-fx-library.js studio/app/js/engine/text-styles.js studio/app/js/engine/speed-ramps.js studio/app/js/engine/beatmaker.js studio/app/js/engine/montage.js studio/app/js/engine/sfx.js studio/app/js/engine/reframe.js studio/app/js/rate.js studio/app/js/panels/filters.js studio/app/js/panels/transitions.js studio/app/js/panels/overlays.js studio/app/js/panels/stickers.js studio/app/js/panels/sound.js studio/app/js/engine/reference.js \
+                   studio/app/js/engine/audio-fx.js studio/app/js/engine/audio-fx-library.js studio/app/js/engine/text-styles.js studio/app/js/engine/speed-ramps.js studio/app/js/engine/beatmaker.js studio/app/js/engine/montage.js studio/app/js/engine/sfx.js studio/app/js/engine/reframe.js studio/app/js/engine/expressions.js studio/app/js/engine/frame-context.js studio/app/js/engine/audio-analysis.js studio/app/js/expr-ui.js studio/app/js/engine/shapes.js studio/app/js/panels/shapes.js studio/app/js/rate.js studio/app/js/panels/filters.js studio/app/js/panels/transitions.js studio/app/js/panels/overlays.js studio/app/js/panels/stickers.js studio/app/js/panels/sound.js studio/app/js/engine/reference.js \
                    studio/app/js/engine/looks-library.js studio/app/js/engine/share.js \
                    studio/app/js/engine/transitions-library.js \
                    studio/app/js/panels/transition-picker.js \
