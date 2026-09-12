@@ -1,14 +1,19 @@
 # Hand tattoo designs
 
-Three black-and-grey hand tattoo layouts, each rendered as a stencil-style
-reference image (2400 x 3200 PNG) plus the full prompt for generating a
-photoreal version with an image model.
+Three black-and-grey hand tattoo layouts, each rendered as a reference image
+(2400 x 3200 PNG) of the design on a hand resting on a knee in dark streetwear,
+plus the prompts for generating a photoreal version with an image model.
+[`PROMPTS.md`](PROMPTS.md) has the real-hand cinematic prompts, tuned per
+generator; the original design prompts are at the bottom of this page.
 
 The references are built the same way as the promo material in `tools/promo`:
 an HTML page draws the design as SVG and Playwright screenshots it. Every
 element is placed by hand landmarks (knuckles, joints, bone lines, wrist), so
-lettering sits exactly where the prompt says it should. They are layout and
-placement references for an artist, not finished photoreal art.
+lettering sits exactly where the prompt says it should. The hand carries
+directional light, knuckle creases, tendons, veins and hair, with a ribbed hoodie
+cuff at the bottom of the frame, but it is still drawn, not photographed: use the
+images as placement references for an artist or as the layout input to an image
+model, not as finished photoreal art.
 
 | # | File | Wrist | Fingers | Knuckles |
 |---|------|-------|---------|----------|
@@ -17,8 +22,9 @@ placement references for an artist, not finished photoreal art.
 | 3 | [`3-pocket-watch.png`](3-pocket-watch.png) | "Deep Thoughts", gothic around the wrist bone | "RN4L" down the middle finger; "Opportunist" micro-script along the pinky side | — |
 
 All three share the same hand: top-down, back of a right hand, thumb on the
-left, wrist at the bottom, on a flat neutral grey ground, with the full
-skeleton in bright white over heavy black.
+left, wrist at the bottom, resting on a knee in dark streetwear with a ribbed
+hoodie cuff at the bottom of the frame, with the full skeleton in bright white
+over heavy black.
 
 ## Rebuild the images
 
@@ -35,13 +41,13 @@ To change a design, edit its HTML page. Artwork is plain SVG built in the
 (`H.f.index.mcp`, `H.f.middle.pip`, `H.wrist`, and so on) that everything is
 positioned against. Open the page in a browser to preview without rendering.
 
-## Prompts
+## Original design prompts
 
-These are the prompts each design was built from, unchanged. Use them as-is
-with an image model for the hyper-realistic version, and use the PNG beside it
-as the placement reference when the model gets the lettering wrong.
+These are the prompts each design was built from, unchanged. For the real-hand
+photograph versions use [`PROMPTS.md`](PROMPTS.md) instead, and use the PNG
+beside each as the placement reference when the model gets the lettering wrong.
 
-### 1. Bleeding heart, chain-link, stone plaque
+### 1. Bleeding heart, chain-link, OTF plaque
 
 > Hyper-realistic tattoo design reference of a man's full hand and wrist, top-down view, flat on neutral grey, black and grey only, no color. High-contrast dark realism with smooth needle shading. Anatomically correct skeleton hand bones rendered bright white beneath the artwork, with heavy solid-black negative space behind the bones. On the back of the hand: a gritty, highly detailed bleeding heart intertwined with chain-link fence, blended seamlessly beside a cracked, stone-textured blank emblem plaque. Lettering sharp and legible: "Almost Healed" in clean Chicano script curved over the wrist cuff; "Opportunist" in fine-line block letters running vertically down the index finger bone; "RN4L" bold across the four main knuckles, one character per knuckle. Premium tattoo studio portfolio piece, clean and masculine, no filler.
 
