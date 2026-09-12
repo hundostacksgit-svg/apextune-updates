@@ -325,7 +325,25 @@ export function elementFor(media, clipId = 'shared', { preferProxy = false } = {
     node = document.createElement(media.kind === 'audio' ? 'audio' : 'video');
     node.src = src;
     node.preload = 'auto';
+    /*
+     * Inline, both ways of saying it.
+     *
+     * The property is the modern spelling and the bare attribute is what iOS
+     * before 10 reads. Without one of them Safari on a phone takes any play()
+     * as a request to go fullscreen, which on a video editor means the
+     * timeline vanishes the moment somebody presses play.
+     */
     node.playsInline = true;
+    node.setAttribute('playsinline', '');
+    node.setAttribute('webkit-playsinline', '');
+    /*
+     * No AirPlay or cast route for a pooled element. These are decoders, not
+     * things anybody wants to watch on a television — and a phone that routes
+     * one to an external display stops handing frames back to the canvas,
+     * which reads in the app as the picture freezing.
+     */
+    node.disableRemotePlayback = true;
+    node.setAttribute('disableremoteplayback', '');
     node.muted = true;               // the audio graph takes over once built
     node.load();
   }
@@ -355,6 +373,32 @@ function teardown(node) {
 /** Every live element, for the audio engine to walk. */
 export function liveElements() {
   return [...elements.entries()].map(([key, node]) => ({ key, node }));
+}
+
+/*
+ * Spend a real user gesture unlocking every decoder we have.
+ *
+ * Phones will not start an unmuted media element without one, and the gesture
+ * only counts while the browser is still handling it — a play() from inside
+ * an animation frame a few hundred milliseconds later is not the same thing.
+ * The transport starts its elements from an animation frame, necessarily, so
+ * the gesture has to be spent up front on a play() we immediately abandon.
+ *
+ * The pause is synchronous and deliberate: this is not trying to play
+ * anything, only to move each element into the state where a later play()
+ * from a timer is allowed. Elements created after the first gesture inherit
+ * the document's activation and need none of this.
+ */
+export function unlock() {
+  for (const [, node] of elements) {
+    if (!node || typeof node.play !== 'function' || !node.paused) continue;
+    let p;
+    try { p = node.play(); } catch { continue; }
+    // A rejected promise here is the expected outcome, not a failure worth
+    // reporting — the point was to ask, and asking is what unlocks it.
+    p?.then?.(() => { try { node.pause(); } catch { /* already stopped */ } },
+      () => { /* refused; media-clock's fallback keeps the picture moving */ });
+  }
 }
 
 export function releaseFor(mediaId) {

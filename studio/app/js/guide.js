@@ -288,6 +288,55 @@ export const GUIDE = [
       ['Sharing', 'Only when you press share or open a platform’s upload page yourself.'],
     ],
   },
+  {
+    id: 'projects',
+    group: 'Getting going',
+    title: 'Opening the editor, and your list of projects',
+    body: [
+      ['What you land on', 'Opening the editor shows your projects, newest first, with how many clips are in each and when you last touched it. Click one and it opens where you left it.'],
+      ['The first time', 'There is nothing to list yet, so the new-project form is right there: give it a name, pick a shape — 9:16 for TikTok and Reels, 16:9 for YouTube, 1:1 or 4:5 for a feed — and a frame rate. You can change all three later in Settings.'],
+      ['Getting back to the list', 'Menu bar → **File → Open project**, or the folder icon at the bottom-right of the page bar. It has a Cancel on it, so looking at the list never loses what you are working on.'],
+      ['Where they live', 'On this device, in the browser\u2019s own storage — not on a server. Clearing site data for omnidx.net clears them, and a project made on your phone is not on your laptop. **File → Save a copy** writes a bundle you can move across yourself.'],
+      ['Straight into a new one', 'Add `?new=1` to the editor address and it skips the list entirely. `?project=<id>` opens one by name.'],
+    ],
+  },
+  {
+    id: 'pages',
+    group: 'Finishing',
+    title: 'Pages: one screen per job',
+    body: [
+      ['The bar along the bottom', 'At Intermediate and Professional there is a row of pages: **Media, Cut, Edit, Motion, Colour, Fairlight, Deliver**. They are the same project seen seven ways — switching pages never changes your edit, only what is on screen around it.'],
+      ['Why bother', 'Cutting wants a long timeline and a small picture. Grading wants the opposite, plus a node graph, scopes and a strip of shots. One layout cannot be right for both, and the usual compromise is a screen that is wrong for everything.'],
+      ['Switching', '**Shift+1** through **Shift+7**, or click one. Where you were is remembered, so the app opens on the page you were last working in.'],
+      ['Turning docks on and off', 'Bottom-right of the page bar: **Gallery, Nodes, Scopes, Strip, Lightbox**. Each page remembers its own set, so closing the gallery on Colour does not close it everywhere.'],
+      ['Beginner', 'None of this appears. Beginner is one screen on purpose and stays one screen.'],
+    ],
+  },
+  {
+    id: 'nodes',
+    group: 'Colour',
+    title: 'Correctors: grading in a chain, not in one box',
+    body: [
+      ['What the graph shows', 'On the Colour page, the **Nodes** dock shows your grade as a chain: Source, then each corrector in turn, then Output. Corrector 1 is the clip\u2019s own grade — the wheels and sliders you have always had.'],
+      ['Adding one', '**+ Serial**, or **Alt+S**. The new corrector reads the finished output of the one before it, which is the whole point: key the sky in corrector 2 and push it, then key skin out of *that result* in corrector 3. One set of controls cannot do that no matter how many of them there are.'],
+      ['Which one you are editing', 'Click a corrector to select it. The Colour panel says which one it is writing to, and every wheel, slider, look and window you touch goes to that corrector alone.'],
+      ['Turning one off', 'The power symbol on the corrector. Its grade comes straight out of the picture and goes back when you press it again — the settings are kept either way, so it is a comparison, not a delete.'],
+      ['Deleting', 'Select it and press **✕**. Corrector 1 cannot be deleted because it is the clip\u2019s own grade; reset it instead.'],
+      ['Before and after', 'Hold **\\** or press and hold **BYPASS** above the picture. Everything comes off, the frame gets an amber border so there is no mistaking it, and it all comes back when you let go.'],
+    ],
+  },
+  {
+    id: 'gallery',
+    group: 'Colour',
+    title: 'Stills, the clip strip and the lightbox',
+    body: [
+      ['Grabbing a still', 'Happy with a shot? Press **Grab** in the Gallery. It saves that grade — the whole chain and its windows — with a thumbnail of what it did.'],
+      ['Using one', 'Click a still and it goes on the shot you are on. That is how a sequence gets matched: you do not write the numbers down, you grab the one that works and apply it to the next.'],
+      ['The strip under the picture', 'Every shot in the timeline, in order. Click one and the playhead goes to the middle of it and selects it. Grading is done shot by shot, and "the next shot" is a question a timeline answers badly.'],
+      ['The lightbox', 'Turn it on from the page bar to see every shot at once. It is for one job — spotting the one that does not match the others — and it closes when you click a shot.'],
+      ['Scopes', 'The Scopes dock reads the actual frame, not your screen. A monitor running warm makes everything look warm, so you correct toward blue and deliver a blue file. Parade, waveform, vectorscope and histogram.'],
+    ],
+  },
 ];
 
 /** Every article flattened for searching. */

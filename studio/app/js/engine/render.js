@@ -22,6 +22,7 @@ import { drawText, CAPTION_STYLES } from './titles.js';
 import { applyEffects } from './effects.js';
 import { drawSticker } from './stickers.js';
 import { elementFor } from './media.js';
+import * as clock from './media-clock.js';
 
 export class Renderer {
   constructor(canvas) {
@@ -31,9 +32,22 @@ export class Renderer {
     this.scratchCtx = this.scratch.map((c) => c.getContext('2d'));
     this.quality = 1;
     this.pendingSeeks = new Set();
+    // Elements we have already bailed on once and are waiting to hear from.
+    this.pendingReady = new Set();
     this.onNeedsRedraw = null;
     // Set by the app so beat-reactive effects know where they are in the bar.
     this.beats = null;
+    /*
+     * Before and after.
+     *
+     * A viewer state, never a project one — it is switched on while a finger
+     * is on a key and off again when it lifts, which is exactly how you check
+     * whether a grade is doing what you think. Kept on the renderer rather
+     * than read from the DOM in the draw loop, because the draw loop should
+     * not be asking the document about anything sixty times a second, and
+     * because the exporter has a renderer of its own that must never see it.
+     */
+    this.bypassGrade = false;
     this.fps = 30;
     // Motion blur re-renders the clip at sub-frame offsets, which needs a
     // canvas nothing else is using that frame.
@@ -74,13 +88,21 @@ export class Renderer {
   /**
    * Paint the whole frame.
    *
-   * `playing` matters: while the transport is running the video elements are
-   * playing themselves and we just take whatever frame they're showing. When
-   * parked we have to seek them, which is asynchronous — so a scrub paints the
+   * `playing` matters, and it means exactly one thing: the transport is
+   * running. Then every video element that contributes a picture is asked to
+   * roll, through the shared media clock — nothing else in the app starts
+   * them, and the clock is what stops two owners fighting over the same node.
+   * When parked we seek instead, which is asynchronous, so a scrub paints the
    * nearest available frame immediately and repaints when the seek lands.
-   * That is why scrubbing stays responsive instead of stuttering.
+   *
+   * `scrub` is a quality hint and nothing more. It used to be folded into
+   * `playing` by the caller, which was harmless while `playing` only meant
+   * "don't seek" and is not harmless now that it means "start playback" —
+   * dragging the playhead would have started the video rolling under the
+   * finger doing the dragging.
    */
-  draw(project, t, { playing = false, forExport = false } = {}) {
+  draw(project, t, { playing = false, forExport = false, scrub = false } = {}) {
+    this._scrub = scrub;
     const { ctx } = this;
     const w = this.canvas.width, h = this.canvas.height;
 
@@ -175,10 +197,10 @@ export class Renderer {
     sctx.clearRect(0, 0, w, h);
     sctx.drawImage(this.canvas, 0, 0);
 
-    const graded = animatedColor(clip, local);
+    const graded = this.bypassGrade ? null : animatedColor(clip, local);
     if (!isIdentity(graded)) {
       const css = cssFilter(resolved(graded));
-      const wheels = wheelFilter(clip.id, clip.color?.wheels);
+      const wheels = wheelFilter(clip.id, this.bypassGrade ? null : clip.color?.wheels);
       if (css !== 'none' || wheels) {
         // Filtering a canvas onto itself is not defined, so it goes via the
         // second scratch and comes back.
@@ -206,6 +228,9 @@ export class Renderer {
         redrawClip: () => null,          // nothing to re-render: it has no media
       });
     }
+
+    // Correctors two and up, over what the adjustment layer has done so far.
+    this._runGradeNodes(sctx, clip, t, w, h);
 
     // A window on an adjustment layer is how you grade one corner of a cut
     // sequence, which is most of what they are used for.
@@ -302,7 +327,7 @@ export class Renderer {
   /** The grade, effects and windows a clip carries, applied to a finished frame. */
   _treatFrame(project, clip, t, w, h, ctx, skipEffects) {
     const local = t - clip.start;
-    const graded = animatedColor(clip, local);
+    const graded = this.bypassGrade ? null : animatedColor(clip, local);
     if (!isIdentity(graded)) {
       /*
        * The CSS half of a grade has to go through a draw.
@@ -313,7 +338,7 @@ export class Renderer {
        * is a filter. A grade on a compound looked like it did nothing.
        */
       const css = cssFilter(resolved(graded));
-      const wheels = wheelFilter(clip.id, clip.color?.wheels);
+      const wheels = wheelFilter(clip.id, this.bypassGrade ? null : clip.color?.wheels);
       if (css !== 'none' || wheels) {
         const via = this._innerCtx(w, h, 7);      // a pad nothing else uses
         via.ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -328,6 +353,9 @@ export class Renderer {
       }
       applyPasses(ctx, w, h, resolved(graded));
     }
+    // A compound or an adjustment layer can carry a chain too — it is a clip,
+    // and the grade tools do not ask what kind before writing to it.
+    this._runGradeNodes(ctx, clip, t, w, h);
     if (!skipEffects && clip.effects?.length) {
       applyEffects(ctx, w, h, clip, {
         clip, local, time: t,
@@ -447,10 +475,23 @@ export class Renderer {
       : sourceTime(clip, t);
 
     if (media.kind === 'video') {
-      if (!node.videoWidth) return null;
-      if (!playing || forExport) this._seek(node, src, forExport);
+      if (!node.videoWidth) { this._whenReady(node); return null; }
+      if (playing && !forExport) {
+        /*
+         * Hand the element to the clock rather than seeking it.
+         *
+         * A reversed clip is the exception and has to keep being seeked: no
+         * browser has ever supported a negative playbackRate, so the only way
+         * to run one backwards is a frame at a time.
+         */
+        clock.want(node, src, speedAt(clip, Math.max(0, Math.min(clip.dur, local))), {
+          seekOnly: Boolean(clip.reversed),
+        });
+      } else {
+        this._seek(node, src, forExport);
+      }
     } else if (media.kind === 'image') {
-      if (!node.complete || !node.naturalWidth) return null;
+      if (!node.complete || !node.naturalWidth) { this._whenReady(node); return null; }
     } else {
       return null;                             // audio contributes no picture
     }
@@ -477,8 +518,11 @@ export class Renderer {
 
     // Keyframed exposure, contrast, saturation and the rest resolve here, so a
     // grade can ramp across a clip the same way a position can.
-    const graded = animatedColor(clip, local);
+    const graded = this.bypassGrade ? null : animatedColor(clip, local);
     const grade = resolved(graded);
+    // Wheels are a separate filter from the rest of the grade, so bypass has
+    // to cancel them by hand or half the correction stays on screen.
+    const wheelSource = this.bypassGrade ? null : clip.color.wheels;
 
     /*
      * A windowed grade is two renders, not one.
@@ -506,7 +550,7 @@ export class Renderer {
 
     // The wheels are an SVG filter chained onto the CSS one, so both stages
     // happen in a single GPU pass rather than a read-back.
-    const wheels = wheelFilter(clip.id, clip.color.wheels);
+    const wheels = wheelFilter(clip.id, wheelSource);
     const css = cssFilter(grade);
     const target = windowed ? this._gradeCtx(w, h) : ctx;
     if (windowed) target.clearRect(0, 0, w, h);
@@ -545,8 +589,8 @@ export class Renderer {
 
     if (!isIdentity(graded)) applyPasses(target, w, h, grade);
     // Only when the GPU path is unavailable — otherwise this would double up.
-    if (!supportsUrlFilters() && !wheelsAreNeutral(clip.color.wheels)) {
-      applyWheelsFallback(target, w, h, clip.color.wheels);
+    if (!supportsUrlFilters() && !wheelsAreNeutral(wheelSource)) {
+      applyWheelsFallback(target, w, h, wheelSource);
     }
 
     if (windowed) {
@@ -566,6 +610,9 @@ export class Renderer {
       }
       ctx.drawImage(target.canvas, 0, 0);
     }
+
+    // Correctors two and up, each reading the last one's output.
+    this._runGradeNodes(ctx, clip, t, w, h);
 
     if (!skipEffects && clip.effects?.length) {
       applyEffects(ctx, w, h, clip, {
@@ -667,6 +714,106 @@ export class Renderer {
         y: cue.y ?? style.y,
         animDur: 0.22,
       }, t - cue.start, cue.end - cue.start);
+    }
+  }
+
+  /**
+   * Come back when this element can actually be drawn.
+   *
+   * A clip dropped on the timeline is asked for a frame immediately, and for
+   * the first fraction of a second the decoder has nothing: `videoWidth` is 0
+   * and there is no picture to copy. Returning null there is right. Returning
+   * null and then never being asked again is what left the viewer black after
+   * adding a clip — the next draw only happened if something else happened to
+   * trigger one, so on a quick machine you saw the frame and on a slow one or
+   * a phone you saw black until you touched a control.
+   *
+   * So the bail schedules its own retry. One listener per element, removed
+   * the moment it fires, and `onNeedsRedraw` is the same repaint a landing
+   * seek already uses.
+   */
+  _whenReady(node) {
+    if (!node || this.pendingReady.has(node)) return;
+    this.pendingReady.add(node);
+    const done = () => {
+      this.pendingReady.delete(node);
+      for (const ev of ['loadeddata', 'canplay', 'load', 'error']) {
+        node.removeEventListener(ev, done);
+      }
+      this.onNeedsRedraw?.();
+    };
+    // `loadeddata` is the one that means "there is a frame"; `canplay` covers
+    // the browsers that get there without firing it, and `error` stops a file
+    // that will never decode from holding a listener forever.
+    for (const ev of ['loadeddata', 'canplay', 'load', 'error']) {
+      node.addEventListener(ev, done);
+    }
+  }
+
+  /* ---------------- the grade chain ---------------- */
+
+  /**
+   * Run correctors two and up, in order, over whatever is on `ctx`.
+   *
+   * Corrector one is the clip's own grade and has already happened by the time
+   * this is called — it is welded into the draw that put the picture there,
+   * which is what keeps it a single GPU pass for the overwhelmingly common
+   * case of one corrector. Every corrector after it costs a pass of its own,
+   * and that is the honest price of a serial chain: each one has to see the
+   * finished output of the one before it, or it is not serial.
+   *
+   * Each corrector gets its own windows and its own qualifier. That is the
+   * whole reason to have more than one: key the sky in node two, push it, then
+   * key skin in node three out of the result — impossible with one set of
+   * controls no matter how many of them there are.
+   */
+  _runGradeNodes(ctx, clip, t, w, h) {
+    const chain = clip.grades;
+    if (!chain?.length || this.bypassGrade) return;
+    const local = t - clip.start;
+
+    for (const node of chain) {
+      if (node.on === false) continue;
+      const grade = resolved(node.color);
+      const wheels = wheelFilter(node.id, node.color?.wheels);
+      const flat = isIdentity(grade) && !wheels
+        && (!supportsUrlFilters() ? wheelsAreNeutral(node.color?.wheels) : true);
+      // A corrector nobody has touched costs nothing. Worth checking: an
+      // untouched node is the normal state of the one you just added.
+      if (flat && !(node.masks || []).some((m) => m.on !== false)) continue;
+
+      const target = this._gradeCtx(w, h);
+      target.setTransform(1, 0, 0, 1, 0, 0);
+      target.globalAlpha = 1;
+      target.globalCompositeOperation = 'source-over';
+      target.clearRect(0, 0, w, h);
+      const css = cssFilter(grade);
+      target.filter = wheels ? (css === 'none' ? wheels : `${css} ${wheels}`) : css;
+      try { target.drawImage(ctx.canvas, 0, 0); }
+      catch { target.filter = 'none'; continue; }
+      target.filter = 'none';
+
+      if (!isIdentity(grade)) applyPasses(target, w, h, grade);
+      if (!supportsUrlFilters() && !wheelsAreNeutral(node.color?.wheels)) {
+        applyWheelsFallback(target, w, h, node.color.wheels);
+      }
+
+      /*
+       * The matte is built from a clip-shaped view of the corrector.
+       *
+       * `combinedMatte` reads `masks`, `color.qualifier` and any keyframes
+       * hung off the host, and a corrector carries the first two itself. The
+       * clip's keyframe table comes along so a window on node three can be
+       * animated by exactly the same machinery that animates one on node one.
+       */
+      const view = { id: node.id, masks: node.masks || [], color: node.color, keyframes: clip.keyframes };
+      const matte = combinedMatte(view, 'grade', target, w, h, local);
+      if (matte) {
+        target.globalCompositeOperation = 'destination-in';
+        target.drawImage(matte, 0, 0);
+        target.globalCompositeOperation = 'source-over';
+      }
+      ctx.drawImage(target.canvas, 0, 0);
     }
   }
 

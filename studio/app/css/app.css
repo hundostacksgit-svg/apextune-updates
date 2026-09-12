@@ -162,6 +162,27 @@ html[data-level="expert"] .card-hint{display:none}
 @keyframes spin{to{transform:rotate(360deg)}}
 
 /* ============ top bar ============ */
+/*
+ * The header may not decide how wide the application is.
+ *
+ * Body is a one-column grid, so its width is the widest thing in it, and a
+ * flex row with nothing shrinkable in it reports its full content width as a
+ * minimum. Adding controls here therefore used to widen every row in the app
+ * — the timeline, the page bar, the workspace — and put the whole layout into
+ * a horizontal scroll. `min-width:0` on the sections lets them give ground
+ * instead.
+ */
+.topbar{min-width:0}
+.topbar > *{min-width:0}
+/*
+ * No `overflow:hidden` here, however tempting.
+ *
+ * It is the obvious partner to min-width:0 and it clips the menu bar's own
+ * dropdowns, which are absolutely positioned children of this box: File,
+ * Edit and the rest opened and were cut off at the header's bottom edge.
+ * `min-width:0` alone is enough — it lets the sections give ground, which is
+ * all that was needed to stop the header widening the app.
+ */
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;
   padding:0 12px;background:var(--surface);border-bottom:1px solid var(--line);
   padding-top:env(safe-area-inset-top)}
@@ -350,6 +371,98 @@ html[data-level="expert"] .card-hint{display:none}
   background:linear-gradient(var(--surface-2),var(--surface-2)) padding-box}
 .tl-track.audio{background:color-mix(in srgb,var(--surface-2) 70%,var(--surface))}
 .tl-track.drop{background:color-mix(in srgb,var(--blue) 12%,var(--surface-2))}
+
+/* ---------- the project picker ---------- */
+/*
+ * Above the splash, because it is what the splash hands over to. Below
+ * nothing: while this is up there is no project open, so there is nothing
+ * behind it worth reaching.
+ */
+.start{
+  position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;
+  padding:20px;background:var(--bg);
+  opacity:0;transition:opacity .18s ease;overflow:auto;
+}
+.start.on{opacity:1}
+.start-box{
+  width:min(980px,100%);max-height:100%;overflow:auto;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);
+  box-shadow:0 30px 80px rgba(0,0,0,.5);
+}
+.start-head{display:flex;align-items:center;gap:14px;padding:22px 26px 18px;
+  border-bottom:1px solid var(--line)}
+.start-mark{border-radius:9px;flex:none}
+.start-head h1{margin:0;font-size:20px;letter-spacing:-.01em}
+.start-head p{margin:3px 0 0;font-size:13px;color:var(--text-3)}
+.start-x{margin-left:auto;width:34px;height:34px;border:0;border-radius:50%;
+  background:var(--surface-2);color:var(--text-2);font-size:14px;cursor:pointer;flex:none}
+.start-x:hover{background:var(--surface-3);color:var(--text)}
+
+.start-body{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.start-new{padding:22px 26px 26px;border-right:1px solid var(--line)}
+.start-list{padding:22px 26px 26px;min-width:0}
+.start-body h2{margin:0 0 12px;font-size:11px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--text-3);font-weight:700}
+.start-new .input{width:100%;margin-bottom:14px}
+
+.start-shapes{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.start-shape{display:flex;flex-direction:column;align-items:center;gap:5px;padding:10px 4px 8px;
+  border:1px solid var(--line);border-radius:var(--r-s);cursor:pointer;text-align:center;
+  background:var(--surface-2);transition:border-color .12s,background .12s}
+.start-shape:hover{background:var(--surface-3)}
+.start-shape.on{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 16%,var(--surface-2))}
+.start-shape input{position:absolute;opacity:0;pointer-events:none}
+.start-shape b{font-size:11.5px;font-weight:600}
+.start-shape em{font-style:normal;font-size:9.5px;color:var(--text-3);line-height:1.3}
+/* The little proxy of the frame: the one thing that makes four words of
+   platform names unnecessary to read. */
+.start-thumb{display:block;background:var(--text-3);border-radius:2px;opacity:.55}
+.start-thumb.r9-16{width:15px;height:26px}
+.start-thumb.r16-9{width:30px;height:17px}
+.start-thumb.r1-1{width:22px;height:22px}
+.start-thumb.r4-5{width:20px;height:25px}
+.start-shape.on .start-thumb{background:var(--blue-2);opacity:1}
+
+.start-fps{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  font-size:12.5px;color:var(--text-2);margin-bottom:16px}
+.start-fps select{flex:0 1 190px}
+
+.start-rows{display:flex;flex-direction:column;gap:6px;max-height:46vh;overflow:auto}
+.start-row{display:flex;align-items:center;gap:11px;padding:10px 11px;border-radius:var(--r-s);
+  border:1px solid transparent;background:var(--surface-2);cursor:pointer;min-width:0}
+.start-row:hover,.start-row:focus-visible{border-color:var(--blue);background:var(--surface-3);outline:none}
+.start-ratio{flex:none;background:var(--text-3);border-radius:2px;opacity:.5}
+.start-ratio.r9-16{width:13px;height:22px}
+.start-ratio.r16-9{width:24px;height:14px}
+.start-ratio.r1-1{width:18px;height:18px}
+.start-ratio.r4-5{width:17px;height:21px}
+.start-meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.start-meta b{font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.start-meta em{font-style:normal;font-size:11.5px;color:var(--text-3)}
+.start-del{flex:none;width:30px;height:30px;border:0;border-radius:6px;background:transparent;
+  color:var(--text-3);font-size:13px;cursor:pointer;opacity:0;transition:opacity .12s}
+.start-row:hover .start-del,.start-row:focus-within .start-del{opacity:1}
+.start-del:hover{background:color-mix(in srgb,var(--bad) 20%,transparent);color:var(--bad)}
+.start-none p{margin:0;font-size:13px;color:var(--text-3);line-height:1.6}
+
+/* One column on a phone, with the new-project form first: somebody with no
+   projects should not have to scroll past an empty list to make one. */
+@media (max-width:760px){
+  .start{padding:0;align-items:stretch}
+  .start-box{width:100%;max-height:none;min-height:100%;border:0;border-radius:0}
+  .start-body{grid-template-columns:1fr}
+  .start-new{border-right:0;border-bottom:1px solid var(--line)}
+  .start-rows{max-height:none}
+  .start-head{padding:16px 18px 14px}
+  .start-new,.start-list{padding:18px}
+  .start-shapes{grid-template-columns:repeat(2,1fr)}
+  .start-del{opacity:1}
+}
+@media (pointer: coarse){
+  .start-row{min-height:56px}
+  .start-del{width:40px;height:40px}
+  .start-shape{min-height:74px}
+}
 
 /* ---------- compound clips ---------- */
 /* A folder edge, so a clip that is really a timeline does not look like a clip
@@ -749,6 +862,7 @@ input[type=checkbox]{accent-color:var(--blue)}
   animation:tin .26s cubic-bezier(.2,.8,.3,1);max-width:min(420px,86vw);text-align:center}
 .toast.ok{border-color:rgba(48,211,138,.55)}
 .toast.bad{border-color:rgba(255,93,108,.55)}
+.toast.warn{border-color:rgba(255,193,74,.6)}
 @keyframes tin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 
 .modal{border:0;padding:0;background:transparent;max-width:min(560px,92vw);width:100%}
@@ -809,7 +923,21 @@ input[type=checkbox]{accent-color:var(--blue)}
 .ro-preview{width:100%;border-radius:var(--r-m);margin-top:14px;background:#000;
   max-height:230px;object-fit:contain}
 
-.media-pool{position:absolute;width:0;height:0;overflow:hidden;opacity:0;pointer-events:none}
+/*
+ * The decoder pool: present, tiny, and not quite invisible.
+ *
+ * It used to be a zero-by-zero box at opacity 0. That is the natural way to
+ * hide something, and on a phone it is also a good way to stop it decoding —
+ * a media element with no painted area is one a mobile browser feels free to
+ * stop handing frames to the compositor, and a frame the compositor never
+ * gets is a frame drawImage() cannot copy onto the canvas. The symptom is a
+ * video that plays, reports a sensible currentTime, and shows one frozen
+ * picture. So: a real pixel, very nearly transparent, parked under everything
+ * and untouchable. It costs one pixel of the screen and nothing else.
+ */
+.media-pool{position:fixed;left:0;bottom:0;width:1px;height:1px;overflow:hidden;
+  opacity:.01;pointer-events:none;z-index:-1}
+.media-pool video,.media-pool audio,.media-pool img{width:1px;height:1px;object-fit:cover}
 
 /* ============ misc animations ============ */
 .fade-in{animation:fin .28s ease}
@@ -1430,7 +1558,24 @@ input[type=checkbox]{accent-color:var(--blue)}
  * seeing the spacing between keys.
  */
 @media (pointer: coarse) {
-  .clip .cfold{width:26px;height:26px;font-size:12px;line-height:26px}
+  /*
+   * The fold caret: a 36px target around a 20px caret.
+   *
+   * Growing the button itself to 36 square would put a dark tile over a third
+   * of a clip on the timeline, so the button grows and the thing you can see
+   * does not. The visible caret is drawn by the pseudo-element and the button
+   * around it is transparent — a real 36px hit area, which is what a thumb
+   * needs, without the timeline turning into a row of buttons with a bit of
+   * video behind them.
+   */
+  .clip .cfold{width:36px;height:36px;left:0;top:0;padding:0;background:transparent;
+    display:grid;place-items:center;font-size:0;line-height:0;color:transparent}
+  .clip .cfold::before{content:'\25B8';font-size:12px;width:21px;height:21px;line-height:21px;
+    border-radius:5px;background:rgba(0,0,0,.52);color:rgba(255,255,255,.78);text-align:center}
+  .clip .cfold.open::before{content:'\25BE';background:var(--blue);color:#fff}
+  .clip .cfold:hover{background:transparent}
+  .clip .cfold:hover::before{background:rgba(0,0,0,.75);color:#fff}
+  .clip .cfold.anim::after{right:6px;top:6px}
   .clip.folds .cname{left:33px}
   .kf-key{width:26px;height:22px;margin-left:-13px;font-size:12px}
   .kf-key::before{content:'';position:absolute;inset:-6px}
@@ -1587,3 +1732,339 @@ input[type=checkbox]{accent-color:var(--blue)}
 .guide-p{font-size:12.5px;line-height:1.55;color:var(--text-2);margin:0 0 11px}
 .guide-p:last-child{margin-bottom:0}
 .guide-p b{color:var(--text);font-weight:600}
+
+/* ============ the workspace: pages and docks ============ */
+/*
+ * Everything in this block belongs to Intermediate and Professional.
+ *
+ * Beginner is one screen — panel, picture, timeline — and it stays that way.
+ * That is not a smaller version of this layout, it is a different one, and the
+ * reason for the difference is that somebody making a first cut is not doing
+ * the job these docks exist for. So every rule here is fenced behind the two
+ * levels that want it, and behind a desktop width: a node graph and a scope on
+ * a 390px screen would be four columns of nothing.
+ */
+:root{
+  --gal-w:0px; --dockr-w:0px; --strip-h:0px; --pb-h:0px;
+  --dock-h:26px;
+}
+
+.dock,.pagebar,.wsbar{display:none}
+
+@media(min-width:761px){
+  html[data-level="intermediate"],html[data-level="expert"]{ --pb-h:38px; }
+  html[data-level="intermediate"].ws-gallery,html[data-level="expert"].ws-gallery{ --gal-w:132px; }
+  html[data-level="intermediate"].ws-nodes,html[data-level="expert"].ws-nodes,
+  html[data-level="intermediate"].ws-scopes,html[data-level="expert"].ws-scopes{ --dockr-w:250px; }
+  html[data-level="intermediate"].ws-strip,html[data-level="expert"].ws-strip{ --strip-h:86px; }
+
+  /*
+   * Five rows instead of three.
+   *
+   * The two new ones collapse to 0px rather than disappearing, so turning a
+   * dock on and off is a width or a height changing and never a reflow of the
+   * whole grid — which is what keeps the viewer from jumping half a second
+   * after you press a button.
+   */
+  html[data-level="intermediate"] body,html[data-level="expert"] body{
+    grid-template-rows:var(--top-h) 1fr var(--strip-h) var(--tl-h) var(--pb-h);
+  }
+  html[data-level="intermediate"] .workspace,html[data-level="expert"] .workspace{
+    grid-template-columns:var(--gal-w) var(--rail-w) var(--panel-w) 1fr var(--insp-w) var(--dockr-w);
+  }
+  /* Full-screen timeline still wins: it is a deliberate "show me the edit". */
+  html.tl-full[data-level="intermediate"] body,html.tl-full[data-level="expert"] body{
+    grid-template-rows:var(--top-h) 0px 0px 1fr var(--pb-h);
+  }
+
+  html[data-level="intermediate"] .pagebar,html[data-level="expert"] .pagebar{display:flex}
+  html[data-level="intermediate"] .wsbar,html[data-level="expert"] .wsbar{display:flex}
+  html.ws-gallery[data-level="intermediate"] .dock-gallery,
+  html.ws-gallery[data-level="expert"] .dock-gallery{display:flex}
+  html.ws-nodes[data-level="intermediate"] .dock-nodes,
+  html.ws-nodes[data-level="expert"] .dock-nodes{display:flex}
+  html.ws-scopes[data-level="intermediate"] .dock-scopes,
+  html.ws-scopes[data-level="expert"] .dock-scopes{display:flex}
+  html.ws-strip[data-level="intermediate"] .dock-strip,
+  html.ws-strip[data-level="expert"] .dock-strip{display:flex}
+  html.ws-lightbox[data-level="intermediate"] .dock-lightbox,
+  html.ws-lightbox[data-level="expert"] .dock-lightbox{display:flex}
+}
+
+.dock-right{display:flex;flex-direction:column;min-width:0;min-height:0;
+  background:var(--surface);border-left:1px solid var(--line)}
+
+/* ---- shared dock furniture ---- */
+.dock{flex-direction:column;min-width:0;min-height:0;background:var(--surface)}
+.dock-h{display:flex;align-items:center;gap:6px;height:var(--dock-h);flex:0 0 var(--dock-h);
+  padding:0 8px;border-bottom:1px solid var(--line-soft);background:var(--surface-2)}
+.dock-h b{font-size:9.5px;font-weight:750;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-3)}
+.dock-sp{flex:1}
+.dock-btn{border:1px solid var(--line);background:var(--surface-3);color:var(--text-2);
+  border-radius:5px;font-size:10.5px;font-weight:650;padding:2px 7px;line-height:1.5}
+.dock-btn:hover{background:var(--line);color:var(--text)}
+.dock-select{background:var(--surface-3);color:var(--text-2);border:1px solid var(--line);
+  border-radius:5px;font-size:10.5px;padding:1px 4px;max-width:120px}
+.dock-empty{margin:0;padding:14px 10px;font-size:11px;color:var(--text-3);text-align:center;
+  line-height:1.5}
+
+/* ---- the page bar ---- */
+/*
+ * A page is a job, and the bar is the list of jobs in the order they happen.
+ * It sits at the bottom because that is where it is in every application that
+ * has one, and because muscle memory for "change what I am doing" is worth
+ * more than the forty pixels.
+ */
+.pagebar{grid-row:5;align-items:center;gap:10px;padding:0 10px;height:var(--pb-h);
+  background:var(--surface-2);border-top:1px solid var(--line);min-width:0}
+.pb-name{font-size:10px;font-weight:700;letter-spacing:.05em;color:var(--text-3);
+  white-space:nowrap;flex:0 0 auto}
+.pb-pages{display:flex;align-items:center;gap:2px;margin:0 auto;min-width:0;overflow-x:auto;
+  scrollbar-width:none}
+.pb-pages::-webkit-scrollbar{display:none}
+.pb-page{display:flex;align-items:center;gap:6px;padding:4px 11px;border:0;border-radius:7px;
+  background:transparent;color:var(--text-3);white-space:nowrap;transition:.14s}
+.pb-page .pb-ico{font-size:13px;line-height:1}
+.pb-page i{font-style:normal;font-size:11px;font-weight:650;letter-spacing:.01em}
+.pb-page:hover{background:var(--surface-3);color:var(--text-2)}
+.pb-page.on{background:var(--surface-3);color:var(--text);box-shadow:inset 0 -2px 0 var(--blue-2)}
+.pb-right{display:flex;gap:4px;flex:0 0 auto}
+.pb-tool{border:0;background:transparent;color:var(--text-3);font-size:14px;padding:3px 7px;
+  border-radius:6px}
+.pb-tool:hover{background:var(--surface-3);color:var(--text)}
+
+/* ---- the workspace toggles, in the top bar ---- */
+.wsbar{align-items:center;gap:3px;margin-right:8px;padding-right:8px;
+  border-right:1px solid var(--line)}
+.ws-btn{border:1px solid transparent;background:transparent;color:var(--text-3);
+  font-size:10.5px;font-weight:650;padding:3px 8px;border-radius:6px;transition:.14s}
+.ws-btn:hover{color:var(--text-2);background:var(--surface-3)}
+.ws-btn.on{color:var(--text);background:var(--surface-3);border-color:var(--line)}
+
+/* ---- gallery ---- */
+.dock-gallery{border-right:1px solid var(--line);overflow:hidden}
+.gl-grid{flex:1;overflow-y:auto;padding:6px;display:grid;grid-template-columns:1fr 1fr;
+  gap:6px;align-content:start}
+.gl-still{position:relative;border:1px solid var(--line);border-radius:6px;overflow:hidden;
+  background:var(--surface-3);padding:0;display:flex;flex-direction:column}
+.gl-still:hover{border-color:var(--blue-2)}
+.gl-pic{display:block;width:100%;aspect-ratio:16/9;background:#000 center/cover no-repeat}
+.gl-still i{font-style:normal;font-size:9px;font-weight:650;color:var(--text-3);padding:2px 4px;
+  font-variant-numeric:tabular-nums}
+.gl-del{position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:4px;
+  background:rgba(4,6,13,.76);color:#fff;font-size:9px;display:grid;place-items:center;opacity:0}
+.gl-still:hover .gl-del{opacity:1}
+.gl-grid .dock-empty{grid-column:1/-1}
+
+/* ---- the node graph ---- */
+/*
+ * A row of correctors with wires between them, because that is what a serial
+ * chain is. Left to right, source at one end and output at the other, so the
+ * order on screen is the order the picture goes through.
+ */
+.dock-nodes{flex:1 1 auto;min-height:120px;border-bottom:1px solid var(--line)}
+.nd-canvas{flex:1;overflow:auto;padding:10px 8px;
+  background:
+    radial-gradient(circle at 1px 1px,var(--line-soft) 1px,transparent 0) 0 0/14px 14px,
+    var(--surface)}
+.nd-row{display:flex;flex-direction:column;align-items:center;gap:0;min-width:0}
+.nd-io{display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--text-3)}
+.nd-io i{font-style:normal;font-size:9px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase}
+.nd-io-dot{width:9px;height:9px;border-radius:50%;background:var(--text-3);
+  box-shadow:0 0 0 3px var(--surface-2)}
+.nd-io.out .nd-io-dot{background:var(--blue-2)}
+.nd-wire{width:2px;height:13px;background:linear-gradient(var(--line),var(--text-3))}
+.nd-node{position:relative;display:grid;grid-template-columns:20px 46px 1fr 18px;
+  grid-template-areas:"num pic label power" "num pic sum power";
+  align-items:center;gap:0 7px;width:100%;max-width:230px;padding:5px 6px;text-align:left;
+  border:1px solid var(--line);border-radius:7px;background:var(--surface-3);color:var(--text-2);
+  transition:.14s}
+.nd-node:hover{border-color:var(--text-3)}
+.nd-node.on{border-color:var(--blue-2);background:var(--surface-3);color:var(--text);
+  box-shadow:0 0 0 1px var(--blue-2)}
+.nd-node.off{opacity:.45}
+.nd-num{grid-area:num;font-family:var(--mono);font-size:10px;font-weight:700;
+  color:var(--text-3);text-align:center;font-variant-numeric:tabular-nums}
+.nd-thumb{grid-area:pic;width:46px;aspect-ratio:16/9;border-radius:4px;
+  background:#000 center/cover no-repeat;border:1px solid var(--line-soft)}
+.nd-label{grid-area:label;font-size:10.5px;font-weight:650;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.nd-sum{grid-area:sum;font-family:var(--mono);font-size:8.5px;color:var(--text-3);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.02em}
+.nd-power{grid-area:power;font-size:10px;color:var(--text-3);text-align:center;
+  border-radius:4px;padding:2px 0}
+.nd-power:hover{background:var(--line);color:var(--text)}
+.nd-node.off .nd-power{color:var(--amber,#ffc14a)}
+
+/* ---- scopes ---- */
+.dock-scopes{flex:0 0 auto}
+.sc-canvas{display:block;width:100%;height:auto;aspect-ratio:512/300;background:#05070d}
+
+/* ---- the clip strip ---- */
+/*
+ * Shot by shot, which is how grading is navigated. A timeline answers "what
+ * is at 41 seconds"; this answers "what is the next shot", and that is the
+ * question being asked over and over on a colour page.
+ */
+.dock-strip{grid-row:3;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  background:var(--surface-2)}
+.st-row{display:flex;gap:5px;padding:5px 7px;overflow-x:auto;align-items:stretch}
+.st-cell{position:relative;flex:0 0 auto;width:104px;padding:0;border:1px solid var(--line);
+  border-radius:5px;overflow:hidden;background:var(--surface-3);display:flex;
+  flex-direction:column;transition:.12s}
+.st-cell:hover{border-color:var(--text-3)}
+.st-cell.sel{border-color:var(--blue-2)}
+.st-cell.live{box-shadow:inset 0 0 0 2px var(--blue-2)}
+.st-pic{display:block;width:100%;flex:1;min-height:40px;background:#000 center/cover no-repeat}
+.st-cell i{font-style:normal;font-size:8.5px;font-family:var(--mono);color:var(--text-3);
+  padding:1px 4px;text-align:left;font-variant-numeric:tabular-nums}
+.st-num{position:absolute;top:2px;left:3px;font-family:var(--mono);font-size:9px;font-weight:700;
+  color:#fff;background:rgba(4,6,13,.72);border-radius:3px;padding:0 3px;line-height:1.5}
+.st-dot{position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;
+  background:var(--blue-2)}
+.st-dot.off{background:transparent;border:1px solid var(--line)}
+
+/* ---- the lightbox ---- */
+.dock-lightbox{position:fixed;inset:var(--top-h) 0 var(--pb-h) 0;z-index:420;
+  background:var(--bg);border-top:1px solid var(--line)}
+.lb-grid{flex:1;overflow-y:auto;padding:12px;display:grid;gap:10px;
+  grid-template-columns:repeat(auto-fill,minmax(190px,1fr));align-content:start}
+.lb-cell{position:relative;padding:0;border:1px solid var(--line);border-radius:8px;
+  overflow:hidden;background:var(--surface-2)}
+.lb-cell:hover{border-color:var(--blue-2)}
+.lb-pic{display:block;width:100%;aspect-ratio:16/9;background:#000 center/cover no-repeat}
+.lb-cell i{position:absolute;top:5px;left:6px;font-style:normal;font-family:var(--mono);
+  font-size:10px;font-weight:700;color:#fff;background:rgba(4,6,13,.72);border-radius:4px;
+  padding:0 5px}
+
+/*
+ * Page-specific proportions.
+ *
+ * Grading wants a big picture and a short timeline; cutting wants the
+ * opposite. These are the only numbers that differ between pages, which is
+ * deliberate — a page that rearranged everything would make the app feel like
+ * seven applications instead of one.
+ */
+@media(min-width:761px){
+  html[data-page="colour"][data-level="intermediate"],
+  html[data-page="colour"][data-level="expert"]{--tl-h:150px}
+  html[data-page="cut"][data-level="intermediate"],
+  html[data-page="cut"][data-level="expert"]{--tl-h:420px}
+  html[data-page="deliver"][data-level="intermediate"],
+  html[data-page="deliver"][data-level="expert"]{--tl-h:170px;--panel-w:420px}
+  html[data-page="media"][data-level="intermediate"],
+  html[data-page="media"][data-level="expert"]{--panel-w:380px;--tl-h:170px}
+}
+
+/* ---- the viewer bar ---- */
+.vbar{display:none;align-items:center;gap:8px;padding:0 12px;height:26px;flex:0 0 26px;
+  background:var(--surface-2);border-bottom:1px solid var(--line);font-size:11px;min-width:0}
+@media(min-width:761px){
+  html[data-level="intermediate"] .vbar,html[data-level="expert"] .vbar{display:flex}
+}
+.vb-name{font-weight:650;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;min-width:0}
+.vb-tc{font-family:var(--mono);font-size:10.5px;color:var(--text-3);
+  font-variant-numeric:tabular-nums}
+.vb-btn{border:1px solid var(--line);background:var(--surface-3);color:var(--text-3);
+  border-radius:5px;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  padding:1px 8px}
+.vb-btn:hover{color:var(--text)}
+.vb-btn.on{background:var(--amber,#ffc14a);color:#120c00;border-color:transparent}
+/* An unmissable frame while the grade is off, so nobody grades a bypassed shot. */
+html.grade-off #canvas-wrap{box-shadow:0 0 0 2px var(--amber,#ffc14a),0 20px 60px rgba(0,0,0,.5)}
+
+/* ============ Professional: a neutral room ============ */
+/*
+ * The last of the colour comes out at Professional, and this is not taste.
+ *
+ * Simultaneous contrast is measurable: the same shot reads darker and less
+ * saturated against a bright surround and lighter and more saturated against
+ * a neutral one. Grade next to a saturated blue button and your eye
+ * compensates for the button, so you push the image further than you meant
+ * and deliver a file that is wrong. Every grading suite on earth is a grey
+ * room with a grey wall behind the monitor for exactly this reason.
+ *
+ * Beginner and Intermediate keep the brand colour — nobody is judging a grade
+ * at those levels and the app should look like itself. Professional gives it
+ * up, except on the one control where losing it would cost more than it saves:
+ * the play button, which has to be findable at a glance.
+ */
+html[data-level="expert"]{
+  --bg:#0b0d11;--bg-2:#0e1116;--surface:#12151b;--surface-2:#171b22;--surface-3:#1d2128;
+  --line:#272c35;--line-soft:#1c2028;
+}
+html[data-level="expert"] .topbar,
+html[data-level="expert"] .pagebar{background:var(--surface-2)}
+html[data-level="expert"] .viewer{background:var(--bg-2)}   /* no blue wash behind the picture */
+html[data-level="expert"] .tp.play{background:var(--surface-3);color:var(--text);
+  box-shadow:none;border:1px solid var(--line)}
+html[data-level="expert"] .tp.play:hover{background:var(--line);color:#fff;filter:none}
+html[data-level="expert"] .level-switch button.on{background:var(--surface-3);color:var(--text);
+  background-image:none}
+html[data-level="expert"] .tb-btn.primary{background:var(--surface-3);color:var(--text);
+  border:1px solid var(--line);box-shadow:none}
+html[data-level="expert"] .tb-btn.primary:hover{background:var(--line);filter:none}
+html[data-level="expert"] .rail button.on{color:var(--text)}
+html[data-level="expert"] .rail button.on::before{background:var(--text-3)}
+html[data-level="expert"] .pb-page.on{box-shadow:inset 0 -2px 0 var(--text-2)}
+html[data-level="expert"] .canvas-wrap{border-radius:2px;box-shadow:0 0 0 1px var(--line)}
+html[data-level="expert"] .dh-icon{background:var(--surface-3);color:var(--text-2);box-shadow:none}
+/*
+ * The controls, too.
+ *
+ * `accent-color` paints every range and checkbox in the browser's own UI, and
+ * a column of bright blue sliders beside the picture is the same lie to the
+ * eye as a bright blue button — worse, in fact, because there are twenty of
+ * them and they are the things you look at while you drag.
+ */
+html[data-level="expert"] input[type=range],
+html[data-level="expert"] input[type=checkbox],
+html[data-level="expert"] input[type=radio]{accent-color:#8d97ab}
+html[data-level="expert"] .tl-btn.on,
+html[data-level="expert"] .rail button.on{color:var(--text)}
+html[data-level="expert"] .nd-node.on{border-color:#8d97ab;box-shadow:0 0 0 1px #8d97ab}
+html[data-level="expert"] .st-cell.live{box-shadow:inset 0 0 0 2px #8d97ab}
+html[data-level="expert"] .st-cell.sel,
+html[data-level="expert"] .gl-still:hover{border-color:#8d97ab}
+html[data-level="expert"] .nd-io.out .nd-io-dot{background:#8d97ab}
+/* Which corrector the colour controls are writing to, said plainly. */
+.grade-on{margin:0 0 10px;padding:5px 9px;border-radius:6px;font-size:11px;
+  background:var(--surface-3);border:1px solid var(--line);color:var(--text-3);line-height:1.45}
+.grade-on b{color:var(--text-2)}
+
+/* ============ every region pinned to its own track ============ */
+/*
+ * Auto-placement and `display:none` do not mix, and the failure is total.
+ *
+ * A grid item that is not displayed is not in the grid at all, so every
+ * auto-placed item after it slides up a track. Turn the clip strip off and
+ * the timeline slid into the strip's row — which is 0px on a page with no
+ * strip — and the page bar took the timeline's. The timeline was one pixel
+ * tall. Turn the gallery off and every column moved left by one: the panel
+ * got the rail's 60px, the viewer got the panel's 300, and the inspector got
+ * the 1fr that belonged to the picture.
+ *
+ * Nothing about that looks like a grid bug from the outside; it looks like
+ * the app is broken. So no region is auto-placed. Every one of them names its
+ * own row or column, and a hidden dock leaves an empty track behind it rather
+ * than a gap everything falls into.
+ */
+@media(min-width:761px){
+  html[data-level="intermediate"] .topbar,html[data-level="expert"] .topbar{grid-row:1}
+  html[data-level="intermediate"] .workspace,html[data-level="expert"] .workspace{grid-row:2}
+  html[data-level="intermediate"] .dock-strip,html[data-level="expert"] .dock-strip{grid-row:3}
+  html[data-level="intermediate"] .timeline,html[data-level="expert"] .timeline{grid-row:4}
+  html[data-level="intermediate"] .pagebar,html[data-level="expert"] .pagebar{grid-row:5}
+
+  html[data-level="intermediate"] .dock-gallery,html[data-level="expert"] .dock-gallery{grid-column:1}
+  html[data-level="intermediate"] .rail,html[data-level="expert"] .rail{grid-column:2}
+  html[data-level="intermediate"] .panel,html[data-level="expert"] .panel{grid-column:3}
+  html[data-level="intermediate"] .stage,html[data-level="expert"] .stage{grid-column:4}
+  html[data-level="intermediate"] .inspector,html[data-level="expert"] .inspector{grid-column:5}
+  html[data-level="intermediate"] .dock-right,html[data-level="expert"] .dock-right{grid-column:6}
+}
+/* An empty right column should not draw its own border. */
+html:not(.ws-nodes):not(.ws-scopes) .dock-right{display:none}

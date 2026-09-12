@@ -16,6 +16,33 @@ import { activeAt, audibleAt, mediaById, sourceTime, speedAt } from './project.j
 import { elementFor } from './media.js';
 import { buildAudioChain, fxSignature } from './audio-fx.js';
 import { buildStrip, stripSignature, warmStrip, makeupMeasured } from './audio-strip.js';
+import * as clock from './media-clock.js';
+
+/**
+ * Does this element actually carry sound?
+ *
+ * Asked of the element, not of the file, and asked while it is playing —
+ * which is the only moment any browser can answer it. `hasAudio` on the media
+ * record is a guess made at import from whatever the browser would admit to
+ * before decoding anything, and on a phone that guess is usually "no" for a
+ * file that plainly has a soundtrack.
+ *
+ * Getting this wrong in the cautious direction matters: wiring a silent video
+ * into the graph unmutes it, and an unmuted element needs user activation to
+ * start where a muted one does not. So a video with no detectable audio stays
+ * muted and keeps the easier autoplay path, and the first frame that proves
+ * otherwise upgrades it for good.
+ */
+function carriesSound(media, node) {
+  if (media.kind === 'audio' || media.hasAudio) return true;
+  const decoded = node.webkitAudioDecodedByteCount ?? 0;
+  const tracks = node.audioTracks?.length ?? 0;
+  if (decoded > 0 || tracks > 0 || node.mozHasAudio === true) {
+    media.hasAudio = true;
+    return true;
+  }
+  return false;
+}
 
 export class AudioEngine {
   constructor() {
@@ -192,14 +219,32 @@ export class AudioEngine {
       const track = project.tracks.find((tr) => tr.id === clip.trackId);
       if (!track) continue;
       const media = mediaById(project, clip.mediaId);
-      if (!media || media.missing || !media.hasAudio) continue;
+      if (!media || media.missing) continue;
       if (media.kind === 'image') continue;
       if (clip.reversed) continue;                 // no backwards playback
-
       const node = elementFor(media, clip.id);
       if (!node || node.tagName === 'IMG') continue;
-      const rec = this._wire(node);
-      if (rec) this._applyFx(rec, clip);
+
+      /*
+       * Whether there is sound no longer decides whether there is picture.
+       *
+       * This loop used to skip a clip whose audio track went undetected, and
+       * skipping it meant nobody ever started the element — so the shot froze.
+       * The transport request below therefore happens either way, and only the
+       * mixing is conditional.
+       *
+       * It is also asked again here rather than trusted from import. The
+       * import-time guess is made at `loadedmetadata`, before a single audio
+       * byte has been decoded, which is why it is wrong so often on a phone.
+       * A playing element knows the answer, so the answer is taken from the
+       * element and written back to the media record.
+       */
+      const sound = carriesSound(media, node);
+      let rec = null;
+      if (sound) {
+        rec = this._wire(node);
+        if (rec) this._applyFx(rec, clip);
+      }
       wanted.add(node);
 
       /* ---- level ---- */
@@ -219,26 +264,28 @@ export class AudioEngine {
       }
 
       /* ---- position ---- */
+      /*
+       * Asked for, not done here.
+       *
+       * Transport is the media clock's job — see engine/media-clock.js. This
+       * used to start and stop elements itself, which meant two owners for one
+       * node: the compositor wanted a video rolling so it had a fresh frame to
+       * draw, and this loop paused the same node the moment it decided the
+       * clip was inaudible. Whoever ran last won, and which one that was
+       * depended on a file's metadata.
+       */
       const src = sourceTime(clip, t);
       // Follows a ramp, so audio stays with the picture through a speed change.
-      node.playbackRate = Math.max(0.25, Math.min(4, speedAt(clip, local)));
-      if (playing) {
-        if (node.paused) { node.play().catch(() => { /* autoplay policy; the gesture will fix it */ }); }
-        // Correct drift, but only when it's audible. Nudging every frame is
-        // itself a source of stutter.
-        if (Math.abs(node.currentTime - src) > 0.28) node.currentTime = Math.max(0, src);
-        this.playingNodes.add(node);
-      } else if (!node.paused) {
-        node.pause();
-      }
+      clock.want(node, Math.max(0, src), speedAt(clip, local));
+      this.playingNodes.add(node);
     }
 
-    // Silence and stop everything that shouldn't be heard.
+    // Silence everything that shouldn't be heard. Stopping it is the clock's
+    // business: a node this loop has finished with may still be on screen.
     for (const node of [...this.playingNodes]) {
       if (wanted.has(node)) continue;
       const rec = this.wired.get(node);
       if (rec) rec.gain.gain.setTargetAtTime(0, now, 0.02);
-      if (!node.paused) node.pause();
       this.playingNodes.delete(node);
     }
   }
@@ -246,11 +293,11 @@ export class AudioEngine {
   /** Hard stop — used on pause, on project close and when export finishes. */
   stopAll() {
     for (const node of [...this.playingNodes]) {
-      try { node.pause(); } catch { /* already stopped */ }
       const rec = this.wired.get(node);
       if (rec) rec.gain.gain.value = 0;
     }
     this.playingNodes.clear();
+    clock.stopAll();
   }
 
   /**

@@ -96,6 +96,13 @@ export const LOOK_GROUPS_ALL = {
 export const LOOK_BY_ID = Object.fromEntries(LOOKS.map((l) => [l.id, l]));
 
 /** A look's values merged over the clip's own, scaled by strength. */
+/* Every grading value at rest. Frozen: it is handed out, never written to. */
+const defaultNeutral = Object.freeze({
+  look: 'none', strength: 1,
+  exposure: 0, contrast: 0, saturation: 0, temperature: 0, tint: 0,
+  highlights: 0, shadows: 0, vignette: 0, grain: 0, blur: 0, sharpen: 0,
+});
+
 export function resolved(color) {
   /*
    * A clip stores a LUT's id, never the table itself.
@@ -107,6 +114,16 @@ export function resolved(color) {
    * A project opened on a machine that has not loaded that LUT simply grades
    * without it rather than failing to open.
    */
+  /*
+   * No colour at all is a legitimate answer.
+   *
+   * The viewer's bypass hands this null rather than a neutral object, because
+   * "there is no grade" and "there is a grade whose every value is zero" are
+   * different things to the caller — one of them still has a look and a LUT
+   * attached. Returning the neutral shape here lets every pass downstream
+   * carry on without a second code path for the bypassed case.
+   */
+  if (!color) return { ...defaultNeutral, _look: null, _lut: null };
   const lut = color.lut ? lutById(color.lut) : null;
   const look = LOOK_BY_ID[color.look];
   if (!look || look.id === 'none') return { ...color, _look: null, _lut: lut };
@@ -270,6 +287,7 @@ export function applyPasses(ctx, w, h, c) {
 /** True when a clip's colour settings do anything at all — lets the renderer
  *  skip the whole scratch-canvas path for untouched clips. */
 export function isIdentity(c) {
+  if (!c) return true;
   if (c.look && c.look !== 'none') return false;
   if (c._lut && (c.lutAmount ?? 1) > 0.002) return false;
   // A curve that is still a straight line is not a grade, so a clip carrying

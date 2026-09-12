@@ -257,6 +257,19 @@ export function addClip(p, {
     /* Shape masks: power windows for the grade, or the outline of the layer
        itself. Empty on every clip until somebody draws one. */
     masks: [],
+    /*
+     * Extra correctors, in series after the clip's own grade.
+     *
+     * Empty on every clip, and that is the point: `color` and `masks` above
+     * are corrector one, exactly as they always were, so every project ever
+     * saved still opens and still grades identically. A second corrector is
+     * only ever a thing somebody asked for, and then it is a real one — its
+     * own wheels, its own windows, its own qualifier, reading the output of
+     * the corrector before it. That serial chain is the difference between a
+     * colour panel and a grading suite: you cannot key the sky, push it, and
+     * then key the skin out of the result with a single set of controls.
+     */
+    grades: [],
     volume: 1,
     fadeIn: 0,
     fadeOut: 0,
@@ -802,6 +815,81 @@ export function animatedColor(clip, t) {
     out[field] = valueAt(clip, prop, t, clip.color[field]);
   }
   return out || clip.color;
+}
+
+/* ------------------------------------------------------------------ */
+/* the grade chain                                                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * A new corrector, neutral, with nothing selected.
+ *
+ * Shaped like the part of a clip that gets graded — `color` and `masks` —
+ * rather than like a clip, because that is exactly what the renderer and the
+ * matte builder already know how to read. A corrector can therefore be handed
+ * to `combinedMatte` in place of a clip and it simply works.
+ */
+export function newGradeNode(label = '') {
+  return {
+    id: uid('n'),
+    label,
+    on: true,
+    color: defaultColor(),
+    masks: [],
+  };
+}
+
+/**
+ * The whole chain, corrector one first.
+ *
+ * Corrector one is not stored — it *is* the clip's own `color` and `masks`,
+ * presented here under a node's name so the graph has one kind of thing in it
+ * instead of two. `base: true` marks it, because it cannot be deleted and its
+ * edits go somewhere different.
+ */
+export function gradeNodes(clip) {
+  if (!clip) return [];
+  const base = {
+    id: `${clip.id}:base`,
+    base: true,
+    label: 'Corrector 1',
+    on: clip.gradeOn !== false,
+    color: clip.color,
+    masks: clip.masks || [],
+  };
+  return [base, ...(clip.grades || []).map((n, i) => ({ ...n, label: n.label || `Corrector ${i + 2}` }))];
+}
+
+/** Add a corrector to the end of the chain and return it. */
+export function addGradeNode(clip, label) {
+  clip.grades ||= [];
+  const node = newGradeNode(label);
+  clip.grades.push(node);
+  return node;
+}
+
+export function removeGradeNode(clip, id) {
+  if (!clip.grades) return clip;
+  clip.grades = clip.grades.filter((n) => n.id !== id);
+  return clip;
+}
+
+/** Find one corrector by id, base included. */
+export function gradeNodeById(clip, id) {
+  return gradeNodes(clip).find((n) => n.id === id) || null;
+}
+
+/**
+ * The live corrector for editing — the stored object, not the copy.
+ *
+ * `gradeNodes` spreads the extra correctors so the base can be synthesised
+ * alongside them, which means writing to what it returns writes to a copy and
+ * nothing happens. Anything that edits has to come through here.
+ */
+export function liveGradeNode(clip, id) {
+  if (!clip) return null;
+  if (!id || id === `${clip.id}:base`) return clip;          // the clip itself is corrector one
+  return (clip.grades || []).find((n) => n.id === id) || null;
 }
 
 /**

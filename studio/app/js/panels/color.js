@@ -69,6 +69,17 @@ function lookGroups(clip) {
 export function mount(host) {
   const sel = [...S.sel];
   const clip = sel.length === 1 ? S.project.clips.find((c) => c.id === sel[0]) : null;
+  /*
+   * Read from whichever corrector the node graph has selected.
+   *
+   * `clip` still decides whether there is anything to grade at all and still
+   * owns the things that are genuinely per-clip — curves, LUTs, the clip's
+   * own outline mask. `grade` is where the colour values come from and where
+   * they go back to, and for corrector one it *is* the clip, so at Beginner
+   * and Intermediate this reads exactly as it always did.
+   */
+  const grade = (clip && actions.gradeHost?.()) || clip;
+  const nodeName = grade && clip && grade !== clip ? gradeNodeName(clip, grade) : null;
   const target = sel.length ? `${sel.length} clip${sel.length === 1 ? '' : 's'}` : 'every clip';
 
   host.innerHTML = `
@@ -77,6 +88,8 @@ export function mount(host) {
       <button class="btn btn-sm btn-ghost" id="c-copy" title="Copy this grade to every clip">Match all</button>
     </div>
     <p class="panel-sub">Applies to ${esc(target)}.</p>
+    ${nodeName ? `<p class="grade-on">Editing <b>${esc(nodeName)}</b> — pick another in the
+      node graph, or press Alt+S for a new one.</p>` : ''}
 
     ${currentLevel() === 'expert' ? `
       <div class="group scope-box" style="padding:10px">
@@ -103,7 +116,7 @@ export function mount(host) {
          first screen. -->
     <input class="input" id="c-look-search" placeholder="Search looks — film, mood, mono…"
            style="margin-bottom:10px">
-    <div id="c-looks">${lookGroups(clip)}</div>
+    <div id="c-looks">${lookGroups(grade)}</div>
 
     <!-- Curves and LUTs were on the pricing page before they were in the app.
          They are the two things a colourist reaches for first, and the reason
@@ -164,7 +177,7 @@ export function mount(host) {
                 </div>
               </div>`).join('')}
           </div>
-          ${slider({ key: 'offset', label: 'Overall', value: (clip.color.wheels?.offset ?? 0),
+          ${slider({ key: 'offset', label: 'Overall', value: (grade.color.wheels?.offset ?? 0),
             min: -1, max: 1, step: 0.01, fmt: (v) => Number(v).toFixed(2) })}
           <div class="btn-row" style="margin-top:6px">
             <button class="btn btn-sm btn-ghost" id="c-wheels-reset">Reset all wheels</button>
@@ -178,7 +191,7 @@ export function mount(host) {
 
     <div id="c-sliders" style="margin-top:16px">
       ${clip ? CONTROLS.map((ctl) => `<div data-min="${ctl.level}">${slider({
-        key: ctl.key, label: ctl.label, value: clip.color[ctl.key] ?? 0,
+        key: ctl.key, label: ctl.label, value: grade.color[ctl.key] ?? 0,
         min: ctl.min, max: ctl.max, step: ctl.step || 1,
         fmt: (v) => (ctl.step ? Number(v).toFixed(1) : String(Math.round(v))),
       })}</div>`).join('') : ''}
@@ -248,6 +261,20 @@ export function mount(host) {
     if (!btn) return;
     const feature = btn.dataset.tier === 'free' ? 'basic-filters' : 'all-filters';
     licence.gate(feature, () => {
+      /*
+       * A look lands on the corrector in hand when there is one.
+       *
+       * Without this, picking a corrector, reaching for a look and watching it
+       * land on corrector one instead would be the single most confusing thing
+       * on the page — the chips sit directly above the wheels that *do* write
+       * to the selected corrector.
+       */
+      const host = actions.gradeHost?.();
+      if (host && !S.project.clips.includes(host)) {
+        actions.patchGrade((g) => { g.color.look = btn.dataset.look; g.color.strength = 1; },
+          'Apply look');
+        return;
+      }
       const ids = S.sel.size ? [...S.sel] : videoClipIds();
       for (const id of ids) {
         const c = S.project.clips.find((x) => x.id === id);
@@ -261,12 +288,23 @@ export function mount(host) {
     const key = e.target.dataset.k;
     if (!key) return;
     const value = Number(e.target.value);
-    actions.patchSelected((c) => { c.color[key] = value; }, `Change ${key}`, `colour:${key}`);
+    actions.patchGrade((c) => { c.color[key] = value; }, `Change ${key}`, `colour:${key}`);
     const label = host.querySelector(`[data-val="${CSS.escape(key)}"]`);
     if (label) label.textContent = String(Math.round(value));
   });
 
   $('#c-reset', host).addEventListener('click', () => {
+    // Same rule as the looks: reset what is in hand, not the whole clip.
+    const target = actions.gradeHost?.();
+    if (target && !S.project.clips.includes(target)) {
+      actions.patchGrade((g) => {
+        for (const ctl of CONTROLS) g.color[ctl.key] = 0;
+        g.color.look = 'none';
+        g.color.strength = 1;
+        g.color.wheels = null;
+      }, 'Reset this corrector');
+      return;
+    }
     const ids = S.sel.size ? [...S.sel] : videoClipIds();
     for (const id of ids) {
       const c = S.project.clips.find((x) => x.id === id);
@@ -293,7 +331,7 @@ export function mount(host) {
   for (const btn of $$('[data-wreset]', host)) {
     btn.addEventListener('click', () => {
       const which = btn.dataset.wreset;
-      actions.patchSelected((c) => {
+      actions.patchGrade((c) => {
         c.color.wheels = { ...(c.color.wheels || neutralWheels()) };
         c.color.wheels[which] = { r: 0, g: 0, b: 0 };
       }, `Reset ${which}`);
@@ -301,20 +339,26 @@ export function mount(host) {
   }
 
   $('#c-wheels-reset', host)?.addEventListener('click', () => {
-    actions.patchSelected((c) => { c.color.wheels = null; }, 'Reset colour wheels');
+    actions.patchGrade((c) => { c.color.wheels = null; }, 'Reset colour wheels');
   });
 
   host.addEventListener('input', (e) => {
     if (e.target.dataset.k !== 'offset') return;
     const v = Number(e.target.value);
-    actions.patchSelected((c) => {
+    actions.patchGrade((c) => {
       c.color.wheels = { ...(c.color.wheels || neutralWheels()), offset: v };
     }, 'Overall exposure', 'wheel:offset');
   });
 
-  if (clip) wireWheels(host, clip);
+  if (clip) wireWheels(host, grade);
   startScope(host);
   void $$;
+}
+
+/** Which corrector in the chain this object is, by name. */
+function gradeNodeName(clip, host) {
+  const i = (clip.grades || []).findIndex((n) => n === host);
+  return i < 0 ? null : ((clip.grades[i].label) || `Corrector ${i + 2}`);
 }
 
 function videoClipIds() {
@@ -416,10 +460,10 @@ function paintWheel(canvas, offset) {
   }
 }
 
-function wireWheels(host, clip) {
+function wireWheels(host, grade) {
   for (const canvas of $$('[data-wheel]', host)) {
     const which = canvas.dataset.wheel;
-    const current = () => clip.color.wheels?.[which] || { r: 0, g: 0, b: 0 };
+    const current = () => grade.color.wheels?.[which] || { r: 0, g: 0, b: 0 };
     paintWheel(canvas, current());
     updateReadout(host, which, current());
 
@@ -437,7 +481,7 @@ function wireWheels(host, clip) {
         g: Number(((c.g - 0.5) * 2 * push).toFixed(4)),
         b: Number(((c.b - 0.5) * 2 * push).toFixed(4)),
       };
-      actions.patchSelected((cl) => {
+      actions.patchGrade((cl) => {
         cl.color.wheels = { ...(cl.color.wheels || neutralWheels()), [which]: offset };
       }, `Colour wheel: ${which}`, `wheel:${which}`);
       paintWheel(canvas, offset);
@@ -457,7 +501,7 @@ function wireWheels(host, clip) {
     });
 
     canvas.addEventListener('dblclick', () => {
-      actions.patchSelected((cl) => {
+      actions.patchGrade((cl) => {
         cl.color.wheels = { ...(cl.color.wheels || neutralWheels()), [which]: { r: 0, g: 0, b: 0 } };
       }, `Reset ${which}`);
       paintWheel(canvas, { r: 0, g: 0, b: 0 });

@@ -24,6 +24,7 @@ import { duration as projectDuration, activeAt, mediaById } from './project.js';
 import { tc } from '../ui.js';
 import { fontsUsedBy } from './titles.js';
 import { preloadFonts } from './fonts-library.js';
+import * as clock from './media-clock.js';
 
 export const PRESETS = [
   { id: 'tiktok',  name: 'TikTok / Reels / Shorts', w: 1080, h: 1920, fps: 30, tier: 'free',
@@ -235,6 +236,16 @@ export function exportProject(project, {
         if (t >= total) { finish(); return; }
         renderer.draw(project, t, { playing: true, forExport: false });
         audioEngine.sync(project, t, true);
+        /*
+         * The same commit the preview does, for the same reason.
+         *
+         * A realtime export is the timeline playing into a recorder, so it
+         * needs the elements rolling exactly as playback does — and the two
+         * lines above only say which ones. Without this the recorder captures
+         * a frozen frame for the whole duration, which is the preview bug
+         * wearing a different hat.
+         */
+        clock.commit(true);
         if (first) { first = false; onFirstFrame?.(canvas); }
         onProgress?.({ done: t, total, phase: 'recording', seconds: t, mode });
         requestAnimationFrame(frame);
@@ -268,6 +279,8 @@ export function exportProject(project, {
     }
 
     function finish() {
+      // Nothing should still be rolling once the recorder is told to stop.
+      clock.stopAll();
       onProgress?.({ done: total, total, phase: 'finishing', seconds: total, mode });
       // Give the encoder a moment to flush its last frames before stopping.
       setTimeout(() => { try { recorder.stop(); } catch { /* already stopped */ } }, 260);

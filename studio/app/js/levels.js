@@ -10,11 +10,14 @@
  * The three levels are not the same app with things taken away. They are three
  * densities:
  *
- *   Beginner       roomy, guided, the inspector out of the way entirely.
- *   Intermediate   the real timeline and inspector, at a working density.
+ *   Beginner       roomy, guided, the inspector out of the way entirely, and
+ *                  one screen: panel, picture, timeline.
+ *   Intermediate   pages, the real timeline and inspector, at a working
+ *                  density. A node graph and scopes, without the vocabulary.
  *   Professional   finishing-suite density — smaller type, tighter rows, a
- *                  taller timeline, tabular figures, and a deliberately grey
- *                  chrome so the only saturated thing on screen is the image.
+ *                  taller timeline, tabular figures, serial correctors, and a
+ *                  deliberately grey chrome so the only saturated thing on
+ *                  screen is the image.
  *
  * That last one matters more than the feature list. A colourist judging a
  * grade next to bright blue furniture is being lied to by their own eye, which
@@ -38,10 +41,12 @@ export const DESCRIPTIONS = {
   intermediate: {
     name: 'Intermediate',
     tag: 'Editing',
-    line: 'The full timeline and inspector at a working density, without the colour-science vocabulary.',
-    shows: ['Multitrack timeline with ripple, roll and slip',
+    line: 'Pages, the full timeline and the inspector at a working density, without the colour-science vocabulary.',
+    shows: ['Pages: Media, Cut, Edit, Colour, Fairlight, Deliver',
+      'Multitrack timeline with ripple, roll and slip',
       'Inspector: transform, crop, opacity, blend',
-      'Colour sliders and the whole look library',
+      'A node graph, colour sliders and the whole look library',
+      'Scopes, the stills gallery and the shot strip',
       'Audio mixing, fades, ducking and creative filters',
       'Transitions, markers and snapping',
       'Motion tracking',
@@ -50,10 +55,14 @@ export const DESCRIPTIONS = {
   expert: {
     name: 'Professional',
     tag: 'Finishing',
-    line: 'Finishing-suite density and a neutral chrome, with nothing hidden from you.',
-    shows: ['Keyframes with bezier easing on every property',
+    line: 'A finishing suite: seven pages, serial correctors, scopes, and a neutral grey room around the picture.',
+    shows: ['Serial correctors — a real node chain, each one keying the last one\u2019s output',
+      'The Motion page, plus the lightbox for matching a sequence',
+      'Stills gallery: grab a grade, drop it on the next shot',
+      'Keyframes with bezier easing on every property',
       'Curves, scopes and HSL qualifiers',
       'Three-way colour wheels and unlimited LUT slots',
+      'Bypass on one key, to see the shot as it was',
       'Speed ramping and time remapping',
       'Frame-accurate timecode on every field',
       'ProRes, DNxHR and H.265 delivery',

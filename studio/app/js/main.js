@@ -22,6 +22,7 @@ import {
 import { Renderer } from './engine/render.js';
 import { Transport } from './engine/playback.js';
 import { AudioEngine } from './engine/audio.js';
+import * as clock from './engine/media-clock.js';
 import * as preview from './engine/preview.js';
 import { CHECK_RATIOS, drawCheck, lossFor } from './engine/multiframe.js';
 import { tagVideo } from './engine/tags.js';
@@ -30,6 +31,8 @@ import { initHistoryUi, showDid, openHistory, paintUndoButtons } from './history
 import { initTips, applyTipsForLevel, setTips, tipsOn } from './tips.js';
 import { initMoreSheet } from './more-sheet.js';
 import { initMaskUi, paintMaskUi } from './mask-ui.js';
+import { chooseProject } from './start.js';
+import * as ws from './workspace.js';
 import { mattePreview } from './panels/masks.js';
 import { initContextMenus, attach as attachMenu } from './context-menu.js';
 import { mediaMenu, viewerMenu } from './menus.js';
@@ -113,6 +116,7 @@ export const actions = {
     refreshPanel();
     paintTransport();
     paintUndo();
+    ws.refresh();
   },
 
   seek(t, opts = {}) {
@@ -126,6 +130,7 @@ export const actions = {
   select(ids) {
     S.sel = new Set(ids.filter(Boolean));
     timeline.render();
+    ws.refresh();
     refreshPanel();
   },
 
@@ -581,6 +586,61 @@ export const actions = {
     actions.commit(by > 0 ? 'Nudge later' : 'Nudge earlier', 'nudge');
   },
 
+  /**
+   * Change the corrector the colour tools are pointed at.
+   *
+   * Corrector one *is* the clip — its grade lives in `clip.color` and always
+   * has — so the callback is handed either a clip or a corrector, and both
+   * have a `.color` on them. That is why the colour panel needed no rewriting
+   * to gain a node graph: every control in it already said `x.color.contrast`
+   * and never cared what `x` was.
+   */
+  patchGrade(fn, label, coalesceKey) {
+    const host = ws.activeGradeTarget();
+    /*
+     * A corrector overrides the selection. Nothing else does.
+     *
+     * Picking corrector three and dragging a wheel has to write to corrector
+     * three, obviously. But the first version of this diverted *every* colour
+     * edit through the grade target, which quietly broke the oldest behaviour
+     * in the panel: select six clips, drag saturation, and all six move. They
+     * stopped moving — only the one under the playhead did — and nothing on
+     * screen said why.
+     *
+     * So the test is what kind of thing came back. A corrector is not one of
+     * the project's clips; a clip is. When it is a clip, this is an ordinary
+     * colour edit and means what it has always meant.
+     */
+    if (host && !S.project.clips.includes(host)) {
+      fn(host);
+      actions.commit(label, coalesceKey);
+      return;
+    }
+    if (S.sel.size) { actions.patchSelected(fn, label, coalesceKey); return; }
+    // Nothing selected, but a shot is under the playhead — the Colour page's
+    // normal state. Grade that one rather than nothing at all.
+    if (host) { fn(host); actions.commit(label, coalesceKey); }
+  },
+
+  /** What the colour controls should read their current values from. */
+  gradeHost() {
+    return ws.activeGradeTarget();
+  },
+
+  /** Change one named clip. The workspace docks edit by id, not by selection. */
+  patchClip(id, fn, label, coalesceKey) {
+    const clip = clipById(S.project, id);
+    if (!clip) return;
+    fn(clip);
+    actions.commit(label, coalesceKey);
+  },
+
+  /** Change something on the project itself — the gallery of stills, say. */
+  patch(fn, label, coalesceKey) {
+    fn(S.project);
+    actions.commit(label, coalesceKey);
+  },
+
   /** Change one field on every selected clip. Used by every inspector control. */
   patchSelected(fn, label, coalesceKey) {
     if (!S.sel.size) return;
@@ -621,23 +681,39 @@ export const actions = {
     actions.commit(`Canvas ${ratio}`);
   },
 
-  async newProject() {
-    if (!await confirmDialog({
-      title: 'Start a new project?',
-      body: 'This one is saved and stays in your project list.',
-      confirmText: 'New project',
-    })) return;
+  /**
+   * New, or open another one — the same screen either way.
+   *
+   * They were two different things: a confirm dialog that made an Untitled
+   * project, and a settings panel listing what you had. One screen does both,
+   * and it is the screen the app already opens on, so there is one place to
+   * learn instead of two.
+   */
+  async openStart({ canCancel = true } = {}) {
+    const { chooseProject } = await import('./start.js');
+    const choice = await chooseProject({ canCancel });
+    if (!choice || choice.action === 'cancel') return;
+
     await saveNow();
+    if (choice.action === 'open') {
+      if (choice.id === S.project.id) return;      // already in it
+      await actions.openProject(choice.id);
+      return;
+    }
     media.releaseAll();
-    S.project = newProject();
+    S.project = newProject({ name: choice.name, ratio: choice.ratio, fps: choice.fps });
     S.sel.clear();
     S.beats = null;
     S.history.reset(S.project, 'New project');
     sizeCanvas();
+    await store.saveProject(S.project);
+    await store.pref('lastProject', S.project.id);
     actions.seek(0);
     actions.refresh();
     paintName();
   },
+
+  newProject() { return actions.openStart({ canCancel: true }); },
 
   async openProject(id) {
     const doc = await store.loadProject(id);
@@ -684,13 +760,27 @@ async function loadDocument(doc) {
   media.releaseAll();
   const project = deserialize(doc);
   for (const m of project.media) {
-    // eslint-disable-next-line no-await-in-loop -- IndexedDB reads are sequential anyway
-    await media.rehydrate(m);
-    if (m.hasAudio || m.kind === 'audio') {
-      // eslint-disable-next-line no-await-in-loop
-      const buffer = await media.decode(m);
-      if (buffer) m.peaks = media.peaks(buffer, 900);
-      if (m.kind === 'audio' && buffer && !S.beats) S.beats = media.detectBeats(buffer);
+    /*
+     * One unreadable file must not cost the whole project.
+     *
+     * Restoring media touches the database, the decoder and the beat finder,
+     * and any of the three can fail on one record — a file that has gone, a
+     * codec this browser dropped, an entry written wrong. Letting that throw
+     * left the editor on whatever was already open with nothing said, which
+     * looks exactly like clicking the project did nothing. The clip is marked
+     * missing instead, which the app already knows how to explain.
+     */
+    try {
+      // eslint-disable-next-line no-await-in-loop -- IndexedDB reads are sequential anyway
+      await media.rehydrate(m);
+      if (m.hasAudio || m.kind === 'audio') {
+        // eslint-disable-next-line no-await-in-loop
+        const buffer = await media.decode(m);
+        if (buffer) m.peaks = media.peaks(buffer, 900);
+        if (m.kind === 'audio' && buffer && !S.beats) S.beats = media.detectBeats(buffer);
+      }
+    } catch {
+      m.missing = true;
     }
   }
   const missing = project.media.filter((m) => m.missing);
@@ -775,7 +865,18 @@ function drawFrame(scrub = false) {
   renderer.beats = S.beats;
   renderer.fps = S.project.settings.fps;
   renderer.showMatte = mattePreview();
-  renderer.draw(S.project, S.time, { playing: S.playing || scrub });
+  // Bypass is a viewer state held on the document while a key or button is
+  // down; the renderer is told, rather than asking, once per frame.
+  renderer.bypassGrade = document.documentElement.classList.contains('grade-off');
+  /*
+   * `scrub` is its own flag now.
+   *
+   * It used to be passed as `playing`, back when `playing` only meant "leave
+   * the video elements alone". It means "start them rolling" now, so folding
+   * a scrub into it would set the footage playing under the finger dragging
+   * the playhead.
+   */
+  renderer.draw(S.project, S.time, { playing: S.playing, scrub });
   // The handles follow the picture: a window drawn on one frame has to sit in
   // the same place on the next, and the canvas can be resized underneath it.
   paintMaskUi();
@@ -981,7 +1082,24 @@ function syncAfterStep() {
 function togglePlay() {
   audio.ensure();
   audio.resume();
+  // This is a real gesture. Spend it before starting, not after: the transport
+  // starts its elements from an animation frame, which is too late to count.
+  unlockPlayback();
   transport.toggle();
+}
+
+/*
+ * Everything a phone needs before it will play an unmuted element.
+ *
+ * Safe to call as often as you like — the audio context is created once, the
+ * resume is a no-op when it is already running, and the element unlock only
+ * touches decoders that are sitting paused.
+ */
+function unlockPlayback() {
+  audio.ensure();
+  audio.resume();
+  media.unlock();
+  clock.retry();
 }
 
 function setZoom(v) {
@@ -1031,7 +1149,43 @@ function wireChrome() {
   });
 
   // On a phone, touching the picture puts the panel away.
-  $('#viewer').addEventListener('pointerdown', () => { if (panelIsOverlay()) closePanel(); });
+  $('#viewer').addEventListener('pointerdown', () => {
+    if (panelIsOverlay()) closePanel();
+    // And it is the gesture the browser was holding out for, if the sound was
+    // refused. The toast tells people to tap the picture; this is what makes
+    // that true rather than just encouraging.
+    if (clock.isBlocked()) unlockPlayback();
+  });
+
+  /*
+   * The first touch anywhere, spent on the decoders.
+   *
+   * A phone will not start an unmuted media element without a gesture, and
+   * will not accept one that arrived a few hundred milliseconds late from a
+   * timer. Whatever somebody touches first — a menu, a clip, the play button —
+   * is the one chance to get every element already in the pool into a state
+   * where the transport can start it. It costs a play() and an immediate
+   * pause() on a handful of elements and is never repeated.
+   */
+  let unlocked = false;
+  const firstGesture = () => {
+    if (unlocked) return;
+    unlocked = true;
+    unlockPlayback();
+  };
+  document.addEventListener('pointerdown', firstGesture, { capture: true });
+  document.addEventListener('keydown', firstGesture, { capture: true });
+
+  /*
+   * Say something when the browser refuses to play.
+   *
+   * It refuses silently, and the app keeps the picture moving by seeking
+   * instead — so without this the only symptom is a video with no sound and
+   * no explanation, which reads as a broken app rather than a policy.
+   */
+  clock.onBlockedChange((on) => {
+    if (on) toast('Tap the picture to turn the sound on', 'warn', 5200);
+  });
 
   // transport
   $('#tp-play').addEventListener('click', togglePlay);
@@ -1154,9 +1308,62 @@ function wireChrome() {
 function paintLevel() {
   const level = levels.current();
   $$('#level-switch button').forEach((b) => b.classList.toggle('on', b.dataset.level === level));
+  /*
+   * The workspace follows the level, from here rather than from each switch.
+   *
+   * There are four places that change the level — the top bar, the phone
+   * sheet, the command palette and the desktop menus — and every one of them
+   * already calls this. Hooking the pages in at each of the four is how three
+   * of them end up correct and the fourth does not.
+   */
+  ws.onLevelChange();
 }
 
 /* ------------------------------------------------------------------ */
+/**
+ * What happens between the splash and the timeline.
+ *
+ * Straight into an empty "Untitled project" is a small cruelty: it looks like
+ * the app forgot the six hours you spent in it yesterday, and the only way to
+ * find out it did not is to go hunting through a settings panel. So the editor
+ * opens on what you have, the way Resolve, Premiere and Final Cut all do.
+ *
+ * Two ways past it, both deliberate. `?project=<id>` opens one directly, which
+ * is what a link from the site or a desktop shortcut needs; `?new=1` skips to
+ * a fresh timeline for anyone who genuinely wants that every time.
+ */
+async function openingScreen() {
+  const params = new URLSearchParams(location.search);
+
+  const wanted = params.get('project');
+  if (wanted) {
+    const doc = await store.loadProject(wanted);
+    if (doc) { await loadDocument(doc); return; }
+    toast('That project is not on this device', 'bad', 4600);
+  }
+  if (params.get('new') === '1') return;
+
+  const choice = await chooseProject();
+  if (choice?.action === 'open') {
+    const doc = await store.loadProject(choice.id);
+    if (doc) { await loadDocument(doc); return; }
+    toast('That project could not be opened', 'bad');
+    return;
+  }
+  if (choice?.action === 'new') {
+    S.project = newProject({ name: choice.name, ratio: choice.ratio, fps: choice.fps });
+    S.sel.clear();
+    S.beats = null;
+    S.history.reset(S.project, 'New project');
+    sizeCanvas();
+    // Saved immediately, so it is in the list the moment it exists rather than
+    // only after the first edit — somebody who names a project and then closes
+    // the tab should find it again.
+    await store.saveProject(S.project);
+    await store.pref('lastProject', S.project.id);
+  }
+}
+
 /* boot                                                                */
 /* ------------------------------------------------------------------ */
 
@@ -1176,13 +1383,27 @@ function paintLevel() {
       renderer.beats = S.beats;
       renderer.draw(S.project, t, { playing });
       audio.sync(S.project, t, playing);
+      /*
+       * Last, and once.
+       *
+       * Both of the two lines above register the elements they need rolling;
+       * this is the single place that actually starts, stops and nudges them.
+       * Doing it here rather than inside either one is what stops the two of
+       * them contradicting each other — which is what used to leave a clip
+       * showing one frozen frame while the playhead swept past it.
+       */
+      clock.commit(playing);
       timeline.renderPlayhead();
+      ws.onFrame();
       $('#tc').textContent = tc(t, S.project.settings.fps);
     },
     onStateChange: (tp) => {
       S.playing = tp.playing;
       if (!tp.playing) audio.stopAll();
       paintTransport();
+      // Parking every element on the frame it stopped at, so the picture on
+      // screen is the frame the playhead is actually sitting on.
+      if (!tp.playing) drawFrame();
     },
   });
 
@@ -1217,6 +1438,28 @@ function paintLevel() {
   });
 
   /*
+   * Pages and docks, at Intermediate and Professional.
+   *
+   * Handed the same actions table everything else uses rather than the state
+   * object, so a dock cannot reach past undo — every change the gallery or the
+   * node graph makes goes through commit() and lands in the history like any
+   * other edit. `state` is the one read-only exception, because a dock has to
+   * know what is selected and where the playhead is to draw itself at all.
+   */
+  ws.initWorkspace({
+    state: () => S,
+    openPanel,
+    refreshPanel,
+    sizeCanvas,
+    patch: (fn, label, key) => actions.patch(fn, label, key),
+    patchClip: (id, fn, label, key) => actions.patchClip(id, fn, label, key),
+    select: (ids) => actions.select(ids),
+    seek: (t) => actions.seek(t),
+    openStart: (opts) => actions.openStart(opts),
+    redraw: () => drawFrame(),
+  });
+
+  /*
    * One table of things the chrome can do, shared by the menu bar, the phone
    * sheet and the right-click menus. A second copy would drift — and the first
    * symptom of drift is a menu item that works in one place and not another,
@@ -1225,7 +1468,7 @@ function paintLevel() {
   menubarApi = {
     /* file */
     newProject: () => actions.newProject(),
-    openProject: () => openPanel('settings'),
+    openProject: () => actions.openStart({ canCancel: true }),
     importMedia: () => $('#file-input').click(),
     importProjectFile: () => $('#file-input').click(),
     exportProjectFile: () => actions.exportProjectFile(),
@@ -1411,11 +1654,7 @@ function paintLevel() {
       store.clearDirty();
     }
   } else {
-    const lastId = await store.pref('lastProject');
-    if (lastId) {
-      const doc = await store.loadProject(lastId);
-      if (doc) await loadDocument(doc);
-    }
+    await openingScreen();
   }
 
   actions.refresh();

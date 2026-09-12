@@ -100,6 +100,29 @@ eyeballed.
 - **Adjustment layers**, **compound clips** with real nesting, and **scene edit
   detection** that finds the cuts in an already-flattened video and splits
   there
+- **Pages** at Intermediate and Professional — Media, Cut, Edit, Motion,
+  Colour, Fairlight, Deliver. One screen per job rather than one screen that
+  is a compromise between seven of them. Beginner is untouched: still one
+  panel, one picture, one timeline
+- **Serial correctors** — a real node chain. Each corrector reads the finished
+  output of the one before it, with its own wheels, windows and qualifier, so
+  you can key the sky in node two and key skin out of *that result* in node
+  three. Verified on pixels, not on the boxes: corrector one desaturating and
+  corrector two lifting on top of it both measured out of the renderer
+- **The colourist's furniture** — a stills gallery you grab a grade into and
+  drop on the next shot, a shot strip, a lightbox for spotting the one that
+  does not match, scopes docked beside the picture, and bypass on one key with
+  an amber border so a bypassed shot can never be mistaken for a graded one
+- **A neutral room at Professional** — every saturated surface in the chrome
+  gone, measured: no gradient on the play button, no brand colour on the
+  export button, greyed slider accents. Simultaneous contrast is real, and a
+  blue button beside the picture makes you grade past where you meant to
+- **Playback that plays.** A clip whose audio track the browser failed to
+  detect used to sit on one frozen frame with no sound while the playhead swept
+  past it — the normal case on a phone, where the probe runs before a single
+  audio byte is decoded. One media clock now owns play, pause, rate and
+  position for every element, and when a browser refuses to start an unmuted
+  one the picture is driven by seeking instead of freezing
 - Every effect, look and transition previews on your own footage. Nothing is a
   shipped screenshot, so nothing can drift from what it actually does — and it
   adds zero bytes to the download

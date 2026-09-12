@@ -104,6 +104,16 @@ export async function putMedia(hash, file, meta = {}) {
 }
 
 export function getMedia(hash) {
+  /*
+   * A missing hash is a miss, not a crash.
+   *
+   * IndexedDB's get() throws on an undefined key rather than returning
+   * nothing, so one media record written without a hash — an old project, a
+   * half-finished import, a hand-edited file — took the whole restore down
+   * with it. The project then failed to open with no message at all: the
+   * editor simply stayed on whatever was already loaded.
+   */
+  if (hash === undefined || hash === null || hash === '') return Promise.resolve(null);
   return tx(S_MEDIA, 'readonly', (s) => s.get(hash));
 }
 
