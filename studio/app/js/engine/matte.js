@@ -172,6 +172,52 @@ export async function buildPlate(video, {
   return { canvas: cv, width: w, height: h, samples: n };
 }
 
+/**
+ * Does the camera hold still?
+ *
+ * The plate is a median over time, and a median of a panning shot is a
+ * smear that keys nothing. Three frames spread across the range, compared
+ * on their outer border — where the subject usually is not — say whether
+ * the background stayed put. A still camera on a busy background differs by
+ * a few levels of noise; a moving one differs everywhere.
+ */
+export async function cameraStill(video, { from = 0, to = null, width = 96 } = {}) {
+  if (!video?.videoWidth) return true;
+  const end = to ?? video.duration;
+  const w = width, h = Math.max(2, Math.round((video.videoHeight / video.videoWidth) * width));
+  const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+  const ctx = cv.getContext('2d', { willReadFrequently: true });
+  const lumas = [];
+  for (const f of [0.15, 0.5, 0.85]) {
+    // eslint-disable-next-line no-await-in-loop -- sequential seeks
+    await seekTo(video, from + (end - from) * f);
+    ctx.drawImage(video, 0, 0, w, h);
+    const d = ctx.getImageData(0, 0, w, h).data;
+    const l = new Float32Array(w * h);
+    for (let i = 0, p = 0; i < l.length; i++, p += 4) l[i] = d[p] * 0.299 + d[p + 1] * 0.587 + d[p + 2] * 0.114;
+    lumas.push(l);
+  }
+  // The share of border pixels that changed by more than sensor noise can
+  // explain, not the mean difference: a pan moves nearly every pixel a
+  // little, and noise moves a few pixels a lot, and a mean cannot tell those
+  // apart.
+  let changed = 0, n = 0, diff = 0;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const border = x < w * 0.15 || x > w * 0.85 || y < h * 0.15 || y > h * 0.85;
+      if (!border) continue;
+      const i = y * w + x;
+      const d1 = Math.abs(lumas[0][i] - lumas[1][i]), d2 = Math.abs(lumas[1][i] - lumas[2][i]);
+      if (d1 > 18) changed++;
+      if (d2 > 18) changed++;
+      diff += d1 + d2;
+      n += 2;
+    }
+  }
+  const fraction = n ? changed / n : 0;
+  return { still: fraction < 0.22, changed: fraction, meanDiff: n ? diff / n : 0 };
+}
+
 function seekTo(video, t) {
   return new Promise((resolve, reject) => {
     const done = () => { cleanup(); resolve(); };
@@ -188,6 +234,240 @@ function seekTo(video, t) {
     video.addEventListener('error', fail, { once: true });
     try { video.currentTime = Math.max(0, t); } catch { fail(); }
   });
+}
+
+/* ------------------------------------------------------------------ *
+ * Cleaning a mask
+ * ------------------------------------------------------------------ */
+
+/*
+ * A per-pixel decision is speckled: single background pixels that happened
+ * to differ from the plate, single subject pixels that happened not to. Two
+ * passes of a 3×3 majority vote remove both without moving the edge, which
+ * is what the erode-then-dilate the textbooks suggest would do. Then the
+ * largest blob that touches the seed wins and the islands go: a keyed
+ * subject is one thing, not a subject and some confetti.
+ */
+function majority(mask, w, h, passes = 2) {
+  let src = mask;
+  let dst = new Uint8ClampedArray(mask.length);
+  for (let pass = 0; pass < passes; pass++) {
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        let sum = 0, n = 0;
+        for (let dy = -1; dy <= 1; dy++) {
+          const yy = y + dy; if (yy < 0 || yy >= h) continue;
+          for (let dx = -1; dx <= 1; dx++) {
+            const xx = x + dx; if (xx < 0 || xx >= w) continue;
+            sum += src[yy * w + xx]; n++;
+          }
+        }
+        dst[y * w + x] = sum / n;
+      }
+    }
+    [src, dst] = [dst, src];
+  }
+  return src;
+}
+
+/** Keep only the connected region (alpha > 128) that contains (sx, sy), plus
+ *  any region larger than a fifth of it — a second person is not an island. */
+function keepMainBlob(mask, w, h, sx, sy) {
+  const label = new Int32Array(w * h).fill(-1);
+  const sizes = [];
+  const stack = new Int32Array(w * h);
+  let next = 0;
+  for (let start = 0; start < mask.length; start++) {
+    if (mask[start] < 128 || label[start] !== -1) continue;
+    let top = 0, n = 0;
+    stack[top++] = start; label[start] = next;
+    while (top) {
+      const p = stack[--top]; n++;
+      const x = p % w, y = (p / w) | 0;
+      const tryPush = (q) => { if (mask[q] >= 128 && label[q] === -1) { label[q] = next; stack[top++] = q; } };
+      if (x > 0) tryPush(p - 1);
+      if (x < w - 1) tryPush(p + 1);
+      if (y > 0) tryPush(p - w);
+      if (y < h - 1) tryPush(p + w);
+    }
+    sizes.push(n); next++;
+  }
+  if (!sizes.length) return mask;
+  const seedLabel = label[Math.min(mask.length - 1, Math.max(0, (sy | 0) * w + (sx | 0)))];
+  const main = seedLabel >= 0 ? sizes[seedLabel] : Math.max(...sizes);
+  const keep = new Set();
+  sizes.forEach((n, i) => { if (i === seedLabel || n >= main * 0.2) keep.add(i); });
+  const out = new Uint8ClampedArray(mask.length);
+  for (let i = 0; i < mask.length; i++) out[i] = label[i] >= 0 && keep.has(label[i]) ? mask[i] : 0;
+  return out;
+}
+
+/*
+ * Frame-to-frame memory, per clip.
+ *
+ * A mask decided fresh on every frame crawls: the same edge pixel flips in
+ * and out as noise pushes it either side of the threshold. Blending each
+ * frame's mask with the last one settles that — 0.55 new, 0.45 old is enough
+ * to kill the crawl without a visible lag on a moving subject.
+ */
+const memory = new Map();
+export function forgetMatte(clipId) { memory.delete(clipId); }
+function remember(key, mask, w, h) {
+  if (!key) return mask;
+  const prev = memory.get(key);
+  if (prev && prev.w === w && prev.h === h) {
+    for (let i = 0; i < mask.length; i++) mask[i] = mask[i] * 0.55 + prev.data[i] * 0.45;
+  }
+  memory.set(key, { data: Uint8ClampedArray.from(mask), w, h });
+  return mask;
+}
+
+/** Turn a small greyscale mask into alpha on a full-size frame, feathered. */
+function applyMask(ctx, w, h, mask, mw, mh, feather) {
+  const small = document.createElement('canvas');
+  small.width = mw; small.height = mh;
+  const sctx = small.getContext('2d');
+  const img = sctx.createImageData(mw, mh);
+  for (let i = 0, p = 0; i < mask.length; i++, p += 4) { img.data[p] = img.data[p + 1] = img.data[p + 2] = 255; img.data[p + 3] = mask[i]; }
+  sctx.putImageData(img, 0, 0);
+
+  const big = document.createElement('canvas');
+  big.width = w; big.height = h;
+  const bctx = big.getContext('2d');
+  if (feather > 0) bctx.filter = `blur(${feather}px)`;
+  bctx.drawImage(small, 0, 0, w, h);
+  bctx.filter = 'none';
+
+  const out = document.createElement('canvas');
+  out.width = w; out.height = h;
+  const octx = out.getContext('2d');
+  octx.drawImage(ctx.canvas, 0, 0);
+  octx.globalCompositeOperation = 'destination-in';
+  octx.drawImage(big, 0, 0);
+  octx.globalCompositeOperation = 'source-over';
+  ctx.clearRect(0, 0, w, h);
+  ctx.drawImage(out, 0, 0);
+}
+
+/* ------------------------------------------------------------------ *
+ * Portrait matte — no plate, no green screen
+ * ------------------------------------------------------------------ */
+
+/*
+ * The case the plate cannot do: a subject that does not move, or a camera
+ * that does. The plate needs the background to show through at every pixel
+ * for more than half the clip; a talking head that sits still is baked into
+ * it as furniture.
+ *
+ * This is colour-model segmentation, the method that did this job before
+ * neural networks did: two colour distributions — what the subject looks
+ * like, what the background looks like — and each pixel goes with whichever
+ * it resembles more, weighted by where it is. The subject model is seeded
+ * from a face when one is found (the same skin-chroma finder the tracker
+ * uses, which works on every complexion because it ignores brightness) and
+ * from the body region beneath it; the background model from the frame's
+ * border. Then the models are re-fitted from the mask they produced and the
+ * mask re-decided, twice — the iteration that makes the result depend on
+ * the picture rather than on the guess.
+ *
+ * What it is honestly good at: a person against a background that is not
+ * the colour of their clothes and skin. What it is not: hair against a
+ * similar wall, a subject in camouflage. The panel says which method is
+ * running, so nobody wonders why the edge on a plate key is cleaner.
+ */
+const BINS = 12;
+function binOf(r, g, b) {
+  return (((r * BINS) >> 8) * BINS + ((g * BINS) >> 8)) * BINS + ((b * BINS) >> 8);
+}
+
+function fitModels(d, mw, mh, weight) {
+  const fg = new Float32Array(BINS ** 3), bg = new Float32Array(BINS ** 3);
+  let fgN = 0, bgN = 0;
+  for (let i = 0, p = 0; i < mw * mh; i++, p += 4) {
+    const bin = binOf(d[p], d[p + 1], d[p + 2]);
+    const wgt = weight[i];
+    fg[bin] += wgt; fgN += wgt;
+    bg[bin] += 1 - wgt; bgN += 1 - wgt;
+  }
+  // Laplace smoothing, so a colour never seen in one model is unlikely rather
+  // than impossible — a shadow on the cheek must not become a hole.
+  for (let b2 = 0; b2 < fg.length; b2++) { fg[b2] = (fg[b2] + 0.02) / (fgN + 0.02 * fg.length); bg[b2] = (bg[b2] + 0.02) / (bgN + 0.02 * bg.length); }
+  // Blur the histograms a little across neighbouring bins, so a slightly
+  // different shade of the same shirt counts as the same shirt.
+  return { fg, bg };
+}
+
+export function portraitMatte(ctx, w, h, {
+  softness = 14, feather = 2, seed = null, key = null, faceFinder = null,
+} = {}) {
+  const mw = 160, mh = Math.max(2, Math.round((h / w) * 160));
+  const small = document.createElement('canvas');
+  small.width = mw; small.height = mh;
+  const sctx = small.getContext('2d', { willReadFrequently: true });
+  sctx.drawImage(ctx.canvas, 0, 0, mw, mh);
+  let img;
+  try { img = sctx.getImageData(0, 0, mw, mh); } catch { return; }
+  const d = img.data;
+
+  /* ---- the seed: a face, or the middle ---- */
+  let box = seed;
+  if (!box && faceFinder) {
+    const face = faceFinder(d, mw, mh);
+    if (face && face.confidence > 0.35) box = face.box;
+  }
+  if (!box) box = { x: 0.5, y: 0.42, w: 0.3, h: 0.42 };
+
+  // The body hangs under the head: a region wider than the face and running
+  // to the bottom of the frame is where the subject's clothes are.
+  const headX = box.x * mw, headY = box.y * mh, headW = box.w * mw, headH = box.h * mh;
+  const bodyX0 = Math.max(0, headX - headW * 1.3), bodyX1 = Math.min(mw, headX + headW * 1.3);
+  const bodyY0 = Math.max(0, headY + headH * 0.4);
+
+  const weight = new Float32Array(mw * mh);   // how much each pixel votes "subject" when fitting
+  for (let y = 0; y < mh; y++) {
+    for (let x = 0; x < mw; x++) {
+      const i = y * mw + x;
+      const inHead = Math.abs(x - headX) < headW * 0.45 && Math.abs(y - headY) < headH * 0.45;
+      const inBody = x >= bodyX0 && x <= bodyX1 && y >= bodyY0;
+      const border = x < mw * 0.07 || x > mw * 0.93 || y < mh * 0.08;
+      weight[i] = border ? 0 : inHead ? 1 : inBody ? 0.75 : 0.15;
+    }
+  }
+
+  /* ---- decide, refit, decide again ---- */
+  let mask = new Uint8ClampedArray(mw * mh);
+  const cx = headX, cy = Math.min(mh - 1, headY + headH * 0.8);
+  const reach = Math.max(mw, mh) * 0.9;
+  for (let iter = 0; iter < 3; iter++) {
+    const { fg, bg } = fitModels(d, mw, mh, weight);
+    for (let y = 0; y < mh; y++) {
+      for (let x = 0; x < mw; x++) {
+        const i = y * mw + x, p = i * 4;
+        const bin = binOf(d[p], d[p + 1], d[p + 2]);
+        // A gentle spatial prior: things far from where the subject was seeded
+        // need to look more like the subject to count.
+        const dist = Math.hypot(x - cx, (y - cy) * 0.6) / reach;
+        const prior = Math.max(0.15, 1 - dist * 0.9);
+        const pf = fg[bin] * prior, pb = bg[bin] * (1.1 - prior * 0.5);
+        mask[i] = Math.round(255 * (pf / (pf + pb)));
+      }
+    }
+    mask = majority(mask, mw, mh, 2);
+    // The next fit uses what this pass decided, softened so an early mistake
+    // does not become the whole model.
+    for (let i = 0; i < weight.length; i++) weight[i] = weight[i] * 0.4 + (mask[i] / 255) * 0.6;
+  }
+
+  /* ---- clean, settle, apply ---- */
+  const th = 128, soft = Math.max(1, softness) * 3;
+  for (let i = 0; i < mask.length; i++) {
+    const v = mask[i];
+    mask[i] = v < th - soft ? 0 : v > th + soft ? 255 : Math.round(((v - (th - soft)) / (2 * soft)) * 255);
+  }
+  mask = keepMainBlob(mask, mw, mh, cx, cy);
+  mask = remember(key, mask, mw, mh);
+  applyMask(ctx, w, h, mask, mw, mh, feather);
+  return { method: 'portrait', seed: box };
 }
 
 /* ------------------------------------------------------------------ *
@@ -223,7 +503,7 @@ export function hasPlate(id) { return plates.has(id); }
  * softening it is what turns a mask into a matte.
  */
 export function keyAgainstPlate(ctx, w, h, plate, {
-  tolerance = 26, softness = 14, feather = 2,
+  tolerance = 26, softness = 14, feather = 2, key = null,
 } = {}) {
   if (!plate?.canvas) return;
 
@@ -256,41 +536,20 @@ export function keyAgainstPlate(ctx, w, h, plate, {
     if (diff < tol) alpha = 0;
     else if (diff < tol + soft) alpha = ((diff - tol) / soft) * 255;
     else alpha = 255;
-    // The mask is written into the plate copy's own buffer as white-on-black,
-    // so it can be drawn as an image and blurred by the compositor.
     fd[i] = fd[i + 1] = fd[i + 2] = alpha;
     fd[i + 3] = 255;
   }
-  sctx.putImageData(frame, 0, 0);
 
-  const mask = document.createElement('canvas');
-  mask.width = w; mask.height = h;
-  const mctx = mask.getContext('2d');
-  // Feathering happens here, on the way up to full size — cheaper than
-  // blurring a 4K mask, and the softness is in the right proportion either way.
-  if (feather > 0) mctx.filter = `blur(${feather}px)`;
-  mctx.drawImage(small, 0, 0, w, h);
-  mctx.filter = 'none';
-
-  // Turn the greyscale mask into alpha on the frame.
-  const out = document.createElement('canvas');
-  out.width = w; out.height = h;
-  const octx = out.getContext('2d');
-  octx.drawImage(ctx.canvas, 0, 0);
-  octx.globalCompositeOperation = 'destination-in';
-  // `luminosity` first would be ideal; instead the mask is drawn with its own
-  // luminance as alpha, which `destination-in` against a white-on-black image
-  // achieves once the mask is converted.
-  const maskAlpha = mctx.getImageData(0, 0, w, h);
-  const md = maskAlpha.data;
-  for (let i = 0; i < md.length; i += 4) {
-    md[i + 3] = md[i];
-    md[i] = md[i + 1] = md[i + 2] = 255;
-  }
-  mctx.putImageData(maskAlpha, 0, 0);
-  octx.drawImage(mask, 0, 0);
-  octx.globalCompositeOperation = 'source-over';
-
-  ctx.clearRect(0, 0, w, h);
-  ctx.drawImage(out, 0, 0);
+  // A speckled decision becomes a matte: vote out the flecks, drop the
+  // islands, settle it against the last frame, then feather on the way up.
+  let mask = new Uint8ClampedArray(pw * ph);
+  for (let i = 0, p = 0; i < mask.length; i++, p += 4) mask[i] = fd[p];
+  mask = majority(mask, pw, ph, 2);
+  // The seed for the main blob is the mask's own centre of mass.
+  let sx = 0, sy = 0, sn = 0;
+  for (let i = 0; i < mask.length; i++) if (mask[i] > 128) { sx += i % pw; sy += (i / pw) | 0; sn++; }
+  if (sn > 0) mask = keepMainBlob(mask, pw, ph, sx / sn, sy / sn);
+  mask = remember(key, mask, pw, ph);
+  applyMask(ctx, w, h, mask, pw, ph, feather);
+  return { method: 'plate' };
 }

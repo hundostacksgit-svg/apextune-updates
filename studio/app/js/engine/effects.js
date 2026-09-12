@@ -19,7 +19,8 @@
 import { valueAt } from './project.js';
 import { scratch, snapshot, channel, noise, clamp01, hexToRgba, pixels, cellSize, blurred, edgeMap, stretch } from './fx-utils.js';
 import { EFFECT_PACKS } from './effects-library.js';
-import { chromaKey, keyAgainstPlate, plateById } from './matte.js';
+import { chromaKey, keyAgainstPlate, plateById, portraitMatte } from './matte.js';
+import { findFaceIn } from './tracking.js';
 
 /* ------------------------------------------------------------------ */
 /* the effects                                                         */
@@ -688,23 +689,35 @@ Object.assign(EFFECTS, {
      */
     needsSetup: 'Finds the background from the clip itself when you add it',
     params: {
+      method: { label: 'Method', type: 'select', def: 'auto',
+        options: [['auto', 'Automatic'], ['plate', 'Still camera (background plate)'], ['portrait', 'Person (no plate needed)']] },
       tolerance: { label: 'Sensitivity', min: 2, max: 90, def: 26 },
       softness: { label: 'Edge softness', min: 1, max: 60, def: 14 },
       feather: { label: 'Feather', min: 0, max: 10, def: 2 },
     },
     /*
-     * Needs a background plate, which the Matte panel builds from the clip.
-     * Without one this does nothing at all rather than guessing — a key that
-     * silently invents a matte is worse than a button that has not been
-     * pressed yet, and the panel is what says so.
+     * Two methods, picked automatically.
+     *
+     * A background plate, built from the clip when the effect is added, is
+     * the cleaner key by a distance — but it needs a still camera and a
+     * subject that moves, and a talking head that sits still is baked into
+     * it. When there is no plate, or the person chose it, the portrait matte
+     * runs instead: a colour model seeded from the face, no plate needed,
+     * no green screen. Both clean, settle and feather the same way.
      */
     draw(ctx, w, h, p, { clip }) {
       const plate = plateById(clip?.matte?.plateId);
-      if (!plate) return;
-      keyAgainstPlate(ctx, w, h, plate, {
-        tolerance: p.tolerance ?? 26,
-        softness: p.softness ?? 14,
-        feather: p.feather ?? 2,
+      const method = p.method || 'auto';
+      const key = clip?.id ? `rb:${clip.id}` : null;
+      if (plate && method !== 'portrait') {
+        keyAgainstPlate(ctx, w, h, plate, {
+          tolerance: p.tolerance ?? 26, softness: p.softness ?? 14, feather: p.feather ?? 2, key,
+        });
+        return;
+      }
+      if (method === 'plate') return;          // asked for a plate and there is none yet
+      portraitMatte(ctx, w, h, {
+        softness: p.softness ?? 14, feather: p.feather ?? 2, key, faceFinder: findFaceIn,
       });
     },
   },

@@ -32,6 +32,115 @@ export const SHAPES = {
   focus:     { name: 'Focus ring', tier: 'creator' },
 };
 
+/*
+ * Reactions: what a sticker does about a tracked subject.
+ *
+ * A pinned sticker follows. A *reacting* sticker does something with the
+ * subject's position, speed and size — hovers over its head, orbits it,
+ * leans into its motion, trails behind it, points at it from across the
+ * frame, pops when it stops. The subject arrives as a sample from the motion
+ * track at the moment being drawn, resolved by the renderer; nothing here is
+ * baked into keyframes, so re-tracking or nudging the track moves every
+ * sticker that reacts to it.
+ */
+export const STICKER_REACTIONS = [
+  ['follow', 'Follow it', 'Sits on the subject, with an offset you choose.'],
+  ['hover', 'Hover over it', 'Floats above the head, bobbing gently.'],
+  ['orbit', 'Orbit it', 'Circles the subject, upright the whole way round.'],
+  ['lean', 'Lean into the motion', 'Follows, and tilts the way the subject is moving.'],
+  ['trail', 'Trail behind it', 'Ghost copies along the path it just took.'],
+  ['grow', 'Grow with speed', 'Bigger the faster the subject moves.'],
+  ['pointAt', 'Point at it', 'Stays where you put it and turns to face the subject.'],
+  ['shadow', 'Shadow under it', 'A squashed, darkened copy on the ground beneath.'],
+  ['magnet', 'Get pulled in', 'Starts where you put it and is drawn onto the subject.'],
+  ['ring', 'Tighten when it stops', 'Sits on the subject; shrinks as it slows, opens as it moves.'],
+  ['burst', 'Pop when it stops', 'A jolt of scale the moment the subject halts.'],
+  ['held', 'In its hand', 'Follows with a small lag and a lean, as if carried.'],
+];
+export const REACTION_NAME = Object.fromEntries(STICKER_REACTIONS.map(([id, name]) => [id, name]));
+
+export function defaultReact(trackId, mode = 'follow') {
+  return { trackId, mode, offsetX: 0, offsetY: 0, amount: 0.5 };
+}
+
+/**
+ * Where, how big, how turned, how faint — for a reacting sticker, now.
+ *
+ * `subject` is { x, y, scale, rot, vx, vy, speed, at(dt) } in frame units:
+ * positions 0..1, velocity in frame-widths per second, and `at(dt)` giving
+ * the same sample dt seconds away, for trails and for noticing a stop.
+ * Returns the pose, and for a trail the ghost poses behind it.
+ */
+export function reactPose(sticker, subject, t) {
+  const r = sticker.react || {};
+  const amt = Math.max(0, Math.min(1, r.amount ?? 0.5));
+  const ox = r.offsetX || 0, oy = r.offsetY || 0;
+  const base = { x: sticker.x, y: sticker.y, rotate: sticker.rotate || 0, scale: 1, alpha: 1, ghosts: [] };
+  if (!subject) return base;
+  const sx = subject.x + ox, sy = subject.y + oy;
+  const sc = subject.scale || 1;
+  const speed = subject.speed || 0;                   // frame widths per second
+  const dir = (subject.vx || subject.vy) ? Math.atan2(subject.vy, subject.vx) : 0;
+  const deg = (rad) => (rad * 180) / Math.PI;
+
+  switch (r.mode) {
+    case 'hover': {
+      const bob = Math.sin(t * 2.6) * 0.012;
+      return { ...base, x: sx, y: sy - (0.12 + amt * 0.12) * sc + bob, scale: sc };
+    }
+    case 'orbit': {
+      const radius = (0.06 + amt * 0.14) * sc;
+      const ang = t * (1.2 + amt * 2.4);
+      return { ...base, x: sx + Math.cos(ang) * radius, y: sy + Math.sin(ang) * radius * 0.55, scale: sc };
+    }
+    case 'lean': {
+      const tilt = Math.min(1, speed / 0.6) * (20 + amt * 40) * Math.sign(Math.cos(dir) || 1);
+      return { ...base, x: sx, y: sy, rotate: (sticker.rotate || 0) + tilt, scale: sc };
+    }
+    case 'trail': {
+      const n = 3 + Math.round(amt * 5);
+      const ghosts = [];
+      for (let k = 1; k <= n; k++) {
+        const past = subject.at ? subject.at(-k * 0.07) : subject;
+        ghosts.push({ x: past.x + ox, y: past.y + oy, scale: sc * (1 - k / (n + 2)), alpha: 0.55 * (1 - k / (n + 1)), rotate: sticker.rotate || 0 });
+      }
+      return { ...base, x: sx, y: sy, scale: sc, ghosts };
+    }
+    case 'grow':
+      return { ...base, x: sx, y: sy, scale: sc * (1 + Math.min(1.6, speed * (1 + amt * 4))) };
+    case 'pointAt': {
+      const ang = Math.atan2(subject.y - sticker.y, subject.x - sticker.x);
+      return { ...base, rotate: deg(ang) };
+    }
+    case 'shadow':
+      return { ...base, x: sx, y: sy + 0.14 * sc, scale: sc, squash: 0.42, alpha: 0.42, dark: true };
+    case 'magnet': {
+      // Eases onto the subject over the first second and a half, then stays.
+      const f = Math.min(1, t / (0.6 + (1 - amt) * 1.8));
+      const e = 1 - (1 - f) ** 3;
+      return { ...base, x: sticker.x + (sx - sticker.x) * e, y: sticker.y + (sy - sticker.y) * e, scale: 1 + (sc - 1) * e };
+    }
+    case 'ring': {
+      const open = Math.min(1, speed / 0.5);
+      return { ...base, x: sx, y: sy, scale: sc * (0.7 + open * (0.5 + amt * 0.6)) };
+    }
+    case 'burst': {
+      const before = subject.at ? subject.at(-0.12) : subject;
+      const drop = Math.max(0, (before.speed || 0) - speed);
+      const pop = Math.min(1.5, drop * (2 + amt * 6));
+      return { ...base, x: sx, y: sy, scale: sc * (1 + pop) };
+    }
+    case 'held': {
+      const lag = subject.at ? subject.at(-0.05) : subject;
+      const tilt = Math.min(1, speed / 0.6) * 14 * Math.sign(Math.cos(dir) || 1);
+      return { ...base, x: lag.x + (ox || 0.06 * sc), y: lag.y + (oy || 0.02 * sc), rotate: (sticker.rotate || 0) + tilt, scale: sc };
+    }
+    case 'follow':
+    default:
+      return { ...base, x: sx, y: sy, scale: sc };
+  }
+}
+
 export const STICKER_ANIMS = [
   ['none', 'None'], ['pop', 'Pop in'], ['bounce', 'Bounce'], ['pulse', 'Pulse'],
   ['spin', 'Spin'], ['float', 'Float'], ['shake', 'Shake'], ['beat', 'On the beat'],
@@ -93,20 +202,30 @@ function animState(anim, t, dur, clipDur, beatPhase) {
 /* drawing                                                             */
 /* ------------------------------------------------------------------ */
 
-export function drawSticker(ctx, w, h, sticker, t = 0, clipDur = 2, beatPhase) {
+export function drawSticker(ctx, w, h, sticker, t = 0, clipDur = 2, beatPhase, subject = null) {
   const s = { ...defaultSticker(), ...sticker };
   const a = animState(s.anim, t, s.animDur ?? 0.4, clipDur, beatPhase);
   if (a.alpha <= 0.003) return;
 
+  // A reacting sticker takes its place, size and turn from the subject.
+  const pose = s.react?.trackId ? reactPose(s, subject, t) : null;
+  for (const ghost of pose?.ghosts || []) {
+    drawOne(ctx, w, h, s, a, { ...ghost, squash: 1, dark: false }, t);
+  }
+  drawOne(ctx, w, h, s, a, pose || { x: s.x, y: s.y, rotate: s.rotate || 0, scale: 1, alpha: 1 }, t);
+}
+
+function drawOne(ctx, w, h, s, a, pose, t) {
   const size = s.size * h;
-  const cx = (s.x + a.dx) * w;
-  const cy = (s.y + a.dy) * h;
+  const cx = (pose.x + a.dx) * w;
+  const cy = (pose.y + a.dy) * h;
 
   ctx.save();
-  ctx.globalAlpha = Math.max(0, Math.min(1, a.alpha * (s.opacity ?? 1)));
+  ctx.globalAlpha = Math.max(0, Math.min(1, a.alpha * (s.opacity ?? 1) * (pose.alpha ?? 1)));
   ctx.translate(cx, cy);
-  ctx.rotate(((s.rotate || 0) * Math.PI) / 180 + a.spin);
-  ctx.scale(a.scale, a.scale);
+  ctx.rotate(((pose.rotate || 0) * Math.PI) / 180 + a.spin);
+  ctx.scale(a.scale * (pose.scale ?? 1), a.scale * (pose.scale ?? 1) * (pose.squash ?? 1));
+  if (pose.dark) ctx.filter = 'brightness(0) blur(1px)';
 
   if (s.kind === 'emoji') {
     ctx.font = `${size}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;

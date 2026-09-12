@@ -522,7 +522,8 @@ export class Renderer {
 
     if (clip.kind === 'sticker') {
       const local = t - clip.start;
-      drawSticker(ctx, w, h, clip.sticker, Math.max(0, local), clip.dur, this._beatPhase(t));
+      const subject = clip.sticker?.react?.trackId ? this._subjectAt(project, clip.sticker.react.trackId, t) : null;
+      drawSticker(ctx, w, h, clip.sticker, Math.max(0, local), clip.dur, this._beatPhase(t), subject);
       if (!skipEffects && clip.effects?.length) this._runEffects(ctx, w, h, clip, t, project);
       return cv;
     }
@@ -799,6 +800,56 @@ export class Renderer {
     // which is what people mean when they put one at the top of a timeline.
     return { type: tin.type || 'dissolve', progress: into / tin.dur, other: prev,
       anchor: this._transitionAnchor(project, tin, clip, prev, t) };
+  }
+
+  /**
+   * The tracked subject, sampled at timeline time t.
+   *
+   * A track is a list of points in its clip's source seconds, so the moment
+   * is first turned into that clip's source time — through its speed and
+   * any ramp, which is what makes a sticker keep up with a slow-motion
+   * subject. Position is interpolated between the two nearest points;
+   * velocity comes from the points either side, converted back to timeline
+   * seconds so "fast" means fast on screen. `at(dt)` re-samples nearby, for
+   * trails and for noticing a stop. If the clip the track was made on has
+   * gone, the track's own clock is used instead, so a sticker never
+   * disappears because a shot was deleted.
+   */
+  _subjectAt(project, trackId, t) {
+    const rec = (project.motionTracks || []).find((r) => r.id === trackId);
+    if (!rec?.points?.length) return null;
+    const pts = rec.points;
+    const owner = clipsOn ? project.clips.find((c) => c.id === rec.sourceClipId) : null;
+    const toSource = (tt) => (owner ? sourceTime(owner, Math.max(owner.start, Math.min(owner.start + owner.dur, tt)))
+      : pts[0].t + (tt - (rec.clipStart || 0)));
+    const rate = owner ? Math.abs(speedAt(owner, Math.max(0, t - owner.start))) || 1 : 1;
+
+    const sampleAt = (tt) => {
+      const src = toSource(tt);
+      if (src <= pts[0].t) return { ...pts[0] };
+      if (src >= pts.at(-1).t) return { ...pts.at(-1) };
+      let lo = 0, hi = pts.length - 1;
+      while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (pts[mid].t <= src) lo = mid; else hi = mid; }
+      const a = pts[lo], b = pts[hi];
+      const f = (src - a.t) / ((b.t - a.t) || 1);
+      return {
+        x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f,
+        scale: (a.scale ?? 1) + ((b.scale ?? 1) - (a.scale ?? 1)) * f,
+        rot: (a.rot ?? 0) + ((b.rot ?? 0) - (a.rot ?? 0)) * f,
+      };
+    };
+    const build = (tt) => {
+      const here = sampleAt(tt);
+      const dt = 0.1;
+      const before = sampleAt(tt - dt), after = sampleAt(tt + dt);
+      // Frame units per timeline second, through the clip's playback rate.
+      const vx = ((after.x - before.x) / (2 * dt)) * rate;
+      const vy = ((after.y - before.y) / (2 * dt)) * rate;
+      return { x: here.x, y: here.y, scale: here.scale ?? 1, rot: here.rot ?? 0, vx, vy, speed: Math.hypot(vx, vy) };
+    };
+    const now = build(t);
+    now.at = (dt) => build(t + dt);
+    return now;
   }
 
   /**

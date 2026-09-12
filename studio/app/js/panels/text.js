@@ -7,7 +7,7 @@ import { TITLE_PRESETS, FONT_GROUPS, ANIMS, defaultText } from '../engine/titles
 import { TEXT_STYLE_GROUPS, applyTextStyle } from '../engine/text-styles.js';
 import { attachPreviews } from '../engine/preview.js';
 import { loadFont, isLoaded } from '../engine/fonts-library.js';
-import { EMOJI, SHAPES, STICKER_ANIMS, defaultSticker } from '../engine/stickers.js';
+import { EMOJI, SHAPES, STICKER_ANIMS, STICKER_REACTIONS, defaultSticker, defaultReact } from '../engine/stickers.js';
 import * as licence from '../licence.js';
 
 export function mount(host) {
@@ -70,7 +70,25 @@ export function mount(host) {
   });
 
   if (stickerClip) {
+    const writeReact = (key, value, label) => {
+      actions.patchSelected((c) => {
+        if (c.kind !== 'sticker') return;
+        if (key === 'trackId') {
+          c.sticker.react = value ? { ...(c.sticker.react || defaultReact(value, 'hover')), trackId: value } : null;
+          return;
+        }
+        if (!c.sticker.react) return;
+        c.sticker.react[key] = (key === 'mode') ? value : Number(value);
+      }, label, key === 'mode' || key === 'trackId' ? null : `react:${key}`);
+    };
     host.addEventListener('input', (e) => {
+      const rk = e.target.dataset.react;
+      if (rk && e.target.type === 'range') {
+        writeReact(rk, e.target.value, `Sticker reaction ${rk}`);
+        const label = host.querySelector(`[data-val="${CSS.escape(rk)}"]`);
+        if (label) label.textContent = `${Math.round(Number(e.target.value) * 100)}%`;
+        return;
+      }
       const key = e.target.dataset.sk;
       if (!key) return;
       const value = e.target.type === 'range' ? Number(e.target.value) : e.target.value;
@@ -80,6 +98,8 @@ export function mount(host) {
       if (label && e.target.type === 'range') label.textContent = String(Math.round(value * 100) / 100);
     });
     host.addEventListener('change', (e) => {
+      const rk = e.target.dataset.react;
+      if (rk && e.target.tagName === 'SELECT') { writeReact(rk, e.target.value, rk === 'trackId' ? 'Sticker reacts to track' : 'Sticker reaction'); return; }
       const key = e.target.dataset.sk;
       if (key && (e.target.tagName === 'SELECT' || e.target.type === 'color')) {
         actions.patchSelected((c) => { if (c.kind === 'sticker') c.sticker[key] = e.target.value; }, 'Edit sticker');
@@ -381,6 +401,45 @@ function stickerEditor(clip) {
           <input class="input" type="color" id="s-col" data-sk="colour" value="${esc(st.colour)}"></div>` : ''}
       ${st.value === 'progress' ? slider({ key: 'progress', label: 'Fill', value: st.progress,
         min: 0, max: 1, step: 0.01, fmt: (v) => `${Math.round(v * 100)}%` }).replace('data-k=', 'data-sk=') : ''}
+      ${reactEditor(st)}
+    </div>`;
+}
+
+/*
+ * Reacting to a tracked subject.
+ *
+ * Only offered once there is a track to react to; before that the section
+ * says how to get one rather than showing an empty list. The mode is the
+ * whole idea — hover, orbit, lean, trail, point at — and the amount and the
+ * offset are the two numbers that tune it.
+ */
+function reactEditor(st) {
+  const tracks = S.project.motionTracks || [];
+  const r = st.react || null;
+  if (!tracks.length) {
+    return `<p class="tiny muted" style="margin:12px 0 0">
+      <b>React to something:</b> track a subject first (Inspector → Track), then come back here and this
+      sticker can hover over it, orbit it, lean into its motion, trail behind it or point at it.</p>`;
+  }
+  const options = [['', 'Nothing — stay put'], ...tracks.map((tr) => [tr.id, tr.name])];
+  return `
+    <div style="margin-top:12px;border-top:1px solid var(--line-soft);padding-top:10px">
+      <div class="field"><label for="s-react-track">React to</label>
+        <select class="input" id="s-react-track" data-react="trackId">
+          ${options.map(([v, n]) => `<option value="${esc(v)}" ${(r?.trackId || '') === v ? 'selected' : ''}>${esc(n)}</option>`).join('')}
+        </select></div>
+      ${r?.trackId ? `
+      <div class="field"><label for="s-react-mode">How</label>
+        <select class="input" id="s-react-mode" data-react="mode">
+          ${STICKER_REACTIONS.map(([id, name, blurb]) => `<option value="${esc(id)}" title="${esc(blurb)}" ${r.mode === id ? 'selected' : ''}>${esc(name)}</option>`).join('')}
+        </select></div>
+      <p class="tiny muted" style="margin:-4px 0 8px">${esc(STICKER_REACTIONS.find(([id]) => id === r.mode)?.[2] || '')}</p>
+      ${slider({ key: 'amount', label: 'Amount', value: r.amount ?? 0.5, min: 0, max: 1, step: 0.02,
+        fmt: (v) => `${Math.round(v * 100)}%` }).replace('data-k=', 'data-react=')}
+      ${slider({ key: 'offsetX', label: 'Offset across', value: r.offsetX || 0, min: -0.4, max: 0.4, step: 0.01,
+        fmt: (v) => `${Math.round(v * 100)}%` }).replace('data-k=', 'data-react=')}
+      ${slider({ key: 'offsetY', label: 'Offset down', value: r.offsetY || 0, min: -0.4, max: 0.4, step: 0.01,
+        fmt: (v) => `${Math.round(v * 100)}%` }).replace('data-k=', 'data-react=')}` : ''}
     </div>`;
 }
 

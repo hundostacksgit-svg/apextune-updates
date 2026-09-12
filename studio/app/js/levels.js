@@ -50,6 +50,7 @@ export const DESCRIPTIONS = {
       'Freeze frame, match frame, insert and overwrite, J/K/L shuttle',
       'Sixteen speed ramps, drawn as curves, that fit the footage',
       'Tracked transitions: zoom, iris, spin, portal aimed at what you tracked',
+      'Stickers that hover over, orbit, trail or point at a tracked subject',
       'Multitrack timeline with ripple, roll and slip',
       'Inspector: transform, crop, opacity, blend',
       'A node graph, colour sliders and the whole look library',

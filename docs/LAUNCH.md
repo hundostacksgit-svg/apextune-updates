@@ -93,6 +93,19 @@ eyeballed.
 - **Sixteen speed ramps** drawn as curves in the Inspector, written in
   fractions of the clip so they refit after a trim, and shortened to what the
   file can cover rather than running off its end
+- **Remove background, two ways, chosen automatically.** A plate from the
+  clip on a still camera; a portrait matte — colour models seeded from the
+  face, re-fitted twice — on a moving camera or a person who sits still.
+  Measured against known mattes: the still person keys at IoU 0.75+ with no
+  plate, the panning camera 0.7+, the plate path 0.85+; sensor noise flips
+  under 2% of pixels between frames, because each matte is settled against
+  the last. The camera-motion check is what decides, and says so
+- **Twelve sticker reactions** — a sticker that hovers over the tracked
+  subject, orbits it, leans into its motion, trails behind it, grows with
+  its speed, points at it, shadows it, is pulled onto it, tightens or pops
+  when it stops, or rides in its hand. Sampled live from the track through
+  the clip's speed ramp, never baked into keyframes. Checked on the pose of
+  every mode and on pixels through the renderer
 - **Nine tracked transitions** — zoom through, iris, spin, whip, portal,
   radial wipe, glitch, blur — that take an anchor from a motion track at the
   moment of the cut. "Cut through it" on a finished track sets one up

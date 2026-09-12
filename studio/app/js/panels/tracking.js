@@ -11,7 +11,9 @@
 
 import { $, esc, toast, drag, modal, closeModal } from '../ui.js';
 import { S, actions, engine } from '../main.js';
-import { clipById, mediaById, sourceTime, clipsOn } from '../engine/project.js';
+import { clipById, mediaById, sourceTime, clipsOn, addClip, addTrack } from '../engine/project.js';
+import { defaultSticker, defaultReact } from '../engine/stickers.js';
+const projectApi = { addClip, addTrack };
 import { elementFor } from '../engine/media.js';
 import { trackBox, smoothTrack, applyTrack, describeTrack, findTarget, findFace } from '../engine/tracking.js';
 import { makeEffect } from '../engine/effects.js';
@@ -268,11 +270,14 @@ function offerToPin(record, verdict) {
       <button class="btn" data-pin="pixel">Pixelate this spot</button>
       <button class="btn" data-pin="selected">Pin the selected clip to it</button>
       <button class="btn" data-pin="transition">Cut through it</button>
+      <button class="btn" data-pin="sticker">Give it a sticker</button>
       <button class="btn btn-ghost" data-pin="later">Just keep the track</button>
     </div>
     <p class="tiny muted" style="margin:8px 0 0">
       <b>Cut through it</b> puts a zoom-through on the cut after this clip, aimed at the tracked
       spot: the picture dives into whatever you tracked and comes out in the next shot.
+      <b>Give it a sticker</b> drops one that hovers over the subject — then change what it does
+      (orbit, lean, trail, point at it, pop when it stops) in the Text panel.
     </p>
     <p class="tiny muted" style="margin-top:14px">
       Whatever you pick becomes ordinary keyframes you can edit by hand. The track stays in
@@ -300,6 +305,32 @@ export function pin(record, what) {
    * then. Any anchor-aware transition can be swapped in afterwards from the
    * picker; the track stays attached to the cut.
    */
+  /*
+   * A sticker that reacts to the subject, spanning the tracked clip.
+   *
+   * Hover by default — it is the one that reads instantly as "attached to
+   * that person" — and the Text panel is where the other eleven live. The
+   * sticker holds a reference to the track, not a copy of its points, so
+   * re-tracking moves it.
+   */
+  if (what === 'sticker') {
+    if (!source) { toast('The clip this was tracked on has gone', 'bad'); return; }
+    const { addClip, addTrack } = projectApi;
+    let track = S.project.tracks.find((tr) => tr.kind === 'video' && tr.name === 'Stickers');
+    if (!track) track = addTrack(S.project, 'video', 'Stickers');
+    const first = record.points[0], last = record.points.at(-1);
+    const start = Math.max(source.start, source.start + (first.t - source.in) / (source.speed || 1));
+    const end = Math.min(source.start + source.dur, source.start + (last.t - source.in) / (source.speed || 1));
+    const clip = addClip(S.project, {
+      trackId: track.id, start, dur: Math.max(0.5, end - start), kind: 'sticker',
+      sticker: { ...defaultSticker('emoji', '🔥'), size: 0.12, anim: 'pop', react: defaultReact(record.id, 'hover') },
+    });
+    S.sel = new Set([clip.id]);
+    actions.commit('Sticker reacts to track');
+    toast('A 🔥 now hovers over it — change the emoji and what it does in the Text panel', 'ok', 4200);
+    return;
+  }
+
   if (what === 'transition') {
     if (!source) { toast('The clip this was tracked on has gone', 'bad'); return; }
     const list = clipsOn(S.project, source.trackId);

@@ -13,7 +13,7 @@ import { pickerMarkup, wirePicker } from './transition-picker.js';
 import { attachPreviews } from '../engine/preview.js';
 import { clipsOn, clipById, mediaById, sourceTime } from '../engine/project.js';
 import { elementFor } from '../engine/media.js';
-import { buildPlate, registerPlate, hasPlate } from '../engine/matte.js';
+import { buildPlate, registerPlate, hasPlate, cameraStill } from '../engine/matte.js';
 import * as licence from '../licence.js';
 import {
   presetGroups, presetById, applyPreset, presetFromClip,
@@ -413,9 +413,22 @@ async function ensurePlates(clipIds) {
       const from = sourceTime(clip, clip.start);
       const to = sourceTime(clip, clip.start + clip.dur - 0.02);
       toast('Working out what the background is…', '', 2500);
+      /*
+       * A moving camera gets no plate. The median of a panning shot keys
+       * nothing, and building one would only make the effect look broken;
+       * the portrait matte runs instead, and the toast says which.
+       */
+      // eslint-disable-next-line no-await-in-loop -- one at a time, deliberately
+      const motion = await cameraStill(node, { from, to: Math.max(from + 0.3, to) });
+      if (!motion.still) {
+        clip.matte = { ...(clip.matte || {}), moving: true, plateId: null };
+        actions.commit('Background: moving camera');
+        toast('The camera moves in this shot, so it is keying the person directly — no plate. Works best on a person against a background that is not their colour.', '', 6500);
+        continue;
+      }
       // eslint-disable-next-line no-await-in-loop -- one at a time, deliberately
       const plate = registerPlate(await buildPlate(node, { from, to: Math.max(from + 0.3, to) }));
-      clip.matte = { ...(clip.matte || {}), plateId: plate.id };
+      clip.matte = { ...(clip.matte || {}), plateId: plate.id, moving: false };
       actions.commit('Background plate');
       toast('Background found. Tune the sensitivity in the effect if the edge is rough.', 'ok', 5000);
     } catch (err) {
