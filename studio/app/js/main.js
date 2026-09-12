@@ -1226,7 +1226,7 @@ function paintUpgrade() {
 /* keyboard                                                            */
 /* ------------------------------------------------------------------ */
 
-const PANEL_KEYS = ['media', 'ai', 'templates', 'effects', 'color', 'text', 'audio', 'captions', 'settings'];
+const PANEL_KEYS = ['media', 'ai', 'templates', 'filters', 'effects', 'transitions', 'overlays', 'color', 'text'];
 
 function onKey(e) {
   const typing = /^(input|textarea|select)$/i.test(e.target.tagName) || e.target.isContentEditable;

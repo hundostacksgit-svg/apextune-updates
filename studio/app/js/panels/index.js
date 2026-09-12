@@ -18,16 +18,26 @@ import * as audioPanel from './audio.js';
 import * as captionsPanel from './captions.js';
 import * as settingsPanel from './settings.js';
 import * as helpPanel from './help.js';
+import * as filtersPanel from './filters.js';
+import * as transitionsPanel from './transitions.js';
+import * as overlaysPanel from './overlays.js';
+import * as stickersPanel from './stickers.js';
+import * as soundPanel from './sound.js';
 import * as inspector from './inspector.js';
 
 export const PANELS = {
   media: { title: 'Media', mod: mediaPanel },
   ai: { title: 'AI editor', mod: aiPanel },
   templates: { title: 'Styles', mod: templatesPanel },
+  filters: { title: 'Filters', mod: filtersPanel },
   effects: { title: 'Effects', mod: effectsPanel },
+  transitions: { title: 'Transitions', mod: transitionsPanel },
+  overlays: { title: 'Overlays', mod: overlaysPanel },
   color: { title: 'Colour', mod: colorPanel },
   text: { title: 'Text', mod: textPanel },
+  stickers: { title: 'Stickers', mod: stickersPanel },
   audio: { title: 'Audio', mod: audioPanel },
+  sound: { title: 'Sound', mod: soundPanel },
   captions: { title: 'Captions', mod: captionsPanel },
   settings: { title: 'Settings', mod: settingsPanel },
   help: { title: 'Learn', mod: helpPanel },

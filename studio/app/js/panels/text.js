@@ -69,43 +69,7 @@ export function mount(host) {
     licence.gate(feature, () => addSticker('shape', btn.dataset.shape), { what: 'That callout' });
   });
 
-  if (stickerClip) {
-    const writeReact = (key, value, label) => {
-      actions.patchSelected((c) => {
-        if (c.kind !== 'sticker') return;
-        if (key === 'trackId') {
-          c.sticker.react = value ? { ...(c.sticker.react || defaultReact(value, 'hover')), trackId: value } : null;
-          return;
-        }
-        if (!c.sticker.react) return;
-        c.sticker.react[key] = (key === 'mode') ? value : Number(value);
-      }, label, key === 'mode' || key === 'trackId' ? null : `react:${key}`);
-    };
-    host.addEventListener('input', (e) => {
-      const rk = e.target.dataset.react;
-      if (rk && e.target.type === 'range') {
-        writeReact(rk, e.target.value, `Sticker reaction ${rk}`);
-        const label = host.querySelector(`[data-val="${CSS.escape(rk)}"]`);
-        if (label) label.textContent = `${Math.round(Number(e.target.value) * 100)}%`;
-        return;
-      }
-      const key = e.target.dataset.sk;
-      if (!key) return;
-      const value = e.target.type === 'range' ? Number(e.target.value) : e.target.value;
-      actions.patchSelected((c) => { if (c.kind === 'sticker') c.sticker[key] = value; },
-        `Sticker ${key}`, `sticker:${key}`);
-      const label = host.querySelector(`[data-val="${CSS.escape(key)}"]`);
-      if (label && e.target.type === 'range') label.textContent = String(Math.round(value * 100) / 100);
-    });
-    host.addEventListener('change', (e) => {
-      const rk = e.target.dataset.react;
-      if (rk && e.target.tagName === 'SELECT') { writeReact(rk, e.target.value, rk === 'trackId' ? 'Sticker reacts to track' : 'Sticker reaction'); return; }
-      const key = e.target.dataset.sk;
-      if (key && (e.target.tagName === 'SELECT' || e.target.type === 'color')) {
-        actions.patchSelected((c) => { if (c.kind === 'sticker') c.sticker[key] = e.target.value; }, 'Edit sticker');
-      }
-    });
-  }
+  if (stickerClip) wireStickerEditor(host);
 
   $('#t-presets', host).addEventListener('click', (e) => {
     const btn = e.target.closest('[data-preset]');
@@ -378,7 +342,7 @@ function useAnim(anim) {
 /* stickers                                                            */
 /* ------------------------------------------------------------------ */
 
-function stickerEditor(clip) {
+export function stickerEditor(clip) {
   const st = { ...defaultSticker(), ...clip.sticker };
   const needsText = st.kind === 'shape' && ['bubble', 'bar', 'burst', 'countdown'].includes(st.value);
   return `
@@ -443,7 +407,50 @@ function reactEditor(st) {
     </div>`;
 }
 
-function addSticker(kind, value) {
+/*
+ * The sticker editor's listeners, shared with the Stickers tab: the same
+ * sliders write the same fields whichever panel they sit in, so a sticker
+ * placed from one and tuned in the other is one sticker with one history.
+ */
+export function wireStickerEditor(host) {
+    const writeReact = (key, value, label) => {
+      actions.patchSelected((c) => {
+        if (c.kind !== 'sticker') return;
+        if (key === 'trackId') {
+          c.sticker.react = value ? { ...(c.sticker.react || defaultReact(value, 'hover')), trackId: value } : null;
+          return;
+        }
+        if (!c.sticker.react) return;
+        c.sticker.react[key] = (key === 'mode') ? value : Number(value);
+      }, label, key === 'mode' || key === 'trackId' ? null : `react:${key}`);
+    };
+    host.addEventListener('input', (e) => {
+      const rk = e.target.dataset.react;
+      if (rk && e.target.type === 'range') {
+        writeReact(rk, e.target.value, `Sticker reaction ${rk}`);
+        const label = host.querySelector(`[data-val="${CSS.escape(rk)}"]`);
+        if (label) label.textContent = `${Math.round(Number(e.target.value) * 100)}%`;
+        return;
+      }
+      const key = e.target.dataset.sk;
+      if (!key) return;
+      const value = e.target.type === 'range' ? Number(e.target.value) : e.target.value;
+      actions.patchSelected((c) => { if (c.kind === 'sticker') c.sticker[key] = value; },
+        `Sticker ${key}`, `sticker:${key}`);
+      const label = host.querySelector(`[data-val="${CSS.escape(key)}"]`);
+      if (label && e.target.type === 'range') label.textContent = String(Math.round(value * 100) / 100);
+    });
+    host.addEventListener('change', (e) => {
+      const rk = e.target.dataset.react;
+      if (rk && e.target.tagName === 'SELECT') { writeReact(rk, e.target.value, rk === 'trackId' ? 'Sticker reacts to track' : 'Sticker reaction'); return; }
+      const key = e.target.dataset.sk;
+      if (key && (e.target.tagName === 'SELECT' || e.target.type === 'color')) {
+        actions.patchSelected((c) => { if (c.kind === 'sticker') c.sticker[key] = e.target.value; }, 'Edit sticker');
+      }
+    });
+}
+
+export function addSticker(kind, value) {
   let track = S.project.tracks.find((t) => t.kind === 'video' && t.name === 'Stickers');
   if (!track) track = addTrack(S.project, 'video', 'Stickers');
   const at = Math.min(S.time, Math.max(0, duration(S.project) - 0.3));

@@ -104,6 +104,19 @@ eyeballed.
   cinematic, lo-fi, drum and bass — as a real WAV in the pool with an exact
   grid. The reader was run on 33,280 generated descriptions and 832
   single-clip instructions: 100% right, none thrown, 0.02 ms each
+- **Five more tabs, each a full library, none a duplicate.** Filters (the
+  117 looks with a strength slider, at every level), Transitions (116, one
+  length, on the selection or every cut), Overlays (the 118 leaks, flares,
+  frames, weather, grain and tape effects as their own gallery), Stickers
+  (91 emoji in sets, 10 shapes and callouts, the shared editor and the
+  reactions), Sound (a beat maker in eight styles at any tempo with an
+  exact grid, and 32 sound effects synthesised on the spot — whooshes,
+  hits, risers, glitches, clicks, beds — placed on their own track at the
+  playhead, one file per sound however often it is used). Every tab
+  writes the same fields as the panel it grew out of. Number keys 1–9,
+  the Window menu, the palette and the phone's scrolling tab bar all know
+  them. Measured in Chromium: 31 checks, including every sound rendering
+  finite and normalised
 - **Rate us, in the app and on the site.** Help menu, Learn panel and the
   phone's More sheet open one card: five stars, an optional line. The third
   finished export earns one quiet corner card, never a second. The site's

@@ -197,6 +197,19 @@ export const GUIDE = [
     ],
   },
   {
+    id: 'tabs',
+    group: 'Getting around',
+    title: 'The tabs down the side',
+    body: [
+      ['Fifteen of them', 'Media, AI, Styles, Filters, Effects, Transitions, Overlays, Colour, Text, Stickers, Audio, Sound, Captions, Settings, Learn. The first nine answer to the number keys. On a phone the same row runs along the bottom and scrolls sideways.'],
+      ['Filters', 'The look library — 117 of them, film, mood, genre, social, mono, technical — with a strength slider. It lands on the clips you have selected, or on every clip when nothing is; the line under the title always says which. Colour is the same idea with the dials: wheels, curves, LUT files, the corrector stack.'],
+      ['Effects, Transitions, Overlays', 'Three views of what is done to a shot. **Effects** is the whole engine, with every dial. **Transitions** is the 116 ways from one shot to the next, one length for the lot, on the selected clips or on every cut. **Overlays** is the part of the effects library that sits *on* the picture — leaks, flares, frames, weather, grain, tape wear — for the person who wants a light leak and not a wall of three hundred.'],
+      ['Text and Stickers', '**Text** is titles: presets, fonts, 49 styles, 35 animations. **Stickers** is emoji, shapes and callouts, and the editor that sizes, colours, animates them and makes them react to something you have tracked. A sticker dropped from either panel is the same sticker.'],
+      ['Audio and Sound', '**Audio** is what happens to sound you have: levels, repair, the channel strip, loudness, 148 filters. **Sound** is sound you do not have yet: a beat made to your tempo in eight styles, and 32 sound effects — whooshes, hits, risers, glitches, small sounds, beds — made on the spot and dropped on their own track at the playhead.'],
+      ['Nothing is duplicated', 'Every tab writes the same fields on the same clips. A filter picked in Filters can be refined in Colour; a transition set in Transitions shows in Effects; a sticker from Stickers sits in Text’s list. Undo is one history.'],
+    ],
+  },
+  {
     id: 'montage',
     group: 'The AI',
     title: 'A whole montage from a sentence, or one press',
