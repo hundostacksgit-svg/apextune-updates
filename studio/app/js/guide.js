@@ -387,6 +387,68 @@ export const GUIDE = [
     ],
   },
   {
+    id: 'expressions',
+    group: 'Motion design',
+    title: 'Expressions: movement without keyframes',
+    body: [
+      ['Where', 'Unfold a clip on the timeline (the caret on the clip, or Clip → Layer properties). Every lane has a **ƒ** button next to its stopwatch. Press it and a small editor opens with presets on the left.'],
+      ['The presets', '**Wiggle** for hand-held drift, **Spin forever**, **Pop on the beat**, **Scale with the music**, **Loop the keys**, **Ping-pong**, **Overshoot and settle**, **Blink**, **Drift**, **Fade in and out**, **Stop-motion**. Pick one; it is written into the box and you can change the numbers.'],
+      ['Writing your own', '**value** is what the keys say at this frame; **time** and **local** are seconds; **wiggle(freq, amount)**, **loopOut("cycle")**, **beatPulse(8)**, **audio("low")**, **noise(t)**, **ease(t, a, b, x, y)**, **layer("Title").x**. The box turns red with the reason when something does not read.'],
+      ['Why it matches the export', 'Everything random is seeded from the frame, so the render draws the same frame the preview did. A wiggle is the same wiggle every time you play it.'],
+    ],
+  },
+  {
+    id: 'shapes',
+    group: 'Motion design',
+    title: 'Shape layers',
+    body: [
+      ['Adding one', 'The **Shapes** tab in the rail, or the shape button in the tool strip. A raw rectangle, ellipse, line, polygon or star — or a finished piece: a line that reveals, a ring that fills, a progress bar, a burst, a sabre.'],
+      ['Trim paths', 'Start and end, in percent, on every path. Key the end from 0 to 100 and the shape draws itself on. That is the whole trick behind most animated logos.'],
+      ['The repeater', 'Copies with an offset, a rotation and a scale per copy, walking a straight line or an arc. Nine dots become a grid or a ring in two numbers.'],
+      ['Wiggle and zigzag', 'A path made nervous or jagged, and it animates on its own. The sabre stroke has a white core and a coloured glow, and reads through anything behind it.'],
+    ],
+  },
+  {
+    id: 'animators',
+    group: 'Motion design',
+    title: 'Text animators: letter by letter',
+    body: [
+      ['What they are', 'A property — opacity, position, scale, rotation, tracking, blur — applied to whichever characters a **range selector** covers, with a soft edge. Key the selector\'s start from 0% to 100% and the letters arrive one after another. Key the offset and a wave rolls through them.'],
+      ['The quick way', 'Open **Text** with a title selected and press a move in the **Animators** row: typewriter, fade up by character, rise, fall, scale in by word, zoom out by word, rotate in, blur in, tracking in, tracking out, random pop, slide in, wave, jitter, bounce on the beat, scale with the music.'],
+      ['Tuning', 'Each animator lists its amount and the selector\'s start, end, offset and softness; every one of those is a keyframe lane and takes an expression. Switch the unit to **words** and the same move happens a word at a time.'],
+    ],
+  },
+  {
+    id: 'parenting',
+    group: 'Motion design',
+    title: 'Parenting, null objects and anchor points',
+    body: [
+      ['Parent', 'In the Inspector\'s **Layer** section, pick any other layer as the Parent. The clip then follows that layer\'s position, scale and rotation, through the whole chain. A badge on the clip shows it is following.'],
+      ['Null objects', 'A layer with no picture, there only to be a parent. Add one from the tool strip or **Clip → Add a null object**, then parent a title, a shape and a sticker to it and move the null: the whole rig moves.'],
+      ['Anchor point', 'Where a layer pivots. Put it at a corner and a rotation swings from the corner. Under Transform in the Inspector.'],
+    ],
+  },
+  {
+    id: 'particles',
+    group: 'Motion design',
+    title: 'Particles, noise, displacement, echo',
+    body: [
+      ['Particles', 'In **Effects → Particles**: snow, rain, sparks, embers, confetti, dust, bokeh, bubbles, a starfield, or the bare emitter. Rate, life, speed, spread, gravity, wind, turbulence, size, colour, shape, where they come from. They are computed from the frame, not simulated, so scrubbing backwards costs nothing and the export matches.'],
+      ['Generators', '**Fractal noise** for clouds, smoke and grain plates — it evolves, and it blends. **Gradient ramp** under a title. **Fill** to recolour a shape or a title in one press. **Light sweep** across a logo, **Lens flare** that rides on a tracked subject.'],
+      ['Distort and time', '**Turbulent displace** melts a picture with a noise field; **Displacement map** pushes it by its own brightness. **Echo** stacks the last few frames for a trail; **Posterize time** shows the clip at a stepped rate for the stop-motion look.'],
+      ['Sound on the picture', '**Audio spectrum** and **Audio waveform** draw from the music\'s real analysis. In silence they rest at a floor rather than vanish.'],
+    ],
+  },
+  {
+    id: 'installapp',
+    group: 'Getting around',
+    title: 'Install it as an app',
+    body: [
+      ['From the editor', 'The **Install** button in the top bar, **File → Install as an app**, or the row in the phone\'s More sheet. Where the browser can install it does; where it cannot, the dialog gives the menu route for that browser — Safari\'s File → Add to Dock, the iPhone\'s Share sheet.'],
+      ['What you get', 'Its own window and icon, works with no connection, opens projects, bundles and footage from the file manager, and on Android appears in the Share sheet so a clip goes straight in.'],
+    ],
+  },
+  {
     id: 'speedramps',
     group: 'The timeline',
     title: 'Speed ramps',

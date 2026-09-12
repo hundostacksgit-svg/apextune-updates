@@ -860,6 +860,12 @@ export class Renderer {
       spectrum: (out) => this._spectrumAt(project, t, out),
       wave: (seconds, n, out) => this._waveAt(project, t, seconds, n, out),
       subject: (trackId) => this._subjectAt(project, trackId, t),
+      // The subject an effect on this clip should follow: the first track
+      // measured on the clip itself, which is the one a person made for it.
+      subjectOf: (clip) => {
+        const rec = (project.motionTracks || []).find((r) => r.sourceClipId === clip?.id && r.points?.length);
+        return rec ? this._subjectAt(project, rec.id, t) : null;
+      },
     };
   }
 

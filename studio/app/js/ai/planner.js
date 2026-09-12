@@ -20,6 +20,7 @@
 import { matchTemplate, buildTemplate, TEMPLATES } from '../engine/templates.js';
 import { readInstructions } from './direct.js';
 import { EFFECTS } from '../engine/effects.js';
+import { EFFECT_WORDS, SHAPE_WORDS, ANIMATOR_WORDS, EXPRESSION_WORDS, firstMatch } from './vocabulary.js';
 import { parseMontage, buildMontage, trimSteps, describeSpec } from '../engine/montage.js';
 
 const NUM_WORDS = {
@@ -65,26 +66,8 @@ const TRANSITION_WORDS = [
 
 /* Effects people name directly. Anything not in here still reaches the effect
    through a template, so this list is a shortcut, not the only door. */
-const EFFECT_WORDS = [
-  [/motion blur|blur the motion|smear/i, 'motionBlur', { amount: 55 }],
-  [/zoom blur|radial blur/i, 'zoomBlur', { amount: 45 }],
-  [/shake|shaky|handheld|hand-held|earthquake/i, 'shake', { amount: 40 }],
-  [/rgb split|chromatic|colou?r split|aberration/i, 'rgbSplit', { amount: 28, pulse: 60 }],
-  [/glow|bloom|dreamy light/i, 'glow', { amount: 40 }],
-  [/speed ?lines?|manga lines|action lines/i, 'speedLines', { amount: 60 }],
-  [/halftone|manga dots|comic dots/i, 'halftone', { amount: 60 }],
-  [/cel ?shade|posteri[sz]e|cartoon|toon/i, 'posterize', { levels: 5, outline: 40 }],
-  [/pixelate|pixel|8.?bit|censor/i, 'pixelate', { size: 14 }],
-  [/scanlines?|crt|old tv|retro screen/i, 'scanlines', { amount: 40 }],
-  [/mirror|kaleidoscope|symmetr/i, 'mirror', { mode: 'h' }],
-  [/vhs|tape wobble|camcorder wobble/i, 'vhsWobble', { amount: 40 }],
-  [/prism|lens fringe/i, 'prism', { amount: 35 }],
-  [/light ?leak|lens flare|sun leak/i, 'lightLeak', { amount: 45 }],
-  [/letterbox|black bars|cinema bars|widescreen bars/i, 'letterbox', { amount: 12 }],
-  [/blur\s+(out\s+)?(the|his|her|their|my|a)?\s*(face|plate|number|sign|screen|logo)|censor|hide\s+(the|his|her|their|my)?\s*face/i,
-    'blurRegion', { size: 20, strength: 22 }],
-  [/flash|strobe/i, 'flash', { amount: 70, every: 0.5, length: 0.08 }],
-];
+/* The named effects, shapes, animators and expressions live in vocabulary.js,
+   shared with the direct reader so a word means the same thing from either door. */
 
 const RATIO_WORDS = [
   [/tiktok|reel|short|vertical|9:16|portrait|story|stories/i, '9:16'],
@@ -132,6 +115,9 @@ export function understand(prompt) {
       && !/\bmake me\b|\bbuild\b|\bcreate\b|\bnew edit\b/i.test(s),
 
     effects: [],
+    shapes: [],
+    animator: null,
+    expression: null,
     template: null,
     energy: null,
     ctaText: null,
@@ -201,6 +187,14 @@ export function understand(prompt) {
   for (const [re, id, params] of EFFECT_WORDS) {
     if (re.test(s) && EFFECTS[id]) intent.effects.push({ effect: id, params });
   }
+  /* ---- shapes, text animators and expressions, by name ---- */
+  for (const [re, id] of SHAPE_WORDS) if (re.test(s) && !intent.shapes.includes(id)) intent.shapes.push(id);
+  intent.animator = firstMatch(ANIMATOR_WORDS, s)?.[1] || null;
+  // An expression only when the sentence is about movement of the layers,
+  // not a montage that happens to mention the beat (beatCut handles that).
+  const expr = firstMatch(EXPRESSION_WORDS, s)?.[1] || null;
+  if (expr && !/\b(cut|cuts|edit|montage|build|make me)\b/i.test(s)) intent.expression = expr;
+  else if (expr && /\b(wiggle|spin|breath|blink|drift)\b/i.test(s)) intent.expression = expr;
 
   /* ---- energy, which is finer than pace ---- */
   if (/frantic|insane|crazy fast|hyper|brainrot|chaotic/i.test(s)) intent.energy = 'frantic';
@@ -393,6 +387,21 @@ export function plan(prompt, context) {
       label: `Add ${EFFECTS[fx.effect]?.name.toLowerCase() || fx.effect}`,
       detail: 'You asked for this one by name, so it goes on every shot. Remove it from any clip in the Effects panel.',
     });
+  }
+
+  /* ---- motion design, by name ---- */
+  for (const preset of intent.shapes) {
+    steps.push({ op: 'addShape', args: { preset, at: 0, dur: Math.min(4, intent.targetDur || 4) },
+      label: `Add a ${preset.replace(/([A-Z])/g, ' $1').toLowerCase().trim()}`, detail: 'A shape layer that animates itself, on its own track.' });
+  }
+  if (intent.animator && steps.some((st) => st.op === 'addTitle')) {
+    steps.push({ op: 'textAnimator', args: { target: 'titles', preset: intent.animator },
+      label: 'Animate the title letter by letter', detail: 'A text animator with a range selector; open the title to change the timing.' });
+  }
+  if (intent.expression) {
+    steps.push({ op: 'addExpression', args: { target: 'all', preset: intent.expression },
+      label: `${intent.expression === 'audio' ? 'Scale with the music' : intent.expression === 'beat' ? 'Pop on the beat' : 'Add a movement'} to every shot`,
+      detail: 'An expression, not keyframes — it runs for the whole clip and can be edited in the Inspector.' });
   }
 
   if (intent.removeSilence && !steps.some((st) => st.op === 'removeSilence')) {
@@ -653,6 +662,8 @@ function truncate(s, n) {
 
 /** Examples the panel offers when someone doesn't know what to type. */
 export const EXAMPLES = [
+  'Fast edit with snow and sparks, title "WINTER" typed on letter by letter',
+  'Make every shot pop on the beat, add a light sweep on the title',
   'Make me an anime montage that starts slow and goes crazy, 30 seconds, speed ramps, title that says "JJK"',
   'Phonk drift edit from these clips, 20 seconds, VHS and shake on the drop',
   'Cinematic trailer, black bars, one slow-motion peak, then a title card',

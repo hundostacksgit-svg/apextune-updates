@@ -20,6 +20,10 @@ import { makeEffect, EFFECTS } from '../engine/effects.js';
 import { applyRamp } from '../engine/speed-ramps.js';
 import { renderBeat, bufferToWav } from '../engine/beatmaker.js';
 import { applyTextStyle } from '../engine/text-styles.js';
+import { PRESETS as EXPRESSION_PRESETS, check as checkExpression } from '../engine/expressions.js';
+import { setExpression } from '../engine/project.js';
+import { defaultShape, SHAPE_PRESET_BY_ID } from '../engine/shapes.js';
+import { TEXT_ANIMATOR_BY_ID } from '../engine/titles.js';
 
 /**
  * Run a plan against a project. Mutates `project` and returns a report.
@@ -157,6 +161,32 @@ function clearStory(p) {
  * code counts from zero is worse than one that cannot do it at all.
  */
 export function resolveTarget(p, target, { selection = [] } = {}) {
+  /*
+   * Layers that are not footage — titles, shapes, nulls, stickers — are
+   * asked for by kind, because "make the title wiggle" names one of them
+   * and none of the shots. "title" is the most recent one, which is nearly
+   * always the one just made; "titles" is all of them.
+   */
+  if (target === 'title' || target === 'titles') {
+    const titles = p.clips.filter((c) => c.kind === 'title').sort((a, b) => a.start - b.start);
+    if (!titles.length) throw new Error('There is no title on the timeline yet — add one first.');
+    return target === 'title' ? titles.slice(-1) : titles;
+  }
+  if (target === 'shapes' || target === 'shape') {
+    const shapes = p.clips.filter((c) => c.kind === 'shape').sort((a, b) => a.start - b.start);
+    if (!shapes.length) throw new Error('There is no shape layer yet — add one first.');
+    return target === 'shape' ? shapes.slice(-1) : shapes;
+  }
+  if (target === 'null' || target === 'nulls') {
+    const nulls = p.clips.filter((c) => c.kind === 'null');
+    if (!nulls.length) throw new Error('There is no null object yet — add one first.');
+    return target === 'null' ? nulls.slice(-1) : nulls;
+  }
+  if (target === 'stickers' || target === 'sticker') {
+    const st = p.clips.filter((c) => c.kind === 'sticker').sort((a, b) => a.start - b.start);
+    if (!st.length) throw new Error('There is no sticker yet — add one first.');
+    return target === 'sticker' ? st.slice(-1) : st;
+  }
   const clips = storyClips(p);
   if (!clips.length) return [];
   if (target === undefined || target === null || target === 'all') return clips;
@@ -578,6 +608,89 @@ const OPS = {
       : 'No speech found to caption.';
   },
 
+  /* ---------------- motion design ---------------- */
+
+  /**
+   * An expression on a property of chosen layers: a named preset from the
+   * library, or the source written out. A preset knows which properties it
+   * is for, so "wiggle" lands on position and "spin" on rotation without
+   * the sentence saying so.
+   */
+  addExpression(p, { target, preset = null, prop = null, source = null }, ctx = {}) {
+    const clips = resolveTarget(p, target, ctx);
+    if (!clips.length) throw new Error('There is nothing on the timeline yet.');
+    let src = source;
+    let props = prop ? [prop] : [];
+    let name = 'Expression';
+    if (preset) {
+      const def = EXPRESSION_PRESETS.find((x) => x.id === preset || x.name.toLowerCase() === String(preset).toLowerCase());
+      if (!def) throw new Error(`There is no "${preset}" expression — try wiggle, spin, beat, audio, loop, drift, blink.`);
+      src = def.src;
+      name = def.name;
+      if (!props.length) props = def.for || ['transform.scale'];
+    }
+    if (!src) throw new Error('Say which expression: a preset like wiggle, spin or beat, or the source itself.');
+    if (!props.length) props = ['transform.x'];
+    const bad = checkExpression(src);
+    if (bad) throw new Error(`That expression does not read: ${bad}`);
+    for (const clip of clips) for (const pr of props) setExpression(clip, pr, src);
+    return `${name} on ${props.map((x) => x.replace('transform.', '')).join(' and ')} of ${clips.length} layer${clips.length === 1 ? '' : 's'}.`;
+  },
+
+  /** A shape layer: a raw type, or a finished piece from the library. */
+  addShape(p, { type = 'rect', preset = null, at = 0, dur = 3, name = null }) {
+    let track = videoTracks(p).find((t) => t.name === 'Shapes');
+    if (!track) track = addTrack(p, 'video', 'Shapes');
+    const piece = preset ? SHAPE_PRESET_BY_ID[preset] : null;
+    if (preset && !piece) throw new Error(`There is no "${preset}" shape.`);
+    const clip = addClip(p, { trackId: track.id, start: Math.max(0, Number(at) || 0), dur: Math.max(0.2, Number(dur) || 3), kind: 'shape' });
+    clip.shape = defaultShape(type);
+    if (piece) { piece.build(clip, clip.dur); clip.shape.name = piece.name; }
+    clip.label = name || clip.shape.name;
+    return `${clip.label} added at ${clip.start.toFixed(1)}s.`;
+  },
+
+  /** A text animator on the titles: how the letters arrive, from the library of finished moves. */
+  textAnimator(p, { target = 'titles', preset = 'fadeByChar' }, ctx = {}) {
+    const def = TEXT_ANIMATOR_BY_ID[preset];
+    if (!def) throw new Error(`There is no "${preset}" text animator.`);
+    const clips = resolveTarget(p, target ?? 'titles', ctx).filter((c) => c.kind === 'title');
+    if (!clips.length) throw new Error('There is no title to animate — add one first.');
+    for (const clip of clips) def.build(clip, clip.dur);
+    return `${def.name} on ${clips.length} title${clips.length === 1 ? '' : 's'}.`;
+  },
+
+  /** A null object: a layer with no picture, there to be a parent. */
+  addNull(p, { name = null, at = 0, dur = null }) {
+    let track = videoTracks(p).find((t) => t.name === 'Controls');
+    if (!track) track = addTrack(p, 'video', 'Controls');
+    const n = p.clips.filter((c) => c.kind === 'null').length + 1;
+    const clip = addClip(p, {
+      mediaId: null, trackId: track.id, start: Math.max(0, Number(at) || 0),
+      dur: Math.max(1, Number(dur) || duration(p) || 5), in: 0, kind: 'null',
+    });
+    clip.label = name || `Null ${n}`;
+    return `${clip.label} added — parent any layer to it.`;
+  },
+
+  /** Make one layer the parent of others: they follow its position, scale and rotation. */
+  setParent(p, { target, parent }, ctx = {}) {
+    const children = resolveTarget(p, target, ctx);
+    if (!children.length) throw new Error('Say which layers should follow.');
+    const parentClip = parent === null || parent === 'none' ? null : resolveTarget(p, parent ?? 'null', ctx)[0];
+    for (const clip of children) {
+      if (parentClip && clip.id === parentClip.id) continue;
+      // A chain that leads back to the child is a loop; refuse it rather than draw nothing for ever.
+      let up = parentClip, hops = 0, loop = false;
+      while (up && hops++ < 64) { if (up.id === clip.id) { loop = true; break; } up = up.parentId ? clipById(p, up.parentId) : null; }
+      if (loop) continue;
+      clip.parentId = parentClip ? parentClip.id : null;
+    }
+    return parentClip
+      ? `${children.length} layer${children.length === 1 ? '' : 's'} now follow${children.length === 1 ? 's' : ''} ${parentClip.label || parentClip.text?.content || 'the parent'}.`
+      : `${children.length} layer${children.length === 1 ? '' : 's'} unparented.`;
+  },
+
   addTitle(p, { content, preset = 'headline', at = 0, dur = 2.2, style = null, anim = null }) {
     const presetDef = TITLE_PRESETS.find((t) => t.id === preset) || TITLE_PRESETS[0];
     // Titles go on their own track above the picture so they never displace a shot.
@@ -763,12 +876,15 @@ const OPS = {
    * 'first'. Adding the same effect twice replaces it rather than stacking two
    * copies, because two chromatic splits is a bug every time.
    */
-  addEffect(p, { effect, params = {}, scope = 'all', every = 3, section = null }) {
+  addEffect(p, { effect, params = {}, scope = 'all', every = 3, section = null, target }, ctx = {}) {
     if (!EFFECTS[effect]) throw new Error(`There is no "${effect}" effect.`);
-    const clips = storyClips(p);
+    // A target names particular layers ("the title", "clip 3"); a scope
+    // spreads over the story. Given a target, the scope is not consulted.
+    const clips = target !== undefined && target !== null && target !== 'all' ? resolveTarget(p, target, ctx) : storyClips(p);
     if (!clips.length) throw new Error('There is nothing on the timeline yet.');
 
-    const targets = scope === 'first' ? clips.slice(0, 1)
+    const targets = target !== undefined && target !== null && target !== 'all' ? clips
+      : scope === 'first' ? clips.slice(0, 1)
       : scope === 'accent' ? clips.filter((_, i) => i % Math.max(2, every) === 0)
       : scope === 'section' ? sectionClips(p, section)
       : clips;
@@ -1058,6 +1174,20 @@ export const OP_SPEC = {
   removeEffect: {
     args: 'target?, effect?: id (omit to clear everything on them)',
     does: 'Take effects back off chosen clips.' },
+
+  /* motion design — target may also be "title" (the newest title), "titles", "shape", "shapes", "null", "sticker" */
+  addExpression: {
+    args: 'target?, preset?: wiggle|wiggleRot|wiggleScale|loop|pingpong|offset|inertia|beat|beatOpacity|audio|audioBass|audioRot|spin|drift|fadeInOut|blink|stutter|shakeDecay, prop?: "transform.x"|"transform.y"|"transform.scale"|"transform.rotate"|"transform.opacity", source?: expression text',
+    does: 'A movement without keyframes: wiggle, spin, pop on the beat, scale with the music, loop the keys. Use for "make the title wiggle", "spin the logo", "pulse with the music".' },
+  textAnimator: {
+    args: 'target?: "title"|"titles", preset: typewriterHard|fadeByChar|riseByChar|fallByChar|scaleByWord|zoomByWord|rotateIn|blurIn|trackingIn|trackingOut|randomPop|slideFromLeft|waveLoop|jitterLoop|beatBounce|audioScale',
+    does: 'How the letters of a title arrive or move: one by one, word by word, typed on, tracking in. Put it after addTitle.' },
+  addShape: {
+    args: 'preset?: progressBar|underline|lineReveal|ringFill|boxOutline|circleBurst|starPop|burstLines|dashedOrbit|dotGrid|spiralSquares|saberLine|neonRing|wobbleBlob|scribbleCircle|burstStar|hexagon|arrowIn, type?: rect|ellipse|line|polygon|star, at?: seconds, dur?: seconds',
+    does: 'A shape layer that animates itself: a line that draws on, a ring that fills, a progress bar, a burst.' },
+  addNull: { args: 'name?: string, at?: seconds, dur?: seconds', does: 'A null object — an invisible layer other layers can follow.' },
+  setParent: { args: 'target, parent: a target ("null", "title", a clip number) or null to unparent',
+    does: 'Make layers follow another: "parent the title to the null", "make clip 2 follow the logo".' },
   reorderClips: {
     args: 'order: [clip numbers in the new order]',
     does: 'Rearrange the timeline. Use for "put the last shot first".' },

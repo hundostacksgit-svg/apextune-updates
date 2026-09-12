@@ -36,8 +36,19 @@ const ORDINALS = {
  * Returns undefined when nothing was named, which means "all" — "add grain"
  * with no target is a whole-timeline instruction and should stay one.
  */
+
+import { EFFECT_WORDS, SHAPE_WORDS, ANIMATOR_WORDS, EXPRESSION_WORDS, NULL_WORDS, PARENT_WORDS, firstMatch } from './vocabulary.js';
+
 export function parseTarget(text) {
   const s = ` ${String(text || '').toLowerCase()} `;
+
+  // Layers that are not shots, by kind.
+  if (/\b(every|all( the)?)\s+titles?\b|\bthe titles\b/.test(s)) return 'titles';
+  if (/\b(the|my|this|that)\s+(title|text|headline|logo text|caption|words)\b|\bthe logo\b/.test(s)) return 'title';
+  if (/\b(the|my|this)\s+shapes\b/.test(s)) return 'shapes';
+  if (/\b(the|my|this)\s+shape\b/.test(s)) return 'shape';
+  if (/\b(the|my|this)\s+null\b/.test(s)) return 'null';
+  if (/\b(the|my|this)\s+sticker\b/.test(s)) return 'sticker';
 
   if (/\b(this|the selected|selected|these)\s+(clip|one|shot|clips|ones|shots)\b/.test(s)) return 'selected';
   if (/\b(every|all|each)\s+(clip|shot|one)\b|\bto (all|everything)\b|\bthe whole (thing|timeline|video)\b/.test(s)) return 'all';
@@ -121,6 +132,62 @@ function parseSeconds(s) {
  * guessing a number.
  */
 const RULES = [
+  /* ---- motion design: the specific phrase before the general word ---- */
+  {
+    id: 'parent',
+    test: (s) => PARENT_WORDS.test(s) && !/\bparental\b/.test(s),
+    build: (s, target) => {
+      const m = s.match(/\b(?:parent|attach|pin|stick)\b(.*?)\bto\b(.*)$/) || s.match(/^(.*?)\bfollows?\b(.*)$/);
+      if (!m) return null;
+      const child = parseTarget(m[1]) ?? target ?? 'selected';
+      const parent = parseTarget(m[2]) ?? (/\bnull\b/.test(m[2]) ? 'null' : null);
+      if (parent === null) return null;
+      return { op: 'setParent', args: { target: child, parent },
+        label: `${describe(child)} follows ${describe(parent)}`, detail: 'Position, scale and rotation come from the parent from now on.' };
+    },
+  },
+  {
+    id: 'null',
+    test: (s) => NULL_WORDS.test(s),
+    build: () => ({ op: 'addNull', args: {}, label: 'Add a null object', detail: 'An invisible layer to parent things to.' }),
+  },
+  {
+    id: 'animator',
+    test: (s) => Boolean(firstMatch(ANIMATOR_WORDS, s)),
+    build: (s, target) => {
+      const hit = firstMatch(ANIMATOR_WORDS, s);
+      const t = target === undefined || target === 'all' || target === 'selected' ? 'titles' : target;
+      return { op: 'textAnimator', args: { target: t, preset: hit[1] },
+        label: `${hit[1].replace(/([A-Z])/g, ' $1').toLowerCase().trim()} on ${describe(t)}`, detail: 'A text animator; open the title to change its timing.' };
+    },
+  },
+  {
+    id: 'shape',
+    test: (s) => Boolean(firstMatch(SHAPE_WORDS, s)) && /\b(add|put|draw|make|give|with|a|an)\b/.test(s),
+    build: (s) => {
+      const hit = firstMatch(SHAPE_WORDS, s);
+      const at = Number((s.match(/\bat\s+([\d.]+)\s*s\b/) || [])[1]) || 0;
+      return { op: 'addShape', args: { preset: hit[1], at }, label: `Add a ${hit[1].replace(/([A-Z])/g, ' $1').toLowerCase().trim()}`, detail: 'A shape layer on its own track, animating itself.' };
+    },
+  },
+  {
+    id: 'expression',
+    test: (s) => Boolean(firstMatch(EXPRESSION_WORDS, s)),
+    build: (s, target) => {
+      const hit = firstMatch(EXPRESSION_WORDS, s);
+      return { op: 'addExpression', args: { target, preset: hit[1] },
+        label: `${hit[1].replace(/([A-Z])/g, ' $1').toLowerCase().trim()} on ${describe(target)}`, detail: 'An expression, not keyframes: it runs for the whole clip.' };
+    },
+  },
+  {
+    id: 'effect',
+    test: (s) => Boolean(firstMatch(EFFECT_WORDS, s)) && !/\b(remove|take off|get rid of|without|no)\b/.test(s),
+    build: (s, target) => {
+      const hit = firstMatch(EFFECT_WORDS, s);
+      return { op: 'addEffect', args: { target: target ?? 'all', effect: hit[1], params: hit[2] || {} },
+        label: `${hit[1].replace(/([A-Z])/g, ' $1').toLowerCase().trim()} on ${describe(target)}`, detail: 'Change its settings in the Effects panel.' };
+    },
+  },
   {
     id: 'mute',
     test: (s) => /\b(mute|silence|kill the (audio|sound))\b/.test(s) && !/\bun-?mute\b/.test(s),
@@ -279,6 +346,11 @@ const RULES = [
 ];
 
 function describe(target) {
+  if (target === 'title') return 'the title';
+  if (target === 'titles') return 'every title';
+  if (target === 'shape' || target === 'shapes') return target === 'shape' ? 'the shape' : 'the shapes';
+  if (target === 'null') return 'the null';
+  if (target === 'sticker') return 'the sticker';
   if (target === undefined || target === 'all') return 'every clip';
   if (target === 'selected') return 'the selected clips';
   if (target === 'first') return 'the first clip';

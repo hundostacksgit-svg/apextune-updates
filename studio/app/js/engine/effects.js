@@ -19,6 +19,7 @@
 import { valueAt } from './project.js';
 import { scratch, snapshot, channel, noise, clamp01, hexToRgba, pixels, cellSize, blurred, edgeMap, stretch } from './fx-utils.js';
 import { EFFECT_PACKS } from './effects-library.js';
+import { MOTION_EFFECTS } from './effects-motion.js';
 import { chromaKey, keyAgainstPlate, plateById, portraitMatte } from './matte.js';
 import { findFaceIn } from './tracking.js';
 
@@ -723,7 +724,7 @@ Object.assign(EFFECTS, {
   },
 });
 
-Object.assign(EFFECTS, { ...EFFECT_PACKS, ...EFFECTS });
+Object.assign(EFFECTS, { ...EFFECT_PACKS, ...MOTION_EFFECTS, ...EFFECTS });
 
 export const EFFECT_LIST = Object.entries(EFFECTS).map(([id, e]) => ({ id, ...e }));
 

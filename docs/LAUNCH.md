@@ -96,7 +96,7 @@ eyeballed.
   new overlay layer, as many as you like
 - Undo that names what it will take back, plus a full history you can jump
   into at any point
-- 319 effects, 107 transitions, 118 looks, 194 typefaces, 176 styles
+- 340 effects, 107 transitions, 118 looks, 194 typefaces, 176 styles
 - **Keyframes you can see.** Unfold a clip and it becomes its properties —
   position, scale, rotation, opacity, volume, the grade, every parameter of
   every effect on it. Each has a stopwatch and a lane of draggable diamonds at
@@ -326,7 +326,20 @@ per-platform downloads, an account that remembers you.
   characters or words, random order, and sixteen finished moves
 - **Parenting, null objects and anchor points**: a layer follows its parent
   through the whole chain, and pivots where the anchor is put
-- Verified by `verify-expressions`, `verify-shapes`, `verify-text-animators`
+- **The compositor's effects**, twenty-one of them: fractal noise that
+  evolves and blends, gradient ramp, fill, light sweep, a lens flare that
+  rides on the tracked subject, turbulent displace, displacement map, echo,
+  posterize time, an audio spectrum and a waveform drawn from the music's
+  real analysis, and a stateless particle emitter with snow, rain, sparks,
+  embers, confetti, dust, bokeh, bubbles and a starfield. Every one is
+  deterministic (the export matches the preview), keyframable, off at zero,
+  and under 60 ms a frame at 720p
+- **The AI speaks all of it.** "Make the title type on letter by letter and
+  pop on the beat, add snow, parent the logo to a null" is five steps the
+  assistant reads, explains and applies; the vocabulary lives in one file
+  and the verifier checks every word names a real preset
+- Verified by `verify-expressions`, `verify-shapes`, `verify-text-animators`,
+  `verify-motion-fx`, `verify-ai-motion`
 
 **Installing it**
 - The editor installs itself: an Install button in the top bar, File →
