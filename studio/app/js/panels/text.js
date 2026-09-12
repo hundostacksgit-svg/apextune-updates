@@ -257,7 +257,7 @@ function fmt(key, v) {
   return String(Math.round(v));
 }
 
-function addTitle(presetId, { quiet = false } = {}) {
+export function addTitle(presetId, { quiet = false } = {}) {
   const preset = TITLE_PRESETS.find((p) => p.id === presetId) || TITLE_PRESETS[0];
   let track = S.project.tracks.find((t) => t.kind === 'video' && t.name === 'Titles');
   if (!track) track = addTrack(S.project, 'video', 'Titles');
@@ -417,8 +417,23 @@ function wireAnimators(host) {
       actions.patchSelected((c) => {
         if (c.kind !== 'title') return;
         c.text.animators.splice(k, 1);
-        for (const key of Object.keys(c.keyframes || {})) if (key.startsWith('text.animators.')) delete c.keyframes[key];
-        for (const key of Object.keys(c.expressions || {})) if (key.startsWith('text.animators.')) delete c.expressions[key];
+        // The keys and expressions are addressed by index, so the ones after
+        // the removed animator move down a slot rather than being thrown away
+        // with it — removing the third animator must not un-key the first.
+        const shift = (obj) => {
+          if (!obj) return obj;
+          const next = {};
+          for (const [key, v] of Object.entries(obj)) {
+            const m = key.match(/^text\.animators\.(\d+)\.(.+)$/);
+            if (!m) { next[key] = v; continue; }
+            const i = Number(m[1]);
+            if (i === k) continue;
+            next[i > k ? `text.animators.${i - 1}.${m[2]}` : key] = v;
+          }
+          return next;
+        };
+        c.keyframes = shift(c.keyframes) || {};
+        if (c.expressions) c.expressions = shift(c.expressions);
       }, 'Remove animator');
       return;
     }

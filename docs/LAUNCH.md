@@ -223,7 +223,7 @@ eyeballed.
   detection** that finds the cuts in an already-flattened video and splits
   there
 - **Pages** at Intermediate and Professional — Media, Cut, Edit, Motion,
-  Colour, Fairlight, Deliver. One screen per job rather than one screen that
+  Colour, Sound, Deliver. One screen per job rather than one screen that
   is a compromise between seven of them. Beginner is untouched: still one
   panel, one picture, one timeline
 - **Serial correctors** — a real node chain. Each corrector reads the finished
@@ -308,6 +308,36 @@ every control a finger has to hit is big enough.
 per-platform downloads, an account that remembers you.
 
 ---
+
+**Motion design** (Creator and up)
+- **Expressions** on any property: `wiggle`, `loop`, `beatPulse`, `audio`,
+  `noise`, `layer("name")`, keyed values with velocity — its own small
+  language, deterministic frame to frame, so the render matches the preview
+- **Shape layers**: paths that draw themselves on with trim paths, a repeater
+  that walks arcs, wiggle and zigzag paths, sabre strokes with a white core
+- **Text animators**: per-character opacity, position, scale, rotation,
+  tracking and blur under a range selector with a soft edge, five shapes,
+  characters or words, random order, and sixteen finished moves
+- **Parenting, null objects and anchor points**: a layer follows its parent
+  through the whole chain, and pivots where the anchor is put
+- Verified by `verify-expressions`, `verify-shapes`, `verify-text-animators`
+
+**The look**
+- Its own chrome: one family of line icons, a graphite palette with a mint
+  accent and an amber playhead, a tool strip in the top bar, a
+  composition-style project settings dialog (presets, size with a locked
+  shape, broadcast rates, start timecode, background), a media bin with
+  sortable columns and measured frame rates, layer switches on every track
+  head (mute, solo, hide or duck, lock), a parent badge on the clip, a Window
+  menu for the panels, and a status readout of frame size, rate and draw time
+- Verified by `verify-ui-identity`, and the start screen by `verify-start-pro`
+
+**Accounts**
+- Nobody loses an account: a recovery code and a recovery file made at
+  sign-up, a password reset from the code on any device, restore on a new
+  device from the file with the code or the password, the Square receipt as
+  the last way in, and the oldest device makes room instead of a lockout.
+  `docs/ACCOUNT-RECOVERY.md` has the whole model; `verify-recovery` runs it
 
 ## Not done, and why
 

@@ -55,6 +55,8 @@ const SHELL = [
   './js/engine/frame-context.js',
   './js/engine/audio-analysis.js',
   './js/expr-ui.js',
+  './js/icons.js',
+  './js/project-settings.js',
   './js/engine/shapes.js',
   './js/panels/shapes.js',
   './js/panels/filters.js',

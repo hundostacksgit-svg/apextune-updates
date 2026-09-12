@@ -38,6 +38,7 @@ import { CONTROLS } from './engine/filters.js';
 import { angleAt } from './engine/multicam.js';
 import { elementFor, urlOf } from './engine/media.js';
 import { wheelsMarkup, wireWheels, refreshWheels } from './wheels-ui.js';
+import { icon } from './icons.js';
 
 /* ------------------------------------------------------------------ */
 /* pages                                                               */
@@ -55,19 +56,19 @@ import { wheelsMarkup, wireWheels, refreshWheels } from './wheels-ui.js';
  * tool rather than an editing one.
  */
 export const PAGES = [
-  { id: 'media',   name: 'Media',     icon: '🗂', panel: 'media',
+  { id: 'media',   name: 'Media',     icon: 'media', panel: 'media',
     hint: 'Bring footage in, look at it, tag it' },
-  { id: 'cut',     name: 'Cut',       icon: '✂',  panel: 'templates',
+  { id: 'cut',     name: 'Cut',       icon: 'razor',  panel: 'templates',
     hint: 'Fast assembly — the whole timeline at once' },
-  { id: 'edit',    name: 'Edit',      icon: '🎬', panel: 'effects',
+  { id: 'edit',    name: 'Edit',      icon: 'trim', panel: 'effects',
     hint: 'The full timeline, inspector and effects' },
-  { id: 'fusion',  name: 'Motion',    icon: '⬡',  panel: 'text', min: 'expert',
+  { id: 'fusion',  name: 'Motion',    icon: 'shapes',  panel: 'text', min: 'expert',
     hint: 'Titles, tracking, masks and compositing' },
-  { id: 'colour',  name: 'Colour',    icon: '◐',  panel: 'color', min: 'intermediate',
+  { id: 'colour',  name: 'Colour',    icon: 'color',  panel: 'color', min: 'intermediate',
     hint: 'Nodes, wheels, curves and scopes' },
-  { id: 'audio',   name: 'Fairlight', icon: '🔊', panel: 'audio',
+  { id: 'audio',   name: 'Sound',     icon: 'sound', panel: 'audio',
     hint: 'Mixer, channel strips and loudness' },
-  { id: 'deliver', name: 'Deliver',   icon: '⇪',  panel: 'settings',
+  { id: 'deliver', name: 'Deliver',   icon: 'export',  panel: 'settings',
     hint: 'Render settings and the export queue' },
 ];
 
@@ -145,7 +146,11 @@ function buildPageBar() {
       title: `${p.name} — ${p.hint}`,
     });
     if (p.min) btn.dataset.min = p.min;
-    btn.append(el('span', { class: 'pb-ico' }, p.icon), el('i', {}, p.name));
+    // The page icons come from the same line set as every other button,
+    // sized down a step so the word next to them stays the thing you read.
+    const ico = el('span', { class: 'pb-ico' });
+    ico.innerHTML = icon(p.icon, 14);
+    btn.append(ico, el('i', {}, p.name));
     pages.append(btn);
   }
   pages.addEventListener('click', (e) => {
@@ -154,13 +159,26 @@ function buildPageBar() {
   });
 
   const right = el('div', { class: 'pb-right' });
+  /*
+   * The status readout.
+   *
+   * Frame size, frame rate, and how long the last frame took to draw. The
+   * last number is the one that matters: it is the difference between a
+   * timeline that plays and one that stutters, and a person who can see it
+   * climb as they stack effects can decide what to drop before playback
+   * tells them. Compositors put this in the corner for the same reason.
+   */
+  const status = el('span', { class: 'pb-status', id: 'pb-status',
+    title: 'Frame size · frame rate · time to draw the last frame' });
   const projects = el('button', { class: 'pb-tool', id: 'pb-projects', type: 'button',
-    title: 'Project manager' }, '🗀');
+    title: 'Project manager' });
+  projects.innerHTML = icon('folder', 15);
   projects.addEventListener('click', () => api?.openStart?.({ canCancel: true }));
   const prefs = el('button', { class: 'pb-tool', id: 'pb-prefs', type: 'button',
-    title: 'Project settings' }, '⚙');
-  prefs.addEventListener('click', () => api?.openPanel?.('settings'));
-  right.append(projects, prefs);
+    title: 'Project settings' });
+  prefs.innerHTML = icon('gear', 15);
+  prefs.addEventListener('click', () => (api?.projectSettings ? api.projectSettings() : api?.openPanel?.('settings')));
+  right.append(status, projects, prefs);
 
   bar.append(el('span', { class: 'pb-name' }, 'OmniDx Studio'), pages, right);
   return bar;
@@ -980,6 +998,31 @@ function buildSplitHandle() {
   return handle;
 }
 
+/**
+ * The status readout, four times a second.
+ *
+ * The draw time is a running average the renderer keeps, so the number sits
+ * still enough to read; a raw per-frame figure flickers between 3 and 30 and
+ * tells nobody anything. Colour: quiet while a frame fits in its slot, amber
+ * when it is over budget, so the warning is the readout itself.
+ */
+let statusAt = 0;
+function paintStatus() {
+  const box = $('#pb-status');
+  if (!box) return;
+  const now = performance.now();
+  if (now - statusAt < 250) return;
+  statusAt = now;
+  const S = api?.state?.();
+  if (!S) return;
+  const { width, height, fps } = S.project.settings;
+  const ms = S.stats?.frameMs || 0;
+  const budget = 1000 / (fps || 30);
+  const text = `${width}×${height} · ${fps} fps · ${ms ? ms.toFixed(1) : '–'} ms`;
+  if (box.textContent !== text) box.textContent = text;
+  box.classList.toggle('slow', ms > budget);
+}
+
 function paintViewerBar() {
   const nameEl = $('#vb-name');
   if (!nameEl) return;
@@ -1196,6 +1239,7 @@ export function refresh() {
 export function onFrame() {
   paintScope();
   paintViewerBar();
+  paintStatus();
   // Live, because that is the entire point of an angle viewer.
   paintAngles();
   if (document.documentElement.classList.contains('ws-strip')) {

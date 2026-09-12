@@ -45,7 +45,7 @@ export const MENUS = [
       { label: 'Save a copy to disk', key: `${MOD}+S`, run: () => api.exportProjectFile?.() },
       { label: 'Export video…', key: `${MOD}+E`, run: () => api.exportVideo?.() },
       { sep: true },
-      { label: 'Project settings…', run: () => api.openPanel?.('settings') },
+      { label: 'Project settings…', run: () => api.projectSettings?.() },
     ],
   },
   {
@@ -146,7 +146,21 @@ export const MENUS = [
       { label: () => `${api.isOn?.('ratios') ? '✓ ' : ''}All platforms`, run: () => api.toggle?.('ratios') },
       { label: () => `${api.isOn?.('scopes') ? '✓ ' : ''}Scopes`, run: () => api.toggle?.('scopes') },
       { sep: true },
+      { label: 'Dark / light', run: () => api.theme?.() },
+      { label: 'Full screen', run: () => api.fullscreen?.() },
+    ],
+  },
+  /*
+   * Window is the panels. They used to sit inside View, which made View the
+   * one menu that did not fit a small laptop screen once the rail grew past
+   * a dozen tabs; every compositor keeps "what is on the viewer" and "which
+   * panel is open" as two menus, and now so does this.
+   */
+  {
+    id: 'window', label: 'Window', items: [
       { label: 'Media', key: '1', run: () => api.openPanel?.('media') },
+      { label: 'AI editor', key: '2', run: () => api.openPanel?.('ai') },
+      { label: 'Styles', key: '3', run: () => api.openPanel?.('templates') },
       { label: 'Filters', key: '4', run: () => api.openPanel?.('filters') },
       { label: 'Effects', key: '5', run: () => api.openPanel?.('effects') },
       { label: 'Transitions', key: '6', run: () => api.openPanel?.('transitions') },
@@ -154,18 +168,16 @@ export const MENUS = [
       { label: 'Colour', key: '8', run: () => api.openPanel?.('color') },
       { label: 'Text', key: '9', run: () => api.openPanel?.('text') },
       { label: 'Stickers', run: () => api.openPanel?.('stickers') },
+      { label: 'Shapes', run: () => api.openPanel?.('shapes') },
       { label: 'Audio', run: () => api.openPanel?.('audio') },
       { label: 'Sound', run: () => api.openPanel?.('sound') },
-      { label: 'Shapes', run: () => api.openPanel?.('shapes') },
-      { sep: true },
-      { label: 'Dark / light', run: () => api.theme?.() },
-      { label: 'Full screen', run: () => api.fullscreen?.() },
+      { label: 'Captions', run: () => api.openPanel?.('captions') },
     ],
   },
   {
     id: 'settings', label: 'Settings', items: [
-      { label: 'Project settings…', run: () => api.openPanel?.('settings') },
-      { label: 'Frame rate and resolution…', run: () => api.openPanel?.('settings') },
+      { label: 'Project settings…', run: () => api.projectSettings?.() },
+      { label: 'Frame rate and size…', run: () => api.projectSettings?.() },
       { sep: true },
       { label: () => `${api.level?.() === 'beginner' ? '✓ ' : ''}Beginner`, run: () => api.setLevel?.('beginner') },
       { label: () => `${api.level?.() === 'intermediate' ? '✓ ' : ''}Intermediate`, run: () => api.setLevel?.('intermediate') },

@@ -192,9 +192,11 @@ export class Renderer {
     ctx.fillStyle = project.settings.background || '#000';
     ctx.fillRect(0, 0, w, h);
 
+    // Solo: when any video layer is soloed, only soloed layers are drawn.
+    const soloed = project.tracks.some((tr) => tr.kind === 'video' && tr.solo);
     const visible = activeAt(project, t).filter((c) => {
       const track = project.tracks.find((tr) => tr.id === c.trackId);
-      return track && track.kind === 'video' && !track.hidden;
+      return track && track.kind === 'video' && !track.hidden && (!soloed || track.solo);
     });
 
     for (const clip of visible) {
@@ -386,9 +388,11 @@ export class Renderer {
 
   /** Draw a project's video clips onto a context. The body of draw(), reusable. */
   _drawInto(ctx, project, t, w, h, playing, forExport) {
+    // Solo: when any video layer is soloed, only soloed layers are drawn.
+    const soloed = project.tracks.some((tr) => tr.kind === 'video' && tr.solo);
     const visible = activeAt(project, t).filter((c) => {
       const track = project.tracks.find((tr) => tr.id === c.trackId);
-      return track && track.kind === 'video' && !track.hidden;
+      return track && track.kind === 'video' && !track.hidden && (!soloed || track.solo);
     });
     for (const clip of visible) {
       if (clip.kind === 'adjust') { this._applyAdjustmentOn(ctx, project, clip, t, w, h); continue; }

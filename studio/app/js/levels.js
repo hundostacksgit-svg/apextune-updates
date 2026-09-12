@@ -42,7 +42,7 @@ export const DESCRIPTIONS = {
     name: 'Intermediate',
     tag: 'Editing',
     line: 'Pages, the full timeline and the inspector at a working density, without the colour-science vocabulary.',
-    shows: ['Pages: Media, Cut, Edit, Colour, Fairlight, Deliver',
+    shows: ['Pages: Media, Cut, Edit, Colour, Sound, Deliver',
       '290 presets — a grade, an effect stack and an audio strip in one tap',
       'Save your own presets from any clip you got right',
       'Copy attributes off one clip and paste them onto the rest',

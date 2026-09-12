@@ -17,6 +17,7 @@ import * as kf from './keyframes-ui.js';
 import * as licence from './licence.js';
 import { attach as attachMenu } from './context-menu.js';
 import { clipMenu, trackSpaceMenu, trackHeadMenu, rulerMenu } from './menus.js';
+import { icon } from './icons.js';
 
 const SNAP_PX = 8;          // how close a drag has to get before it sticks
 const MIN_CLIP = 0.08;
@@ -91,24 +92,28 @@ export class TimelineUI {
     const frag = document.createDocumentFragment();
     const ctx = { time: this.state.time };
     for (const track of this.project.tracks) {
-      const head = el('div', { class: 'tl-head', 'data-track': track.id });
+      const head = el('div', { class: `tl-head ${track.locked ? 'locked' : ''}`, 'data-track': track.id });
       head.style.height = `${track.height}px`;
+      /*
+       * The layer switches, the compositor's row of them: mute, solo, hide
+       * (or duck, on audio), lock. Solo is the one that saves the most time
+       * on a stacked timeline — hear one layer, see one layer — and lock is
+       * the one that stops a finished layer being nudged by accident.
+       */
+      const sw = (act, on, off, title, cls) => el('button', {
+        class: cls, title, 'data-act': act, 'data-track': track.id, html: on ? icon(off ? 'unmute' : 'mute', 13) : '',
+      });
+      const b = (act, cls, title, ico) => { const n = el('button', { class: cls, title, 'data-act': act, 'data-track': track.id }); n.innerHTML = icon(ico, 13); return n; };
       head.append(
         el('span', { class: 'tn', title: track.name }, track.name),
-        el('button', {
-          class: track.muted ? 'off' : '', title: track.muted ? 'Unmute' : 'Mute',
-          'data-act': 'mute', 'data-track': track.id,
-        }, track.muted ? '🔇' : '🔊'),
+        b('mute', track.muted ? 'off' : '', track.muted ? 'Unmute' : 'Mute', track.muted ? 'mute' : 'unmute'),
+        b('solo', track.solo ? 'on' : '', track.solo ? 'Solo off' : 'Solo — only this layer', 'solo'),
         track.kind === 'video'
-          ? el('button', {
-            class: track.hidden ? 'off' : '', title: track.hidden ? 'Show' : 'Hide',
-            'data-act': 'hide', 'data-track': track.id,
-          }, track.hidden ? '🚫' : '👁')
-          : el('button', {
-            class: track.duck ? 'on' : '', title: 'Duck under voice',
-            'data-act': 'duck', 'data-track': track.id,
-          }, '⤓'),
+          ? b('hide', track.hidden ? 'off' : '', track.hidden ? 'Show' : 'Hide', track.hidden ? 'eyeOff' : 'eye')
+          : b('duck', track.duck ? 'on' : '', 'Duck under voice', 'duck'),
+        b('lock', track.locked ? 'on' : '', track.locked ? 'Unlock' : 'Lock — nothing on it can be moved', track.locked ? 'lock' : 'unlock'),
       );
+      void sw;
       frag.appendChild(head);
 
       /*
@@ -175,6 +180,12 @@ export class TimelineUI {
     node.style.width = `${Math.max(4, this.toPx(clip.dur))}px`;
 
     const width = this.toPx(clip.dur);
+    if (clip.parentId) {
+      const parent = p.clips.find((c) => c.id === clip.parentId);
+      const badge = el('span', { class: 'cparent', title: `Follows ${parent?.label || parent?.text?.content || 'its parent'}` });
+      badge.innerHTML = icon('parent', 11);
+      node.appendChild(badge);
+    }
 
     // Filmstrip for video, waveform for audio. Both are cheap because the
     // frames and peaks were computed once at import.
@@ -299,6 +310,8 @@ export class TimelineUI {
       if (btn.dataset.act === 'mute') track.muted = !track.muted;
       if (btn.dataset.act === 'hide') track.hidden = !track.hidden;
       if (btn.dataset.act === 'duck') track.duck = !track.duck;
+      if (btn.dataset.act === 'solo') track.solo = !track.solo;
+      if (btn.dataset.act === 'lock') track.locked = !track.locked;
       this.actions.commit(`${btn.dataset.act} ${track.name}`);
     });
 

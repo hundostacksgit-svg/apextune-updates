@@ -5,16 +5,51 @@ import { S, actions } from '../main.js';
 import { isReady } from '../engine/media.js';
 import { suggestFor, insertBroll } from '../engine/broll.js';
 
+/*
+ * Two views of the same bin. The grid is for recognising footage by its
+ * picture; the list is the compositor's project panel — name, type, size,
+ * frame rate, length, dimensions in columns, sortable by any of them — for
+ * the person with forty files who needs the 59.94 one. The choice and the
+ * sort are remembered.
+ */
+const VIEW_KEY = 'omnidx.studio.media.view';
+const SORT_KEY = 'omnidx.studio.media.sort';
+let view = (() => { try { return localStorage.getItem(VIEW_KEY) || 'grid'; } catch { return 'grid'; } })();
+let sortBy = (() => { try { return localStorage.getItem(SORT_KEY) || 'added'; } catch { return 'added'; } })();
+let sortDir = 1;
+
+const COLS = [
+  ['name', 'Name'], ['kind', 'Type'], ['size', 'Size'], ['fps', 'Rate'], ['duration', 'Length'], ['dims', 'Size (px)'],
+];
+
+function sorted(media) {
+  const list = media.slice();
+  const key = sortBy;
+  list.sort((a, b) => {
+    let x, y;
+    if (key === 'dims') { x = (a.width || 0) * (a.height || 0); y = (b.width || 0) * (b.height || 0); }
+    else if (key === 'added') { x = a.addedAt || 0; y = b.addedAt || 0; }
+    else { x = a[key] ?? ''; y = b[key] ?? ''; }
+    if (typeof x === 'string') return x.localeCompare(String(y)) * sortDir;
+    return ((x || 0) - (y || 0)) * sortDir;
+  });
+  return list;
+}
+
 export function mount(host) {
   const { media } = S.project;
 
   host.innerHTML = `
     <div class="panel-h">
       <h2>Media</h2>
-      <button class="btn btn-sm btn-primary" id="m-add">＋ Import</button>
+      <span style="display:flex;gap:4px;align-items:center">
+        <button class="btn btn-sm btn-ghost mview ${view === 'grid' ? 'on' : ''}" id="m-view-grid" title="Thumbnails">▦</button>
+        <button class="btn btn-sm btn-ghost mview ${view === 'list' ? 'on' : ''}" id="m-view-list" title="Columns — name, type, size, rate, length">☰</button>
+        <button class="btn btn-sm btn-primary" id="m-add">＋ Import</button>
+      </span>
     </div>
     <p class="panel-sub">Drag onto a track, or double-click to add it to the end.</p>
-    ${media.length ? `<div class="mgrid" id="m-grid"></div>` : empty('🎞',
+    ${media.length ? (view === 'list' ? listMarkup(media) : `<div class="mgrid" id="m-grid"></div>`) : empty('🎞',
       'Nothing imported yet',
       'Drop video, photos or music anywhere in this window. Nothing is uploaded — it stays on this device.')}
     ${media.length ? `<p class="tiny muted" style="margin-top:14px">
@@ -29,6 +64,15 @@ export function mount(host) {
 
   $('#m-add', host).addEventListener('click', () => $('#file-input').click());
   wireBroll(host);
+  $('#m-view-grid', host).addEventListener('click', () => { view = 'grid'; try { localStorage.setItem(VIEW_KEY, view); } catch { /* fine */ } mount(host); });
+  $('#m-view-list', host).addEventListener('click', () => { view = 'list'; try { localStorage.setItem(VIEW_KEY, view); } catch { /* fine */ } mount(host); });
+
+  const list = $('#m-list', host);
+  if (list) {
+    wireList(host, list);
+    measureRates(media, host);
+    return;
+  }
 
   const grid = $('#m-grid', host);
   if (!grid) return;
@@ -73,6 +117,86 @@ export function mount(host) {
   });
 
   void $$;
+}
+
+/* ------------------------------------------------------------------ */
+/* the columns view                                                    */
+/* ------------------------------------------------------------------ */
+
+function listMarkup(media) {
+  const arrow = (k) => (sortBy === k ? (sortDir > 0 ? ' ▴' : ' ▾') : '');
+  return `
+    <table class="mlist" id="m-list">
+      <thead><tr>${COLS.map(([k, label]) => `<th data-sort="${k}" class="${sortBy === k ? 'on' : ''}">${esc(label)}${arrow(k)}</th>`).join('')}<th></th></tr></thead>
+      <tbody>
+        ${sorted(media).map((m) => `
+          <tr draggable="true" data-media="${esc(m.id)}" title="${esc(m.name)}" class="${m.missing ? 'missing' : ''}">
+            <td class="mn"><span class="mk">${m.kind === 'audio' ? '♪' : m.kind === 'image' ? '▣' : '▶'}</span>${esc(m.missing ? `⚠ ${m.name}` : m.name)}</td>
+            <td>${esc(m.kind === 'video' ? 'Video' : m.kind === 'audio' ? 'Audio' : 'Image')}</td>
+            <td class="mono">${esc(bytes(m.size || 0))}</td>
+            <td class="mono" data-fps="${esc(m.id)}">${m.fps ? `${m.fps}${m.vfr ? ' vfr' : ''}` : (m.kind === 'video' ? '…' : '—')}</td>
+            <td class="mono">${esc(dur(m.duration))}</td>
+            <td class="mono">${m.width ? `${m.width}×${m.height}` : '—'}</td>
+            <td><button class="rm" title="Remove from project" data-rm="${esc(m.id)}">✕</button></td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function wireList(host, list) {
+  list.addEventListener('click', (e) => {
+    const th = e.target.closest('th[data-sort]');
+    if (th) {
+      if (sortBy === th.dataset.sort) sortDir = -sortDir; else { sortBy = th.dataset.sort; sortDir = 1; }
+      try { localStorage.setItem(SORT_KEY, sortBy); } catch { /* fine */ }
+      mount(host);
+      return;
+    }
+    const rm = e.target.closest('[data-rm]');
+    if (rm) {
+      e.stopPropagation();
+      const used = S.project.clips.filter((c) => c.mediaId === rm.dataset.rm).length;
+      if (used && !confirm(`That file is used by ${used} clip${used === 1 ? '' : 's'}. Remove it anyway?`)) return;
+      actions.removeMedia(rm.dataset.rm);
+      toast('Removed from the project — the file on your disk is untouched');
+    }
+  });
+  list.addEventListener('dragstart', (e) => {
+    const row = e.target.closest('[data-media]');
+    if (!row) return;
+    e.dataTransfer.setData('text/omnidx-media', row.dataset.media);
+    e.dataTransfer.effectAllowed = 'copy';
+  });
+  list.addEventListener('dblclick', (e) => {
+    const row = e.target.closest('[data-media]');
+    if (row) actions.appendMedia(row.dataset.media);
+  });
+}
+
+/*
+ * A file's frame rate, measured once, the first time the columns ask for
+ * it. Read from the frames' own presentation times rather than trusted from
+ * a header, so a 29.97 file says 29.97 and a variable-rate screen recording
+ * says so. Kept on the record so the next open does not measure again.
+ */
+const measuring = new Set();
+async function measureRates(media, host) {
+  const { elementFor } = await import('../engine/media.js');
+  const { inspectFrameRate } = await import('../engine/proxy.js');
+  for (const m of media) {
+    if (m.kind !== 'video' || m.fps || m.missing || measuring.has(m.id)) continue;
+    measuring.add(m.id);
+    try {
+      const node = elementFor(m, `rate-${m.id}`);
+      if (!node) continue;
+      // eslint-disable-next-line no-await-in-loop -- one file at a time, or ten videos play at once
+      const rate = await inspectFrameRate(node, { samples: 16 });
+      if (rate?.fps) { m.fps = rate.fps; m.vfr = rate.variable; }
+      else m.fps = 0;
+      const cell = host.querySelector(`[data-fps="${CSS.escape(m.id)}"]`);
+      if (cell) cell.textContent = m.fps ? `${m.fps}${m.vfr ? ' vfr' : ''}` : '—';
+    } catch { m.fps = 0; } finally { measuring.delete(m.id); }
+  }
 }
 
 /* ------------------------------------------------------------------ */

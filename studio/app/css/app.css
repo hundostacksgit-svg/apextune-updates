@@ -8,26 +8,39 @@
  */
 
 :root{
-  --blue:#2f7dff; --blue-2:#00d1ff; --blue-3:#7a5cff;
-  --grad:linear-gradient(125deg,var(--blue-3),var(--blue) 45%,var(--blue-2));
-  --glow:rgba(47,125,255,.4);
+  /*
+   * The room.
+   *
+   * Graphite, not navy: a neutral surround is the only honest place to judge
+   * a picture, and it is also what makes this look like a finishing tool
+   * rather than a phone app. One accent — a mint signal colour — for the
+   * thing that is active or selected, and one warm colour for the playhead,
+   * so the two things you look for on a timeline are never the same colour
+   * as each other or as the chrome. The brand gradient survives on the mark
+   * and the way to pay, and nowhere else.
+   */
+  --blue:#31d9a7; --blue-2:#5ce8bd; --blue-3:#7a5cff;
+  --accent:#31d9a7; --accent-2:#5ce8bd; --amber:#f5b342;
+  --grad:linear-gradient(125deg,#7a5cff,#2f7dff 45%,#00d1ff);
+  --glow:rgba(49,217,167,.35);
 
-  --bg:#04060d; --bg-2:#070a12; --surface:#0b0f1a; --surface-2:#111828;
-  --surface-3:#182134; --line:#1d2740; --line-soft:#141b2c;
-  --text:#e9eefc; --text-2:#94a1c0; --text-3:#5f6b87;
-  --ok:#30d38a; --warn:#ffc247; --bad:#ff5d6c;
+  --bg:#0f1012; --bg-2:#121316; --surface:#161719; --surface-2:#1c1d20;
+  --surface-3:#232428; --surface-4:#2a2b30; --line:#2b2d33; --line-soft:#212227;
+  --text:#e8e8ea; --text-2:#a9abb3; --text-3:#6f727b;
+  --ok:#3fd18f; --warn:#f5b342; --bad:#ff6b6b;
 
-  --rail-w:66px; --panel-w:284px; --insp-w:300px; --tl-h:290px; --top-h:54px;
-  --r-s:8px; --r-m:12px; --r-l:16px;
+  --rail-w:64px; --panel-w:284px; --insp-w:300px; --tl-h:290px; --top-h:52px;
+  --r-s:6px; --r-m:8px; --r-l:12px;
   --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
   color-scheme:dark;
 }
 :root[data-theme="light"]{
-  --bg:#eef2fa; --bg-2:#e4ebf7; --surface:#ffffff; --surface-2:#f3f6fd;
-  --surface-3:#e7eefb; --line:#d2dcf0; --line-soft:#e4ebf7;
-  --text:#0a1226; --text-2:#4d5977; --text-3:#818da9;
-  --glow:rgba(47,125,255,.22);
+  --bg:#e9eaed; --bg-2:#e2e3e7; --surface:#f5f5f7; --surface-2:#ececef;
+  --surface-3:#e1e2e6; --surface-4:#d6d7dc; --line:#cfd0d6; --line-soft:#dfe0e5;
+  --text:#141518; --text-2:#4b4e57; --text-3:#7d8089;
+  --blue:#0f9f76; --blue-2:#12b487; --accent:#0f9f76; --accent-2:#12b487;
+  --glow:rgba(15,159,118,.25);
   color-scheme:light;
 }
 
@@ -212,9 +225,24 @@ html[data-level="expert"] .card-hint{display:none}
 .tb-btn:active:not([disabled]){transform:scale(.97)}
 .tb-btn[disabled]{opacity:.32;cursor:default}
 .tb-btn .ico{font-size:15px;line-height:1}
-.tb-btn.primary{background:var(--grad);color:#fff;border-color:transparent;font-weight:650;
-  box-shadow:0 6px 18px -6px var(--glow)}
-.tb-btn.primary:hover{background:var(--grad);color:#fff;filter:brightness(1.08)}
+.tb-btn.primary{background:var(--accent);color:#0c1411;border-color:transparent;font-weight:650;
+  box-shadow:none}
+.tb-btn.primary:hover{background:var(--accent-2);color:#0c1411;filter:none}
+.tb-btn svg{width:18px;height:18px;display:block}
+.tb-btn .ico{display:inline-flex}
+/* The tool strip: what the pointer does, and what a press adds. Sits after the
+   menus, the way a compositor's toolbar does; the timeline keeps its own copy
+   of the three cutting tools because that is where the hand already is. */
+.toolstrip{display:flex;align-items:center;gap:1px;padding:0 4px;margin-left:4px;border-left:1px solid var(--line);
+  border-right:1px solid var(--line);flex:none}
+.toolstrip button{width:30px;height:30px;border:0;border-radius:5px;background:transparent;color:var(--text-3);
+  display:grid;place-items:center;transition:.12s}
+.toolstrip button svg{width:17px;height:17px}
+.toolstrip button:hover{background:var(--surface-3);color:var(--text)}
+.toolstrip button.on{background:var(--surface-3);color:var(--accent)}
+.toolstrip .ts-div{width:1px;height:16px;background:var(--line);margin:0 3px}
+@media(max-width:1300px){.toolstrip{display:none}}
+#btn-proj{padding:5px;width:28px;height:28px;justify-content:center;flex:none}
 
 /* The upgrade button: an outlined pill in the brand gradient, with the mark
    alive inside it. Outlined rather than filled so it does not fight Export
@@ -268,7 +296,14 @@ html[data-level="expert"] .tb-upgrade .lbl{background:var(--grad);-webkit-backgr
   .menubar .mn-btn{padding-left:4px;padding-right:4px}
   .tb-left .proj-name{max-width:56px}
 }
-@media(max-width:1000px){ .menubar .mn-btn{padding-left:4px;padding-right:4px;font-size:12px} }
+@media(max-width:1000px){
+  .menubar .mn-btn{padding-left:4px;padding-right:4px;font-size:12px}
+  /* Eight menus, a name and three level tabs do not share a thousand pixels
+     at full size: the gear goes (it is in two menus and the page bar) and
+     the level tabs tighten. */
+  #btn-proj{display:none}
+  .level-switch button{padding:0 7px;font-size:10.5px;letter-spacing:0}
+}
 @media(max-width:900px){.tb-btn .lbl{display:none}}
 /* And whatever happens, the level switch is on top and clickable. */
 .tb-mid{flex:none;position:relative;z-index:3}
@@ -276,21 +311,22 @@ html[data-level="expert"] .tb-upgrade .lbl{background:var(--grad);-webkit-backgr
   padding:6px 10px;font-size:13.5px;font-weight:600;max-width:230px;min-width:90px;
   transition:border-color .14s,background .14s}
 .proj-name:hover{background:var(--surface-2)}
-.proj-name:focus{outline:0;border-color:var(--blue);background:var(--surface-2)}
+.proj-name:focus{outline:0;border-color:var(--accent);background:var(--surface-2)}
 .saved{font-size:11px;color:var(--text-3);padding:3px 8px;border-radius:99px;
   background:var(--surface-2);white-space:nowrap;transition:color .2s}
 .saved.saving{color:var(--warn)}
 .saved.ok{color:var(--ok)}
 @media(max-width:820px){.saved{display:none}}
 
-.level-switch{display:flex;gap:2px;padding:3px;border-radius:10px;background:var(--surface-2);
-  border:1px solid var(--line)}
-.level-switch button{padding:5px 13px;border-radius:7px;border:0;background:transparent;
-  color:var(--text-3);font-size:12px;font-weight:640;transition:.15s}
+.level-switch{display:flex;gap:0;padding:0;border-radius:0;background:transparent;border:0;height:var(--top-h)}
+.level-switch button{padding:0 14px;border-radius:0;border:0;background:transparent;
+  color:var(--text-3);font-size:11.5px;font-weight:620;letter-spacing:.02em;text-transform:uppercase;transition:.15s;
+  border-bottom:2px solid transparent;height:100%}
 .level-switch button:hover{color:var(--text-2)}
-.level-switch button.on{background:var(--grad);color:#fff;box-shadow:0 3px 10px -3px var(--glow)}
+.level-switch button.on{background:transparent;color:var(--text);box-shadow:none;border-bottom-color:var(--accent)}
 @media(max-width:1000px){.level-switch button{padding:5px 9px;font-size:11px}}
-@media(max-width:700px){.tb-mid{display:none}}
+/* Under this the tabs would sit on the menus; Settings lists the levels. */
+@media(max-width:820px){.tb-mid{display:none}}
 
 /* ============ workspace ============ */
 .workspace{display:grid;grid-template-columns:var(--rail-w) var(--panel-w) 1fr var(--insp-w);
@@ -301,12 +337,14 @@ html[data-level="expert"] .tb-upgrade .lbl{background:var(--grad);-webkit-backgr
 .rail button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 2px;
   border-radius:10px;border:0;background:transparent;color:var(--text-3);transition:.15s;
   position:relative}
-.rail button span{font-size:17px;line-height:1.1;font-weight:700}
-.rail button i{font-size:9.5px;font-style:normal;letter-spacing:.02em;font-weight:600}
+.rail button span{font-size:17px;line-height:1.1;font-weight:700;display:grid;place-items:center}
+.rail button span svg{width:20px;height:20px}
+.rail button i{font-size:9px;font-style:normal;letter-spacing:.06em;font-weight:600;text-transform:uppercase}
 .rail button:hover{background:var(--surface-2);color:var(--text-2)}
-.rail button.on{background:var(--surface-3);color:var(--blue-2)}
-.rail button.on::before{content:"";position:absolute;left:-6px;top:9px;bottom:9px;width:3px;
-  border-radius:0 3px 3px 0;background:var(--grad)}
+.rail button.on{background:var(--surface-3);color:var(--accent)}
+.rail button.on::before{content:"";position:absolute;left:-6px;top:9px;bottom:9px;width:2px;
+  border-radius:0 2px 2px 0;background:var(--accent)}
+.rail button{border-radius:6px;padding:8px 2px}
 .rail-end{margin-top:auto}
 
 .panel{background:var(--surface);border-right:1px solid var(--line);overflow-y:auto;
@@ -329,10 +367,9 @@ html[data-level="expert"] .tb-upgrade .lbl{background:var(--grad);-webkit-backgr
 /* ============ viewer ============ */
 .stage{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg-2)}
 .viewer{flex:1;display:grid;place-items:center;padding:16px;min-height:0;position:relative;
-  background:
-    radial-gradient(680px 340px at 50% 0%,color-mix(in srgb,var(--blue) 8%,transparent),transparent 70%)}
+  background:var(--bg-2)}
 .canvas-wrap{position:relative;max-width:100%;max-height:100%;display:grid;place-items:center;
-  border-radius:var(--r-m);overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.5);
+  border-radius:2px;overflow:hidden;box-shadow:0 0 0 1px var(--line);
   background:#000;transition:box-shadow .2s}
 #preview{display:block;max-width:100%;max-height:100%;object-fit:contain;background:#000}
 
@@ -350,11 +387,10 @@ html[data-level="expert"] .tb-upgrade .lbl{background:var(--grad);-webkit-backgr
   background:color-mix(in srgb,var(--surface) 92%,transparent);
   border:2px dashed var(--line);border-radius:var(--r-m);transition:.2s}
 .drop-hint.hide{opacity:0;visibility:hidden}
-.canvas-wrap.dragover .drop-hint{opacity:1;visibility:visible;border-color:var(--blue);
-  background:color-mix(in srgb,var(--blue) 14%,var(--surface))}
-.dh-icon{width:52px;height:52px;border-radius:16px;background:var(--grad);display:grid;
-  place-items:center;font-size:26px;color:#fff;margin-bottom:6px;
-  box-shadow:0 10px 26px -8px var(--glow)}
+.canvas-wrap.dragover .drop-hint{opacity:1;visibility:visible;border-color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 10%,var(--surface))}
+.dh-icon{width:52px;height:52px;border-radius:12px;background:var(--surface-3);display:grid;
+  place-items:center;font-size:26px;color:var(--text-2);margin-bottom:6px;box-shadow:none}
 .drop-hint h3{margin:0;font-size:16px}
 .drop-hint p{margin:0;max-width:34ch;font-size:12.5px;color:var(--text-3)}
 
@@ -362,11 +398,12 @@ html[data-level="expert"] .tb-upgrade .lbl{background:var(--grad);-webkit-backgr
 .transport{display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--surface);
   border-top:1px solid var(--line);flex-wrap:wrap}
 .tp{width:32px;height:30px;border-radius:var(--r-s);border:0;background:transparent;
-  color:var(--text-2);font-size:12px;transition:.14s}
+  color:var(--text-2);font-size:12px;transition:.14s;display:grid;place-items:center}
+.tp svg{width:18px;height:18px}
 .tp:hover{background:var(--surface-2);color:var(--text)}
-.tp.play{width:40px;background:var(--grad);color:#fff;font-size:14px;
-  box-shadow:0 5px 14px -5px var(--glow)}
-.tp.play:hover{filter:brightness(1.1);background:var(--grad);color:#fff}
+.tp.play{width:40px;background:var(--accent);color:#0c1411;font-size:14px;box-shadow:none}
+.tp.play:hover{filter:none;background:var(--accent-2);color:#0c1411}
+.tc{font-family:var(--mono);letter-spacing:.02em}
 .tc{font-size:12.5px;font-weight:600;padding:0 3px}
 .tc-sep{color:var(--text-3)}
 .tp-spacer{flex:1}
@@ -384,16 +421,19 @@ html[data-level="expert"] .tb-upgrade .lbl{background:var(--grad);-webkit-backgr
   padding:7px 12px;border-bottom:1px solid var(--line-soft);flex-wrap:wrap}
 .tl-tools,.tl-zoom{display:flex;align-items:center;gap:5px}
 .tl-btn{padding:6px 10px;border-radius:var(--r-s);border:1px solid transparent;
-  background:transparent;color:var(--text-2);font-size:12.5px;font-weight:550;transition:.14s}
+  background:transparent;color:var(--text-2);font-size:12.5px;font-weight:550;transition:.14s;
+  display:inline-flex;align-items:center;gap:6px}
+.tl-btn svg{width:16px;height:16px;flex:none}
+.tl-btn.has-ico:not(#tl-import):not(#tl-split):not(#tl-add-video):not(#tl-add-audio){padding:6px 7px}
 .tl-btn:hover{background:var(--surface-2);color:var(--text)}
-.tl-btn.on{background:var(--surface-3);color:var(--blue-2)}
+.tl-btn.on{background:var(--surface-3);color:var(--accent)}
 .tl-div{width:1px;height:18px;background:var(--line);margin:0 4px}
 .tl-toggle{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2);
   padding:5px 9px;border-radius:var(--r-s);background:var(--surface-2);white-space:nowrap}
-.tl-zoom input[type=range]{width:110px;accent-color:var(--blue)}
+.tl-zoom input[type=range]{width:110px;accent-color:var(--text-3)}
 @media(max-width:700px){.tl-zoom input[type=range]{width:70px}}
 
-.tl-body{flex:1;display:grid;grid-template-columns:132px 1fr;min-height:0}
+.tl-body{flex:1;display:grid;grid-template-columns:158px 1fr;min-height:0}
 /*
  * Unfolding a layer widens the header column.
  *
@@ -404,7 +444,7 @@ html[data-level="expert"] .tb-upgrade .lbl{background:var(--grad);-webkit-backgr
  * a layer panel. It goes back when the last layer folds shut, so the timeline
  * is only as wide as what is open in it.
  */
-.tl-body.props{grid-template-columns:232px 1fr}
+.tl-body.props{grid-template-columns:258px 1fr}
 @media(max-width:700px){
   .tl-body{grid-template-columns:88px 1fr}
   .tl-body.props{grid-template-columns:168px 1fr}
@@ -415,11 +455,14 @@ html[data-level="expert"] .tb-upgrade .lbl{background:var(--grad);-webkit-backgr
   font-size:11.5px;color:var(--text-2);background:var(--surface)}
 .tl-head .tn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   font-weight:600}
-.tl-head button{width:20px;height:20px;border-radius:5px;border:0;background:transparent;
-  color:var(--text-3);font-size:11px;display:grid;place-items:center}
+.tl-head button{width:18px;height:18px;border-radius:4px;border:0;background:transparent;
+  color:var(--text-3);font-size:11px;display:grid;place-items:center;padding:0}
+.tl-head button svg{width:13px;height:13px}
 .tl-head button:hover{background:var(--surface-3);color:var(--text)}
-.tl-head button.on{color:var(--blue-2)}
+.tl-head button.on{color:var(--accent)}
 .tl-head button.off{color:var(--bad)}
+.tl-head.locked .tn{color:var(--text-3)}
+.tl-head{gap:2px}
 
 .tl-scroll{overflow:auto;position:relative;min-height:0}
 .tl-inner{position:relative;min-width:100%;min-height:100%}
@@ -452,9 +495,9 @@ html[data-level="expert"] .tb-upgrade .lbl{background:var(--grad);-webkit-backgr
 }
 .start.on{opacity:1}
 .start-box{
-  width:min(980px,100%);max-height:100%;overflow:auto;
-  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l);
-  box-shadow:0 30px 80px rgba(0,0,0,.5);
+  width:min(1040px,100%);max-height:100%;overflow:auto;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-m);
+  box-shadow:0 30px 80px rgba(0,0,0,.45);
 }
 .start-head{display:flex;align-items:center;gap:14px;padding:22px 26px 18px;
   border-bottom:1px solid var(--line)}
@@ -477,7 +520,7 @@ html[data-level="expert"] .tb-upgrade .lbl{background:var(--grad);-webkit-backgr
   border:1px solid var(--line);border-radius:var(--r-s);cursor:pointer;text-align:center;
   background:var(--surface-2);transition:border-color .12s,background .12s}
 .start-shape:hover{background:var(--surface-3)}
-.start-shape.on{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 16%,var(--surface-2))}
+.start-shape.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--surface-2))}
 .start-shape input{position:absolute;opacity:0;pointer-events:none}
 .start-shape b{font-size:11.5px;font-weight:600}
 .start-shape em{font-style:normal;font-size:9.5px;color:var(--text-3);line-height:1.3}
@@ -489,7 +532,7 @@ html[data-level="expert"] .tb-upgrade .lbl{background:var(--grad);-webkit-backgr
 .start-thumb.r1-1{width:22px;height:22px}
 .start-thumb.r4-5{width:20px;height:25px}
 .start-thumb.r2-39-1{width:34px;height:14px}
-.start-shape.on .start-thumb{background:var(--blue-2);opacity:1}
+.start-shape.on .start-thumb{background:var(--accent);opacity:1}
 
 .start-fps{display:flex;align-items:center;justify-content:space-between;gap:10px;
   font-size:12.5px;color:var(--text-2);margin-bottom:16px}
@@ -498,7 +541,7 @@ html[data-level="expert"] .tb-upgrade .lbl{background:var(--grad);-webkit-backgr
 .start-rows{display:flex;flex-direction:column;gap:6px;max-height:46vh;overflow:auto}
 .start-row{display:flex;align-items:center;gap:11px;padding:10px 11px;border-radius:var(--r-s);
   border:1px solid transparent;background:var(--surface-2);cursor:pointer;min-width:0}
-.start-row:hover,.start-row:focus-visible{border-color:var(--blue);background:var(--surface-3);outline:none}
+.start-row:hover,.start-row:focus-visible{border-color:var(--text-3);background:var(--surface-3);outline:none}
 .start-ratio{flex:none;background:var(--text-3);border-radius:2px;opacity:.5}
 .start-ratio.r9-16{width:13px;height:22px}
 .start-ratio.r16-9{width:24px;height:14px}
@@ -832,12 +875,15 @@ html.tl-full .undo-bar{bottom:calc(20px + env(safe-area-inset-bottom))}
   border-radius:50%;background:var(--blue-2);box-shadow:0 0 0 1px rgba(0,0,0,.5)}
 .clip.folds .cname{left:22px}
 
-.clip{position:absolute;top:3px;bottom:3px;border-radius:6px;overflow:hidden;
-  background:var(--grad);border:1px solid rgba(255,255,255,.14);cursor:grab;
+.clip{position:absolute;top:3px;bottom:3px;border-radius:4px;overflow:hidden;
+  background:linear-gradient(180deg,#3b6fb5,#2d5590);border:1px solid rgba(255,255,255,.12);cursor:grab;
   display:flex;flex-direction:column;min-width:6px;
-  box-shadow:0 2px 8px rgba(0,0,0,.3);transition:box-shadow .14s,filter .14s}
+  box-shadow:none;transition:box-shadow .14s,filter .14s}
 .clip:hover{filter:brightness(1.08)}
-.clip.sel{border-color:#fff;box-shadow:0 0 0 2px var(--blue-2),0 4px 14px rgba(0,0,0,.45);z-index:3}
+.clip.sel{border-color:var(--accent);box-shadow:0 0 0 1.5px var(--accent);z-index:3}
+/* A parented layer wears a small mark, so the rig reads on the timeline. */
+.clip .cparent{position:absolute;right:5px;top:3px;font-size:10px;line-height:1;color:#fff;opacity:.85;
+  text-shadow:0 1px 2px rgba(0,0,0,.6)}
 .clip.dragging{cursor:grabbing;opacity:.82;z-index:5}
 .clip .cname{position:absolute;left:7px;top:3px;right:7px;font-size:10.5px;font-weight:650;
   color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.6);white-space:nowrap;overflow:hidden;
@@ -860,10 +906,10 @@ html.tl-full .undo-bar{bottom:calc(20px + env(safe-area-inset-bottom))}
 .clip .trans.l{left:0;border-right:1px solid rgba(255,255,255,.4)}
 .clip .trans.r{right:0;border-left:1px solid rgba(255,255,255,.4)}
 
-.playhead{position:absolute;top:0;bottom:0;width:2px;background:var(--blue-2);z-index:8;
-  pointer-events:none;box-shadow:0 0 12px var(--blue-2)}
-.ph-grip{position:absolute;top:0;left:50%;transform:translateX(-50%);width:13px;height:13px;
-  background:var(--blue-2);clip-path:polygon(0 0,100% 0,50% 100%);pointer-events:auto;
+.playhead{position:absolute;top:0;bottom:0;width:1px;background:var(--amber);z-index:8;
+  pointer-events:none;box-shadow:0 0 0 .5px rgba(245,179,66,.5)}
+.ph-grip{position:absolute;top:0;left:50%;transform:translateX(-50%);width:13px;height:14px;
+  background:var(--amber);clip-path:polygon(0 0,100% 0,100% 55%,50% 100%,0 55%);pointer-events:auto;
   cursor:ew-resize}
 .snapline{position:absolute;top:0;bottom:0;width:1px;background:var(--warn);z-index:7;
   pointer-events:none;opacity:.85}
@@ -872,11 +918,10 @@ html.tl-full .undo-bar{bottom:calc(20px + env(safe-area-inset-bottom))}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:9px 15px;
   border-radius:var(--r-s);border:1px solid var(--line);background:var(--surface-2);
   color:var(--text);font-size:13px;font-weight:600;transition:.15s;white-space:nowrap}
-.btn:hover{border-color:var(--blue);transform:translateY(-1px)}
+.btn:hover{border-color:var(--text-3);transform:none;background:var(--surface-3)}
 .btn:active{transform:none}
-.btn-primary{background:var(--grad);border-color:transparent;color:#fff;
-  box-shadow:0 6px 18px -7px var(--glow)}
-.btn-primary:hover{filter:brightness(1.08)}
+.btn-primary{background:var(--accent);border-color:transparent;color:#0c1411;box-shadow:none}
+.btn-primary:hover{background:var(--accent-2);border-color:transparent;filter:none}
 .btn-ghost{background:transparent}
 .btn-danger{background:transparent;border-color:rgba(255,93,108,.5);color:var(--bad)}
 .btn-sm{padding:6px 11px;font-size:12px}
@@ -930,7 +975,7 @@ input[type=checkbox]{accent-color:var(--blue)}
 .mgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .mitem{border:1px solid var(--line);border-radius:var(--r-s);overflow:hidden;background:var(--surface-2);
   cursor:grab;transition:.15s;position:relative}
-.mitem:hover{border-color:var(--blue);transform:translateY(-2px)}
+.mitem:hover{border-color:var(--text-3);transform:none}
 .mitem .th{aspect-ratio:16/10;background:#000;display:grid;place-items:center;overflow:hidden;
   font-size:20px;color:var(--text-3)}
 .mitem .th img{width:100%;height:100%;object-fit:cover}
@@ -948,8 +993,8 @@ input[type=checkbox]{accent-color:var(--blue)}
 .chip{padding:9px 8px;border-radius:var(--r-s);border:1px solid var(--line);background:var(--surface-2);
   font-size:11.5px;font-weight:600;color:var(--text-2);text-align:center;transition:.15s;
   position:relative;overflow:hidden}
-.chip:hover{border-color:var(--blue);color:var(--text);transform:translateY(-1px)}
-.chip.on{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 16%,transparent);
+.chip:hover{border-color:var(--text-3);color:var(--text);transform:none;background:var(--surface-3)}
+.chip.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);
   color:var(--text)}
 .chip .sw{display:block;height:26px;border-radius:5px;margin-bottom:6px}
 .chip.locked{opacity:.55}
@@ -1971,13 +2016,19 @@ input[type=checkbox]{accent-color:var(--blue)}
 .pb-pages::-webkit-scrollbar{display:none}
 .pb-page{display:flex;align-items:center;gap:6px;padding:4px 11px;border:0;border-radius:7px;
   background:transparent;color:var(--text-3);white-space:nowrap;transition:.14s}
-.pb-page .pb-ico{font-size:13px;line-height:1}
+.pb-page .pb-ico{display:grid;place-items:center;line-height:1}
+.pb-page .pb-ico svg{width:14px;height:14px}
 .pb-page i{font-style:normal;font-size:11px;font-weight:650;letter-spacing:.01em}
 .pb-page:hover{background:var(--surface-3);color:var(--text-2)}
 .pb-page.on{background:var(--surface-3);color:var(--text);box-shadow:inset 0 -2px 0 var(--blue-2)}
 .pb-right{display:flex;gap:4px;flex:0 0 auto}
 .pb-tool{border:0;background:transparent;color:var(--text-3);font-size:14px;padding:3px 7px;
-  border-radius:6px}
+  border-radius:6px;display:grid;place-items:center}
+.pb-tool svg{width:15px;height:15px}
+/* The status readout: tabular figures so the draw time does not jitter the row. */
+.pb-status{font-family:var(--mono);font-size:10.5px;color:var(--text-3);letter-spacing:.02em;
+  font-variant-numeric:tabular-nums;white-space:nowrap;padding:0 8px;align-self:center}
+.pb-status.slow{color:var(--amber)}
 .pb-tool:hover{background:var(--surface-3);color:var(--text)}
 
 /* ---- the workspace toggles, in the top bar ---- */
@@ -2186,17 +2237,17 @@ html.grade-off #canvas-wrap{box-shadow:0 0 0 2px var(--amber,#ffc14a),0 20px 60p
  * the play button, which has to be findable at a glance.
  */
 html[data-level="expert"]{
-  --bg:#0b0d11;--bg-2:#0e1116;--surface:#12151b;--surface-2:#171b22;--surface-3:#1d2128;
-  --line:#272c35;--line-soft:#1c2028;
+  --bg:#0c0d0f;--bg-2:#0f1012;--surface:#131416;--surface-2:#191a1d;--surface-3:#202125;
+  --line:#2a2b30;--line-soft:#1f2024;
 }
 html[data-level="expert"] .topbar,
 html[data-level="expert"] .pagebar{background:var(--surface-2)}
 html[data-level="expert"] .viewer{background:var(--bg-2)}   /* no blue wash behind the picture */
 html[data-level="expert"] .tp.play{background:var(--surface-3);color:var(--text);
   box-shadow:none;border:1px solid var(--line)}
-html[data-level="expert"] .tp.play:hover{background:var(--line);color:#fff;filter:none}
-html[data-level="expert"] .level-switch button.on{background:var(--surface-3);color:var(--text);
-  background-image:none}
+html[data-level="expert"] .tp.play:hover{background:var(--surface-4);color:#fff;filter:none}
+html[data-level="expert"] .level-switch button.on{background:transparent;color:var(--text);
+  background-image:none;border-bottom-color:var(--text-2)}
 html[data-level="expert"] .tb-btn.primary{background:var(--surface-3);color:var(--text);
   border:1px solid var(--line);box-shadow:none}
 html[data-level="expert"] .tb-btn.primary:hover{background:var(--line);filter:none}
@@ -2412,7 +2463,7 @@ html[data-level="expert"] .ang-tile.on{border-color:#8d97ab;box-shadow:0 0 0 2px
 .start-start{display:flex;gap:9px;align-items:flex-start;padding:9px 10px;border:1px solid var(--line);border-radius:var(--r-s);
   background:var(--surface-2);cursor:pointer;position:relative}
 .start-start:hover{background:var(--surface-3)}
-.start-start.on{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 16%,var(--surface-2))}
+.start-start.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--surface-2))}
 .start-start input{position:absolute;opacity:0;pointer-events:none}
 .start-start .ico{font-size:16px;line-height:1.2;flex:none}
 .start-start b{display:block;font-size:12px;font-weight:600}
@@ -2443,7 +2494,7 @@ html[data-level="expert"] .ang-tile.on{border-color:#8d97ab;box-shadow:0 0 0 2px
   background:var(--surface-2);color:var(--text);font:inherit;font-size:11.5px;font-weight:600;line-height:1.2;cursor:pointer}
 .start-chip em{font-style:normal;font-weight:400;font-size:9.5px;color:var(--text-3)}
 .start-chip:hover{background:var(--surface-3)}
-.start-chip.on{border-color:var(--blue);background:color-mix(in srgb,var(--blue) 16%,var(--surface-2))}
+.start-chip.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--surface-2))}
 .start-chip.on em{color:var(--text-2)}
 .start-field .btn{align-self:flex-start}
 .start-sum{margin:-2px 0 10px;font-size:12px;color:var(--text-2);font-variant-numeric:tabular-nums}
@@ -2462,3 +2513,29 @@ html[data-level="expert"] .ang-tile.on{border-color:#8d97ab;box-shadow:0 0 0 2px
   .start-search{width:100%}
   .start-drop-hint{display:none}
 }
+
+/* ============ project settings: the composition dialog ============ */
+.ps{min-width:min(560px,86vw)}
+.ps-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px 12px;align-items:end}
+.ps-grid .field{margin:0}
+.ps-lock{display:flex;align-items:center;gap:6px;padding-bottom:9px;color:var(--text-2);white-space:nowrap}
+.ps .field label{font-size:11px;color:var(--text-3);letter-spacing:.04em;text-transform:uppercase}
+@media(max-width:600px){.ps-grid{grid-template-columns:1fr 1fr}}
+
+/* ============ the media bin's columns ============ */
+.mview{padding:4px 7px;font-size:13px}
+.mview.on{background:var(--surface-3);color:var(--text)}
+.mlist{width:100%;border-collapse:collapse;font-size:11.5px;table-layout:fixed}
+.mlist th{position:sticky;top:0;text-align:left;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);
+  padding:5px 6px;border-bottom:1px solid var(--line);background:var(--surface);cursor:pointer;white-space:nowrap;font-weight:650}
+.mlist th.on{color:var(--text)}
+.mlist td{padding:5px 6px;border-bottom:1px solid var(--line-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-2)}
+.mlist td.mn{color:var(--text);font-weight:550}
+.mlist td .mk{display:inline-block;width:14px;color:var(--text-3);font-size:10px}
+.mlist tr{cursor:grab}
+.mlist tr:hover td{background:var(--surface-2)}
+.mlist tr.missing td{color:var(--bad)}
+.mlist .rm{width:18px;height:18px;border:0;border-radius:4px;background:transparent;color:var(--text-3);font-size:10px;opacity:0}
+.mlist tr:hover .rm{opacity:1}
+.mlist th:nth-child(1),.mlist td:nth-child(1){width:38%}
+.mlist th:nth-child(7),.mlist td:nth-child(7){width:22px;padding:0}

@@ -267,7 +267,8 @@ export class AudioEngine {
 
       /* ---- level ---- */
       const local = t - clip.start;
-      let gain = (clip.volume ?? 1) * (track.muted ? 0 : 1);
+      const soloed = project.tracks.some((tr) => tr.kind === 'audio' && tr.solo);
+      let gain = (clip.volume ?? 1) * (track.muted || (soloed && !track.solo) ? 0 : 1);
       if (clip.fadeIn > 0 && local < clip.fadeIn) gain *= local / clip.fadeIn;
       const toEnd = clip.dur - local;
       if (clip.fadeOut > 0 && toEnd < clip.fadeOut) gain *= toEnd / clip.fadeOut;

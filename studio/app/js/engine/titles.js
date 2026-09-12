@@ -136,13 +136,23 @@ export function defaultAnimator(prop = 'opacity', from = null) {
 
 const smoothstep = (x) => { const u = Math.max(0, Math.min(1, x)); return u * u * (3 - 2 * u); };
 
-/* How much the selector covers position u (0..1 through the text). */
+/*
+ * How much the selector covers position u (0..1 through the text).
+ *
+ * The soft edge only exists where a boundary is inside the text. A range
+ * that starts at 0% covers the first letter fully, and one that ends at 100%
+ * covers the last: an edge softened there would leave the first and last
+ * letters half-selected for ever, so "fade up by character" from a full
+ * selector would start with its two end letters already showing. The edge
+ * appears the moment the boundary moves inward, which is when there is
+ * something for it to soften.
+ */
 export function selectorAmount(u, sel) {
   const lo = (sel.start ?? 0) + (sel.offset ?? 0), hi = (sel.end ?? 1) + (sel.offset ?? 0);
   if (hi <= lo) return 0;
   if (u < lo || u > hi) return 0;
   const edge = Math.max(0.0005, sel.edge ?? 0.15);
-  let a = smoothstep((u - lo) / edge) * smoothstep((hi - u) / edge);
+  let a = (lo > 0 ? smoothstep((u - lo) / edge) : 1) * (hi < 1 ? smoothstep((hi - u) / edge) : 1);
   const p = (u - lo) / (hi - lo);
   switch (sel.shape) {
     case 'rampUp': a *= p; break;

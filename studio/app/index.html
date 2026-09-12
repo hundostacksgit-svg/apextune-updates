@@ -59,7 +59,20 @@
       like "Undo Add clip" name the thing that will actually happen.
     -->
     <nav class="menubar" id="menubar" aria-label="Menus"></nav>
+    <!-- The tool strip: what the pointer does, then what a press adds. -->
+    <div class="toolstrip" id="toolstrip" role="toolbar" aria-label="Tools" data-min="intermediate">
+      <button data-tool="select" title="Select (V)"></button>
+      <button data-tool="trim" title="Trim (T)"></button>
+      <button data-tool="razor" title="Razor (C)"></button>
+      <span class="ts-div"></span>
+      <button data-add="title" title="Add a title"></button>
+      <button data-add="shape" title="Add a shape layer"></button>
+      <button data-add="sticker" title="Add a sticker"></button>
+      <button data-add="adjust" title="Add an adjustment layer"></button>
+      <button data-add="null" title="Add a null object"></button>
+    </div>
     <input class="proj-name" id="proj-name" value="Untitled project" aria-label="Project name" spellcheck="false">
+    <button class="tb-btn" id="btn-proj" title="Project settings — size, frame rate, start timecode, background"><span class="ico">⚙</span></button>
     <span class="saved" id="saved-dot" title="Saved">Saved</span>
   </div>
 

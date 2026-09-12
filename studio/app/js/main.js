@@ -54,6 +54,8 @@ import { maybeOfferTour, startTour } from './tutorial.js';
 import { openExport } from './panels/export.js';
 import { wireDesktop, isDesktop } from './desktop.js';
 import { startUpdateChecks, BUILD } from './updates.js';
+import { applyIcons, icon } from './icons.js';
+import { openProjectSettings } from './project-settings.js';
 
 /* ------------------------------------------------------------------ */
 /* state                                                               */
@@ -73,6 +75,9 @@ export const S = {
   saving: false,
   previewScale: 1,
   beats: null,          // cached beat detection for the current music track
+  // How long a frame takes to draw, as a running average; the page bar shows
+  // it. `worst` is the slowest frame since the last seek, for the guide.
+  stats: { frameMs: 0, worst: 0, frames: 0 },
 };
 
 let renderer = null;
@@ -912,6 +917,31 @@ export const actions = {
     actions.commit(`Canvas ${ratio}`);
   },
 
+  /** The composition dialog. */
+  projectSettings() { openProjectSettings(); },
+
+  /*
+   * Everything the composition dialog can change, applied together as one
+   * undo step. The size is honoured only in one of the five shapes, which
+   * the dialog has already checked; the preview quality is a viewer setting
+   * and lives on the select that owns it.
+   */
+  applyProjectSettings({ name, ratio, width, height, fps, startTc, background, quality }) {
+    const st = S.project.settings;
+    if (name) S.project.name = name;
+    if (RATIOS[ratio]) { st.ratio = ratio; st.width = width; st.height = height; }
+    if (fps > 0) st.fps = fps;
+    st.startTc = Math.max(0, startTc || 0);
+    if (/^#[0-9a-f]{6}$/i.test(background || '')) st.background = background;
+    if (quality && $('#quality')) { $('#quality').value = quality; }
+    const ratioSel = $('#ratio');
+    if (ratioSel && RATIOS[ratio]) ratioSel.value = ratio;
+    sizeCanvas();
+    paintName();
+    actions.commit('Project settings');
+    actions.refresh();
+  },
+
   /**
    * New, or open another one — the same screen either way.
    *
@@ -1107,7 +1137,13 @@ function drawFrame(scrub = false) {
    * a scrub into it would set the footage playing under the finger dragging
    * the playhead.
    */
+  const t0 = performance.now();
   renderer.draw(S.project, S.time, { playing: S.playing, scrub });
+  const dt = performance.now() - t0;
+  const st = S.stats;
+  st.frames += 1;
+  st.frameMs = st.frameMs ? st.frameMs * 0.85 + dt * 0.15 : dt;
+  if (dt > st.worst) st.worst = dt;
   // The handles follow the picture: a window drawn on one frame has to sit in
   // the same place on the next, and the canvas can be resized underneath it.
   paintMaskUi();
@@ -1197,9 +1233,14 @@ async function tagNewMedia(count) {
 
 function paintTransport() {
   const fps = S.project.settings.fps;
-  $('#tc').textContent = tc(S.time, fps);
-  $('#tc-total').textContent = tc(duration(S.project), fps);
-  $('#tp-play').textContent = S.playing ? '❚❚' : '▶';
+  const tc0 = S.project.settings.startTc || 0;
+  $('#tc').textContent = tc(S.time + tc0, fps);
+  $('#tc-total').textContent = tc(duration(S.project) + tc0, fps);
+  // The same line icons as the rest of the transport; a text glyph here was
+  // the one button on the bar drawn by the platform's font instead of ours.
+  const play = $('#tp-play');
+  const want = S.playing ? 'pause' : 'play';
+  if (play && play.dataset.ico !== want) { play.dataset.ico = want; play.innerHTML = icon(want); }
 }
 
 function paintUndo() {
@@ -1595,6 +1636,18 @@ function wireChrome() {
   $('#tg-snap').addEventListener('change', (e) => { S.snap = e.target.checked; });
   $('#tg-ripple').addEventListener('change', (e) => { S.ripple = e.target.checked; });
   $$('[data-tool]').forEach((b) => b.addEventListener('click', () => actions.setTool(b.dataset.tool)));
+  // The tool strip's second half: one press adds a layer of that kind at the playhead.
+  $$('#toolstrip [data-add]').forEach((b) => b.addEventListener('click', async () => {
+    const what = b.dataset.add;
+    if (what === 'title') { const m = await import('./panels/text.js'); m.addTitle('headline'); }
+    else if (what === 'shape') { const m = await import('./panels/shapes.js'); m.addShape({ type: 'rect' }); }
+    else if (what === 'sticker') { const m = await import('./panels/text.js'); m.addSticker('emoji', '🔥'); }
+    else if (what === 'adjust') actions.addAdjustment();
+    else if (what === 'null') actions.addNull();
+  }));
+  $('#btn-proj')?.addEventListener('click', () => actions.projectSettings());
+  $('#proj-name')?.addEventListener('dblclick', () => actions.projectSettings());
+  applyIcons();
   $('#zoom').addEventListener('input', (e) => setZoom(Number(e.target.value)));
   $('#zoom-in').addEventListener('click', () => setZoom(S.zoom * 1.4));
   $('#zoom-out').addEventListener('click', () => setZoom(S.zoom / 1.4));
@@ -1882,7 +1935,7 @@ async function importProjectJson(file) {
       clock.commit(playing);
       timeline.renderPlayhead();
       ws.onFrame();
-      $('#tc').textContent = tc(t, S.project.settings.fps);
+      $('#tc').textContent = tc(t + (S.project.settings.startTc || 0), S.project.settings.fps);
     },
     onStateChange: (tp) => {
       S.playing = tp.playing;
@@ -1953,6 +2006,7 @@ async function importProjectJson(file) {
     select: (ids) => actions.select(ids),
     seek: (t) => actions.seek(t),
     openStart: (opts) => actions.openStart(opts),
+    projectSettings: () => actions.projectSettings(),
     redraw: () => drawFrame(),
     setCompare: (x) => { if (renderer) renderer.compareAt = x; },
   });
@@ -1991,6 +2045,7 @@ async function importProjectJson(file) {
     addLayer: (kind) => actions.addLayer(kind),
     addAdjustment: () => actions.addAdjustment(),
     addNull: () => actions.addNull(),
+    projectSettings: () => actions.projectSettings(),
     group: () => actions.groupSelected(),
     ungroup: () => actions.ungroupSelected(),
     canUngroup: () => [...S.sel].some((id) => clipById(S.project, id)?.kind === 'compound'),

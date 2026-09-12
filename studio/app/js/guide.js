@@ -427,7 +427,7 @@ export const GUIDE = [
     group: 'Finishing',
     title: 'Pages: one screen per job',
     body: [
-      ['The bar along the bottom', 'At Intermediate and Professional there is a row of pages: **Media, Cut, Edit, Motion, Colour, Fairlight, Deliver**. They are the same project seen seven ways — switching pages never changes your edit, only what is on screen around it.'],
+      ['The bar along the bottom', 'At Intermediate and Professional there is a row of pages: **Media, Cut, Edit, Motion, Colour, Sound, Deliver**. They are the same project seen seven ways — switching pages never changes your edit, only what is on screen around it.'],
       ['Why bother', 'Cutting wants a long timeline and a small picture. Grading wants the opposite, plus a node graph, scopes and a strip of shots. One layout cannot be right for both, and the usual compromise is a screen that is wrong for everything.'],
       ['Switching', '**Shift+1** through **Shift+7**, or click one. Where you were is remembered, so the app opens on the page you were last working in.'],
       ['Turning docks on and off', 'Bottom-right of the page bar: **Gallery, Nodes, Scopes, Strip, Lightbox, Primaries**. Each page remembers its own set, so closing the gallery on Colour does not close it everywhere.'],
