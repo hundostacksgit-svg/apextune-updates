@@ -73,6 +73,14 @@ the desktop ones do not until there is a file there. See
 
 ## Done and verified
 
+Every one of the 73 verification suites — app, site, engine, Worker route —
+was run end to end in Chromium after the last change below: 73 ran, 0 failed.
+Two things the sweep caught and that are fixed: the phone's More sheet could
+grow past the top of the screen and hide its back button once View listed
+every panel; and the beat button stayed disabled after an import re-drew the
+Sound panel.
+
+
 Each of these was tested in a real browser against a real measurement, not
 eyeballed.
 
