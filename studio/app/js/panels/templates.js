@@ -9,6 +9,7 @@
 import { $, $$, esc, toast, empty } from '../ui.js';
 import { S, actions } from '../main.js';
 import { TEMPLATES, TEMPLATE_GROUPS_ALL, buildTemplate } from '../engine/templates.js';
+import { MONTAGES, buildMontageById } from '../engine/montage.js';
 import { applyPlan } from '../ai/apply.js';
 import { duration } from '../engine/project.js';
 
@@ -45,6 +46,23 @@ export function mount(host) {
     <input class="input" id="t-search" placeholder="Search styles — noir, vhs, karaoke, drone…"
            style="margin:14px 0 10px">
     <div id="t-list">
+      <!-- Whole edits first: these build the cut, not just the look. -->
+      <details class="group" open>
+        <summary>Full montages <span class="tiny muted">${MONTAGES.length}</span></summary>
+        <div class="gbody">
+          <p class="tiny muted" style="margin:0 0 8px">The whole edit: sections, pace, ramps, slams, transitions, title — to your music, or to a beat made on the spot.</p>
+          ${MONTAGES.map((m) => `
+            <button class="tpl" data-montage="${esc(m.id)}"
+              data-search="${esc(`${m.name} ${m.blurb} ${m.genre} montage`.toLowerCase())}">
+              <span class="te">${m.emoji}</span>
+              <span class="tt">
+                <b>${esc(m.name)}</b>
+                <span>${esc(m.blurb)}</span>
+                <em>Needs: clips or photos. Music optional — it makes a beat if there is none.</em>
+              </span>
+            </button>`).join('')}
+        </div>
+      </details>
       ${Object.entries(TEMPLATE_GROUPS_ALL).map(([group, list]) => `
         <details class="group" ${group === 'Originals' ? 'open' : ''}>
           <summary>${esc(group)} <span class="tiny muted">${list.length}</span></summary>
@@ -88,13 +106,19 @@ export function mount(host) {
   });
 
   $('#t-list', host).addEventListener('click', (e) => {
+    const mb = e.target.closest('[data-montage]');
+    if (mb) {
+      if (!hasMedia) { toast('Import some clips first'); return; }
+      previewMontage(host, mb.dataset.montage);
+      return;
+    }
     const btn = e.target.closest('[data-tpl]');
     if (!btn) return;
     if (!hasMedia) { toast('Import some clips first'); return; }
     preview(host, btn.dataset.tpl);
   });
 
-  if (pending) preview(host, pending.id, true);
+  if (pending) (pending.montage ? previewMontage : preview)(host, pending.id, true);
 }
 
 /*
@@ -105,6 +129,33 @@ export function mount(host) {
  * on each one is the same annoyance in smaller pieces.
  */
 let rebuildChoice = null;
+
+function previewMontage(host, id, quiet = false) {
+  const media = S.project.media;
+  const ctx = {
+    ratio: S.project.settings.ratio, hasMusic: media.some((m) => m.kind === 'audio'), bpm: S.beats?.bpm || null,
+    clipCount: media.filter((m) => m.kind !== 'audio').length, onTimeline: S.project.clips.length,
+    hasPhotos: media.some((m) => m.kind === 'image') && media.filter((m) => m.kind !== 'audio').every((m) => m.kind === 'image'),
+    hasSpeech: media.some((m) => m.kind === 'video' && m.hasAudio), rebuild: true,
+  };
+  const built = buildMontageById(id, ctx);
+  if (!built) return;
+  pending = { id, built: { template: built.montage, steps: built.steps }, montage: true };
+  const box = $('#t-plan', host);
+  box.innerHTML = `
+    <div class="note info" style="margin-top:0">
+      <b>${built.montage.emoji} ${esc(built.montage.name)}</b><br>
+      <span class="tiny">${esc(built.summary)}</span>
+    </div>
+    ${built.steps.map((s) => `
+      <div class="tiny" style="padding:8px 0;border-bottom:1px solid var(--line-soft)">
+        <b>${esc(s.label)}</b><br><span class="muted">${esc(s.detail || '')}</span>
+      </div>`).join('')}
+    <div class="btn-row"><button class="btn btn-primary btn-full" id="t-run">Build it</button></div>
+    <p class="tiny muted" style="margin-top:8px">This replaces what is on your video tracks. Undo puts it straight back.</p>`;
+  $('#t-run', box).addEventListener('click', () => run(host, id));
+  if (!quiet) box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
 
 function preview(host, id, quiet = false) {
   const ctx = {
@@ -185,9 +236,15 @@ async function run(host, id) {
       onTimeline: S.project.clips.length,
       rebuild: rebuildChoice ?? !S.project.clips.length,
     });
-    const report = await applyPlan(S.project, { steps: built.steps }, { beats: S.beats, selection: [...S.sel] });
+    const ctx = {
+      beats: S.beats, selection: [...S.sel],
+      // A montage with no music makes a beat; it goes through the same import as an upload.
+      importFile: async (file) => { const made = await actions.importFiles([file], { silent: true }); return made?.[0] || S.project.media.find((m) => m.name === file.name) || null; },
+    };
+    const report = await applyPlan(S.project, { steps: built.steps }, ctx);
+    if (ctx.beats && ctx.beatBuffer) S.beats = ctx.beats;
 
-    actions.commit(`Style: ${built.template.name}`);
+    actions.commit(`${pending?.montage ? 'Montage' : 'Style'}: ${built.template.name}`);
     actions.seek(0);
 
     const failed = report.failed.length;

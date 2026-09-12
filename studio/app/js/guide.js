@@ -197,6 +197,21 @@ export const GUIDE = [
     ],
   },
   {
+    id: 'montage',
+    group: 'The AI',
+    title: 'A whole montage from a sentence, or one press',
+    body: [
+      ['Say the edit', '*"Make me an anime edit, 30 seconds, starts slow and goes crazy, title that says JJK"*. That is not a style on top of a cut — it is the cut. The plan shows every part: the sections and their pace, the speed ramps on the drop, the impact frames, the transitions per section, the title, the music fitted to the end.'],
+      ['Or press one', 'AI panel → **Make a montage from my clips** → pick one of 21 — anime opening, phonk drift, velocity edit, cinematic trailer, sports hype, gaming clutch, travel recap, car reel, wedding highlight, lo-fi day, photo dump and the rest. Same builder, no sentence, and no AI credit, because it runs on this device. The Styles panel has the same list under **Full montages**.'],
+      ['Sections, not a single pace', 'Every montage has a shape — intro, build, drop, breather, second drop, outro — and each section has its own beats-per-cut, its own transition, its own ramp. The drop is loud because the rest is not.'],
+      ['Every cut on the beat', 'With music in the pool the cuts land on its beat grid; the section edges land on beats too, so a section is a whole number of beats. There is never a gap between shots: a file shorter than its slot is skipped for one that fits.'],
+      ['No music? It makes some', 'A beat in the style of the montage — trap, phonk, drill, house, hype, cinematic, lo-fi, drum and bass — rendered on the spot and put in the pool as a real file, so its grid is known to the sample and every cut lands. Swap in your own song afterwards and **sync to the music** re-times the cuts.'],
+      ['Ramps that keep the grid', 'A ramp that needs more footage than the shot has slides its in-point earlier to find it, and only then plays a little quieter. The shot never shrinks, so the cut after it stays on the beat.'],
+      ['It knows what it is not', '*"cut clip 3 at 5 seconds"* and *"add anime speed lines to clip 2"* are not requests for a montage, and never become one. Tested on 33,000 generated sentences and 800 single-clip instructions: all read correctly.'],
+      ['Whole thing, one undo', 'It lands as ordinary clips, effects and titles — change any of it — and one Ctrl+Z takes all of it back.'],
+    ],
+  },
+  {
     id: 'broll',
     group: 'The AI',
     title: 'Finding a cutaway for a moment',
@@ -226,6 +241,7 @@ export const GUIDE = [
     title: 'Levels, cleaning up and effects',
     body: [
       ['Reading the meter', 'Green to −18 is comfortable, amber to −6 is loud but fine, red is asking the encoder to make a decision you will not like. The thin line that lags behind is the peak hold — a clip lasts one sample and you would never see it otherwise. A red strip across the top means something clipped in the last couple of seconds.'],
+      ['Finding the beat', 'Import a song and its tempo and beat grid are read at once, and used by every "on the beat" tool. It reads the kick and the snare separately from the hats — a trap kick on a three-three-two figure would otherwise read as a beat and a half — settles the octave by what the hats are doing, and fits the grid to the hits by least squares so a three-minute song does not drift a beat by the end. Measured: within one per cent and a few milliseconds on eight styles at twenty tempos; drum and bass and fast house read at half time, which is how they are counted anyway.'],
       ['The fader', 'Unity (0 dB) sits three-quarters up, where a mixing desk puts it. Double-click it to go back there.'],
       ['Cleaning up', 'Audio panel → **Repair**. It learns the noise from a quiet moment and subtracts it, finds mains hum and notches it out, and takes out clicks. It works on the decoded audio, not the file, so the original is untouched.'],
       ['Creative filters', '17 of them — underwater, telephone, radio, megaphone, cathedral, slowed, nightcore and the rest. They apply to a clip, and they are rendered the same way in the export as in the preview.'],
@@ -326,7 +342,7 @@ export const GUIDE = [
     title: 'Speed ramps',
     body: [
       ['What a ramp is', 'Speed that changes through the shot: fast into a moment, slow through it, fast out. Inspector → **Speed & timing** → a row of sixteen curves. The curve is the label — Velocity, Slow-mo hit, Bullet time, Punch, Kickback, Land, Ease in, Ease out, Dip, Double tap, Stutter, Timelapse, Hyperlapse, Reveal, Hold and go, Heartbeat.'],
-      ['It fits the footage', 'A ramp that averages faster than 1× needs more of the file than the clip is long. Rather than running off the end and holding the last frame, the clip is shortened to what the file can cover and the ramp reshaped to it. The toast says so when it happens.'],
+      ['It fits the footage', 'A ramp that averages faster than 1× needs more of the file than the clip is long. Rather than running off the end and holding the last frame, the clip is shortened to what the file can cover and the ramp reshaped to it. The toast says so when it happens. (A montage does the opposite — keeps the shot’s length and eases the ramp — because its cuts are on the beat and must stay there.)'],
       ['Shapes, not seconds', 'Each ramp is written in fractions of the clip, so the same gesture fits a two-second shot and a ten-second one. Trim the clip and press the ramp again to refit it.'],
       ['Flat speed and ramps are one control', 'Pressing ½×, 1× or 2× takes a ramp off; pressing a ramp replaces the flat speed. **Remove ramp** puts the clip back to 1×.'],
     ],

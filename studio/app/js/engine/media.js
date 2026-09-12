@@ -468,59 +468,349 @@ export function peaks(buffer, buckets = 600) {
 /**
  * Onset envelope: how much the energy rose in each short window. This is the
  * input to both beat detection and the "cut here" suggestions.
+ *
+ * Three bands, kept separate. The beat of almost every track lives in the
+ * kick and the snare — the low and the middle — while the hi-hats above them
+ * mark the subdivisions. Each band is log-compressed first so a quiet verse
+ * and a loud chorus count the same, which is what lets one grid hold across
+ * the whole song. `env` is the sum, for callers that want one curve; `bands`
+ * is what the tempo detector reads, because the bands disagree in exactly
+ * the way that tells the beat from the pattern.
  */
-function onsetEnvelope(buffer, hop = 512) {
+export function onsetEnvelope(buffer, hop = 256) {
   const data = buffer.getChannelData(0);
+  const sr = buffer.sampleRate;
   const frames = Math.floor(data.length / hop);
   const env = new Float32Array(frames);
-  let prev = 0;
+  const bands = [new Float32Array(frames), new Float32Array(frames), new Float32Array(frames)];
+  // One-pole low-passes at 300 Hz and 2.5 kHz; the bands are the differences.
+  // The split sits above an 808's fundamentals and below a snare's crack,
+  // so a sustained bass note cannot mask the backbeat in the middle band.
+  const aLo = Math.exp((-2 * Math.PI * 300) / sr);
+  const aMid = Math.exp((-2 * Math.PI * 2500) / sr);
+  let lo = 0, mid = 0, pLo = 0, pMid = 0, pHi = 0;
   for (let f = 0; f < frames; f++) {
-    let sum = 0;
+    let sl = 0, sm = 0, sh = 0;
     const start = f * hop;
-    for (let i = start; i < start + hop; i++) sum += data[i] * data[i];
-    const rms = Math.sqrt(sum / hop);
-    env[f] = Math.max(0, rms - prev);      // half-wave rectified difference
-    prev = rms;
+    for (let i = start; i < start + hop; i++) {
+      const x = data[i];
+      lo += (1 - aLo) * (x - lo);
+      mid += (1 - aMid) * (x - mid);
+      const m = mid - lo, h = x - mid;
+      sl += lo * lo; sm += m * m; sh += h * h;
+    }
+    const rl = Math.log1p(60 * Math.sqrt(sl / hop));
+    const rm = Math.log1p(60 * Math.sqrt(sm / hop));
+    const rh = Math.log1p(60 * Math.sqrt(sh / hop));
+    bands[0][f] = Math.max(0, rl - pLo);
+    bands[1][f] = Math.max(0, rm - pMid);
+    bands[2][f] = Math.max(0, rh - pHi);
+    env[f] = bands[0][f] + bands[1][f] + 0.4 * bands[2][f];
+    pLo = rl; pMid = rm; pHi = rh;
   }
-  return { env, rate: buffer.sampleRate / hop };
+  return { env, bands, rate: sr / hop };
+}
+
+/* Smooth by about twelve milliseconds and take the mean out. */
+function centred(env) {
+  const K = [0.054, 0.242, 0.4, 0.242, 0.054];   // Gaussian, sigma one frame
+  const out = new Float32Array(env.length);
+  let mean = 0;
+  for (let i = 0; i < env.length; i++) mean += env[i];
+  mean /= env.length || 1;
+  for (let i = 0; i < env.length; i++) { let v = 0; for (let j = -2; j <= 2; j++) v += K[j + 2] * (env[i + j] || 0); out[i] = v - mean; }
+  return { e: out, mean };
 }
 
 /**
  * Tempo and a beat grid.
  *
- * Autocorrelation over the onset envelope finds the period; the phase is then
- * chosen by testing every offset within one beat and keeping whichever lines up
- * best with the onsets we actually measured. Returns a grid, not raw onsets,
- * because cutting on a grid looks intentional and cutting on raw onsets looks
- * nervous.
+ * Autocorrelation over the onset envelope finds periods, but a drum pattern
+ * has more than one, and the strongest is rarely the beat. A trap or drill
+ * kick sits on a three-three-two figure whose self-similarity peaks at a
+ * beat and a half; a snare on two and four repeats every two beats; hi-hats
+ * repeat at every subdivision; the bar repeats loudest of all. So this is
+ * done in two stages, the way a person does it:
+ *
+ *   1. A comb over the summed onsets — a lag, half-weight at twice the lag,
+ *      a quarter at four times, which in four-four only the beat and its
+ *      octaves satisfy — shaded by a mild preference for the tempos people
+ *      cut to, picks the *family*: a period, its half, its double, and the
+ *      three-to-two relatives that syncopation throws up.
+ *   2. Within the family, the octave is settled by the hi-hats: the beat is
+ *      the reading on which they are eighths, triplets or sixteenths, not
+ *      thirty-seconds and not whole beats. The three-to-two relatives are
+ *      settled by the snare band, which repeats at two beats and never at
+ *      three.
+ *
+ * The onsets are smoothed by a few milliseconds before any of this, because
+ * a tight electronic kick is a one-frame spike and a beat period is never a
+ * whole number of frames; left sharp, the true period scores worse than a
+ * period that happens to round better. The lag is then read to a fraction
+ * of a frame, and the grid is fitted by least squares to the onsets it lands
+ * near. Both matter: a whole-frame lag is a tempo error of up to one per
+ * cent, and one per cent over a three-minute song is a cut a full beat late
+ * by the end. The result is a grid, not raw onsets, because cutting on a
+ * grid looks intentional and cutting on raw onsets looks nervous.
  */
-export function detectBeats(buffer, { min = 70, max = 180 } = {}) {
+export function detectBeats(buffer, { min = 60, max = 190 } = {}) {
   if (!buffer) return null;
-  const { env, rate } = onsetEnvelope(buffer);
-  if (env.length < 8) return null;
+  const { env, bands, rate } = onsetEnvelope(buffer);
+  const n = env.length;
+  if (n < 8) return null;
 
-  const loLag = Math.floor((60 / max) * rate);
+  const loLag = Math.max(2, Math.floor((60 / max) * rate));
   const hiLag = Math.ceil((60 / min) * rate);
+  if (hiLag * 4 >= n) return detectBeatsShort(buffer, env, rate, loLag, hiLag);
+
+  const correlator = (signal) => {
+    const { e } = centred(signal);
+    const cache = new Map();
+    return (lag) => {
+      const L = Math.round(lag);
+      if (L < 1 || L >= n - 4) return 0;
+      if (cache.has(L)) return cache.get(L);
+      let s = 0;
+      for (let i = 0; i + L < n; i++) s += e[i] * e[i + L];
+      const v = s / (n - L);
+      cache.set(L, v);
+      return v;
+    };
+  };
+  const acSum = correlator(env);
+  const acMid = correlator(bands[1]);
+  const acHi = correlator(bands[2]);
+  const bpmOf = (lag) => (60 * rate) / lag;
+  const prior = (lag) => Math.exp(-0.5 * (Math.log2(bpmOf(lag) / 120) / 0.9) ** 2);
+  const comb = (ac, lag) => ac(lag) + 0.5 * ac(lag * 2) + 0.25 * ac(lag * 4);
+
+  /*
+   * 1. the family. The scan runs down to 30 BPM, well below anything that
+   * will be reported: a sparse track — a cinematic pulse with a hit every
+   * two beats — has its only real period there, and the family brings it
+   * back into range as its double or quadruple. Searching only inside the
+   * range would leave such a track to whatever noise correlates best.
+   */
+  const scanHi = Math.min(n >> 2, Math.ceil((60 / 30) * rate));
+  let bestLag = loLag, bestScore = -Infinity, sum = 0, counted = 0;
+  for (let lag = loLag; lag <= scanHi; lag++) {
+    const v = comb(acSum, lag) * prior(lag);
+    sum += v; counted++;
+    if (v > bestScore) { bestScore = v; bestLag = lag; }
+  }
+  const avg = counted ? sum / counted : 0;
+  const confidence = avg > 0 ? Math.max(0, Math.min(1, (bestScore / avg - 1) / 4)) : 0;
+
+  /* 2. the subdivision: the shortest strong period in the hats */
+  const subdivision = (ac) => {
+    // From 75 ms — under the smoothing's reach, and sixteenths at 190 BPM are 79 ms — to half a
+    // second, which is eighths at 60 BPM.
+    const lo = Math.max(2, Math.round(0.075 * rate)), hi = Math.round(0.5 * rate);
+    const a = new Float32Array(hi + 2);
+    let top = 0;
+    for (let lag = lo; lag <= hi; lag++) { a[lag] = ac(lag); if (a[lag] > top) top = a[lag]; }
+    if (top <= 0) return null;
+    for (let lag = lo; lag <= hi; lag++) {
+      if (a[lag] >= 0.8 * top && a[lag] >= a[lag - 1] && a[lag] >= a[lag + 1]) {
+        const d = a[lag - 1] - 2 * a[lag] + a[lag + 1];
+        return d < 0 ? lag + 0.5 * ((a[lag - 1] - a[lag + 1]) / d) : lag;
+      }
+    }
+    return null;
+  };
+  const H = subdivision(acHi) ?? subdivision(acSum);
+  // How plausible a beat of `lag` is given hats every H: eighths, triplets and sixteenths are
+  // normal; sextuplets rare; thirty-seconds and hats only on the beat rarer still.
+  const hatFactor = (lag) => {
+    if (!H) return 1;
+    const r = lag / H;
+    if (r < 1.5) return 0.5;
+    if (r < 2.6) return 1;                       // eighths
+    if (r < 3.5) return 0.8;                     // triplets: real, but the rarer reading
+    if (r < 4.5) return 1;                       // sixteenths
+    if (r < 6.6) return 0.6;
+    return 0.35;
+  };
+  /*
+   * Within the family — the pick, its octaves, and the three-to-two relatives
+   * a syncopated kick or a swung hat throws up — the comb's own lean towards
+   * the slower reading is flattened by the square root, and the hats have
+   * the last word: the beat is the reading on which they are a sane
+   * subdivision.
+   */
+  const inRange = (l) => l >= loLag && l <= hiLag;
+  const family = [bestLag, bestLag / 2, bestLag / 4, bestLag * 2, (bestLag * 2) / 3, (bestLag * 3) / 2, (bestLag * 4) / 3, (bestLag * 3) / 4, bestLag / 3, (bestLag * 2) / 6]
+    .map(Math.round)
+    .filter((l, i, arr) => inRange(l) && arr.indexOf(l) === i);
+  const score = (l) => Math.sqrt(Math.max(0, comb(acSum, l))) * prior(l) * hatFactor(l);
+  let pick = bestLag, pickScore = -Infinity;
+  for (const l of family) { const v = score(l); if (v > pickScore) { pickScore = v; pick = l; } }
+
+  const drums = new Float32Array(n);
+  for (let i = 0; i < n; i++) drums[i] = bands[0][i] + bands[1][i];
+  return finishGrid(buffer, env, rate, refineLag(env, pick), confidence, drums);
+}
+
+/*
+ * The lag to a fraction of a frame.
+ *
+ * A parabola over the three integer neighbours of the correlation peak gets
+ * within a quarter of a frame, and a quarter of a frame per beat is a full
+ * beat of drift by the end of a song. The precise answer comes from the
+ * onsets themselves: every pair of onset peaks that sit a whole number of
+ * beats apart is a measurement of the period, made without knowing the
+ * phase, and the median of those measurements is exact to the frame rate's
+ * own limit — the hits in an electronic track fall on the grid to the
+ * sample, and a drummer's do not, but the median of a few hundred of them
+ * is still the tempo they are playing.
+ */
+function refineLag(env, lag0) {
+  const n = env.length;
+  const K = [0.011, 0.045, 0.117, 0.201, 0.252, 0.201, 0.117, 0.045, 0.011];   // Gaussian, sigma 1.6 frames
+  let mean = 0, peak = 0;
+  for (let i = 0; i < n; i++) { mean += env[i]; if (env[i] > peak) peak = env[i]; }
+  mean /= n || 1;
+  const e = new Float32Array(n);
+  for (let i = 0; i < n; i++) { let v = 0; for (let j = -4; j <= 4; j++) v += K[j + 4] * (env[i + j] || 0); e[i] = v - mean; }
+  const ac = (lag) => { if (lag < 1 || lag >= n - 4) return 0; let s = 0; for (let i = 0; i + lag < n; i++) s += e[i] * e[i + lag]; return s / (n - lag); };
+  const a = ac(lag0 - 1), b = ac(lag0), c = ac(lag0 + 1);
+  const denom = a - 2 * b + c;
+  let period = lag0;
+  if (denom < 0) { const d = 0.5 * ((a - c) / denom); if (Math.abs(d) <= 1) period = lag0 + d; }
+
+  // Onset peaks, each placed to a fraction of a frame by the parabola through
+  // its three frames: an onset that straddles two frames is between them.
+  const floor = Math.max(mean * 1.5, peak * 0.12);
+  const peaks = [];
+  for (let i = 1; i < n - 1; i++) {
+    if (!(env[i] > floor && env[i] >= env[i - 1] && env[i] > env[i + 1])) continue;
+    const dd = env[i - 1] - 2 * env[i] + env[i + 1];
+    peaks.push(dd < 0 ? i + 0.5 * ((env[i - 1] - env[i + 1]) / dd) : i);
+  }
+  const reach = period * 4.2;
+  const measured = [];
+  for (let x = 0; x < peaks.length; x++) {
+    for (let y = x + 1; y < peaks.length; y++) {
+      const gap = peaks[y] - peaks[x];
+      if (gap > reach) break;
+      const m = Math.round(gap / period);
+      if (m < 1) continue;
+      const one = gap / m;
+      if (Math.abs(one - period) < 0.06 * period) measured.push(one);
+    }
+  }
+  if (measured.length < 12) return period;
+  // The mean of the middle half: robust to the odd wrong pairing, and unlike
+  // the median not stuck on the values a whole number of frames allows.
+  measured.sort((p, q) => p - q);
+  const lo = measured.length >> 2, hi = measured.length - lo;
+  let acc = 0;
+  for (let i = lo; i < hi; i++) acc += measured[i];
+  const fitted = acc / (hi - lo);
+  return Math.abs(fitted - period) < 0.06 * period ? fitted : period;
+}
+
+/* Under a few bars of audio the comb has nothing to hold on to: plain autocorrelation. */
+function detectBeatsShort(buffer, env, rate, loLag, hiLag) {
+  const { e } = centred(env);
+  const n = e.length;
   let bestLag = loLag, bestScore = -Infinity;
-  for (let lag = loLag; lag <= hiLag; lag++) {
-    let score = 0;
-    for (let i = 0; i + lag < env.length; i++) score += env[i] * env[i + lag];
-    score /= (env.length - lag);
-    if (score > bestScore) { bestScore = score; bestLag = lag; }
+  for (let lag = loLag; lag <= Math.min(hiLag, n - 4); lag++) {
+    let s = 0;
+    for (let i = 0; i + lag < n; i++) s += e[i] * e[i + lag];
+    s /= (n - lag);
+    if (s > bestScore) { bestScore = s; bestLag = lag; }
   }
+  return finishGrid(buffer, env, rate, bestLag, 0.3);
+}
 
-  let bestPhase = 0, phaseScore = -Infinity;
-  for (let phase = 0; phase < bestLag; phase++) {
-    let score = 0;
-    for (let i = phase; i < env.length; i += bestLag) score += env[i];
-    if (score > phaseScore) { phaseScore = score; bestPhase = phase; }
+/*
+ * Phase, then a least-squares fit of the grid to the onsets it lands near.
+ *
+ * The phase is not simply the offset that collects the most onset energy of
+ * any kind: hi-hats sit on every subdivision and would let any offset score.
+ * What marks the beat is the drums — the kick and the snare — so the
+ * opening bars nominate the offsets that land on the most kick and snare,
+ * each is grown into a grid over the whole song by least squares, and the
+ * grid that gathers the most drum energy is kept, with one prior on top: a
+ * song that starts is a song that starts on a beat, so a grid through the
+ * first strong hit is preferred over one that puts it between two beats.
+ * That prior is what settles a pattern like drill, whose kicks and snares
+ * are placed off the beat on purpose and would otherwise pull the grid a
+ * half-beat late.
+ */
+function finishGrid(buffer, env, rate, lag, confidence, drums = null) {
+  const n = env.length;
+  let mean = 0, peak = 0;
+  for (let i = 0; i < n; i++) { mean += env[i]; if (env[i] > peak) peak = env[i]; }
+  mean /= n || 1;
+  const hits = drums || env;
+  const at = (arr, c) => Math.max(arr[c] || 0, arr[c - 1] || 0, arr[c + 1] || 0, arr[c - 2] || 0, arr[c + 2] || 0);
+  let first = 0;
+  while (first < n && env[first] < peak * 0.4) first++;
+  const startsOn = (phase, period) => {
+    const d = (((first - phase) % period) + period) % period;
+    return 1 + 0.5 * (1 - (2 * Math.min(d, period - d)) / period);   // 1.5 on the first hit, 0.5 half a beat from it
+  };
+
+  // Nominations from the opening eight seconds.
+  const span = Math.min(n, Math.round(8 * rate));
+  const scored = [];
+  for (let phase = 0; phase < lag; phase += 0.25) {
+    let energy = 0;
+    for (let t = phase; t < span; t += lag) energy += at(hits, Math.round(t));
+    scored.push({ phase, score: energy * startsOn(phase, lag) });
   }
+  scored.sort((a, b) => b.score - a.score);
+  const nominees = [];
+  for (const s of scored) { if (nominees.length >= 4) break; if (nominees.every((q) => Math.abs(q.phase - s.phase) > lag * 0.1)) nominees.push(s); }
 
-  const period = bestLag / rate;
-  const bpm = Math.round((60 / period) * 10) / 10;
+  /*
+   * Grow each nomination into a grid. Every grid beat is matched to the
+   * strongest onset within ±15% of a period and a line t = phase + k·period
+   * is fitted through the matches, weighted by how strong they are. The span
+   * grows by doubling — eight seconds, sixteen, thirty-two, the whole song —
+   * so that the grid being matched is never more than a fraction of a beat
+   * off anywhere inside the span; a single pass over three minutes would be
+   * matching the wrong onsets by the end. A fit only replaces the estimate
+   * when it agrees with it: one that wandered off to a different tempo is a
+   * fit to noise.
+   */
+  const grow = (phase0) => {
+    let period = lag, phase = phase0;
+    const win = Math.max(1, Math.round(period * 0.15));
+    let drum = 0;
+    for (let span2 = Math.min(n, Math.round(8 * rate)); ; span2 = Math.min(n, span2 * 2)) {
+      for (let pass = 0; pass < 2; pass++) {
+        let sw = 0, sk = 0, st = 0, skk = 0, skt = 0;
+        drum = 0;
+        for (let k = 0, t = phase; t < span2; k++, t += period) {
+          const c = Math.round(t);
+          drum += at(hits, c);
+          let bi = -1, bv = 0;
+          for (let j = Math.max(0, c - win); j <= Math.min(n - 1, c + win); j++) if (env[j] > bv) { bv = env[j]; bi = j; }
+          if (bi < 0 || bv <= mean * 0.5) continue;
+          sw += bv; sk += bv * k; st += bv * bi; skk += bv * k * k; skt += bv * k * bi;
+        }
+        const det = sw * skk - sk * sk;
+        if (sw > 0 && det > 0) {
+          const p2 = (sw * skt - sk * st) / det;
+          const ph2 = (st - p2 * sk) / sw;
+          if (Math.abs(p2 - period) / period < 0.012 && ph2 > -period && ph2 < period * 2) { period = p2; phase = ((ph2 % period) + period) % period; }
+        }
+      }
+      if (span2 >= n) break;
+    }
+    return { period, phase, quality: drum * startsOn(phase, period) };
+  };
+  const grids = nominees.map((s) => grow(s.phase)).sort((a, b) => b.quality - a.quality);
+  const { period, phase: bestPhase } = grids[0];
+
+  const periodSec = period / rate;
+  const bpm = Math.round((60 / periodSec) * 10) / 10;
   const beats = [];
-  for (let t = bestPhase / rate; t < buffer.duration; t += period) beats.push(Number(t.toFixed(4)));
-  return { bpm, period, beats, confidence: Math.min(1, bestScore * 400) };
+  for (let t = bestPhase / rate; t < buffer.duration; t += periodSec) beats.push(Number(t.toFixed(4)));
+  return { bpm, period: periodSec, beats, confidence };
 }
 
 /**

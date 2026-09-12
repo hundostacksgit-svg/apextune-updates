@@ -20,6 +20,7 @@
 import { matchTemplate, buildTemplate, TEMPLATES } from '../engine/templates.js';
 import { readInstructions } from './direct.js';
 import { EFFECTS } from '../engine/effects.js';
+import { parseMontage, buildMontage, trimSteps, describeSpec } from '../engine/montage.js';
 
 const NUM_WORDS = {
   one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
@@ -305,6 +306,42 @@ export function plan(prompt, context) {
     };
   }
 
+  /* ---------------- 0.5. a whole montage ---------------- */
+  /*
+   * "Make me an anime edit that starts slow and goes crazy, 30 seconds,
+   * with speed ramps and a title that says JJK" is not a style on top of a
+   * cut — it is the cut. Read it as a montage spec and build the whole
+   * thing: sections, pace per section, ramps and slams on the drop, the
+   * title, a beat if there is no music. Only when the timeline is empty or
+   * the words ask for a rebuild; a montage on top of an edit someone made is
+   * the same destruction the style rule exists to prevent.
+   */
+  const montage = parseMontage(prompt);
+  if (montage && (ctx.rebuild || !onTimeline)) {
+    const mctx = {
+      ...ctx,
+      hasPhotos: videos.some((m) => m.kind === 'image') && videos.every((m) => m.kind === 'image'),
+      hasSpeech: context.media.some((m) => m.kind === 'video' && m.hasAudio),
+      targetDur: intent.targetDur || montage.targetDur,
+    };
+    let msteps = trimSteps(montage, buildMontage(montage, mctx));
+    if (intent.look) {
+      const graded = msteps.find((st) => st.op === 'applyLook');
+      if (graded) graded.args = { look: intent.look, strength: 1 };
+    }
+    msteps = validateSteps(msteps, mctx, warnings);
+    const sections = (msteps.find((st) => st.op === 'structuredCut')?.args.sections || []);
+    return {
+      intent: { ...intent, montage },
+      steps: msteps,
+      warnings,
+      questions: intent.targetDur ? [] : [`I have made it ${mctx.targetDur || 30} seconds. Say a length if you want it longer or shorter.`],
+      template: { id: montage.id, name: montage.name, emoji: montage.emoji },
+      summary: `${describeSpec(montage, mctx)} ${sections.length} sections: ${sections.map((sec) => `${sec.name} (${sec.every <= 1 ? 'a cut every beat' : `every ${sec.every} beats`})`).join(', ')}.`,
+      source: { id: 'montage', name: 'Montage builder' },
+    };
+  }
+
   /* ---------------- 1. a named style ---------------- */
   if (intent.template) {
     const built = buildTemplate(intent.template, ctx);
@@ -534,7 +571,8 @@ function validateSteps(steps, ctx, warnings) {
   // Anything that builds the timeline has to come before anything that
   // decorates it, whatever order the template or the model emitted.
   const RANK = {
-    setRatio: 0, syncToTrack: 1, beatCut: 1, layout: 1, removeSilence: 2, setSpeed: 3, speedRamp: 3,
+    setRatio: 0, generateBeat: 0.5, syncToTrack: 1, beatCut: 1, layout: 1, structuredCut: 1, removeSilence: 2,
+    setSpeed: 3, speedRamp: 3, sectionRamp: 3,
     applyLook: 4, addEffect: 5, beatZoom: 5, impactFrames: 5, kenBurns: 5, autoZoomSpeech: 5,
     addTransitions: 6, numberClips: 7, addTitle: 7, addSticker: 7, captions: 8, fitMusic: 9, fadeEnds: 10,
   };
@@ -542,8 +580,8 @@ function validateSteps(steps, ctx, warnings) {
 
   for (const step of ordered) {
     if (step.op === 'addEffect') {
-      const id = step.args?.effect;
-      if (seenEffects.has(id)) continue;           // never stack two of one effect
+      const id = `${step.args?.effect}@${step.args?.section ?? 'all'}`;
+      if (seenEffects.has(id)) continue;           // never stack two of one effect on the same shots
       seenEffects.add(id);
     }
     // A transition longer than a third of the shortest shot eats the edit.
@@ -615,6 +653,9 @@ function truncate(s, n) {
 
 /** Examples the panel offers when someone doesn't know what to type. */
 export const EXAMPLES = [
+  'Make me an anime montage that starts slow and goes crazy, 30 seconds, speed ramps, title that says "JJK"',
+  'Phonk drift edit from these clips, 20 seconds, VHS and shake on the drop',
+  'Cinematic trailer, black bars, one slow-motion peak, then a title card',
   'Make a fast paced anime edit, cuts on the beat, impact frames and speed lines',
   'Sync the clips on my timeline to the audio track, keep my order',
   'Phonk drift edit with VHS, shake and a crushed black grade',

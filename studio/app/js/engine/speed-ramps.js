@@ -96,28 +96,43 @@ function needed(keys, dur, samples = 96) {
  * A ramp that averages above 1× eats more source than the clip's length, and
  * a clip that runs past the end of its file shows its last frame held — which
  * reads as a freeze nobody asked for. So when the file cannot cover the ramp,
- * the clip is shortened to what the file can cover, with the ramp reshaped to
- * the new length. Returns what was done so the panel can say so.
+ * one of two things gives:
+ *
+ *   - by default the clip is shortened to what the file can cover, with the
+ *     ramp reshaped to the new length (the panel says so);
+ *   - with `keepDur` the clip keeps its length and the ramp's speeds are all
+ *     scaled down so the same shape fits the file. A montage is cut on a beat
+ *     grid, and a shot that shrinks moves every cut after it off the grid —
+ *     a quieter ramp is the right loss there, not a broken rhythm.
+ *
+ * Returns what was done so the caller can say so.
  */
-export function applyRamp(clip, id, { available = Infinity } = {}) {
+export function applyRamp(clip, id, { available = Infinity, keepDur = false } = {}) {
   const ramp = RAMP_BY_ID[id];
   if (!ramp || !clip) return null;
   let dur = clip.dur;
   let keys = rampKeys(id, dur);
   let need = needed(keys, dur);
   let shortened = false;
+  let scaled = 1;
   if (Number.isFinite(available) && need > available && need > 0) {
-    dur = Math.max(0.2, dur * (available / need) * 0.995);
-    keys = rampKeys(id, dur);
-    need = needed(keys, dur);
-    shortened = true;
+    if (keepDur) {
+      scaled = Math.max(0.05, (available / need) * 0.995);
+      keys = keys.map((k) => ({ t: k.t, v: Number((k.v * scaled).toFixed(4)) }));
+      need = needed(keys, dur);
+    } else {
+      dur = Math.max(0.2, dur * (available / need) * 0.995);
+      keys = rampKeys(id, dur);
+      need = needed(keys, dur);
+      shortened = true;
+    }
   }
   clip.speed = 1;
   clip.frozen = false;
   clip.speedKeys = keys;
   clip.rampId = id;
   clip.dur = dur;
-  return { dur, need, shortened };
+  return { dur, need, shortened, scaled };
 }
 
 /** Take a ramp off, back to a flat 1×. */

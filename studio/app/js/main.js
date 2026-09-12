@@ -161,8 +161,9 @@ export const actions = {
 
   async importFiles(fileList, { silent = false } = {}) {
     const files = [...fileList];
-    if (!files.length) return;
+    if (!files.length) return [];
     let added = 0;
+    const records = [];   // returned so a caller that made the file can find it
     for (const file of files) {
       try {
         // eslint-disable-next-line no-await-in-loop -- one at a time keeps the UI alive
@@ -176,12 +177,13 @@ export const actions = {
           if (rec.kind === 'audio' && buffer) S.beats = media.detectBeats(buffer);
         }
         S.project.media.push(rec);
+        records.push(rec);
         added++;
       } catch (err) {
         toast(err.message, 'bad', 5000);
       }
     }
-    if (!added) return;
+    if (!added) return records;
     actions.commit(`Import ${added} file${added === 1 ? '' : 's'}`);
     /*
      * Point the effect and look previews at the footage that was just added.
@@ -210,6 +212,7 @@ export const actions = {
       if (S.panel !== 'media') openPanel('media');
       toast(`${added} file${added === 1 ? '' : 's'} added`, 'ok');
     }
+    return records;
   },
 
   /** Drop a media item onto a track at a given time. */

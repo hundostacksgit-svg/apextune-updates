@@ -15,6 +15,8 @@ import { duration } from '../engine/project.js';
 import { EXAMPLES } from '../ai/planner.js';
 import { applyPlan } from '../ai/apply.js';
 import { askForPlan, available as cloudAvailable, transcribe } from '../ai/remote.js';
+import { MONTAGES, buildMontageById } from '../engine/montage.js';
+import { BEAT_STYLES } from '../engine/beatmaker.js';
 import * as licence from '../licence.js';
 
 let lastPlan = null;
@@ -120,9 +122,34 @@ export function mount(host) {
       </button>
     </div>
 
+    <!--
+      The one-press montage.
+
+      Clips in, finished edit out. No sentence to write: pick the kind
+      of thing, and it builds the whole cut — sections, pace, ramps,
+      slams, transitions, title — to your music if there is any, or to a
+      beat it makes on the spot so every cut lands. Free, because it is
+      deterministic and local: the paid AI is the free-form sentence.
+    -->
+    <details class="group" open id="ai-montage" style="margin-top:12px">
+      <summary>Make a montage from my clips <span class="tiny muted">${MONTAGES.length} kinds</span></summary>
+      <div class="gbody">
+        <p class="tiny muted" style="margin:0 0 8px">
+          ${S.project.media.some((m) => m.kind === 'audio')
+            ? 'Cut to your music — every cut on the beat.'
+            : 'No music yet: it will make a beat to cut to, or <button class="lnk" id="ai-add-music">add your own track</button> first.'}
+        </p>
+        <div class="chips" id="ai-montages">
+          ${MONTAGES.map((m) => `<button class="chip" data-montage="${esc(m.id)}" title="${esc(m.blurb)}">${m.emoji} ${esc(m.name)}</button>`).join('')}
+        </div>
+        <p class="tiny muted" style="margin:8px 0 0">Every one shows its steps first. One Ctrl+Z takes the whole thing back.</p>
+      </div>
+    </details>
+
     <details class="group" style="margin-top:12px">
       <summary>Examples</summary>
       <div class="gbody">
+
         ${EXAMPLES.map((x) => `<button class="btn btn-sm btn-ghost btn-full"
           style="justify-content:flex-start;text-align:left;margin-bottom:6px;white-space:normal"
           data-example="${esc(x)}">${esc(x)}</button>`).join('')}
@@ -156,6 +183,11 @@ export function mount(host) {
     e.target.value = '';          // so choosing the same file twice still fires
   });
 
+  $('#ai-montages', host)?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-montage]');
+    if (btn) planMontage(host, btn.dataset.montage);
+  });
+  $('#ai-add-music', host)?.addEventListener('click', () => $('#file-input')?.click());
   $('#ai-plan', host).addEventListener('click', () => runPlan(host));
   $('#ai-prompt', host).addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') runPlan(host);
@@ -235,6 +267,31 @@ async function runReference(host, file) {
 }
 
 /* ------------------------------------------------------------------ */
+
+/** A montage preset, planned like anything else and shown before it runs. */
+function planMontage(host, id) {
+  const hasClips = S.project.media.some((m) => m.kind !== 'audio');
+  if (!hasClips) { toast('Import some clips or photos first — it edits your footage, it does not make any', 'bad', 4200); return; }
+  const media = S.project.media;
+  const ctx = {
+    ratio: S.project.settings.ratio,
+    hasMusic: media.some((m) => m.kind === 'audio'),
+    bpm: S.beats?.bpm || null,
+    clipCount: media.filter((m) => m.kind !== 'audio').length,
+    onTimeline: S.project.clips.length,
+    hasPhotos: media.some((m) => m.kind === 'image') && media.filter((m) => m.kind !== 'audio').every((m) => m.kind === 'image'),
+    hasSpeech: media.some((m) => m.kind === 'video' && m.hasAudio),
+    rebuild: true,
+  };
+  const built = buildMontageById(id, ctx);
+  if (!built) return;
+  lastPlan = {
+    steps: built.steps, warnings: [], questions: [],
+    template: { id: built.montage.id, name: built.montage.name, emoji: built.montage.emoji },
+    summary: built.summary, source: 'montage', intent: { raw: built.montage.name, montage: built.montage },
+  };
+  paintPlan(host, lastPlan);
+}
 
 async function runPlan(host) {
   if (busy) return;
@@ -320,7 +377,9 @@ async function doApply(host, plan) {
     .map((box) => plan.steps[Number(box.dataset.step)]);
 
   if (!chosen.length) { toast('Nothing ticked'); return; }
-  if (!licence.spendAi()) { licence.outOfAiPrompt(); return; }
+  // A montage preset is deterministic and local, like a style: no quota.
+  const isMontage = plan.source === 'montage' || plan.source?.id === 'montage';
+  if (!isMontage && !licence.spendAi()) { licence.outOfAiPrompt(); return; }
 
   busy = true;
   const btn = $('#ai-apply', host);
@@ -334,8 +393,11 @@ async function doApply(host, plan) {
       // mean something rather than quietly applying to the whole timeline.
       selection: [...S.sel],
       transcribe: cloudAvailable() ? (project) => transcribeProject(project) : null,
+      // A generated beat goes through the same import as an upload.
+      importFile: async (file) => { const made = await actions.importFiles([file], { silent: true }); return made?.[0] || S.project.media.find((m) => m.name === file.name) || null; },
     };
     const report = await applyPlan(S.project, { ...plan, steps: chosen }, ctx);
+    if (ctx.beats && ctx.beatBuffer) S.beats = ctx.beats;   // a made beat's grid is exact; detection is not
 
     // One history entry for the whole run: undoing an AI edit should be one
     // keystroke, not one per step.

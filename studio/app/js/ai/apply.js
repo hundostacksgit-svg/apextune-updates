@@ -17,6 +17,9 @@ import { defaultText, TITLE_PRESETS } from '../engine/titles.js';
 import { LOOK_BY_ID } from '../engine/filters.js';
 import { defaultSticker } from '../engine/stickers.js';
 import { makeEffect, EFFECTS } from '../engine/effects.js';
+import { applyRamp } from '../engine/speed-ramps.js';
+import { renderBeat, bufferToWav } from '../engine/beatmaker.js';
+import { applyTextStyle } from '../engine/text-styles.js';
 
 /**
  * Run a plan against a project. Mutates `project` and returns a report.
@@ -51,6 +54,14 @@ function videoTracks(p) { return p.tracks.filter((t) => t.kind === 'video'); }
 function audioTracks(p) { return p.tracks.filter((t) => t.kind === 'audio'); }
 function mainVideoTrack(p) { return videoTracks(p).at(-1) || addTrack(p, 'video'); }
 function mainAudioTrack(p) { return audioTracks(p)[0] || addTrack(p, 'audio'); }
+
+/** The story clips that fall inside a remembered montage section. */
+function sectionClips(p, index) {
+  const bounds = p.montageSections?.[index];
+  const clips = storyClips(p);
+  if (!bounds) return clips;
+  return clips.filter((c) => c.start >= bounds.from - 0.01 && c.start < bounds.to - 0.01);
+}
 
 function visualMedia(p) {
   return p.media.filter((m) => (m.kind === 'video' || m.kind === 'image') && !m.missing);
@@ -352,12 +363,138 @@ const OPS = {
     return `${clips.length} clips graded.`;
   },
 
-  addTransitions(p, { type = 'dissolve', dur = 0.4 }) {
+  /*
+   * The whole cut, shaped.
+   *
+   * Sections each take a share of the length and cut at their own pace —
+   * beats per cut on the music grid, or seconds at 120 BPM without one. The
+   * section boundaries are remembered on the project so the steps that
+   * follow can say "the drop" and mean a range of clips, which is what makes
+   * a ramp for the drop land on the drop and nowhere else.
+   */
+  async structuredCut(p, { targetDur = 30, sections = [], shuffle = false }, ctx) {
+    const pool = visualMedia(p);
+    if (!pool.length) throw new Error('There is no footage in the media pool.');
+    if (!sections.length) sections = [{ name: 'All', share: 1, every: 4 }];
+
+    const music = p.media.find((m) => m.kind === 'audio');
+    let grid = null;
+    if (music) {
+      const buffer = ctx.beatBuffer || await decode(music);
+      const detected = ctx.beats?.beats?.length ? ctx.beats : (buffer ? detectBeats(buffer) : null);
+      if (detected?.beats?.length > 4) grid = detected;
+    }
+    const period = grid ? grid.period : 0.5;      // 120 BPM without music
+    const wanted = Math.min(targetDur, grid && music ? Math.max(4, music.duration) : targetDur);
+    // Without music the grid is still a grid: 120 BPM, so the same code runs.
+    const beats = grid ? grid.beats : Array.from({ length: Math.ceil(wanted / period) + 2 }, (_, k) => k * period);
+    const nearest = (t) => beats.reduce((best, b) => (Math.abs(b - t) < Math.abs(best - t) ? b : best), beats[0]);
+
+    /*
+     * Section edges land on beats, and so does the end, so a section is a
+     * whole number of beats and the last cut is on one too. Every shot starts
+     * where the last one ended and ends on a beat, so there is never a black
+     * gap between two shots. A file shorter than its slot is the one thing
+     * that can break the grid: it is skipped for one that fits, and only when
+     * nothing fits does the whole short file play, with the next shot picking
+     * the grid back up at the following beat.
+     */
+    const total = Math.max(period, nearest(wanted) <= (music?.duration ?? Infinity) ? nearest(wanted) : beats.filter((b) => b <= wanted).at(-1) ?? wanted);
+    const edges = [0];
+    let acc = 0;
+    for (const sec of sections) { acc += sec.share; edges.push(Math.max(edges.at(-1), Math.min(total, nearest(acc * total)))); }
+    edges[edges.length - 1] = total;
+
+    clearStory(p);
+    const track = mainVideoTrack(p);
+    const order = shuffle ? shuffled(pool) : pool;
+    const bounds = [];
+    let t = 0, i = 0, next = 0;
+    const pick = (len) => {
+      for (let k = 0; k < order.length; k++) {
+        const m = order[(next + k) % order.length];
+        if (m.kind === 'image' || m.duration >= len - 0.02) { next = (next + k + 1) % order.length; return m; }
+      }
+      const m = order[next % order.length]; next = (next + 1) % order.length; return m;
+    };
+    for (let si = 0; si < sections.length; si++) {
+      const sec = sections[si];
+      const secEnd = edges[si + 1];
+      const step = Math.max(0.12, period * Math.max(0.5, sec.every));
+      const from = t;
+      while (t < secEnd - 0.06) {
+        const start = t;
+        // The first beat at or after a full step from here, unless the section ends first.
+        const nb = beats.find((x) => x >= start + step - 0.01);
+        let end = nb !== undefined ? Math.min(nb, secEnd) : secEnd;
+        if (secEnd - end < 0.1) end = secEnd;    // never leave a sliver at the end of a section
+        const len = end - start;
+        if (len < 0.1) break;
+        const media = pick(len); i++;
+        const usable = Math.min(len, media.kind === 'image' ? len : media.duration);
+        // eslint-disable-next-line no-await-in-loop -- analysis is per clip
+        const inPoint = await bestSegment(media, usable);
+        addClip(p, { mediaId: media.id, trackId: track.id, start, dur: usable, in: inPoint });
+        t = start + usable;
+      }
+      bounds.push({ name: sec.name, from, to: t });
+    }
+    p.montageSections = bounds;
+    return `${i} shots in ${sections.length} sections${grid ? ` at ${grid.bpm} BPM` : ''}, ${t.toFixed(1)}s.`;
+  },
+
+  /**
+   * A speed ramp on every shot inside a section.
+   *
+   * The shots keep their length — the cuts are on the beat and stay there.
+   * A ramp that needs more footage than the shot has in front of it first
+   * slides the in-point earlier to find it, and only then plays quieter.
+   */
+  sectionRamp(p, { section, ramp }) {
+    const clips = sectionClips(p, section);
+    if (!clips.length) throw new Error('That section has no shots in it.');
+    let n = 0, quieter = 0;
+    for (const clip of clips) {
+      const media = mediaById(p, clip.mediaId);
+      if (!media || media.kind === 'image') continue;
+      const probe = { dur: clip.dur, speed: 1 };
+      const need = applyRamp(probe, ramp).need;
+      if (media.duration && clip.in + need > media.duration) clip.in = Math.max(0, media.duration - need);
+      const available = media.duration ? Math.max(0.2, media.duration - clip.in) : Infinity;
+      const out = applyRamp(clip, ramp, { available, keepDur: true });
+      if (out.scaled < 0.999) quieter++;
+      n++;
+    }
+    return `${ramp} on ${n} shots${quieter ? ` (${quieter} eased to fit the footage)` : ''}.`;
+  },
+
+  /**
+   * Make a beat and put it in the media pool, as a real file.
+   *
+   * Runs through the same import as an upload, so it gets a waveform, a
+   * duration, a fingerprint and a place in the pool. Its beat grid is set
+   * on the context for the cut that follows, exactly — no detection needed.
+   */
+  async generateBeat(p, { style = 'trap', bpm = null, seconds = 32 }, ctx) {
+    if (p.media.some((m) => m.kind === 'audio')) return 'There is already music in the pool — using that.';
+    if (!ctx.importFile) throw new Error('This build cannot import a generated file.');
+    const made = await renderBeat({ style, bpm, seconds });
+    const file = bufferToWav(made.buffer, `Beat — ${style} ${made.bpm} BPM.wav`);
+    const rec = await ctx.importFile(file);
+    if (!rec) throw new Error('The beat could not be added to the pool.');
+    ctx.beats = { bpm: made.bpm, period: 60 / made.bpm, beats: made.beats, confidence: 1 };
+    ctx.beatBuffer = made.buffer;
+    return `A ${style} beat at ${made.bpm} BPM, ${made.seconds.toFixed(0)}s.`;
+  },
+
+  addTransitions(p, { type = 'dissolve', dur = 0.4, section = null }) {
     let count = 0;
+    const only = section === null || section === undefined ? null : new Set(sectionClips(p, section).map((c) => c.id));
     for (const track of videoTracks(p)) {
       const list = clipsOn(p, track.id).filter((c) => c.kind !== 'title');
       list.forEach((clip, i) => {
         if (i === 0) return;
+        if (only && !only.has(clip.id)) return;
         // Never let a transition eat more than a third of the shorter shot.
         const room = Math.min(clip.dur, list[i - 1].dur) / 3;
         clip.transitionIn = { type, dur: Math.min(dur, room) };
@@ -441,14 +578,19 @@ const OPS = {
       : 'No speech found to caption.';
   },
 
-  addTitle(p, { content, preset = 'headline', at = 0, dur = 2.2 }) {
+  addTitle(p, { content, preset = 'headline', at = 0, dur = 2.2, style = null, anim = null }) {
     const presetDef = TITLE_PRESETS.find((t) => t.id === preset) || TITLE_PRESETS[0];
     // Titles go on their own track above the picture so they never displace a shot.
     let track = videoTracks(p).find((t) => t.name === 'Titles');
     if (!track) { track = addTrack(p, 'video', 'Titles'); }
+    const text = { ...defaultText(content), ...presetDef.text, content };
+    // A named style replaces the preset's fill and shadow but keeps its
+    // placement; an animation name replaces the preset's entrance.
+    if (style) applyTextStyle(text, style);
+    if (anim) text.anim = anim;
     const clip = addClip(p, {
       trackId: track.id, start: at, dur, kind: 'title',
-      text: { ...defaultText(content), ...presetDef.text, content },
+      text,
     });
     return `Title "${String(content).slice(0, 30)}" added at ${at.toFixed(1)}s.`;
   },
@@ -621,13 +763,14 @@ const OPS = {
    * 'first'. Adding the same effect twice replaces it rather than stacking two
    * copies, because two chromatic splits is a bug every time.
    */
-  addEffect(p, { effect, params = {}, scope = 'all', every = 3 }) {
+  addEffect(p, { effect, params = {}, scope = 'all', every = 3, section = null }) {
     if (!EFFECTS[effect]) throw new Error(`There is no "${effect}" effect.`);
     const clips = storyClips(p);
     if (!clips.length) throw new Error('There is nothing on the timeline yet.');
 
     const targets = scope === 'first' ? clips.slice(0, 1)
       : scope === 'accent' ? clips.filter((_, i) => i % Math.max(2, every) === 0)
+      : scope === 'section' ? sectionClips(p, section)
       : clips;
 
     for (const clip of targets) {
@@ -647,8 +790,8 @@ const OPS = {
    * Written as keyframes on each clip rather than a special mode, so you can
    * open any shot and soften, move or delete its punch like anything else.
    */
-  beatZoom(p, { amount = 0.16, hold = 0.14 }, ctx) {
-    const clips = storyClips(p);
+  beatZoom(p, { amount = 0.16, hold = 0.14, section = null }, ctx) {
+    const clips = section === null || section === undefined ? storyClips(p) : sectionClips(p, section);
     if (!clips.length) throw new Error('There is nothing on the timeline yet.');
     const beats = ctx.beats?.beats;
 
@@ -676,8 +819,8 @@ const OPS = {
    * Impact frames — the one or two inverted frames an anime cut slams on.
    * Placed at the start of every Nth shot, where the cut already is.
    */
-  impactFrames(p, { every = 4, style = 'invert', length = 0.07 }) {
-    const clips = storyClips(p);
+  impactFrames(p, { every = 4, style = 'invert', length = 0.07, section = null }) {
+    const clips = section === null || section === undefined ? storyClips(p) : sectionClips(p, section);
     if (!clips.length) throw new Error('There is nothing on the timeline yet.');
     let count = 0;
     clips.forEach((clip, i) => {
@@ -861,21 +1004,26 @@ export const OP_SPEC = {
   speedRamp: { args: 'peak?: multiplier, floor?: multiplier', does: 'A real speed curve inside each shot — slow head, fast tail. The velocity-edit look.' },
   applyLook: { args: 'look: id, strength?: 0-1.5',
     does: 'Grade every clip. Looks: none, punch, cinematic, mono, warm, cool, fade, noir, vivid, soft, kodak, fuji, bleach, vhs, neon, sunburn, moonlight, pastel, crush, infra.' },
-  addEffect: { args: 'effect: id, params?: object, scope?: "all"|"accent"|"first", every?: n',
-    does: 'Add an effect. scope "accent" puts it on every Nth shot only.' },
+  addEffect: { args: 'effect: id, params?: object, scope?: "all"|"accent"|"first"|"section", every?: n, section?: index',
+    does: 'Add an effect. scope "accent" puts it on every Nth shot only; "section" on one montage section.' },
   beatZoom: { args: 'amount?: 0-0.4, hold?: seconds', does: 'Keyframed punch-in on every beat.' },
   impactFrames: { args: 'every?: n shots, style?: "invert"|"white"|"black"|"edge", length?: seconds',
     does: 'The one-or-two-frame slam an anime cut lands on.' },
   kenBurns: { args: 'amount?: 0-0.4', does: 'Slow push on photos so stills are not dead on screen.' },
   autoZoomSpeech: { args: 'amount?: 0-0.2, alternate?: bool', does: 'Alternate the framing across jump cuts so a chopped-up talking head does not look static.' },
-  addTransitions: { args: 'type: id, dur: seconds',
+  addTransitions: { args: 'type: id, dur: seconds, section?: index',
     does: 'Transitions: dissolve, dipBlack, dipWhite, slideLeft, slideUp, wipe, circle, zoomPunch, whip, blurDissolve, glitch, filmBurn, spin.' },
-  addTitle: { args: 'content: string, preset?: "headline"|"lower"|"subtitle"|"hook"|"counter"|"quote"|"glitchy"|"endcard", at?: seconds (negative counts from the end), dur?: seconds',
+  addTitle: { args: 'content: string, preset?: "headline"|"lower"|"subtitle"|"hook"|"counter"|"quote"|"glitchy"|"endcard", at?: seconds (negative counts from the end), dur?: seconds, style?: text style id, anim?: text animation id',
     does: 'A text clip on its own track.' },
   addSticker: { args: 'kind: "emoji"|"shape", value: emoji or shape id, at?: seconds, dur?: seconds, x?/y?: 0-1, size?: 0-1, anim?: id, text?: string',
     does: 'Shapes: arrow, circle, box, burst, bubble, progress, countdown, bar, scribble, focus.' },
   numberClips: { args: 'countdown?: bool, preset?: title preset', does: 'One big number per shot, for a list or countdown.' },
   captions: { args: 'style?: "tiktok"|"youtube"|"bold"|"karaoke"|"clean"', does: 'Caption cues timed to the speech.' },
+  structuredCut: { args: 'targetDur?: seconds, sections: [{name, share: 0-1, every: beats per cut}], shuffle?: bool',
+    does: 'Replace the video tracks with a cut whose pace changes per section (intro slow, drop fast). Remembers the sections so later steps can target one. Use for any montage.' },
+  sectionRamp: { args: 'section: index, ramp: id', does: 'A speed ramp on every shot in a section. Ramps: velocity, slowmo-hit, bullet-time, punch, kickback, land, ease-in, ease-out, dip, double-tap, stutter, timelapse, hyper, reveal, freeze-go, heartbeat.' },
+  generateBeat: { args: 'style?: "phonk"|"trap"|"drill"|"house"|"hype"|"cinematic"|"lofi"|"dnb", bpm?: number, seconds?: number',
+    does: 'When there is no music, make a beat in the pool to cut to. Its grid is exact. Put it before structuredCut.' },
   fitMusic: { args: 'fadeOut?: seconds, duck?: bool', does: 'Trim the music to the edit length. Always last but one.' },
   fadeEnds: { args: 'dur?: seconds', does: 'Fade the first and last shot.' },
 
