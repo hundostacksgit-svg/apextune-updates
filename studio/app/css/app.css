@@ -204,6 +204,33 @@ html[data-level="expert"] .card-hint{display:none}
 .tb-btn.primary{background:var(--grad);color:#fff;border-color:transparent;font-weight:650;
   box-shadow:0 6px 18px -6px var(--glow)}
 .tb-btn.primary:hover{background:var(--grad);color:#fff;filter:brightness(1.08)}
+
+/* The upgrade button: an outlined pill in the brand gradient, with the mark
+   alive inside it. Outlined rather than filled so it does not fight Export
+   for the one solid button on the bar. */
+.tb-upgrade{gap:8px;padding:6px 12px 6px 9px;border:1px solid transparent;color:var(--text);white-space:nowrap;flex:none;
+  background:linear-gradient(var(--surface),var(--surface)) padding-box,var(--grad) border-box;
+  text-decoration:none;font-weight:650;letter-spacing:.005em}
+.tb-upgrade:hover{background:linear-gradient(var(--surface-2),var(--surface-2)) padding-box,var(--grad) border-box;
+  color:var(--text);box-shadow:0 6px 18px -8px var(--glow)}
+.tb-upgrade .lbl{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.up-mark{flex:none;overflow:visible}
+.up-mark .up-r1{transform-origin:32px 32px}
+.up-mark .up-r2,.up-mark .up-r3{transform-origin:32px 32px;opacity:.55}
+/* The two outer frames ripple outward from the solid one, one after the other,
+   and the play head gives a small nod on each pass. Slow — this sits next to
+   the picture, and anything that flashes there is a distraction, not a cue. */
+@keyframes up-ripple{0%{transform:scale(.72);opacity:0}18%{opacity:.85}60%{opacity:.35}100%{transform:scale(1.18);opacity:0}}
+@keyframes up-nod{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+.up-mark .up-r2{animation:up-ripple 3.2s cubic-bezier(.2,.6,.3,1) infinite}
+.up-mark .up-r3{animation:up-ripple 3.2s cubic-bezier(.2,.6,.3,1) 1.1s infinite}
+.up-mark .up-play{transform-origin:33px 32px;animation:up-nod 3.2s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){
+  .up-mark .up-r2,.up-mark .up-r3,.up-mark .up-play{animation:none}
+}
+/* At Professional the chrome is neutral on purpose; the one exception is the
+   way to pay, which keeps its colour because it is a link out, not a tool. */
+html[data-level="expert"] .tb-upgrade .lbl{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
 @media(max-width:900px){.tb-btn .lbl{display:none}}
 .proj-name{background:transparent;border:1px solid transparent;border-radius:var(--r-s);
   padding:6px 10px;font-size:13.5px;font-weight:600;max-width:230px;min-width:90px;

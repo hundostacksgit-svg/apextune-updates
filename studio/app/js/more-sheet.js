@@ -24,6 +24,8 @@ let api = {};
 const ROWS = [
   { ico: '🎛', label: 'Settings', sub: 'Frame rate, resolution, canvas', run: () => api.openPanel?.('settings') },
   { ico: '👤', label: 'Account', sub: () => api.accountLine?.() || 'Sign in or see your licence', run: () => api.openPanel?.('settings') },
+  { ico: '⬆', label: 'Upgrade to Pro', sub: () => api.upgradeLine?.() || 'See the plans', run: () => api.upgrade?.(),
+    when: () => Boolean(api.upgradeLine?.()) },
   { ico: '⌘', label: 'Find anything', sub: 'Search every command', run: () => api.palette?.() },
   { ico: '🕘', label: 'History', sub: 'Step back to any point', run: () => api.openHistory?.() },
   { ico: '◐', label: 'Dark / light', sub: 'Switch the theme', run: () => api.theme?.() },
@@ -116,7 +118,7 @@ function paint() {
   // Rebuilt each time it opens, so the level and the account line are current
   // rather than whatever they were when the app started.
   box.innerHTML = `${grip}${
-    ROWS.map((r, i) => `
+    ROWS.map((r, i) => (r.when && !r.when()) ? '' : `
       <button class="more-row" data-more="${i}" role="menuitem">
         <span class="ico" aria-hidden="true">${r.ico}</span>
         <span><b>${text(r.label)}</b><em>${text(r.sub)}</em></span>

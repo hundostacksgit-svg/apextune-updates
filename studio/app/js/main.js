@@ -12,6 +12,7 @@ import { $, $$, toast, tc, confirmDialog, clamp } from './ui.js';
 import * as store from './store.js';
 import * as levels from './levels.js';
 import * as licence from './licence.js';
+import { EDITIONS, SITE } from '../../assets/config.js';
 import * as auth from '../../assets/auth.js';
 import { History } from './engine/history.js';
 import {
@@ -1185,6 +1186,37 @@ export function paintAccount() {
     who?.email
       ? `${who.email} — ${licence.editionName()}`
       : `Not signed in — ${licence.editionName()}`);
+  paintUpgrade();
+}
+
+/**
+ * The next edition up, or nothing.
+ *
+ * Studio is the top of the ladder for one person and Team is a different
+ * shape rather than a step above it, so both are "nothing left to buy" here.
+ */
+export function nextEdition() {
+  const ed = licence.edition();
+  if (ed === 'free') return EDITIONS.creator;
+  if (ed === 'creator') return EDITIONS.studio;
+  return null;
+}
+
+function paintUpgrade() {
+  const a = $('#btn-upgrade');
+  if (!a) return;
+  const next = nextEdition();
+  a.hidden = !next;
+  if (!next) return;
+  /*
+   * An absolute address, always. In the browser a relative one works; in the
+   * desktop build the page is a file:// URL and "../pricing/" resolves to a
+   * folder that does not exist. The shell intercepts anything that is not
+   * file:// and hands it to the system browser, which is the right place for
+   * a checkout anyway.
+   */
+  a.href = `https://${SITE.domain}/studio/pricing/`;
+  a.title = `${next.name} — $${next.once.toFixed(2)} once, no subscription`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -1920,6 +1952,11 @@ async function openingScreen() {
       const who = auth.session();
       return who?.email ? `${who.email} — ${licence.editionName()}` : `Not signed in — ${licence.editionName()}`;
     },
+    upgradeLine: () => {
+      const next = nextEdition();
+      return next ? `${next.name} — $${next.once.toFixed(2)} once` : '';
+    },
+    upgrade: () => { const next = nextEdition(); if (next) window.open(`https://${SITE.domain}/studio/pricing/`, '_blank', 'noopener'); },
     cycleLevel: () => {
       const order = levels.LEVELS;
       const next = order[(order.indexOf(levels.current()) + 1) % order.length];
