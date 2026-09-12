@@ -50,6 +50,15 @@ Then put the URL it prints into `DEFAULT_API_BASE` in
 `studio/assets/config.js`, commit, push. The AI panel switches from "on-device
 reader" to full understanding the moment that lands.
 
+**From then on it deploys itself.** Add three repository secrets on GitHub —
+`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_D1_ID` (the
+server README says where each comes from) — and every push that touches
+`server/` redeploys the Worker with any new tables created first. Every six
+hours it checks the Worker answers and redeploys if it does not. The app
+itself already rides out an outage: the planner falls back to the on-device
+reader and says so, licences are checked from the device's own record, and
+ratings wait and go out later.
+
 **Until you do this, do not advertise free-form AI editing.** It will not do
 what the words on the pricing page promise.
 

@@ -32,6 +32,26 @@ Then point the app at it: **Settings → Cloud brain → Worker URL** (visible a
 Expert level), or set `DEFAULT_API_BASE` in `studio/assets/config.js` so every
 copy uses it.
 
+### Or let GitHub do it
+
+`.github/workflows/worker.yml` deploys on every push that touches `server/`,
+creates any missing tables first (the schema is additive), and every six hours
+checks `/v1/health` and redeploys if the Worker has stopped answering. It
+needs three repository secrets — **Settings → Secrets and variables →
+Actions**:
+
+| Secret | Where it comes from |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | dash.cloudflare.com → My Profile → API Tokens → Create → "Edit Cloudflare Workers" template, plus D1 Edit |
+| `CLOUDFLARE_ACCOUNT_ID` | the right-hand column of any Workers page in the dashboard |
+| `CLOUDFLARE_D1_ID` | what `npx wrangler d1 create omnidx-studio` printed |
+
+and one optional repository variable, `WORKER_URL`, so the health check knows
+where to look. Until the secrets exist the workflow does nothing and says so;
+it never goes red on a fork. The API keys themselves (`ANTHROPIC_API_KEY` and
+the rest) stay as Worker secrets set once with `wrangler secret put` — they are
+not in the repository and the workflow never sees them.
+
 Check it came up:
 
 ```bash

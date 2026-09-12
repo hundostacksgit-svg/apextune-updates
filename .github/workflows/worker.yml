@@ -1,25 +1,26 @@
-name: Deploy the API Worker
+name: Deploy the Worker
 
-# The Worker is what makes the AI, real accounts and Team seats work. It is
-# deployed from here so a change to server/ reaches production by pushing,
-# rather than by remembering to run wrangler on the right machine.
+# The API deploys itself. A push that touches server/ (or a press of the
+# button) creates any missing tables and deploys the Worker; every six hours
+# a health check hits it, and a failing check redeploys rather than pages
+# anyone. The schema is additive (every statement is IF NOT EXISTS), so
+# re-running it is always safe.
 #
-# One-time setup, and then it looks after itself:
-#   1. Cloudflare dashboard → My Profile → API Tokens → Create Token
-#      → "Edit Cloudflare Workers" template. Copy the token.
-#   2. This repo → Settings → Secrets and variables → Actions → New secret
-#      → name: CLOUDFLARE_API_TOKEN, value: the token.
-#   3. Add CLOUDFLARE_ACCOUNT_ID the same way (dashboard sidebar, right side).
-#
-# Without those secrets this workflow skips itself quietly rather than failing
-# every push, because most people cloning this repo will not have a Worker.
-
+# It needs three repository secrets, and does nothing but say so until they
+# exist — a fork or a checkout without a Cloudflare account must not go red:
+#   CLOUDFLARE_API_TOKEN   a token with Workers Scripts:Edit and D1:Edit
+#   CLOUDFLARE_ACCOUNT_ID  from the Cloudflare dashboard's right-hand column
+#   CLOUDFLARE_D1_ID       the id "wrangler d1 create omnidx-studio" printed
+# and one optional repository variable:
+#   WORKER_URL             e.g. https://omnidx-studio-api.<you>.workers.dev
+#                          (used by the health check; found from the deploy
+#                          output when unset)
 on:
   push:
     branches: [main, master, "claude/omnidx-editing-platform-9phdcc"]
-    paths:
-      - 'server/**'
-      - '.github/workflows/worker.yml'
+    paths: ["server/**", ".github/workflows/worker.yml"]
+  schedule:
+    - cron: "17 */6 * * *"
   workflow_dispatch:
 
 permissions:
@@ -27,79 +28,83 @@ permissions:
 
 concurrency:
   group: deploy-worker
-  cancel-in-progress: false      # never cancel a half-finished deploy
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  worker:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_D1_ID: ${{ secrets.CLOUDFLARE_D1_ID }}
+      WORKER_URL: ${{ vars.WORKER_URL }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Is a Cloudflare token configured?
-        id: check
+      - name: Are the secrets there?
+        id: ready
         run: |
-          if [ -n "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
-            echo "ready=yes" >> "$GITHUB_OUTPUT"
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$CLOUDFLARE_D1_ID" ]; then
+            echo "Cloudflare secrets are not set on this repository, so there is nothing to deploy to."
+            echo "Set CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_D1_ID under Settings → Secrets, or run server/deploy.sh by hand."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
           else
-            echo "ready=no" >> "$GITHUB_OUTPUT"
-            echo "::notice::No CLOUDFLARE_API_TOKEN secret, so the Worker was not deployed."
-            echo "::notice::The app works without it — the AI planner runs on the device."
-            echo "::notice::To enable it, see the comments at the top of this workflow."
+            echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: actions/setup-node@v4
-        if: steps.check.outputs.ready == 'yes'
+        if: steps.ready.outputs.ready == 'true'
         with:
-          node-version: '20'
+          node-version: 22
 
       - name: Install
-        if: steps.check.outputs.ready == 'yes'
-        working-directory: server
+        if: steps.ready.outputs.ready == 'true'
         run: npm install --no-audit --no-fund
 
-      - name: Check the Worker parses before deploying it
-        if: steps.check.outputs.ready == 'yes'
-        working-directory: server
-        run: |
-          cp worker.js /tmp/worker-check.mjs
-          node --check /tmp/worker-check.mjs
-          echo "worker.js is valid"
+      - name: Point the config at the database
+        if: steps.ready.outputs.ready == 'true'
+        run: sed -i "s/PASTE_YOUR_DATABASE_ID_HERE/$CLOUDFLARE_D1_ID/" wrangler.toml
 
-      - name: Apply any new tables
-        if: steps.check.outputs.ready == 'yes'
-        working-directory: server
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        # Every statement is CREATE TABLE IF NOT EXISTS, so this is safe to run
-        # on every deploy and does nothing when the schema has not changed.
-        run: npx wrangler d1 execute omnidx-studio --file=schema.sql --remote --yes || true
+      # On a scheduled run, deploy only when the Worker is not answering.
+      - name: Health check (scheduled runs)
+        id: health
+        if: steps.ready.outputs.ready == 'true' && github.event_name == 'schedule'
+        run: |
+          url="$WORKER_URL"
+          if [ -z "$url" ]; then
+            url="$(npx wrangler deployments list 2>/dev/null | grep -o 'https://[^ ]*workers.dev' | head -1 || true)"
+          fi
+          if [ -z "$url" ]; then echo "No URL to check; deploying to be safe."; echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if curl -fsS --max-time 20 "$url/v1/health" >/dev/null; then
+            echo "$url answers."; echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "$url did not answer — redeploying."; echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create any missing tables
+        if: steps.ready.outputs.ready == 'true' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
+        run: npx wrangler d1 execute omnidx-studio --file=schema.sql --remote --yes
 
       - name: Deploy
-        if: steps.check.outputs.ready == 'yes'
-        working-directory: server
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        if: steps.ready.outputs.ready == 'true' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
         run: npx wrangler deploy
 
       - name: Check it answers
-        if: steps.check.outputs.ready == 'yes'
-        env:
-          API_URL: ${{ secrets.API_URL }}
-        # A deploy that succeeds and a Worker that works are different things.
+        if: steps.ready.outputs.ready == 'true' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
         run: |
-          if [ -z "$API_URL" ]; then
-            echo "::notice::Set an API_URL secret to have this step verify the deploy."
-            exit 0
+          url="$WORKER_URL"
+          if [ -z "$url" ]; then
+            url="$(npx wrangler deployments list 2>/dev/null | grep -o 'https://[^ ]*workers.dev' | head -1 || true)"
           fi
-          for attempt in 1 2 3 4 5; do
-            if curl -fsS --max-time 20 "$API_URL/v1/health" | tee /tmp/health.json; then
-              echo ""
-              grep -q '"ok":true' /tmp/health.json && { echo "healthy"; exit 0; }
-            fi
-            echo "not answering yet, retrying in $((attempt * 5))s"
-            sleep $((attempt * 5))
-          done
-          echo "::error::The Worker deployed but /v1/health did not come back healthy."
-          exit 1
+          if [ -n "$url" ]; then
+            for i in 1 2 3 4 5 6; do
+              if curl -fsS --max-time 20 "$url/v1/health"; then echo; echo "Live at $url"; exit 0; fi
+              sleep 10
+            done
+            echo "Deployed, but $url/v1/health did not answer within a minute."; exit 1
+          else
+            echo "Deployed. Set the WORKER_URL repository variable so the health check knows where to look."
+          fi
