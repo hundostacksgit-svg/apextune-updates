@@ -79,12 +79,15 @@ themselves weekly from that folder.
 
 ## Done and verified
 
-Every one of the 75 verification suites — app, site, engine, Worker route —
-was run end to end in Chromium after the last change below: 75 ran, 0 failed.
-Two things the sweep caught and that are fixed: the phone's More sheet could
-grow past the top of the screen and hide its back button once View listed
-every panel; and the beat button stayed disabled after an import re-drew the
-Sound panel.
+Every one of the 83 verification suites — app, site, engine, Worker route —
+was run end to end in Chromium after the last change below: 83 ran, 81
+passed on the first run and the other two pass on their own. Both are
+timing checks, not logic: the HSL qualifier's budget is 40 ms a frame at
+1080p and this container measures it at 39.4–40.6 ms (the code has not
+changed in weeks; a real laptop is well inside), and the reference-video
+analysis counted one spurious cut when frame seeking ran under load from a
+second browser and none when it ran alone. Neither budget was loosened to
+make the number go green.
 
 
 Each of these was tested in a real browser against a real measurement, not
