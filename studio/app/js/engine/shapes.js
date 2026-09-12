@@ -101,12 +101,16 @@ function outline(s, read, h) {
       pts.push([Math.cos(a) * W / 2 * k, Math.sin(a) * H / 2 * k]);
     }
   } else if (type === 'line') {
-    pts.push([-W / 2, 0], [W / 2, 0]);
+    // Centred by default; from the origin when `pivot` is 'start', so a
+    // repeater turning copies about the origin radiates them outward.
+    const x0 = s.pivot === 'start' ? 0 : -W / 2;
+    pts.push([x0, 0], [x0 + W, 0]);
     closed = false;
   } else if (type === 'arrow') {
     // A line with a head at the end; the head is a fraction of the length.
     const head = Math.min(W * 0.35, H);
-    pts.push([-W / 2, 0], [W / 2, 0], [W / 2 - head, -head * 0.55], [W / 2, 0], [W / 2 - head, head * 0.55]);
+    const x0 = s.pivot === 'start' ? 0 : -W / 2;
+    pts.push([x0, 0], [x0 + W, 0], [x0 + W - head, -head * 0.55], [x0 + W, 0], [x0 + W - head, head * 0.55]);
     closed = false;
   } else if (type === 'path') {
     for (const p of s.points || []) pts.push([(p.x - read('x', s.x)) * h * (1 / 1), (p.y - read('y', s.y)) * h]);
@@ -267,12 +271,20 @@ export function drawShape(ctx, w, h, shape, t = 0, clipDur = 2, read = (p, f) =>
   ctx.lineJoin = 'round';
   if (dash > 0) ctx.setLineDash([dash, gap > 0 ? gap : dash]);
 
+  ctx.save();
   for (let k = 0; k < count; k++) {
-    ctx.save();
-    // Each copy a step further than the last: the repeater's whole trick.
-    ctx.translate(rdx * k, rdy * k);
-    if (rrot) ctx.rotate((rrot * k * Math.PI) / 180);
-    if (rsc !== 1) { const sc = rsc ** k; ctx.scale(sc, sc); }
+    /*
+     * Each copy a step further than the last, and the step is taken in the
+     * previous copy's own frame: a turn plus a shift walks an arc, a turn
+     * alone fans copies about the origin, a shift alone makes a row. That
+     * accumulation is what a compositor's repeater does and what makes a
+     * spiral out of one square.
+     */
+    if (k > 0) {
+      ctx.translate(rdx, rdy);
+      if (rrot) ctx.rotate((rrot * Math.PI) / 180);
+      if (rsc !== 1) ctx.scale(rsc, rsc);
+    }
     ctx.globalAlpha = alpha * (count > 1 ? 1 - rfade * (k / Math.max(1, count - 1)) : 1);
 
     for (const sub of subs) {
@@ -316,8 +328,8 @@ export function drawShape(ctx, w, h, shape, t = 0, clipDur = 2, read = (p, f) =>
         }
       }
     }
-    ctx.restore();
   }
+  ctx.restore();
   ctx.restore();
   void clipDur; void beatPhase;
 }
@@ -378,7 +390,7 @@ export const SHAPE_PRESETS = [
   { id: 'burstLines', name: 'Burst lines', group: 'Impact', icon: '✳', tier: 'creator',
     note: 'Twelve lines radiating from a point, shooting out and fading — the anime hit.',
     build(clip) {
-      Object.assign(clip.shape, { type: 'line', name: 'Burst lines', w: 0.14, x: 0.5, y: 0.5, strokeWidth: 0.008, stroke: '#ffffff', cap: 'round',
+      Object.assign(clip.shape, { type: 'line', name: 'Burst lines', w: 0.14, x: 0.5, y: 0.5, pivot: 'start', strokeWidth: 0.008, stroke: '#ffffff', cap: 'round',
         repeat: { count: 12, dx: 0, dy: 0, rotate: 30, scale: 1, fade: 0 } });
       // Each line is offset from the centre by the copy's own rotation, so a
       // trim that runs from the inner end to the outer end shoots outward.
@@ -396,7 +408,7 @@ export const SHAPE_PRESETS = [
   { id: 'dotGrid', name: 'Dot grid', group: 'Pattern', icon: '⁙', tier: 'creator',
     note: 'A row of dots stepping across — a background pattern, a loading row.',
     build(clip) {
-      Object.assign(clip.shape, { type: 'ellipse', name: 'Dots', x: 0.2, w: 0.03, h: 0.03, fill: '#ffffff', repeat: { count: 9, dx: 0.13, dy: 0, rotate: 0, scale: 1, fade: 0.6 } });
+      Object.assign(clip.shape, { type: 'ellipse', name: 'Dots', x: 0.12, w: 0.03, h: 0.03, fill: '#ffffff', repeat: { count: 9, dx: 0.045, dy: 0, rotate: 0, scale: 1, fade: 0.6 } });
       clip.expressions ||= {};
       clip.expressions['shape.repeat.fade'] = '0.5 + sin(local * 3) * 0.4';
     } },
