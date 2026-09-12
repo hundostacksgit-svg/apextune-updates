@@ -714,8 +714,35 @@ async function initAccount() {
             ? 'Your password is hashed before it is stored. We never see it.'
             : 'This account lives on this device only — your password never leaves it, and nothing is uploaded.'}
         </p>
+        <details style="margin-top:18px" id="forgot">
+          <summary class="small">Forgot your password?</summary>
+          <p class="tiny muted" style="margin:10px 0 8px">
+            Your <b>recovery code</b> resets it — the code you were given when the account was made
+            (it starts OMNIDX-RK). ${auth.MODE.server ? 'Or ask for a reset link by email below.' : 'It works on any device that holds the account; on a new device, restore from your recovery file first.'}
+          </p>
+          <input class="input mono" id="forgot-code" placeholder="OMNIDX-RK-XXXX-XXXX-…" autocomplete="off" spellcheck="false" style="text-transform:uppercase">
+          <input class="input" type="password" id="forgot-pw" placeholder="New password" autocomplete="new-password" style="margin-top:8px">
+          <button class="btn" type="button" id="forgot-go" style="width:100%;margin-top:10px">Set the new password</button>
+          ${auth.MODE.server ? '<button class="btn btn-ghost" type="button" id="forgot-mail" style="width:100%;margin-top:8px">Email me a reset link instead</button>' : ''}
+          <p class="tiny muted" id="forgot-err" style="margin:10px 0 0"></p>
+        </details>
+        <details style="margin-top:12px" id="restore">
+          <summary class="small">Lost your device? Restore from your recovery file</summary>
+          <p class="tiny muted" style="margin:10px 0 8px">
+            The file you saved when the account was made (omnidx-recovery-….txt) brings the account — and
+            anything you bought — onto this device. It opens with your <b>recovery code</b> or your <b>password</b>,
+            whichever you remember.
+          </p>
+          <textarea class="input mono" id="restore-file" rows="3" placeholder="Paste the whole file here, or pick it below" style="font-size:11px"></textarea>
+          <input type="file" id="restore-pick" accept=".txt,text/plain" style="margin-top:8px;font-size:12px">
+          <input class="input mono" id="restore-code" placeholder="Recovery code (OMNIDX-RK-…)" autocomplete="off" spellcheck="false" style="margin-top:8px;text-transform:uppercase">
+          <p class="tiny muted" style="margin:6px 0">— or —</p>
+          <input class="input" type="password" id="restore-pw" placeholder="The account's password" autocomplete="off">
+          <button class="btn" type="button" id="restore-go" style="width:100%;margin-top:10px">Bring my account back</button>
+          <p class="tiny muted" id="restore-err" style="margin:10px 0 0"></p>
+        </details>
         ${auth.MODE.server ? '' : `
-        <details style="margin-top:18px" id="move-in">
+        <details style="margin-top:12px" id="move-in">
           <summary class="small">Signing in from another device?</summary>
           <p class="tiny muted" style="margin:10px 0 8px">
             Until the sync server is on, an account lives on the device that made it. On that device, open
@@ -741,6 +768,16 @@ async function initAccount() {
           unlock it here and you are in straight away.
         </p>
         <a class="btn" href="../activate/" style="width:100%;justify-content:center">Unlock my copy</a>
+        <details style="margin-top:14px" id="ways-back">
+          <summary class="small">Every way back into your account</summary>
+          <ul class="tiny muted" style="margin:10px 0 0;padding-left:18px;line-height:1.7">
+            <li><b>Forgot the password</b> — your recovery code sets a new one.</li>
+            <li><b>Lost the device</b> — your recovery file restores the account and your purchase anywhere, with the code or the password.</li>
+            <li><b>Lost the file as well</b> — your Square receipt number unlocks what you bought on the activate page, and a new account takes a moment.</li>
+            <li><b>Too many devices</b> — the one you used longest ago makes room. You are never refused.</li>
+            <li><b>None of those</b> — <a href="mailto:${esc(PAY.supportEmail)}?subject=${encodeURIComponent('OmniDx Studio — account help')}">${esc(PAY.supportEmail)}</a> sorts it by hand.</li>
+          </ul>
+        </details>
         <details style="margin-top:14px">
           <summary class="small">Been given a licence key?</summary>
           <form id="redeemform" style="margin-top:10px">
@@ -783,8 +820,15 @@ async function initAccount() {
           // immediately after creating an account is the most pointless step
           // on the web.
           await auth.signIn({ ...payload, remember: true });
+          // The kit is made now, while the password is in hand: a kit made
+          // later is a kit most people never make, and it is the one thing
+          // that makes a forgotten password or a lost phone survivable.
+          const kit = await auth.createRecoveryKit(payload.password).catch(() => null);
+          toast('Account created', 'ok');
+          if (kit) { kitView(kit, () => signedInView()); return; }
         } else {
-          await auth.signIn({ ...payload, remember: $('#remember')?.checked !== false });
+          const res = await auth.signIn({ ...payload, remember: $('#remember')?.checked !== false });
+          if (res?.evicted) toast(`Signed in. ${res.evicted} was signed out to make room.`, '', 5000);
         }
         toast(mode === 'up' ? 'Account created' : 'Signed in', 'ok');
         signedInView();
@@ -812,7 +856,8 @@ async function initAccount() {
                 await auth.signUp(payload);
                 await auth.signIn({ ...payload, remember: true });
                 toast('Account created', 'ok');
-                signedInView();
+                const kit = await auth.createRecoveryKit(payload.password).catch(() => null);
+                if (kit) kitView(kit, () => signedInView()); else signedInView();
               } catch (e2) {
                 // A weak password is the one thing that can stop it; show the strength meter and say so.
                 setMode('up');
@@ -829,6 +874,40 @@ async function initAccount() {
           }
         }
       }
+    });
+
+    $('#forgot-go')?.addEventListener('click', async () => {
+      const out = $('#forgot-err');
+      out.style.color = '';
+      out.textContent = 'Working…';
+      try {
+        await auth.resetPasswordWithCode($('#forgot-code').value, $('#forgot-pw').value, { email: $('#email').value });
+        toast('Password changed — you are signed in', 'ok');
+        signedInView();
+      } catch (ex) { out.style.color = 'var(--bad)'; out.textContent = ex.message; }
+    });
+    $('#forgot-mail')?.addEventListener('click', async () => {
+      const out = $('#forgot-err');
+      try {
+        const res = await auth.requestResetEmail($('#email').value);
+        out.style.color = '';
+        out.textContent = res?.sent ? 'If that address has an account, a reset link is on its way. It works for an hour.' : 'Email is not set up on the server yet — use your recovery code.';
+      } catch (ex) { out.style.color = 'var(--bad)'; out.textContent = ex.message; }
+    });
+    $('#restore-pick')?.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (file) $('#restore-file').value = await file.text();
+    });
+    $('#restore-go')?.addEventListener('click', async () => {
+      const out = $('#restore-err');
+      out.style.color = '';
+      out.textContent = 'Opening…';
+      try {
+        const res = await auth.restoreFromFile($('#restore-file').value, { code: $('#restore-code').value, password: $('#restore-pw').value });
+        toast(`Welcome back, ${res.email}`, 'ok');
+        if (res.evicted) toast(`${res.evicted} was signed out to make room.`, '', 5000);
+        signedInView();
+      } catch (ex) { out.style.color = 'var(--bad)'; out.textContent = ex.message; }
     });
 
     $('#move-go')?.addEventListener('click', async () => {
@@ -890,6 +969,34 @@ async function initAccount() {
           </li>`).join('') || '<li><span class="dn muted">No devices linked yet.</span></li>'}
         </ul>
 
+        ${!s?.email ? '' : `
+        <h4 style="margin:26px 0 6px" id="recovery">Recovery kit</h4>
+        ${(() => {
+          const rk = auth.recoveryState();
+          return `<p class="tiny muted" style="margin:0 0 10px" id="rk-status">${rk.has
+            ? (rk.stale ? 'You have a kit, but you bought something since it was made — download a fresh file so the purchase is in it.'
+              : `You have a kit${rk.at ? ` from ${new Date(rk.at).toLocaleDateString()}` : ''}. Forgot your password, lost the device: either gets you back in.${rk.saved ? '' : ' Make sure the code and the file are saved somewhere.'}`)
+            : 'No kit yet. Make one now — it is the only thing that gets you back in if you forget the password or lose this device.'}</p>`;
+        })()}
+        <div id="rk-box">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input class="input" type="password" id="rk-pw2" placeholder="Your password" autocomplete="current-password" style="flex:1;min-width:160px">
+            <button class="btn" id="rk-refresh" type="button" ${auth.recoveryState().has ? '' : 'hidden'}>Fresh file</button>
+            <button class="btn ${auth.recoveryState().has ? 'btn-ghost' : 'btn-primary'}" id="rk-make" type="button">${auth.recoveryState().has ? 'New code and file' : 'Make my kit'}</button>
+          </div>
+          <p class="tiny muted" id="rk-err" style="margin:8px 0 0"></p>
+        </div>
+
+        <details style="margin-top:14px">
+          <summary class="small">Change password</summary>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+            <input class="input" type="password" id="cp-old" placeholder="Current password" autocomplete="current-password" style="flex:1;min-width:140px">
+            <input class="input" type="password" id="cp-new" placeholder="New password" autocomplete="new-password" style="flex:1;min-width:140px">
+            <button class="btn" id="cp-go" type="button">Change</button>
+          </div>
+          <p class="tiny muted" id="cp-err" style="margin:8px 0 0"></p>
+        </details>`}
+
         ${auth.MODE.server || !s?.email ? '' : `
         <h4 style="margin:26px 0 6px">Move to another device</h4>
         <p class="tiny muted" style="margin:0 0 10px">
@@ -929,12 +1036,96 @@ async function initAccount() {
       } catch (ex) { err.style.color = 'var(--bad)'; err.textContent = ex.message; }
     });
 
+    $('#rk-make')?.addEventListener('click', async () => {
+      const err = $('#rk-err'); err.textContent = '';
+      try {
+        const kit = await auth.createRecoveryKit($('#rk-pw2').value);
+        kitView(kit, () => signedInView());
+      } catch (ex) { err.style.color = 'var(--bad)'; err.textContent = ex.message; }
+    });
+    $('#rk-refresh')?.addEventListener('click', async () => {
+      const err = $('#rk-err'); err.textContent = '';
+      try {
+        const out = await auth.recoveryFile({ password: $('#rk-pw2').value });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([out.file], { type: 'text/plain' }));
+        a.download = out.fileName;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 20000);
+        auth.markRecoverySaved();
+        toast('Fresh recovery file saved', 'ok');
+        signedInView();
+      } catch (ex) { err.style.color = 'var(--bad)'; err.textContent = ex.message; }
+    });
+    $('#cp-go')?.addEventListener('click', async () => {
+      const err = $('#cp-err'); err.textContent = '';
+      try {
+        await auth.changePassword($('#cp-old').value, $('#cp-new').value);
+        err.style.color = ''; err.textContent = 'Changed. Your recovery code and file still work.';
+        $('#cp-old').value = ''; $('#cp-new').value = '';
+      } catch (ex) { err.style.color = 'var(--bad)'; err.textContent = ex.message; }
+    });
+
     $$('[data-rm]').forEach((b) => b.addEventListener('click', async () => {
       await auth.removeDevice(b.dataset.rm);
       toast('Device removed', 'ok');
       signedInView();
     }));
     $('#out').addEventListener('click', async () => { await auth.signOut(); toast('Signed out'); signedOutView(); });
+  }
+
+  /*
+   * The kit, shown once: the code big enough to write down, the file to
+   * save, and no way past it that has not at least been offered. `after`
+   * runs when they say they have it.
+   */
+  function kitView(kit, after) {
+    root.innerHTML = `
+      <div class="form-card" id="rk-card" style="max-width:560px">
+        <h3 style="margin:0 0 6px">Save your recovery kit</h3>
+        <p class="small" style="margin:0 0 14px">This is the one thing that gets you back in if you forget your password or lose this device.
+          It is shown once. Two minutes now, never locked out later.</p>
+        <p class="tiny muted" style="margin:0 0 4px"><b>Your recovery code</b> — write it down or put it in your password manager.</p>
+        <code class="mono" id="rk-code" style="display:block;font-size:15px;letter-spacing:.04em;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);user-select:all;word-break:break-all">${esc(kit.code)}</code>
+        <div class="btn-row" style="margin-top:8px;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm" type="button" id="rk-copy">Copy the code</button>
+          <button class="btn btn-sm" type="button" id="rk-download">Download the recovery file</button>
+          <a class="btn btn-sm btn-ghost" id="rk-mail" href="mailto:?subject=${encodeURIComponent('My OmniDx Studio recovery kit')}&body=${encodeURIComponent(`Recovery code: ${kit.code}\n\n${kit.file}`)}">Email it to myself</a>
+        </div>
+        <textarea class="input mono" id="rk-file" rows="4" readonly style="font-size:10.5px;margin-top:10px">${esc(kit.file)}</textarea>
+        <p class="tiny muted" style="margin:8px 0 0">The file restores the account on any device, with anything you bought; it opens with the code or your password, whichever you remember. Nothing in it can be read without one of those.</p>
+        <label class="tiny" style="display:flex;gap:8px;align-items:center;margin:16px 0 10px"><input type="checkbox" id="rk-saved"> I have saved the code and the file</label>
+        <button class="btn btn-primary" type="button" id="rk-done" disabled style="width:100%">Continue</button>
+      </div>`;
+    $('#rk-copy').addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(kit.code); toast('Code copied', 'ok'); } catch { toast('Select the code and copy it'); }
+    });
+    $('#rk-download').addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([kit.file], { type: 'text/plain' }));
+      a.download = kit.fileName;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 20000);
+      toast('Saved — keep it somewhere you will find it', 'ok', 3600);
+    });
+    $('#rk-saved').addEventListener('change', (e) => { $('#rk-done').disabled = !e.target.checked; });
+    $('#rk-done').addEventListener('click', () => { auth.markRecoverySaved(); after(); });
+  }
+
+  const resetToken = params.get('reset');
+  if (resetToken && auth.MODE.server) {
+    root.innerHTML = `
+      <div class="form-card">
+        <h3 style="margin:0 0 8px">Choose a new password</h3>
+        <input class="input" type="password" id="rs-pw" placeholder="New password" autocomplete="new-password">
+        <button class="btn btn-primary" id="rs-go" style="width:100%;margin-top:10px">Set it and sign in</button>
+        <p class="tiny muted" id="rs-err" style="margin:10px 0 0"></p>
+      </div>`;
+    $('#rs-go').addEventListener('click', async () => {
+      try { await auth.confirmResetEmail(resetToken, $('#rs-pw').value); history.replaceState(null, '', location.pathname); toast('Password changed', 'ok'); signedInView(); }
+      catch (ex) { $('#rs-err').style.color = 'var(--bad)'; $('#rs-err').textContent = ex.message; }
+    });
+    return;
   }
 
   if (auth.isSignedIn() || auth.edition() !== 'free') await signedInView();

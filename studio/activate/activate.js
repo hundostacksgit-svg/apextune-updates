@@ -90,6 +90,8 @@ function renderUnlocked(edition, order, verified) {
       This device is unlocked now.
       ${verified ? 'Your purchase is registered to your account, so it follows you.'
         : 'To put it on your other devices, make an account on the account page and this licence moves with it.'}
+      Then save a <a href="../account/#recovery">recovery kit</a> — it brings the account and this purchase back on any device, even if this one is lost.
+      Keep your Square receipt too: its order number unlocks the purchase here again, always.
     </p>
     ${supportBlock(`OmniDx Studio — ${ed.name} activation`)}`;
 }

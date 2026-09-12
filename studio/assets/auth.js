@@ -313,22 +313,42 @@ export async function signIn({ email, password, remember = false }) {
   const key = await deriveKey(password, b64.to(acc.salt), acc.rounds || PBKDF2_ROUNDS);
   if (await verifierFor(key) !== acc.verifier) throw new Error('Wrong password.');
 
-  // Touch this device, and refuse a new one past the plan's limit.
+  // Touch this device. Past the plan's limit the oldest device makes room —
+  // see makeRoom — because "remove one first" cannot be done from a device
+  // that was lost, and a limit that locks the owner out is not a limit.
   const dev = deviceInfo();
-  const devices = (acc.devices || []).filter((d) => d.id !== dev.id);
-  const limit = DEVICE_LIMIT[acc.edition || 'free'];
-  if (devices.length >= limit) {
-    throw new Error(`This account is already on ${devices.length} devices (limit ${limit}). Remove one first.`);
-  }
-  devices.push(dev);
-  put(K.account, { ...acc, devices });
+  const back = releaseHeld(acc);
+  const { devices, evicted } = makeRoom(back.devices, dev, back.edition);
+  put(K.account, { ...back, devices });
 
   if (remember) {
     const dk = await deriveKey(deviceId(), b64.to(acc.salt), 120_000);
     put(K.remember, await seal(dk, { email, at: Date.now() }));
   }
-  put(K.session, { email, token: 'local', edition: acc.edition || 'free', name: acc.name || '', at: Date.now() });
-  return { local: true };
+  put(K.session, { email, token: 'local', edition: back.edition || 'free', name: back.name || '', at: Date.now() });
+  return { local: true, evicted };
+}
+
+/*
+ * The device list with this device on it, within the plan's limit.
+ *
+ * A limit is enforced by count, never by refusal: when the list is full the
+ * device seen longest ago is dropped to make room, and its name comes back so
+ * the screen can say so. The alternative — "remove one first" — is exactly
+ * the instruction nobody can follow after losing the phone the account was
+ * made on, and the whole point of an account is that losing a device does
+ * not mean losing the account.
+ */
+function makeRoom(list, dev, edition) {
+  const devices = (list || []).filter((d) => d.id !== dev.id);
+  const limit = Math.max(1, DEVICE_LIMIT[edition || 'free'] || 2);
+  let evicted = null;
+  while (devices.length >= limit) {
+    devices.sort((a, b) => (a.lastSeen || 0) - (b.lastSeen || 0));
+    evicted = devices.shift()?.label || 'an older device';
+  }
+  devices.push(dev);
+  return { devices, evicted };
 }
 
 /* ------------------------------------------------------------------ */
@@ -376,16 +396,17 @@ export async function importAccount(code, password) {
     throw new Error(`This device already has an account for ${existing.email}. Sign out of it first.`);
   }
   const dev = deviceInfo();
-  const devices = (acc.devices || []).filter((d) => d.id !== dev.id);
-  const limit = DEVICE_LIMIT[acc.edition || 'free'];
-  if (devices.length >= limit) throw new Error(`This account is already on ${devices.length} devices (limit ${limit}). Remove one on the other device first.`);
-  devices.push(dev);
+  const { devices, evicted } = makeRoom(acc.devices, dev, acc.edition);
   put(K.account, { ...acc, devices });
   // The purchase comes along, and never downgrades one already here.
-  const here = get(K_PURCHASE);
-  if (data.purchase?.edition && (!here || (RANK[data.purchase.edition] ?? -1) > (RANK[here.edition] ?? -1))) put(K_PURCHASE, data.purchase);
+  keepBestPurchase(data.purchase);
   put(K.session, { email: acc.email, token: 'local', edition: acc.edition || 'free', name: acc.name || '', at: Date.now() });
-  return { email: acc.email, edition: edition() };
+  return { email: acc.email, edition: edition(), evicted };
+}
+
+function keepBestPurchase(incoming) {
+  const here = get(K_PURCHASE);
+  if (incoming?.edition && (!here || (RANK[incoming.edition] ?? -1) > (RANK[here.edition] ?? -1))) put(K_PURCHASE, incoming);
 }
 
 /** Silent re-auth on a device the user chose to trust. */
@@ -397,7 +418,9 @@ export async function resumeRemembered() {
     const dk = await deriveKey(deviceId(), b64.to(acc.salt), 120_000);
     const { email } = await open(dk, box);
     if (email !== acc.email) return false;
-    put(K.session, { email, token: 'local', edition: acc.edition || 'free', name: acc.name || '', at: Date.now() });
+    const back = releaseHeld(acc);
+    if (back !== acc) put(K.account, back);
+    put(K.session, { email, token: 'local', edition: back.edition || 'free', name: back.name || '', at: Date.now() });
     return true;
   } catch {
     drop(K.remember);            // wrong device, or storage tampered with
@@ -425,8 +448,22 @@ export async function signOut() {
   const acc = get(K.account);
   if (bought?.account && bought.account === acc?.email) {
     drop(K_PURCHASE);
-    if (acc) put(K.account, { ...acc, edition: 'free', purchase: null });
+    /*
+     * Held, not destroyed. The device is free while nobody is signed in, and
+     * the purchase is back the moment its owner signs in again — with the
+     * password, the recovery code, or the file. Before this it was dropped,
+     * and signing out then in on the same machine lost a paid edition for
+     * good, which is the exact thing this app promises never happens.
+     */
+    if (acc) put(K.account, { ...acc, edition: 'free', purchase: null, held: bought });
   }
+}
+
+/* A verified owner is back: whatever was held at sign-out returns to the device. */
+function releaseHeld(acc) {
+  if (!acc?.held?.edition) return acc;
+  keepBestPurchase(acc.held);
+  return { ...acc, edition: acc.held.edition, purchase: acc.held, held: null };
 }
 
 export async function devices() {
@@ -620,4 +657,333 @@ export async function redeemPurchase({ edition, order }) {
   } catch (err) {
     return { ...local, verified: false, reason: err.message };
   }
+}
+
+
+/* ------------------------------------------------------------------ *
+ * The recovery kit — nobody loses an account.
+ *
+ * Every way an account can be lost, and the way back in:
+ *
+ *   forgot the password       → the recovery code resets it, on any device
+ *                                that holds the account
+ *   lost the device           → the recovery file restores the account, with
+ *                                anything bought, on a new device — opened by
+ *                                the recovery code OR the password, whichever
+ *                                is remembered
+ *   lost the file too         → the purchase comes back from the Square
+ *                                receipt on the activate page; a new account
+ *                                takes a moment
+ *   too many devices          → the oldest makes room; there is no refusal
+ *   the sync server is on     → the same code resets the server password, and
+ *                                the file is mirrored, sealed, to the server
+ *
+ * The code is 160 bits from the device's random source, shown once and never
+ * stored — only a verifier of it. The file is the account record and the
+ * purchase, sealed with a random file key; that key is wrapped twice, once
+ * under a key from the recovery code and once under the password key, so
+ * either opens it. Nothing in the file is readable without one of the two.
+ * The kit is made at sign-up, while the password is in hand, because a
+ * kit made later is a kit most people never make.
+ * ------------------------------------------------------------------ */
+
+const RK_PREFIX = 'OMNIDX-RK-';
+const FILE_PREFIX = 'OMNIDX-RECOVERY-1.';
+const RK_ROUNDS = 120_000;
+const RK_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // no I, O, 0, 1 — nothing to mis-type
+
+function codeFromBytes(bytes) {
+  let bits = '';
+  for (const b of bytes) bits += b.toString(2).padStart(8, '0');
+  let out = '';
+  for (let i = 0; i + 5 <= bits.length; i += 5) out += RK_ALPHABET[parseInt(bits.slice(i, i + 5), 2)];
+  return out;
+}
+
+/** The code as typed, reduced to what matters: letters and digits, upper case, prefix off. */
+export function normaliseRecoveryCode(text) {
+  const c = String(text || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return c.startsWith('OMNIDXRK') ? c.slice(8) : c;
+}
+
+export function formatRecoveryCode(code) {
+  const c = normaliseRecoveryCode(code);
+  return RK_PREFIX + (c.match(/.{1,4}/g) || []).join('-');
+}
+
+export function looksLikeRecoveryCode(text) {
+  const c = normaliseRecoveryCode(text);
+  return c.length >= 24 && [...c].every((ch) => RK_ALPHABET.includes(ch));
+}
+
+async function recoveryKey(code, saltB64) {
+  return deriveKey(normaliseRecoveryCode(code), b64.to(saltB64), RK_ROUNDS);
+}
+
+async function fileKeyFrom(rawB64) {
+  return crypto.subtle.importKey('raw', b64.to(rawB64), { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+
+/** What the account page shows: whether a kit exists, when, and whether it predates a purchase. */
+export function recoveryState() {
+  const acc = get(K.account);
+  const bought = get(K_PURCHASE);
+  const at = acc?.recovery?.at || 0;
+  return {
+    has: Boolean(acc?.recovery),
+    at,
+    saved: Boolean(acc?.recoverySaved),
+    stale: Boolean(at && bought?.at && bought.at > at),
+  };
+}
+
+/** Note that the person said they saved the kit, so the reminder can stop. */
+export function markRecoverySaved() {
+  const acc = get(K.account);
+  if (acc) put(K.account, { ...acc, recoverySaved: true });
+}
+
+/**
+ * Make (or remake) the kit. Needs the password, because the file must open
+ * with it too. Returns the code — the only time it is ever seen — and the
+ * file's text with a name to save it under.
+ */
+export async function createRecoveryKit(password) {
+  const acc = get(K.account);
+  const s = session();
+  if (online() && s?.token) return createServerKit(password, s);
+  if (!acc) throw new Error('There is no account on this device to make a kit for.');
+  const pkey = await deriveKey(password, b64.to(acc.salt), acc.rounds || PBKDF2_ROUNDS);
+  if (await verifierFor(pkey) !== acc.verifier) throw new Error('Wrong password.');
+  const vaultPlain = await open(pkey, acc.vault).catch(() => ({ licence: null, brandKit: null }));
+
+  const code = codeFromBytes(randomBytes(20));
+  const salt = randomBytes(16);
+  const rkey = await recoveryKey(code, b64.from(salt));
+  const fileRaw = b64.from(randomBytes(32));
+  const recovery = {
+    salt: b64.from(salt),
+    verifier: await verifierFor(rkey),
+    vault: await seal(rkey, vaultPlain),
+    fileKey: await seal(rkey, { k: fileRaw }),
+    at: Date.now(),
+  };
+  const next = { ...acc, recovery, fileKey: await seal(pkey, { k: fileRaw }), recoverySaved: false };
+  put(K.account, next);
+  const file = await buildRecoveryFile(fileRaw);
+  return { code: formatRecoveryCode(code), file: file.text, fileName: file.name };
+}
+
+/* The file's text: a few lines a person can read, then the sealed payload. */
+async function buildRecoveryFile(fileRaw) {
+  const acc = get(K.account);
+  const fkey = await fileKeyFrom(fileRaw);
+  const box = await seal(fkey, { account: acc, purchase: get(K_PURCHASE), at: Date.now() });
+  const payload = {
+    email: acc.email, s: acc.recovery.salt, ps: acc.salt, pr: acc.rounds || PBKDF2_ROUNDS,
+    wrapR: acc.recovery.fileKey, wrapP: acc.fileKey, iv: box.iv, ct: box.ct,
+  };
+  const text = `OmniDx Studio — account recovery file
+Account: ${acc.email}
+Made: ${new Date().toISOString()}
+
+Keep this file somewhere safe (a cloud drive, a USB stick, an email to yourself).
+To get your account back on any device: omnidx.net/studio/account → "Lost your device?",
+paste this whole file, and type either your recovery code or your password.
+Nothing in it can be read without one of those.
+
+${FILE_PREFIX}${btoa(JSON.stringify(payload))}
+`;
+  return { text, name: `omnidx-recovery-${acc.email.replace(/[^a-z0-9]+/gi, '-')}.txt` };
+}
+
+/** A fresh copy of the file — after a purchase, say — opened with the password or the code. */
+export async function recoveryFile({ password = '', code = '' } = {}) {
+  const acc = get(K.account);
+  if (!acc?.recovery) throw new Error('Make a recovery kit first.');
+  let fileRaw = null;
+  if (code) {
+    const rkey = await recoveryKey(code, acc.recovery.salt);
+    if (await verifierFor(rkey) !== acc.recovery.verifier) throw new Error('That recovery code is not right.');
+    fileRaw = (await open(rkey, acc.recovery.fileKey)).k;
+  } else {
+    const pkey = await deriveKey(password, b64.to(acc.salt), acc.rounds || PBKDF2_ROUNDS);
+    if (await verifierFor(pkey) !== acc.verifier) throw new Error('Wrong password.');
+    fileRaw = (await open(pkey, acc.fileKey)).k;
+  }
+  const file = await buildRecoveryFile(fileRaw);
+  await mirrorToServer(file.text);
+  return { file: file.text, fileName: file.name };
+}
+
+export function isRecoveryFile(text) { return String(text || '').includes(FILE_PREFIX); }
+
+function parseRecoveryFile(text) {
+  const m = String(text || '').match(/OMNIDX-RECOVERY-1\.([A-Za-z0-9+/=]+)/);
+  if (!m) throw new Error('That is not a recovery file. It has a line starting OMNIDX-RECOVERY.');
+  try { return JSON.parse(atob(m[1])); } catch { throw new Error('That file is damaged — paste all of it, from the first line to the last.'); }
+}
+
+/**
+ * Restore an account from its file, on any device, with the recovery code or
+ * the password. The account arrives as it was — its password, its purchase —
+ * and signs in. Never downgrades a purchase already on the device.
+ */
+export async function restoreFromFile(text, { code = '', password = '' } = {}) {
+  const f = parseRecoveryFile(text);
+  let fileRaw = null;
+  if (code) {
+    const rkey = await recoveryKey(code, f.s);
+    try { fileRaw = (await open(rkey, f.wrapR)).k; } catch { throw new Error('That recovery code does not open this file.'); }
+  } else if (password) {
+    const pkey = await deriveKey(password, b64.to(f.ps), f.pr || PBKDF2_ROUNDS);
+    try { fileRaw = (await open(pkey, f.wrapP)).k; } catch { throw new Error('That password does not open this file. Try the recovery code instead.'); }
+  } else {
+    throw new Error('Type your recovery code, or the account\'s password.');
+  }
+  const data = await open(await fileKeyFrom(fileRaw), { iv: f.iv, ct: f.ct });
+  const acc = data?.account;
+  if (!acc?.email || !acc?.verifier) {
+    // A server-mode kit carries no local record: the purchase comes back, and the sign-in is on the server.
+    keepBestPurchase(data?.purchase);
+    return { email: f.email, edition: edition(), server: true };
+  }
+  const existing = get(K.account);
+  if (existing && existing.email !== acc.email) {
+    throw new Error(`This device already has an account for ${existing.email}. Sign out of it first.`);
+  }
+  const dev = deviceInfo();
+  const back = releaseHeld(acc);
+  const { devices, evicted } = makeRoom(back.devices, dev, back.edition);
+  put(K.account, { ...back, devices, recoverySaved: true });
+  keepBestPurchase(data.purchase);
+  put(K.session, { email: acc.email, token: 'local', edition: back.edition || 'free', name: back.name || '', at: Date.now() });
+  return { email: acc.email, edition: edition(), evicted };
+}
+
+/**
+ * A new password, with the recovery code, on a device that holds the
+ * account. The vault is re-sealed under the new password; the code and the
+ * file stay valid. "Remember me" is dropped, because it was tied to the old
+ * salt, and the next sign-in sets it again.
+ */
+export async function resetPasswordWithCode(code, newPassword, { email = '' } = {}) {
+  if (strength(newPassword).score < 3) throw new Error('Pick a stronger password — aim for 12+ characters.');
+  const acc = get(K.account);
+  if (online()) return resetServerPasswordFor(email || acc?.email || get(K.session)?.email, code, newPassword);
+  if (!acc) throw new Error('There is no account on this device. Restore it from your recovery file first, under "Lost your device?".');
+  if (!acc.recovery) throw new Error('This account has no recovery kit. Sign in with the password and make one.');
+  const rkey = await recoveryKey(code, acc.recovery.salt);
+  if (await verifierFor(rkey) !== acc.recovery.verifier) throw new Error('That recovery code is not right.');
+  const vaultPlain = await open(rkey, acc.recovery.vault);
+  const fileRaw = (await open(rkey, acc.recovery.fileKey)).k;
+  const salt = randomBytes(32);
+  const pkey = await deriveKey(newPassword, salt);
+  const back = releaseHeld(acc);
+  put(K.account, {
+    ...back,
+    salt: b64.from(salt), rounds: PBKDF2_ROUNDS,
+    verifier: await verifierFor(pkey),
+    vault: await seal(pkey, vaultPlain),
+    fileKey: await seal(pkey, { k: fileRaw }),
+  });
+  drop(K.remember);
+  put(K.session, { email: acc.email, token: 'local', edition: back.edition || 'free', name: back.name || '', at: Date.now() });
+  return { email: acc.email };
+}
+
+/** Change the password while signed in, knowing the old one. */
+export async function changePassword(oldPassword, newPassword) {
+  if (strength(newPassword).score < 3) throw new Error('Pick a stronger password — aim for 12+ characters.');
+  const s = session();
+  if (online() && s?.token) {
+    await api('/v1/auth/password', { password: oldPassword, next: newPassword }, s.token);
+    return { ok: true };
+  }
+  const acc = get(K.account);
+  if (!acc) throw new Error('There is no account on this device.');
+  const pkey = await deriveKey(oldPassword, b64.to(acc.salt), acc.rounds || PBKDF2_ROUNDS);
+  if (await verifierFor(pkey) !== acc.verifier) throw new Error('The current password is wrong.');
+  const vaultPlain = await open(pkey, acc.vault).catch(() => ({ licence: null, brandKit: null }));
+  const fileRaw = acc.fileKey ? (await open(pkey, acc.fileKey)).k : null;
+  const salt = randomBytes(32);
+  const nkey = await deriveKey(newPassword, salt);
+  put(K.account, {
+    ...acc,
+    salt: b64.from(salt), rounds: PBKDF2_ROUNDS,
+    verifier: await verifierFor(nkey),
+    vault: await seal(nkey, vaultPlain),
+    fileKey: fileRaw ? await seal(nkey, { k: fileRaw }) : acc.fileKey,
+  });
+  drop(K.remember);
+  return { ok: true };
+}
+
+/* ---------------- with the server on ---------------- */
+
+/* The server holds the account; the kit holds a verifier there, and the file
+   carries the purchase. The same code resets the server password. */
+async function createServerKit(password, s) {
+  const code = codeFromBytes(randomBytes(20));
+  const salt = randomBytes(16);
+  const rkey = await recoveryKey(code, b64.from(salt));
+  await api('/v1/auth/recovery/set', { salt: b64.from(salt), verifier: await verifierFor(rkey) }, s.token);
+  const fileRaw = b64.from(randomBytes(32));
+  const pSalt = randomBytes(16);
+  const pkey = await deriveKey(password, pSalt, RK_ROUNDS);
+  const fkey = await fileKeyFrom(fileRaw);
+  const box = await seal(fkey, { purchase: get(K_PURCHASE), email: s.email, at: Date.now() });
+  const payload = {
+    email: s.email, s: b64.from(salt), ps: b64.from(pSalt), pr: RK_ROUNDS,
+    wrapR: await seal(rkey, { k: fileRaw }), wrapP: await seal(pkey, { k: fileRaw }), iv: box.iv, ct: box.ct,
+  };
+  const text = `OmniDx Studio — account recovery file\nAccount: ${s.email}\nMade: ${new Date().toISOString()}\n\n${FILE_PREFIX}${btoa(JSON.stringify(payload))}\n`;
+  await mirrorToServer(text);
+  return { code: formatRecoveryCode(code), file: text, fileName: `omnidx-recovery-${s.email.replace(/[^a-z0-9]+/gi, '-')}.txt` };
+}
+
+/** Server mode: reset with email + recovery code. */
+export async function resetServerPasswordFor(email, code, newPassword) {
+  email = String(email || '').trim().toLowerCase();
+  if (!validEmail(email)) throw new Error('That email address does not look right.');
+  if (strength(newPassword).score < 3) throw new Error('Pick a stronger password — aim for 12+ characters.');
+  const { salt } = await api('/v1/auth/recovery/salt', { email });
+  const rkey = await recoveryKey(code, salt);
+  const out = await api('/v1/auth/recovery/reset', { email, verifier: await verifierFor(rkey), password: newPassword, device: deviceInfo() });
+  put(K.session, { email, token: out.token, edition: out.edition || 'free', name: out.name || '', at: Date.now() });
+  return out;
+}
+
+/** Server mode: ask for a reset link by email. Always says it was sent. */
+export async function requestResetEmail(email) {
+  if (!online()) throw new Error('Email resets need the sync server. Use your recovery code instead.');
+  return api('/v1/auth/reset/request', { email: String(email || '').trim().toLowerCase() });
+}
+
+export async function confirmResetEmail(token, newPassword) {
+  if (strength(newPassword).score < 3) throw new Error('Pick a stronger password — aim for 12+ characters.');
+  const out = await api('/v1/auth/reset/confirm', { token, password: newPassword, device: deviceInfo() });
+  put(K.session, { email: out.email, token: out.token, edition: out.edition || 'free', name: out.name || '', at: Date.now() });
+  return out;
+}
+
+/* The sealed file, kept on the server too, so a new device signed in with
+   the password finds the purchase without the file. Silent when there is
+   no server, or it is down: the file in the person's hands is the copy that
+   matters. */
+async function mirrorToServer(text) {
+  const s = session();
+  if (!online() || !s?.token || s.token === 'local') return false;
+  try { await api('/v1/vault/put', { blob: text }, s.token); return true; } catch { return false; }
+}
+
+/** After a server sign-in on a new device: the mirrored file, opened with the password. */
+export async function restoreFromServer(password) {
+  const s = session();
+  if (!online() || !s?.token || s.token === 'local') return null;
+  try {
+    const { blob } = await api('/v1/vault/get', {}, s.token);
+    if (!blob) return null;
+    return await restoreFromFile(blob, { password });
+  } catch { return null; }
 }

@@ -93,6 +93,9 @@ export function mount(host) {
           : `<p class="tiny muted">You don't need an account to edit. It exists to move a paid
              licence between your devices. Signed up on another device? Get a <b>move code</b> from its
              Account page and paste it on the Account page here.</p>`}
+        <p class="tiny muted">Never locked out: your <b>recovery kit</b> (a code and a file, made on the Account page)
+          resets a forgotten password and restores the account on a new device. Lost everything? Your Square receipt
+          unlocks what you bought.</p>
         <div class="field" style="margin-top:12px">
           <label for="s-key">Licence key</label>
           <input class="input mono" id="s-key" placeholder="OMNIDX-STU-XXXX-XXXX-XXXX"

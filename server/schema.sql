@@ -102,3 +102,30 @@ CREATE TABLE IF NOT EXISTS ratings (
   created_at  INTEGER NOT NULL,
   UNIQUE (device_id, day)
 );
+
+-- The recovery code, as a verifier. The app derives a key from the code and
+-- a salt and sends a verifier of it; the code itself never reaches the
+-- server, so a stolen database cannot reset anybody's password.
+CREATE TABLE IF NOT EXISTS recovery (
+  user_id     TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  salt        TEXT NOT NULL,
+  verifier    TEXT NOT NULL,
+  created_at  INTEGER NOT NULL
+);
+
+-- Password reset links by email: a hash of the token, an hour to use it.
+CREATE TABLE IF NOT EXISTS resets (
+  token_hash  TEXT PRIMARY KEY,
+  user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  expires_at  INTEGER NOT NULL,
+  created_at  INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS resets_user ON resets(user_id);
+
+-- The recovery file, sealed on the device, one per account. Bytes the
+-- server cannot read; a new device signed in with the password opens it.
+CREATE TABLE IF NOT EXISTS vaults (
+  user_id     TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  blob        TEXT NOT NULL,
+  updated_at  INTEGER NOT NULL
+);

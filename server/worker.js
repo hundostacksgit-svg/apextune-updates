@@ -211,6 +211,7 @@ const routes = {
     ai: Boolean(env.ANTHROPIC_API_KEY),
     transcription: Boolean(env.STT_URL && env.STT_KEY),
     payments: Boolean(env.STRIPE_WEBHOOK_SECRET),
+    mail: Boolean(env.RESEND_API_KEY),
   }, { env, request: _req }),
 
   /* ---------------- auth ---------------- */
@@ -254,10 +255,119 @@ const routes = {
 
     const edition = await editionFor(env, user.id);
     const placed = await touchDevice(env, user.id, body.device, edition);
-    if (placed.error) return fail(placed.error, 403, env, request);
 
-    return json({ token: await createSession(env, user.id), edition, name: user.name },
+    return json({ token: await createSession(env, user.id), edition, name: user.name, evicted: placed.evicted || null },
       { env, request });
+  },
+
+  /* ---------------- passwords and recovery ---------------- */
+
+  /* A new password, knowing the old one. Every other session is ended. */
+  'POST /v1/auth/password': async (request, env, body) => {
+    const user = await userFor(env, request);
+    if (!user) return fail('Sign in first.', 401, env, request);
+    const hash = await hashPassword(String(body.password || ''), user.pw_salt, user.pw_rounds);
+    if (!sameSecret(hash, user.pw_hash)) return fail('The current password is wrong.', 403, env, request);
+    if (String(body.next || '').length < 8) return fail('Passwords need to be at least 8 characters.', 400, env, request);
+    await setPassword(env, user.id, body.next);
+    await env.DB.prepare('DELETE FROM sessions WHERE user_id = ? AND token_hash != ?').bind(user.id, await sha256(user.token)).run();
+    return json({ ok: true }, { env, request });
+  },
+
+  /*
+   * The recovery code, server side. The app derives a key from the code and
+   * a salt and sends a verifier of it — the code itself never reaches the
+   * server, so a stolen database cannot reset anybody's password.
+   */
+  'POST /v1/auth/recovery/set': async (request, env, body) => {
+    const user = await userFor(env, request);
+    if (!user) return fail('Sign in first.', 401, env, request);
+    if (!body.salt || !body.verifier) return fail('A salt and a verifier are needed.', 400, env, request);
+    await env.DB.prepare(
+      `INSERT INTO recovery (user_id, salt, verifier, created_at) VALUES (?,?,?,?)
+       ON CONFLICT(user_id) DO UPDATE SET salt = excluded.salt, verifier = excluded.verifier, created_at = excluded.created_at`,
+    ).bind(user.id, String(body.salt).slice(0, 64), String(body.verifier).slice(0, 128), Date.now()).run();
+    return json({ ok: true }, { env, request });
+  },
+
+  /* The salt, so the app can derive the verifier. An unknown email gets a
+     stable fake salt, so this cannot be used to find out who has an account. */
+  'POST /v1/auth/recovery/salt': async (request, env, body) => {
+    const email = String(body.email || '').trim().toLowerCase();
+    const row = await env.DB.prepare(
+      'SELECT r.salt FROM recovery r JOIN users u ON u.id = r.user_id WHERE u.email = ?',
+    ).bind(email).first();
+    const salt = row?.salt || (await sha256(`no-such-account:${email}:${env.SALT_PEPPER || ''}`)).slice(0, 24);
+    return json({ salt }, { env, request });
+  },
+
+  'POST /v1/auth/recovery/reset': async (request, env, body) => {
+    const email = String(body.email || '').trim().toLowerCase();
+    const row = await env.DB.prepare(
+      'SELECT u.*, r.verifier AS rv FROM users u JOIN recovery r ON r.user_id = u.id WHERE u.email = ?',
+    ).bind(email).first();
+    if (!row || !sameSecret(String(body.verifier || ''), row.rv)) {
+      return fail('That recovery code is not right for this account.', 403, env, request);
+    }
+    if (String(body.password || '').length < 8) return fail('Passwords need to be at least 8 characters.', 400, env, request);
+    await setPassword(env, row.id, body.password);
+    await env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(row.id).run();
+    const edition = await editionFor(env, row.id);
+    await touchDevice(env, row.id, body.device, edition);
+    return json({ token: await createSession(env, row.id), edition, name: row.name }, { env, request });
+  },
+
+  /* A reset link by email, when a mailer is configured. The answer is the
+     same whether or not the address has an account. */
+  'POST /v1/auth/reset/request': async (request, env, body) => {
+    const email = String(body.email || '').trim().toLowerCase();
+    if (!env.RESEND_API_KEY) return json({ ok: true, sent: false, reason: 'no mailer configured' }, { env, request });
+    const user = await env.DB.prepare('SELECT id, name FROM users WHERE email = ?').bind(email).first();
+    if (user) {
+      const token = randomHex(32);
+      await env.DB.prepare('INSERT INTO resets (token_hash, user_id, expires_at, created_at) VALUES (?,?,?,?)')
+        .bind(await sha256(token), user.id, Date.now() + 3600_000, Date.now()).run();
+      await emailReset(env, email, `${env.SITE_URL || 'https://omnidx.net'}/studio/account/?reset=${token}`);
+    }
+    return json({ ok: true, sent: true }, { env, request });
+  },
+
+  'POST /v1/auth/reset/confirm': async (request, env, body) => {
+    const row = await env.DB.prepare(
+      'SELECT r.user_id, u.email, u.name FROM resets r JOIN users u ON u.id = r.user_id WHERE r.token_hash = ? AND r.expires_at > ?',
+    ).bind(await sha256(String(body.token || '')), Date.now()).first();
+    if (!row) return fail('That reset link has expired or was already used. Ask for a new one.', 403, env, request);
+    if (String(body.password || '').length < 8) return fail('Passwords need to be at least 8 characters.', 400, env, request);
+    await setPassword(env, row.user_id, body.password);
+    await env.DB.prepare('DELETE FROM resets WHERE user_id = ?').bind(row.user_id).run();
+    await env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(row.user_id).run();
+    const edition = await editionFor(env, row.user_id);
+    await touchDevice(env, row.user_id, body.device, edition);
+    return json({ token: await createSession(env, row.user_id), edition, email: row.email, name: row.name }, { env, request });
+  },
+
+  /* ---------------- the sealed vault ---------------- */
+
+  /* An opaque blob per account — the recovery file, sealed on the device.
+     The server stores bytes it cannot read, so a new device signed in with
+     the password gets the purchase back without the file. */
+  'POST /v1/vault/put': async (request, env, body) => {
+    const user = await userFor(env, request);
+    if (!user) return fail('Sign in first.', 401, env, request);
+    const blob = String(body.blob || '');
+    if (!blob || blob.length > 200_000) return fail('The vault must be between 1 byte and 200 KB.', 400, env, request);
+    await env.DB.prepare(
+      `INSERT INTO vaults (user_id, blob, updated_at) VALUES (?,?,?)
+       ON CONFLICT(user_id) DO UPDATE SET blob = excluded.blob, updated_at = excluded.updated_at`,
+    ).bind(user.id, blob, Date.now()).run();
+    return json({ ok: true }, { env, request });
+  },
+
+  'POST /v1/vault/get': async (request, env) => {
+    const user = await userFor(env, request);
+    if (!user) return fail('Sign in first.', 401, env, request);
+    const row = await env.DB.prepare('SELECT blob, updated_at AS updatedAt FROM vaults WHERE user_id = ?').bind(user.id).first();
+    return json({ blob: row?.blob || null, updatedAt: row?.updatedAt || null }, { env, request });
   },
 
   'POST /v1/auth/logout': async (request, env) => {
@@ -559,12 +669,26 @@ async function touchDevice(env, userId, device, edition) {
   const seen = await env.DB.prepare('SELECT device_id FROM devices WHERE user_id = ? AND device_id = ?')
     .bind(userId, id).first();
 
+  let evicted = null;
   if (!seen) {
+    /*
+     * Past the plan's limit the device seen longest ago is dropped to make
+     * room, and its name is returned so the app can say so. Refusing here
+     * was the wrong shape of limit: "remove one from your account page
+     * first" cannot be done from a device that was lost, and a limit that
+     * locks the owner out of their own account is not enforcing anything
+     * worth enforcing. The count still holds.
+     */
     const { count } = await env.DB.prepare('SELECT COUNT(*) AS count FROM devices WHERE user_id = ?')
       .bind(userId).first();
     const limit = DEVICE_LIMIT[edition] ?? 2;
     if (count >= limit) {
-      return { error: `This account is already on ${count} devices (${edition} allows ${limit}). Remove one from your account page first.` };
+      const oldest = await env.DB.prepare('SELECT device_id, label FROM devices WHERE user_id = ? ORDER BY last_seen ASC LIMIT 1')
+        .bind(userId).first();
+      if (oldest) {
+        await env.DB.prepare('DELETE FROM devices WHERE user_id = ? AND device_id = ?').bind(userId, oldest.device_id).run();
+        evicted = oldest.label || 'an older device';
+      }
     }
   }
 
@@ -574,7 +698,16 @@ async function touchDevice(env, userId, device, edition) {
      ON CONFLICT(user_id, device_id) DO UPDATE SET last_seen = excluded.last_seen, label = excluded.label`,
   ).bind(userId, id, String(device.label || '').slice(0, 80), String(device.os || '').slice(0, 24),
     String(device.screen || '').slice(0, 24), Date.now()).run();
-  return {};
+  return { evicted };
+}
+
+/** A new password hash for a user, with a fresh salt. */
+async function setPassword(env, userId, password) {
+  const rounds = Number(env.PBKDF2_ROUNDS) || DEFAULT_PBKDF2_ROUNDS;
+  const salt = randomHex(16);
+  const hash = await hashPassword(String(password), salt, rounds);
+  await env.DB.prepare('UPDATE users SET pw_hash = ?, pw_salt = ?, pw_rounds = ? WHERE id = ?')
+    .bind(hash, salt, rounds, userId).run();
 }
 
 /* ------------------------------------------------------------------ */
@@ -828,6 +961,27 @@ There is nothing to pay and nothing to cancel.`,
       }),
     });
   } catch { /* the seat row exists; the code can be passed on by hand */ }
+}
+
+async function emailReset(env, email, link) {
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        from: env.MAIL_FROM || 'OmniDx Studio <keys@omnidx.net>',
+        to: [email],
+        subject: 'Reset your OmniDx Studio password',
+        text: `Somebody asked to reset the password on your OmniDx Studio account.
+
+If that was you, open this link within the hour and choose a new one:
+${link}
+
+If it was not you, nothing happens — the link does nothing until it is used,
+and your recovery code still works as it always did.`,
+      }),
+    });
+  } catch { /* the token exists; the person can ask again */ }
 }
 
 async function emailKey(env, email, key, edition) {

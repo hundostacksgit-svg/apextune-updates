@@ -27,6 +27,10 @@ PBKDF2_ROUNDS = "210000"
 CLAUDE_MODEL = "claude-opus-5"
 
 MAIL_FROM = "OmniDx Studio <keys@omnidx.net>"
+# Where password-reset links point, and a pepper for the fake salts that hide
+# which emails have accounts. Set the pepper to any long random string.
+SITE_URL = "https://omnidx.net"
+SALT_PEPPER = "change-me-to-a-long-random-string"
 
 # Secrets are NOT set here — they would end up in git. Set each one with:
 #   npx wrangler secret put ANTHROPIC_API_KEY
