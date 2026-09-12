@@ -138,7 +138,18 @@ export function paintUndoButtons() {
     undo.disabled = !h?.canUndo;
     undo.title = label ? `Undo ${label} (Ctrl+Z)` : 'Nothing to undo';
     const lbl = $('.lbl', undo);
-    if (lbl) lbl.textContent = label ? `Undo ${label}` : 'Undo';
+    // The action's name is its own element, so a narrower window can keep the
+    // word "Undo" and drop "Adjust audio filter" — which is up to 170px the bar
+    // does not have below about 1750px.
+    if (lbl) {
+      lbl.textContent = 'Undo';
+      if (label) {
+        const what = document.createElement('em');
+        what.className = 'what';
+        what.textContent = ` ${label}`;
+        lbl.appendChild(what);
+      }
+    }
   }
   if (redo) {
     const label = h?.redoLabel;

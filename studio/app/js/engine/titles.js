@@ -74,10 +74,21 @@ export const CAPTION_STYLES = {
 };
 
 export const ANIMS = [
-  ['none', 'None'], ['fade', 'Fade in'], ['pop', 'Pop'], ['slideUp', 'Slide up'],
-  ['typewriter', 'Typewriter'], ['wordPop', 'Word by word'], ['karaoke', 'Karaoke highlight'],
-  ['shake', 'Shake'], ['bounce', 'Bounce'],
+  ['none', 'None'], ['fade', 'Fade in'], ['pop', 'Pop'], ['slideUp', 'Slide up'], ['slideDown', 'Slide down'],
+  ['slideLeft', 'From the right'], ['slideRight', 'From the left'], ['zoomIn', 'Zoom in'], ['zoomOut', 'Zoom out'],
+  ['blurIn', 'Blur in'], ['spinIn', 'Spin in'], ['flipIn', 'Flip in'], ['dropIn', 'Drop in'], ['riseUp', 'Rise'],
+  ['rubber', 'Rubber band'], ['typewriter', 'Typewriter'], ['scramble', 'Scramble'], ['wordPop', 'Word by word'],
+  ['wordSlide', 'Words slide in'], ['karaoke', 'Karaoke highlight'], ['letterPop', 'Letter by letter'],
+  ['letterFall', 'Letters fall'], ['letterRise', 'Letters rise'], ['wave', 'Wave'], ['tracking', 'Tracking in'],
+  ['wipe', 'Wipe reveal'], ['glitch', 'Glitch'], ['flicker', 'Neon flicker'], ['shake', 'Shake'], ['bounce', 'Bounce'],
+  ['pulse', 'Pulse (loops)'], ['breathe', 'Breathe (loops)'], ['swing', 'Swing (loops)'], ['jitter', 'Jitter (loops)'],
+  ['blink', 'Blink (loops)'],
 ];
+export const ANIM_NAME = Object.fromEntries(ANIMS);
+
+/* The ones that move each character on its own. They draw through a different
+   path, because a whole-line transform cannot make one letter arrive late. */
+const PER_CHAR = new Set(['letterPop', 'letterFall', 'letterRise', 'wave', 'scramble', 'glitch', 'tracking']);
 
 export function defaultText(content = 'Your text here') {
   return {
@@ -99,6 +110,30 @@ export function defaultText(content = 'Your text here') {
     maxWidth: 0.86,
     letterSpacing: 0,
     uppercase: false,
+
+    /*
+     * The style layer. Everything below is off by default, so a title made
+     * before these existed draws exactly as it did.
+     *
+     * opacity      — the whole title, translucent
+     * gradient     — [colour, colour, …] replacing the fill, top to bottom at
+     *                gradientAngle degrees; "shaded" is a gradient of one hue
+     * glow         — a coloured halo, glowBlur in fractions of the size
+     * extrude      — a 3D block behind the face, extrudeDepth in fractions of
+     *                the size, along extrudeAngle
+     * outline2     — a second, outer outline behind the first
+     */
+    opacity: 1,
+    gradient: null,
+    gradientAngle: 90,
+    glow: null,
+    glowBlur: 0.35,
+    extrude: null,
+    extrudeDepth: 0.08,
+    extrudeAngle: 45,
+    outline2: null,
+    outline2Width: 0.08,
+    styleId: null,       // which library style this came from, for the chip
   };
 }
 
@@ -127,33 +162,109 @@ function wrap(ctx, text, maxWidth) {
 /* animation                                                           */
 /* ------------------------------------------------------------------ */
 
+const ease = (x) => 1 - (1 - x) ** 3;
+const easeInOut = (x) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2);
+/* Elastic: overshoots and settles. The rubber band, the pop with a spring. */
+const elastic = (x) => (x === 0 || x === 1 ? x : 2 ** (-10 * x) * Math.sin((x * 10 - 0.75) * (2 * Math.PI / 3)) + 1);
+/* A cheap deterministic hash, so a glitch is the same every frame you scrub to. */
+const hash = (n) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+
 /**
  * Returns the per-frame drawing modifiers for an animation at local time t.
  * Everything is expressed as offsets and multipliers so the draw code below
  * stays one path regardless of which animation is running.
+ *
+ * `perChar(i, n)` is only set for the per-character animations and gives the
+ * transform for character i of n, in the same units.
  */
 function animState(anim, t, dur, clipDur) {
   const inP = Math.min(1, Math.max(0, t / Math.max(0.05, dur)));
   const outStart = clipDur - dur;
   const outP = clipDur > dur * 2 ? Math.min(1, Math.max(0, (t - outStart) / Math.max(0.05, dur))) : 0;
-  const ease = (x) => 1 - (1 - x) ** 3;
-  const base = { alpha: 1, scale: 1, dy: 0, dx: 0, reveal: 1, wordIndex: Infinity, karaoke: -1 };
+  const inOut = ease(inP) * (1 - ease(outP));
+  const base = {
+    alpha: 1, scale: 1, dy: 0, dx: 0, rot: 0, skew: 0, blur: 0, reveal: 1, wipe: 1, spacing: 0,
+    wordIndex: Infinity, wordSlide: false, karaoke: -1, perChar: null, rgb: 0,
+  };
+  // Stagger for the per-character ones: each letter starts a little after the
+  // one before, and the whole word has finished inside `dur`.
+  const stagger = (i, n, spread = 0.7) => {
+    const per = (dur * spread) / Math.max(1, n);
+    const local = (t - i * per) / Math.max(0.05, dur * (1 - spread));
+    return Math.min(1, Math.max(0, local));
+  };
 
   switch (anim) {
     case 'fade':
-      return { ...base, alpha: ease(inP) * (1 - ease(outP)) };
+      return { ...base, alpha: inOut };
     case 'pop': {
       const s = inP < 1 ? 0.6 + ease(inP) * 0.46 : 1;      // overshoots to 1.06 then settles
-      return { ...base, alpha: ease(inP) * (1 - ease(outP)), scale: inP < 1 ? Math.min(s, 1.06) : 1 };
+      return { ...base, alpha: inOut, scale: inP < 1 ? Math.min(s, 1.06) : 1 };
     }
     case 'slideUp':
-      return { ...base, alpha: ease(inP) * (1 - ease(outP)), dy: (1 - ease(inP)) * 0.09 };
+      return { ...base, alpha: inOut, dy: (1 - ease(inP)) * 0.09 };
+    case 'slideDown':
+      return { ...base, alpha: inOut, dy: -(1 - ease(inP)) * 0.09 };
+    case 'slideLeft':
+      return { ...base, alpha: inOut, dx: (1 - ease(inP)) * 0.18 };
+    case 'slideRight':
+      return { ...base, alpha: inOut, dx: -(1 - ease(inP)) * 0.18 };
+    case 'zoomIn':
+      return { ...base, alpha: inOut, scale: 0.3 + ease(inP) * 0.7 };
+    case 'zoomOut':
+      return { ...base, alpha: inOut, scale: 2.2 - ease(inP) * 1.2 };
+    case 'blurIn':
+      return { ...base, alpha: inOut, blur: (1 - ease(inP)) * 0.6 };
+    case 'spinIn':
+      return { ...base, alpha: inOut, rot: (1 - ease(inP)) * Math.PI * 0.75, scale: 0.5 + ease(inP) * 0.5 };
+    case 'flipIn':
+      return { ...base, alpha: inOut, skew: (1 - ease(inP)) * 1.2, scale: 0.85 + ease(inP) * 0.15 };
+    case 'dropIn': {
+      // Falls from above and lands with a bounce.
+      const p = inP;
+      const b = p < 1 ? Math.abs(Math.sin(p * Math.PI * 1.5)) * (1 - p) ** 2 * 0.12 : 0;
+      return { ...base, alpha: Math.min(1, inP * 3) * (1 - ease(outP)), dy: -((1 - p) ** 2) * 0.4 + b };
+    }
+    case 'riseUp':
+      return { ...base, alpha: inOut, dy: (1 - easeInOut(inP)) * 0.25, scale: 0.92 + ease(inP) * 0.08 };
+    case 'rubber':
+      return { ...base, alpha: inOut, scale: inP < 1 ? 0.2 + elastic(inP) * 0.8 : 1 };
     case 'typewriter':
       return { ...base, reveal: inP };
+    case 'scramble':
+      // Letters land one by one; the ones still in the air show random glyphs.
+      return { ...base, perChar: (i, n) => ({ settled: stagger(i, n, 0.85) >= 1, alpha: 1, dx: 0, dy: 0, scale: 1, rot: 0 }) };
     case 'wordPop':
       return { ...base, wordIndex: inP };
+    case 'wordSlide':
+      return { ...base, wordIndex: inP, wordSlide: true };
     case 'karaoke':
       return { ...base, karaoke: clipDur > 0 ? t / clipDur : 0 };
+    case 'letterPop':
+      return { ...base, alpha: 1 - ease(outP), perChar: (i, n) => { const p = stagger(i, n); return { alpha: ease(p), scale: p < 1 ? Math.min(0.4 + ease(p) * 0.68, 1.08) : 1, dx: 0, dy: 0, rot: 0 }; } };
+    case 'letterFall':
+      return { ...base, alpha: 1 - ease(outP), perChar: (i, n) => { const p = stagger(i, n); return { alpha: Math.min(1, p * 3), dy: -(1 - ease(p)) * 0.35, dx: 0, scale: 1, rot: (1 - ease(p)) * 0.4 * (i % 2 ? 1 : -1) }; } };
+    case 'letterRise':
+      return { ...base, alpha: 1 - ease(outP), perChar: (i, n) => { const p = stagger(i, n); return { alpha: ease(p), dy: (1 - ease(p)) * 0.3, dx: 0, scale: 1, rot: 0 }; } };
+    case 'wave':
+      return { ...base, alpha: inOut, perChar: (i) => ({ alpha: 1, dy: Math.sin(t * 6 + i * 0.6) * 0.035, dx: 0, scale: 1, rot: Math.sin(t * 6 + i * 0.6) * 0.06 }) };
+    case 'tracking':
+      // Starts spread wide and tightens into place. The cinematic title card.
+      return { ...base, alpha: inOut, spacing: (1 - ease(inP)) * 0.5, perChar: (i) => ({ alpha: 1, dx: 0, dy: 0, scale: 1, rot: 0, i }) };
+    case 'wipe':
+      return { ...base, wipe: ease(inP), alpha: 1 - ease(outP) };
+    case 'glitch': {
+      // Bursts of displacement that settle. Deterministic on t, so scrubbing
+      // back to a frame shows the same tear.
+      const burst = inP < 1 ? (1 - inP) : (hash(Math.floor(t * 9)) > 0.86 ? 0.25 : 0);
+      return { ...base, alpha: inOut, rgb: burst * 0.02,
+        perChar: (i) => { const h = hash(i * 7 + Math.floor(t * 24)); return { alpha: 1, dx: (h - 0.5) * burst * 0.06, dy: (hash(i * 3 + Math.floor(t * 24)) - 0.5) * burst * 0.03, scale: 1, rot: 0 }; } };
+    }
+    case 'flicker': {
+      // A neon tube warming up: stutters, then holds, with the odd dip after.
+      const warm = inP < 1 ? (hash(Math.floor(t * 30)) > 0.45 ? 1 : 0.15) : (hash(Math.floor(t * 4)) > 0.93 ? 0.4 : 1);
+      return { ...base, alpha: warm * (1 - ease(outP)) };
+    }
     case 'shake': {
       const a = Math.sin(t * 34) * 0.006 * (1 - inP * 0.5);
       return { ...base, dx: a, dy: Math.cos(t * 41) * 0.005, alpha: ease(inP) };
@@ -162,6 +273,16 @@ function animState(anim, t, dur, clipDur) {
       const b = inP < 1 ? Math.abs(Math.sin(inP * Math.PI * 2)) * (1 - inP) * 0.06 : 0;
       return { ...base, dy: -b, alpha: ease(inP) };
     }
+    case 'pulse':
+      return { ...base, alpha: inOut, scale: 1 + Math.max(0, Math.sin(t * 5.2)) ** 6 * 0.12 };
+    case 'breathe':
+      return { ...base, alpha: inOut, scale: 1 + Math.sin(t * 1.6) * 0.04 };
+    case 'swing':
+      return { ...base, alpha: inOut, rot: Math.sin(t * 2.4) * 0.07 };
+    case 'jitter':
+      return { ...base, alpha: inOut, dx: (hash(Math.floor(t * 20)) - 0.5) * 0.008, dy: (hash(Math.floor(t * 20) + 99) - 0.5) * 0.008 };
+    case 'blink':
+      return { ...base, alpha: (Math.floor(t * 2.5) % 2 === 0 ? 1 : 0.12) * (1 - ease(outP)) };
     default:
       return base;
   }
@@ -181,13 +302,19 @@ export function drawText(ctx, w, h, text, t = 0, clipDur = 3) {
   const font = FONT_BY_ID[st.font]?.stack || FONTS[0].stack;
   const a = animState(st.anim, t, st.animDur ?? 0.45, clipDur);
   if (a.alpha <= 0.002) return;
+  // The frame's own time drives anything random-looking, so two renders of
+  // the same moment draw the same glyphs — in the export and under the scrub.
+  const prevClock = renderClock;
+  renderClock = t;
 
   ctx.save();
-  ctx.globalAlpha = a.alpha;
+  ctx.globalAlpha = a.alpha * Math.max(0, Math.min(1, st.opacity ?? 1));
   ctx.font = `${st.weight} ${size}px ${font}`;
   ctx.textBaseline = 'middle';
   ctx.textAlign = st.align;
-  if (st.letterSpacing) ctx.letterSpacing = `${(st.letterSpacing * size).toFixed(2)}px`;
+  const spacing = (st.letterSpacing || 0) + a.spacing;
+  if (spacing) ctx.letterSpacing = `${(spacing * size).toFixed(2)}px`;
+  if (a.blur > 0.01) ctx.filter = `blur(${(a.blur * size * 0.25).toFixed(1)}px)`;
 
   let content = String(st.content ?? '');
   if (st.uppercase) content = content.toUpperCase();
@@ -202,7 +329,18 @@ export function drawText(ctx, w, h, text, t = 0, clipDur = 3) {
 
   ctx.translate(cx, cy);
   ctx.scale(a.scale, a.scale);
+  if (a.rot) ctx.rotate(a.rot);
+  if (a.skew) ctx.transform(1, 0, a.skew, 1, 0, 0);
   ctx.translate(-cx, -cy);
+
+  // A wipe reveal is a clip that widens across the block from the left.
+  if (a.wipe < 1) {
+    const widest = Math.max(...lines.map((l) => ctx.measureText(l).width), 0) + size;
+    const left = st.align === 'left' ? cx - size * 0.5 : st.align === 'right' ? cx - widest + size * 0.5 : cx - widest / 2;
+    ctx.beginPath();
+    ctx.rect(left, top - lineH, widest * a.wipe, totalH + lineH);
+    ctx.clip();
+  }
 
   // background box, sized to the widest line
   if (st.box) {
@@ -214,25 +352,51 @@ export function drawText(ctx, w, h, text, t = 0, clipDur = 3) {
     ctx.fill();
   }
 
-  if (st.shadow) {
-    ctx.shadowColor = 'rgba(0,0,0,.55)';
-    ctx.shadowBlur = size * 0.22;
-    ctx.shadowOffsetY = size * 0.045;
-  }
-
   lines.forEach((line, i) => {
     const y = top + i * lineH;
-    if (st.anim === 'wordPop' || st.anim === 'karaoke') {
+    if (a.perChar || PER_CHAR.has(st.anim)) {
+      drawChars(ctx, line, cx, y, size, st, a, lines.length, i);
+    } else if (st.anim === 'wordPop' || st.anim === 'wordSlide' || st.anim === 'karaoke') {
       drawWords(ctx, line, cx, y, size, st, a, lines.length, i);
     } else {
-      strokeAndFill(ctx, line, cx, y, size, st);
+      paintLine(ctx, line, cx, y, size, st);
     }
   });
 
   ctx.restore();
+  renderClock = prevClock;
 }
 
-function strokeAndFill(ctx, line, x, y, size, st) {
+/**
+ * One run of text with the whole style on it, in the order the layers stack:
+ * the 3D block furthest back, then the outer outline, the outline, the glow,
+ * and the face on top. Shadow is a property of the face, so it is set last —
+ * a shadow under every extrusion step would be a smear.
+ */
+function paintLine(ctx, line, x, y, size, st, { colour = null } = {}) {
+  if (!line) return;
+  ctx.save();
+
+  if (st.extrude && st.extrudeDepth > 0) {
+    const steps = Math.max(1, Math.round(st.extrudeDepth * size * 0.5));
+    const ang = ((st.extrudeAngle ?? 45) * Math.PI) / 180;
+    const ox = Math.cos(ang), oy = Math.sin(ang);
+    const total = st.extrudeDepth * size;
+    ctx.fillStyle = st.extrude;
+    for (let k = steps; k >= 1; k--) {
+      const d = (k / steps) * total;
+      ctx.fillText(line, x + ox * d, y + oy * d);
+    }
+  }
+
+  if (st.outline2 && st.outline2Width > 0) {
+    ctx.lineWidth = size * ((st.strokeWidth || 0) + st.outline2Width);
+    ctx.lineJoin = 'round';
+    ctx.miterLimit = 2;
+    ctx.strokeStyle = st.outline2;
+    ctx.strokeText(line, x, y);
+  }
+
   if (st.stroke && st.strokeWidth > 0) {
     ctx.lineWidth = size * st.strokeWidth;
     ctx.lineJoin = 'round';
@@ -240,8 +404,43 @@ function strokeAndFill(ctx, line, x, y, size, st) {
     ctx.strokeStyle = st.stroke;
     ctx.strokeText(line, x, y);
   }
-  ctx.fillStyle = st.color;
+
+  if (st.glow) {
+    // Twice, because one pass of a soft shadow is a faint tint and neon is
+    // not faint.
+    ctx.shadowColor = st.glow;
+    ctx.shadowBlur = size * (st.glowBlur ?? 0.35);
+    ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
+    ctx.fillStyle = st.glow;
+    ctx.fillText(line, x, y);
+    ctx.fillText(line, x, y);
+    ctx.shadowBlur = 0;
+  } else if (st.shadow) {
+    ctx.shadowColor = 'rgba(0,0,0,.55)';
+    ctx.shadowBlur = size * 0.22;
+    ctx.shadowOffsetY = size * 0.045;
+  }
+
+  ctx.fillStyle = colour || fillFor(ctx, line, x, y, size, st);
   ctx.fillText(line, x, y);
+  ctx.restore();
+}
+
+/** Solid colour, or a gradient sized to this run of text. */
+function fillFor(ctx, line, x, y, size, st) {
+  if (!st.gradient || !st.gradient.length) return st.color;
+  const w = ctx.measureText(line).width || size;
+  const left = st.align === 'left' ? x : st.align === 'right' ? x - w : x - w / 2;
+  const ang = ((st.gradientAngle ?? 90) * Math.PI) / 180;
+  // The gradient axis runs through the middle of the text block at `angle`,
+  // long enough to cover it whichever way it points.
+  const half = Math.max(w, size) / 2;
+  const cx = left + w / 2;
+  const dx = Math.cos(ang) * half, dy = Math.sin(ang) * half;
+  const g = ctx.createLinearGradient(cx - dx, y - dy, cx + dx, y + dy);
+  const stops = st.gradient;
+  stops.forEach((c, i) => g.addColorStop(stops.length === 1 ? 0 : i / (stops.length - 1), c));
+  return g;
 }
 
 /** Word-by-word reveal and karaoke share this path; they differ only in which
@@ -257,7 +456,6 @@ function drawWords(ctx, line, cx, y, size, st, a, lineCount, lineIndex) {
   const prevAlign = ctx.textAlign;
   ctx.textAlign = 'left';
 
-  const globalIndex = lineIndex * 100;   // keeps ordering stable across lines
   const shown = a.wordIndex === Infinity ? words.length
     : Math.ceil(a.wordIndex * words.length * lineCount) - lineIndex * words.length;
   const active = a.karaoke >= 0 ? Math.floor(a.karaoke * words.length * lineCount) - lineIndex * words.length : -1;
@@ -265,22 +463,75 @@ function drawWords(ctx, line, cx, y, size, st, a, lineCount, lineIndex) {
   words.forEach((word, i) => {
     if (a.wordIndex !== Infinity && i >= shown) { x += widths[i] + space; return; }
     const isActive = active === i;
-    const saveColor = st.color;
-    const colour = isActive && st.highlight ? st.highlight : saveColor;
-    if (st.stroke && st.strokeWidth > 0) {
-      ctx.lineWidth = size * st.strokeWidth;
-      ctx.lineJoin = 'round';
-      ctx.strokeStyle = st.stroke;
-      ctx.strokeText(word, x, y);
+    // A karaoke with no highlight colour set is a karaoke that does nothing
+    // visible, so the brand blue stands in until somebody picks one.
+    const colour = isActive ? (st.highlight || '#00d1ff') : null;
+    // The newest word slides in from below when the animation asks for it.
+    let dy = 0;
+    if (a.wordSlide && a.wordIndex !== Infinity && i === shown - 1) {
+      const frac = (a.wordIndex * words.length * lineCount) - (lineIndex * words.length + i);
+      dy = (1 - Math.min(1, Math.max(0, frac))) * size * 0.35;
     }
-    ctx.fillStyle = colour;
-    ctx.fillText(word, x, y);
-    void globalIndex;
+    paintLine(ctx, word, x, y + dy, size, st, { colour });
     x += widths[i] + space;
   });
 
   ctx.textAlign = prevAlign;
 }
+
+/*
+ * One character at a time.
+ *
+ * Each glyph is measured and placed by hand, then drawn through paintLine so
+ * it carries the whole style — a 3D extrusion on a letter that is still
+ * falling into place has to fall with it.
+ */
+const SCRAMBLE = 'ABCDEFGHJKLMNPQRSTUVWXYZ023456789#%&';
+function drawChars(ctx, line, cx, y, size, st, a, lineCount, lineIndex) {
+  const chars = [...line];
+  if (!chars.length) return;
+  const widths = chars.map((c) => ctx.measureText(c).width);
+  const total = widths.reduce((s, v) => s + v, 0);
+  let x = st.align === 'left' ? cx : st.align === 'right' ? cx - total : cx - total / 2;
+  const prevAlign = ctx.textAlign;
+  ctx.textAlign = 'left';
+  const n = chars.length * lineCount;
+
+  chars.forEach((ch, i) => {
+    const idx = lineIndex * chars.length + i;
+    const c = a.perChar ? a.perChar(idx, n) : { alpha: 1, dx: 0, dy: 0, scale: 1, rot: 0 };
+    let glyph = ch;
+    if (st.anim === 'scramble' && c.settled === false && ch !== ' ') {
+      glyph = SCRAMBLE[Math.floor(hash(idx * 13 + Math.floor(performanceNow() * 18)) * SCRAMBLE.length)];
+    }
+    if (c.alpha > 0.003 && ch !== ' ') {
+      ctx.save();
+      ctx.globalAlpha *= Math.max(0, Math.min(1, c.alpha));
+      const gx = x + widths[i] / 2, gy = y;
+      ctx.translate(gx + c.dx * size * 4, gy + c.dy * size * 4);
+      if (c.rot) ctx.rotate(c.rot);
+      if (c.scale !== 1) ctx.scale(c.scale, c.scale);
+      ctx.translate(-widths[i] / 2, 0);
+      // A glitch tears the colour channels apart by a few pixels.
+      if (a.rgb > 0) {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        paintLine(ctx, glyph, -a.rgb * size * 2, 0, size, { ...st, glow: null, extrude: null, outline2: null, stroke: null, shadow: false }, { colour: 'rgba(255,40,80,.85)' });
+        paintLine(ctx, glyph, a.rgb * size * 2, 0, size, { ...st, glow: null, extrude: null, outline2: null, stroke: null, shadow: false }, { colour: 'rgba(0,209,255,.85)' });
+        ctx.restore();
+      }
+      paintLine(ctx, glyph, 0, 0, size, st);
+      ctx.restore();
+    }
+    x += widths[i];
+  });
+  ctx.textAlign = prevAlign;
+}
+
+/* The clock the scramble reads: the frame's time, set by drawText for the
+   duration of a draw. Exported so a preview can pin it explicitly. */
+let renderClock = 0;
+export function setTextClock(seconds) { renderClock = seconds ?? 0; }
+function performanceNow() { return renderClock || 0; }
 
 function roundRect(ctx, x, y, w, h, r) {
   const rad = Math.min(r, w / 2, h / 2);

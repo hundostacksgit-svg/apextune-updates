@@ -4,6 +4,8 @@ import { $, $$, esc, toast, slider, selectRow, toggleRow, group } from '../ui.js
 import { S, actions, drawFrame } from '../main.js';
 import { addClip, addTrack, clipById, duration } from '../engine/project.js';
 import { TITLE_PRESETS, FONT_GROUPS, ANIMS, defaultText } from '../engine/titles.js';
+import { TEXT_STYLE_GROUPS, applyTextStyle } from '../engine/text-styles.js';
+import { attachPreviews } from '../engine/preview.js';
 import { loadFont, isLoaded } from '../engine/fonts-library.js';
 import { EMOJI, SHAPES, STICKER_ANIMS, defaultSticker } from '../engine/stickers.js';
 import * as licence from '../licence.js';
@@ -28,8 +30,11 @@ export function mount(host) {
 
     ${clip ? styleEditor(clip) : `
       <div class="note tiny" style="margin-top:14px">
-        Tap a style to drop a title at the playhead. Select it on the timeline to edit the words.
+        Tap a layout to drop a title at the playhead. Select it on the timeline to edit the words.
       </div>`}
+
+    ${styleGallery(clip)}
+    ${animGallery(clip)}
 
     <details class="group" style="margin-top:16px" ${stickerClip ? 'open' : ''}>
       <summary>Stickers &amp; callouts</summary>
@@ -88,6 +93,40 @@ export function mount(host) {
     const feature = btn.dataset.tier === 'free' ? 'text' : 'all-filters';
     licence.gate(feature, () => addTitle(btn.dataset.preset), { what: 'That title style' });
   });
+
+  /*
+   * A style or an animation goes on the selected title, or — with none
+   * selected — onto a fresh one at the playhead, so the gallery is never a
+   * row of buttons that do nothing until you have done something else first.
+   */
+  $('#t-styles', host)?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-tstyle]');
+    if (!btn) return;
+    const feature = btn.dataset.tier === 'free' ? 'text' : 'all-filters';
+    licence.gate(feature, () => useStyle(btn.dataset.tstyle), { what: 'That text style' });
+  });
+  $('#t-anims', host)?.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-tanim]');
+    if (!btn) return;
+    useAnim(btn.dataset.tanim);
+  });
+  $('#t-style-search', host)?.addEventListener('input', (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    for (const grp of $$('#t-styles details', host)) {
+      let shown = 0;
+      for (const chip of $$('[data-tstyle]', grp)) {
+        const hit = !q || chip.dataset.search.includes(q);
+        chip.hidden = !hit;
+        if (hit) shown++;
+      }
+      grp.hidden = shown === 0;
+      if (q) grp.open = true;
+    }
+  });
+  // Every chip gets a real picture of itself — the style on the sample frame,
+  // the animation playing on hover — the same way the effect library does.
+  attachPreviews(host, 'tstyle');
+  attachPreviews(host, 'tanim');
 
   if (!clip) return;
 
@@ -230,7 +269,7 @@ function fmt(key, v) {
   return String(Math.round(v));
 }
 
-function addTitle(presetId) {
+function addTitle(presetId, { quiet = false } = {}) {
   const preset = TITLE_PRESETS.find((p) => p.id === presetId) || TITLE_PRESETS[0];
   let track = S.project.tracks.find((t) => t.kind === 'video' && t.name === 'Titles');
   if (!track) track = addTrack(S.project, 'video', 'Titles');
@@ -243,9 +282,77 @@ function addTitle(presetId) {
   });
   actions.select([clip.id]);
   actions.commit(`Add title (${preset.name})`);
-  toast('Title added — type into the Words box', 'ok');
+  if (!quiet) toast('Title added — type into the Words box', 'ok');
 }
 
+
+/* ------------------------------------------------------------------ */
+/* styles and animations                                                */
+/* ------------------------------------------------------------------ */
+
+function styleGallery(clip) {
+  const current = clip?.text?.styleId || null;
+  const groups = Object.entries(TEXT_STYLE_GROUPS);
+  const total = groups.reduce((n, [, l]) => n + l.length, 0);
+  const owning = groups.find(([, list]) => list.some((st) => st.id === current))?.[0];
+  return `
+    <details class="group" style="margin-top:16px" open id="t-style-wrap">
+      <summary>Text styles <span class="tiny muted">${total}</span></summary>
+      <div class="gbody">
+        <p class="tiny muted" style="margin:0 0 8px">Outlines, neon, gradients, shaded colours, 3D blocks, glass.
+          ${clip ? 'Tap one to restyle the selected title.' : 'Tap one to add a title in that style.'}</p>
+        <div class="field" style="margin:0 0 8px">
+          <input class="input" id="t-style-search" placeholder="Search styles — neon, gold, glass, 3D…" aria-label="Search text styles">
+        </div>
+        <div id="t-styles">
+          ${groups.map(([name, list]) => `
+            <details class="group" ${name === (owning || groups[0][0]) ? 'open' : ''}>
+              <summary>${esc(name)} <span class="tiny muted">${list.length}</span></summary>
+              <div class="gbody"><div class="chips chips-prev">${list.map((st) => {
+                const locked = st.tier !== 'free' && !licence.can('all-filters');
+                return `<button class="chip ${current === st.id ? 'on' : ''} ${locked ? 'locked' : ''}"
+                  data-tstyle="${esc(st.id)}" data-tier="${esc(st.tier)}"
+                  data-search="${esc(`${st.name} ${st.group} ${st.id}`.toLowerCase())}"
+                  title="${esc(st.name)}">${esc(st.name)}</button>`;
+              }).join('')}</div></div>
+            </details>`).join('')}
+        </div>
+      </div>
+    </details>`;
+}
+
+function animGallery(clip) {
+  const current = clip?.text?.anim || null;
+  return `
+    <details class="group" style="margin-top:12px" ${clip ? 'open' : ''} id="t-anim-wrap">
+      <summary>Animations <span class="tiny muted">${ANIMS.length}</span></summary>
+      <div class="gbody">
+        <p class="tiny muted" style="margin:0 0 8px">Hover or press one to watch it. Letter-by-letter, glitch, neon flicker, rubber band, wipe, and the loops.</p>
+        <div class="chips chips-prev" id="t-anims">
+          ${ANIMS.map(([id, name]) => `<button class="chip ${current === id ? 'on' : ''}"
+            data-tanim="${esc(id)}" title="${esc(name)}">${esc(name)}</button>`).join('')}
+        </div>
+      </div>
+    </details>`;
+}
+
+function selectedTitle() {
+  return [...S.sel].map((id) => clipById(S.project, id)).find((c) => c?.kind === 'title') || null;
+}
+
+function useStyle(styleId) {
+  if (!selectedTitle()) {
+    addTitle('headline', { quiet: true });
+  }
+  const before = selectedTitle();
+  actions.patchSelected((c) => { if (c.kind === 'title') applyTextStyle(c.text, styleId); }, `Text style: ${styleId}`);
+  if (before) toast('Style applied', 'ok');
+}
+
+function useAnim(anim) {
+  if (!selectedTitle()) addTitle('headline', { quiet: true });
+  actions.patchSelected((c) => { if (c.kind === 'title') c.text.anim = anim; }, `Text animation: ${anim}`);
+}
 
 /* ------------------------------------------------------------------ */
 /* stickers                                                            */

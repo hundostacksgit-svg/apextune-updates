@@ -251,7 +251,9 @@ export const GUIDE = [
     group: 'Text',
     title: 'Titles, captions and 194 typefaces',
     body: [
-      ['Adding a title', 'Text panel → tap a style. It lands at the playhead as a normal clip you can drag and trim.'],
+      ['Adding a title', 'Text panel → tap a layout. It lands at the playhead as a normal clip you can drag and trim.'],
+      ['Text styles', '49 of them under **Text styles**, each chip a real render of the style on a frame: bold and double outlines, neon in four colours, gold, chrome, sunset and holographic gradients, shaded reds and blues, 3D blocks and long shadows, glass, ghost and watermark translucency, 70s, 80s chrome, VHS, typewriter, comic, anime slam. Tap one with a title selected and only its look changes — the words, size and position are yours and stay. Tap one with nothing selected and it adds a title in that style.'],
+      ['Animations', '35 under **Animations**, and they play in their chips when you hover or press. Fade, pop, slides from every side, zoom, blur, spin, flip, drop-in, rubber band, typewriter, scramble, word-by-word, words sliding in, karaoke, letter-by-letter, letters falling and rising, wave, tracking-in, wipe reveal, glitch, neon flicker, and the loops: pulse, breathe, swing, jitter, blink.'],
       ['Choosing a typeface', 'Search the font list — every name is set in its own typeface, because a list of names in the system font tells you nothing. Picking one fetches it; the offline fallbacks are chosen to look like the real thing, so text still renders sensibly with no signal.'],
       ['Captions', 'Captions panel. Styles match what each platform produces, so a video posted from here does not look out of place next to native ones.'],
       ['Tracking text to something', 'Inspector → track a point in the clip, then pin the title to it. It follows.'],

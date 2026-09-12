@@ -187,7 +187,18 @@ html[data-level="expert"] .card-hint{display:none}
   padding:0 12px;background:var(--surface);border-bottom:1px solid var(--line);
   padding-top:env(safe-area-inset-top)}
 .tb-left,.tb-right,.tb-mid{display:flex;align-items:center;gap:6px;min-width:0}
-.tb-left{flex:1}.tb-right{flex:1;justify-content:flex-end}
+/*
+ * Sized from their contents, not equal thirds.
+ *
+ * With `flex:1` (basis 0) each side got exactly a third of the bar whatever
+ * was in it, and the menu bar plus the project name is wider than a third at
+ * anything under 1700px — so the left group overflowed its box and sat on
+ * top of the level switch. Basis auto lets each side take what it holds and
+ * share only the spare; the cascade below is what keeps the sum inside the
+ * window.
+ */
+.tb-left{flex:1 1 auto}.tb-right{flex:1 1 auto;justify-content:flex-end}
+.tb-left .proj-name{flex:0 1 auto;min-width:48px}
 .brand{display:flex;align-items:center;gap:8px;font-weight:600;color:var(--text-2);
   padding-right:8px;white-space:nowrap}
 .brand .mark{width:24px;height:24px;border-radius:7px;flex:none;
@@ -231,7 +242,36 @@ html[data-level="expert"] .card-hint{display:none}
 /* At Professional the chrome is neutral on purpose; the one exception is the
    way to pay, which keeps its colour because it is a link out, not a tool. */
 html[data-level="expert"] .tb-upgrade .lbl{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+/*
+ * The top bar gives ground in a fixed order as the window narrows, rather
+ * than letting its three groups slide over each other.
+ *
+ * Measured at 1280 wide: the menu bar on the left and the buttons on the
+ * right both overflowed their thirds and landed on top of the level switch,
+ * which then could not be clicked. Each step below was sized from a
+ * measurement of what overlapped at that width, and drops what carries the
+ * least first: the undo button's action name, then labels, then the brand
+ * name, the account name, the saved dot, then whole buttons that also live
+ * in a menu and the overflow sheet.
+ */
+@media(max-width:1899px){ .tb-undo .what{display:none} }
+@media(max-width:1750px){ #btn-palette .lbl,.bname{display:none} .tb-left .proj-name{max-width:120px} }
+@media(max-width:1500px){
+  .tb-undo .lbl,#acct-lbl{display:none}
+  .menubar .mn-btn{padding-left:6px;padding-right:6px}
+  .tb-left .proj-name{max-width:70px}
+}
+@media(max-width:1400px){ .tb-upgrade .lbl,#btn-export .lbl{display:none} .tb-upgrade{padding:6px 9px} }
+@media(max-width:1300px){ .saved,#btn-redo{display:none} }        /* Ctrl+Shift+Z, and in the Edit menu */
+@media(max-width:1100px){
+  #btn-theme,#btn-palette{display:none}       /* both in the overflow sheet and the View menu */
+  .menubar .mn-btn{padding-left:4px;padding-right:4px}
+  .tb-left .proj-name{max-width:56px}
+}
+@media(max-width:1000px){ .menubar .mn-btn{padding-left:4px;padding-right:4px;font-size:12px} }
 @media(max-width:900px){.tb-btn .lbl{display:none}}
+/* And whatever happens, the level switch is on top and clickable. */
+.tb-mid{flex:none;position:relative;z-index:3}
 .proj-name{background:transparent;border:1px solid transparent;border-radius:var(--r-s);
   padding:6px 10px;font-size:13.5px;font-weight:600;max-width:230px;min-width:90px;
   transition:border-color .14s,background .14s}
@@ -1470,7 +1510,8 @@ input[type=checkbox]{accent-color:var(--blue)}
 /* ===================================================================
    Undo
    =================================================================== */
-.tb-undo .lbl{max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb-undo .lbl{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tb-undo .what{font-style:normal;font-weight:500;color:var(--text-3)}
 
 /*
  * The bar that says what just happened.

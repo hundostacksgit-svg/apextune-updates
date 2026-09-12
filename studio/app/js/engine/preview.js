@@ -34,6 +34,8 @@
  */
 
 import { EFFECTS, makeEffect } from './effects.js';
+import { drawText, defaultText, setTextClock } from './titles.js';
+import { TEXT_STYLE_BY_ID } from './text-styles.js';
 import { LOOK_BY_ID, resolved, cssFilter, applyPasses } from './filters.js';
 import { TRANSITIONS } from './transitions.js';
 import { presetById } from './presets.js';
@@ -411,6 +413,45 @@ export function presetThumb(id, t = 0.55) {
 }
 
 /**
+ * A text style, drawn large on the sample frame.
+ *
+ * Big on purpose: a gradient or a 3D block at caption size is a smudge, and
+ * the chip's job is to show the difference between two styles at a glance.
+ */
+export function textStyleThumb(id) {
+  return cached(`tstyle:${id}:${userFrame ? 'u' : 'b'}`, () => {
+    const out = blank();
+    const ctx = out.getContext('2d');
+    ctx.drawImage(sourceFrame(), 0, 0, out.width, out.height);
+    const style = TEXT_STYLE_BY_ID[id];
+    if (!style) return out;
+    try {
+      drawText(ctx, out.width, out.height, {
+        ...defaultText('Aa'), ...style.text, content: style.text.uppercase ? 'AB' : 'Aa',
+        size: 0.5, x: 0.5, y: 0.52, anim: 'none', maxWidth: 0.95, align: 'center',
+      }, 0, 3);
+    } catch { /* a chip without a picture still works */ }
+    return out;
+  });
+}
+
+/** A text animation at a moment, drawn with a plain style so the motion reads. */
+export function textAnimThumb(id, t = 0.32) {
+  return cached(`tanim:${id}:${t.toFixed(2)}:${userFrame ? 'u' : 'b'}`, () => {
+    const out = blank();
+    const ctx = out.getContext('2d');
+    ctx.drawImage(sourceFrame(), 0, 0, out.width, out.height);
+    try {
+      setTextClock(t);
+      drawText(ctx, out.width, out.height, {
+        ...defaultText('Text'), size: 0.34, x: 0.5, y: 0.52, anim: id, animDur: 0.6, maxWidth: 0.95,
+      }, t, 2.4);
+    } catch { /* keep the frame */ } finally { setTextClock(null); }
+    return out;
+  });
+}
+
+/**
  * One transition, at a given point through it.
  *
  * Two versions of the sample frame are used as the outgoing and incoming
@@ -487,7 +528,7 @@ function observer() {
  */
 export function attachPreviews(host, kind = 'fx', selector = null) {
   const attr = { fx: 'data-fx', look: 'data-look', transition: 'data-trans',
-    preset: 'data-preset' }[kind];
+    preset: 'data-preset', tstyle: 'data-tstyle', tanim: 'data-tanim' }[kind];
   if (!attr || !host) return;
 
   for (const chip of host.querySelectorAll(selector || `[${attr}]`)) {
@@ -515,16 +556,19 @@ export function attachPreviews(host, kind = 'fx', selector = null) {
         if (kind === 'fx') paint(effectThumb(id));
         else if (kind === 'look') paint(lookThumb(id));
         else if (kind === 'preset') paint(presetThumb(id));
+        else if (kind === 'tstyle') paint(textStyleThumb(id));
+        else if (kind === 'tanim') paint(textAnimThumb(id, 0.32));
         else paint(transitionThumb(id, 0.45));
       } catch { /* a chip without a picture still works */ }
     });
     observer().observe(chip);
 
-    if (kind === 'transition' || kind === 'fx' || kind === 'preset') {
+    if (kind === 'transition' || kind === 'fx' || kind === 'preset' || kind === 'tanim') {
       let raf = 0, t0 = 0;
       const still = () => (kind === 'fx' ? effectThumb(id)
         : kind === 'preset' ? presetThumb(id)
-          : transitionThumb(id, 0.45));
+          : kind === 'tanim' ? textAnimThumb(id, 0.32)
+            : transitionThumb(id, 0.45));
       const stop = () => {
         if (!raf) return;
         cancelAnimationFrame(raf); raf = 0;
@@ -535,6 +579,8 @@ export function attachPreviews(host, kind = 'fx', selector = null) {
         const secs = (now - t0) / 1000;
         try {
           if (kind === 'transition') paint(transitionThumb(id, (secs / 1.1) % 1));
+          // A text animation plays its clip through on a 2.4s loop.
+          else if (kind === 'tanim') paint(textAnimThumb(id, Math.round((secs % 2.4) * 12) / 12));
           // Quantised to twelfths so a hover renders about a dozen distinct
           // frames a second and every one of them is a cache hit next time.
           else if (kind === 'preset') paint(presetThumb(id, Math.round(secs * 12) / 12));

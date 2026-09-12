@@ -36,7 +36,7 @@ export const DESCRIPTIONS = {
     name: 'Beginner',
     tag: 'Guided',
     line: 'Nine tools and a guided path. Nothing on screen that you do not need yet.',
-    shows: ['Media', 'AI editor', 'One-tap looks', 'Text', 'Music', 'Export presets'],
+    shows: ['Media', 'AI editor', 'One-tap looks', 'Text with 49 styles and 35 animations', 'Music', 'Export presets'],
   },
   intermediate: {
     name: 'Intermediate',

@@ -159,6 +159,14 @@ eyeballed.
   frame (Y), three-point insert and overwrite, and J/K/L shuttle with the rate
   reaching the decoders so picture and sound keep up at 8x. Reverse shuttle
   moves the picture and says plainly that it cannot move the sound
+- **49 text styles and 35 text animations**, each chip a real render — the
+  style on a frame, the animation playing on hover. Outlines, neon, gradients,
+  shaded colours, 3D blocks, glass and watermark translucency, retro; letter-
+  by-letter, glitch, neon flicker, rubber band, wipe, and the loops. A style
+  changes only the look; the words, size and position stay. Measured: every
+  style draws differently from plain text, every animation moves, and the
+  random-looking ones render identically twice at the same moment, so the
+  export cannot flicker
 - Every effect, look and transition previews on your own footage. Nothing is a
   shipped screenshot, so nothing can drift from what it actually does — and it
   adds zero bytes to the download
