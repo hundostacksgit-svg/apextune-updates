@@ -23,7 +23,9 @@ import { openPanel } from './panels/index.js';
 import { openHistory } from './history-ui.js';
 import { openMenu } from './context-menu.js';
 
-const MOD = navigator.platform?.toLowerCase().includes('mac') ? '⌘' : 'Ctrl';
+const IS_MAC = navigator.platform?.toLowerCase().includes('mac');
+const MOD = IS_MAC ? '⌘' : 'Ctrl';
+const ALT = IS_MAC ? '⌥' : 'Alt';
 
 /* The two that lead every menu, labelled with what they will actually take
    back rather than with the bare word. */
@@ -87,6 +89,13 @@ export function clipMenu(clipId, at) {
       run: () => actions.copySelected() },
     { label: 'Paste here', hint: `${MOD}+V`, when: () => actions.hasClipboard(),
       run: () => actions.pasteAt(at, clip.trackId) },
+    /* The look without the shot: grade one, then put it on the rest of the
+       camera's shots without touching where any of them sit. */
+    { label: 'Copy attributes', hint: `${MOD}+${ALT}+C`,
+      run: () => actions.copyAttributes(clip.id) },
+    { label: () => (many ? `Paste attributes to ${plural(selCount(), 'clip')}` : 'Paste attributes'),
+      hint: `${MOD}+${ALT}+V`, when: () => actions.hasAttributes(),
+      run: () => actions.pasteAttributes(many ? null : [clip.id]) },
     { label: 'Duplicate', hint: `${MOD}+D`, run: () => actions.duplicateSelected() },
     { label: () => `Group ${plural(selCount(), 'clip')} into one`, hint: `${MOD}+G`,
       when: () => selCount() > 1, run: () => actions.groupSelected() },

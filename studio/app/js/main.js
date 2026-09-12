@@ -38,6 +38,7 @@ import {
 import {
   syncAngles, makeMulticam, cutTo, angleView, flattenMulticam,
 } from './engine/multicam.js';
+import { presetFromClip, applyPreset } from './engine/presets.js';
 import * as ws from './workspace.js';
 import { mattePreview } from './panels/masks.js';
 import { initContextMenus, attach as attachMenu } from './context-menu.js';
@@ -93,6 +94,12 @@ export const engine = {
 /* Clips cut or copied, as plain data. Lives for the session only — a clipboard
    that survived a reload would paste clips whose media is no longer loaded. */
 let clipboard = [];
+
+/* The other clipboard: what was *done* to a clip, with none of the clip. Kept
+   separate on purpose — copying a shot and copying its grade are two different
+   intentions, and one clipboard for both means each quietly destroys the
+   other's contents. */
+let attributes = null;
 
 export const actions = {
 
@@ -466,6 +473,56 @@ export const actions = {
   },
 
   hasClipboard() { return clipboard.length > 0; },
+
+  /* ---------------- attributes ---------------- */
+
+  /*
+   * Copy attributes, paste attributes.
+   *
+   * The thing an editor does forty times an hour: grade one shot, then put
+   * that grade on the other eleven from the same camera. Copying the clip and
+   * re-trimming it is not the same operation — it throws away the edit to
+   * carry the look.
+   *
+   * Built on the preset system rather than beside it, so "what counts as an
+   * attribute" has one definition in this app instead of two that drift: the
+   * grade, the effects with their exact settings, the reframe, the audio
+   * strip. Never where a clip sits, how long it is, its in point or its speed.
+   */
+  copyAttributes(id = null) {
+    const clip = clipById(S.project, id || [...S.sel][0]);
+    if (!clip) return false;
+    attributes = presetFromClip(clip, 'Attributes');
+    if (!attributes) return false;
+    toast(attributes.blurb ? `Copied: ${attributes.blurb}` : 'Attributes copied');
+    return true;
+  },
+
+  hasAttributes() { return Boolean(attributes); },
+
+  /**
+   * Put them on every selected clip, as one undoable change.
+   *
+   * `presetId` is cleared rather than carried: these attributes came off a
+   * clip, not out of the library, so leaving the source clip's preset id on
+   * them would light up a library chip that does not describe what is now
+   * running.
+   */
+  pasteAttributes(ids = null) {
+    if (!attributes) return 0;
+    const targets = ids ? [].concat(ids) : [...S.sel];
+    let n = 0;
+    for (const id of targets) {
+      const clip = clipById(S.project, id);
+      if (!clip) continue;
+      applyPreset(clip, attributes);
+      clip.presetId = null;
+      n++;
+    }
+    if (!n) return 0;
+    actions.commit(`Paste attributes to ${n} clip${n === 1 ? '' : 's'}`);
+    return n;
+  },
 
   /**
    * Paste at a time, on a track — defaulting to the playhead and the track the
@@ -1163,6 +1220,16 @@ function onKey(e) {
      * simply dead.
      */
     if (k === 'x' && S.sel.size) { e.preventDefault(); actions.cutSelected(); return; }
+    /*
+     * Attributes first: Ctrl+Alt+C has to be caught before the plain Ctrl+C
+     * line below, which returns for any selection and would eat it.
+     *
+     * Matched on e.code, not e.key. Option+C on a Mac is not "c" — the OS
+     * hands the page "ç", and Option+V hands it "√", so a key comparison here
+     * works everywhere except the platform these two shortcuts came from.
+     */
+    if (e.altKey && e.code === 'KeyC' && S.sel.size) { e.preventDefault(); actions.copyAttributes(); return; }
+    if (e.altKey && e.code === 'KeyV' && actions.hasAttributes()) { e.preventDefault(); actions.pasteAttributes(); return; }
     if (k === 'c' && S.sel.size) { e.preventDefault(); actions.copySelected(); return; }
     if (k === 'v' && actions.hasClipboard()) { e.preventDefault(); actions.pasteAt(S.time); return; }
     if (k === 'g') {
@@ -1720,6 +1787,9 @@ async function openingScreen() {
     copy: () => actions.copySelected(),
     paste: () => actions.pasteAt(S.time),
     canPaste: () => actions.hasClipboard(),
+    copyAttributes: () => actions.copyAttributes(),
+    pasteAttributes: () => actions.pasteAttributes(),
+    canPasteAttributes: () => actions.hasAttributes() && S.sel.size > 0,
     duplicate: () => actions.duplicateSelected(),
     addLayer: (kind) => actions.addLayer(kind),
     addAdjustment: () => actions.addAdjustment(),

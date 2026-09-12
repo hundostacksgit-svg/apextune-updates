@@ -24,6 +24,7 @@ let api = {};
 
 const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent || '');
 const MOD = isMac ? '⌘' : 'Ctrl';
+const ALT = isMac ? '⌥' : 'Alt';
 
 /**
  * The menus.
@@ -58,6 +59,10 @@ export const MENUS = [
       { label: 'Cut', key: `${MOD}+X`, when: () => api.hasSelection?.(), run: () => api.cut?.() },
       { label: 'Copy', key: `${MOD}+C`, when: () => api.hasSelection?.(), run: () => api.copy?.() },
       { label: 'Paste', key: `${MOD}+V`, when: () => api.canPaste?.(), run: () => api.paste?.() },
+      { label: 'Copy attributes', key: `${MOD}+${ALT}+C`, when: () => api.hasSelection?.(),
+        run: () => api.copyAttributes?.() },
+      { label: 'Paste attributes', key: `${MOD}+${ALT}+V`, when: () => api.canPasteAttributes?.(),
+        run: () => api.pasteAttributes?.() },
       { label: 'Duplicate', key: `${MOD}+D`, when: () => api.hasSelection?.(), run: () => api.duplicate?.() },
       { label: 'Delete', key: 'Del', when: () => api.hasSelection?.(), run: () => api.remove?.() },
       { sep: true },

@@ -310,6 +310,7 @@ export const GUIDE = [
       ['Using one', 'Select a clip and click a preset. Nothing selected means every video clip. The chip shows the real stack running on a real frame — on your own footage once you have imported some — so what you see is what you get.'],
       ['They replace, they do not pile up', 'Trying a second preset takes the first one off. Two stacked is almost never what anybody meant, and the result looks like neither. Undo takes the whole thing back in one press.'],
       ['Save your own', '**＋ Save preset** in the Effects panel header. Select the one clip you got right, name it, and it appears under **Mine** — with a ✕ to delete it, which the shipped ones do not have. It keeps the grade, the effects and their exact settings, and it survives closing the app.'],
+      ['Copy the look off one clip onto the rest', 'Get one shot right, then **Ctrl+Alt+C** on it and **Ctrl+Alt+V** on the others — right-click has both as **Copy attributes** and **Paste attributes**. It carries the grade, the effects with their exact settings, the reframe and the audio strip, and it carries none of the edit: nothing moves, nothing retrims. Select twelve clips and one paste does all twelve, as one undo.'],
       ['What they never touch', 'Where a clip sits, how long it is, its in point, its speed, its transitions, its keyframes, its masks. Those are the edit. A preset called Neon Night has no business moving a shot.'],
     ],
   },

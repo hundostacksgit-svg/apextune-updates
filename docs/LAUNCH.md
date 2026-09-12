@@ -149,6 +149,12 @@ eyeballed.
   instead of being quietly stacked at zero. The angle viewer shows every angle
   live while the timeline runs, 1–9 cut between them as it plays, and Flatten
   turns the switches into ordinary clips
+- **Copy attributes, paste attributes** (Ctrl+Alt+C / Ctrl+Alt+V) — grade one
+  shot, then put that grade, those effects with their exact settings, that
+  reframe and that audio strip onto the other eleven from the same camera.
+  Built on the preset system rather than beside it, so what counts as an
+  attribute has one definition instead of two that drift, and it carries none
+  of the edit: nothing moves, nothing retrims. A whole selection is one undo
 - **The commands that make it feel like an editor** — freeze frame (E), match
   frame (Y), three-point insert and overwrite, and J/K/L shuttle with the rate
   reaching the decoders so picture and sound keep up at 8x. Reverse shuttle
