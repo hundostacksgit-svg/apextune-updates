@@ -486,7 +486,8 @@ export class Renderer {
       const local = t - clip.start;
       ctx.save();
       this._layerTransform(ctx, clip, Math.max(0, local), w, h, (clip.text?.x ?? 0.5) * w, (clip.text?.y ?? 0.5) * h);
-      drawText(ctx, w, h, clip.text, Math.max(0, local), clip.dur);
+      drawText(ctx, w, h, clip.text, Math.max(0, local), clip.dur,
+        (prop, fb) => valueAt(clip, `text.${prop}`, Math.max(0, local), fb));
       ctx.restore();
       if (!skipEffects && clip.effects?.length) this._runEffects(ctx, w, h, clip, t, project);
       return cv;

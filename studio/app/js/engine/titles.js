@@ -86,6 +86,190 @@ export const ANIMS = [
 ];
 export const ANIM_NAME = Object.fromEntries(ANIMS);
 
+/* ------------------------------------------------------------------ */
+/* text animators                                                      */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Per-character animators with a range selector — the mechanism kinetic
+ * typography is made of, and the one the animations above cannot express:
+ * each of those is a whole-line move with a fixed stagger, whereas an
+ * animator is a property (opacity, position, scale, rotation, tracking,
+ * blur) with an amount, applied to whichever characters the selector
+ * covers, and the selector's edges are what you animate. Key the start
+ * from 0% to 100% and the letters arrive one by one; key the offset and a
+ * wave rolls through them; switch the unit to words and the same thing
+ * happens a word at a time.
+ *
+ * The amount for a character is decided by where it sits (0 at the first
+ * character, 1 at the last, or shuffled when `random` is on) against the
+ * selector's range, softened at each edge over `edge`, and shaped across
+ * the range (square, ramps, triangle, round). Every number here resolves
+ * through the reader the renderer hands drawText, so any of them can be
+ * keyed or driven by an expression.
+ */
+export const ANIMATOR_PROPS = [
+  ['opacity', 'Opacity'], ['y', 'Position Y'], ['x', 'Position X'], ['scale', 'Scale'],
+  ['rotate', 'Rotation'], ['tracking', 'Tracking'], ['blur', 'Blur'],
+];
+export const SELECTOR_SHAPES = [
+  ['square', 'Square'], ['rampUp', 'Ramp up'], ['rampDown', 'Ramp down'], ['triangle', 'Triangle'], ['round', 'Round'],
+];
+/* The amount's meaning per property, for the panel's slider. */
+export const ANIMATOR_RANGE = {
+  opacity: { min: 0, max: 1, step: 0.01, def: 0, fmt: (v) => `${Math.round(v * 100)}%` },
+  y: { min: -1, max: 1, step: 0.01, def: 0.3, fmt: (v) => `${Math.round(v * 100)}%` },
+  x: { min: -1, max: 1, step: 0.01, def: -0.3, fmt: (v) => `${Math.round(v * 100)}%` },
+  scale: { min: 0, max: 4, step: 0.02, def: 0, fmt: (v) => `${Math.round(v * 100)}%` },
+  rotate: { min: -360, max: 360, step: 1, def: 90, fmt: (v) => `${Math.round(v)}°` },
+  tracking: { min: -1, max: 3, step: 0.02, def: 1, fmt: (v) => `${Math.round(v * 100)}%` },
+  blur: { min: 0, max: 3, step: 0.05, def: 1, fmt: (v) => `${v.toFixed(1)}` },
+};
+
+export function defaultAnimator(prop = 'opacity', from = null) {
+  return {
+    prop,
+    from: from ?? ANIMATOR_RANGE[prop]?.def ?? 0,
+    selector: { start: 0, end: 1, offset: 0, edge: 0.15, shape: 'square', unit: 'chars', random: 0 },
+  };
+}
+
+const smoothstep = (x) => { const u = Math.max(0, Math.min(1, x)); return u * u * (3 - 2 * u); };
+
+/* How much the selector covers position u (0..1 through the text). */
+export function selectorAmount(u, sel) {
+  const lo = (sel.start ?? 0) + (sel.offset ?? 0), hi = (sel.end ?? 1) + (sel.offset ?? 0);
+  if (hi <= lo) return 0;
+  if (u < lo || u > hi) return 0;
+  const edge = Math.max(0.0005, sel.edge ?? 0.15);
+  let a = smoothstep((u - lo) / edge) * smoothstep((hi - u) / edge);
+  const p = (u - lo) / (hi - lo);
+  switch (sel.shape) {
+    case 'rampUp': a *= p; break;
+    case 'rampDown': a *= 1 - p; break;
+    case 'triangle': a *= 1 - Math.abs(p * 2 - 1); break;
+    case 'round': a *= Math.sin(p * Math.PI); break;
+    default: break;
+  }
+  return Math.max(0, Math.min(1, a));
+}
+
+/* Resolve every number of every animator through the reader, once per draw. */
+function resolveAnimators(list, read) {
+  return (list || []).map((an, k) => ({
+    prop: an.prop,
+    from: read(`animators.${k}.from`, an.from ?? 0),
+    unit: an.selector?.unit || 'chars',
+    random: an.selector?.random || 0,
+    sel: {
+      start: read(`animators.${k}.selector.start`, an.selector?.start ?? 0),
+      end: read(`animators.${k}.selector.end`, an.selector?.end ?? 1),
+      offset: read(`animators.${k}.selector.offset`, an.selector?.offset ?? 0),
+      edge: read(`animators.${k}.selector.edge`, an.selector?.edge ?? 0.15),
+      shape: an.selector?.shape || 'square',
+    },
+  }));
+}
+
+/*
+ * The per-character modifiers from every animator, for the character at
+ * `idx` of `n` (or the word it belongs to). Units match drawChars: dx and
+ * dy in quarter font-sizes, scale a multiplier, rot in radians, blur in
+ * font-sizes, track in font-sizes of extra advance.
+ */
+function animatorState(animators, idx, n, wordIdx, wordCount) {
+  const out = { alpha: 1, dx: 0, dy: 0, scale: 1, rot: 0, blur: 0, track: 0 };
+  for (const an of animators) {
+    const byWord = an.unit === 'words';
+    const i = byWord ? wordIdx : idx, count = byWord ? wordCount : n;
+    const u = an.random ? hash(i * 17.3 + an.random * 7.7) : count > 1 ? i / (count - 1) : 0;
+    const a = selectorAmount(u, an.sel);
+    if (a <= 0) continue;
+    switch (an.prop) {
+      case 'opacity': out.alpha *= 1 - a * (1 - an.from); break;
+      case 'y': out.dy += a * an.from; break;
+      case 'x': out.dx += a * an.from; break;
+      case 'scale': out.scale *= 1 + a * (an.from - 1); break;
+      case 'rotate': out.rot += (a * an.from * Math.PI) / 180; break;
+      case 'tracking': out.track += a * an.from; break;
+      case 'blur': out.blur += a * an.from; break;
+      default: break;
+    }
+  }
+  return out;
+}
+
+/*
+ * Finished pieces: the animators and keys that make a classic move. Each
+ * `build(clip, dur)` writes onto a title clip — the animators onto its text
+ * and the keys onto the clip — so the panel and the AI make the same thing.
+ */
+export const TEXT_ANIMATOR_PRESETS = [
+  { id: 'fadeByChar', name: 'Fade up by character', note: 'Each letter fades up in turn, with a soft edge.',
+    build(clip, dur) { setAnimators(clip, [defaultAnimator('opacity', 0)], { start: [[0, 0], [Math.min(1, dur * 0.45), 1]] }); } },
+  { id: 'riseByChar', name: 'Rise by character', note: 'Letters rise into place and fade up, one after another.',
+    build(clip, dur) { setAnimators(clip, [defaultAnimator('opacity', 0), defaultAnimator('y', 0.35)], { start: [[0, 0], [Math.min(1, dur * 0.45), 1]] }, 0.2); } },
+  { id: 'fallByChar', name: 'Fall by character', note: 'Letters drop in from above, turning as they land.',
+    build(clip, dur) { setAnimators(clip, [defaultAnimator('opacity', 0), defaultAnimator('y', -0.6), defaultAnimator('rotate', -20)], { start: [[0, 0], [Math.min(1.1, dur * 0.5), 1]] }, 0.2); } },
+  { id: 'scaleByWord', name: 'Scale in by word', note: 'Each word grows from nothing, word by word.',
+    build(clip, dur) { const list = [defaultAnimator('scale', 0), defaultAnimator('opacity', 0)]; list.forEach((a) => { a.selector.unit = 'words'; }); setAnimators(clip, list, { start: [[0, 0], [Math.min(1, dur * 0.4), 1]] }, 0.35); } },
+  { id: 'zoomByWord', name: 'Zoom out by word', note: 'Words land from huge, one at a time.',
+    build(clip, dur) { const list = [defaultAnimator('scale', 3), defaultAnimator('opacity', 0)]; list.forEach((a) => { a.selector.unit = 'words'; }); setAnimators(clip, list, { start: [[0, 0], [Math.min(1, dur * 0.4), 1]] }, 0.35); } },
+  { id: 'rotateIn', name: 'Rotate in', note: 'Letters swing in from ninety degrees.',
+    build(clip, dur) { setAnimators(clip, [defaultAnimator('rotate', 90), defaultAnimator('opacity', 0)], { start: [[0, 0], [Math.min(1, dur * 0.45), 1]] }, 0.25); } },
+  { id: 'blurIn', name: 'Blur in', note: 'Letters resolve out of a blur, left to right.',
+    build(clip, dur) { setAnimators(clip, [defaultAnimator('blur', 1.2), defaultAnimator('opacity', 0)], { start: [[0, 0], [Math.min(1, dur * 0.45), 1]] }, 0.3); } },
+  { id: 'trackingIn', name: 'Tracking in', note: 'Spread wide, tightening into place — the cinematic title.',
+    build(clip, dur) { const an = defaultAnimator('tracking', 1.4); setAnimators(clip, [an], {}); clip.keyframes['text.animators.0.from'] = [{ t: 0, v: 1.4, ease: 'out' }, { t: Math.min(1.2, dur * 0.5), v: 0, ease: 'out' }]; } },
+  { id: 'trackingOut', name: 'Tracking out', note: 'Tight, then spreading wide and fading — the cinematic exit.',
+    build(clip, dur) { const an = defaultAnimator('tracking', 0); setAnimators(clip, [an, defaultAnimator('opacity', 1)], {}); clip.keyframes['text.animators.0.from'] = [{ t: Math.max(0, dur - 1), v: 0, ease: 'in' }, { t: dur, v: 1.6, ease: 'in' }]; clip.keyframes['text.animators.1.from'] = [{ t: Math.max(0, dur - 0.8), v: 1, ease: 'in' }, { t: dur, v: 0, ease: 'in' }]; } },
+  { id: 'randomPop', name: 'Random pop', note: 'Letters pop in, in a random order.',
+    build(clip, dur) { const list = [defaultAnimator('scale', 0), defaultAnimator('opacity', 0)]; list.forEach((a) => { a.selector.random = 3; }); setAnimators(clip, list, { start: [[0, 0], [Math.min(1, dur * 0.45), 1]] }, 0.12); } },
+  { id: 'typewriterHard', name: 'Typewriter', note: 'Letters appear one at a time with a hard edge.',
+    build(clip, dur) { setAnimators(clip, [defaultAnimator('opacity', 0)], { start: [[0, 0], [Math.min(1.4, dur * 0.6), 1]] }, 0.001); } },
+  { id: 'slideFromLeft', name: 'Slide in from the left', note: 'Letters slide in from the left and fade up.',
+    build(clip, dur) { setAnimators(clip, [defaultAnimator('x', -0.5), defaultAnimator('opacity', 0)], { start: [[0, 0], [Math.min(1, dur * 0.45), 1]] }, 0.25); } },
+  { id: 'waveLoop', name: 'Wave (loops)', note: 'A bump rolls through the letters, forever.',
+    build(clip) { const an = defaultAnimator('y', -0.16); an.selector = { ...an.selector, start: 0, end: 0.35, edge: 0.12, shape: 'round' }; setAnimators(clip, [an], {}); clip.expressions ||= {}; clip.expressions['text.animators.0.selector.offset'] = 'mod(local * 0.7, 1.7) - 0.35'; } },
+  { id: 'jitterLoop', name: 'Jitter (loops)', note: 'Every letter shivers on its own, forever.',
+    build(clip) { const an = defaultAnimator('y', 0.05); an.selector = { ...an.selector, start: 0, end: 1, random: 5 }; setAnimators(clip, [an, { ...defaultAnimator('rotate', 4), selector: { ...defaultAnimator().selector, random: 9 } }], {}); clip.expressions ||= {}; clip.expressions['text.animators.0.from'] = 'noise(local * 14) * 0.06'; clip.expressions['text.animators.1.from'] = 'noise(local * 11, 3) * 6'; } },
+  { id: 'beatBounce', name: 'Bounce on the beat', note: 'The letters jump on every beat of the music, rippling left to right.',
+    build(clip) { const an = defaultAnimator('y', -0.2); an.selector = { ...an.selector, start: 0, end: 1, shape: 'square', edge: 0.3 }; setAnimators(clip, [an, defaultAnimator('scale', 1.12)], {}); clip.expressions ||= {}; clip.expressions['text.animators.0.from'] = '-0.2 * beatPulse(9)'; clip.expressions['text.animators.1.from'] = '1 + beatPulse(9) * 0.14'; } },
+  { id: 'audioScale', name: 'Scale with the music', note: 'Every letter grows with the level of the sound.',
+    build(clip) { setAnimators(clip, [defaultAnimator('scale', 1)], {}); clip.expressions ||= {}; clip.expressions['text.animators.0.from'] = '1 + audioSmooth("all", 0.06) * 0.35'; } },
+];
+export const TEXT_ANIMATOR_BY_ID = Object.fromEntries(TEXT_ANIMATOR_PRESETS.map((p) => [p.id, p]));
+
+/* Put animators on a title clip, with the selector's `start` keyed if asked, and one edge softness for all. */
+function setAnimators(clip, list, keysFor, edge = 0.15) {
+  clip.text ||= defaultText();
+  clip.text.animators = list.map((a) => ({ ...a, selector: { ...a.selector, edge: a.selector.edge === 0.15 ? edge : a.selector.edge } }));
+  clip.keyframes ||= {};
+  for (const k of Object.keys(clip.keyframes)) if (k.startsWith('text.animators.')) delete clip.keyframes[k];
+  if (clip.expressions) for (const k of Object.keys(clip.expressions)) if (k.startsWith('text.animators.')) delete clip.expressions[k];
+  if (keysFor.start) {
+    list.forEach((_, i) => { clip.keyframes[`text.animators.${i}.selector.start`] = keysFor.start.map(([t, v]) => ({ t, v, ease: 'ease' })); });
+  }
+  // A whole-title animation on top of animators would fight them.
+  clip.text.anim = 'none';
+}
+
+/** The lanes a title with animators can animate. */
+export function animatorProps(text) {
+  const out = [];
+  (text?.animators || []).forEach((an, k) => {
+    const name = ANIMATOR_PROPS.find(([id]) => id === an.prop)?.[1] || an.prop;
+    const r = ANIMATOR_RANGE[an.prop] || ANIMATOR_RANGE.opacity;
+    const pct = (v) => `${Math.round(v * 100)}%`;
+    out.push({ prop: `text.animators.${k}.from`, label: `${name} amount`, min: r.min, max: r.max, step: r.step, def: r.def, fmt: r.fmt });
+    out.push({ prop: `text.animators.${k}.selector.start`, label: `${name} · start`, min: 0, max: 1, step: 0.005, def: 0, fmt: pct });
+    out.push({ prop: `text.animators.${k}.selector.end`, label: `${name} · end`, min: 0, max: 1, step: 0.005, def: 1, fmt: pct });
+    out.push({ prop: `text.animators.${k}.selector.offset`, label: `${name} · offset`, min: -1, max: 1, step: 0.005, def: 0, fmt: pct });
+    out.push({ prop: `text.animators.${k}.selector.edge`, label: `${name} · softness`, min: 0, max: 1, step: 0.005, def: 0.15, fmt: pct });
+  });
+  return out;
+}
+
 /* The ones that move each character on its own. They draw through a different
    path, because a whole-line transform cannot make one letter arrive late. */
 const PER_CHAR = new Set(['letterPop', 'letterFall', 'letterRise', 'wave', 'scramble', 'glitch', 'tracking']);
@@ -296,12 +480,14 @@ function animState(anim, t, dur, clipDur) {
  * Paint a text object onto ctx sized w×h. `t` is seconds since the clip
  * started and `clipDur` its length — both only matter for the animations.
  */
-export function drawText(ctx, w, h, text, t = 0, clipDur = 3) {
+export function drawText(ctx, w, h, text, t = 0, clipDur = 3, read = null) {
   const st = { ...defaultText(), ...text };
   const size = Math.max(8, st.size * h);
   const font = FONT_BY_ID[st.font]?.stack || FONTS[0].stack;
   const a = animState(st.anim, t, st.animDur ?? 0.45, clipDur);
   if (a.alpha <= 0.002) return;
+  // Per-character animators, every number resolved through the reader when there is one.
+  const animators = st.animators?.length ? resolveAnimators(st.animators, read || ((_, fb) => fb)) : [];
   // The frame's own time drives anything random-looking, so two renders of
   // the same moment draw the same glyphs — in the export and under the scrub.
   const prevClock = renderClock;
@@ -352,10 +538,19 @@ export function drawText(ctx, w, h, text, t = 0, clipDur = 3) {
     ctx.fill();
   }
 
+  // Where each line's characters sit in the whole text, for the animators.
+  const layout = { offsets: [], n: 0, wordBase: [], words: 0 };
+  for (const line of lines) {
+    layout.offsets.push(layout.n);
+    layout.wordBase.push(layout.words);
+    layout.n += [...line].length;
+    layout.words += line.split(' ').filter(Boolean).length;
+  }
+
   lines.forEach((line, i) => {
     const y = top + i * lineH;
-    if (a.perChar || PER_CHAR.has(st.anim)) {
-      drawChars(ctx, line, cx, y, size, st, a, lines.length, i);
+    if (a.perChar || PER_CHAR.has(st.anim) || animators.length) {
+      drawChars(ctx, line, cx, y, size, st, a, lines.length, i, animators, layout);
     } else if (st.anim === 'wordPop' || st.anim === 'wordSlide' || st.anim === 'karaoke') {
       drawWords(ctx, line, cx, y, size, st, a, lines.length, i);
     } else {
@@ -487,26 +682,47 @@ function drawWords(ctx, line, cx, y, size, st, a, lineCount, lineIndex) {
  * falling into place has to fall with it.
  */
 const SCRAMBLE = 'ABCDEFGHJKLMNPQRSTUVWXYZ023456789#%&';
-function drawChars(ctx, line, cx, y, size, st, a, lineCount, lineIndex) {
+function drawChars(ctx, line, cx, y, size, st, a, lineCount, lineIndex, animators = [], layout = null) {
   const chars = [...line];
   if (!chars.length) return;
   const widths = chars.map((c) => ctx.measureText(c).width);
-  const total = widths.reduce((s, v) => s + v, 0);
+  const n = layout ? layout.n : chars.length * lineCount;
+  const base = layout ? layout.offsets[lineIndex] : lineIndex * chars.length;
+
+  // The animators' per-character state, once, because tracking changes
+  // where every character after it sits and the line must stay centred.
+  let states = null, extra = 0;
+  if (animators.length) {
+    states = [];
+    let word = layout ? layout.wordBase[lineIndex] : 0;
+    chars.forEach((ch, i) => {
+      if (i > 0 && chars[i - 1] === ' ' && ch !== ' ') word++;
+      const s = animatorState(animators, base + i, n, word, layout ? layout.words : 1);
+      states.push(s);
+      extra += s.track * size * 0.5;
+    });
+  }
+  const total = widths.reduce((s, v) => s + v, 0) + extra;
   let x = st.align === 'left' ? cx : st.align === 'right' ? cx - total : cx - total / 2;
   const prevAlign = ctx.textAlign;
   ctx.textAlign = 'left';
-  const n = chars.length * lineCount;
 
   chars.forEach((ch, i) => {
-    const idx = lineIndex * chars.length + i;
-    const c = a.perChar ? a.perChar(idx, n) : { alpha: 1, dx: 0, dy: 0, scale: 1, rot: 0 };
+    const idx = base + i;
+    const c0 = a.perChar ? a.perChar(idx, n) : { alpha: 1, dx: 0, dy: 0, scale: 1, rot: 0 };
+    const an = states ? states[i] : null;
+    const c = an ? {
+      ...c0, alpha: c0.alpha * an.alpha, dx: c0.dx + an.dx, dy: c0.dy + an.dy,
+      scale: c0.scale * an.scale, rot: (c0.rot || 0) + an.rot, blur: an.blur,
+    } : c0;
     let glyph = ch;
     if (st.anim === 'scramble' && c.settled === false && ch !== ' ') {
       glyph = SCRAMBLE[Math.floor(hash(idx * 13 + Math.floor(performanceNow() * 18)) * SCRAMBLE.length)];
     }
-    if (c.alpha > 0.003 && ch !== ' ') {
+    if (c.alpha > 0.003 && ch !== ' ' && c.scale > 0.001) {
       ctx.save();
       ctx.globalAlpha *= Math.max(0, Math.min(1, c.alpha));
+      if (c.blur > 0.01) ctx.filter = `blur(${(c.blur * size * 0.3).toFixed(1)}px)`;
       const gx = x + widths[i] / 2, gy = y;
       ctx.translate(gx + c.dx * size * 4, gy + c.dy * size * 4);
       if (c.rot) ctx.rotate(c.rot);
@@ -522,7 +738,7 @@ function drawChars(ctx, line, cx, y, size, st, a, lineCount, lineIndex) {
       paintLine(ctx, glyph, 0, 0, size, st);
       ctx.restore();
     }
-    x += widths[i];
+    x += widths[i] + (an ? an.track * size * 0.5 : 0);
   });
   ctx.textAlign = prevAlign;
 }

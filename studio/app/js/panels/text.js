@@ -3,7 +3,9 @@
 import { $, $$, esc, toast, slider, selectRow, toggleRow, group } from '../ui.js';
 import { S, actions, drawFrame } from '../main.js';
 import { addClip, addTrack, clipById, duration } from '../engine/project.js';
-import { TITLE_PRESETS, FONT_GROUPS, ANIMS, defaultText } from '../engine/titles.js';
+import { TITLE_PRESETS, FONT_GROUPS, ANIMS, defaultText, TEXT_ANIMATOR_PRESETS, TEXT_ANIMATOR_BY_ID, ANIMATOR_PROPS, ANIMATOR_RANGE, SELECTOR_SHAPES, defaultAnimator } from '../engine/titles.js';
+import { setKeyframe } from '../engine/project.js';
+import { openExpressionEditor } from '../expr-ui.js';
 import { TEXT_STYLE_GROUPS, applyTextStyle } from '../engine/text-styles.js';
 import { attachPreviews } from '../engine/preview.js';
 import { loadFont, isLoaded } from '../engine/fonts-library.js';
@@ -35,6 +37,7 @@ export function mount(host) {
 
     ${styleGallery(clip)}
     ${animGallery(clip)}
+    ${animatorGallery(clip)}
 
     <details class="group" style="margin-top:16px" ${stickerClip ? 'open' : ''}>
       <summary>Stickers &amp; callouts</summary>
@@ -94,6 +97,7 @@ export function mount(host) {
     if (!btn) return;
     useAnim(btn.dataset.tanim);
   });
+  wireAnimators(host);
   $('#t-style-search', host)?.addEventListener('input', (e) => {
     const q = e.target.value.trim().toLowerCase();
     for (const grp of $$('#t-styles details', host)) {
@@ -318,6 +322,183 @@ function animGallery(clip) {
         </div>
       </div>
     </details>`;
+}
+
+/*
+ * Animators: per-character moves with a range selector — the mechanism
+ * kinetic typography is made of. The pieces go on the selected title (or a
+ * fresh one), and the editor under them exposes every animator on it:
+ * property, amount, unit, shape, the selector's start, end, offset and
+ * softness, each keyable at the playhead or handed to an expression.
+ */
+function animatorGallery(clip) {
+  const locked = !licence.can('text-animators');
+  const list = clip?.text?.animators || [];
+  return `
+    <details class="group" style="margin-top:12px" ${list.length ? 'open' : ''} id="t-animator-wrap">
+      <summary>Animators — per character <span class="tiny muted">${TEXT_ANIMATOR_PRESETS.length}</span></summary>
+      <div class="gbody">
+        <p class="tiny muted" style="margin:0 0 8px">A property, an amount, and a selector that sweeps through the letters or words. Key the selector and the letters arrive one by one; key the amount and they all move together.</p>
+        ${locked ? `<div class="note pro tiny" style="margin-bottom:8px">Text animators are in ${esc(licence.requires('text-animators')?.name || 'Creator')}.
+          <button class="btn btn-sm" data-act="upgrade-animators" style="margin-top:8px">See what's included</button></div>` : ''}
+        <div class="chips chips-prev" id="t-animators">
+          ${TEXT_ANIMATOR_PRESETS.map((p) => `<button class="chip ${locked ? 'locked' : ''}" data-tanim="an:${esc(p.id)}" data-tanimator="${esc(p.id)}" title="${esc(p.note)}">${esc(p.name)}</button>`).join('')}
+        </div>
+        ${clip ? animatorEditor(clip) : ''}
+      </div>
+    </details>`;
+}
+
+function animatorEditor(clip) {
+  const list = clip.text?.animators || [];
+  const row = (key, label, min, max, step, value, fmt) => `
+    <div class="sh-row">
+      ${slider({ key: `an.${key}`, label, value, min, max, step, fmt })}
+      <span class="sh-keys">
+        <button class="kf-mini ${clip.keyframes?.[`text.animators.${key}`]?.length ? 'on' : ''}" data-ankey="${esc(key)}" title="Key this at the playhead">◆</button>
+        <button class="kf-expr ${clip.expressions?.[`text.animators.${key}`] ? 'on' : ''}" data-anexpr="${esc(key)}" title="Drive this with an expression">ƒ</button>
+      </span>
+    </div>`;
+  const pct = (v) => `${Math.round(v * 100)}%`;
+  return `
+    <div id="t-animator-list" style="margin-top:10px">
+      ${list.map((an, k) => {
+        const r = ANIMATOR_RANGE[an.prop] || ANIMATOR_RANGE.opacity;
+        const sel = an.selector || {};
+        return `
+        <div class="an-block">
+          <div class="an-head">
+            <select class="input" data-anprop="${k}">${ANIMATOR_PROPS.map(([id, name]) => `<option value="${id}" ${an.prop === id ? 'selected' : ''}>${esc(name)}</option>`).join('')}</select>
+            <select class="input" data-anunit="${k}"><option value="chars" ${sel.unit !== 'words' ? 'selected' : ''}>by character</option><option value="words" ${sel.unit === 'words' ? 'selected' : ''}>by word</option></select>
+            <button class="btn btn-sm btn-ghost" data-andel="${k}" title="Remove this animator">✕</button>
+          </div>
+          ${row(`${k}.from`, 'Amount', r.min, r.max, r.step, an.from ?? r.def, r.fmt)}
+          ${row(`${k}.selector.start`, 'Selector start', 0, 1, 0.005, sel.start ?? 0, pct)}
+          ${row(`${k}.selector.end`, 'Selector end', 0, 1, 0.005, sel.end ?? 1, pct)}
+          ${row(`${k}.selector.offset`, 'Selector offset', -1, 1, 0.005, sel.offset ?? 0, pct)}
+          ${row(`${k}.selector.edge`, 'Softness', 0, 1, 0.005, sel.edge ?? 0.15, pct)}
+          <div class="an-head">
+            <select class="input" data-anshape="${k}">${SELECTOR_SHAPES.map(([id, name]) => `<option value="${id}" ${(sel.shape || 'square') === id ? 'selected' : ''}>${esc(name)}</option>`).join('')}</select>
+            <label class="tiny"><input type="checkbox" data-anrandom="${k}" ${sel.random ? 'checked' : ''}> Random order</label>
+          </div>
+        </div>`;
+      }).join('')}
+      <div class="btn-row" style="margin-top:8px">
+        <select class="input" id="an-add" style="max-width:190px">
+          <option value="">Add an animator…</option>
+          ${ANIMATOR_PROPS.map(([id, name]) => `<option value="${id}">${esc(name)}</option>`).join('')}
+        </select>
+        ${list.length ? `<button class="btn btn-sm btn-ghost" data-act="animators-in">Arrive over 1 s</button>
+        <button class="btn btn-sm btn-ghost" data-act="animators-out">…and leave at the end</button>
+        <button class="btn btn-sm btn-ghost" data-act="animators-clear">Remove all</button>` : ''}
+      </div>
+    </div>`;
+}
+
+function wireAnimators(host) {
+  const wrap = $('#t-animator-wrap', host);
+  if (!wrap) return;
+  const local = (clip) => Math.max(0, Math.min(clip.dur, S.time - clip.start));
+  wrap.addEventListener('click', (e) => {
+    if (e.target.closest('[data-act="upgrade-animators"]')) { licence.upgradePrompt('text-animators', 'Text animators'); return; }
+    const piece = e.target.closest('[data-tanimator]');
+    if (piece) {
+      licence.gate('text-animators', () => {
+        if (!selectedTitle()) addTitle('headline', { quiet: true });
+        actions.patchSelected((c) => { if (c.kind === 'title') TEXT_ANIMATOR_BY_ID[piece.dataset.tanimator]?.build(c, c.dur); }, `Text animator: ${piece.dataset.tanimator}`);
+      }, { what: 'That animator' });
+      return;
+    }
+    const clip = selectedTitle();
+    if (!clip) return;
+    const del = e.target.closest('[data-andel]');
+    if (del) {
+      const k = Number(del.dataset.andel);
+      actions.patchSelected((c) => {
+        if (c.kind !== 'title') return;
+        c.text.animators.splice(k, 1);
+        for (const key of Object.keys(c.keyframes || {})) if (key.startsWith('text.animators.')) delete c.keyframes[key];
+        for (const key of Object.keys(c.expressions || {})) if (key.startsWith('text.animators.')) delete c.expressions[key];
+      }, 'Remove animator');
+      return;
+    }
+    const key = e.target.closest('[data-ankey]');
+    if (key) {
+      const prop = `text.animators.${key.dataset.ankey}`;
+      const now = readAnimator(clip, key.dataset.ankey);
+      actions.patchSelected((c) => { if (c.kind === 'title') setKeyframe(c, prop, local(c), now); }, 'Key animator');
+      return;
+    }
+    const xp = e.target.closest('[data-anexpr]');
+    if (xp) { openExpressionEditor(clip, `text.animators.${xp.dataset.anexpr}`, { label: `Animator ${xp.dataset.anexpr.split('.').pop()}` }); return; }
+    const act = e.target.closest('[data-act]')?.dataset.act;
+    if (act === 'animators-in') {
+      actions.patchSelected((c) => {
+        if (c.kind !== 'title') return;
+        (c.text.animators || []).forEach((_, i) => { c.keyframes[`text.animators.${i}.selector.start`] = [{ t: 0, v: 0, ease: 'ease' }, { t: Math.min(1, c.dur * 0.5), v: 1, ease: 'ease' }]; });
+      }, 'Animators arrive');
+    } else if (act === 'animators-out') {
+      actions.patchSelected((c) => {
+        if (c.kind !== 'title') return;
+        (c.text.animators || []).forEach((_, i) => {
+          const keys = (c.keyframes[`text.animators.${i}.selector.start`] ||= []);
+          keys.push({ t: Math.max(0.1, c.dur - 0.8), v: 1, ease: 'ease' }, { t: c.dur, v: 0, ease: 'ease' });
+          keys.sort((a, b) => a.t - b.t);
+        });
+      }, 'Animators leave');
+    } else if (act === 'animators-clear') {
+      actions.patchSelected((c) => {
+        if (c.kind !== 'title') return;
+        c.text.animators = [];
+        for (const key of Object.keys(c.keyframes || {})) if (key.startsWith('text.animators.')) delete c.keyframes[key];
+        for (const key of Object.keys(c.expressions || {})) if (key.startsWith('text.animators.')) delete c.expressions[key];
+      }, 'Remove animators');
+    }
+  });
+  wrap.addEventListener('input', (e) => {
+    const k = e.target.dataset.k;
+    if (!k?.startsWith('an.') || e.target.type !== 'range') return;
+    const clip = selectedTitle();
+    if (!clip) return;
+    const value = Number(e.target.value);
+    const label = wrap.querySelector(`[data-val="${CSS.escape(k)}"]`);
+    if (label) label.textContent = String(Math.round(value * 100) / 100);
+    writeAnimator(clip, k.slice(3), value);
+    drawFrame();
+  });
+  wrap.addEventListener('change', (e) => {
+    const clip = selectedTitle();
+    if (!clip) return;
+    const k = e.target.dataset.k;
+    if (k?.startsWith('an.') && e.target.type === 'range') { actions.patchSelected((c) => writeAnimator(c, k.slice(3), Number(e.target.value)), 'Animator', `an:${k}`); return; }
+    if (e.target.id === 'an-add' && e.target.value) {
+      const prop = e.target.value;
+      actions.patchSelected((c) => { if (c.kind === 'title') { (c.text.animators ||= []).push(defaultAnimator(prop)); c.text.anim = 'none'; } }, 'Add animator');
+      return;
+    }
+    const d = e.target.dataset;
+    if (d.anprop !== undefined) { actions.patchSelected((c) => { const an = c.text?.animators?.[Number(d.anprop)]; if (an) { an.prop = e.target.value; an.from = ANIMATOR_RANGE[an.prop]?.def ?? 0; } }, 'Animator property'); return; }
+    if (d.anunit !== undefined) { actions.patchSelected((c) => { const an = c.text?.animators?.[Number(d.anunit)]; if (an) an.selector.unit = e.target.value; }, 'Animator unit'); return; }
+    if (d.anshape !== undefined) { actions.patchSelected((c) => { const an = c.text?.animators?.[Number(d.anshape)]; if (an) an.selector.shape = e.target.value; }, 'Selector shape'); return; }
+    if (d.anrandom !== undefined) { actions.patchSelected((c) => { const an = c.text?.animators?.[Number(d.anrandom)]; if (an) an.selector.random = e.target.checked ? 3 : 0; }, 'Random order'); }
+  });
+}
+
+function readAnimator(clip, key) {
+  return key.split('.').reduce((o, kk) => (o ? o[kk] : undefined), clip.text?.animators);
+}
+
+function writeAnimator(clip, key, value) {
+  if (clip.kind !== 'title') return;
+  const prop = `text.animators.${key}`;
+  if (clip.keyframes?.[prop]?.length) {
+    setKeyframe(clip, prop, Math.max(0, Math.min(clip.dur, S.time - clip.start)), value);
+    return;
+  }
+  const parts = key.split('.');
+  let node = clip.text.animators;
+  for (let i = 0; i < parts.length - 1; i++) node = node?.[parts[i]];
+  if (node) node[parts.at(-1)] = value;
 }
 
 function selectedTitle() {

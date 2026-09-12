@@ -34,7 +34,8 @@
  */
 
 import { EFFECTS, makeEffect } from './effects.js';
-import { drawText, defaultText, setTextClock } from './titles.js';
+import { drawText, defaultText, setTextClock, TEXT_ANIMATOR_BY_ID } from './titles.js';
+import { valueAt } from './project.js';
 import { TEXT_STYLE_BY_ID } from './text-styles.js';
 import { LOOK_BY_ID, resolved, cssFilter, applyPasses } from './filters.js';
 import { TRANSITIONS } from './transitions.js';
@@ -443,9 +444,17 @@ export function textAnimThumb(id, t = 0.32) {
     ctx.drawImage(sourceFrame(), 0, 0, out.width, out.height);
     try {
       setTextClock(t);
-      drawText(ctx, out.width, out.height, {
-        ...defaultText('Text'), size: 0.34, x: 0.5, y: 0.52, anim: id, animDur: 0.6, maxWidth: 0.95,
-      }, t, 2.4);
+      if (id.startsWith('an:')) {
+        // An animator piece: built onto a throwaway clip so its keys resolve.
+        const piece = TEXT_ANIMATOR_BY_ID[id.slice(3)];
+        const clip = { id: `thumb-${id}`, start: 0, dur: 2.4, keyframes: {}, expressions: {}, text: { ...defaultText('Text'), size: 0.34, x: 0.5, y: 0.52, maxWidth: 0.95 } };
+        piece?.build(clip, 2.4);
+        drawText(ctx, out.width, out.height, clip.text, t, 2.4, (p, fb) => valueAt(clip, `text.${p}`, t, fb));
+      } else {
+        drawText(ctx, out.width, out.height, {
+          ...defaultText('Text'), size: 0.34, x: 0.5, y: 0.52, anim: id, animDur: 0.6, maxWidth: 0.95,
+        }, t, 2.4);
+      }
     } catch { /* keep the frame */ } finally { setTextClock(null); }
     return out;
   });

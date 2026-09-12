@@ -590,6 +590,11 @@ html[data-level="expert"] .tb-upgrade .lbl{background:var(--grad);-webkit-backgr
 .sh-colours{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 .sh-colours label{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--text-2)}
 .sh-colours input[type=color]{width:30px;height:24px;padding:0;border:1px solid var(--line);border-radius:5px;background:none}
+/* Text animators: one block per animator on the selected title. */
+.an-block{border:1px solid var(--line);border-radius:var(--r-s);padding:8px 10px 4px;margin-bottom:8px;background:var(--surface-2)}
+.an-head{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.an-head .input{flex:1;min-width:0;padding:4px 6px;font-size:12px}
+.an-head label{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;color:var(--text-2)}
 
 /* ---------- the channel strip ---------- */
 .st-h{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3);

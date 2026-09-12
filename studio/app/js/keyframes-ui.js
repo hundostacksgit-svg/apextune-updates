@@ -22,6 +22,7 @@ import { $, el, drag, clamp } from './ui.js';
 import { CONTROLS } from './engine/filters.js';
 import { EFFECTS } from './engine/effects.js';
 import { SHAPE_PROPS } from './engine/shapes.js';
+import { animatorProps } from './engine/titles.js';
 import {
   readPath, setKeyframe, moveKeyframe, removeKeyframe, clearKeyframes, valueAt, EASE_NAMES,
 } from './engine/project.js';
@@ -99,6 +100,7 @@ export function propsFor(clip) {
   out.push({ ...VOLUME, group: isAudio ? 'Audio' : 'Transform' });
 
   if (clip.kind === 'shape') for (const p of SHAPE_PROPS) out.push({ ...p, group: 'Shape' });
+  if (clip.kind === 'title') for (const p of animatorProps(clip.text)) out.push({ ...p, group: 'Text animators' });
 
   // The grade never reaches a title, a sticker, a shape or a null, so a
   // colour lane on one would animate nothing.
