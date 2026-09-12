@@ -58,6 +58,7 @@ let host = null;
 let resolveChoice = null;
 let query = '';
 let sort = 'recent';
+let current = [];        // the projects on screen; the handlers below read it
 
 export function isOpen() { return Boolean(host) && !host.hidden; }
 
@@ -118,6 +119,7 @@ function length(p) {
 }
 
 function render(projects, { canCancel }) {
+  current = projects;
   const empty = projects.length === 0;
   const list = visible(projects);
 
@@ -220,7 +222,13 @@ function render(projects, { canCancel }) {
       </div>
     </div>`;
 
-  wire(projects);
+  wire();
+  /*
+   * The name field takes focus when there is nothing to open, and not
+   * otherwise. Somebody with fifteen projects came here to pick one, and a
+   * cursor blinking in a text box tells them they came to type.
+   */
+  if (!projects.length) setTimeout(() => $('#start-name', host)?.focus(), 60);
 }
 
 function sizeOptions(ratio) {
@@ -284,8 +292,18 @@ const COLOUR_NAMES = { '#000000': 'Black', '#ffffff': 'White', '#0f0f14': 'Near 
 /* wiring                                                              */
 /* ------------------------------------------------------------------ */
 
-function wire(projects) {
+/*
+ * The form is rebuilt on every render, so its submit listener goes on each
+ * time. Everything else listens on the host, which lives for the whole
+ * session — and is therefore wired exactly once, or every re-render after a
+ * rename or a copy would stack another listener and one press would copy a
+ * project three times.
+ */
+function wire() {
   const form = $('#start-new', host);
+  form?.addEventListener('submit', onSubmit);
+  if (host.dataset.wired) return;
+  host.dataset.wired = '1';
 
   host.addEventListener('change', (e) => {
     // The shape cards are radio buttons wearing a costume; keep the costume in
@@ -306,7 +324,7 @@ function wire(projects) {
       if (custom) $('#start-w', host).focus();
       return;
     }
-    if (e.target.id === 'start-sort') { sort = e.target.value; render(projects, { canCancel: Boolean($('[data-cancel]', host)) }); return; }
+    if (e.target.id === 'start-sort') { sort = e.target.value; render(current, { canCancel: Boolean($('[data-cancel]', host)) }); return; }
     if (e.target.id === 'start-file') {
       const file = e.target.files?.[0];
       if (file) finish({ action: 'import', file });
@@ -323,7 +341,7 @@ function wire(projects) {
       query = e.target.value;
       const rows = $('.start-rows', host);
       if (!rows) return;
-      const list = visible(projects);
+      const list = visible(current);
       rows.innerHTML = list.map(row).join('') || `<div class="start-none"><p>Nothing called "${esc(query)}".</p></div>`;
       return;
     }
@@ -337,7 +355,11 @@ function wire(projects) {
     }
   });
 
-  form?.addEventListener('submit', (e) => {
+  host.addEventListener('click', onClick);
+  host.addEventListener('keydown', onKey);
+}
+
+function onSubmit(e) {
     e.preventDefault();
     const name = $('#start-name', host).value.trim();
     const ratio = $('input[name="start-ratio"]:checked', host)?.value || '9:16';
@@ -360,9 +382,10 @@ function wire(projects) {
       background: $('#start-bg', host).value,
       intent: $('input[name="start-intent"]:checked', host)?.value || 'blank',
     });
-  });
+}
 
-  host.addEventListener('click', async (e) => {
+async function onClick(e) {
+    const projects = current;
     if (e.target.closest('[data-cancel]')) { finish({ action: 'cancel' }); return; }
     if (e.target.closest('#start-import')) { $('#start-file', host).click(); return; }
 
@@ -401,24 +424,16 @@ function wire(projects) {
 
     const open = e.target.closest('[data-open]');
     if (open) finish({ action: 'open', id: open.dataset.open });
-  });
+}
 
-  // A row is a button, so it answers to the keyboard like one.
-  host.addEventListener('keydown', (e) => {
+// A row is a button, so it answers to the keyboard like one.
+function onKey(e) {
     if (e.target.closest?.('.start-rename')) return;
     const open = e.target.closest?.('[data-open]');
     if (open && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
       finish({ action: 'open', id: open.dataset.open });
     }
-  });
-
-  /*
-   * The name field takes focus when there is nothing to open, and not
-   * otherwise. Somebody with fifteen projects came here to pick one, and a
-   * cursor blinking in a text box tells them they came to type.
-   */
-  if (!projects.length) setTimeout(() => $('#start-name', host)?.focus(), 60);
 }
 
 /* Rename in place: the name becomes a box, Enter keeps it, Escape does not. */
