@@ -275,6 +275,8 @@ function finishWith(handle, overlay, preview, proResFormat) {
       $('[data-x="ok"]')?.addEventListener('click', closeModal);
     } else {
       toast(`Saved ${name}`, 'ok', 5000);
+      // Count it; the third finished export earns one quiet ask for a rating.
+      import('../rate.js').then((m) => m.exported()).catch(() => {});
     }
   }).catch((err) => {
     overlay.hidden = true;

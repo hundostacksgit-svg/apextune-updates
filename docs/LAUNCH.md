@@ -104,6 +104,14 @@ eyeballed.
   cinematic, lo-fi, drum and bass — as a real WAV in the pool with an exact
   grid. The reader was run on 33,280 generated descriptions and 832
   single-clip instructions: 100% right, none thrown, 0.02 ms each
+- **Rate us, in the app and on the site.** Help menu, Learn panel and the
+  phone's More sheet open one card: five stars, an optional line. The third
+  finished export earns one quiet corner card, never a second. The site's
+  footer carries the same block on every page, and shows the average once
+  there are five ratings. Ratings post to `/v1/rate` on the Worker (one row
+  per device per day; no email, no project) and wait on the device when
+  there is no backend. After deploying the Worker, run `npm run db:init`
+  again so the `ratings` table exists — the schema is additive
 - **Beat detection rebuilt for precision.** Three bands (kick, snare, hats),
   a four-four comb so a syncopated kick cannot read as a beat and a half,
   the octave settled by the hats, a period taken from inter-onset intervals

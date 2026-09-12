@@ -175,6 +175,7 @@ export const MENUS = [
       { label: 'Find anything…', key: `${MOD}+K`, run: () => api.palette?.() },
       { sep: true },
       { label: 'What is built, honestly', run: () => api.openUrl?.('../pricing/#compare') },
+      { label: 'Rate OmniDx Studio…', run: () => api.rate?.() },
       { label: 'Get in touch', run: () => api.support?.() },
     ],
   },

@@ -585,3 +585,15 @@ footer{border-top:1px solid var(--line-soft);padding:52px 0 60px;background:var(
 .steps b{color:var(--text)}
 .kbd{display:inline-block;padding:1px 6px;border-radius:5px;border:1px solid var(--line);
   background:var(--surface-2);font-size:12px;font-family:var(--mono)}
+
+/* ---- rate us (footer) ---- */
+.rate-host{max-width:34ch}
+.rate-block h4{font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--text-3);margin:0 0 6px}
+.rate-stars{display:flex;gap:2px}
+.rate-star{background:none;border:0;padding:2px;font-size:26px;line-height:1;color:var(--text-3);cursor:pointer;transition:transform .12s,color .12s}
+.rate-star.on{color:#f5b301}
+.rate-star:hover{transform:scale(1.15)}
+.rate-star:focus-visible{outline:2px solid var(--accent);border-radius:6px}
+.rate-block .input{font-size:13px;padding:9px 11px;min-height:0}
+.rate-block .btn-row{gap:10px;align-items:center;flex-wrap:wrap}
+@media(prefers-reduced-motion:reduce){.rate-star:hover{transform:none}}

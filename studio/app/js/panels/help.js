@@ -81,6 +81,7 @@ export function mount(host) {
     <p class="tiny muted" style="margin:9px 0 18px">
       Eight steps, skippable at any point, and it never touches your project.
     </p>
+    <button class="btn btn-sm btn-full" id="h-rate" style="margin:-8px 0 18px">★ Rate OmniDx Studio</button>
 
     <!--
       The tour points at eight things and gets out of the way, which is right
@@ -127,6 +128,7 @@ export function mount(host) {
     if (box) box.innerHTML = guideMarkup(searchGuide(e.target.value));
   });
 
+  $('#h-rate', host)?.addEventListener('click', async () => { const { openRating } = await import('../rate.js'); openRating({ trigger: 'panel' }); });
   $('#h-tour', host).addEventListener('click', startTour);
 }
 

@@ -48,6 +48,7 @@ const SHELL = [
   './js/engine/speed-ramps.js',
   './js/engine/beatmaker.js',
   './js/engine/montage.js',
+  './js/rate.js',
   './js/engine/audio-render.js',
   './js/engine/audio-repair.js',
   './js/engine/audio.js',

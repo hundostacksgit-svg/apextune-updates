@@ -62,6 +62,8 @@ weak hash.
 | `POST /v1/devices/list` | The machines on this account. |
 | `POST /v1/devices/remove` | Sign one out. |
 | `POST /v1/licence/redeem` | Attach a key to the account. |
+| `POST /v1/rate` | A star rating from the app or the site. One row per device per day. |
+| `GET /v1/rate/summary` | Count and average, the average only once there are five. |
 | `POST /v1/ai/plan` | Prompt + media summary → an edit plan. |
 | `POST /v1/ai/transcribe` | Audio → caption cues, via your STT service. |
 | `POST /v1/webhooks/stripe` | Payment → licence → email. |

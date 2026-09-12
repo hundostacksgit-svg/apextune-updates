@@ -86,3 +86,19 @@ CREATE TABLE IF NOT EXISTS seats (
 CREATE INDEX IF NOT EXISTS seats_licence ON seats(licence_key);
 CREATE INDEX IF NOT EXISTS seats_user ON seats(user_id);
 CREATE UNIQUE INDEX IF NOT EXISTS seats_active ON seats(licence_key, email) WHERE released_at IS NULL;
+
+-- Star ratings from the app and the site. One row per device per day; a
+-- change of mind updates the row. No email, no project, no footage.
+CREATE TABLE IF NOT EXISTS ratings (
+  id          TEXT PRIMARY KEY,
+  device_id   TEXT NOT NULL,
+  day         TEXT NOT NULL,      -- YYYY-MM-DD, for the one-per-day rule
+  stars       INTEGER NOT NULL,   -- 1..5
+  note        TEXT,
+  place       TEXT NOT NULL,      -- 'app', 'web' or 'desktop'
+  edition     TEXT,
+  version     TEXT,
+  user_id     TEXT REFERENCES users(id) ON DELETE SET NULL,
+  created_at  INTEGER NOT NULL,
+  UNIQUE (device_id, day)
+);

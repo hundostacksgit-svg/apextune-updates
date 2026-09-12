@@ -427,6 +427,41 @@ const routes = {
 
   /* ---------------- AI ---------------- */
 
+  /* ---------------- ratings ---------------- */
+  /*
+   * A star rating from the app or the site. One row per device per day, so
+   * a person changing their mind updates rather than piles up, and nobody
+   * can vote a hundred times from one machine. Nothing identifying beyond a
+   * device id that already exists for licensing; the note is capped.
+   */
+  'POST /v1/rate': async (request, env, body) => {
+    const stars = Math.round(Number(body.stars));
+    if (!(stars >= 1 && stars <= 5)) return fail('Stars must be 1 to 5.', 400, env, request);
+    const device = String(body.device || '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 40);
+    if (!device) return fail('No device id.', 400, env, request);
+    const day = new Date().toISOString().slice(0, 10);
+    const note = String(body.note || '').slice(0, 500);
+    const where = ['app', 'web', 'desktop'].includes(body.where) ? body.where : 'app';
+    const edition = String(body.edition || 'free').slice(0, 16);
+    const version = String(body.version || '').slice(0, 24);
+    const user = await userFor(env, request);
+    await env.DB.prepare(
+      `INSERT INTO ratings (id, device_id, day, stars, note, place, edition, version, user_id, created_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?)
+       ON CONFLICT(device_id, day) DO UPDATE SET stars = excluded.stars, note = excluded.note,
+         place = excluded.place, edition = excluded.edition, version = excluded.version, created_at = excluded.created_at`,
+    ).bind(randomHex(12), device, day, stars, note, where, edition, version, user?.id || null, Date.now()).run();
+    const sum = await env.DB.prepare('SELECT COUNT(*) AS n, AVG(stars) AS avg FROM ratings').first();
+    return json({ ok: true, count: sum?.n || 0, average: sum?.avg ? Number(Number(sum.avg).toFixed(2)) : null }, { env, request });
+  },
+
+  /* The public figure for the site: shown only once there are enough to mean something. */
+  'GET /v1/rate/summary': async (request, env) => {
+    const sum = await env.DB.prepare('SELECT COUNT(*) AS n, AVG(stars) AS avg FROM ratings').first();
+    const n = sum?.n || 0;
+    return json({ count: n, average: n >= 5 && sum?.avg ? Number(Number(sum.avg).toFixed(2)) : null }, { env, request });
+  },
+
   'POST /v1/ai/plan': async (request, env, body) => {
     if (!env.ANTHROPIC_API_KEY) return fail('No AI key is configured on this server.', 503, env, request);
 

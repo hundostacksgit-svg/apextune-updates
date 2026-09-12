@@ -31,6 +31,7 @@ const ROWS = [
   { ico: '◐', label: 'Dark / light', sub: 'Switch the theme', run: () => api.theme?.() },
   { ico: '🎓', label: () => `Skill level — ${api.levelName?.() || 'Beginner'}`, sub: 'Beginner, Intermediate, Professional', run: () => api.cycleLevel?.() },
   { ico: '?', label: 'Walkthrough', sub: 'How everything works', run: () => api.openPanel?.('help') },
+  { ico: '★', label: 'Rate OmniDx Studio', sub: 'Five stars or one — it is read', run: () => api.rate?.() },
 ];
 
 const text = (v) => (typeof v === 'function' ? v() : v);

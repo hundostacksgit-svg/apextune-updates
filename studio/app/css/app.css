@@ -2336,3 +2336,13 @@ html[data-level="expert"] .ang-tile.on{border-color:#8d97ab;box-shadow:0 0 0 2px
  * panels/index.js.
  */
 .panel-inner{display:contents}
+
+/* ---- rate us: one card, five stars ---- */
+.rate-stars{display:flex;gap:2px}
+.rate-star{background:none;border:0;padding:2px;font-size:28px;line-height:1;color:var(--text-4);cursor:pointer;transition:transform .12s,color .12s}
+.rate-star.on,.rate-star.hover{color:#f5b301}
+.rate-star:hover{transform:scale(1.15)}
+.rate-star:focus-visible{outline:2px solid var(--accent);border-radius:6px}
+.rate-corner{position:fixed;right:18px;bottom:18px;z-index:60;width:min(340px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 18px 48px rgba(0,0,0,.35);animation:rate-in .3s ease}
+@keyframes rate-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.rate-corner{animation:none}.rate-star:hover{transform:none}}

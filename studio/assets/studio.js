@@ -7,6 +7,7 @@
 
 import { EDITIONS, priceOf, buyUrl, PAY, DEVICE_LIMIT, SEATS, DOWNLOADS, downloadUrl } from './config.js';
 import * as auth from './auth.js';
+import { mountRating } from './rate.js';
 
 export const $  = (s, r = document) => r.querySelector(s);
 export const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -863,6 +864,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initDownloads();
   initNavAccount();
   initAccount();
+  mountRating($('#rate-us'));
 
   // Mark the current page in the nav without hard-coding it per page.
   const here = location.pathname.replace(/index\.html$/, '');

@@ -1737,6 +1737,8 @@ async function openingScreen() {
   timeline = new TimelineUI({ state: S, actions });
   // A seek that lands after its frame decodes should repaint, not sit stale.
   renderer.onNeedsRedraw = () => { if (!S.playing) drawFrame(); };
+  // A rating given while offline goes out now, quietly.
+  import('./rate.js').then((m) => m.flush()).catch(() => {});
 
   wireChrome();
   sizeCanvas();
@@ -1917,6 +1919,7 @@ async function openingScreen() {
     palette: () => openPalette(),
     support: () => openPanel('help'),
     openUrl: (href) => window.open(href, '_blank', 'noopener'),
+    rate: () => import('./rate.js').then((m) => m.openRating({ trigger: 'menu' })),
 
     /* the timeline over the whole window, and a way straight to export */
     timelineFull: () => toggleTimelineFull(),
@@ -1960,6 +1963,7 @@ async function openingScreen() {
       return next ? `${next.name} — $${next.once.toFixed(2)} once` : '';
     },
     upgrade: () => { const next = nextEdition(); if (next) window.open(`https://${SITE.domain}/studio/pricing/`, '_blank', 'noopener'); },
+    rate: () => import('./rate.js').then((m) => m.openRating({ trigger: 'menu' })),
     cycleLevel: () => {
       const order = levels.LEVELS;
       const next = order[(order.indexOf(levels.current()) + 1) % order.length];
