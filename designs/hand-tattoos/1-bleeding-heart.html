@@ -1,10 +1,10 @@
-<!doctype html><html><head><meta charset="utf-8"><title>Design 1 — bleeding heart, chain-link, stone plaque</title>
+<!doctype html><html><head><meta charset="utf-8"><title>Design 1 — bleeding heart, chain-link, OTF plaque</title>
 <link rel="stylesheet" href="hand.css"></head><body>
 <div class="stage"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"></svg></div>
 <script src="hand.js"></script>
 <script>
 // Design 1: dark realism. White skeleton on heavy solid black. Bleeding heart tangled
-// in chain-link on the back of the hand, a cracked blank stone plaque beside it.
+// in chain-link on the back of the hand, a cracked stone plaque carrying the OTF emblem beside it.
 // "Almost Healed" curved over the wrist cuff, "Opportunist" down the index finger,
 // "RN4L" one letter per knuckle.
 const H = HAND.build(document.querySelector('svg'), { negative: true, negativeRadius: 26, negativeBlur: 9,
@@ -89,6 +89,10 @@ el('rect', { x: -77, y: -57, width: 160, height: 120, rx: 6, fill: 'none', strok
 // chipped corner
 el('path', { d: 'M 60 -75 L 95 -75 L 95 -40 L 82 -52 L 74 -46 L 66 -64 Z', fill: '#141414' }, plaque);
 el('path', { d: 'M 60 -75 L 66 -64 L 74 -46 L 82 -52 L 95 -40', fill: 'none', stroke: '#d0d0d0', 'stroke-width': 1.5 }, plaque);
+// OTF emblem carved into the stone (block letters, not a reproduction of any trademarked mark)
+const carve = { class: 'block', 'font-size': 66, 'letter-spacing': 4, 'text-anchor': 'middle', 'dominant-baseline': 'central', x: 0, y: 4 };
+const hi = el('text', { ...carve, fill: '#f0f0f0', transform: 'translate(2.5 2.5)' }, plaque); hi.textContent = 'OTF';
+const lo = el('text', { ...carve, fill: '#0e0e0e' }, plaque); lo.textContent = 'OTF';
 // cracks
 const crack = 'M -34 -75 L -24 -44 L -36 -14 L -10 18 L -20 46 L 2 75';
 el('path', { d: crack, fill: 'none', stroke: '#050505', 'stroke-width': 4.5, 'stroke-linejoin': 'round' }, plaque);
