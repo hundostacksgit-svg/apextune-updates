@@ -166,15 +166,37 @@ export function validEmail(v) {
 /* ------------------------------------------------------------------ */
 const online = () => Boolean(API.base);
 
+/*
+ * Every call has a deadline. A Worker that is down fails fast on its own; a
+ * Worker that is *slow* — a platform hiccup, a cold start behind a bad
+ * route — would otherwise leave a sign-in spinner running for as long as
+ * the browser's own patience, which is minutes. Twelve seconds is longer
+ * than any of these calls takes and short enough that the person is told
+ * the truth while they still remember pressing the button.
+ */
+const API_TIMEOUT = 12_000;
+
 async function api(path, body, token) {
-  const res = await fetch(API.base + path, {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(body || {}),
-  });
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), API_TIMEOUT);
+  let res;
+  try {
+    res = await fetch(API.base + path, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(body || {}),
+      signal: ctl.signal,
+    });
+  } catch (err) {
+    throw new Error(err?.name === 'AbortError'
+      ? 'The server did not answer in time. Your copy keeps working — try again in a minute.'
+      : 'The server could not be reached. Your copy keeps working — check the connection and try again.');
+  } finally {
+    clearTimeout(timer);
+  }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Server said ${res.status}`);
   return data;
