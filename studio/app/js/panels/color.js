@@ -9,6 +9,7 @@ import { attachPreviews } from '../engine/preview.js';
 import { curvesMarkup, drawCurve, wireCurves, curvesOpen, setCurvesOpen } from './curves.js';
 import { SCOPES, drawScope } from '../engine/scopes.js';
 import { masksMarkup, handleMaskClick, handleMaskInput } from './masks.js';
+import { wheelsMarkup, wireWheels } from '../wheels-ui.js';
 
 /*
  * Which scope is showing, remembered for the session.
@@ -92,7 +93,7 @@ export function mount(host) {
       node graph, or press Alt+S for a new one.</p>` : ''}
 
     ${currentLevel() === 'expert' ? `
-      <div class="group scope-box" style="padding:10px">
+      <div class="group scope-box" id="c-scope-box" style="padding:10px">
         <!--
           Scopes read the file, not your screen. A monitor that runs warm makes
           every shot look warm, so you correct toward blue and everything you
@@ -131,7 +132,7 @@ export function mount(host) {
 
     ${masksMarkup(clip)}
 
-    <details class="group" data-min="expert" ${clip ? 'open' : ''}>
+    <details class="group" data-min="expert" id="c-wheels-group" ${clip ? 'open' : ''}>
       <summary>Colour wheels</summary>
       <div class="gbody">
         ${clip ? `
@@ -143,39 +144,7 @@ export function mount(host) {
             this shot to that one" is a job you do with numbers.
           -->
           <div class="wheels" id="c-wheels">
-            ${['lift', 'gamma', 'gain'].map((which) => `
-              <div class="wheel">
-                <!--
-                  Lift, Gamma and Gain rather than Shadows, Midtones and
-                  Highlights.
-
-                  These wheels only appear at Professional, and those are the
-                  words the people who see them already use — every tutorial,
-                  every grading conversation and every other application says
-                  lift/gamma/gain. They are also short enough to fit the
-                  column, where "Highlights" was truncating to "HIGHLIGH…" on a
-                  control whose whole job is naming which part of the range it
-                  touches. The plain-English name is on the hover tip.
-                -->
-                <div class="wheel-top">
-                  <span class="wl" title="${which === 'lift' ? 'Lift — the darkest parts of the picture'
-                    : which === 'gamma' ? 'Gamma — the midtones, where skin lives'
-                    : 'Gain — the brightest parts of the picture'}"
-                    data-tip="${which === 'lift' ? 'Lift moves the shadows. Drag toward a colour to tint the dark parts.'
-                    : which === 'gamma' ? 'Gamma moves the midtones — where faces and skin sit. The one to reach for first.'
-                    : 'Gain moves the highlights. Drag toward a colour to tint the bright parts.'}"
-                    >${which === 'lift' ? 'Lift' : which === 'gamma' ? 'Gamma' : 'Gain'}</span>
-                  <button class="wheel-reset" data-wreset="${which}"
-                    aria-label="Reset ${which}" title="Reset this wheel">↺</button>
-                </div>
-                <canvas data-wheel="${which}" width="128" height="128"
-                  title="Drag to push ${which} toward a colour. Double-click to reset."></canvas>
-                <div class="wheel-nums">
-                  <span class="wn"><i>R</i><b data-wn="${which}-r">0.00</b></span>
-                  <span class="wn"><i>G</i><b data-wn="${which}-g">0.00</b></span>
-                  <span class="wn"><i>B</i><b data-wn="${which}-b">0.00</b></span>
-                </div>
-              </div>`).join('')}
+            ${wheelsMarkup()}
           </div>
           ${slider({ key: 'offset', label: 'Overall', value: (grade.color.wheels?.offset ?? 0),
             min: -1, max: 1, step: 0.01, fmt: (v) => Number(v).toFixed(2) })}
@@ -326,18 +295,6 @@ export function mount(host) {
     toast('Grade copied to every clip', 'ok');
   });
 
-  // Each wheel's own reset. Resetting all three when you only wanted one back
-  // is the kind of thing that makes people stop using the reset at all.
-  for (const btn of $$('[data-wreset]', host)) {
-    btn.addEventListener('click', () => {
-      const which = btn.dataset.wreset;
-      actions.patchGrade((c) => {
-        c.color.wheels = { ...(c.color.wheels || neutralWheels()) };
-        c.color.wheels[which] = { r: 0, g: 0, b: 0 };
-      }, `Reset ${which}`);
-    });
-  }
-
   $('#c-wheels-reset', host)?.addEventListener('click', () => {
     actions.patchGrade((c) => { c.color.wheels = null; }, 'Reset colour wheels');
   });
@@ -350,7 +307,9 @@ export function mount(host) {
     }, 'Overall exposure', 'wheel:offset');
   });
 
-  if (clip) wireWheels(host, grade);
+  // The wheels, and the per-wheel resets that come with them: resetting all
+  // three when you only wanted one back is what makes people stop using reset.
+  if (clip) wireWheels(host, { grade: () => grade, patch: actions.patchGrade });
   startScope(host);
   void $$;
 }
@@ -380,7 +339,17 @@ function startScope(host) {
   const scope = $('#scope', host);
   if (!scope) return;
 
-  const paint = () => drawScope(scope, engine.renderer?.canvas, scopeKind);
+  /*
+   * Nothing to do when it is not on screen.
+   *
+   * On the Colour page the scopes have their own dock, so this one is hidden —
+   * and a hidden scope reading back a 1080p frame four times a second is the
+   * most expensive thing the app would be doing for no reason at all.
+   */
+  const paint = () => {
+    if (!scope.isConnected || !scope.offsetParent) return;
+    drawScope(scope, engine.renderer?.canvas, scopeKind);
+  };
 
   paint();
   scopeTimer = setInterval(paint, 250);
@@ -391,142 +360,4 @@ function startScope(host) {
     if (note) note.textContent = SCOPE_NOTES[scopeKind] || '';
     paint();
   });
-}
-
-
-/* ------------------------------------------------------------------ */
-/* colour wheels                                                       */
-/* ------------------------------------------------------------------ */
-/*
- * The standard colourist control: drag toward a hue to push that part of the
- * range toward it, distance from the centre is how far. Double-click returns
- * it to neutral, which is the one gesture every editor gets wrong by hiding it
- * in a right-click menu.
- */
-
-const MAX_PUSH = 0.55;      // full deflection is strong but not destructive
-
-function hueRgb(angleDeg) {
-  const h = ((angleDeg % 360) + 360) % 360 / 60;
-  const x = 1 - Math.abs((h % 2) - 1);
-  const [r, g, b] = h < 1 ? [1, x, 0] : h < 2 ? [x, 1, 0] : h < 3 ? [0, 1, x]
-    : h < 4 ? [0, x, 1] : h < 5 ? [x, 0, 1] : [1, 0, x];
-  return { r, g, b };
-}
-
-function paintWheel(canvas, offset) {
-  const ctx = canvas.getContext('2d');
-  const size = canvas.width;
-  const r = size / 2;
-  const img = ctx.createImageData(size, size);
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const dx = x - r, dy = y - r;
-      const dist = Math.hypot(dx, dy) / r;
-      const i = (y * size + x) * 4;
-      if (dist > 1) { img.data[i + 3] = 0; continue; }
-      const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
-      const c = hueRgb(angle);
-      // Toward the centre it desaturates to grey — the neutral position.
-      const mix = (v) => Math.round(255 * (0.5 + (v - 0.5) * dist));
-      img.data[i] = mix(c.r);
-      img.data[i + 1] = mix(c.g);
-      img.data[i + 2] = mix(c.b);
-      img.data[i + 3] = dist > 0.97 ? Math.round(255 * ((1 - dist) / 0.03)) : 255;
-    }
-  }
-  ctx.putImageData(img, 0, 0);
-
-  // the puck
-  const push = Math.hypot(offset?.r || 0, offset?.g || 0, offset?.b || 0) / MAX_PUSH;
-  if (push > 0.01) {
-    const angle = Math.atan2((offset.g - offset.b) * 0.866, offset.r - (offset.g + offset.b) / 2);
-    const px = r + Math.cos(angle) * Math.min(1, push) * r * 0.92;
-    const py = r + Math.sin(angle) * Math.min(1, push) * r * 0.92;
-    ctx.beginPath();
-    ctx.arc(px, py, 6, 0, Math.PI * 2);
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-    ctx.strokeStyle = 'rgba(0,0,0,.6)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  } else {
-    ctx.beginPath();
-    ctx.arc(r, r, 4, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(255,255,255,.85)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  }
-}
-
-function wireWheels(host, grade) {
-  for (const canvas of $$('[data-wheel]', host)) {
-    const which = canvas.dataset.wheel;
-    const current = () => grade.color.wheels?.[which] || { r: 0, g: 0, b: 0 };
-    paintWheel(canvas, current());
-    updateReadout(host, which, current());
-
-    const setFrom = (ev) => {
-      const rect = canvas.getBoundingClientRect();
-      const r = rect.width / 2;
-      const dx = ev.clientX - rect.left - r;
-      const dy = ev.clientY - rect.top - r;
-      const dist = Math.min(1, Math.hypot(dx, dy) / r);
-      const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
-      const c = hueRgb(angle);
-      const push = dist * MAX_PUSH;
-      const offset = {
-        r: Number(((c.r - 0.5) * 2 * push).toFixed(4)),
-        g: Number(((c.g - 0.5) * 2 * push).toFixed(4)),
-        b: Number(((c.b - 0.5) * 2 * push).toFixed(4)),
-      };
-      actions.patchGrade((cl) => {
-        cl.color.wheels = { ...(cl.color.wheels || neutralWheels()), [which]: offset };
-      }, `Colour wheel: ${which}`, `wheel:${which}`);
-      paintWheel(canvas, offset);
-      updateReadout(host, which, offset);
-    };
-
-    canvas.addEventListener('pointerdown', (ev) => {
-      canvas.setPointerCapture(ev.pointerId);
-      setFrom(ev);
-      const move = (e2) => setFrom(e2);
-      const up = () => {
-        canvas.removeEventListener('pointermove', move);
-        canvas.removeEventListener('pointerup', up);
-      };
-      canvas.addEventListener('pointermove', move);
-      canvas.addEventListener('pointerup', up);
-    });
-
-    canvas.addEventListener('dblclick', () => {
-      actions.patchGrade((cl) => {
-        cl.color.wheels = { ...(cl.color.wheels || neutralWheels()), [which]: { r: 0, g: 0, b: 0 } };
-      }, `Reset ${which}`);
-      paintWheel(canvas, { r: 0, g: 0, b: 0 });
-      updateReadout(host, which, { r: 0, g: 0, b: 0 });
-    });
-  }
-}
-
-/*
- * The three numbers under a wheel.
- *
- * Per channel rather than one summary string, because that is what a wheel
- * actually produces and what you compare between shots. "Match this to that
- * one" is a job done by reading R, G and B off one and typing them into the
- * other; a line saying "warm" cannot be matched to anything.
- *
- * Always two decimals, always signed, tabular figures — so the numbers do not
- * jump sideways as they change, which makes a readout you are watching during
- * a drag unreadable.
- */
-function updateReadout(host, which, offset) {
-  for (const [ch, value] of [['r', offset.r], ['g', offset.g], ['b', offset.b]]) {
-    const el = host.querySelector(`[data-wn="${which}-${ch}"]`);
-    if (!el) continue;
-    el.textContent = `${value >= 0 ? '+' : '−'}${Math.abs(value).toFixed(2)}`;
-    el.classList.toggle('off', Math.abs(value) < 0.005);
-  }
 }

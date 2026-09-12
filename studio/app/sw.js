@@ -71,6 +71,7 @@ const SHELL = [
   './js/engine/playback.js',
   './js/engine/media-clock.js',
   './js/workspace.js',
+  './js/wheels-ui.js',
   './js/engine/project.js',
   './js/engine/proxy.js',
   './js/engine/reference.js',

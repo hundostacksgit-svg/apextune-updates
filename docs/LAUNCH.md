@@ -109,10 +109,15 @@ eyeballed.
   you can key the sky in node two and key skin out of *that result* in node
   three. Verified on pixels, not on the boxes: corrector one desaturating and
   corrector two lifting on top of it both measured out of the renderer
-- **The colourist's furniture** — a stills gallery you grab a grade into and
-  drop on the next shot, a shot strip, a lightbox for spotting the one that
-  does not match, scopes docked beside the picture, and bypass on one key with
-  an amber border so a bypassed shot can never be mistaken for a graded one
+- **The colourist's furniture** — a primaries band under the picture with the
+  three wheels and the six numbers you reach for between wheel moves, a stills
+  gallery you grab a grade into and drop on the next shot, a shot strip, a
+  lightbox for spotting the one that does not match, scopes docked beside the
+  picture, bypass on one key with an amber border so a bypassed shot can
+  never be mistaken for a graded one, and a draggable split screen whose
+  ungraded half is the same compositor with the grade switched off rather than
+  a cached approximation of it. The band and the panel are the same
+  widget wired to the same corrector, not two that look alike
 - **A neutral room at Professional** — every saturated surface in the chrome
   gone, measured: no gradient on the play button, no brand colour on the
   export button, greyed slider accents. Simultaneous contrast is real, and a

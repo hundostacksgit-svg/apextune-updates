@@ -48,6 +48,14 @@ export class Renderer {
      * because the exporter has a renderer of its own that must never see it.
      */
     this.bypassGrade = false;
+    /*
+     * Where the split-screen line sits, 0..1 across the frame. 0 is off.
+     *
+     * A fraction rather than a pixel column, for the same reason a mask is:
+     * the preview and the export are different sizes, and a line that means
+     * "40% across" means the same thing on both.
+     */
+    this.compareAt = 0;
     this.fps = 30;
     // Motion blur re-renders the clip at sub-frame offsets, which needs a
     // canvas nothing else is using that frame.
@@ -101,9 +109,8 @@ export class Renderer {
    * dragging the playhead would have started the video rolling under the
    * finger doing the dragging.
    */
-  draw(project, t, { playing = false, forExport = false, scrub = false } = {}) {
-    this._scrub = scrub;
-    const { ctx } = this;
+  draw(project, t, opts = {}) {
+    const { forExport = false } = opts;
     const w = this.canvas.width, h = this.canvas.height;
 
     /*
@@ -118,6 +125,59 @@ export class Renderer {
       const drawn = this._drawMatte(project, t, w, h);
       if (drawn) return;
     }
+
+    /*
+     * Split screen: graded on one side of a line, ungraded on the other.
+     *
+     * The single most-used check in grading, and the one thing a before/after
+     * toggle cannot do — a toggle shows you two pictures a second apart and
+     * asks you to remember the first one. This shows both at once, along the
+     * only edge that matters, which is how you see that the skin went ruddy
+     * while you were busy with the sky.
+     *
+     * It costs two full renders of the frame, and that is the honest price:
+     * the ungraded side is not a cached copy of anything, it is the same
+     * compositor with the grade switched off, so what you are comparing
+     * against is the real shot and not an approximation of it.
+     */
+    const split = this.compareAt;
+    if (split > 0.001 && split < 0.999 && !forExport && !this.bypassGrade) {
+      const was = this.bypassGrade;
+      this.bypassGrade = true;
+      this._paint(project, t, opts);
+      this.bypassGrade = was;
+
+      const keep = this._compareCtx(w, h);
+      keep.clearRect(0, 0, w, h);
+      keep.drawImage(this.canvas, 0, 0);
+
+      this._paint(project, t, opts);
+
+      const x = Math.round(w * split);
+      const { ctx } = this;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x, 0, w - x, h);
+      ctx.clip();
+      ctx.drawImage(keep.canvas, 0, 0);
+      ctx.restore();
+
+      // The line, so nobody mistakes a split for a shot with a hard edge in it.
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,255,255,.9)';
+      ctx.fillRect(x - 1, 0, 2, h);
+      ctx.restore();
+      return;
+    }
+
+    this._paint(project, t, opts);
+  }
+
+  /** The whole frame, once. Everything above decides how many times. */
+  _paint(project, t, { playing = false, forExport = false, scrub = false } = {}) {
+    this._scrub = scrub;
+    const { ctx } = this;
+    const w = this.canvas.width, h = this.canvas.height;
 
     ctx.save();
     ctx.globalCompositeOperation = 'source-over';
@@ -370,6 +430,17 @@ export class Renderer {
       ctx.drawImage(matte, 0, 0);
       ctx.globalCompositeOperation = 'source-over';
     }
+  }
+
+  /** The off-screen canvas the split screen keeps its other half on. */
+  _compareCtx(w, h) {
+    if (!this._compareCanvas || this._compareCanvas.width !== w || this._compareCanvas.height !== h) {
+      this._compareCanvas = document.createElement('canvas');
+      this._compareCanvas.width = w;
+      this._compareCanvas.height = h;
+      this._compareCtxCache = this._compareCanvas.getContext('2d');
+    }
+    return this._compareCtxCache;
   }
 
   /** The off-screen canvas a windowed grade is built on. One, reused. */

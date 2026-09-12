@@ -57,6 +57,7 @@ export const DESCRIPTIONS = {
     tag: 'Finishing',
     line: 'A finishing suite: seven pages, serial correctors, scopes, and a neutral grey room around the picture.',
     shows: ['Serial correctors — a real node chain, each one keying the last one\u2019s output',
+      'Lift, gamma and gain in a band under the picture, following the chain',
       'The Motion page, plus the lightbox for matching a sequence',
       'Stills gallery: grab a grade, drop it on the next shot',
       'Keyframes with bezier easing on every property',

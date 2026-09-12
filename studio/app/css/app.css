@@ -1745,7 +1745,7 @@ input[type=checkbox]{accent-color:var(--blue)}
  * a 390px screen would be four columns of nothing.
  */
 :root{
-  --gal-w:0px; --dockr-w:0px; --strip-h:0px; --pb-h:0px;
+  --gal-w:0px; --dockr-w:0px; --strip-h:0px; --prim-h:0px; --pb-h:0px;
   --dock-h:26px;
 }
 
@@ -1757,6 +1757,7 @@ input[type=checkbox]{accent-color:var(--blue)}
   html[data-level="intermediate"].ws-nodes,html[data-level="expert"].ws-nodes,
   html[data-level="intermediate"].ws-scopes,html[data-level="expert"].ws-scopes{ --dockr-w:250px; }
   html[data-level="intermediate"].ws-strip,html[data-level="expert"].ws-strip{ --strip-h:86px; }
+  html[data-level="intermediate"].ws-primaries,html[data-level="expert"].ws-primaries{ --prim-h:186px; }
 
   /*
    * Five rows instead of three.
@@ -1767,14 +1768,14 @@ input[type=checkbox]{accent-color:var(--blue)}
    * after you press a button.
    */
   html[data-level="intermediate"] body,html[data-level="expert"] body{
-    grid-template-rows:var(--top-h) 1fr var(--strip-h) var(--tl-h) var(--pb-h);
+    grid-template-rows:var(--top-h) 1fr var(--strip-h) var(--prim-h) var(--tl-h) var(--pb-h);
   }
   html[data-level="intermediate"] .workspace,html[data-level="expert"] .workspace{
     grid-template-columns:var(--gal-w) var(--rail-w) var(--panel-w) 1fr var(--insp-w) var(--dockr-w);
   }
   /* Full-screen timeline still wins: it is a deliberate "show me the edit". */
   html.tl-full[data-level="intermediate"] body,html.tl-full[data-level="expert"] body{
-    grid-template-rows:var(--top-h) 0px 0px 1fr var(--pb-h);
+    grid-template-rows:var(--top-h) 0px 0px 0px 1fr var(--pb-h);
   }
 
   html[data-level="intermediate"] .pagebar,html[data-level="expert"] .pagebar{display:flex}
@@ -1789,6 +1790,8 @@ input[type=checkbox]{accent-color:var(--blue)}
   html.ws-strip[data-level="expert"] .dock-strip{display:flex}
   html.ws-lightbox[data-level="intermediate"] .dock-lightbox,
   html.ws-lightbox[data-level="expert"] .dock-lightbox{display:flex}
+  html.ws-primaries[data-level="intermediate"] .dock-primaries,
+  html.ws-primaries[data-level="expert"] .dock-primaries{display:flex}
 }
 
 .dock-right{display:flex;flex-direction:column;min-width:0;min-height:0;
@@ -1927,6 +1930,53 @@ input[type=checkbox]{accent-color:var(--blue)}
 .st-dot.off{background:transparent;border:1px solid var(--line)}
 
 /* ---- the lightbox ---- */
+/* ---- the primaries band ---- */
+.dock-primaries{border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  background:var(--surface-2);overflow:hidden}
+.pm-on{font-family:var(--mono);font-size:9.5px;color:var(--text-2);background:var(--surface-3);
+  border:1px solid var(--line);border-radius:4px;padding:0 6px;line-height:1.6}
+.pm-body{flex:1;display:flex;align-items:center;gap:18px;padding:8px 14px;min-height:0;
+  overflow-x:auto}
+.pm-wheels{display:flex;gap:16px;flex:0 0 auto;margin:0}
+/*
+ * The column is wider than the wheel in it, on purpose.
+ *
+ * Three signed two-decimal numbers on one line come to about 118px at a size
+ * anybody would read; the wheel is 96. Sizing the column to the wheel is what
+ * ran the readouts of one wheel into the next — "B +0R0G0A0.00" — so the
+ * column is sized to the numbers and the wheel is centred in it.
+ */
+.pm-wheels .wheel{width:124px}
+.pm-wheels canvas{width:96px;height:96px;max-width:none;display:block;margin:0 auto;
+  cursor:crosshair;touch-action:none}
+/*
+ * Across, not stacked — the opposite of the panel, and for the opposite reason.
+ *
+ * In a 300px column three signed two-decimal numbers are wider than the wheel
+ * they describe, so they stack. Here the band is as wide as the window and the
+ * height is the scarce dimension: stacking costs two lines under every wheel
+ * and pushes the readouts out of a band sized to hold them.
+ */
+.pm-wheels .wheel-nums{flex-direction:row;gap:7px;margin-top:4px;justify-content:center}
+.pm-wheels .wn{width:auto;max-width:none;gap:2px;font-size:8.5px;white-space:nowrap}
+.pm-wheels .wn i{font-size:8px}
+.pm-wheels .wheel-top{margin-bottom:3px}
+/*
+ * Two columns of three, not one row of six.
+ *
+ * A row puts them all on one line at 1600px and off the end of it at 1200,
+ * and a band you have to scroll sideways is a band you stop using. Three tall
+ * is exactly the height of a wheel, so the two halves of the band line up.
+ */
+.pm-nums{display:grid;grid-template-columns:repeat(2,minmax(150px,1fr));
+  grid-auto-rows:min-content;gap:3px 18px;flex:1 1 auto;min-width:0;align-content:center}
+.pm-num{display:grid;grid-template-columns:74px 1fr 34px;align-items:center;gap:7px;
+  font-size:10.5px}
+.pm-k{color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pm-num input[type=range]{width:100%;accent-color:var(--blue)}
+.pm-num b{font-family:var(--mono);font-size:10px;text-align:right;color:var(--text-2);
+  font-variant-numeric:tabular-nums}
+
 .dock-lightbox{position:fixed;inset:var(--top-h) 0 var(--pb-h) 0;z-index:420;
   background:var(--bg);border-top:1px solid var(--line)}
 .lb-grid{flex:1;overflow-y:auto;padding:12px;display:grid;gap:10px;
@@ -2020,6 +2070,7 @@ html[data-level="expert"] .dh-icon{background:var(--surface-3);color:var(--text-
  * eye as a bright blue button — worse, in fact, because there are twenty of
  * them and they are the things you look at while you drag.
  */
+html[data-level="expert"] .pm-num input[type=range],
 html[data-level="expert"] input[type=range],
 html[data-level="expert"] input[type=checkbox],
 html[data-level="expert"] input[type=radio]{accent-color:#8d97ab}
@@ -2056,8 +2107,9 @@ html[data-level="expert"] .nd-io.out .nd-io-dot{background:#8d97ab}
   html[data-level="intermediate"] .topbar,html[data-level="expert"] .topbar{grid-row:1}
   html[data-level="intermediate"] .workspace,html[data-level="expert"] .workspace{grid-row:2}
   html[data-level="intermediate"] .dock-strip,html[data-level="expert"] .dock-strip{grid-row:3}
-  html[data-level="intermediate"] .timeline,html[data-level="expert"] .timeline{grid-row:4}
-  html[data-level="intermediate"] .pagebar,html[data-level="expert"] .pagebar{grid-row:5}
+  html[data-level="intermediate"] .dock-primaries,html[data-level="expert"] .dock-primaries{grid-row:4}
+  html[data-level="intermediate"] .timeline,html[data-level="expert"] .timeline{grid-row:5}
+  html[data-level="intermediate"] .pagebar,html[data-level="expert"] .pagebar{grid-row:6}
 
   html[data-level="intermediate"] .dock-gallery,html[data-level="expert"] .dock-gallery{grid-column:1}
   html[data-level="intermediate"] .rail,html[data-level="expert"] .rail{grid-column:2}
@@ -2068,3 +2120,37 @@ html[data-level="expert"] .nd-io.out .nd-io-dot{background:#8d97ab}
 }
 /* An empty right column should not draw its own border. */
 html:not(.ws-nodes):not(.ws-scopes) .dock-right{display:none}
+
+/*
+ * The panel does not repeat what a dock is already showing.
+ *
+ * The Colour panel carries scopes and wheels because at Intermediate, with no
+ * docks open, that is the only place for them. On the Colour page with the
+ * docks up they are on screen twice — the same control, two sets of numbers,
+ * and a moment of "which one am I looking at" every time. Hidden rather than
+ * removed, so closing the dock brings the panel's copy straight back.
+ */
+html.ws-scopes[data-page="colour"] #c-scope-box{display:none}
+html.ws-primaries[data-page="colour"] #c-wheels-group{display:none}
+
+/* ---- the split-screen line ---- */
+/*
+ * Inside the canvas wrapper, not the viewer.
+ *
+ * The wrapper is the picture; the viewer is the grey around it. A line placed
+ * against the viewer would sit at 40% of the window, and the split it marks is
+ * at 40% of the shot — so on anything letterboxed the line and the edge it
+ * claims to mark would be in different places.
+ */
+.split-handle{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;z-index:5;
+  background:rgba(255,255,255,.9);cursor:ew-resize;touch-action:none}
+.split-handle::before{content:"";position:absolute;inset:0 -11px;cursor:ew-resize}
+.split-handle:focus-visible{outline:2px solid var(--blue-2);outline-offset:2px}
+.sh-grip{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:26px;height:26px;border-radius:50%;background:rgba(10,14,22,.82);color:#fff;
+  display:grid;place-items:center;font-size:12px;border:1px solid rgba(255,255,255,.6);
+  pointer-events:none}
+@media (pointer: coarse){
+  .split-handle::before{inset:0 -18px}
+  .sh-grip{width:34px;height:34px;font-size:14px}
+}

@@ -34,6 +34,8 @@ import { $, $$, el, toast } from './ui.js';
 import * as levels from './levels.js';
 import { gradeNodes, addGradeNode, removeGradeNode, liveGradeNode, mediaById, clipById } from './engine/project.js';
 import { SCOPES, drawScope } from './engine/scopes.js';
+import { CONTROLS } from './engine/filters.js';
+import { wheelsMarkup, wireWheels, refreshWheels } from './wheels-ui.js';
 
 /* ------------------------------------------------------------------ */
 /* pages                                                               */
@@ -81,6 +83,7 @@ const DOCKS = [
   { id: 'scopes',  name: 'Scopes',   pages: ['colour'],                  side: 'right' },
   { id: 'strip',   name: 'Strip',    pages: ['colour', 'cut', 'fusion'], side: 'bottom' },
   { id: 'lightbox',name: 'Lightbox', pages: ['colour', 'cut', 'media'],  side: 'over', off: true },
+  { id: 'primaries', name: 'Primaries', pages: ['colour', 'fusion'],   side: 'bottom' },
 ];
 
 const PAGE_KEY = 'omnidx.studio.page';
@@ -298,6 +301,7 @@ export function activeGradeTarget() {
 function selectNode(id) {
   selectedNode = id;
   paintNodes();
+  paintPrimaries();
   api?.refreshPanel?.();
 }
 
@@ -607,6 +611,121 @@ function paintStrip() {
 }
 
 /* ------------------------------------------------------------------ */
+/* the primaries band                                                  */
+/* ------------------------------------------------------------------ */
+
+/*
+ * The wheels, along the bottom, where a colourist's hands already are.
+ *
+ * They are in the Colour panel too, and that is not a duplicate: it is the
+ * same widget from wheels-ui.js, wired to the same corrector, in the place the
+ * work actually happens. A grading page puts the primaries under the picture
+ * for the same reason a mixing desk puts the faders under the meters — you are
+ * looking at one thing and touching another, and they should not be at
+ * opposite ends of the screen.
+ *
+ * Six numbers sit beside them, the ones reached for between wheel moves. Not
+ * all ten controls: the band is for the pass you make on every shot, and the
+ * long tail belongs in the panel where there is room to read the labels.
+ */
+const BAND_KEYS = ['exposure', 'contrast', 'saturation', 'temperature', 'tint', 'shadows'];
+
+function buildPrimaries() {
+  const dock = el('section', { class: 'dock dock-primaries', id: 'primaries',
+    'aria-label': 'Primaries' });
+  dock.append(
+    el('div', { class: 'dock-h' },
+      el('b', {}, 'Primaries'),
+      el('span', { class: 'pm-on', id: 'pm-on' }, 'Corrector 1'),
+      el('span', { class: 'dock-sp' }),
+      button('Reset', 'pm-reset', 'Put this corrector back to neutral'),
+    ),
+    el('div', { class: 'pm-body' },
+      el('div', { class: 'wheels pm-wheels', id: 'pm-wheels', html: wheelsMarkup({ size: 112 }) }),
+      el('div', { class: 'pm-nums', id: 'pm-nums' }),
+    ),
+  );
+
+  dock.addEventListener('click', (e) => {
+    if (!e.target.closest('#pm-reset')) return;
+    api?.patchGrade?.((g) => {
+      for (const c of CONTROLS) g.color[c.key] = 0;
+      g.color.look = 'none';
+      g.color.strength = 1;
+      g.color.wheels = null;
+    }, 'Reset this corrector');
+    paintPrimaries();
+    api?.refreshPanel?.();
+  });
+
+  dock.addEventListener('input', (e) => {
+    const key = e.target.dataset.pm;
+    if (!key) return;
+    const v = Number(e.target.value);
+    api?.patchGrade?.((g) => { g.color[key] = v; }, `Change ${key}`, `colour:${key}`);
+    const out = dock.querySelector(`[data-pmv="${key}"]`);
+    if (out) out.textContent = String(Math.round(v));
+  });
+
+  wireWheels(dock, {
+    grade: () => activeGradeTarget(),
+    patch: (fn, label, key) => api?.patchGrade?.(fn, label, key),
+  });
+  return dock;
+}
+
+function paintPrimaries() {
+  const dock = $('#primaries');
+  if (!dock || !document.documentElement.classList.contains('ws-primaries')) return;
+  const grade = activeGradeTarget();
+  const clip = gradeClip();
+
+  const label = $('#pm-on');
+  if (label) {
+    if (!clip) label.textContent = 'no shot';
+    else if (grade === clip) label.textContent = 'Corrector 1';
+    else {
+      const i = (clip.grades || []).findIndex((n) => n === grade);
+      label.textContent = i < 0 ? 'Corrector 1' : (clip.grades[i].label || `Corrector ${i + 2}`);
+    }
+  }
+
+  const nums = $('#pm-nums');
+  if (nums) {
+    /*
+     * Rebuilt only when the fields would actually differ.
+     *
+     * These are the controls under a finger during a drag, and replacing the
+     * input you are dragging is how a slider jumps out from under you.
+     */
+    const want = BAND_KEYS.join(',');
+    if (nums.dataset.built !== want) {
+      nums.dataset.built = want;
+      nums.innerHTML = BAND_KEYS.map((key) => {
+        const ctl = CONTROLS.find((c) => c.key === key);
+        if (!ctl) return '';
+        return `<label class="pm-num">
+          <span class="pm-k">${ctl.label}</span>
+          <input type="range" data-pm="${ctl.key}" min="${ctl.min}" max="${ctl.max}"
+            step="${ctl.step || 1}" value="0" aria-label="${ctl.label}">
+          <b data-pmv="${ctl.key}">0</b>
+        </label>`;
+      }).join('');
+    }
+    for (const key of BAND_KEYS) {
+      const input = nums.querySelector(`[data-pm="${key}"]`);
+      const out = nums.querySelector(`[data-pmv="${key}"]`);
+      const v = grade?.color?.[key] ?? 0;
+      // Never while it is being dragged: that is the jump described above.
+      if (input && document.activeElement !== input) input.value = String(v);
+      if (out) out.textContent = String(Math.round(v));
+    }
+  }
+
+  refreshWheels(dock, grade);
+}
+
+/* ------------------------------------------------------------------ */
 /* the viewer bar                                                      */
 /* ------------------------------------------------------------------ */
 
@@ -636,18 +755,111 @@ function buildViewerBar() {
    */
   const bypass = el('button', { class: 'vb-btn', id: 'vb-bypass', type: 'button',
     'aria-pressed': 'false', title: 'Hold to see the shot ungraded (\\)' }, 'Bypass');
-  const hold = (on) => {
-    document.documentElement.classList.toggle('grade-off', on);
-    bypass.classList.toggle('on', on);
-    bypass.setAttribute('aria-pressed', on ? 'true' : 'false');
-    api?.redraw?.();
-  };
-  bypass.addEventListener('pointerdown', () => hold(true));
+  bypass.addEventListener('pointerdown', () => setBypass(true));
   for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) {
-    bypass.addEventListener(ev, () => hold(false));
+    bypass.addEventListener(ev, () => setBypass(false));
   }
   bar.append(bypass);
+
+  /*
+   * Split screen, and a handle to move the line with.
+   *
+   * A fixed line down the middle is almost useless — whatever you want to
+   * compare is never exactly there. Dragging it is the whole control, so the
+   * button turns it on at the middle and the line itself is what you move.
+   */
+  const split = el('button', { class: 'vb-btn', id: 'vb-split', type: 'button',
+    'aria-pressed': 'false',
+    title: 'Split screen: graded on the left, the shot as it was on the right. Drag the line.' },
+  'Split');
+  split.addEventListener('click', () => {
+    splitAt = splitAt > 0 ? 0 : 0.5;
+    paintSplit();
+    api?.redraw?.();
+  });
+  bar.append(split);
   return bar;
+}
+
+let splitAt = 0;
+
+/**
+ * Before and after, from the button or from the key.
+ *
+ * One function because the two used to differ: the button turned the split
+ * screen off first and the key did not, so holding a key gave you a frame
+ * carrying three different states with nothing saying which half was which.
+ */
+function setBypass(on) {
+  if (on && splitAt > 0) { splitAt = 0; paintSplit(); }
+  document.documentElement.classList.toggle('grade-off', on);
+  const btn = $('#vb-bypass');
+  if (btn) {
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+  api?.redraw?.();
+}
+
+function paintSplit() {
+  const btn = $('#vb-split');
+  if (btn) {
+    btn.classList.toggle('on', splitAt > 0);
+    btn.setAttribute('aria-pressed', splitAt > 0 ? 'true' : 'false');
+  }
+  const handle = $('#split-handle');
+  if (handle) {
+    handle.hidden = !(splitAt > 0);
+    handle.style.left = `${(splitAt * 100).toFixed(2)}%`;
+  }
+  api?.setCompare?.(splitAt);
+}
+
+/**
+ * The line over the picture, in the picture's own space.
+ *
+ * It lives in the canvas wrapper rather than the viewer, so it tracks the
+ * letterboxed picture rather than the grey around it — a split at 40% has to
+ * be 40% of the shot, not 40% of the window.
+ */
+function buildSplitHandle() {
+  const handle = el('div', { class: 'split-handle', id: 'split-handle', hidden: true,
+    role: 'separator', 'aria-label': 'Split screen position', tabindex: '0' });
+  handle.append(el('span', { class: 'sh-grip' }, '⇹'));
+
+  const from = (ev, box) => {
+    const x = (ev.clientX - box.left) / box.width;
+    splitAt = Math.max(0.02, Math.min(0.98, x));
+    paintSplit();
+    api?.redraw?.();
+  };
+  handle.addEventListener('pointerdown', (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    const wrap = $('#canvas-wrap');
+    if (!wrap) return;
+    const box = wrap.getBoundingClientRect();
+    handle.setPointerCapture(ev.pointerId);
+    const move = (e2) => from(e2, box);
+    const up = () => {
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', up);
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', up);
+  });
+  // Arrow keys, because a line you can only drag is a line somebody on a
+  // trackpad cannot place accurately.
+  handle.addEventListener('keydown', (ev) => {
+    const step = ev.shiftKey ? 0.05 : 0.01;
+    if (ev.key === 'ArrowLeft') splitAt = Math.max(0.02, splitAt - step);
+    else if (ev.key === 'ArrowRight') splitAt = Math.min(0.98, splitAt + step);
+    else return;
+    ev.preventDefault();
+    paintSplit();
+    api?.redraw?.();
+  });
+  return handle;
 }
 
 function paintViewerBar() {
@@ -744,8 +956,10 @@ export function initWorkspace(actions) {
   ws.append(right);
   const viewer = $('#viewer');
   viewer?.parentNode.insertBefore(buildViewerBar(), viewer);
+  $('#canvas-wrap')?.append(buildSplitHandle());
   const tl = $('#timeline');
   tl?.parentNode.insertBefore(buildStrip(), tl);
+  tl?.parentNode.insertBefore(buildPrimaries(), tl);
   document.body.append(buildLightbox(), buildPageBar());
 
   /*
@@ -773,15 +987,20 @@ export function initWorkspace(actions) {
    */
   document.addEventListener('keydown', (e) => {
     if (e.target.matches('input, textarea, select, [contenteditable]')) return;
+    /*
+     * None of these exist at Beginner, so none of them fire there.
+     *
+     * The listener is on the document because the controls it drives are in
+     * four different places, and a shortcut that works when its button is not
+     * on screen is a key that does something invisible.
+     */
+    if (!levels.allows('intermediate')) return;
     if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 's' || e.key === 'S')) {
       e.preventDefault(); addNode(); return;
     }
     if (e.key === '\\' && !e.ctrlKey && !e.metaKey && !e.altKey) {
       e.preventDefault();
-      const on = !document.documentElement.classList.contains('grade-off');
-      document.documentElement.classList.toggle('grade-off', on);
-      $('#vb-bypass')?.classList.toggle('on', on);
-      api?.redraw?.();
+      setBypass(!document.documentElement.classList.contains('grade-off'));
       return;
     }
     if (e.shiftKey && !e.altKey && !e.ctrlKey && !e.metaKey && /^[1-7]$/.test(e.key)) {
@@ -823,7 +1042,19 @@ export function onLevelChange() {
      */
     document.documentElement.removeAttribute('data-page');
     for (const d of DOCKS) document.documentElement.classList.remove(`ws-${d.id}`);
+    /*
+     * Put the viewer states back too.
+     *
+     * The split screen and the bypass live on the viewer bar, and the viewer
+     * bar is not there at Beginner. Leaving either switched on strands it:
+     * half a picture graded and half not, with the only control that turns it
+     * off no longer on screen.
+     */
+    splitAt = 0;
+    paintSplit();
+    document.documentElement.classList.remove('grade-off');
     api.sizeCanvas?.();
+    api.redraw?.();
   }
 }
 
@@ -834,6 +1065,7 @@ export function refresh() {
   // anything changes — not only while the transport is running.
   paintScope();
   paintViewerBar();
+  paintPrimaries();
   if (document.documentElement.classList.contains('ws-nodes')) paintNodes();
   if (document.documentElement.classList.contains('ws-gallery')) paintGallery();
   if (document.documentElement.classList.contains('ws-strip')) paintStrip();

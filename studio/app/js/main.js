@@ -1453,10 +1453,15 @@ async function openingScreen() {
     sizeCanvas,
     patch: (fn, label, key) => actions.patch(fn, label, key),
     patchClip: (id, fn, label, key) => actions.patchClip(id, fn, label, key),
+    // What the primaries band and the node graph write through: the same
+    // corrector-aware path the Colour panel uses, so a wheel dragged in the
+    // band and the same wheel dragged in the panel land in the same place.
+    patchGrade: (fn, label, key) => actions.patchGrade(fn, label, key),
     select: (ids) => actions.select(ids),
     seek: (t) => actions.seek(t),
     openStart: (opts) => actions.openStart(opts),
     redraw: () => drawFrame(),
+    setCompare: (x) => { if (renderer) renderer.compareAt = x; },
   });
 
   /*
