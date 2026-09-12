@@ -295,15 +295,20 @@ export async function signIn({ email, password, remember = false }) {
    */
   const acc = get(K.account);
   if (!acc) {
-    throw new Error(
-      'There is no account on this device yet. Accounts live on the device that made them '
-      + 'until the sync server is switched on — so if you signed up somewhere else, create one '
-      + 'here with the same email. It takes a second, and anything you have bought stays unlocked.');
+    const err = new Error(
+      'No account on this device yet. Accounts live on the device that made them until the sync '
+      + 'server is on. Create one here with these details — one press, and anything you bought '
+      + 'stays unlocked — or bring your account over with a move code from the other device.');
+    err.code = 'no-local-account';
+    throw err;
   }
   if (acc.email !== email) {
-    throw new Error(
+    const err = new Error(
       `This device has an account for ${acc.email}, not ${email}. Sign in with that one, `
       + 'or sign out of it first to use a different email here.');
+    err.code = 'other-account';
+    err.email = acc.email;
+    throw err;
   }
   const key = await deriveKey(password, b64.to(acc.salt), acc.rounds || PBKDF2_ROUNDS);
   if (await verifierFor(key) !== acc.verifier) throw new Error('Wrong password.');
@@ -324,6 +329,63 @@ export async function signIn({ email, password, remember = false }) {
   }
   put(K.session, { email, token: 'local', edition: acc.edition || 'free', name: acc.name || '', at: Date.now() });
   return { local: true };
+}
+
+/* ------------------------------------------------------------------ */
+/* moving an account between devices, with no server                    */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Until the sync server is on, an account is a record on one device. This
+ * is the honest way to have it on two: the record — and the purchase that
+ * unlocks the app — sealed with the password into a code, pasted on the
+ * other device, opened with the same password. Nothing leaves either device
+ * except through the person's own clipboard, and a code without the password
+ * is noise: it is AES-GCM under a key derived from the password with a
+ * fresh salt, and it carries no key material of its own.
+ */
+const MOVE_PREFIX = 'OMNIDX-MOVE-1.';
+
+export async function exportAccount(password) {
+  const acc = get(K.account);
+  if (!acc) throw new Error('There is no account on this device to move.');
+  const key = await deriveKey(password, b64.to(acc.salt), acc.rounds || PBKDF2_ROUNDS);
+  if (await verifierFor(key) !== acc.verifier) throw new Error('Wrong password.');
+  const salt = randomBytes(16);
+  const k2 = await deriveKey(password, salt, 120_000);
+  const box = await seal(k2, { account: acc, purchase: get(K_PURCHASE), at: Date.now() });
+  return MOVE_PREFIX + btoa(JSON.stringify({ s: b64.from(salt), iv: box.iv, ct: box.ct }));
+}
+
+export function isMoveCode(text) {
+  return String(text || '').trim().startsWith(MOVE_PREFIX);
+}
+
+export async function importAccount(code, password) {
+  const raw = String(code || '').replace(/\s+/g, '');
+  if (!raw.startsWith(MOVE_PREFIX)) throw new Error('That is not a move code. It starts with OMNIDX-MOVE.');
+  let parsed;
+  try { parsed = JSON.parse(atob(raw.slice(MOVE_PREFIX.length))); } catch { throw new Error('That code is damaged — copy it again, all of it.'); }
+  const k2 = await deriveKey(password, b64.to(parsed.s), 120_000);
+  let data;
+  try { data = await open(k2, { iv: parsed.iv, ct: parsed.ct }); } catch { throw new Error('Wrong password for that code.'); }
+  const acc = data?.account;
+  if (!acc?.email || !acc?.salt || !acc?.verifier) throw new Error('That code holds no account.');
+  const existing = get(K.account);
+  if (existing && existing.email !== acc.email) {
+    throw new Error(`This device already has an account for ${existing.email}. Sign out of it first.`);
+  }
+  const dev = deviceInfo();
+  const devices = (acc.devices || []).filter((d) => d.id !== dev.id);
+  const limit = DEVICE_LIMIT[acc.edition || 'free'];
+  if (devices.length >= limit) throw new Error(`This account is already on ${devices.length} devices (limit ${limit}). Remove one on the other device first.`);
+  devices.push(dev);
+  put(K.account, { ...acc, devices });
+  // The purchase comes along, and never downgrades one already here.
+  const here = get(K_PURCHASE);
+  if (data.purchase?.edition && (!here || (RANK[data.purchase.edition] ?? -1) > (RANK[here.edition] ?? -1))) put(K_PURCHASE, data.purchase);
+  put(K.session, { email: acc.email, token: 'local', edition: acc.edition || 'free', name: acc.name || '', at: Date.now() });
+  return { email: acc.email, edition: edition() };
 }
 
 /** Silent re-auth on a device the user chose to trust. */

@@ -12,6 +12,7 @@ import { $, $$, esc, toast, dur, modal, closeModal } from '../ui.js';
 import { S } from '../main.js';
 import { engine } from '../main.js';
 import { duration } from '../engine/project.js';
+import { reframedCopy, PLATFORM_SET } from '../engine/reframe.js';
 import {
   PRESETS, QUALITY, exportProject, download, safeName, pickMime, extensionFor, hasAudio,
 } from '../engine/exporter.js';
@@ -47,6 +48,17 @@ export function openExport() {
         }).join('')}
       </select>
     </div>
+
+    <!--
+      One edit, every shape. The same cut rendered vertical, landscape, square
+      and portrait in turn, each reframed to cover its canvas and centred on a
+      tracked subject where there is one. Four files, one press, no re-editing.
+    -->
+    <label class="tp-toggle" style="display:flex;gap:9px;align-items:flex-start;margin:0 0 12px">
+      <input type="checkbox" id="x-all">
+      <span class="small">Export for every platform
+        <span class="tiny muted" style="display:block">${PLATFORM_SET.map((p) => p.ratio).join(', ')} — four files from this one edit, each reframed to fit${S.project.motionTracks?.length ? ', centred on what you tracked' : ''}.</span></span>
+    </label>
 
     <div class="field">
       <label for="x-quality">Quality</label>
@@ -156,6 +168,7 @@ export function openExport() {
       return;
     }
     closeModal();
+    if ($('#x-all', body)?.checked) { startBatch(quality, codecId, caps); return; }
     start(preset, quality, codecId, caps);
   });
 
@@ -169,7 +182,7 @@ function ratioValue(r) {
 
 /* ------------------------------------------------------------------ */
 
-async function start(preset, quality, codecId, caps) {
+async function start(preset, quality, codecId, caps, { project = S.project, fileName = S.project.name, heading = null } = {}) {
   const overlay = $('#render-overlay');
   const fill = $('#ro-fill');
   const note = $('#ro-note');
@@ -177,7 +190,7 @@ async function start(preset, quality, codecId, caps) {
   const preview = $('#ro-preview');
   overlay.hidden = false;
   fill.style.width = '0%';
-  title.textContent = `Exporting — ${preset.name}`;
+  title.textContent = heading || `Exporting — ${preset.name}`;
   note.textContent = 'Starting…';
 
   const startedAt = performance.now();
@@ -202,27 +215,27 @@ async function start(preset, quality, codecId, caps) {
    * dead file is the worst outcome available here, so the muxer earns its
    * place rather than being trusted.
    */
-  if (picked && (!hasAudio(S.project) || caps.canMuxAudio)) {
+  if (picked && (!hasAudio(project) || caps.canMuxAudio)) {
     note.textContent = 'Checking the encoder…';
     const proved = await selfTest(picked.codec);
     if (proved) {
-      running = exportWithCodecs(S.project, {
+      running = exportWithCodecs(project, {
         preset, quality, codec: picked.codec,
-        audioCodec: hasAudio(S.project) && caps.canMuxAudio ? 'mp4a.40.2' : null,
+        audioCodec: hasAudio(project) && caps.canMuxAudio ? 'mp4a.40.2' : null,
         onFirstFrame: (canvas) => {
           try { preview.srcObject = canvas.captureStream(12); preview.play().catch(() => {}); }
           catch { /* one stream per canvas on some builds */ }
         },
         onProgress: progress,
       });
-      finishWith(running, overlay, preview, wantsProRes ? codecId : null);
+      const done = finishWith(running, overlay, preview, wantsProRes ? codecId : null, fileName);
       $('#ro-cancel').onclick = () => { running?.cancel(); note.textContent = 'Stopping…'; };
-      return;
+      return done;
     }
     toast('The fast encoder did not check out on this device — using the reliable path instead', '', 5000);
   }
 
-  running = exportProject(S.project, {
+  running = exportProject(project, {
     preset,
     quality,
     audioEngine: engine.audio,
@@ -240,11 +253,44 @@ async function start(preset, quality, codecId, caps) {
     note.textContent = 'Stopping — you will still get everything rendered so far…';
   };
 
-  finishWith(running, overlay, preview, wantsProRes ? codecId : null);
+  return finishWith(running, overlay, preview, wantsProRes ? codecId : null, fileName);
 }
 
-function finishWith(handle, overlay, preview, proResFormat) {
-  handle.promise.then(async (out) => {
+/*
+ * Every platform from one edit.
+ *
+ * The same cut, rendered vertical, landscape, square and portrait in turn,
+ * each from a reframed copy — the live project is never touched — at the
+ * 1080-class preset for that shape and the project's own frame rate. Files
+ * are named by shape so they are told apart in a folder. Cancelling stops
+ * the one being rendered and the ones after it; what is already saved
+ * stays saved.
+ */
+let batchStopped = false;
+async function startBatch(quality, codecId, caps) {
+  batchStopped = false;
+  const fps = S.project.settings.fps || 30;
+  const base = S.project.name;
+  let n = 0;
+  for (const { ratio, label, suffix } of PLATFORM_SET) {
+    if (batchStopped) break;
+    n++;
+    const target = PRESETS.find((p) => p.tier === 'free' && Math.abs((p.w / p.h) - ratioValue(ratio)) < 0.02 && Math.max(p.w, p.h) >= 1080) || PRESETS[0];
+    const preset = { ...target, fps, name: label };
+    let copy;
+    try { copy = reframedCopy(S.project, ratio); } catch (err) { toast(err.message, 'bad'); continue; }
+    // eslint-disable-next-line no-await-in-loop -- one render at a time is the point
+    const out = await start(preset, quality, codecId, caps, {
+      project: copy, fileName: `${base} — ${suffix}`, heading: `Exporting ${n} of ${PLATFORM_SET.length} — ${label}`,
+    });
+    if (!out || out.partial || out.failed) batchStopped = true;
+  }
+  if (!batchStopped) toast(`All ${PLATFORM_SET.length} shapes saved`, 'ok', 5000);
+}
+
+/* Resolves with what happened — { partial, failed } — once the file is saved, so a batch can go on to the next. */
+function finishWith(handle, overlay, preview, proResFormat, fileName = S.project.name) {
+  return handle.promise.then(async (out) => {
     overlay.hidden = true;
     try { preview.srcObject = null; } catch { /* already cleared */ }
     let blob = out.blob;
@@ -261,10 +307,10 @@ function finishWith(handle, overlay, preview, proResFormat) {
       }
     }
 
-    const name = safeName(S.project.name, ext);
+    const name = safeName(fileName, ext);
     // On the desktop this is a real Save dialog; in a browser it's a download.
     if (!await saveBytes(blob, name)) download(blob, name);
-    if (!out.partial) offerToPost(blob, name);
+    if (!out.partial && fileName === S.project.name) offerToPost(blob, name);
     if (out.partial) {
       modal(`<h3>Export stopped early</h3>
         <p>It stopped because ${esc(out.reason || 'it was cancelled')}. The part that had already
@@ -278,6 +324,7 @@ function finishWith(handle, overlay, preview, proResFormat) {
       // Count it; the third finished export earns one quiet ask for a rating.
       import('../rate.js').then((m) => m.exported()).catch(() => {});
     }
+    return { partial: Boolean(out.partial), failed: false, name };
   }).catch((err) => {
     overlay.hidden = true;
     modal(`<h3>Export failed</h3>
@@ -285,6 +332,7 @@ function finishWith(handle, overlay, preview, proResFormat) {
       <div class="btn-row" style="justify-content:flex-end">
         <button class="btn btn-primary" data-x="ok">OK</button></div>`);
     $('[data-x="ok"]')?.addEventListener('click', closeModal);
+    return { partial: false, failed: true };
   }).finally(() => { running = null; });
 }
 

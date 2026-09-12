@@ -892,17 +892,13 @@ export const actions = {
       await actions.openProject(choice.id);
       return;
     }
+    if (choice.action === 'import') { await importProjectJson(choice.file); return; }
     media.releaseAll();
-    S.project = newProject({ name: choice.name, ratio: choice.ratio, fps: choice.fps });
-    S.sel.clear();
-    S.beats = null;
-    S.history.reset(S.project, 'New project');
-    sizeCanvas();
-    await store.saveProject(S.project);
-    await store.pref('lastProject', S.project.id);
+    await createFromChoice(choice);
     actions.seek(0);
     actions.refresh();
     paintName();
+    runIntent(choice.intent);
   },
 
   newProject() { return actions.openStart({ canCancel: true }); },
@@ -1677,18 +1673,78 @@ async function openingScreen() {
     toast('That project could not be opened', 'bad');
     return;
   }
+  if (choice?.action === 'import') { await importProjectJson(choice.file); return; }
   if (choice?.action === 'new') {
-    S.project = newProject({ name: choice.name, ratio: choice.ratio, fps: choice.fps });
-    S.sel.clear();
-    S.beats = null;
-    S.history.reset(S.project, 'New project');
-    sizeCanvas();
-    // Saved immediately, so it is in the list the moment it exists rather than
-    // only after the first edit — somebody who names a project and then closes
-    // the tab should find it again.
-    await store.saveProject(S.project);
-    await store.pref('lastProject', S.project.id);
+    await createFromChoice(choice);
+    runIntent(choice.intent);
   }
+}
+
+/*
+ * A new project from the start screen's answers. Saved immediately, so it is
+ * in the list the moment it exists rather than only after the first edit —
+ * somebody who names a project and then closes the tab should find it again.
+ */
+async function createFromChoice(choice) {
+  S.project = newProject({
+    name: choice.name, ratio: choice.ratio, fps: choice.fps,
+    width: choice.width, height: choice.height, background: choice.background,
+  });
+  S.sel.clear();
+  S.beats = null;
+  S.history.reset(S.project, 'New project');
+  sizeCanvas();
+  await store.saveProject(S.project);
+  await store.pref('lastProject', S.project.id);
+}
+
+/*
+ * The start screen's "start with" choice, once the project exists. Each is a
+ * door into something the editor already does; the door is opened here so
+ * the person lands where the choice leads rather than on a blank timeline
+ * wondering where the montage builder went.
+ */
+function runIntent(intent) {
+  if (!intent || intent === 'blank') return;
+  const input = $('#file-input');
+  setTimeout(async () => {
+    if (intent === 'montage') {
+      openPanel('ai');
+      toast('Bring your clips in, then pick a montage — it builds the whole cut', '', 5200);
+      setTimeout(() => $('#ai-montage')?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 120);
+      input?.click();
+    } else if (intent === 'copy') {
+      openPanel('ai');
+      setTimeout(() => { $('#ai-ref')?.setAttribute('open', ''); $('#ref-pick')?.scrollIntoView({ block: 'center' }); }, 120);
+      toast('Import your clips first, then choose the video whose edit to copy', '', 5200);
+      input?.click();
+    } else if (intent === 'photos') {
+      if (input) { input.accept = 'image/*'; input.click(); setTimeout(() => { input.accept = ''; }, 3000); }
+      toast('Pick your photos — then Styles → Photo dump builds the slideshow', '', 5200);
+    } else if (intent === 'import') {
+      input?.click();
+    }
+  }, 200);
+}
+
+/*
+ * A project file from another device. It is the same document the app saves,
+ * so it loads the same way; the one thing to guard is an id already on this
+ * device — a file re-imported twice must not overwrite the copy that has
+ * been edited since.
+ */
+async function importProjectJson(file) {
+  let doc;
+  try { doc = JSON.parse(await file.text()); } catch { toast('That is not a project file', 'bad', 4200); return; }
+  if (!doc || typeof doc !== 'object' || !Array.isArray(doc.clips) || !doc.settings) { toast('That is not an OmniDx project file', 'bad', 4200); return; }
+  const existing = await store.listProjects();
+  if (existing.some((p) => p.id === doc.id)) doc.id = `${doc.id}-${Date.now().toString(36)}`;
+  doc.name = doc.name || file.name.replace(/\.omnidx\.json$|\.json$/i, '');
+  media.releaseAll();
+  await loadDocument(doc);
+  await store.saveProject(S.project);
+  await store.pref('lastProject', S.project.id);
+  toast(`Opened ${S.project.name} — its media will need re-importing if it is not on this device`, '', 6000);
 }
 
 /* boot                                                                */

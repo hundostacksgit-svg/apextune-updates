@@ -121,6 +121,27 @@ eyeballed.
   cinematic, lo-fi, drum and bass — as a real WAV in the pool with an exact
   grid. The reader was run on 33,280 generated descriptions and 832
   single-clip instructions: 100% right, none thrown, 0.02 ms each
+- **The sign-in dead end is gone.** Signing in on a device with no account
+  offers, right there, to create it with the same details in one press or to
+  bring the account over with a **move code**: the account record and the
+  purchase, sealed with the password (AES-GCM, PBKDF2 with a fresh salt),
+  made on one device's Account page and pasted on the other's. Verified with
+  two fresh browser profiles: the code refuses the wrong password, arrives
+  signed in with the Creator purchase intact, and the moved account signs in
+  normally afterwards. The message no longer strands anyone
+- **A start screen that is a project manager.** Five shapes including
+  cinemascope, sizes per shape from light to 4K or a custom one that keeps
+  the shape, five frame rates, the colour behind the picture, four ways to
+  begin (blank, montage from clips, copy an edit, photo dump), the first
+  clip's picture on every row, search and sort, rename in place, duplicate
+  (shares footage, does not double it), delete with a question, a door for
+  a project file from another device, and how much of the device is used
+- **Export for every platform.** One press renders vertical, landscape,
+  square and portrait from the same edit, each from a reframed copy that
+  keeps the frame covered and centres on a tracked subject where there is
+  one, named by shape. Checked on the numbers: an untracked shot keeps the
+  centre, a tracked shot slides its subject to mid-frame within the room
+  the cover scale allows, and the live project never changes shape
 - **Five more tabs, each a full library, none a duplicate.** Filters (the
   117 looks with a strength slider, at every level), Transitions (116, one
   length, on the selection or every cut), Overlays (the 118 leaks, flares,

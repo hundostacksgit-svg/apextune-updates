@@ -50,6 +50,7 @@ const SHELL = [
   './js/engine/montage.js',
   './js/rate.js',
   './js/engine/sfx.js',
+  './js/engine/reframe.js',
   './js/panels/filters.js',
   './js/panels/transitions.js',
   './js/panels/overlays.js',

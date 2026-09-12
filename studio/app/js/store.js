@@ -75,6 +75,33 @@ export function deleteProject(id) {
   return tx(S_PROJECTS, 'readwrite', (s) => s.delete(id));
 }
 
+/**
+ * A copy, as a new project. The media records point at the same stored
+ * files — a duplicate shares footage, it does not double it — and the copy
+ * is named so it is obvious which is which in the list.
+ */
+export async function duplicateProject(id) {
+  const doc = await loadProject(id);
+  if (!doc) return null;
+  const copy = {
+    ...doc,
+    id: `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`,
+    name: `${doc.name || 'Untitled project'} copy`,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+  await tx(S_PROJECTS, 'readwrite', (s) => s.put(copy));
+  return copy;
+}
+
+export async function renameProject(id, name) {
+  const doc = await loadProject(id);
+  if (!doc) return null;
+  doc.name = String(name || '').trim().slice(0, 60) || doc.name;
+  await tx(S_PROJECTS, 'readwrite', (s) => s.put(doc));
+  return doc;
+}
+
 /* ------------------------------------------------------------------ */
 /* media                                                               */
 /* ------------------------------------------------------------------ */

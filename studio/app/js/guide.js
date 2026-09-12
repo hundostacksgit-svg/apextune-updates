@@ -197,6 +197,19 @@ export const GUIDE = [
     ],
   },
   {
+    id: 'start',
+    group: 'Getting around',
+    title: 'The start screen',
+    body: [
+      ['What it is', 'The list of every project on this device, and the one place a new one is made. It opens with the app and comes back from the File menu.'],
+      ['Making one', 'A name, a shape (vertical, landscape, square, portrait, cinemascope), a size for that shape from light to 4K or a custom one that keeps the shape, a frame rate, and the colour behind the picture. All of these are awkward to change once there are clips on the timeline, which is why they are asked here.'],
+      ['Start with', 'A blank timeline, or a door into something the editor already does: a montage built from your clips, an edit copied from a video you like, a photo dump from stills. Each lands you where that leads.'],
+      ['Finding one', 'Search by name, sort by recent, name or length. A row shows the first clip’s picture, the shape, the frame rate and when you were last in it.'],
+      ['Rename, copy, delete', 'The three buttons on a row. Rename is in place — Enter keeps it, Escape does not. A copy shares the footage rather than doubling it. Delete asks first; the files on your device are untouched either way.'],
+      ['From another device', '**Open a project file** takes a .omnidx.json saved from another copy of the app. Its media has to be re-imported if it is not on this device — the file is the edit, not the footage.'],
+    ],
+  },
+  {
     id: 'tabs',
     group: 'Getting around',
     title: 'The tabs down the side',
@@ -207,6 +220,28 @@ export const GUIDE = [
       ['Text and Stickers', '**Text** is titles: presets, fonts, 49 styles, 35 animations. **Stickers** is emoji, shapes and callouts, and the editor that sizes, colours, animates them and makes them react to something you have tracked. A sticker dropped from either panel is the same sticker.'],
       ['Audio and Sound', '**Audio** is what happens to sound you have: levels, repair, the channel strip, loudness, 148 filters. **Sound** is sound you do not have yet: a beat made to your tempo in eight styles, and 32 sound effects — whooshes, hits, risers, glitches, small sounds, beds — made on the spot and dropped on their own track at the playhead.'],
       ['Nothing is duplicated', 'Every tab writes the same fields on the same clips. A filter picked in Filters can be refined in Colour; a transition set in Transitions shows in Effects; a sticker from Stickers sits in Text’s list. Undo is one history.'],
+    ],
+  },
+  {
+    id: 'everyplatform',
+    group: 'Export',
+    title: 'Export for every platform',
+    body: [
+      ['One press, four files', 'Export → **Export for every platform**. The same edit is rendered vertical, landscape, square and portrait in turn, at the 1080-class size for each shape and your project’s frame rate, and each file is named by its shape.'],
+      ['How it reframes', 'The picture always fills the frame, so a wide edit made vertical keeps a slice of it. Left alone, that is the middle. A shot you have tracked is centred on its subject instead — the crop follows the person, not the frame. A shot you have already slid or scaled keeps your framing, clamped so no bars appear.'],
+      ['Your edit is not touched', 'Every shape is rendered from a copy. The project on the timeline stays the shape you made it.'],
+      ['Stopping', 'Cancel stops the shape being rendered and the ones after it. What has already been saved stays saved.'],
+    ],
+  },
+  {
+    id: 'moveaccount',
+    group: 'Account',
+    title: 'Your account on another device',
+    body: [
+      ['Why it asks', 'Until the sync server is switched on, an account is a record on the device that made it. Signing in somewhere else finds nothing to check against — that is not your account gone, it is a second device that has never met it.'],
+      ['Two ways forward', 'On the sign-in form, **Create it here with these details** makes the account on this device in one press; anything you bought stays unlocked, because a purchase is not tied to the account. Or bring the account over with a move code.'],
+      ['The move code', 'On the device that has the account: Account → **Move to another device** → your password → **Make a code**. On the other device: Account → **Signing in from another device?** → paste the code, type the same password, **Bring my account here**. The purchase comes with it and never downgrades one already there.'],
+      ['What the code is', 'The account record and the purchase, encrypted with a key derived from your password and a fresh salt. Without the password it is noise; it carries no key of its own, and nothing about your projects or footage.'],
     ],
   },
   {

@@ -35,8 +35,11 @@ export function defaultColor() {
 }
 
 export function newProject(opts = {}) {
-  const ratio = opts.ratio || '9:16';
+  const ratio = RATIOS[opts.ratio] ? opts.ratio : '9:16';
   const r = RATIOS[ratio];
+  // A size other than the ratio's default is only honoured when it keeps the
+  // ratio: a 9:16 project at 1920×1080 is a contradiction, not a setting.
+  const custom = opts.width > 0 && opts.height > 0 && Math.abs((opts.width / opts.height) - (r.w / r.h)) < 0.02;
   return {
     schema: SCHEMA,
     id: uid('p'),
@@ -45,10 +48,10 @@ export function newProject(opts = {}) {
     updatedAt: Date.now(),
     settings: {
       ratio,
-      width: r.w,
-      height: r.h,
+      width: custom ? Math.round(opts.width) : r.w,
+      height: custom ? Math.round(opts.height) : r.h,
       fps: opts.fps || 30,
-      background: '#000000',
+      background: /^#[0-9a-f]{6}$/i.test(opts.background || '') ? opts.background : '#000000',
       sampleRate: 48000,
     },
     media: [],

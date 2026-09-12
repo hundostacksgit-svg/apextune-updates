@@ -91,7 +91,8 @@ export function mount(host) {
              ${DEVICE_LIMIT[ed]} device${DEVICE_LIMIT[ed] === 1 ? '' : 's'} allowed.</p>
              <div class="btn-row"><button class="btn btn-sm btn-ghost" id="s-signout">Sign out</button></div>`
           : `<p class="tiny muted">You don't need an account to edit. It exists to move a paid
-             licence between your devices.</p>`}
+             licence between your devices. Signed up on another device? Get a <b>move code</b> from its
+             Account page and paste it on the Account page here.</p>`}
         <div class="field" style="margin-top:12px">
           <label for="s-key">Licence key</label>
           <input class="input mono" id="s-key" placeholder="OMNIDX-STU-XXXX-XXXX-XXXX"

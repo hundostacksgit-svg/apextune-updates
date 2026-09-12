@@ -707,12 +707,25 @@ async function initAccount() {
           </label>
           <button class="btn btn-primary btn-lg" style="width:100%" id="go">Sign in</button>
           <p class="tiny muted" id="err" style="margin:14px 0 0;color:var(--bad)"></p>
+          <div id="err-fix" hidden style="margin-top:12px"></div>
         </form>
         <p class="tiny muted" style="margin:20px 0 0;text-align:center">
           ${auth.MODE.server
             ? 'Your password is hashed before it is stored. We never see it.'
             : 'This account lives on this device only — your password never leaves it, and nothing is uploaded.'}
         </p>
+        ${auth.MODE.server ? '' : `
+        <details style="margin-top:18px" id="move-in">
+          <summary class="small">Signing in from another device?</summary>
+          <p class="tiny muted" style="margin:10px 0 8px">
+            Until the sync server is on, an account lives on the device that made it. On that device, open
+            <b>Account → Move to another device</b>, copy the code it gives you, and paste it here with the same
+            password. Anything you bought comes with it.
+          </p>
+          <textarea class="input mono" id="move-code" rows="3" placeholder="OMNIDX-MOVE-1.…" style="font-size:11px"></textarea>
+          <button class="btn" type="button" id="move-go" style="width:100%;margin-top:10px">Bring my account here</button>
+          <p class="tiny muted" id="move-err" style="margin:10px 0 0"></p>
+        </details>`}
       </div>
       <!--
         Keys are no longer how anybody buys this — paying unlocks the app
@@ -778,6 +791,57 @@ async function initAccount() {
       } catch (ex) {
         err.textContent = ex.message;
         btn.disabled = false; btn.textContent = mode === 'in' ? 'Sign in' : 'Create account';
+        /*
+         * The one failure that is not the person's fault gets a way out, right
+         * there: no account on this device yet means the same details make one
+         * in a press, and a code from the other device brings the old one over.
+         */
+        const fix = $('#err-fix');
+        if (fix) {
+          fix.hidden = true;
+          if (ex.code === 'no-local-account') {
+            fix.hidden = false;
+            fix.innerHTML = `
+              <div class="btn-row" style="gap:8px;flex-wrap:wrap">
+                <button class="btn btn-primary btn-sm" type="button" id="err-create">Create it here with these details</button>
+                <button class="btn btn-sm" type="button" id="err-move">I have a move code</button>
+              </div>`;
+            $('#err-create').addEventListener('click', async () => {
+              const payload = { email: $('#email').value, password: $('#pw').value, name: $('#name')?.value };
+              try {
+                await auth.signUp(payload);
+                await auth.signIn({ ...payload, remember: true });
+                toast('Account created', 'ok');
+                signedInView();
+              } catch (e2) {
+                // A weak password is the one thing that can stop it; show the strength meter and say so.
+                setMode('up');
+                err.textContent = e2.message;
+                $('#pw').dispatchEvent(new Event('input'));
+              }
+            });
+            $('#err-move').addEventListener('click', () => { const d = $('#move-in'); if (d) { d.open = true; $('#move-code')?.focus(); d.scrollIntoView({ block: 'center', behavior: 'smooth' }); } });
+          } else if (ex.code === 'other-account') {
+            fix.hidden = false;
+            fix.innerHTML = `<div class="btn-row" style="gap:8px;flex-wrap:wrap">
+              <button class="btn btn-sm" type="button" id="err-use">Use ${esc(ex.email)} instead</button></div>`;
+            $('#err-use').addEventListener('click', () => { $('#email').value = ex.email; $('#pw').focus(); err.textContent = ''; fix.hidden = true; });
+          }
+        }
+      }
+    });
+
+    $('#move-go')?.addEventListener('click', async () => {
+      const out = $('#move-err');
+      out.style.color = '';
+      out.textContent = 'Opening…';
+      try {
+        const res = await auth.importAccount($('#move-code').value, $('#pw').value);
+        toast(`Welcome back, ${res.email}`, 'ok');
+        signedInView();
+      } catch (ex) {
+        out.style.color = 'var(--bad)';
+        out.textContent = /password/i.test(ex.message) ? `${ex.message} Type the account's password in the box above, then press again.` : ex.message;
       }
     });
 
@@ -826,12 +890,44 @@ async function initAccount() {
           </li>`).join('') || '<li><span class="dn muted">No devices linked yet.</span></li>'}
         </ul>
 
+        ${auth.MODE.server || !s?.email ? '' : `
+        <h4 style="margin:26px 0 6px">Move to another device</h4>
+        <p class="tiny muted" style="margin:0 0 10px">
+          Until the sync server is on, this account lives here. A move code carries it — and anything you
+          bought — to another device: paste it there under <b>Signing in from another device?</b> with this password.
+        </p>
+        <div id="move-out">
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input class="input" type="password" id="move-pw" placeholder="Your password" autocomplete="current-password" style="flex:1;min-width:160px">
+            <button class="btn" id="move-make" type="button">Make a code</button>
+          </div>
+          <p class="tiny muted" id="move-out-err" style="margin:8px 0 0"></p>
+        </div>`}
+
         <div class="btn-row" style="margin-top:26px">
           <a class="btn btn-primary" href="../app/">Open the editor</a>
           ${ed !== 'studio' ? '<a class="btn" href="../pricing/">Upgrade</a>' : ''}
           <button class="btn btn-ghost" id="out">Sign out</button>
         </div>
       </div>`;
+
+    $('#move-make')?.addEventListener('click', async () => {
+      const box = $('#move-out'); const err = $('#move-out-err');
+      err.textContent = '';
+      try {
+        const code = await auth.exportAccount($('#move-pw').value);
+        box.innerHTML = `
+          <textarea class="input mono" id="move-text" rows="4" readonly style="font-size:11px">${esc(code)}</textarea>
+          <div class="btn-row" style="margin-top:8px;gap:8px">
+            <button class="btn btn-sm" id="move-copy" type="button">Copy the code</button>
+            <span class="tiny muted">It only opens with your password. Paste it on the other device and it is gone from the clipboard when you next copy anything.</span>
+          </div>`;
+        $('#move-copy').addEventListener('click', async () => {
+          try { await navigator.clipboard.writeText(code); toast('Copied', 'ok'); }
+          catch { $('#move-text').select(); toast('Select all and copy'); }
+        });
+      } catch (ex) { err.style.color = 'var(--bad)'; err.textContent = ex.message; }
+    });
 
     $$('[data-rm]').forEach((b) => b.addEventListener('click', async () => {
       await auth.removeDevice(b.dataset.rm);
