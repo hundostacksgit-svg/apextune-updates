@@ -1,0 +1,125 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Design 2 — soundwave into smoke profile</title>
+<link rel="stylesheet" href="hand.css"></head><body>
+<div class="stage"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"></svg></div>
+<script src="hand.js"></script>
+<script>
+// Design 2: full skeleton overlay. A glowing audio soundwave woven between the
+// metacarpals (bars alternate under / over the bones), flowing down and dissolving
+// into a smoky side profile at the wrist. "7220" etched on the knuckles, "RN4L"
+// across the lower finger joints, "Almost Healed" as a banner over the wrist.
+const H = HAND.build(document.querySelector('svg'), { negative: true, negativeRadius: 16, negativeBlur: 6,
+  skinLight: '#555', skinMid: '#393939', skinDark: '#222' });
+const { el } = H;
+const defs = el('defs', {}, H.svg);
+
+const smoke = el('filter', { id: 'smoke', x: '-40%', y: '-40%', width: '180%', height: '180%' }, defs);
+el('feTurbulence', { type: 'fractalNoise', baseFrequency: 0.018, numOctaves: 3, seed: 5, result: 'n' }, smoke);
+el('feDisplacementMap', { in: 'SourceGraphic', in2: 'n', scale: 12, xChannelSelector: 'R', yChannelSelector: 'G' }, smoke);
+el('feGaussianBlur', { stdDeviation: 1.1 }, smoke);
+
+const wisp = el('filter', { id: 'wisp', x: '-60%', y: '-60%', width: '220%', height: '220%' }, defs);
+el('feTurbulence', { type: 'fractalNoise', baseFrequency: 0.03, numOctaves: 3, seed: 9, result: 'n' }, wisp);
+el('feDisplacementMap', { in: 'SourceGraphic', in2: 'n', scale: 70, xChannelSelector: 'R', yChannelSelector: 'G' }, wisp);
+el('feGaussianBlur', { stdDeviation: 9 }, wisp);
+
+const dissolve = el('filter', { id: 'dissolve', x: '-40%', y: '-20%', width: '180%', height: '140%' }, defs);
+el('feTurbulence', { type: 'fractalNoise', baseFrequency: 0.025, numOctaves: 3, seed: 3, result: 'n' }, dissolve);
+el('feDisplacementMap', { in: 'SourceGraphic', in2: 'n', scale: 34, xChannelSelector: 'R', yChannelSelector: 'G' }, dissolve);
+el('feGaussianBlur', { stdDeviation: 1.6 }, dissolve);
+
+// ---- soundwave -----------------------------------------------------------------
+// axis runs from just below the knuckles down into the wrist, drifting left
+let seed = 17; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+const N = 32, y0 = 852, dy = 11.5;
+const bars = [];
+for (let i = 0; i < N; i++) {
+  const t = i / (N - 1);
+  const y = y0 + i * dy;
+  const x = 604 - t * 26 + Math.sin(t * 6) * 8;
+  const env = Math.sin(t * Math.PI) ** 0.6;                          // swell then fade
+  const beat = 0.25 + 0.75 * Math.abs(Math.sin(i * 1.9) * 0.6 + rnd() * 0.7);
+  const amp = 14 + 150 * env * beat;
+  bars.push({ x, y, amp, t });
+}
+const drawBars = (parent, list, extra) => list.forEach(b =>
+  el('line', { x1: b.x - b.amp, y1: b.y, x2: b.x + b.amp, y2: b.y, ...extra(b) }, parent));
+
+// glow (under and over so the bones look lit from between)
+const glowU = el('g', { filter: 'url(#glow)' }, H.mid);
+drawBars(glowU, bars, b => ({ stroke: '#fff', 'stroke-width': 12, 'stroke-linecap': 'round', opacity: 0.55 * (1 - b.t * 0.6) }));
+// weave: even bars under the bones, odd bars over
+const under = el('g', {}, H.mid), over = el('g', {}, H.over);
+drawBars(under, bars.filter((b, i) => i % 2 === 0), b => ({ stroke: '#f4f4f4', 'stroke-width': 5.2, 'stroke-linecap': 'round', opacity: 1 - b.t * 0.5 }));
+drawBars(over,  bars.filter((b, i) => i % 2 === 1), b => ({ stroke: '#ffffff', 'stroke-width': 5.2, 'stroke-linecap': 'round', opacity: 1 - b.t * 0.5 }));
+el('line', { x1: bars[0].x, y1: bars[0].y - 10, x2: bars[N - 1].x, y2: bars[N - 1].y + 40, stroke: '#fff', 'stroke-width': 1.2, opacity: 0.5 }, H.over);
+
+// tail of the wave: the last bars break up into smoke
+const tail = el('g', { filter: 'url(#dissolve)' }, H.over);
+for (let i = 0; i < 14; i++) {
+  const b = bars[N - 1], y = b.y + 8 + i * 11, t = i / 13;
+  const amp = (60 + rnd() * 70) * (1 - t * 0.7);
+  el('line', { x1: b.x - amp - 8, y1: y, x2: b.x + amp - 8, y2: y, stroke: '#e8e8e8', 'stroke-width': 4.5,
+    'stroke-linecap': 'round', opacity: 0.55 * (1 - t) }, tail);
+}
+
+// ---- smoky side profile near the wrist ----------------------------------------
+// Local coordinates: 300px tall head, facing left, chin at bottom-left.
+const profile = 'M 150 0 C 60 0 12 70 16 140 C 13 160 20 170 27 180 L 6 216 C 0 226 8 231 24 233 ' +
+  'C 22 246 16 251 26 259 C 20 271 32 276 22 287 C 36 296 42 302 30 322 C 52 340 92 344 112 360 ' +
+  'L 132 420 L 262 420 L 240 330 C 302 250 300 60 150 0 Z';
+// the head dissolves toward the wrist banner instead of ending in a hard neck line
+const fadeG = el('linearGradient', { id: 'headFade', gradientUnits: 'userSpaceOnUse', x1: 0, y1: 1200, x2: 0, y2: 1392 }, defs);
+el('stop', { offset: 0, 'stop-color': '#fff' }, fadeG);
+el('stop', { offset: 0.6, 'stop-color': '#fff', 'stop-opacity': 0.7 }, fadeG);
+el('stop', { offset: 1, 'stop-color': '#fff', 'stop-opacity': 0 }, fadeG);
+const headMask = el('mask', { id: 'headMask', maskUnits: 'userSpaceOnUse', x: 300, y: 800, width: 600, height: 700 }, defs);
+el('rect', { x: 300, y: 800, width: 600, height: 700, fill: 'url(#headFade)' }, headMask);
+const head = el('g', { transform: 'translate(486 1040) scale(0.8)' }, el('g', { mask: 'url(#headMask)' }, H.over));
+// smoke wisps rising from the head up into the wave
+const wisps = el('g', { filter: 'url(#wisp)' }, head);
+const W = [[150, 40, -30, -120, 160, -220], [90, 60, 150, -80, 60, -180], [200, 20, 260, -90, 140, -160], [60, 200, -80, 120, -40, 20]];
+W.forEach(([x, y, c1x, c1y, x2, y2]) =>
+  el('path', { d: `M ${x} ${y} Q ${c1x} ${c1y} ${x2} ${y2}`, fill: 'none', stroke: '#6a6a6a', 'stroke-width': 54, 'stroke-linecap': 'round', opacity: 0.55 }, wisps));
+W.forEach(([x, y, c1x, c1y, x2, y2]) =>
+  el('path', { d: `M ${x} ${y} Q ${c1x} ${c1y} ${x2} ${y2}`, fill: 'none', stroke: '#080808', 'stroke-width': 30, 'stroke-linecap': 'round', opacity: 0.85 }, wisps));
+// lighter smoke halo so the black profile separates from the dark skin
+el('path', { d: profile, fill: '#5c5c5c', filter: 'url(#wisp)', opacity: 0.8, transform: 'translate(-26 -22) scale(1.16)' }, head);
+el('path', { d: profile, fill: '#161616', filter: 'url(#wisp)', opacity: 0.8, transform: 'translate(-12 -10) scale(1.08)' }, head);
+el('path', { d: profile, fill: '#050505', filter: 'url(#smoke)' }, head);
+// rim light along the face so the profile reads even where the smoke eats the edge
+el('path', { d: 'M 40 60 C 18 100 14 130 27 180 L 6 216 C 0 226 8 231 24 233 C 22 246 16 251 26 259 C 20 271 32 276 22 287 C 36 296 42 302 30 322 C 52 340 92 344 112 360',
+  fill: 'none', stroke: '#bdbdbd', 'stroke-width': 2.2, 'stroke-linecap': 'round', opacity: 0.85 }, head);
+
+// ---- lettering ----------------------------------------------------------------
+const T = H.text;
+const fingers = ['index', 'middle', 'ring', 'pinky'];
+
+// "7220" — etched into the bone, one digit per knuckle
+['7', '2', '2', '0'].forEach((ch, i) => {
+  const F = H.f[fingers[i]];
+  const p = H.step(F.mcp, F.angle, 4);
+  const g = el('g', { transform: `translate(${p[0]} ${p[1]}) rotate(${F.angle})` }, T);
+  const a = { class: 'digits', 'font-size': 62, 'text-anchor': 'middle', 'dominant-baseline': 'central' };
+  const hi = el('text', { ...a, fill: '#ffffff', transform: 'translate(2 2)' }, g); hi.textContent = ch;
+  const t = el('text', { ...a, class: 'digits etched', stroke: '#e6e6e6', 'stroke-width': 1.4, 'paint-order': 'stroke' }, g); t.textContent = ch;
+});
+
+// "RN4L" — bold block across the lower finger joints
+['R', 'N', '4', 'L'].forEach((ch, i) => {
+  const F = H.f[fingers[i]];
+  const p = H.step(F.pip, F.angle, 2);
+  const t = el('text', { class: 'block white', 'font-size': 52, 'stroke-width': 6, 'text-anchor': 'middle',
+    'dominant-baseline': 'central', transform: `translate(${p[0]} ${p[1]}) rotate(${F.angle})` }, T);
+  t.textContent = ch;
+});
+
+// "Almost Healed" — sharp banner wrapping the top of the wrist
+const topEdge = 'M 404 1386 Q 610 1412 816 1386', botEdge = 'M 404 1466 Q 610 1492 816 1466';
+el('path', { d: `${topEdge} L 816 1466 Q 610 1492 404 1466 Z`, fill: '#000', filter: 'url(#soft)', opacity: 0.9, transform: 'translate(0 6)' }, T);
+el('path', { d: `${topEdge} L 816 1466 Q 610 1492 404 1466 Z`, fill: '#0d0d0d', stroke: '#f0f0f0', 'stroke-width': 3 }, T);
+el('path', { d: 'M 404 1398 Q 610 1424 816 1398 M 404 1454 Q 610 1480 816 1454', fill: 'none', stroke: '#9a9a9a', 'stroke-width': 1.2 }, T);
+el('path', { id: 'bannerMid', d: 'M 404 1430 Q 610 1456 816 1430', fill: 'none' }, defs);
+const t3 = el('text', { class: 'script', fill: '#fafafa', 'font-size': 60 }, T);
+const tp = el('textPath', { href: '#bannerMid', startOffset: '50%', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, t3);
+tp.textContent = 'Almost Healed';
+</script></body></html>

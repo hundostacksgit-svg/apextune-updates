@@ -1,0 +1,126 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Design 1 — bleeding heart, chain-link, stone plaque</title>
+<link rel="stylesheet" href="hand.css"></head><body>
+<div class="stage"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"></svg></div>
+<script src="hand.js"></script>
+<script>
+// Design 1: dark realism. White skeleton on heavy solid black. Bleeding heart tangled
+// in chain-link on the back of the hand, a cracked blank stone plaque beside it.
+// "Almost Healed" curved over the wrist cuff, "Opportunist" down the index finger,
+// "RN4L" one letter per knuckle.
+const H = HAND.build(document.querySelector('svg'), { negative: true, negativeRadius: 26, negativeBlur: 9,
+  skinLight: '#4a4a4a', skinMid: '#333', skinDark: '#1e1e1e' });
+const { el } = H;
+const defs = el('defs', {}, H.svg);
+
+// ---- extra paint -----------------------------------------------------------
+const bloodG = el('radialGradient', { id: 'blood', cx: 0.35, cy: 0.3, r: 0.8 }, defs);
+el('stop', { offset: 0, 'stop-color': '#8a8a8a' }, bloodG);
+el('stop', { offset: 0.55, 'stop-color': '#2e2e2e' }, bloodG);
+el('stop', { offset: 1, 'stop-color': '#050505' }, bloodG);
+
+const chain = el('pattern', { id: 'chain', patternUnits: 'userSpaceOnUse', width: 34, height: 34, patternTransform: 'rotate(45)' }, defs);
+el('rect', { width: 34, height: 34, fill: 'none' }, chain);
+el('path', { d: 'M 0 1.5 H 34 M 1.5 0 V 34', stroke: '#000', 'stroke-width': 6, opacity: 0.75 }, chain);
+el('path', { d: 'M 0 0 H 34 M 0 0 V 34', stroke: '#cfcfcf', 'stroke-width': 3 }, chain);
+el('path', { d: 'M 0 -1 H 34 M -1 0 V 34', stroke: '#fff', 'stroke-width': 0.9 }, chain);
+
+const fade = el('radialGradient', { id: 'fenceFade', cx: 0.5, cy: 0.5, r: 0.55 }, defs);
+el('stop', { offset: 0, 'stop-color': '#fff' }, fade);
+el('stop', { offset: 0.7, 'stop-color': '#fff', 'stop-opacity': 0.8 }, fade);
+el('stop', { offset: 1, 'stop-color': '#fff', 'stop-opacity': 0 }, fade);
+const fenceMask = el('mask', { id: 'fenceMask' }, defs);
+el('ellipse', { cx: 600, cy: 1020, rx: 235, ry: 200, fill: 'url(#fenceFade)' }, fenceMask);
+
+const stone = el('filter', { id: 'stone', x: '-5%', y: '-5%', width: '110%', height: '110%' }, defs);
+el('feTurbulence', { type: 'fractalNoise', baseFrequency: 0.05, numOctaves: 5, seed: 11, result: 'n' }, stone);
+const dl = el('feDiffuseLighting', { in: 'n', 'lighting-color': '#c8c8c8', surfaceScale: 5, diffuseConstant: 1.0, result: 'lit' }, stone);
+el('feDistantLight', { azimuth: 225, elevation: 50 }, dl);
+el('feComposite', { in: 'lit', in2: 'SourceAlpha', operator: 'in' }, stone);
+
+const frontClip = el('clipPath', { id: 'frontClip' }, defs);
+el('path', { d: 'M 470 1010 L 700 950 L 700 1000 L 470 1060 Z M 460 1110 L 700 1040 L 700 1085 L 460 1160 Z' }, frontClip);
+
+// ---- chain-link fence (behind the heart) -------------------------------------
+const fence = el('g', { mask: 'url(#fenceMask)' }, H.over);
+el('rect', { x: 380, y: 820, width: 440, height: 400, fill: 'url(#chain)' }, fence);
+
+// ---- the heart -------------------------------------------------------------
+const heart = el('g', { transform: 'translate(540 1010) rotate(-8) scale(1.05)' }, H.over);
+const vessel = (d, w) => {
+  el('path', { d, fill: 'none', stroke: '#050505', 'stroke-width': w + 8, 'stroke-linecap': 'round' }, heart);
+  el('path', { d, fill: 'none', stroke: '#4e4e4e', 'stroke-width': w, 'stroke-linecap': 'round' }, heart);
+  el('path', { d, fill: 'none', stroke: '#7a7a7a', 'stroke-width': w * 0.35, 'stroke-linecap': 'round', opacity: 0.6,
+    transform: 'translate(-3 -3)' }, heart);
+};
+vessel('M -20 -75 C -28 -135 45 -160 78 -118', 34);         // aorta
+vessel('M -8 -145 V -175 M 18 -152 V -182 M 44 -148 V -178', 11);  // aortic arch branches
+vessel('M 34 -70 C 22 -112 -32 -122 -66 -96', 26);          // pulmonary trunk
+vessel('M -70 -60 C -88 -95 -78 -125 -84 -150', 22);         // vena cava
+el('path', { d: 'M -10 -70 C 30 -112 112 -96 120 -10 C 126 60 62 122 12 178 C -30 130 -128 70 -124 -15 C -122 -98 -56 -112 -10 -70 Z',
+  fill: 'url(#blood)', stroke: '#000', 'stroke-width': 5 }, heart);
+// coronary vessels
+const cor = el('g', { fill: 'none', stroke: '#0a0a0a', 'stroke-width': 3.5, 'stroke-linecap': 'round' }, heart);
+el('path', { d: 'M -12 -58 C -6 -20 -44 22 -34 92 M -30 10 C -55 20 -70 40 -78 62 M -40 55 C -60 70 -72 90 -70 105' }, cor);
+el('path', { d: 'M 24 -52 C 64 -18 74 34 44 84 M 60 10 C 82 24 96 42 100 60 M 50 60 C 66 74 76 96 70 118' }, cor);
+el('path', { d: 'M -12 -58 C -6 -20 -44 22 -34 92 M 24 -52 C 64 -18 74 34 44 84', fill: 'none', stroke: '#8a8a8a',
+  'stroke-width': 1.2, transform: 'translate(2 2)' }, heart);
+// sheen
+el('ellipse', { cx: -55, cy: -20, rx: 34, ry: 52, fill: '#fff', opacity: 0.22, filter: 'url(#glow)', transform: 'rotate(20 -55 -20)' }, heart);
+// drips
+const drip = (x, y0, len, w) => {
+  const d = `M ${x - w} ${y0} L ${x - w * 0.55} ${y0 + len * 0.62} C ${x - w * 1.6} ${y0 + len * 0.9} ${x + w * 1.6} ${y0 + len * 0.9} ` +
+            `${x + w * 0.55} ${y0 + len * 0.62} L ${x + w} ${y0} Z`;
+  el('path', { d, fill: 'url(#blood)', stroke: '#000', 'stroke-width': 3 }, heart);
+  el('ellipse', { cx: x - w * 0.35, cy: y0 + len * 0.8, rx: w * 0.3, ry: w * 0.4, fill: '#bdbdbd', opacity: 0.55 }, heart);
+};
+drip(-52, 130, 118, 12); drip(6, 172, 96, 11); drip(50, 140, 150, 10); drip(88, 95, 70, 8);
+
+// ---- fence strands in front of the heart (the "intertwined" read) ----------
+const front = el('g', { 'clip-path': 'url(#frontClip)', mask: 'url(#fenceMask)' }, H.over);
+el('rect', { x: 380, y: 820, width: 440, height: 400, fill: 'url(#chain)' }, front);
+
+// ---- cracked stone plaque ------------------------------------------------------
+const plaque = el('g', { transform: 'translate(712 1062) rotate(7)' }, H.over);
+el('rect', { x: -96, y: -76, width: 192, height: 152, rx: 12, fill: '#000', opacity: 0.85, filter: 'url(#soft)', transform: 'translate(6 8)' }, plaque);
+el('rect', { x: -95, y: -75, width: 190, height: 150, rx: 12, fill: '#9a9a9a', filter: 'url(#stone)' }, plaque);
+el('rect', { x: -95, y: -75, width: 190, height: 150, rx: 12, fill: 'none', stroke: '#111', 'stroke-width': 3 }, plaque);
+el('rect', { x: -80, y: -60, width: 160, height: 120, rx: 6, fill: 'none', stroke: '#1a1a1a', 'stroke-width': 4 }, plaque);
+el('rect', { x: -77, y: -57, width: 160, height: 120, rx: 6, fill: 'none', stroke: '#e6e6e6', 'stroke-width': 1.2, opacity: 0.7 }, plaque);
+// chipped corner
+el('path', { d: 'M 60 -75 L 95 -75 L 95 -40 L 82 -52 L 74 -46 L 66 -64 Z', fill: '#141414' }, plaque);
+el('path', { d: 'M 60 -75 L 66 -64 L 74 -46 L 82 -52 L 95 -40', fill: 'none', stroke: '#d0d0d0', 'stroke-width': 1.5 }, plaque);
+// cracks
+const crack = 'M -34 -75 L -24 -44 L -36 -14 L -10 18 L -20 46 L 2 75';
+el('path', { d: crack, fill: 'none', stroke: '#050505', 'stroke-width': 4.5, 'stroke-linejoin': 'round' }, plaque);
+el('path', { d: crack, fill: 'none', stroke: '#e8e8e8', 'stroke-width': 1.3, transform: 'translate(2.2 1.5)' }, plaque);
+el('path', { d: 'M -24 -44 L -4 -50 L 8 -38 M -10 18 L 12 24 L 22 12', fill: 'none', stroke: '#050505', 'stroke-width': 2.5 }, plaque);
+
+// ---- lettering ----------------------------------------------------------------
+const T = H.text;
+const band = (d, w, o = 0.9) => el('path', { d, fill: 'none', stroke: '#000', 'stroke-width': w, filter: 'url(#softWide)', opacity: o }, T);
+
+// "Almost Healed" — Chicano script curved over the wrist cuff
+const arc = 'M 424 1528 Q 610 1436 796 1528';
+band(arc, 130);
+el('path', { id: 'wristArc', d: arc, fill: 'none' }, defs);
+const t1 = el('text', { class: 'script white', 'font-size': 54, 'stroke-width': 6 }, T);
+const tp = el('textPath', { href: '#wristArc', startOffset: '50%', 'text-anchor': 'middle' }, t1);
+tp.textContent = 'Almost Healed';
+
+// "Opportunist" — fine-line block letters vertically down the index finger bone
+const I = H.f.index;
+const mid = H.step(I.mcp, I.angle, I.total * 0.52);
+const t2 = el('text', { class: 'fine white', 'font-size': 38, 'letter-spacing': 5, 'stroke-width': 4.5,
+  'text-anchor': 'middle', 'dominant-baseline': 'central',
+  transform: `translate(${mid[0]} ${mid[1]}) rotate(${90 + I.angle})` }, T);
+t2.textContent = 'OPPORTUNIST';
+
+// "RN4L" — bold across the four main knuckles, one character per knuckle
+['R', 'N', '4', 'L'].forEach((ch, i) => {
+  const F = H.f[['index', 'middle', 'ring', 'pinky'][i]];
+  const p = H.step(F.mcp, F.angle, 6);
+  const t = el('text', { class: 'block white', 'font-size': 68, 'stroke-width': 7, 'text-anchor': 'middle',
+    'dominant-baseline': 'central', transform: `translate(${p[0]} ${p[1]}) rotate(${F.angle})` }, T);
+  t.textContent = ch;
+});
+</script></body></html>

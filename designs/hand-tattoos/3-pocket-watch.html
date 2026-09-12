@@ -1,0 +1,164 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Design 3 — shattering pocket watch into storm</title>
+<link rel="stylesheet" href="hand.css"></head><body>
+<div class="stage"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"></svg></div>
+<script src="hand.js"></script>
+<script>
+// Design 3: fine-line dark surrealism over heavy blackwork. Skeleton base structure,
+// a shattering pocket watch in the centre of the back of the hand, fragments blowing
+// into a storm cloud that spreads toward the wrist. "Deep Thoughts" in gothic around
+// the wrist, "Opportunist" micro-script down the pinky side, "RN4L" down the middle
+// finger along the bone line.
+const H = HAND.build(document.querySelector('svg'), { negative: true, negativeRadius: 22, negativeBlur: 8,
+  skinLight: '#505050', skinMid: '#353535', skinDark: '#1c1c1c' });
+const { el } = H;
+const defs = el('defs', {}, H.svg);
+
+const metal = el('radialGradient', { id: 'metal', cx: 0.35, cy: 0.3, r: 0.8 }, defs);
+el('stop', { offset: 0, 'stop-color': '#f2f2f2' }, metal);
+el('stop', { offset: 0.55, 'stop-color': '#9c9c9c' }, metal);
+el('stop', { offset: 1, 'stop-color': '#3a3a3a' }, metal);
+const dialG = el('radialGradient', { id: 'dial', cx: 0.5, cy: 0.45, r: 0.7 }, defs);
+el('stop', { offset: 0, 'stop-color': '#ffffff' }, dialG);
+el('stop', { offset: 0.8, 'stop-color': '#e2e2e2' }, dialG);
+el('stop', { offset: 1, 'stop-color': '#a8a8a8' }, dialG);
+const shardG = el('linearGradient', { id: 'shard', x1: 0, y1: 0, x2: 1, y2: 1 }, defs);
+el('stop', { offset: 0, 'stop-color': '#f4f4f4' }, shardG);
+el('stop', { offset: 1, 'stop-color': '#7a7a7a' }, shardG);
+
+const cloudF = el('filter', { id: 'cloud', x: '-30%', y: '-40%', width: '160%', height: '180%' }, defs);
+el('feTurbulence', { type: 'fractalNoise', baseFrequency: 0.022, numOctaves: 4, seed: 21, result: 'n' }, cloudF);
+el('feDisplacementMap', { in: 'SourceGraphic', in2: 'n', scale: 34, xChannelSelector: 'R', yChannelSelector: 'G' }, cloudF);
+el('feGaussianBlur', { stdDeviation: 1.6 }, cloudF);
+
+// watch centre and the missing chunk
+const CX = 604, CY = 1012, R = 150;
+const gone = 'M 640 1050 L 680 1070 L 706 1098 L 728 1130 L 758 1150 L 740 1188 L 700 1176 L 664 1170 L 636 1146 L 616 1112 L 626 1080 Z';
+const rimClip = el('clipPath', { id: 'rimClip' }, defs);
+el('circle', { cx: CX, cy: CY, r: R + 6 }, rimClip);
+const watchMask = el('mask', { id: 'watchMask' }, defs);
+el('circle', { cx: CX, cy: CY, r: R + 40, fill: '#fff' }, watchMask);
+el('path', { d: gone, fill: '#000' }, watchMask);
+
+// ---- the pocket watch --------------------------------------------------------
+const W = el('g', { mask: 'url(#watchMask)' }, H.over);
+el('circle', { cx: CX + 8, cy: CY + 12, r: R + 6, fill: '#000', opacity: 0.8, filter: 'url(#softWide)' }, W);
+// bow + stem at 12 o'clock
+el('rect', { x: CX - 13, y: CY - R - 26, width: 26, height: 30, rx: 4, fill: 'url(#metal)', stroke: '#111', 'stroke-width': 2.5 }, W);
+el('path', { d: `M ${CX - 20} ${CY - R - 22} h 40`, stroke: '#111', 'stroke-width': 2 }, W);
+el('circle', { cx: CX, cy: CY - R - 50, r: 20, fill: 'none', stroke: '#111', 'stroke-width': 12 }, W);
+el('circle', { cx: CX, cy: CY - R - 50, r: 20, fill: 'none', stroke: '#c9c9c9', 'stroke-width': 7 }, W);
+// case
+el('circle', { cx: CX, cy: CY, r: R, fill: 'url(#metal)', stroke: '#0a0a0a', 'stroke-width': 4 }, W);
+for (let i = 0; i < 72; i++) {  // knurled edge
+  const a = i * 5 * Math.PI / 180;
+  el('line', { x1: CX + Math.cos(a) * (R - 3), y1: CY + Math.sin(a) * (R - 3), x2: CX + Math.cos(a) * (R - 12), y2: CY + Math.sin(a) * (R - 12),
+    stroke: i % 2 ? '#1a1a1a' : '#e0e0e0', 'stroke-width': 2 }, W);
+}
+el('circle', { cx: CX, cy: CY, r: R - 16, fill: 'none', stroke: '#161616', 'stroke-width': 6 }, W);
+el('circle', { cx: CX, cy: CY, r: R - 22, fill: 'url(#dial)', stroke: '#2a2a2a', 'stroke-width': 1.5 }, W);
+// ticks
+for (let i = 0; i < 60; i++) {
+  const a = (i * 6 - 90) * Math.PI / 180, big = i % 5 === 0;
+  const r1 = R - 26, r2 = r1 - (big ? 12 : 6);
+  el('line', { x1: CX + Math.cos(a) * r1, y1: CY + Math.sin(a) * r1, x2: CX + Math.cos(a) * r2, y2: CY + Math.sin(a) * r2,
+    stroke: '#111', 'stroke-width': big ? 3 : 1.2 }, W);
+}
+// roman numerals
+['XII', 'I', 'II', 'III', 'IIII', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'].forEach((n, i) => {
+  const a = (i * 30 - 90) * Math.PI / 180, r = R - 56;
+  const t = el('text', { x: CX + Math.cos(a) * r, y: CY + Math.sin(a) * r, class: 'roman', 'font-size': 22, fill: '#111',
+    'text-anchor': 'middle', 'dominant-baseline': 'central', transform: `rotate(${i * 30} ${CX + Math.cos(a) * r} ${CY + Math.sin(a) * r})` }, W);
+  t.textContent = n;
+});
+el('circle', { cx: CX, cy: CY, r: R - 76, fill: 'none', stroke: '#222', 'stroke-width': 1 }, W);
+// hands at 10:10
+const hand = (deg, len, w) => {
+  const a = (deg - 90) * Math.PI / 180;
+  const ex = CX + Math.cos(a) * len, ey = CY + Math.sin(a) * len;
+  const bx = CX - Math.cos(a) * 18, by = CY - Math.sin(a) * 18;
+  el('line', { x1: bx, y1: by, x2: ex, y2: ey, stroke: '#0a0a0a', 'stroke-width': w, 'stroke-linecap': 'round' }, W);
+  el('circle', { cx: CX + Math.cos(a) * len * 0.62, cy: CY + Math.sin(a) * len * 0.62, r: w * 1.1, fill: '#0a0a0a' }, W);
+};
+hand(300, 58, 6); hand(60, 86, 4.5);
+el('circle', { cx: CX, cy: CY, r: 6, fill: '#0a0a0a' }, W);
+el('circle', { cx: CX, cy: CY, r: 2.5, fill: '#ddd' }, W);
+// glass sheen
+el('ellipse', { cx: CX - 40, cy: CY - 46, rx: 54, ry: 30, fill: '#fff', opacity: 0.28, filter: 'url(#glow)', transform: `rotate(-32 ${CX - 40} ${CY - 46})` }, W);
+// cracks radiating from the impact point
+const cracks = [
+  'M 640 1050 L 606 1030 L 586 996 L 574 950 L 580 900', 'M 640 1050 L 596 1060 L 546 1052 L 500 1064 L 470 1050',
+  'M 640 1050 L 632 1006 L 640 962 L 662 926 L 668 880', 'M 640 1050 L 676 1010 L 696 976 L 722 948 L 736 908',
+  'M 606 1030 L 578 1022 L 552 992', 'M 596 1060 L 586 1092 L 556 1118 L 536 1150', 'M 632 1006 L 656 986', 'M 616 1112 L 590 1130 L 574 1160',
+];
+cracks.forEach(d => {
+  el('path', { d, fill: 'none', stroke: '#050505', 'stroke-width': 2.6, 'stroke-linejoin': 'round' }, W);
+  el('path', { d, fill: 'none', stroke: '#fff', 'stroke-width': 0.9, opacity: 0.8, transform: 'translate(1.4 1.2)' }, W);
+});
+// broken edge highlight
+const edge = el('g', { 'clip-path': 'url(#rimClip)' }, H.over);
+el('path', { d: gone, fill: '#2a2a2a', opacity: 0.9 }, H.mid);   // the void behind the chunk shows the skin, not bone
+el('path', { d: gone, fill: 'none', stroke: '#000', 'stroke-width': 7, 'stroke-linejoin': 'round', filter: 'url(#soft)', opacity: 0.8 }, edge);
+el('path', { d: gone, fill: 'none', stroke: '#f4f4f4', 'stroke-width': 2.2, 'stroke-linejoin': 'round' }, edge);
+
+// ---- fragments blowing toward the wrist --------------------------------------
+let seed = 31; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+const shards = el('g', {}, H.over);
+const SHAPES = [[[0, -1], [0.9, 0.2], [-0.6, 0.8]], [[-1, -0.6], [1, -0.4], [0.3, 0.9], [-0.7, 0.5]], [[0, -1], [0.6, 0.4], [0.2, 1], [-0.8, 0.1]],
+                [[-1, 0], [0.2, -0.9], [1, 0.3], [-0.2, 0.8]]];
+const shard = (x, y, s, rot, op, dialBit) => {
+  const pts = SHAPES[Math.floor(rnd() * SHAPES.length)].map(([px, py]) => `${px * s},${py * s}`).join(' ');
+  const g = el('g', { transform: `translate(${x} ${y}) rotate(${rot})`, opacity: op }, shards);
+  el('polygon', { points: pts, fill: '#000', opacity: 0.7, filter: 'url(#soft)', transform: 'translate(3 4)' }, g);
+  el('polygon', { points: pts, fill: 'url(#shard)', stroke: '#0a0a0a', 'stroke-width': 1.6, 'stroke-linejoin': 'round' }, g);
+  if (dialBit) el('line', { x1: -s * 0.4, y1: 0, x2: s * 0.3, y2: s * 0.1, stroke: '#111', 'stroke-width': 2 }, g);
+};
+for (let i = 0; i < 26; i++) {
+  const t = i / 25;
+  // curve from the break down and right, then swing back toward the wrist centre
+  const x = 700 + Math.sin(t * Math.PI) * 80 - t * 90 + (rnd() - 0.5) * 90;
+  const y = 1120 + t * 200 + (rnd() - 0.5) * 40;
+  const s = 22 * (1 - t * 0.7) + rnd() * 6;
+  shard(x, y, s, rnd() * 360, 1 - t * 0.5, i % 3 === 0);
+}
+
+// ---- storm cloud at the wrist -------------------------------------------------
+const cloud = el('g', { filter: 'url(#cloud)' }, H.over);
+const puffs = [[470, 1320, 90, 54], [545, 1290, 105, 62], [630, 1300, 112, 66], [715, 1318, 92, 56], [770, 1346, 70, 44],
+               [500, 1372, 96, 52], [600, 1380, 120, 58], [700, 1376, 96, 50], [430, 1370, 60, 40]];
+puffs.forEach(([cx, cy, rx, ry]) => el('ellipse', { cx, cy: cy - 6, rx: rx + 8, ry: ry + 6, fill: '#6a6a6a', opacity: 0.95 }, cloud));
+puffs.forEach(([cx, cy, rx, ry]) => el('ellipse', { cx, cy: cy + 10, rx: rx + 6, ry: ry + 4, fill: '#000', opacity: 0.9 }, cloud));
+puffs.forEach(([cx, cy, rx, ry]) => el('ellipse', { cx, cy, rx, ry, fill: '#0a0a0a' }, cloud));
+puffs.forEach(([cx, cy, rx, ry]) => el('ellipse', { cx: cx - rx * 0.2, cy: cy - ry * 0.5, rx: rx * 0.55, ry: ry * 0.28, fill: '#8c8c8c', opacity: 0.5 }, cloud));
+// lightning
+const bolt = 'M 640 1290 L 618 1330 L 636 1332 L 604 1392 L 622 1390 L 590 1450';
+el('path', { d: bolt, fill: 'none', stroke: '#fff', 'stroke-width': 9, 'stroke-linejoin': 'round', filter: 'url(#glow)', opacity: 0.8 }, H.over);
+el('path', { d: bolt, fill: 'none', stroke: '#fff', 'stroke-width': 3, 'stroke-linejoin': 'round' }, H.over);
+
+// ---- lettering ----------------------------------------------------------------
+const T = H.text;
+const band = (d, w, o = 0.92) => el('path', { d, fill: 'none', stroke: '#000', 'stroke-width': w, filter: 'url(#softWide)', opacity: o }, T);
+
+// "Deep Thoughts" — gothic wrapping around the wrist bone
+const arc = 'M 424 1532 Q 610 1440 796 1532';
+band(arc, 140);
+el('path', { id: 'wristArc', d: arc, fill: 'none' }, defs);
+const t1 = el('text', { class: 'gothic white', 'font-size': 58, 'stroke-width': 6 }, T);
+const tp1 = el('textPath', { href: '#wristArc', startOffset: '50%', 'text-anchor': 'middle' }, t1);
+tp1.textContent = 'Deep Thoughts';
+
+// "Opportunist" — micro-script down the side of the hand along the pinky bone
+const side = 'M 826 905 C 838 1010 826 1160 806 1330';
+band(side, 62, 0.85);
+el('path', { id: 'sidePath', d: side, fill: 'none' }, defs);
+const t2 = el('text', { class: 'micro white', 'font-size': 52, 'stroke-width': 4, 'letter-spacing': 1 }, T);
+const tp2 = el('textPath', { href: '#sidePath', startOffset: '50%', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, t2);
+tp2.textContent = 'Opportunist';
+
+// "RN4L" — down the middle finger, tracking the bone line
+const M = H.f.middle;
+const c = H.step(M.mcp, M.angle, M.total * 0.55);
+const t3 = el('text', { class: 'block white', 'font-size': 60, 'letter-spacing': 30, 'stroke-width': 7,
+  'text-anchor': 'middle', 'dominant-baseline': 'central',
+  transform: `translate(${c[0]} ${c[1]}) rotate(${90 + M.angle})` }, T);
+t3.textContent = 'RN4L';
+</script></body></html>
