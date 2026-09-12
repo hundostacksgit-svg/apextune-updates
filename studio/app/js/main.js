@@ -32,7 +32,7 @@ import { initHistoryUi, showDid, openHistory, paintUndoButtons } from './history
 import { initTips, applyTipsForLevel, setTips, tipsOn } from './tips.js';
 import { initMoreSheet } from './more-sheet.js';
 import { initMaskUi, paintMaskUi } from './mask-ui.js';
-import { chooseProject } from './start.js';
+import { chooseProject, isOpen as startIsOpen } from './start.js';
 import {
   freezeFrame, matchFrame, insertAt, overwriteAt, shuttleNext, shuttleLabel,
 } from './engine/edits.js';
@@ -898,8 +898,12 @@ export const actions = {
     actions.seek(0);
     actions.refresh();
     paintName();
-    runIntent(choice.intent);
+    await bringDropped(choice);
+    runIntent(choice.intent, { haveFiles: Boolean(choice.files?.length) });
   },
+
+  /** A .omnidx.json edit or a .omnidxpkg bundle from another device. */
+  openProjectFile(file) { return importProjectJson(file); },
 
   newProject() { return actions.openStart({ canCancel: true }); },
 
@@ -1225,6 +1229,9 @@ function paintUpgrade() {
 const PANEL_KEYS = ['media', 'ai', 'templates', 'filters', 'effects', 'transitions', 'overlays', 'color', 'text'];
 
 function onKey(e) {
+  // The start screen has its own keys; the timeline behind it must not hear
+  // a Space or a Delete meant for a row in the list.
+  if (startIsOpen()) return;
   const typing = /^(input|textarea|select)$/i.test(e.target.tagName) || e.target.isContentEditable;
   const mod = e.ctrlKey || e.metaKey;
 
@@ -1676,7 +1683,8 @@ async function openingScreen() {
   if (choice?.action === 'import') { await importProjectJson(choice.file); return; }
   if (choice?.action === 'new') {
     await createFromChoice(choice);
-    runIntent(choice.intent);
+    await bringDropped(choice);
+    runIntent(choice.intent, { haveFiles: Boolean(choice.files?.length) });
   }
 }
 
@@ -1699,28 +1707,59 @@ async function createFromChoice(choice) {
 }
 
 /*
+ * Footage dropped on the start screen comes in the moment the project
+ * exists. For a blank timeline or a talking head it goes straight on, in
+ * the order it was dropped — somebody who dropped three clips on "new
+ * project" meant "start with these", not "put these in a bin for me". For
+ * the builders (montage, copy, photos, multicam) it stays in the bin,
+ * because the builder is what arranges it.
+ */
+async function bringDropped(choice) {
+  const files = choice.files || [];
+  if (!files.length) return;
+  const records = await actions.importFiles(files, { silent: true });
+  if (!records.length) return;
+  const onTimeline = choice.intent === 'blank' || choice.intent === 'talk' || !choice.intent;
+  if (onTimeline) for (const rec of records) actions.appendMedia(rec.id);
+  actions.seek(0);
+  actions.refresh();
+  toast(`${records.length} file${records.length === 1 ? '' : 's'} in${onTimeline ? ', on the timeline' : ''}`, 'ok');
+}
+
+/*
  * The start screen's "start with" choice, once the project exists. Each is a
  * door into something the editor already does; the door is opened here so
  * the person lands where the choice leads rather than on a blank timeline
  * wondering where the montage builder went.
  */
-function runIntent(intent) {
+function runIntent(intent, { haveFiles = false } = {}) {
   if (!intent || intent === 'blank') return;
   const input = $('#file-input');
+  // The picker opens only when nothing came in with the project; footage
+  // dropped on the start screen is already here.
+  const ask = () => { if (!haveFiles) input?.click(); };
   setTimeout(async () => {
     if (intent === 'montage') {
       openPanel('ai');
-      toast('Bring your clips in, then pick a montage — it builds the whole cut', '', 5200);
+      toast(haveFiles ? 'Pick a montage — it builds the whole cut from what came in' : 'Bring your clips in, then pick a montage — it builds the whole cut', '', 5200);
       setTimeout(() => $('#ai-montage')?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 120);
-      input?.click();
+      ask();
     } else if (intent === 'copy') {
       openPanel('ai');
       setTimeout(() => { $('#ai-ref')?.setAttribute('open', ''); $('#ref-pick')?.scrollIntoView({ block: 'center' }); }, 120);
-      toast('Import your clips first, then choose the video whose edit to copy', '', 5200);
-      input?.click();
+      toast(haveFiles ? 'Choose the video whose edit to copy' : 'Import your clips first, then choose the video whose edit to copy', '', 5200);
+      ask();
     } else if (intent === 'photos') {
-      if (input) { input.accept = 'image/*'; input.click(); setTimeout(() => { input.accept = ''; }, 3000); }
-      toast('Pick your photos — then Styles → Photo dump builds the slideshow', '', 5200);
+      if (input && !haveFiles) { input.accept = 'image/*'; input.click(); setTimeout(() => { input.accept = ''; }, 3000); }
+      toast(haveFiles ? 'Styles → Photo dump builds the slideshow from what came in' : 'Pick your photos — then Styles → Photo dump builds the slideshow', '', 5200);
+    } else if (intent === 'multicam') {
+      openPanel('media');
+      toast(haveFiles ? 'Select the angles in Media, then Clip → Line up angles by sound' : 'Import every angle, select them in Media, then Clip → Line up angles by sound', '', 6000);
+      ask();
+    } else if (intent === 'talk') {
+      openPanel('audio');
+      toast(haveFiles ? 'Audio → Cut the silences takes the pauses out; Captions puts the words on' : 'Import the take, then Audio → Cut the silences takes the pauses out', '', 6000);
+      ask();
     } else if (intent === 'import') {
       input?.click();
     }
@@ -1735,16 +1774,42 @@ function runIntent(intent) {
  */
 async function importProjectJson(file) {
   let doc;
-  try { doc = JSON.parse(await file.text()); } catch { toast('That is not a project file', 'bad', 4200); return; }
+  let footage = 0;
+  try {
+    // A bundle carries its footage; a bare project file does not. Told apart
+    // by content, not by extension, because people rename things.
+    const head = new Uint8Array(await file.slice(0, 2).arrayBuffer());
+    if (head[0] === 0x50 && head[1] === 0x4b) {
+      toast('Opening bundle…');
+      const { unpack } = await import('./engine/bundle.js');
+      const out = await unpack(file);
+      doc = out.project;
+      /*
+       * The footage goes into the store under its hash before the document
+       * is opened, so opening finds every clip where a fresh import would
+       * have put it. Importing the files afterwards would give each a second
+       * record with a new id, and the clips — which point at the old ids —
+       * would show as missing on the very device that has the files.
+       */
+      for (const { hash, file: f } of out.media) {
+        // eslint-disable-next-line no-await-in-loop -- one write at a time keeps the UI alive
+        await store.putMedia(hash, f, { name: f.name, kind: media.kindOf(f) });
+        footage++;
+      }
+    } else {
+      doc = JSON.parse(await file.text());
+    }
+  } catch (err) { toast(`That is not a project file${err?.message ? ` — ${err.message}` : ''}`, 'bad', 5200); return; }
   if (!doc || typeof doc !== 'object' || !Array.isArray(doc.clips) || !doc.settings) { toast('That is not an OmniDx project file', 'bad', 4200); return; }
   const existing = await store.listProjects();
   if (existing.some((p) => p.id === doc.id)) doc.id = `${doc.id}-${Date.now().toString(36)}`;
-  doc.name = doc.name || file.name.replace(/\.omnidx\.json$|\.json$/i, '');
+  doc.name = doc.name || file.name.replace(/\.omnidx\.json$|\.json$|\.omnidxpkg$|\.zip$/i, '');
   media.releaseAll();
   await loadDocument(doc);
   await store.saveProject(S.project);
   await store.pref('lastProject', S.project.id);
-  toast(`Opened ${S.project.name} — its media will need re-importing if it is not on this device`, '', 6000);
+  if (footage) toast(`Opened ${S.project.name} with ${footage} file${footage === 1 ? '' : 's'} of footage`, 'ok', 5000);
+  else toast(`Opened ${S.project.name} — its media will need re-importing if it is not on this device`, '', 6000);
 }
 
 /* boot                                                                */

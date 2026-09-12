@@ -287,25 +287,9 @@ function wire(host) {
       const file = picker.files?.[0];
       if (!file) return;
       try {
-        // A bundle carries its footage; a bare project file does not. Told
-        // apart by content, not by extension, because people rename things.
-        const head = new Uint8Array(await file.slice(0, 2).arrayBuffer());
-        const isZip = head[0] === 0x50 && head[1] === 0x4b;
-        if (isZip) {
-          toast('Opening bundle…');
-          const { unpack } = await import('../engine/bundle.js');
-          const { project, media } = await unpack(file);
-          await actions.loadDocument(project);
-          if (media.length) {
-            await actions.importFiles(media.map((m) => m.file), { silent: true });
-            toast(`Opened with ${media.length} file${media.length === 1 ? '' : 's'} of footage`, 'ok', 5000);
-          } else {
-            toast('Project opened', 'ok');
-          }
-        } else {
-          await actions.loadDocument(JSON.parse(await file.text()));
-          toast('Project opened', 'ok');
-        }
+        // The same door as the start screen: a bundle's footage is stored
+        // under its hash before the edit opens, so every clip is found.
+        await actions.openProjectFile(file);
       } catch (err) {
         toast(`That file could not be opened: ${err.message}`, 'bad', 6000);
       }

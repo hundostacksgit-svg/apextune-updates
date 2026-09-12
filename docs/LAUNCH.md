@@ -131,11 +131,26 @@ eyeballed.
   normally afterwards. The message no longer strands anyone
 - **A start screen that is a project manager.** Five shapes including
   cinemascope, sizes per shape from light to 4K or a custom one that keeps
-  the shape, five frame rates, the colour behind the picture, four ways to
-  begin (blank, montage from clips, copy an edit, photo dump), the first
-  clip's picture on every row, search and sort, rename in place, duplicate
-  (shares footage, does not double it), delete with a question, a door for
-  a project file from another device, and how much of the device is used
+  the shape, five frame rates, the colour behind the picture, six ways to
+  begin (blank, montage from clips, copy an edit, photo dump, multicam,
+  talking head), the first clip's picture on every row, search (press /)
+  and sort (recent, name, longest, most footage), rename in place,
+  duplicate (shares footage, does not double it), delete with a question
+  and a twelve-second undo, a door for a project file or bundle from
+  another device, and how much of the device is used
+- **Setups that read themselves off the footage.** Seven quick-setup chips
+  (TikTok / Reels, YouTube 4K, YouTube 1080p60, Cinema 24, Instagram feed,
+  Square ad, Broadcast PAL) fill shape, size and rate in one press and light
+  when the form matches them; a summary line says exactly what will be
+  made; **Match a clip** — or footage dropped anywhere on the screen —
+  reads the clip's size and its measured frame rate and sets the nearest
+  shape, size and rate, saying what it read and what it chose; dropped
+  footage comes in with the project (onto the timeline for a blank start or
+  a talking head, into the bin for the builders); the last setup used is
+  the one offered next time. **Pack** on a row writes the edit and every
+  clip it uses as one .omnidxpkg, and opening a bundle stores its footage
+  by hash before the edit loads, so every clip is found rather than
+  duplicated
 - **Export for every platform.** One press renders vertical, landscape,
   square and portrait from the same edit, each from a reframed copy that
   keeps the frame covered and centres on a tracked subject where there is
