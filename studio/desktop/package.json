@@ -21,12 +21,27 @@
   "build": {
     "appId": "net.omnidx.studio",
     "productName": "OmniDx Studio",
-    "directories": { "output": "out" },
-    "files": ["main.js", "preload.js", "package.json"],
+    "directories": {
+      "output": "out"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "package.json"
+    ],
     "extraResources": [
-      { "from": "../app", "to": "studio/app" },
-      { "from": "../assets", "to": "studio/assets" },
-      { "from": "../../icons", "to": "studio/icons" }
+      {
+        "from": "../app",
+        "to": "studio/app"
+      },
+      {
+        "from": "../assets",
+        "to": "studio/assets"
+      },
+      {
+        "from": "../../icons",
+        "to": "studio/icons"
+      }
     ],
     "fileAssociations": [
       {
@@ -34,18 +49,46 @@
         "name": "OmniDx project",
         "role": "Editor",
         "mimeType": "application/json"
+      },
+      {
+        "ext": "omnidxpkg",
+        "name": "OmniDx project bundle",
+        "role": "Editor",
+        "mimeType": "application/zip"
       }
     ],
     "mac": {
       "category": "public.app-category.video",
-      "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
       "icon": "../assets/icons/icon-512.png",
       "hardenedRuntime": true,
       "entitlements": "entitlements.mac.plist",
       "entitlementsInherit": "entitlements.mac.plist"
     },
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "../assets/icons/icon-512.png"
     },
     "nsis": {
@@ -54,9 +97,24 @@
       "perMachine": false
     },
     "linux": {
-      "target": ["AppImage", "deb", "rpm"],
+      "target": [
+        "AppImage",
+        "deb",
+        "rpm"
+      ],
       "category": "AudioVideo",
       "icon": "../assets/icons/icon-512.png"
-    }
+    },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://omnidx.net/studio/download/files/",
+        "channel": "latest"
+      }
+    ],
+    "artifactName": "OmniDx-Studio-${version}-${os}-${arch}.${ext}"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.0"
   }
 }

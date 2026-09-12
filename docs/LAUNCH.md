@@ -62,12 +62,18 @@ ratings wait and go out later.
 **Until you do this, do not advertise free-form AI editing.** It will not do
 what the words on the pricing page promise.
 
-### 3. Build the desktop installers — 30 minutes
+### 3. Build the desktop installers — 30 minutes, mostly waiting
 
-`studio/download/files/` is empty, so the download buttons for macOS and
-Windows have nothing behind them. The browser and phone installs work today;
-the desktop ones do not until there is a file there. See
-`studio/desktop/README.md`.
+`studio/download/files/` is empty, so the macOS, Windows and Linux buttons
+offer the installed web app instead of a native installer. The web app *is*
+the app — its own window and icon, offline, opens files, shares in from a
+phone — so nothing is broken; the native build adds ProRes and hardware
+decode. To publish it: open the repository's **Actions** tab, run **Desktop
+installers**, download the three artifacts, put every file in
+`studio/download/files/`, name them in `DOWNLOADS` in
+`studio/assets/config.js`, push. The full walk-through, signing and the
+100 MB note are in `docs/STUDIO-BUILD.md`. Installed copies then update
+themselves weekly from that folder.
 
 ---
 
@@ -321,6 +327,25 @@ per-platform downloads, an account that remembers you.
 - **Parenting, null objects and anchor points**: a layer follows its parent
   through the whole chain, and pivots where the anchor is put
 - Verified by `verify-expressions`, `verify-shapes`, `verify-text-animators`
+
+**Installing it**
+- The editor installs itself: an Install button in the top bar, File →
+  Install as an app, a row in the phone's More sheet, and one offer after
+  the first export. Where the browser has a prompt it is used; where it does
+  not (Safari on a Mac, an iPhone, Firefox) the dialog gives the real menu
+  route, and says plainly when a browser cannot install at all
+- Installed, it is an app: opens `.omnidx` projects, bundles, video, audio
+  and images from the file manager; appears in Android's Share sheet and
+  takes the shared clip straight into the project (the service worker is the
+  server); handles `web+omnidx://project/…` links; focuses the window that
+  is already open; and the install dialog shows real screenshots
+- The download page says the true route for each browser, unfolds the steps
+  under the button, and carries an honest table of what a tab, an install
+  and the desktop build each give
+- The desktop build updates itself weekly from `studio/download/files/`
+  (never during a render, installs on quit), opens bundles and footage by
+  double-click, and a workflow builds all three installers on the machines
+  they need. Verified by `verify-install` and `verify-download`
 
 **The look**
 - Its own chrome: one family of line icons, a graphite palette with a mint

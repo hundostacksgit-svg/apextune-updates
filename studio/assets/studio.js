@@ -527,10 +527,48 @@ export function detectPlatform() {
   return 'web';
 }
 
+/**
+ * Which browser, because the install route is the browser's, not the OS's:
+ * Safari on a Mac is File → Add to Dock, Chrome and Edge have a prompt,
+ * Firefox on a desktop cannot install at all. The page says the true thing
+ * for each rather than one line that is wrong for most.
+ */
+export function detectBrowser() {
+  const ua = navigator.userAgent;
+  if (/Edg\//.test(ua)) return 'edge';
+  if (/OPR\//.test(ua)) return 'opera';
+  if (/SamsungBrowser/.test(ua)) return 'samsung';
+  if (/Firefox\/|FxiOS/.test(ua)) return 'firefox';
+  if (/CriOS|Chrome\//.test(ua)) return 'chrome';
+  if (/Safari\//.test(ua)) return 'safari';
+  return 'other';
+}
+
+/** The menu route for this browser on this platform: { steps[], note }. */
+export function installSteps(os, br) {
+  if (os === 'ios') {
+    return { steps: [
+      br === 'safari' ? 'Open this page in <b>Safari</b> — you are in it now.' : 'Open this page in <b>Safari</b> (Chrome on an iPhone can also do this from its Share menu on iOS 16.4 or newer).',
+      'Press <b>Share</b> <span class="kbd">↑</span> at the bottom of the screen.',
+      'Scroll down and choose <b>Add to Home Screen</b>.',
+    ], note: '' };
+  }
+  if (os === 'android') {
+    if (br === 'samsung') return { steps: ['Open the <b>≡</b> menu in Samsung Internet.', 'Choose <b>Add page to</b> → <b>Home screen</b>.', 'Confirm.'], note: '' };
+    if (br === 'firefox') return { steps: ['Open the <b>⋮</b> menu in Firefox.', 'Choose <b>Install</b>.', 'Confirm.'], note: '' };
+    return { steps: ['Open the <b>⋮</b> menu in Chrome.', 'Choose <b>Install app</b>.', 'Confirm. It lands in your app drawer.'], note: '' };
+  }
+  if (br === 'safari') return { steps: ['Open <a href="../app/">the editor</a> in Safari.', 'In the menu bar choose <b>File</b> → <b>Add to Dock…</b>', 'Press <b>Add</b>.'], note: 'Needs Safari 17 (macOS Sonoma) or newer. On an older Mac, Chrome or Edge do the same in one press.' };
+  if (br === 'firefox') return { steps: ['<a href="../app/">Open the editor</a> — everything works in Firefox, offline included.', 'For a dock icon and its own window, open the same address once in <b>Chrome</b>, <b>Edge</b> or <b>Safari</b> and press Install there.'], note: 'Firefox removed app install from the desktop version; no site can turn it back on.' };
+  if (br === 'edge') return { steps: ['Open <a href="../app/">the editor</a> in Edge.', 'Open the <b>⋯</b> menu → <b>Apps</b> → <b>Install OmniDx Studio</b>.', 'Press <b>Install</b>.'], note: 'Or press the install icon at the right end of the address bar.' };
+  return { steps: ['Open <a href="../app/">the editor</a> in Chrome.', 'Press the <b>install icon</b> at the right end of the address bar, or <b>⋮</b> → <b>Cast, save and share</b> → <b>Install page as app…</b>', 'Press <b>Install</b>.'], note: 'Double-clicking a project or a video then opens it there.' };
+}
+
 function initDownloads() {
   const host = $('#downloads');
   if (!host) return;
   const me = detectPlatform();
+  const br = detectBrowser();
 
   /*
    * The install prompt only exists in browsers that offer it, and it only fires
@@ -543,13 +581,12 @@ function initDownloads() {
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferred = e; paint(); });
   window.addEventListener('appinstalled', () => { installed = true; deferred = null; paint(); });
 
-  /** iOS has no prompt API at all: Safari's Share menu is the only route. */
-  const iosSteps = `
-    <ol class="steps">
-      <li>Open this page in <b>Safari</b> — Chrome on an iPhone cannot install apps.</li>
-      <li>Press <b>Share</b> <span class="kbd">↑</span> at the bottom of the screen.</li>
-      <li>Scroll down and choose <b>Add to Home Screen</b>.</li>
-    </ol>`;
+  /** The steps for a platform, in this browser. iOS has no prompt API at all. */
+  const stepsFor = (os) => {
+    const s = installSteps(os, os === me ? br : (os === 'ios' ? 'safari' : os === 'android' ? 'chrome' : 'chrome'));
+    return `<ol class="steps">${s.steps.map((x) => `<li>${x}</li>`).join('')}</ol>${s.note ? `<p class="tiny muted" style="margin:8px 0 0">${s.note}</p>` : ''}`;
+  };
+  const iosSteps = stepsFor('ios');
 
   function action(os) {
     const url = downloadUrl(os);
@@ -563,7 +600,8 @@ function initDownloads() {
     }
 
     if (installed && (os === me || os === 'web')) {
-      return `<div class="note ok tiny" style="margin:0">Already installed on this device.</div>`;
+      return `<a class="btn btn-primary" href="../app/">Open the app</a>
+        <div class="tiny muted" style="margin-top:6px">Already installed on this device.</div>`;
     }
 
     // No installer built yet. The web app is not a consolation prize — it is
@@ -571,8 +609,19 @@ function initDownloads() {
     if (d.install === 'safari' || (os === 'ios')) {
       return `<button class="btn btn-primary" data-ios>Add to Home Screen</button>`;
     }
-    if (deferred) {
+    if (deferred && (os === me || os === 'web')) {
       return `<button class="btn btn-primary" data-install-now>Install the app</button>`;
+    }
+    // A desktop, in this browser: the real route, not "see your browser".
+    if (os === me && br === 'firefox') {
+      return `<a class="btn btn-primary" href="../app/">Open the editor</a>
+        <button class="btn btn-sm btn-ghost" data-steps="${os}" style="margin-top:8px">Firefox and installing</button>`;
+    }
+    if (os === me && br === 'safari') {
+      return `<button class="btn btn-primary" data-steps="${os}">Add to the Dock</button>`;
+    }
+    if (os === me) {
+      return `<button class="btn btn-primary" data-steps="${os}">Install the app</button>`;
     }
     return `<a class="btn btn-primary" href="../app/">Open the editor</a>
       <div class="tiny muted" style="margin-top:6px">Then choose <b>Install</b> in your browser</div>`;
@@ -609,6 +658,12 @@ function initDownloads() {
       const box = b.closest('.dl');
       if (box.querySelector('.steps')) { box.querySelector('.ios-steps').remove(); return; }
       b.insertAdjacentHTML('afterend', `<div class="ios-steps">${iosSteps}</div>`);
+    }));
+    // The same unfold for a desktop: the steps for this browser, under the button.
+    $$('[data-steps]', host).forEach((b) => b.addEventListener('click', () => {
+      const box = b.closest('.dl');
+      if (box.querySelector('.steps')) { box.querySelector('.ios-steps').remove(); return; }
+      b.insertAdjacentHTML('afterend', `<div class="ios-steps">${stepsFor(b.dataset.steps)}</div>`);
     }));
   }
 

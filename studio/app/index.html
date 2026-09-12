@@ -47,7 +47,7 @@
 </div>
 
 <!-- ===================== top bar ===================== -->
-<header class="topbar">
+<header class="topbar" id="topbar">
   <div class="tb-left">
     <a class="brand" href="../" title="Back to omnidx.net/studio">
       <span class="mark"></span><span class="bname">OmniDx <b>Studio</b></span>
@@ -103,6 +103,8 @@
     <button class="tb-btn" id="btn-palette" title="Find anything (Ctrl+K)"><span class="ico">⌘</span><span class="lbl">Find</span></button>
     <button class="tb-btn" id="btn-theme" title="Dark / light"><span class="ico">◐</span></button>
     <button class="tb-btn" id="btn-account" title="Account and licence"><span class="ico">👤</span><span class="lbl" id="acct-lbl">Free</span></button>
+    <!-- Install as an app. Hidden once it is one, and where the browser cannot. -->
+    <button class="tb-btn tb-install" id="btn-install" title="Install as an app" hidden><span class="ico">⇩</span><span class="lbl">Install</span></button>
     <!--
       The way up, from inside the app.
 

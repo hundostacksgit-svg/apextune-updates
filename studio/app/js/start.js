@@ -108,7 +108,7 @@ export function isOpen() { return Boolean(host) && !host.hidden; }
  * with nothing: there is no way out of this screen except choosing, because
  * "no project" is not a state the editor can be in.
  */
-export async function chooseProject({ canCancel = false } = {}) {
+export async function chooseProject({ canCancel = false, files = null } = {}) {
   const [projects, remembered] = await Promise.all([
     store.listProjects(),
     store.pref('startDefaults').catch(() => null),
@@ -118,7 +118,11 @@ export async function chooseProject({ canCancel = false } = {}) {
   matched = '';
   build(projects, { canCancel });
   store.usage().then((u) => paintUsage(u)).catch(() => {});
-  return new Promise((resolve) => { resolveChoice = resolve; });
+  const waiting = new Promise((resolve) => { resolveChoice = resolve; });
+  // Files the app was opened with land here the way a drop does: a project
+  // file opens, footage sets the shape and comes in with the new project.
+  if (files?.length) takeDrop(files);
+  return waiting;
 }
 
 export function close() {
@@ -512,7 +516,7 @@ async function useClip(file) {
 }
 
 /* Footage dropped on the screen: the first video or photo sets the form; all of it comes in with the project. */
-async function takeDrop(files) {
+export async function takeDrop(files) {
   const list = [...files];
   if (!list.length) return;
   const one = list[0];

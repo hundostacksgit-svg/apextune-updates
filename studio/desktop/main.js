@@ -14,6 +14,8 @@
  */
 
 const { app, BrowserWindow, Menu, dialog, shell, ipcMain, nativeTheme } = require('electron');
+let autoUpdater = null;
+try { ({ autoUpdater } = require('electron-updater')); } catch { /* running from source without it installed */ }
 const path = require('node:path');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -54,7 +56,7 @@ function createWindow() {
   // Show only once there is something to look at, rather than a white rectangle.
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
-    if (pendingOpen) { sendOpen(pendingOpen); pendingOpen = null; }
+    if (pendingOpen) { sendOpenAny(pendingOpen); pendingOpen = null; }
   });
 
   // Anything that isn't our own file opens in the real browser. A window that
@@ -76,6 +78,13 @@ function createWindow() {
 
 function sendOpen(filePath) {
   try {
+    // A bundle is a zip with the footage inside; it goes over as bytes and the
+    // editor unpacks it the same way it does one dropped on the start screen.
+    if (/\.omnidxpkg$/i.test(filePath)) {
+      const bytes = fs.readFileSync(filePath);
+      mainWindow?.webContents.send('omnidx:open-project', { path: filePath, bytes: new Uint8Array(bytes) });
+      return;
+    }
     const text = fs.readFileSync(filePath, 'utf8');
     mainWindow?.webContents.send('omnidx:open-project', { path: filePath, json: text });
   } catch (err) {
@@ -83,13 +92,59 @@ function sendOpen(filePath) {
   }
 }
 
+/** Does this look like something we open? Projects, bundles, and footage. */
+function isOurs(arg) {
+  return /\.(omnidx|omnidx\.json|omnidxpkg|mp4|mov|webm|mkv|m4v|mp3|wav|m4a|aac|ogg|flac|jpe?g|png|webp|gif)$/i.test(arg) && fs.existsSync(arg);
+}
+
+/** Footage from a double-click goes to the editor as bytes, to import. */
+function sendOpenAny(filePath) {
+  if (/\.(omnidx|omnidx\.json|omnidxpkg)$/i.test(filePath)) { sendOpen(filePath); return; }
+  try {
+    const bytes = fs.readFileSync(filePath);
+    mainWindow?.webContents.send('omnidx:open-media', { path: filePath, name: path.basename(filePath), bytes: new Uint8Array(bytes) });
+  } catch (err) {
+    dialog.showErrorBox('Could not open that file', err.message);
+  }
+}
+
 function openDialog() {
   const picked = dialog.showOpenDialogSync(mainWindow, {
     title: 'Open an OmniDx project',
-    filters: [{ name: 'OmniDx project', extensions: ['json', 'omnidx'] }],
+    filters: [{ name: 'OmniDx project', extensions: ['json', 'omnidx', 'omnidxpkg'] }],
     properties: ['openFile'],
   });
   if (picked?.[0]) sendOpen(picked[0]);
+}
+
+/* ------------------------------------------------------------------ */
+/* updates                                                             */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Once a week, quietly. The check reads latest.yml from the same folder the
+ * download page serves, downloads in the background, and installs the next
+ * time the app quits. It never interrupts: no dialog, no restart prompt, and
+ * nothing at all while a render is running — the renderer tells us when one
+ * is, and the check waits.
+ */
+const WEEK = 7 * 24 * 60 * 60 * 1000;
+let rendering = false;
+ipcMain.on('omnidx:rendering', (_event, on) => { rendering = Boolean(on); });
+
+function startUpdates() {
+  if (!autoUpdater || isDev) return;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.allowPrerelease = false;
+  autoUpdater.logger = null;
+  autoUpdater.on('error', () => { /* offline, or nothing published yet: try next week */ });
+  autoUpdater.on('update-downloaded', () => {
+    mainWindow?.webContents.send('omnidx:update-ready');
+  });
+  const check = () => { if (!rendering) autoUpdater.checkForUpdates().catch(() => {}); };
+  setTimeout(check, 30 * 1000);          // not during launch
+  setInterval(check, WEEK);
 }
 
 ipcMain.handle('omnidx:save-file', async (_event, { name, data, mime }) => {
@@ -246,23 +301,24 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
   app.on('second-instance', (_event, argv) => {
-    const file = argv.find((a) => a.endsWith('.json') || a.endsWith('.omnidx'));
+    const file = argv.slice(1).find(isOurs);
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
-      if (file) sendOpen(file);
+      if (file) sendOpenAny(file);
     }
   });
 
   app.on('open-file', (event, filePath) => {      // macOS
     event.preventDefault();
-    if (mainWindow) sendOpen(filePath); else pendingOpen = filePath;
+    if (mainWindow) sendOpenAny(filePath); else pendingOpen = filePath;
   });
 
   app.whenReady().then(() => {
     buildMenu();
     createWindow();
-    const file = process.argv.find((a) => a.endsWith('.omnidx') || a.endsWith('.omnidx.json'));
+    startUpdates();
+    const file = process.argv.slice(1).find(isOurs);
     if (file) pendingOpen = file;
 
     app.on('activate', () => {

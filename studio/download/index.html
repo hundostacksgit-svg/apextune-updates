@@ -144,6 +144,25 @@
       no 400&nbsp;MB download, and no waiting on anyone's review process.
       <button class="btn btn-sm" data-install hidden style="margin-top:12px">Install OmniDx Studio</button>
     </div>
+
+    <!-- What each way of running it gives. Every row is true today; the desktop
+         column is what the Electron build adds once its installer is published. -->
+    <div class="cmp-wrap" style="margin-top:26px">
+      <table class="cmp" id="what-you-get" aria-label="What you get on each platform">
+        <thead><tr><th>What you get</th><th>In a browser tab</th><th>Installed from here</th><th>Desktop build</th></tr></thead>
+        <tbody>
+          <tr><td>The whole editor — timeline, colour, effects, AI, export</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+          <tr><td>Works with no connection</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+          <tr><td>Its own window and icon — Dock, Start menu, home screen</td><td class="n">—</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+          <tr><td>Opens <span class="mono">.omnidx</span> projects and footage from the file manager</td><td class="n">—</td><td class="y">Yes</td><td class="y">Yes</td></tr>
+          <tr><td>Appears in the phone's <b>Share</b> sheet — send a clip straight in</td><td class="n">—</td><td class="y">Android</td><td class="n">—</td></tr>
+          <tr><td>ProRes and DNxHR export</td><td class="n">—</td><td class="n">—</td><td class="y">Yes</td></tr>
+          <tr><td>Hardware decode for 4K scrubbing</td><td class="p">Browser's</td><td class="p">Browser's</td><td class="y">Yes</td></tr>
+          <tr><td>Updates</td><td class="y">On the next open</td><td class="y">On the next open</td><td class="y">Weekly, in the background</td></tr>
+          <tr><td>Size</td><td class="y">Nothing to download</td><td class="y">Under 4 MB</td><td class="p">About 100 MB</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </section>
 
@@ -195,11 +214,11 @@
     </div>
 
     <div class="note" style="margin-bottom:22px">
-      <b>Where the installers come from.</b> The desktop app is built from
-      <code>studio/desktop/</code> in the public repository. Signed installers are attached to
-      <code>.dmg</code> for macOS, <code>.exe</code> for Windows, and
-      <code>.AppImage</code>/<code>.deb</code>/<code>.rpm</code> for Linux. When one is
-      published it downloads straight from this page — one press, no detour.
+      <b>Where the installers come from.</b> The desktop app is an Electron window around this
+      same editor: <code>.dmg</code> for macOS, <code>.exe</code> for Windows, and
+      <code>.AppImage</code>/<code>.deb</code>/<code>.rpm</code> for Linux, and it updates itself
+      once a week in the background. When a build is published it downloads straight from this
+      page — one press, no detour.
     </div>
 
     <div class="note" style="margin-top:0">
@@ -214,7 +233,7 @@
       <div class="card reveal d1"><div class="card-icon">⚙️</div><h3>Hardware decode</h3>
         <p>H.264, HEVC and ProRes decode on the GPU, so 4K scrubs smoothly on machines a browser would choke on.</p></div>
       <div class="card reveal d2"><div class="card-icon">🔄</div><h3>Updates that don't nag</h3>
-        <p>It checks once a week, downloads in the background and applies the update the next time you quit. It will never interrupt a render.</p></div>
+        <p>It checks once a week, downloads in the background and applies the update the next time you quit. It never interrupts a render, and it never asks.</p></div>
     </div>
   </div>
 </section>

@@ -1,7 +1,10 @@
 {
+  "id": "./",
   "name": "OmniDx Studio",
   "short_name": "OmniDx Studio",
   "description": "A full multitrack video editor with a built-in AI editor. Works offline. Your footage never leaves your device.",
+  "lang": "en",
+  "dir": "ltr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -18,6 +21,11 @@
     "productivity",
     "graphics"
   ],
+  "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "handle_links": "preferred",
   "icons": [
     {
       "src": "../assets/mark.svg",
@@ -50,6 +58,22 @@
       "purpose": "maskable"
     }
   ],
+  "screenshots": [
+    {
+      "src": "../assets/screens/editor-wide.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "The editor at Professional: timeline, viewer, inspector"
+    },
+    {
+      "src": "../assets/screens/editor-narrow.png",
+      "sizes": "720x1440",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "The editor on a phone"
+    }
+  ],
   "shortcuts": [
     {
       "name": "New project",
@@ -64,6 +88,13 @@
     {
       "action": "./",
       "accept": {
+        "application/json": [
+          ".omnidx.json",
+          ".omnidx"
+        ],
+        "application/zip": [
+          ".omnidxpkg"
+        ],
         "video/*": [
           ".mp4",
           ".mov",
@@ -76,7 +107,8 @@
           ".wav",
           ".m4a",
           ".aac",
-          ".ogg"
+          ".ogg",
+          ".flac"
         ],
         "image/*": [
           ".jpg",
@@ -89,7 +121,7 @@
     }
   ],
   "share_target": {
-    "action": "./",
+    "action": "./?share=1",
     "method": "POST",
     "enctype": "multipart/form-data",
     "params": {
@@ -104,5 +136,11 @@
         }
       ]
     }
-  }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+omnidx",
+      "url": "./?open=%s"
+    }
+  ]
 }

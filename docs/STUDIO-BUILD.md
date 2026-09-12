@@ -37,9 +37,16 @@ more trouble than a free GitHub Actions runner.
 ### What the desktop shell adds
 
 - Real Open/Save dialogs, so an export goes where you point it.
-- Double-clicking a `.omnidx` project opens it.
+- Double-clicking a `.omnidx` project, a `.omnidxpkg` bundle, or a video,
+  audio or image file opens it — a second launch hands the file to the
+  window that is already open.
 - A menu bar wired to the same actions the buttons use.
 - A window that survives someone tidying their tabs.
+- Updates itself: once a week it reads `latest.yml` from
+  `https://omnidx.net/studio/download/files/`, downloads the new build in the
+  background and installs it the next time it quits. No dialog, no restart
+  prompt, and it waits while a render is running. Nothing to host but the
+  files the download page already serves.
 
 ### Signing
 
@@ -67,12 +74,37 @@ Unsigned, SmartScreen shows "unrecognised app" until enough people install it.
 
 **Linux** — nothing to sign. AppImage, deb and rpm all come out of `npm run dist`.
 
-### Automating it
+### Automating it — this is the part that is done for you
 
-A GitHub Actions matrix over `macos-latest`, `windows-latest` and
-`ubuntu-latest`, each running `npm run dist`, attaching `out/*` to the release.
-Certificates go in repository secrets. That is how the download page's
-"installers are attached to each release" becomes true.
+`.github/workflows/desktop.yml` builds all three on the machines they need
+(a `.dmg` needs a Mac, an `.exe` needs Windows). Run it from the Actions tab
+with **Run workflow**, or push a tag like `v1.0.1`. Twenty minutes later there
+are three artifacts to download: the installers, plus `latest.yml`,
+`latest-mac.yml` and `latest-linux.yml`, which are what the installed apps
+read to find out a new version exists.
+
+Then, to publish:
+
+1. Put every file from the three artifacts into `studio/download/files/`.
+2. Fill in `DOWNLOADS` in `studio/assets/config.js` — the file name, version
+   and size for `mac`, `windows` and `linux`. The download page turns each
+   button into a direct download the moment the name is there.
+3. Push. Pages serves the files; the download page serves the buttons; every
+   installed copy finds the update within a week.
+
+Bump `version` in `studio/desktop/package.json` before each build — the
+updater compares that number, and a build with the same version is not an
+update.
+
+Signing certificates go in repository secrets (`MAC_CSC_LINK`,
+`MAC_CSC_KEY_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`,
+`APPLE_TEAM_ID`; `WIN_CSC_LINK`, `WIN_CSC_KEY_PASSWORD`). Without them the
+builds are unsigned: they work, and warn on first launch.
+
+GitHub Pages refuses a single file over 100 MB. An Electron installer sits
+near that line. If one goes over, host that file on Cloudflare R2 (the
+Worker's account already has it) and put the full `https://` URL in `file`;
+the updater's `publish.url` in `package.json` then points at the same place.
 
 ---
 

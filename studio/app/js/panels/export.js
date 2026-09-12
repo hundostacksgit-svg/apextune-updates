@@ -236,6 +236,8 @@ async function start(preset, quality, codecId, caps, { project = S.project, file
     toast('The fast encoder did not check out on this device — using the reliable path instead', '', 5000);
   }
 
+  // The desktop shell holds its weekly update check while this runs.
+  window.omnidxDesktop?.rendering?.(true);
   running = exportProject(project, {
     preset,
     quality,
@@ -325,6 +327,9 @@ function finishWith(handle, overlay, preview, proResFormat, fileName = S.project
       toast(`Saved ${name}`, 'ok', 5000);
       // Count it; the third finished export earns one quiet ask for a rating.
       import('../rate.js').then((m) => m.exported()).catch(() => {});
+      // And once, the offer to make this an app: the export is the moment
+      // somebody has just seen what it does.
+      import('../install.js').then((m) => m.maybeNudge('export')).catch(() => {});
     }
     return { partial: Boolean(out.partial), failed: false, name };
   }).catch((err) => {
@@ -335,7 +340,7 @@ function finishWith(handle, overlay, preview, proResFormat, fileName = S.project
         <button class="btn btn-primary" data-x="ok">OK</button></div>`);
     $('[data-x="ok"]')?.addEventListener('click', closeModal);
     return { partial: false, failed: true };
-  }).finally(() => { running = null; });
+  }).finally(() => { running = null; window.omnidxDesktop?.rendering?.(false); });
 }
 
 /* ------------------------------------------------------------------ */

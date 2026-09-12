@@ -36,6 +36,7 @@ import * as licence from '../licence.js';
 import { RATIOS } from '../engine/project.js';
 import { API, setApiBase, EDITIONS, buyUrl, DEVICE_LIMIT } from '../../../assets/config.js';
 import * as auth from '../../../assets/auth.js';
+import * as install from '../install.js';
 
 export function mount(host) {
   const st = S.project.settings;
@@ -144,6 +145,15 @@ export function mount(host) {
       </div>
     </details>
 
+    <details class="group" open>
+      <summary>This copy</summary>
+      <div class="gbody">
+        <p class="tiny" style="margin:0 0 8px" id="s-copy-line">${esc(install.statusLine())}</p>
+        ${install.isInstalled() || !install.canInstallHere() ? '' : `<button class="btn btn-sm btn-primary" id="s-install">Install as an app</button>
+        <p class="tiny muted" style="margin:8px 0 0">Its own window and icon, works with no connection, opens your projects and footage from the file manager. Same editor, same projects.</p>`}
+      </div>
+    </details>
+
     <details class="group">
       <summary>Storage</summary>
       <div class="gbody" id="s-storage"><p class="tiny muted">Checking…</p></div>
@@ -172,6 +182,7 @@ export function mount(host) {
   paintProjects(host);
   paintStorage(host);
   paintProxies(host);
+  $('#s-install', host)?.addEventListener('click', () => install.install());
 }
 
 async function paintProxies(host) {

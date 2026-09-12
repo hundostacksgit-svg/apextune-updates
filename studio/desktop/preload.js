@@ -12,6 +12,7 @@ const MENU_EVENTS = [
   'omnidx:new-project', 'omnidx:import', 'omnidx:save', 'omnidx:export',
   'omnidx:undo', 'omnidx:redo', 'omnidx:palette', 'omnidx:theme',
   'omnidx:tour', 'omnidx:shortcuts', 'omnidx:level', 'omnidx:open-project',
+  'omnidx:open-media', 'omnidx:update-ready',
 ];
 
 contextBridge.exposeInMainWorld('omnidxDesktop', {
@@ -36,6 +37,11 @@ contextBridge.exposeInMainWorld('omnidxDesktop', {
 
   reveal(path) {
     return ipcRenderer.invoke('omnidx:reveal', path);
+  },
+
+  /** Tell the shell a render is running, so the weekly update check waits. */
+  rendering(on) {
+    ipcRenderer.send('omnidx:rendering', Boolean(on));
   },
 
   /** Convert a finished render to ProRes or DNxHR via ffmpeg. */

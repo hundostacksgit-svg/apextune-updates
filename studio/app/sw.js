@@ -10,7 +10,7 @@
  * origin's storage quota for no benefit.
  */
 
-const VERSION = 'omnidx-studio-v1.4.0';
+const VERSION = 'omnidx-studio-v1.5.0';
 
 /*
  * Fonts live in their own cache, outside the versioned one.
@@ -21,6 +21,9 @@ const VERSION = 'omnidx-studio-v1.4.0';
  * somebody's data for no benefit.
  */
 const FONT_CACHE = 'omnidx-fonts-v1';
+/* Files shared into the app from a phone's share sheet wait here, briefly,
+   until the page that opens next collects them. */
+const SHARE_CACHE = 'omnidx-shared-v1';
 /*
  * Every module the editor loads, listed exhaustively and generated from the
  * directory rather than remembered.
@@ -56,6 +59,7 @@ const SHELL = [
   './js/engine/audio-analysis.js',
   './js/expr-ui.js',
   './js/icons.js',
+  './js/install.js',
   './js/project-settings.js',
   './js/engine/shapes.js',
   './js/panels/shapes.js',
@@ -183,7 +187,7 @@ self.addEventListener('activate', (event) => {
     // Sweeping it with the rest would re-download every typeface in use on
     // every update, and leave a freshly-updated app with no fonts offline.
     await Promise.all(keys
-      .filter((k) => k !== VERSION && k !== FONT_CACHE)
+      .filter((k) => k !== VERSION && k !== FONT_CACHE && k !== SHARE_CACHE)
       .map((k) => caches.delete(k)));
     await self.clients.claim();
   })());
@@ -191,8 +195,41 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  if (request.method !== 'GET') return;
   const url = new URL(request.url);
+
+  /*
+   * The share target.
+   *
+   * "Share to OmniDx Studio" from a phone's gallery posts the files here,
+   * to the app's own URL. There is no server, so the worker is the server:
+   * it puts each file in a cache under a stamped name and answers with a
+   * redirect to the app carrying ?shared=1, and the app collects them on the
+   * way in and empties the cache. A share into a page that could not receive
+   * it would be the one thing worse than not offering it.
+   */
+  if (request.method === 'POST' && url.origin === self.location.origin && url.searchParams.get('share') === '1') {
+    event.respondWith((async () => {
+      try {
+        const form = await request.formData();
+        const files = form.getAll('media').filter((f) => f && typeof f === 'object' && f.size > 0);
+        const cache = await caches.open(SHARE_CACHE);
+        const stamp = Date.now();
+        await Promise.all(files.map((f, i) => cache.put(
+          new Request(new URL(`./__shared/${stamp}-${i}`, self.registration.scope).href),
+          new Response(f, { headers: {
+            'content-type': f.type || 'application/octet-stream',
+            'x-omnidx-name': encodeURIComponent(f.name || `shared-${i}`),
+          } }),
+        )));
+      } catch {
+        // Nothing arrived that can be kept; the app still opens.
+      }
+      return Response.redirect(new URL('./?shared=1', self.registration.scope).href, 303);
+    })());
+    return;
+  }
+
+  if (request.method !== 'GET') return;
 
   /*
    * Typefaces are the one thing worth caching from somewhere else.

@@ -35,13 +35,29 @@ export function wireDesktop({ actions, openPanel, startTour, openExport, openPal
   bridge.on('omnidx:shortcuts', () => openPanel('help'));
   bridge.on('omnidx:level', (level) => setLevel(level));
 
-  bridge.on('omnidx:open-project', async ({ path, json }) => {
+  bridge.on('omnidx:open-project', async ({ path, json, bytes }) => {
+    const name = path.split(/[\\/]/).pop();
     try {
-      await actions.loadDocument(JSON.parse(json));
-      toast(`Opened ${path.split(/[\\/]/).pop()}`, 'ok');
+      if (bytes) {
+        // A bundle: the same importer the start screen's "Open a project file" uses.
+        await actions.openProjectFile(new File([bytes], name, { type: 'application/zip' }));
+      } else {
+        await actions.loadDocument(JSON.parse(json));
+      }
+      toast(`Opened ${name}`, 'ok');
     } catch (err) {
       toast(`That file could not be opened: ${err.message}`, 'bad', 5000);
     }
+  });
+  bridge.on('omnidx:open-media', async ({ name, bytes }) => {
+    try {
+      await actions.importFiles([new File([bytes], name)]);
+    } catch (err) {
+      toast(`That file could not be opened: ${err.message}`, 'bad', 5000);
+    }
+  });
+  bridge.on('omnidx:update-ready', () => {
+    toast('An update has downloaded — it installs next time you quit', '', 5000);
   });
 }
 

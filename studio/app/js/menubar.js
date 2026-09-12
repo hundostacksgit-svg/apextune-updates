@@ -46,6 +46,8 @@ export const MENUS = [
       { label: 'Export video…', key: `${MOD}+E`, run: () => api.exportVideo?.() },
       { sep: true },
       { label: 'Project settings…', run: () => api.projectSettings?.() },
+      { sep: true },
+      { label: () => (api.installed?.() ? '✓ Installed as an app' : 'Install as an app…'), run: () => api.installApp?.() },
     ],
   },
   {

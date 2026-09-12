@@ -55,6 +55,7 @@ import { openExport } from './panels/export.js';
 import { wireDesktop, isDesktop } from './desktop.js';
 import { startUpdateChecks, BUILD } from './updates.js';
 import { applyIcons, icon } from './icons.js';
+import * as install from './install.js';
 import { openProjectSettings } from './project-settings.js';
 
 /* ------------------------------------------------------------------ */
@@ -1755,9 +1756,22 @@ function paintLevel() {
  * a fresh timeline for anyone who genuinely wants that every time.
  */
 async function openingScreen() {
+  try {
+    await decideOpening();
+  } finally {
+    // Whatever was decided, files that arrived during it go where they belong now.
+    openingDecided = true;
+    flushIncoming();
+  }
+}
+
+async function decideOpening() {
   const params = new URLSearchParams(location.search);
 
-  const wanted = params.get('project');
+  // A web+omnidx://project/<id> link, handed over by the installed app's
+  // protocol handler as ?open=<the link>.
+  const viaLink = params.get('open')?.match(/^web\+omnidx:\/\/project\/([\w-]+)/)?.[1] || null;
+  const wanted = params.get('project') || viaLink;
   if (wanted) {
     const doc = await store.loadProject(wanted);
     if (doc) { await loadDocument(doc); return; }
@@ -1765,7 +1779,8 @@ async function openingScreen() {
   }
   if (params.get('new') === '1') return;
 
-  const choice = await chooseProject();
+  // The picker gets whatever the app was opened with, as if it were dropped there.
+  const choice = await chooseProject({ files: pendingIncoming.splice(0) });
   if (choice?.action === 'open') {
     const doc = await store.loadProject(choice.id);
     if (doc) { await loadDocument(doc); return; }
@@ -2046,6 +2061,8 @@ async function importProjectJson(file) {
     addAdjustment: () => actions.addAdjustment(),
     addNull: () => actions.addNull(),
     projectSettings: () => actions.projectSettings(),
+    installApp: () => install.install(),
+    installed: () => install.isInstalled(),
     group: () => actions.groupSelected(),
     ungroup: () => actions.ungroupSelected(),
     canUngroup: () => [...S.sel].some((id) => clipById(S.project, id)?.kind === 'compound'),
@@ -2180,6 +2197,8 @@ async function importProjectJson(file) {
     },
     upgrade: () => { const next = nextEdition(); if (next) window.open(`https://${SITE.domain}/studio/pricing/`, '_blank', 'noopener'); },
     rate: () => import('./rate.js').then((m) => m.openRating({ trigger: 'menu' })),
+    installApp: () => install.install(),
+    canInstall: () => !install.isInstalled() && install.canInstallHere(),
     cycleLevel: () => {
       const order = levels.LEVELS;
       const next = order[(order.indexOf(levels.current()) + 1) % order.length];
@@ -2212,6 +2231,7 @@ async function importProjectJson(file) {
 
   /* ---- crash recovery ---- */
   const crashed = store.recoverable();
+  await bringLaunchedFiles();
   if (crashed && crashed.doc?.clips?.length) {
     const restore = await confirmDialog({
       title: 'Pick up where you left off?',
@@ -2225,6 +2245,8 @@ async function importProjectJson(file) {
     } else {
       store.clearDirty();
     }
+    openingDecided = true;
+    flushIncoming();
   } else {
     await openingScreen();
   }
@@ -2232,6 +2254,7 @@ async function importProjectJson(file) {
   actions.refresh();
   paintName();
   paintSaved('ok');
+  install.initInstall();
 
   // Touch gestures and bottom-sheet behaviour. Only does anything on a phone,
   // and is handed the zoom controls so a pinch can drive the same state the
@@ -2257,6 +2280,94 @@ async function importProjectJson(file) {
     }
   }
 })();
+
+/* ------------------------------------------------------------------ *
+ * Files that arrive from outside: the file manager and the share sheet
+ * ------------------------------------------------------------------ */
+
+/*
+ * Files that arrive before the opening screen has decided wait here; the
+ * picker takes them as it opens, or they go into the project it settles on.
+ * Handing them to the editor while the picker is still deciding would put
+ * them in a project that is about to be replaced.
+ */
+const pendingIncoming = [];
+let openingDecided = false;
+const isProjectFile = (f) => /\.omnidx(\.json)?$|\.omnidxpkg$/i.test(f.name);
+
+function flushIncoming() {
+  if (!pendingIncoming.length) return;
+  const files = pendingIncoming.splice(0);
+  openIncoming(files);
+}
+
+/**
+ * Collect what the service worker kept from a share, and empty the shelf.
+ * Each entry is one file, its name in a header because a cache key cannot
+ * carry one safely.
+ */
+async function takeSharedFiles() {
+  if (!('caches' in window)) return [];
+  const files = [];
+  try {
+    const cache = await caches.open('omnidx-shared-v1');
+    for (const req of await cache.keys()) {
+      const res = await cache.match(req);      // eslint-disable-line no-await-in-loop
+      if (!res) continue;
+      const name = decodeURIComponent(res.headers.get('x-omnidx-name') || 'shared');
+      const blob = await res.blob();           // eslint-disable-line no-await-in-loop
+      files.push(new File([blob], name, { type: res.headers.get('content-type') || blob.type }));
+      await cache.delete(req);                 // eslint-disable-line no-await-in-loop
+    }
+  } catch { /* no cache API, or a cleared one */ }
+  return files;
+}
+
+/**
+ * Footage goes where a drop would go; a project file opens. While the start
+ * screen is up the files go to it, so a video double-clicked from a folder
+ * starts a project in that video's shape, the way a drop there does.
+ */
+async function openIncoming(files) {
+  if (!files.length) return;
+  // The picker is up: it takes them the way it takes a drop, and a lone
+  // project file becomes its "open" choice, so the screen resolves normally.
+  if (startIsOpen()) {
+    const st = await import('./start.js');
+    await st.takeDrop(files);
+    return;
+  }
+  if (!openingDecided) { pendingIncoming.push(...files); return; }
+  const projects = files.filter(isProjectFile);
+  const footage = files.filter((f) => !projects.includes(f));
+  if (projects.length) {
+    await saveNow();
+    await importProjectJson(projects[0]);
+  }
+  if (!footage.length) return;
+  const before = S.project.media.length;
+  await actions.importFiles(footage);
+  if (S.project.media.length > before) toast(`${S.project.media.length - before} file${S.project.media.length - before === 1 ? '' : 's'} opened`, 'ok');
+}
+
+/** The launch queue (the installed app opened with files) and the share shelf. */
+async function bringLaunchedFiles() {
+  const params = new URLSearchParams(location.search);
+  if (params.get('shared') === '1') {
+    const shared = await takeSharedFiles();
+    try { history.replaceState(null, '', location.pathname); } catch { /* fine */ }
+    pendingIncoming.push(...shared);
+  }
+  if ('launchQueue' in window && typeof window.launchQueue?.setConsumer === 'function') {
+    window.launchQueue.setConsumer(async (launch) => {
+      const files = [];
+      for (const handle of launch?.files || []) {
+        try { files.push(await handle.getFile()); } catch { /* one refused handle */ }   // eslint-disable-line no-await-in-loop
+      }
+      if (files.length) await openIncoming(files);
+    });
+  }
+}
 
 /* Panels and the palette import these rather than reaching into the DOM. */
 export { openPanel, refreshPanel, closePanel, PANELS, startTour, isDesktop, BUILD, sizeCanvas, drawFrame, setZoom, togglePlay };

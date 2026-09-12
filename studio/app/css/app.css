@@ -2031,6 +2031,15 @@ input[type=checkbox]{accent-color:var(--blue)}
 .pb-status.slow{color:var(--amber)}
 .pb-tool:hover{background:var(--surface-3);color:var(--text)}
 
+/* ---- install as an app ---- */
+.install-nudge{display:flex;align-items:center;gap:10px;padding:7px 14px;background:var(--surface-2);
+  border-bottom:1px solid var(--line);font-size:12.5px;color:var(--text-2);flex-wrap:wrap}
+.install-nudge span{flex:1 1 320px;min-width:0}
+.inst-steps{margin:0;padding-left:20px;font-size:13px;line-height:1.6;color:var(--text-2)}
+.inst-steps li{margin-bottom:6px}
+.inst-steps b{color:var(--text)}
+@media(max-width:1500px){#btn-install .lbl{display:none}}
+
 /* ---- the workspace toggles, in the top bar ---- */
 .wsbar{align-items:center;gap:3px;margin-right:8px;padding-right:8px;
   border-right:1px solid var(--line)}

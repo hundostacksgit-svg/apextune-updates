@@ -32,6 +32,8 @@ const ROWS = [
   { ico: '🎓', label: () => `Skill level — ${api.levelName?.() || 'Beginner'}`, sub: 'Beginner, Intermediate, Professional', run: () => api.cycleLevel?.() },
   { ico: '?', label: 'Walkthrough', sub: 'How everything works', run: () => api.openPanel?.('help') },
   { ico: '★', label: 'Rate OmniDx Studio', sub: 'Five stars or one — it is read', run: () => api.rate?.() },
+  { ico: '⇩', label: 'Install the app', sub: 'Home screen icon, full screen, works offline', run: () => api.installApp?.(),
+    when: () => Boolean(api.canInstall?.()) },
 ];
 
 const text = (v) => (typeof v === 'function' ? v() : v);

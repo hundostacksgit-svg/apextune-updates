@@ -12,11 +12,15 @@ direct download from omnidx.net. Nobody is sent anywhere else.
 Leave `file` empty and that platform falls back to installing the web app,
 which is one press and works on every platform today.
 
-## Why these are not already here
+## Where they come from
 
-Each installer has to be built on the operating system it targets — a `.dmg`
-needs a Mac, an `.exe` needs Windows — and code signing needs certificates that
-belong to you, not to a repository. See `docs/STUDIO-BUILD.md`.
+The **Desktop installers** workflow (Actions tab → Run workflow) builds all
+three on the operating systems they need and hands them back as artifacts.
+Put *every* file from those artifacts here — the installers and the
+`latest.yml` / `latest-mac.yml` / `latest-linux.yml` next to them. Those
+small files are how an installed copy learns a new version exists; the app
+checks this folder once a week and updates itself in the background. See
+`docs/STUDIO-BUILD.md`.
 
 ## Size
 
