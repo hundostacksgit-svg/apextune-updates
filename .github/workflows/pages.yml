@@ -34,7 +34,7 @@ jobs:
                    icons/icon-192.png icons/icon-512.png icons/icon.ico icons/icon.icns; do
             [ -f "$f" ] || { echo "missing required file: $f"; exit 1; }
           done
-          for f in studio/index.html studio/pricing/index.html studio/download/index.html \
+          for f in studio/index.html studio/pricing/index.html studio/download/index.html studio/trust/index.html \
                    studio/account/index.html studio/activate/index.html studio/activate/activate.js \
                    studio/assets/studio.css studio/assets/studio.js studio/assets/showcase.css studio/assets/showcase.js \
                    studio/assets/config.js studio/assets/auth.js studio/assets/rate.js studio/assets/mark.svg \

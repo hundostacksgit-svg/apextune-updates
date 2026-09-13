@@ -5,9 +5,14 @@ Everything to post, in the order to post it. The videos come from
 with them: the caption for each one, the hashtags, the voice-over to add in
 the app, the schedule, and the copy for every other place worth being.
 
+**Read `docs/PROMOTION.md` first.** It covers what to claim and never claim,
+how to answer "this is a scam" in a comment section, and the two claims in this
+kit that were fixed after it was written. This file is the material; that one
+is the plan.
+
 The one message, said twenty ways: **a full video editor you pay for once.
-Free to start, $19.99 once for Creator, updates every day, every device, and
-features the subscription editors do not have.**
+Free to start, $19.99 once for Creator, every update after it free, every
+device, and features the subscription editors do not have.**
 
 ---
 
@@ -63,27 +68,32 @@ and keep it.
 
 | Day | Video | Also post |
 |---|---|---|
-| 1 | 01 Stop paying monthly | feed-01 |
-| 2 | 02 One sentence, whole edit | |
-| 3 | 03 Every cut on the beat | |
+| 1 | 18 Free forever *(proof first — see PROMOTION.md §4)* | feed-01 |
+| 2 | 01 Stop paying monthly | |
+| 3 | 02 One sentence, whole edit | |
 | 4 | 04 340 effects | feed-03 |
-| 5 | 18 Free forever | |
+| 5 | 03 Every cut on the beat | |
 | 6 | 10 One edit, every platform | |
 | 7 | 06 Expressions | feed-02 |
-| 8 | 12 Auto captions | |
+| 8 | 05 Private & offline | |
 | 9 | 07 Text animators | |
 | 10 | 20 What $19.99 gets you | feed-05 |
 | 11 | 11 Every device | |
 | 12 | 14 Colour | |
 | 13 | 08 Particles | feed-04 |
-| 14 | 19 Daily updates | |
-| 15 | 05 Private & offline | |
-| 16 | 13 Motion tracking | |
-| 17 | 09 Shape layers | feed-06 |
-| 18 | 15 Audio repair | |
-| 19 | 16 Speed ramps | |
-| 20 | 17 Montage styles | |
-| 21 | YouTube tour (long) + re-post 01 as a Short | |
+| 14 | 19 Every update free | |
+| 15 | 13 Motion tracking | |
+| 16 | 09 Shape layers | feed-06 |
+| 17 | 15 Audio repair | |
+| 18 | 16 Speed ramps | |
+| 19 | 17 Montage styles | |
+| 20 | The trust page on its own: "everything my editor can't do" | |
+| 21 | YouTube tour (long) + re-post day 1 as a Short | |
+
+**12 Auto captions is deliberately not in this list.** It promises more than the
+app does today; post it when the transcription server is live. That is nineteen
+videos over nineteen days, which is the right number — the twentieth slot is
+better spent on whichever of the first nineteen worked.
 
 After day 21, re-post the three best performers with a new first line, and
 keep making them: the generator is in the repo, and a new video is a new
@@ -102,11 +112,11 @@ hashtags.
 Hook → the two ways to pay (a subscription's bill counting up vs $19.99 once) → the editor → end card.
 
 **Caption**
-> there's no subscription. at all. one payment, yours forever, free updates every day 🫡 free version at omnidx.net (link in bio)
+> there's no subscription. at all. one payment, yours forever, every update after it free 🫡 free version at omnidx.net (link in bio)
 > #videoediting #videoeditor #editingapp #nosubscription #onetimepurchase #capcut #contentcreator #fyp
 
 **Voice-over**
-> Stop paying twenty-three dollars a month to edit videos. OmniDx Studio is a full editor in your browser, and you pay once. Nineteen ninety-nine, yours forever, with free updates every day. Link's in my bio: omnidx dot net.
+> Stop paying twenty-three dollars a month to edit videos. OmniDx Studio is a full editor in your browser, and you pay once. Nineteen ninety-nine, yours forever, and every update after it is free. Link's in my bio: omnidx dot net.
 
 ### 02 · One sentence, whole edit — `02-ai-sentence.mp4`
 Hook → the AI editor typing a prompt and planning the edit, step by step → the real AI panel → end card.
@@ -208,7 +218,15 @@ Hook → the eight export presets → the export dialog, "Export for every platf
 **Voice-over**
 > Phone, tablet, laptop. One licence. It's the same editor on your phone and on your desk, same project. Buy once, sign in anywhere. OmniDx Studio, nineteen ninety-nine, once. omnidx dot net.
 
-### 12 · Auto captions — `12-auto-captions.mp4`
+### 12 · Auto captions — `12-auto-captions.mp4` — **HOLD, do not post yet**
+
+> This video says the captions button "finds the speech … times it to the word".
+> Today it finds the *timings* and you type the words; turning audio into text
+> needs the transcription server, which is not switched on. Posting this is the
+> fastest available route to a "it doesn't do what the ad said" comment. Hold
+> it, and when the server goes live re-render it (`--video 12-auto-captions`)
+> and post it as a new feature — a shipped promise is a better post than the
+> original would have been. See `docs/PROMOTION.md` §1.
 Hook → the captions panel, one click → "Sound off? Still watched." → end card.
 
 **Caption**
@@ -278,15 +296,15 @@ Hook → 21 kinds of montage → the styles panel with the beat detected → "A 
 **Voice-over**
 > Free. Forever. No watermark. Unlimited tracks, seventy-eight effects, titles, ten-eighty-p export, works offline. Not a trial, the free one. Upgrade once if you ever want to. omnidx dot net.
 
-### 19 · Daily updates — `19-daily-updates.mp4`
-"YOU PAY ONCE. IT GETS BETTER EVERY DAY." → what was added recently → the editor → "No version 2. No upgrade fee." → end card.
+### 19 · Every update free — `19-daily-updates.mp4`
+"YOU PAY ONCE. YOU GET EVERYTHING THAT COMES AFTER." → what was added since launch → the editor → "No version 2. No upgrade fee." → end card.
 
 **Caption**
-> you pay once and it gets better every day. motion blur, particles, expressions, text animators, shape layers — all added recently, all free 🛠️ omnidx.net
+> you pay once and every update after is free. motion blur, particles, expressions, text animators, shape layers — all added since launch, all free 🛠️ omnidx.net
 > #indieapp #buildinpublic #videoediting #videoeditor #editingapp #nosubscription #contentcreator #fyp
 
 **Voice-over**
-> You pay once and it gets better every day. Motion blur, particles, expressions, text animators, shape layers, all added recently, all free. No version two, no upgrade fee. OmniDx Studio. Link in bio.
+> You pay once, and every update after that is free. Motion blur, particles, expressions, text animators, shape layers, all added since launch, all free. No version two, no upgrade fee. OmniDx Studio. Link in bio.
 
 ### 20 · What $19.99 gets you — `20-vs-subscriptions.mp4`
 Hook → five years of a subscription ($1,379.40) vs $19.99 → the effects panel → "Own your editor." → end card.
@@ -356,7 +374,7 @@ What is in Creator ($19.99 once): all 340 effects, keyframes with bezier easing,
 What is in Studio ($39.99 once): everything above, unlimited AI, unlimited LUT slots, ProRes and DNxHR on desktop.
 Free (Starter): unlimited tracks, 78 effects, titles, stickers, 1080p export, no watermark, works offline.
 
-Updates are free and ship every day. One licence works on every device you own.
+Every update is free, forever — no version 2 and no upgrade fee. One licence works on every device you own.
 ```
 
 **Tags**: `video editor, video editing software, no subscription, one time purchase, capcut alternative, premiere pro alternative, after effects alternative, browser video editor, free video editor, ai video editor, motion graphics, omnidx`
@@ -377,7 +395,7 @@ day's video attached:
 4. `Type one sentence, it plans the edit, you approve. Runs on your device. (video)`
 5. `One edit → TikTok, YouTube, Reels, Shorts, reframed to fit. (video)`
 6. `Free forever. No watermark. Not a trial. (video)`
-7. `Updates ship every day and they're free. No version 2, no upgrade fee. (video)`
+7. `Every update is free, forever. No version 2, no upgrade fee. (video)`
 
 **Reddit** — value first, link second, and read each subreddit's self-promo
 rule before posting. Post the YouTube tour or a 20-second clip as a native

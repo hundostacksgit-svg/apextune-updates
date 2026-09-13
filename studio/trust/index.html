@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Is this a scam? — OmniDx Studio</title>
+<meta name="description" content="A straight answer, and four things you can check yourself in a minute without giving us anything: no account, no card, works offline, plain files. Plus everything OmniDx Studio cannot do.">
+<meta name="theme-color" content="#04060d">
+<link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<!-- Link previews. Every URL here must be absolute: the scrapers behind iMessage,
+     WhatsApp, Discord, Facebook and X do not resolve relative paths, and a
+     relative og:image is a card with no picture on it. Run
+     `python3 tools/set-domain.py --site-url <url>` to rewrite them all after a
+     rename or a domain change. -->
+<link rel="canonical" href="https://omnidx.net/studio/trust/">
+<meta property="og:url" content="https://omnidx.net/studio/trust/">
+<meta property="og:image" content="https://omnidx.net/studio/assets/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="OmniDx Studio: a video editor timeline with clips cut to the beat of a music track.">
+<meta name="twitter:image" content="https://omnidx.net/studio/assets/og-card.png">
+<meta name="twitter:title" content="Is this a scam? — OmniDx Studio">
+<meta name="twitter:description" content="A straight answer, four things you can check yourself in a minute, and the full list of what this editor cannot do.">
+<meta property="og:site_name" content="OmniDx Studio">
+<meta property="og:title" content="Is this a scam? — OmniDx Studio">
+<meta property="og:description" content="A straight answer, four things you can check yourself in a minute, and the full list of what this editor cannot do.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../assets/studio.css">
+<script>
+/* Set the theme before first paint so a light-mode visitor never sees a black
+   flash. Everything else waits for the module. */
+(function(){try{var t=localStorage.getItem('omnidx.theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+</script>
+<style>
+  /* Four things a stranger can check without giving us anything. Numbered,
+     because the order is the point: the first one costs nothing and settles
+     most of it. */
+  .checks{counter-reset:chk;display:grid;gap:14px;margin-top:26px}
+  .chk{position:relative;padding:20px 22px 20px 68px;border:1px solid var(--line);border-radius:16px;
+    background:var(--surface)}
+  .chk::before{counter-increment:chk;content:counter(chk);position:absolute;left:20px;top:19px;
+    width:32px;height:32px;border-radius:10px;display:grid;place-items:center;
+    background:var(--grad);color:#fff;font-weight:800;font-size:15px}
+  .chk h3{margin:0 0 6px;font-size:17px}
+  .chk p{margin:0;color:var(--text-2);font-size:14.5px;line-height:1.6}
+  .chk .proves{display:block;margin-top:9px;font-size:13px;color:var(--blue-2);font-weight:650}
+
+  /* The honest list. A plain two-column table reads as a spec sheet, which is
+     exactly the register this belongs in — no icons, no apology. */
+  .cant{border:1px solid var(--line);border-radius:16px;overflow:hidden;background:var(--surface)}
+  .cant div{display:grid;grid-template-columns:minmax(180px,1fr) 2fr;gap:18px;padding:16px 20px;
+    border-top:1px solid var(--line-soft);font-size:14.5px;line-height:1.6}
+  .cant div:first-child{border-top:0}
+  .cant b{font-weight:700}
+  .cant span{color:var(--text-2)}
+  @media(max-width:640px){.cant div{grid-template-columns:1fr;gap:5px}}
+
+  /* Yes / no, at a glance, on the money question. */
+  .yn{display:grid;gap:10px;margin-top:20px}
+  .yn p{display:flex;gap:12px;align-items:flex-start;margin:0;font-size:15px;line-height:1.55}
+  .yn p::before{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
+    font-size:13px;font-weight:900;margin-top:1px}
+  .yn p.no::before{content:"✕";background:rgba(255,93,108,.16);color:#ff8a94}
+  .yn p.yes::before{content:"✓";background:rgba(48,211,138,.16);color:var(--ok)}
+</style>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"><div class="grid"></div></div>
+
+<!-- chrome:nav -->
+<nav class="nav">
+  <div class="wrap">
+    <a class="logo" href="../"><span class="mark"><svg viewBox="0 0 64 64" aria-hidden="true" style="width:18px;height:18px"><rect x="13" y="18" width="26" height="6" rx="3" fill="#fff" opacity=".92"/><rect x="13" y="29" width="18" height="6" rx="3" fill="#fff" opacity=".68"/><rect x="13" y="40" width="30" height="6" rx="3" fill="#fff" opacity=".45"/><path d="M43 24.5 L54 32 L43 39.5 Z" fill="#fff"/></svg></span>OmniDx <small>Studio</small></a>
+
+    <!-- The menu box. One row on a desktop, and the same links live in the
+         drawer below for phones — never two different menus to keep in step. -->
+    <div class="menubox" data-menubox>
+      <div class="mb" data-mb>
+        <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp0">Products<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="mb-pop" id="mbp0" role="menu"><a class="mb-link" href="../#features" role="menuitem"><span class="mb-ico" aria-hidden="true">🎬</span><span class="mb-txt"><b>The editor</b><span>Multitrack timeline, colour, effects, export</span></span></a><a class="mb-link" href="../#ai" role="menuitem"><span class="mb-ico" aria-hidden="true">✨</span><span class="mb-txt"><b>AI editing</b><span>Say what you want. It builds the cut.</span></span></a><a class="mb-link" href="../#styles" role="menuitem"><span class="mb-ico" aria-hidden="true">⚡</span><span class="mb-txt"><b>Edit styles</b><span>176 styles and 21 full montages — anime, phonk, velocity</span></span></a><a class="mb-link" href="../#pro" role="menuitem"><span class="mb-ico" aria-hidden="true">🎚️</span><span class="mb-txt"><b>Pro tools</b><span>ProRes, audio repair, proxies, colour wheels</span></span></a><a class="mb-link" href="../#motion" role="menuitem"><span class="mb-ico" aria-hidden="true">ƒ</span><span class="mb-txt"><b>Motion design</b><span>Expressions, shapes, text animators, particles</span></span></a><a class="mb-link" href="../#levels" role="menuitem"><span class="mb-ico" aria-hidden="true">🎓</span><span class="mb-txt"><b>Skill levels</b><span>Beginner, Intermediate, Professional</span></span></a><a class="mb-link" href="../#pro" role="menuitem"><span class="mb-ico" aria-hidden="true">🔊</span><span class="mb-txt"><b>Audio filters</b><span>Underwater, telephone, cathedral, robot</span></span></a></div>
+      </div>
+      <div class="mb" data-mb>
+        <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp1">Download<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="mb-pop" id="mbp1" role="menu"><a class="mb-link" href="../download/#desktop" role="menuitem"><span class="mb-ico" aria-hidden="true">🍎</span><span class="mb-txt"><b>macOS</b><span>Apple silicon and Intel</span></span></a><a class="mb-link" href="../download/#desktop" role="menuitem"><span class="mb-ico" aria-hidden="true">🪟</span><span class="mb-txt"><b>Windows</b><span>Windows 10 and 11</span></span></a><a class="mb-link" href="../download/#mobile" role="menuitem"><span class="mb-ico" aria-hidden="true">📱</span><span class="mb-txt"><b>iPhone &amp; iPad</b><span>Installs from Safari, no App Store</span></span></a><a class="mb-link" href="../download/#mobile" role="menuitem"><span class="mb-ico" aria-hidden="true">🤖</span><span class="mb-txt"><b>Android</b><span>Android 10 and up</span></span></a><a class="mb-link" href="../app/" role="menuitem"><span class="mb-ico" aria-hidden="true">🌐</span><span class="mb-txt"><b>Open in the browser</b><span>No install. The whole editor.</span></span></a><a class="mb-link" href="../download/" role="menuitem"><span class="mb-ico" aria-hidden="true">📦</span><span class="mb-txt"><b>All downloads</b><span>Every platform on one page</span></span></a></div>
+      </div>
+      <a class="mb-btn" href="../pricing/">Pricing</a>
+      <div class="mb" data-mb>
+        <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp3">Help<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="mb-pop" id="mbp3" role="menu"><a class="mb-link" href="../app/" role="menuitem"><span class="mb-ico" aria-hidden="true">🚀</span><span class="mb-txt"><b>Getting started</b><span>The walkthrough, five minutes</span></span></a><a class="mb-link" href="../pricing/#compare" role="menuitem"><span class="mb-ico" aria-hidden="true">✅</span><span class="mb-txt"><b>What's built</b><span>Line by line, honestly</span></span></a><a class="mb-link" href="../pricing/#faq" role="menuitem"><span class="mb-ico" aria-hidden="true">💬</span><span class="mb-txt"><b>FAQ</b><span>Payments, devices, refunds</span></span></a><a class="mb-link" href="../activate/" role="menuitem"><span class="mb-ico" aria-hidden="true">🔓</span><span class="mb-txt"><b>Paid but locked?</b><span>Unlock your copy, no key needed</span></span></a><a class="mb-link" href="../download/" role="menuitem"><span class="mb-ico" aria-hidden="true">📥</span><span class="mb-txt"><b>Install the app</b><span>Every platform, one press</span></span></a><a class="mb-link" href="../trust/" role="menuitem"><span class="mb-ico" aria-hidden="true">🛡️</span><span class="mb-txt"><b>Is this a scam?</b><span>The straight answer, and how to check</span></span></a></div>
+      </div>
+    </div>
+
+    <div class="nav-right">
+      <button class="tbtn" data-theme-toggle aria-label="Switch between dark and light">
+        <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>
+        <svg class="moon" viewBox="0 0 24 24"><path d="M20 14.5A8.2 8.2 0 0 1 9.5 4a8.3 8.3 0 1 0 10.5 10.5z"/></svg>
+      </button>
+      <a class="nav-login" href="../account/">Log in</a>
+      <a class="btn btn-primary nav-cta" href="../app/">Open editor</a>
+      <button class="burger" type="button" data-drawer aria-expanded="false"
+              aria-controls="drawer" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <span class="nav-progress" data-progress aria-hidden="true"></span>
+</nav>
+
+<!-- Phone menu. Hidden until the button is pressed, and it holds exactly the
+     same links as the box above so nothing is only reachable on a desktop. -->
+<div class="drawer" id="drawer" hidden>
+  <div class="drawer-inner">
+    <div class="drawer-top">
+      <a class="btn btn-primary btn-lg" href="../app/">Open the editor</a>
+      <a class="btn btn-lg" href="../account/">Log in</a>
+    </div>
+    <div class="drawer-group">
+      <div class="drawer-h">Products</div>
+      <div class="drawer-links">
+        <a href="../#features"><span aria-hidden="true">🎬</span>The editor<em>Multitrack timeline, colour, effects, export</em></a>
+        <a href="../#ai"><span aria-hidden="true">✨</span>AI editing<em>Say what you want. It builds the cut.</em></a>
+        <a href="../#styles"><span aria-hidden="true">⚡</span>Edit styles<em>176 styles and 21 full montages — anime, phonk, velocity</em></a>
+        <a href="../#pro"><span aria-hidden="true">🎚️</span>Pro tools<em>ProRes, audio repair, proxies, colour wheels</em></a>
+        <a href="../#motion"><span aria-hidden="true">ƒ</span>Motion design<em>Expressions, shapes, text animators, particles</em></a>
+        <a href="../#levels"><span aria-hidden="true">🎓</span>Skill levels<em>Beginner, Intermediate, Professional</em></a>
+        <a href="../#pro"><span aria-hidden="true">🔊</span>Audio filters<em>Underwater, telephone, cathedral, robot</em></a>
+      </div>
+    </div>
+    <div class="drawer-group">
+      <div class="drawer-h">Download</div>
+      <div class="drawer-links">
+        <a href="../download/#desktop"><span aria-hidden="true">🍎</span>macOS<em>Apple silicon and Intel</em></a>
+        <a href="../download/#desktop"><span aria-hidden="true">🪟</span>Windows<em>Windows 10 and 11</em></a>
+        <a href="../download/#mobile"><span aria-hidden="true">📱</span>iPhone &amp; iPad<em>Installs from Safari, no App Store</em></a>
+        <a href="../download/#mobile"><span aria-hidden="true">🤖</span>Android<em>Android 10 and up</em></a>
+        <a href="../app/"><span aria-hidden="true">🌐</span>Open in the browser<em>No install. The whole editor.</em></a>
+        <a href="../download/"><span aria-hidden="true">📦</span>All downloads<em>Every platform on one page</em></a>
+      </div>
+    </div>
+    <a class="drawer-solo" href="../pricing/">Pricing</a>
+    <div class="drawer-group">
+      <div class="drawer-h">Help</div>
+      <div class="drawer-links">
+        <a href="../app/"><span aria-hidden="true">🚀</span>Getting started<em>The walkthrough, five minutes</em></a>
+        <a href="../pricing/#compare"><span aria-hidden="true">✅</span>What's built<em>Line by line, honestly</em></a>
+        <a href="../pricing/#faq"><span aria-hidden="true">💬</span>FAQ<em>Payments, devices, refunds</em></a>
+        <a href="../activate/"><span aria-hidden="true">🔓</span>Paid but locked?<em>Unlock your copy, no key needed</em></a>
+        <a href="../download/"><span aria-hidden="true">📥</span>Install the app<em>Every platform, one press</em></a>
+        <a href="../trust/"><span aria-hidden="true">🛡️</span>Is this a scam?<em>The straight answer, and how to check</em></a>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /chrome:nav -->
+
+<header class="hero" id="top" data-rail="Top" style="padding-bottom:20px">
+  <div class="wrap">
+    <div class="eyebrow reveal in"><span class="pulse"></span>Written for the sceptical</div>
+    <h1 class="reveal in" style="max-width:18ch">Is this a <span class="grad">scam?</span></h1>
+    <p class="lede reveal in d1">
+      No. But you have no reason to take my word for it, and "trust me" is what a scam says too.
+      So here is what a scam would need to do that this cannot, four things you can check yourself
+      in about a minute without giving me an email address or a card, and the full list of what
+      this editor <em>cannot</em> do — which is the part nobody selling you something fake
+      ever writes down.
+    </p>
+    <div class="btn-row reveal in d2">
+      <a class="btn btn-primary btn-lg" href="../app/">Open the editor — nothing to sign up for</a>
+      <a class="btn btn-lg btn-ghost" href="#cant">What it can't do</a>
+    </div>
+  </div>
+</header>
+
+<!-- ==================== check it yourself ==================== -->
+<section id="check" data-rail="Check it">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>Check it yourself, in a minute</h2>
+      <p>Every one of these is something you do on your own machine. None of them require you to
+        give me anything, and none of them can be faked by a website.</p>
+    </div>
+
+    <div class="checks">
+      <div class="chk reveal">
+        <h3>Open the editor. Notice what it doesn't ask for.</h3>
+        <p>No account. No email. No card. No download, no extension, no "start your free trial".
+          The link goes straight into a working editor with a timeline in it. A product that
+          wanted your card before it showed you anything would have asked by now.</p>
+        <span class="proves">Try it: <a href="../app/">omnidx.net/studio/app</a></span>
+      </div>
+
+      <div class="chk reveal d1">
+        <h3>Turn your wifi off, then keep editing.</h3>
+        <p>Import a clip, cut it, add an effect, export it — with no connection at all. It keeps
+          working, because the editing happens in your browser on your own machine. This is the
+          test that settles the privacy question properly: software that was quietly uploading
+          your footage could not survive it.</p>
+        <span class="proves">Proves: your footage is not going anywhere</span>
+      </div>
+
+      <div class="chk reveal">
+        <h3>Export something and look at the file.</h3>
+        <p>It is an ordinary MP4. Open it in any player, drop it into any other editor, upload it
+          anywhere. No watermark on any tier, including the free one. No "exported with" tag, no
+          logo burned into the corner, nothing to pay to remove later.</p>
+        <span class="proves">Proves: the free tier is the actual product, not a demo</span>
+      </div>
+
+      <div class="chk reveal d1">
+        <h3>Open a saved project in a text editor.</h3>
+        <p>A project file is readable JSON — your clips, your cuts, your settings, in plain text
+          you can read and keep. Nothing about your work is locked inside a format only this app
+          can open, so nothing about your work depends on this app still existing.</p>
+        <span class="proves">Proves: you can leave, and take your work with you</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== the direct answer ==================== -->
+<section id="answer" data-rail="Straight answer">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>What a scam would have to do</h2>
+      <p>The patterns are well known, because they are the same every time. Here is each one,
+        and what this does instead.</p>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card reveal">
+        <div class="card-icon">💳</div>
+        <h3>Take the money first</h3>
+        <p>Nothing here asks for payment before you have used the thing. The free version is the
+          full editor with no watermark and no time limit, and most people never need to pay at
+          all. Paying unlocks named features that are listed line by line
+          <a href="../pricing/#compare">on the pricing page</a> before you spend anything.</p>
+      </div>
+      <div class="card reveal d1">
+        <div class="card-icon">🔁</div>
+        <h3>Bill you again quietly</h3>
+        <p>There is no subscription to forget about, because there is no subscription at all —
+          not hidden, not "optional", not after a year. There is nothing to cancel, no card kept
+          on file by me, and no renewal date. One payment, and that is the end of it.</p>
+      </div>
+      <div class="card reveal">
+        <div class="card-icon">🏦</div>
+        <h3>Take payment somewhere with no recourse</h3>
+        <p>Checkout runs through <b>Square</b>, a real payment processor. You pay by card, Apple
+          Pay, Google Pay, PayPal or Klarna, your card details never touch me, and you keep every
+          protection your bank gives you — including the ability to go around me entirely and
+          charge it back if I let you down.</p>
+      </div>
+      <div class="card reveal d1">
+        <div class="card-icon">↩️</div>
+        <h3>Make refunds hard</h3>
+        <p>Fourteen days, no questions, no explanation required and no retention script. Email
+          <span data-support="OmniDx Studio — refund" hidden></span> and it gets refunded. I would
+          genuinely rather have the honest review than the $19.99 — at this size, one person
+          telling people it was a rip-off costs far more than a refund does.</p>
+      </div>
+      <div class="card reveal">
+        <div class="card-icon">📈</div>
+        <h3>Invent the numbers</h3>
+        <p>There are no testimonials on this site, no "trusted by 10,000 creators", no five-star
+          badges and no press logos, because I do not have any of those things yet and inventing
+          them is the cheapest thing in the world to do. The rating block in the footer shows a
+          real average or nothing at all — it has no placeholder.</p>
+      </div>
+      <div class="card reveal d1">
+        <div class="card-icon">⏳</div>
+        <h3>Rush you</h3>
+        <p>No countdown timer, no "3 people are viewing this", no fake discount off a price that
+          was never charged, no launch-week-only pricing. $19.99 is the price. If you come back
+          in six months and it is cheaper, that is your good luck, not a trick played on you now.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== what it can't do ==================== -->
+<section id="cant" data-rail="What it can't do">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>Everything it can't do</h2>
+      <p>This is the honest list, and it is the reason to believe the rest of the site. Anyone can
+        write a features page. Almost nobody writes this one.</p>
+    </div>
+
+    <div class="cant reveal">
+      <div>
+        <b>Generate video that isn't there</b>
+        <span>It cannot swap an object for a different object, invent scenery, or extend a shot
+          past its edges. That needs a generative video model, which cannot run in a browser —
+          so anything offering it is either lying or sending your footage to somebody else's
+          server. It <em>can</em> remove an object and fill the space from the real background,
+          because that is solvable honestly.</span>
+      </div>
+      <div>
+        <b>Write your captions for you, yet</b>
+        <span>Right now captions find the speech and lay out correctly-timed boxes, and you type
+          the words. Turning audio into text needs a transcription server, which is not switched
+          on yet. When it is, the same button transcribes. Buy on what it does today, not on
+          that.</span>
+      </div>
+      <div>
+        <b>Stabilise a shaky shot</b>
+        <span>Not built. A stabiliser that only counters side-to-side movement makes
+          rolling-shutter wobble worse rather than better, and doing it properly means solving
+          rotation and scale too. Left out rather than shipped as something that helps some
+          shots and ruins others.</span>
+      </div>
+      <div>
+        <b>Draw a mask by hand with a pen</b>
+        <span>Masks come as rectangles, ovals and polygons — feathered, rotatable, animatable and
+          trackable. There is no bezier pen for tracing an arbitrary outline freehand.</span>
+      </div>
+      <div>
+        <b>Guarantee a licence can't be shared</b>
+        <span>Entitlement checks run on your own machine, and anyone determined enough can switch
+          them off with browser dev tools. I would rather say that than pretend at a lock that
+          does not exist. The honest deal is that paying is how this keeps being made.</span>
+      </div>
+      <div>
+        <b>Sync your projects between devices, yet</b>
+        <span>Your licence works on every device you own, but projects live on the device you
+          made them on until the account server is switched on. You can move a project by
+          exporting the file and opening it on the other machine.</span>
+      </div>
+      <div>
+        <b>Beat a $6,000 workstation at 8K</b>
+        <span>It is a browser. Long 4K timelines on an old laptop will be slower than DaVinci
+          Resolve on a machine built for it. Playback drops preview resolution to stay smooth and
+          exports at full quality, which is the right trade, but it is a trade.</span>
+      </div>
+    </div>
+
+    <p class="small muted reveal" style="margin-top:18px">
+      If something on this list matters to you, use the free version and find out before you pay,
+      or don't pay. That is the whole point of there being a free version.
+    </p>
+  </div>
+</section>
+
+<!-- ==================== your footage ==================== -->
+<section id="footage" data-rail="Your footage">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>Where your footage goes</h2>
+      <p>Nowhere. Here is the precise version of that, including the exceptions.</p>
+    </div>
+    <div class="grid grid-2">
+      <div class="card reveal">
+        <div class="card-icon">🖥️</div>
+        <h3>The editing is on your machine</h3>
+        <p>Importing, cutting, effects, colour, audio and export all run in your browser. Your
+          clips are held in your browser's own storage on your device. Nothing is uploaded to
+          be edited, which is why the whole thing works with the network off.</p>
+      </div>
+      <div class="card reveal d1">
+        <div class="card-icon">☁️</div>
+        <h3>The two exceptions, named</h3>
+        <p>Two features can talk to a server when they are switched on: the cloud AI planner, and
+          caption transcription. Both send only what they need, both tell you at the time, and
+          both are off unless configured. Everything else has no network path at all.</p>
+      </div>
+      <div class="card reveal">
+        <div class="card-icon">🚫</div>
+        <h3>No analytics on your edit</h3>
+        <p>There is no tracker watching what you cut, no telemetry on your timeline and no
+          third-party scripts loading inside the editor. What you make is not data I collect.</p>
+      </div>
+      <div class="card reveal d1">
+        <div class="card-icon">🔌</div>
+        <h3>Test it, don't trust it</h3>
+        <p>Aeroplane mode, then edit. Or open your browser's network panel and watch it stay
+          quiet while you work. A claim you can check in ten seconds is worth more than a
+          paragraph of promises, and this one is checkable.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== if this disappears ==================== -->
+<section id="ifigone" data-rail="If I disappear">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>What happens if I disappear</h2>
+      <p>The fair question about a one-time purchase from somebody you have never heard of.
+        A subscription dies with the company. This mostly doesn't.</p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card reveal">
+        <div class="card-icon">📴</div>
+        <h3>The app keeps running</h3>
+        <p>Install it and the whole editor is cached on your device. It opens and works with the
+          site gone and the network off, because it was never running on my server in the first
+          place.</p>
+      </div>
+      <div class="card reveal d1">
+        <div class="card-icon">🗂️</div>
+        <h3>Your projects stay readable</h3>
+        <p>Plain JSON on your machine. Even with no app at all, the file tells you what your edit
+          was — and your exports are ordinary MP4s that were never tied to anything.</p>
+      </div>
+      <div class="card reveal d2">
+        <div class="card-icon">🖥️</div>
+        <h3>The desktop build is yours</h3>
+        <p>The Mac and Windows downloads are a normal application sitting on your own drive. Nobody
+          can reach in and switch it off, and it does not phone home to check it is allowed to
+          start.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== who ==================== -->
+<section id="who" data-rail="Who made it">
+  <div class="wrap">
+    <div class="band reveal">
+      <h2>Who is behind this</h2>
+      <p class="lede" style="margin-left:auto;margin-right:auto;max-width:62ch">
+        One person, building this on their own. Not a company, not a team, and I am not going to
+        pretend otherwise with a fake "About us" page and stock photographs of an office. That is
+        the honest weakness of buying from me: there is no support department behind this, and if
+        I am asleep your email waits until morning.
+      </p>
+      <p class="lede" style="margin-left:auto;margin-right:auto;max-width:62ch">
+        It is also the honest strength. Nobody above me needs a growth number next quarter, which
+        is the reason there is no subscription, no watermark and no upsell in the middle of your
+        edit — those things exist to hit targets I do not have.
+      </p>
+      <p class="small" style="margin-top:20px">
+        Reach a human: <span data-support="OmniDx Studio — question from the trust page" hidden></span>
+      </p>
+      <div class="btn-row" style="justify-content:center;margin-top:24px">
+        <a class="btn btn-primary btn-lg" href="../app/">Use it free, decide later</a>
+        <a class="btn btn-lg btn-ghost" href="../pricing/">See exactly what paying changes</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- chrome:footer -->
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a class="logo" href="../"><span class="mark"><svg viewBox="0 0 64 64" aria-hidden="true" style="width:18px;height:18px"><rect x="13" y="18" width="26" height="6" rx="3" fill="#fff" opacity=".92"/><rect x="13" y="29" width="18" height="6" rx="3" fill="#fff" opacity=".68"/><rect x="13" y="40" width="30" height="6" rx="3" fill="#fff" opacity=".45"/><path d="M43 24.5 L54 32 L43 39.5 Z" fill="#fff"/></svg></span>OmniDx <small>Studio</small></a>
+        <p class="small" style="margin-top:14px;max-width:34ch">The editor that stops fighting you.
+          Free to use, yours to own, and it never holds your work hostage.</p>
+        <p class="tiny muted" style="margin-top:10px">One payment. No subscription, ever.</p>
+        <div id="rate-us" class="rate-host" aria-label="Rate OmniDx Studio"></div>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <a href="../#features">Features</a>
+        <a href="../#ai">AI editing</a>
+        <a href="../#pro">Pro tools</a>
+        <a href="../#motion">Motion design</a>
+        <a href="../#styles">Edit styles</a>
+        <a href="../#fixes">What we fixed</a>
+      </div>
+      <div>
+        <h4>Get it</h4>
+        <a href="../app/">Open in browser</a>
+        <a href="../download/#desktop">Mac &amp; Windows</a>
+        <a href="../download/#mobile">iOS &amp; Android</a>
+        <a href="../pricing/">Pricing</a>
+        <a href="../account/">Your account</a>
+      </div>
+      <div>
+        <h4>More</h4>
+        <a href="../trust/">Is this a scam?</a>
+        <a href="../pricing/#faq">FAQ</a>
+        <a href="../activate/">Unlock my copy</a>
+        <a href="../pricing/#compare">What's built</a>
+        <a href="../trust/#cant">What it can't do</a>
+        <span class="foot-support" data-support="OmniDx Studio — help" hidden></span>
+      </div>
+    </div>
+    <div class="foot-note">
+      <span>© 2026 OmniDx. Built to be owned, not rented.</span>
+      <span>Your footage stays on your machine unless you ask it not to.</span>
+    </div>
+  </div>
+</footer>
+<!-- /chrome:footer -->
+
+<div class="toast-host" id="toast-host" aria-live="polite"></div>
+<script type="module" src="../assets/studio.js"></script>
+</body>
+</html>

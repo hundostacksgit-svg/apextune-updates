@@ -255,11 +255,11 @@ export const VIDEOS = [
   {
     id: '19-daily-updates', title: 'You pay once, it keeps getting better', music: 'trap-140-24s',
     scenes: [
-      { type: 'hook', beats: 8, lines: ['YOU PAY ONCE.', 'IT GETS BETTER', 'EVERY DAY.'], grad: [2] },
-      { type: 'list', beats: 14, title: 'added recently', items: UPDATE_ITEMS, stepBeats: 0.6, cap: 'updates every day. <em>free.</em>' },
+      { type: 'hook', beats: 8, lines: ['YOU PAY ONCE.', 'YOU GET EVERYTHING', 'THAT COMES AFTER.'], grad: [2] },
+      { type: 'list', beats: 14, title: 'added since launch', items: UPDATE_ITEMS, stepBeats: 0.6, cap: 'all of it free. <em>no version 2.</em>' },
       { type: 'app', beats: 8, shot: 'editor', box: 'wide', tag: 'today\'s build', view: [...hold(V.whole, 0, 1.4), { at: 3, ...V.viewer }], cap: 'the app updates itself. <i>nothing to reinstall.</i>' },
       { type: 'statement', beats: 6, lines: ['No version 2.', 'No upgrade fee.'], grad: [1] },
-      { type: 'end', beats: 12, line: 'Every update included. <b>$19.99 once.</b> That is the whole deal.', tags: tags('#indieapp', '#buildinpublic') },
+      { type: 'end', beats: 12, line: 'Every update free, forever. <b>$19.99 once.</b> That is the whole deal.', tags: tags('#indieapp', '#buildinpublic') },
     ],
   },
   {

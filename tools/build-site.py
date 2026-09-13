@@ -36,6 +36,7 @@ PAGES = {
     'pricing/index.html': '../',
     'download/index.html': '../',
     'account/index.html': '../',
+    'trust/index.html': '../',
 }
 
 LOGO_SVG = (
@@ -67,8 +68,9 @@ MENU = [
         'items': [
             ('🎬', 'The editor', 'Multitrack timeline, colour, effects, export', '{s}#features'),
             ('✨', 'AI editing', 'Say what you want. It builds the cut.', '{s}#ai'),
-            ('⚡', 'Edit styles', '11 one-tap styles — anime, phonk, velocity', '{s}#styles'),
+            ('⚡', 'Edit styles', '176 styles and 21 full montages — anime, phonk, velocity', '{s}#styles'),
             ('🎚️', 'Pro tools', 'ProRes, audio repair, proxies, colour wheels', '{s}#pro'),
+            ('ƒ', 'Motion design', 'Expressions, shapes, text animators, particles', '{s}#motion'),
             ('🎓', 'Skill levels', 'Beginner, Intermediate, Professional', '{s}#levels'),
             ('🔊', 'Audio filters', 'Underwater, telephone, cathedral, robot', '{s}#pro'),
         ],
@@ -93,6 +95,7 @@ MENU = [
             ('💬', 'FAQ', 'Payments, devices, refunds', '{s}pricing/#faq'),
             ('🔓', 'Paid but locked?', 'Unlock your copy, no key needed', '{s}activate/'),
             ('📥', 'Install the app', 'Every platform, one press', '{s}download/'),
+            ('🛡️', 'Is this a scam?', 'The straight answer, and how to check', '{s}trust/'),
         ],
     },
 ]
@@ -201,12 +204,14 @@ def build_footer(s: str) -> str:
         <p class="small" style="margin-top:14px;max-width:34ch">The editor that stops fighting you.
           Free to use, yours to own, and it never holds your work hostage.</p>
         <p class="tiny muted" style="margin-top:10px">One payment. No subscription, ever.</p>
+        <div id="rate-us" class="rate-host" aria-label="Rate OmniDx Studio"></div>
       </div>
       <div>
         <h4>Product</h4>
         <a href="{s}#features">Features</a>
         <a href="{s}#ai">AI editing</a>
         <a href="{s}#pro">Pro tools</a>
+        <a href="{s}#motion">Motion design</a>
         <a href="{s}#styles">Edit styles</a>
         <a href="{s}#fixes">What we fixed</a>
       </div>
@@ -220,9 +225,11 @@ def build_footer(s: str) -> str:
       </div>
       <div>
         <h4>More</h4>
+        <a href="{s}trust/">Is this a scam?</a>
         <a href="{s}pricing/#faq">FAQ</a>
         <a href="{s}activate/">Unlock my copy</a>
         <a href="{s}pricing/#compare">What's built</a>
+        <a href="{s}trust/#cant">What it can't do</a>
         <span class="foot-support" data-support="OmniDx Studio — help" hidden></span>
       </div>
     </div>

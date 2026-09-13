@@ -293,9 +293,9 @@ function initPricing() {
       ['Custom LUT slots, unlimited', 1],
       ['Scopes and the full colour panel', 1],
       ['Every future update included, free', 1],
-      ['Background removal — building', 2],
+      ['Background removal, no green screen', 1],
+      ['Multicam — angles synced by their own audio', 1],
       ['Voice isolation — building', 2],
-      ['Multicam sync — building', 2],
     ],
     team: [
       ['Everything in Studio, for three people', 1],
@@ -371,7 +371,7 @@ const COMPARE = [
   ['One-tap edit styles', 'All 11', 'All 11', 'All 11'],
   ['Motion tracking', false, true, true],
   ['Remove an object by tapping it', false, true, true],
-  ['Multicam sync', false, false, 'Building'],
+  ['Multicam sync by audio', false, false, true],
 
   ['— Look', null, null, null],
   ['Colour sliders &amp; curves', 'Sliders', true, true],
@@ -381,8 +381,8 @@ const COMPARE = [
   ['Stickers &amp; callouts', true, true, true],
   ['Custom LUT slots', false, '4', 'Unlimited'],
   ['Scopes (waveform, vectorscope)', false, true, true],
-  ['Background removal, no green screen', false, false, 'Building'],
-  ['Auto-reframe to any ratio', false, false, 'Building'],
+  ['Background removal, no green screen', false, false, true],
+  ['Auto-reframe to any ratio', true, true, true],
 
   ['— Motion design', null, null, null],
   ['Expressions (wiggle, loop, beat, audio)', false, true, true],
@@ -395,7 +395,8 @@ const COMPARE = [
 
   ['— AI', null, null, null],
   ['AI edit assistant', false, '200 / month', 'Unlimited'],
-  ['Auto-captions', false, true, true],
+  ['Captions, timed to the speech for you', false, true, true],
+  ['Speech typed out for you (transcription)', false, 'Building', 'Building'],
   ['Beat-synced cutting', false, true, true],
   ['Silence removal', false, true, true],
   ['Voice isolation &amp; noise removal', false, false, 'Building'],

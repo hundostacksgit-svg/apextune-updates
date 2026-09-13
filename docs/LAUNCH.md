@@ -371,6 +371,38 @@ per-platform downloads, an account that remembers you.
   every slide resets when it goes off; with reduced motion the slides
   still rotate, finished, without the cursor. `verify-showcase`
 
+**Proving it is not a scam**
+- A page that asks the question in its own title, at `studio/trust/`: four
+  things a stranger can check in a minute without handing over anything (the
+  editor opens with no account and no card; it keeps working with the wifi
+  off; an export is a plain MP4 with no watermark; a project is readable
+  JSON), the six patterns a scam needs and what this does instead, where the
+  footage goes with the two server exceptions named, what survives if the site
+  disappears, and one person's name on it rather than a fake About Us. The
+  front page now follows its three claims with "Sounds too good? Check all
+  three yourself in a minute" — a promise with its own experiment attached
+  converts a sceptic; a louder promise does not.
+- The honest list is the centre of it: everything the editor cannot do,
+  written down, because nobody selling something fake writes that page.
+- Found while writing it, and worse than the page it prompted: the public
+  comparison table had drifted from the code in both directions. Multicam and
+  background removal shipped and verified months ago and the table still said
+  "Building" while the front page showed a Multicam card; auto-reframe is
+  ungated and the table said Studio only; and "Auto-captions ✓" promised
+  speech-to-text when the words still have to be typed, which is the single
+  likeliest route to a paid customer feeling lied to. All four rows now match
+  what `ENTITLEMENTS` actually grants. `verify-trust` reads the rendered table
+  and the app's entitlement map on every run and fails when they disagree, so
+  the drift cannot come back quietly — and it tells a tier reserved for
+  something unbuilt from a promise the app already keeps by checking whether
+  any control gates on the key.
+- Two claims in the promo kit were corrected for the same reason. "Updates
+  every day" is a delivery rate one person cannot keep, so it is now "every
+  update free, forever", which is a commitment instead of a hostage; the four
+  videos carrying it were re-rendered. The auto-captions video is marked HOLD
+  until the transcription server is live, since it promises the one thing the
+  feature does not do yet. `docs/PROMOTION.md` has the rest of the plan.
+
 **Removing a thing from a shot**
 - Tap it. The region under the tap grows while the colour stays the thing's
   colour and no hard edge is crossed, and anything it surrounds (the label on

@@ -207,7 +207,7 @@ const BUILD = {
   price(s) {
     const root = el('div', 'price');
     const o = { name: 'Subscription editors', price: 22.99, years: 3, note: 'and it never stops', ...(s.other || {}) };
-    const u = { name: 'OmniDx Studio · Creator', price: '$19.99', label: 'once', checks: ['No subscription. Ever.', 'Updates every day. Free.', 'Every device you own.'], ...(s.ours || {}) };
+    const u = { name: 'OmniDx Studio · Creator', price: '$19.99', label: 'once', checks: ['No subscription. Ever.', 'Every update free, forever.', 'Every device you own.'], ...(s.ours || {}) };
     const other = el('div', 'pc other', `<div class="pl">${o.name}</div><div class="pv">${money(o.price)}<span>/month</span><i class="strike"></i></div>
       <div class="pt">${o.years} years = <b class="cnt">$0.00</b></div><div class="pn">${o.note}</div>`);
     const vs = el('div', 'vs', 'vs');

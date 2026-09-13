@@ -316,6 +316,9 @@ section{padding:92px 0;position:relative;scroll-margin-top:74px}
 .hero-note{margin-top:20px;font-size:13.5px;color:var(--text-3);display:flex;
   gap:16px;flex-wrap:wrap;align-items:center}
 .hero-note b{color:var(--text-2);font-weight:600}
+.hero-check{margin:14px 0 0;font-size:14px;color:var(--text-3)}
+.hero-check a{color:var(--blue-2);font-weight:650;text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--blue-2) 40%,transparent)}
+.hero-check a:hover{border-bottom-color:var(--blue-2)}
 .trust{display:flex;gap:10px;flex-wrap:wrap;margin-top:30px}
 .trust span{font-size:12.5px;padding:6px 12px;border-radius:99px;border:1px solid var(--line);
   background:var(--surface);color:var(--text-2)}
