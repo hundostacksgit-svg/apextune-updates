@@ -1,6 +1,6 @@
 # Getting attention without getting called a scam
 
-`PROMO-KIT.md` is the material — twenty videos, the captions, the schedule.
+`PROMO-KIT.md` is the material — the videos, the captions, the schedule.
 This is the strategy: how to push hard for reach while surviving the thing that
 kills unknown paid software, which is a comment section deciding you are fake.
 
@@ -98,7 +98,10 @@ too good? Check all three yourself in a minute", pointing at
   Claim the true version: cheaper, faster to start, no subscription, and it
   does the specific things listed.
 - "AI-powered" as a bare adjective. Say what the AI does — plans the cut from
-  a sentence, on your device — or leave it out.
+  a sentence, on your device — or leave it out. In particular the audio repair
+  is not AI and must not be sold as it: it is spectral subtraction, notch
+  filters, de-clicking and RMS levelling. "Hum, hiss, clicks, level — gone in
+  one pass" is true, is more specific, and survives "which model?".
 - Anything about the transcription server until it is live.
 
 **The framing that outperforms all of it:** you are not competing with Adobe.
@@ -139,7 +142,7 @@ believing you. Post it on its own, a week after launch.
 
 ### TikTok, Reels, Shorts
 
-The twenty videos, one a day, per the schedule in `PROMO-KIT.md`. Two changes
+The videos, one a day, per the schedule in `PROMO-KIT.md`. Two changes
 to that plan for credibility:
 
 - **Reorder the first three.** Lead with 18 (free forever, no watermark), then
@@ -147,9 +150,13 @@ to that plan for credibility:
   third — if the magic lands first, the comments are "fake".
 - **Pin the same comment on every one:** free version at omnidx.net, no
   watermark, no trial, ask me anything. Then actually answer, in the first hour.
+- **Keep 22 in reserve.** It is the only one whose opening is a result rather
+  than a claim — a tap, and the thing is gone — so it is the strongest single
+  post in the set and the one to follow a hit with. It is last in the schedule
+  on purpose: a trick posted before the proof reads as a trick.
 
 Expect most videos to do nothing. That is normal and is not evidence anything
-is wrong; the plan is twenty attempts at one that works, and then more of
+is wrong; the plan is twenty-odd attempts at one that works, and then more of
 whatever that one was.
 
 ### Build in public

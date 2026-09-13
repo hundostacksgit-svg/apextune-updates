@@ -223,7 +223,7 @@ const liveliest = new Map();
 function bestTime(id) {
   if (liveliest.has(id)) return liveliest.get(id);
   const def = EFFECTS[id];
-  if (!def || def.needsSetup) { liveliest.set(id, 0.55); return 0.55; }
+  if (!def || def.needsSetup || def.motionOnly) { liveliest.set(id, 0.55); return 0.55; }
 
   const src = sourceFrame();
   const probe = document.createElement('canvas');
@@ -289,12 +289,43 @@ function setupThumb(def) {
   return out;
 }
 
+/*
+ * A chip for an effect that only exists in motion.
+ *
+ * Posterize time holds the frame at a stepped rate: at any one instant it is
+ * the frame it was already drawing, so a still preview of it is honestly
+ * indistinguishable from no effect at all. Rather than show that and look
+ * broken, the chip shows the idea — the same frame held, stepping behind
+ * itself — and the icon.
+ */
+function motionThumb(def) {
+  const out = blank();
+  const ctx = out.getContext('2d');
+  const W = out.width, H = out.height;
+  const src = sourceFrame();
+  for (let k = 2; k >= 1; k--) {
+    ctx.globalAlpha = 0.22 * k / 2;
+    ctx.drawImage(src, k * W * 0.05, 0, W, H);
+  }
+  ctx.globalAlpha = 1;
+  ctx.drawImage(src, 0, 0, W, H);
+  ctx.fillStyle = 'rgba(5,8,15,.5)';
+  ctx.fillRect(0, H * 0.62, W, H * 0.38);
+  ctx.fillStyle = 'rgba(255,255,255,.94)';
+  ctx.font = `600 ${Math.round(H * 0.2)}px system-ui, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(def.icon || '▯', W / 2, H * 0.8);
+  return out;
+}
+
 /** One effect at its default settings, drawn on the sample frame. */
 export function effectThumb(id, t) {
   if (t === undefined) t = bestTime(id);
   return cached(`fx:${id}:${t}:${userFrame ? 'u' : 'b'}`, () => {
     const def0 = EFFECTS[id];
     if (def0?.needsSetup) return setupThumb(def0);
+    if (def0?.motionOnly) return motionThumb(def0);
     const out = blank();
     const ctx = out.getContext('2d', { willReadFrequently: true });
     ctx.drawImage(sourceFrame(), 0, 0, out.width, out.height);
@@ -385,7 +416,7 @@ export function presetThumb(id, t = 0.55) {
 
     for (const spec of a.effects || []) {
       const def = EFFECTS[spec.id];
-      if (!def || def.needsSetup) continue;
+      if (!def || def.needsSetup || def.motionOnly) continue;
       const inst = makeEffect(spec.id);
       if (!inst) continue;
       inst.params = { ...inst.params, ...(spec.params || {}) };

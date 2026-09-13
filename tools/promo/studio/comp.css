@@ -175,6 +175,33 @@ img { display: block; }
 .wipe .lb { position: absolute; top: 24px; padding: 10px 22px; border-radius: 999px; background: rgba(5,8,16,.75); border: 2px solid rgba(255,255,255,.15); font-weight: 800; font-size: 30px; letter-spacing: .08em; text-transform: uppercase; }
 .wipe .lb.before { right: 24px; color: var(--text-2); }
 .wipe .lb.after { left: 24px; color: var(--mint); border-color: rgba(49,217,167,.5); }
+.wipe .tap { position: absolute; width: 0; height: 0; }
+.wipe .tap .ring { position: absolute; left: 50%; top: 50%; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 6px solid var(--mint); box-shadow: 0 0 40px rgba(49,217,167,.7); }
+.wipe .tap .tlbl { position: absolute; left: 50%; top: 66px; transform: translateX(-50%); white-space: nowrap; padding: 10px 22px; border-radius: 999px;
+  background: var(--mint); color: #04130d; font-weight: 800; font-size: 30px; box-shadow: 0 14px 40px rgba(0,0,0,.5); }
+.wipe .tap::after { content: ''; position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; background: rgba(255,255,255,.9); box-shadow: 0 0 30px rgba(255,255,255,.8); }
+
+/* ---- sound: audio repair, before and after ---- */
+.sound { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 260px 50px 560px; }
+.sound .card { position: relative; width: 100%; max-width: 980px; padding: 30px; border-radius: 34px; background: rgba(10,15,28,.86); border: 2px solid rgba(255,255,255,.1); box-shadow: 0 40px 120px rgba(0,0,0,.6); will-change: transform, opacity; }
+.sound .pan + .pan { margin-top: 34px; }
+.sound .plbl { font-size: 30px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--text-2); margin-bottom: 12px; }
+.sound .good .plbl { color: var(--mint); }
+.sound .wv { position: relative; height: 230px; border-radius: 20px; overflow: hidden; background: rgba(255,255,255,.035); border: 2px solid rgba(255,255,255,.07); }
+.sound .wv svg { width: 100%; height: 100%; display: block; }
+.sound .bar { fill: #8b97ad; }
+.sound .good .bar { fill: var(--mint); }
+.sound .floor { fill: rgba(255,107,107,.30); }
+.sound .good .floor { fill: rgba(49,217,167,.28); }
+.sound .pin { position: absolute; top: 10px; transform: translateX(-50%); width: 42px; height: 42px; line-height: 42px; text-align: center; border-radius: 50%;
+  background: rgba(255,90,90,.92); color: #fff; font-weight: 800; font-size: 24px; box-shadow: 0 0 26px rgba(255,90,90,.6); }
+.sound .fnote { margin-top: 12px; font-size: 28px; font-weight: 700; color: var(--text-2); }
+.sound .good .fnote { color: var(--mint); }
+.sound .fnote b { color: #fff; }
+.sound .sweep { position: absolute; left: 30px; top: 30px; bottom: 116px; width: 6px; margin-left: -3px; background: #fff; box-shadow: 0 0 30px rgba(255,255,255,.9); }
+.sound .chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; margin-top: 26px; }
+.sound .chips span { padding: 12px 24px; border-radius: 999px; background: rgba(49,217,167,.12); border: 2px solid rgba(49,217,167,.45); color: var(--mint); font-size: 30px; font-weight: 800; will-change: transform, opacity; }
+.sound .chips i { font-style: normal; color: #fff; }
 
 /* ---- end card ---- */
 .end { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px; padding: 0 60px; text-align: center; }
@@ -199,7 +226,7 @@ img { display: block; }
 .thumb .device img { width: 100%; border-radius: 12px; }
 
 /* ================= landscape (YouTube) ================= */
-.fmt-yt .hook, .fmt-yt .price, .fmt-yt .list, .fmt-yt .typing, .fmt-yt .tl, .fmt-yt .wipe { padding-top: 60px; padding-bottom: 130px; }
+.fmt-yt .hook, .fmt-yt .price, .fmt-yt .list, .fmt-yt .typing, .fmt-yt .tl, .fmt-yt .wipe, .fmt-yt .sound { padding-top: 60px; padding-bottom: 130px; }
 .fmt-yt #wm { left: 56px; top: 44px; transform: none; padding: 10px 26px 10px 14px; }
 .fmt-yt #wm img { width: 52px; height: 52px; }
 .fmt-yt #wm span { font-size: 36px; }
@@ -227,6 +254,8 @@ img { display: block; }
 .fmt-yt .typing .steps li { font-size: 30px; }
 .fmt-yt .tl .card { max-width: 1500px; }
 .fmt-yt .wipe .frame { max-width: 1400px; }
+.fmt-yt .sound .card, .fmt-yt .sound .chips { max-width: 1400px; }
+.fmt-yt .sound .wv { height: 190px; }
 .fmt-yt .end { flex-direction: row; gap: 70px; text-align: left; padding: 0 140px; }
 .fmt-yt .end .col { display: flex; flex-direction: column; gap: 22px; }
 .fmt-yt .end .mark { width: 380px; height: 380px; }
@@ -234,7 +263,7 @@ img { display: block; }
 .fmt-yt .end .bio { align-self: flex-start; }
 
 /* ================= feed post (4:5) ================= */
-.fmt-feed .hook, .fmt-feed .price, .fmt-feed .list, .fmt-feed .typing, .fmt-feed .tl, .fmt-feed .wipe { padding-top: 170px; padding-bottom: 230px; }
+.fmt-feed .hook, .fmt-feed .price, .fmt-feed .list, .fmt-feed .typing, .fmt-feed .tl, .fmt-feed .wipe, .fmt-feed .sound { padding-top: 170px; padding-bottom: 230px; }
 .fmt-feed #wm { top: 70px; }
 .fmt-feed #cap { bottom: 90px; }
 .fmt-feed .app .device { border-radius: 28px; }

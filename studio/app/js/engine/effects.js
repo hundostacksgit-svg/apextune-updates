@@ -597,6 +597,16 @@ export const EFFECTS = {
    */
   eraseObject: {
     name: 'Remove an object', group: 'Utility', tier: 'creator', icon: '⌫',
+    /*
+     * Nothing to draw until something has been tapped.
+     *
+     * The shape comes from a tap on the picture, not from a slider, so at its
+     * defaults this effect is legitimately inert — and without `needsSetup`
+     * its chip previewed as an untouched frame, which reads as an effect that
+     * does not work. Marked, the chip says what it needs instead, and picking
+     * it from the panel opens the eraser rather than adding a dead effect.
+     */
+    needsSetup: 'Tap the thing you want gone, in the picture',
     params: { x: { label: 'X', min: 0, max: 100, def: 50 },
               y: { label: 'Y', min: 0, max: 100, def: 50 },
               scale: { label: 'Size', min: 20, max: 400, def: 100 },

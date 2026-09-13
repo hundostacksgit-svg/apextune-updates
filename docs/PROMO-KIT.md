@@ -20,7 +20,7 @@ device, and features the subscription editors do not have.**
 
 | Where | Files | Size |
 |---|---|---|
-| TikTok / Reels / Shorts | `out/tiktok/01-…20-*.mp4` | 1080x1920, 18–21 s, 30 fps, beat underneath |
+| TikTok / Reels / Shorts | `out/tiktok/01-…22-*.mp4` | 1080x1920, 17–27 s, 30 fps, beat underneath |
 | YouTube | `out/yt/yt-showcase.mp4` | 1920x1080, 83 s |
 | YouTube thumbnail | `out/stills/yt-thumb.png` | 1280x720 |
 | Instagram feed | `out/stills/feed-01…06-*.png` | 1080x1350 |
@@ -88,22 +88,31 @@ and keep it.
 | 18 | 16 Speed ramps | |
 | 19 | 17 Montage styles | |
 | 20 | 21 Everything it can't do *(the shareable one)* | the trust page as a link post |
-| 21 | YouTube tour (long) + re-post day 1 as a Short | |
+| 21 | 22 Tap it, it's gone *(the loudest one — see below)* | |
+| 22 | YouTube tour (long) + re-post day 1 as a Short | |
 
-**Video 21 is new and video 12 is held.** 21 is the limitations video, written to be the most shareable thing in the set; it takes the slot 12 vacated.
+**Video 21 is the limitations video and video 12 is held.** 21 is written to be
+the most shareable thing in the set; it takes the slot 12 vacated.
+
+**Video 22 is the one to break the schedule for.** It is the only video whose
+first six seconds are a visual result rather than a claim, so it is the best
+candidate to re-post, to boost, and to lead with if the first week is quiet.
+It sits at day 21 because proof of the offer should land before the magic
+does — post a trick first and the comments are "fake" — but if any earlier
+video takes off, follow it with 22 the next day rather than waiting.
 
 **12 Auto captions is deliberately not in this list.** It promises more than the
-app does today; post it when the transcription server is live. That is twenty
-videos over twenty days, which is the right number — the twentieth slot is
-better spent on whichever of the first nineteen worked.
+app does today; post it when the transcription server is live. That leaves
+twenty-one videos over twenty-one days, which is about the right number — a
+further slot is better spent on whichever of them worked than on a new one.
 
-After day 21, re-post the three best performers with a new first line, and
+After day 22, re-post the three best performers with a new first line, and
 keep making them: the generator is in the repo, and a new video is a new
 entry in `videos.js`.
 
 ---
 
-## The twenty videos
+## The videos
 
 Each entry: what the viewer sees, the caption to paste (hashtags included),
 and the voice-over script. Captions are written for TikTok; for Instagram
@@ -226,7 +235,7 @@ Hook → "A features list is an advert. This one is not." → the seven honest l
 This is the one to expect the most from. A feature list is an advert and readers
 discount it; a list of what a product cannot do is the only claim an unknown
 seller makes against their own interest, so it gets believed — and it earns the
-other eighteen videos a hearing. Post it as the day-20 piece alongside the trust
+other nineteen videos a hearing. Post it as the day-20 piece alongside the trust
 page itself. Every line in it matches `omnidx.net/studio/trust/#cant` word for
 word; if you change one, change both.
 
@@ -236,6 +245,40 @@ word; if you change one, change both.
 
 **Voice-over**
 > Everything my video editor can't do. It can't generate video that isn't there. It can't type your captions for you, yet. It can't stabilise a shaky shot, draw a mask with a pen, or beat a six thousand dollar workstation at 8K. That's the honest list, it's on the site before you pay, and everything else works. Free version at omnidx dot net.
+
+### 22 · Tap it, it's gone — `22-instant-wow.mp4`
+Hook → a tap on a can, and a wipe to the same frame with the can removed → the eraser open in the app → "Now the sound." → a dirty waveform and the same three seconds after one repair pass → the audio panel → end card. Trap beat, 22.7 s.
+
+Both demonstrations are the app's own output, which matters if anyone asks.
+The wipe is one frame of the table clip and that frame after `erase.js` filled
+the can out of it, using a background plate from later in the same shot. The
+waveform scene is drawn from `audio-repair.json`, written by running the app's
+`audio-repair.js` over a recording with hiss, 60Hz hum, four clicks and a level
+that wanders; the "−18 dB" on screen is the measured drop in the noise floor on
+that clip, not a round number someone liked. Both are re-made by
+`tools/promo/studio/pairs.mjs`, which refuses to write a pair that would
+mislead — it fails if any of the can survives, or if the repair does not
+actually find the hum and drop the floor.
+
+**On not calling it "AI Cleanup Audio".** The repair pass is spectral
+subtraction, notch filters at the mains frequency, de-clicking against a
+running median, and RMS levelling — real signal processing, and none of it a
+neural model. Naming it after a fashion instead of after what it does is the
+exact move `PROMOTION.md` §3 warns gets an unknown app called a scam, and the
+first person to ask "which model?" gets an answer that undercuts everything
+else in the video. "Hum, hiss, clicks, level — gone in one pass" is both true
+and the better line. The AI in this app plans edits from a sentence; that is
+video 02, and it is called AI there because it is.
+
+**Caption**
+> tap the thing you don't want. it's gone, and it stays gone for the whole clip 🫡 then one pass on the audio: hum, hiss, clicks, wandering level, fixed. no subscription, $19.99 once. omnidx.net
+> #objectremoval #audiorepair #videoediting #videoeditor #editingapp #nosubscription #contentcreator #fyp
+
+**Voice-over**
+> Two buttons that look like a cheat code. Tap the thing you want gone, and it's gone — and it follows it through the whole shot, filling in the background behind it. Then the sound. One pass takes out the hum, drops the hiss eighteen decibels, repairs the clicks and evens the level. Both in Creator. Free to start, nineteen ninety-nine once. omnidx dot net.
+
+**If somebody says it's fake**
+> Fair. Open the free version, drop a clip in, press the eraser and tap something. It won't ask you for an account. Object removal and audio repair are the paid ones, but you can see the whole editor work before you spend anything: omnidx.net
 
 ### 12 · Auto captions — `12-auto-captions.mp4` — **HOLD, do not post yet**
 

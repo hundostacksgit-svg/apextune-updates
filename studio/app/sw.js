@@ -10,7 +10,7 @@
  * origin's storage quota for no benefit.
  */
 
-const VERSION = 'omnidx-studio-v1.6.0';
+const VERSION = 'omnidx-studio-v1.6.1';
 
 /*
  * Fonts live in their own cache, outside the versioned one.

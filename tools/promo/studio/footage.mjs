@@ -48,6 +48,24 @@ const DRAW = {
     ctx.fillStyle='#05060a';const bx=W*.5+Math.sin(t*.8)*8,by=H*.62;ctx.beginPath();ctx.ellipse(bx,by+150,120,140,0,0,7);ctx.fill();ctx.beginPath();ctx.arc(bx,by-40,62,0,7);ctx.fill();
     ctx.strokeStyle='rgba(0,209,255,.8)';ctx.lineWidth=6;ctx.beginPath();ctx.arc(bx,by-40,62,-.9,.9);ctx.stroke();ctx.beginPath();ctx.ellipse(bx,by+150,120,140,0,-.9,.6);ctx.stroke();
     for(let i=0;i<30;i++){ctx.fillStyle='rgba(255,255,255,'+(.15+.15*Math.sin(t*3+i))+')';ctx.beginPath();ctx.arc((i*97+t*12)%W,(i*53+t*7)%H,1.5+(i%3),0,7);ctx.fill();}}`,
+  /* A still camera on a table, with one obvious thing standing on it. This is
+     the clip the eraser is photographed removing something from: the room has
+     grain and a wood pattern, so a fill that did not match would be visible. */
+  table: `(ctx,t,W,H)=>{const g=ctx.createLinearGradient(0,0,0,H*.56);g.addColorStop(0,'#58697d');g.addColorStop(1,'#93a2b4');ctx.fillStyle=g;ctx.fillRect(0,0,W,H*.56);
+    const w2=ctx.createLinearGradient(0,H*.56,0,H);w2.addColorStop(0,'#c8955f');w2.addColorStop(1,'#8e6a3e');ctx.fillStyle=w2;ctx.fillRect(0,H*.56,W,H*.44);
+    let s=3;const rnd=()=>{s=(s*16807)%2147483647;return s/2147483647};
+    for(let i=0;i<9000;i++){ctx.fillStyle='rgba(0,0,0,'+(rnd()*.12)+')';ctx.fillRect(rnd()*W,rnd()*H,2,2);}
+    for(let i=0;i<9000;i++){ctx.fillStyle='rgba(255,255,255,'+(rnd()*.1)+')';ctx.fillRect(rnd()*W,rnd()*H,2,2);}
+    ctx.strokeStyle='rgba(60,40,20,.32)';ctx.lineWidth=2;for(let y=H*.6;y<H;y+=32){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y+9);ctx.stroke();}
+    ctx.fillStyle='rgba(255,255,255,.3)';ctx.fillRect(W*.72,H*.1,W*.16,H*.2);ctx.fillStyle='rgba(30,40,60,.45)';ctx.fillRect(W*.07,H*.13,W*.14,H*.17);
+    const x=W*.10+W*.34*(t/6),y=H*.5,bw=W*.085,bh=H*.3;
+    ctx.fillStyle='rgba(0,0,0,.28)';ctx.beginPath();ctx.ellipse(x+bw/2,y+bh+6,bw*.72,bh*.05,0,0,7);ctx.fill();
+    ctx.fillStyle='#c62828';ctx.beginPath();ctx.roundRect(x,y,bw,bh,9);ctx.fill();
+    ctx.fillStyle='#f3e6c8';ctx.fillRect(x+bw*.09,y+bh*.33,bw*.82,bh*.34);
+    ctx.fillStyle='#b71c1c';ctx.fillRect(x+bw*.19,y+bh*.44,bw*.62,bh*.07);
+    ctx.fillStyle='#8e1b1b';ctx.fillRect(x,y,bw,bh*.08);
+    ctx.fillStyle='#e0e0e0';ctx.beginPath();ctx.ellipse(x+bw/2,y+bh*.06,bw*.47,bh*.026,0,0,7);ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.18)';ctx.fillRect(x+bw*.06,y+bh*.1,bw*.1,bh*.8);}`,
 };
 
 const browser = await chromium.launch({ executablePath: CHROME, args: ['--no-sandbox', '--hide-scrollbars'] });

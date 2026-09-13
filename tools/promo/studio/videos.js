@@ -293,6 +293,43 @@ export const VIDEOS = [
       { type: 'end', beats: 8, line: 'The full list is at <b>omnidx.net/studio/trust</b>. Free to start, <b>$19.99 once</b>.', tags: tags('#honestreview', '#buildinpublic'), bio: 'omnidx.net' },
     ],
   },
+  /*
+   * The two that get a reaction in the first second.
+   *
+   * Both moments are the app's real output rather than a mock-up: the wipe is
+   * a frame of the table clip and the same frame after erase.js filled the can
+   * out of it, and the waveform scene is drawn from audio-repair.json, which is
+   * written by running the app's audio-repair pass over a deliberately awful
+   * recording. So the numbers on screen are measurements.
+   *
+   * The audio half is deliberately not called AI. It is spectral subtraction,
+   * notch filters, de-click and RMS levelling — real signal processing, and
+   * naming it after a fashion instead of after what it does is the exact move
+   * PROMOTION.md says gets an unknown app called a scam. "Hum, hiss, clicks,
+   * level — gone in one pass" is both true and a better line.
+   */
+  {
+    id: '22-instant-wow', title: 'Tap it, it is gone. Then fix the sound.', music: 'trap-140-24s',
+    scenes: [
+      { type: 'hook', beats: 6, lines: ['TWO BUTTONS', 'THAT LOOK LIKE', 'A CHEAT CODE.'], grad: [2] },
+      { type: 'wipe', beats: 11, pair: 'erase', labels: ['the shot', 'the can, gone'],
+        tap: { x: 0.199, y: 0.56, at: 0.85, label: 'tap the can' },
+        cap: 'tap the thing. <em>it is gone.</em>' },
+      { type: 'app', beats: 7, shot: 'panel-erase', box: 'wide', tag: 'one tap, in the app',
+        view: [...hold({ cx: 0.5, cy: 0.31, w: 0.5 }, 0, 1.4), { at: 2.9, cx: 0.42, cy: 0.33, w: 0.3 }],
+        cap: 'it follows the thing <i>through the whole shot.</i>' },
+      { type: 'statement', beats: 3, lines: ['Now the sound.'], mint: [0] },
+      { type: 'sound', beats: 13, labels: ['straight off the phone', 'after one pass'],
+        chips: ['60Hz hum', 'hiss', 'clicks', 'wandering level'],
+        cap: 'hum, hiss, clicks, level. <em>one pass.</em>' },
+      { type: 'app', beats: 6, shot: 'panel-audio', box: 'tall', tag: 'the audio panel',
+        view: [...hold({ cx: 0.13, cy: 0.42, w: 0.32 }, 0, 0.8), { at: 2.4, cx: 0.13, cy: 0.52, w: 0.26 }],
+        spots: [{ at: 0.6, x: 0.046, y: 0.565, w: 0.17, h: 0.035, label: 'repair the audio' }],
+        cap: 'then EQ, dynamics, <i>loudness to spec.</i>' },
+      { type: 'end', beats: 7, line: 'Both are in Creator. Free to start, <b>$19.99 once</b>, no subscription.',
+        tags: tags('#objectremoval', '#audiorepair'), bio: 'omnidx.net' },
+    ],
+  },
 
   /* =============== the YouTube showcase: every feature, 80 seconds =============== */
   {

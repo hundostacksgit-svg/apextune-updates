@@ -516,6 +516,15 @@ add('echo', {
 
 add('posterizeTime', {
   name: 'Posterize time', group: 'Time', tier: 'creator', icon: '▯',
+  /*
+   * There is nothing to see in one frame.
+   *
+   * This holds the frame at a stepped rate, so at any single instant it is
+   * the frame it was already going to draw — its chip previewed as an
+   * untouched picture, which reads as an effect that does not work. Marked,
+   * the chip shows the hold instead of pretending to show the effect.
+   */
+  motionOnly: 'Steps the frame rate — you see it when it plays',
   params: {
     amount: { label: 'Amount', min: 0, max: 100, def: 100 },
     rate: { label: 'Frames a second', min: 1, max: 30, def: 8, step: 1 },

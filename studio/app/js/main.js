@@ -1100,7 +1100,11 @@ async function saveNow() {
 function paintSaved(state) {
   const dot = $('#saved-dot');
   if (!dot) return;
-  dot.className = `saved ${state === 'ok' ? 'ok' : state === 'saving' ? 'saving' : ''}`;
+  /* Toggled, not rewritten: setting className wholesale used to throw away
+     tb-squeezed, so the first save after the bar had folded put the indicator
+     back on top of the level tabs. */
+  dot.classList.toggle('ok', state === 'ok');
+  dot.classList.toggle('saving', state === 'saving');
   dot.textContent = state === 'saving' ? 'Saving…' : state === 'bad' ? 'Not saved' : 'Saved';
 }
 
@@ -1735,6 +1739,15 @@ function wireChrome() {
       clearTimeout(sizeTimer);
       sizeTimer = setTimeout(() => { if (!S.playing) sizeCanvas(); }, 120);
     }).observe($('#viewer') || $('#canvas-wrap'));
+    /* Two things to watch: the bar, which changes with the window, and the
+       left group, which changes when the project is named, the level changes
+       or a label swaps. Folding an item resizes the group and so fires this
+       again — the fitter starts from everything shown every time, reaches the
+       same answer on the second pass and stops there. */
+    let barTimer = null;
+    const refit = () => { clearTimeout(barTimer); barTimer = setTimeout(fitTopbar, 60); };
+    const bar = $('#topbar');
+    if (bar) { const ro = new ResizeObserver(refit); ro.observe(bar); const l = bar.querySelector('.tb-left'); if (l) ro.observe(l); }
   }
 
   // timeline toolbar
@@ -1839,6 +1852,64 @@ function wireChrome() {
   document.addEventListener('visibilitychange', () => { if (document.hidden) saveNow(); });
 }
 
+/*
+ * The top bar, made to fit whatever window it is in.
+ *
+ * The left group holds the brand, seven menus, ten tools, the project name,
+ * the settings gear and the save indicator; the level tabs sit in the middle
+ * of the bar. None of the left group's children can shrink — a menu title
+ * cannot be half a word — so when flexbox shrinks the group's box they simply
+ * paint outside it, over the tabs. That is what "Saving…" sitting on top of
+ * "BEGINNER" was, and a stack of viewport-width media queries could not fix
+ * it because the width at which it happens depends on the level, the project
+ * name and the font, not on the window.
+ *
+ * So it is measured instead: drop the least useful thing, measure again, and
+ * stop as soon as the group clears the tabs. Everything droppable is reachable
+ * somewhere else — the indicator is decoration, the gear is in two menus and
+ * the page bar, the brand is the app's own name, and every tool has both a
+ * menu entry and a keyboard shortcut.
+ */
+const TB_DROP = ['#saved-dot', '#btn-proj', '.brand', '#toolstrip'];
+/*
+ * "Not saved" is the one state of the indicator that is not decoration: it is
+ * the only warning that work is at risk, so in that state it is given up last
+ * instead of first, and something else folds to make room for it.
+ */
+function dropOrder(bar) {
+  const dot = bar.querySelector('#saved-dot');
+  return dot && dot.textContent.trim() === 'Not saved'
+    ? [...TB_DROP.slice(1), '#saved-dot'] : TB_DROP;
+}
+function fitTopbar() {
+  const bar = $('#topbar'), left = bar?.querySelector('.tb-left');
+  if (!bar || !left) return;
+  const mid = bar.querySelector('.tb-mid'), right = bar.querySelector('.tb-right');
+  for (const sel of [...TB_DROP, '#proj-name']) bar.querySelector(sel)?.classList.remove('tb-squeezed');
+  bar.classList.remove('tb-narrow', 'tb-notabs');
+  const fits = () => {
+    const shown = [...left.children].filter((e) => e.getClientRects().length);
+    if (!shown.length) return true;
+    const edge = Math.max(...shown.map((e) => e.getBoundingClientRect().right));
+    const mr = mid?.getClientRects().length ? mid.getBoundingClientRect() : null;
+    const rr = right?.getBoundingClientRect();
+    const limit = mr ? mr.left : (rr ? rr.left : bar.getBoundingClientRect().right);
+    return edge <= limit - 6;
+  };
+  /* Least useful first, and the name is squeezed before it is given up:
+     between about 840 and 900 pixels the menus alone leave no room, and a
+     narrow name with an ellipsis still says which project this is. */
+  const steps = [...dropOrder(bar).map((sel) => () => bar.querySelector(sel)?.classList.add('tb-squeezed')),
+    () => bar.classList.add('tb-narrow'),
+    /* Then the level tabs. They are not a nicety, but the level is also in
+       the View menu, the command palette and the phone sheet, and the
+       workspace itself shows which level it is; the name of the project you
+       have open is in exactly one place, so it outranks them. */
+    () => bar.classList.add('tb-notabs'),
+    () => bar.querySelector('#proj-name')?.classList.add('tb-squeezed')];
+  for (const step of steps) { if (fits()) return; step(); }
+}
+
 function paintLevel() {
   const level = levels.current();
   $$('#level-switch button').forEach((b) => b.classList.toggle('on', b.dataset.level === level));
@@ -1851,6 +1922,7 @@ function paintLevel() {
    * of them end up correct and the fourth does not.
    */
   ws.onLevelChange();
+  fitTopbar();
 }
 
 /* ------------------------------------------------------------------ */
@@ -2037,6 +2109,9 @@ async function importProjectJson(file) {
   levels.apply();
   paintLevel();
   paintAccount();
+  /* The bar is measured again once the interface font has actually arrived:
+     until then every label is the fallback's width and the answer is wrong. */
+  document.fonts?.ready?.then(fitTopbar).catch(() => {});
 
   renderer = new Renderer($('#preview'));
   audio = new AudioEngine();

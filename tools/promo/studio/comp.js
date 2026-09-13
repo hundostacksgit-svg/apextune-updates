@@ -62,6 +62,10 @@ const CURSOR_SVG = '<svg viewBox="0 0 24 24" width="56" height="56"><path d="M5 
 
 /* ---------------------------------------------------------------- music */
 const music = await fetch(`${A}/music/${spec.music}.json`).then((r) => r.json()).catch(() => ({ bpm: 120, beats: [] }));
+/* The audio-repair scene draws measurements, not a drawing of measurements:
+   this file is written by running the app's own audio-repair.js over a
+   deliberately awful recording. Missing is fine — no scene needs it. */
+const AUDIO = await fetch(`${A}/audio-repair.json`).then((r) => r.json()).catch(() => null);
 const BPM = music.bpm || 120;
 const BEAT = 60 / BPM;
 const BEATS = music.beats && music.beats.length ? music.beats : Array.from({ length: 600 }, (_, i) => i * BEAT);
@@ -316,21 +320,128 @@ const BUILD = {
     } };
   },
 
-  /* Before and after, revealed by a wipe. */
+  /* Before and after, revealed by a wipe.
+     One picture with two filters (a grade), or — with `pair` — two different
+     pictures, which is how the eraser and the background remover are shown:
+     both frames come out of the app, so the wipe is the actual result. */
   wipe(s) {
     const root = el('div', 'wipe');
     const frame = el('div', 'frame');
-    const src = `${A}/footage/${s.shot || 'sunset'}-preview.png`;
-    const before = el('img'); before.src = src; before.style.filter = s.before || 'saturate(.35) contrast(.85) brightness(.9)';
-    const after = el('img'); after.src = src; after.style.filter = s.after || 'saturate(1.35) contrast(1.12)';
+    const one = s.pair ? `${A}/footage/${s.pair}-before.png` : `${A}/footage/${s.shot || 'sunset'}-preview.png`;
+    const two = s.pair ? `${A}/footage/${s.pair}-after.png` : one;
+    const before = el('img'); before.src = one; if (!s.pair) before.style.filter = s.before || 'saturate(.35) contrast(.85) brightness(.9)';
+    const after = el('img'); after.src = two; if (!s.pair) after.style.filter = s.after || 'saturate(1.35) contrast(1.12)';
     const line = el('div', 'line');
     const lb1 = el('div', 'lb before', (s.labels || [])[0] || 'Before'), lb2 = el('div', 'lb after', (s.labels || [])[1] || 'After');
-    frame.append(before, after, line, lb1, lb2); root.appendChild(frame);
+    frame.append(before, after, line, lb1, lb2);
+    /* The tap that starts it: a finger goes down on the thing, and the wipe
+       leaves from where it landed. Nothing else in the shot is touched. */
+    let tap = null, tapRing = null, tapLbl = null;
+    if (s.tap) {
+      tap = el('div', 'tap'); tap.style.left = `${s.tap.x * 100}%`; tap.style.top = `${s.tap.y * 100}%`;
+      tapRing = el('div', 'ring'); tapLbl = el('div', 'tlbl', s.tap.label || 'tap');
+      tap.append(tapRing, tapLbl); frame.appendChild(tap);
+    }
+    root.appendChild(frame);
+    const at = s.tap ? (s.tap.at ?? 0.9) : 0;
+    const start = s.tap ? at + 0.9 : 0.5;
+    const end = s.dur - 0.4;
     return { el: root, update(l) {
       pop(frame, prog(l, 0, 0.4), { y: 30, from: 0.94 });
-      const x = lerp(6, 94, inOut(prog(l, 0.5, s.dur - 0.5)));
+      if (tap) {
+        /* Down, a ring that leaves, then it stays lit long enough to be read
+           before the wipe takes over. */
+        const down = prog(l, at, at + 0.16), gone = prog(l, at + 1.05, at + 1.4);
+        tap.style.opacity = down * (1 - gone);
+        tap.style.transform = `translate(-50%, -50%) scale(${lerp(1.5, 1, outBack(down))})`;
+        const r = prog(l, at, at + 0.6);
+        tapRing.style.transform = `scale(${lerp(0.3, 2.6, outCubic(r))})`;
+        tapRing.style.opacity = (1 - r) * 0.9;
+      }
+      const p = prog(l, start, end);
+      const x = lerp(6, 94, inOut(p));
       after.style.clipPath = `inset(0 ${100 - x}% 0 0)`;
       line.style.left = `${x}%`;
+      line.style.opacity = l >= start - 0.05 ? 1 : 0;
+      /* Each label belongs to the half of the picture it is standing on, so
+         neither one names a frame that is not on screen yet. */
+      lb2.style.opacity = prog(l, start, start + 0.35);
+      lb1.style.opacity = 1 - prog(l, end - 0.7, end - 0.2);
+    } };
+  },
+
+  /* Audio repair, drawn: the same three seconds before and after the app's
+     repair pass, with a sweep that fills the clean one in as it goes. Every
+     number on screen is measured, and comes in from audio-repair.json. */
+  sound(s) {
+    const root = el('div', 'sound');
+    const D = AUDIO || { before: [0], after: [0], floorBefore: 0.1, floorAfter: 0.02, clicks: [], seconds: 3 };
+    const card = el('div', 'card'); root.appendChild(card);
+
+    const panel = (cls, label, env, floor, marks) => {
+      const wrap = el('div', `pan ${cls}`);
+      wrap.appendChild(el('div', 'plbl', label));
+      const box = el('div', 'wv');
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('viewBox', '0 0 1000 300'); svg.setAttribute('preserveAspectRatio', 'none');
+      /* The noise floor, as a band you can see the height of. */
+      const band = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      band.setAttribute('class', 'floor'); band.setAttribute('x', '0'); band.setAttribute('width', '1000');
+      const fh = Math.max(1.5, floor * 290);
+      band.setAttribute('y', String(150 - fh)); band.setAttribute('height', String(fh * 2));
+      svg.appendChild(band);
+      const step = 1000 / env.length, bw = Math.max(1.6, step * 0.62);
+      const bars = env.map((v, k) => {
+        const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        r.setAttribute('class', 'bar'); r.setAttribute('x', String(k * step + (step - bw) / 2)); r.setAttribute('width', String(bw));
+        svg.appendChild(r); return { r, v };
+      });
+      box.appendChild(svg);
+      /* The clicks, pinned where they are in the recording. */
+      const pins = (marks || []).map((t) => { const e = el('div', 'pin', '✕'); e.style.left = `${(t / D.seconds) * 100}%`; box.appendChild(e); return e; });
+      wrap.appendChild(box);
+      const note = el('div', 'fnote'); wrap.appendChild(note);
+      return { wrap, bars, pins, note, box };
+    };
+
+    const A1 = panel('bad', (s.labels || [])[0] || 'straight off the phone', D.before, D.floorBefore, D.clicks);
+    const A2 = panel('good', (s.labels || [])[1] || 'after one pass', D.after, D.floorAfter, null);
+    A1.note.innerHTML = s.noteBefore || 'hiss · 60Hz hum · clicks · wandering level';
+    const dB = (D.floorBefore > 0 && D.floorAfter > 0) ? 20 * Math.log10(D.floorAfter / D.floorBefore) : 0;
+    A2.note.innerHTML = s.noteAfter || `hum gone · noise floor <b>${dB.toFixed(0)} dB</b> · clicks repaired · level evened`;
+    const sweep = el('div', 'sweep');
+    card.append(A1.wrap, sweep, A2.wrap);
+
+    /* Inside the card, not under it: the caption band starts at a fixed height
+       and a row floating between the two would land in it. */
+    const chips = el('div', 'chips'); card.appendChild(chips);
+    const chipEls = (s.chips || ['60Hz hum', 'hiss', 'clicks', 'wandering level']).map((c) => { const e = el('span', null, `${c} <i>✓</i>`); chips.appendChild(e); return e; });
+
+    const t0 = 0.55, t1 = Math.max(t0 + 0.6, s.dur - 1.5);
+    return { el: root, update(l) {
+      pop(card, prog(l, 0, 0.4), { y: 34, from: 0.94 });
+      const p = inOut(prog(l, t0, t1));
+      /* The dirty bars are full height from the start; the clean ones grow in
+         behind the sweep, so you watch the repair happen rather than cut to it. */
+      A1.bars.forEach((b, k) => {
+        const passed = clamp((p * A1.bars.length - k) / 6);
+        b.r.setAttribute('height', String(Math.max(1, b.v * 290)));
+        b.r.setAttribute('y', String(150 - b.v * 145));
+        b.r.style.opacity = String(lerp(1, 0.28, passed));
+      });
+      A2.bars.forEach((b, k) => {
+        const passed = clamp((p * A2.bars.length - k) / 6);
+        const hgt = Math.max(1, b.v * 290 * passed);
+        b.r.setAttribute('height', String(hgt)); b.r.setAttribute('y', String(150 - hgt / 2));
+      });
+      A1.pins.forEach((e, k) => {
+        const x = (D.clicks[k] / D.seconds);
+        e.style.opacity = String(prog(l, 0.35 + k * 0.06, 0.6 + k * 0.06) * (1 - clamp((p - x) * 6)));
+      });
+      sweep.style.left = `calc(30px + (100% - 60px) * ${p.toFixed(4)})`;
+      sweep.style.opacity = String(prog(l, t0 - 0.15, t0) * (1 - prog(l, t1, t1 + 0.25)));
+      A2.wrap.style.setProperty('--fill', String(p));
+      chipEls.forEach((e, k) => pop(e, prog(l, t1 - 0.5 + k * 0.16, t1 - 0.2 + k * 0.16), { y: 22, from: 0.7 }));
     } };
   },
 

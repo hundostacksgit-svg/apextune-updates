@@ -118,6 +118,55 @@ const shot = async (page, name) => {
   await ctx.close();
 }
 
+/* The eraser, mid-pick: its own project with only the table clip in it, so the
+   four-clip project every other shot is measured against stays exactly as it
+   was. One tap on the can, and the shot is taken with the region lit up and
+   "Remove it" armed — the app's own overlay, not a drawing of it. */
+{
+  const ctx = await browser.newContext({ viewport: { width: 1600, height: 1000 }, deviceScaleFactor: 2 });
+  await ctx.addInitScript(() => {
+    try {
+      localStorage.setItem('omnidx.studio.level', 'expert');
+      localStorage.setItem('omnidx.studio.tour.v1', 'skipped');
+      localStorage.setItem('omnidx.studio.purchase.v1', JSON.stringify({ edition: 'studio', at: Date.now() }));
+    } catch {}
+  });
+  const page = await ctx.newPage();
+  page.on('pageerror', (e) => console.log('  page error:', e.message));
+  await page.goto(`http://127.0.0.1:${PORT}/studio/app/index.html`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('#start.on', { timeout: 20000 });
+  await page.addStyleTag({ content: '#undo-bar,.toast,#angles{display:none!important}' });
+  await page.fill('#start-name', 'Kitchen shot');
+  await page.click('#start-create');
+  await page.waitForSelector('#start', { state: 'hidden' });
+  await page.setInputFiles('#file-input', [{ name: 'kitchen_table.webm', mimeType: 'video/webm', buffer: fs.readFileSync(path.join(ASSETS, 'footage/table.webm')) }]);
+  await page.waitForTimeout(3000);
+  await page.selectOption('#ratio', '16:9').catch(() => {});
+  await page.waitForTimeout(400);
+  await page.evaluate(async () => {
+    const m = await import('/studio/app/js/main.js');
+    for (const r of m.S.project.media) m.actions.appendMedia(r.id);
+    m.actions.select([m.S.project.clips[0].id]);
+    m.actions.seek(1.0);
+    const t = await import('/studio/app/js/panels/tracking.js');
+    t.openEraserForSelected();
+  });
+  await page.waitForTimeout(900);
+  /* Where the can is at one second, as a fraction of the frame. */
+  const hit = await page.evaluate(() => {
+    const layer = document.getElementById('track-layer');
+    const r = layer.getBoundingClientRect();
+    return { x: r.left + r.width * 0.197, y: r.top + r.height * 0.556 };
+  });
+  await page.mouse.move(hit.x, hit.y);
+  await page.mouse.down(); await page.mouse.up();
+  await page.waitForTimeout(700);
+  const picked = await page.evaluate(async () => (await import('/studio/app/js/panels/tracking.js')).eraserState()?.area || 0);
+  console.log('  eraser picked', picked, 'px');
+  await shot(page, 'panel-erase');
+  await ctx.close();
+}
+
 /* A phone, Beginner level, 3x. */
 {
   const { ctx, page } = await openEditor({ level: 'beginner', viewport: { width: 390, height: 844 }, scale: 3, mobile: true });
