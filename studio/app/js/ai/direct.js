@@ -37,7 +37,8 @@ const ORDINALS = {
  * with no target is a whole-timeline instruction and should stay one.
  */
 
-import { EFFECT_WORDS, SHAPE_WORDS, ANIMATOR_WORDS, EXPRESSION_WORDS, NULL_WORDS, PARENT_WORDS, firstMatch } from './vocabulary.js';
+import { EFFECT_WORDS, SHAPE_WORDS, ANIMATOR_WORDS, EXPRESSION_WORDS, NULL_WORDS, PARENT_WORDS,
+  MUSIC_WORDS, MUSIC_ASK, AUDIO_FIX_WORDS, repairOptions, firstMatch } from './vocabulary.js';
 
 export function parseTarget(text) {
   const s = ` ${String(text || '').toLowerCase()} `;
@@ -181,6 +182,30 @@ const RULES = [
       const hit = firstMatch(EXPRESSION_WORDS, s);
       return { op: 'addExpression', args: { target, preset: hit[1] },
         label: `${hit[1].replace(/([A-Z])/g, ' $1').toLowerCase().trim()} on ${describe(target)}`, detail: 'An expression, not keyframes: it runs for the whole clip.' };
+    },
+  },
+  /* The sound is bad. Named parts if they were named, all of it if not. */
+  {
+    id: 'repair-audio',
+    test: (s) => AUDIO_FIX_WORDS.test(s),
+    build: (s, target) => {
+      const opts = repairOptions(s);
+      const parts = [opts.hum && 'hum', opts.noise && 'hiss', opts.clicks && 'clicks', opts.level && 'level'].filter(Boolean);
+      return { op: 'repairAudio', args: { target: target ?? null, ...opts },
+        label: `Clean up the audio${target ? ` on ${describe(target)}` : ''}`,
+        detail: `${parts.join(', ')} — spectral noise reduction, a notch at the mains frequency, de-clicking and levelling. Not undoable by the file, but the original stays on disk.` };
+    },
+  },
+  /* Music, by style or by mood, out of the library. */
+  {
+    id: 'music',
+    test: (s) => MUSIC_ASK.test(s) || (Boolean(firstMatch(MUSIC_WORDS, s)) && /\b(music|beat|song|track|instrumental)\b/.test(s)),
+    build: (s) => {
+      const hit = firstMatch(MUSIC_WORDS, s);
+      const secs = Number((s.match(/\b(\d+)\s*(s|sec|secs|seconds)\b/) || [])[1]) || null;
+      return { op: 'addMusic', args: { style: hit ? hit[1] : null, want: s, seconds: secs },
+        label: hit ? `Add a ${hit[1]} track` : 'Add music from the library',
+        detail: 'Written on the device from the library — nothing to licence, and the beat grid is exact.' };
     },
   },
   /* A thing in the picture, by name: "remove the can", "get rid of the sign in the back". */

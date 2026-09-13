@@ -12,13 +12,15 @@ import {
   addClip, addTrack, clipsOn, clipById, mediaById, duration,
   removeClips, closeGaps, setKeyframe, sourceSpan, RATIOS, defaultTransform,
 } from '../engine/project.js';
-import { decode, detectSilence, detectBeats, energyCurve } from '../engine/media.js';
+import { decode, detectSilence, detectBeats, energyCurve, replaceAudio } from '../engine/media.js';
 import { defaultText, TITLE_PRESETS } from '../engine/titles.js';
 import { LOOK_BY_ID } from '../engine/filters.js';
 import { defaultSticker } from '../engine/stickers.js';
 import { makeEffect, EFFECTS } from '../engine/effects.js';
 import { applyRamp } from '../engine/speed-ramps.js';
-import { renderBeat, bufferToWav } from '../engine/beatmaker.js';
+import { renderBeat, bufferToWav, BEAT_STYLES } from '../engine/beatmaker.js';
+import { suggestTrack, trackById, findTracks } from '../engine/music-library.js';
+import { repair, describeRepair } from '../engine/audio-repair.js';
 import { applyTextStyle } from '../engine/text-styles.js';
 import { PRESETS as EXPRESSION_PRESETS, check as checkExpression } from '../engine/expressions.js';
 import { setExpression } from '../engine/project.js';
@@ -512,9 +514,86 @@ const OPS = {
     const file = bufferToWav(made.buffer, `Beat — ${style} ${made.bpm} BPM.wav`);
     const rec = await ctx.importFile(file);
     if (!rec) throw new Error('The beat could not be added to the pool.');
+    rec.generated = true;
     ctx.beats = { bpm: made.bpm, period: 60 / made.bpm, beats: made.beats, confidence: 1 };
     ctx.beatBuffer = made.buffer;
     return `A ${style} beat at ${made.bpm} BPM, ${made.seconds.toFixed(0)}s.`;
+  },
+
+  /**
+   * Music from the library, chosen by description.
+   *
+   * generateBeat below makes a bare beat in a named style. This picks a
+   * finished track — a style, a key, a progression and a tune — from the
+   * 544 the library holds, by whatever the person actually said: "a dark
+   * drill beat", "something smooth for an R&B edit", "chill and slow". The
+   * grid comes back exact, so the cut that follows lands to the sample.
+   *
+   * It is the same engine underneath. The difference is that the person gets
+   * a track with a name they can find again rather than "trap at 140".
+   */
+  async addMusic(p, { track = null, style = null, mood = null, want = '', seconds = null }, ctx) {
+    if (p.media.some((m) => m.kind === 'audio')) return 'There is already music in the pool — using that.';
+    if (!ctx.importFile) throw new Error('This build cannot import a generated file.');
+    /* Named outright, then described, then the style's first track. */
+    let pick = track ? trackById(track) : null;
+    if (!pick && want) pick = suggestTrack(want);
+    if (!pick && (style || mood)) pick = findTracks({ style, mood })[0] || null;
+    if (!pick && style) pick = findTracks({ q: style })[0] || null;
+    if (!pick) throw new Error('No track in the library matched that. Name a style — drill, R&B, house, lo-fi — or open Sound and browse.');
+    const len = Math.max(8, Math.min(180, seconds || ctx.targetSeconds || 32));
+    const made = await renderBeat({ style: pick.style, seed: pick.seed, seconds: len });
+    const file = bufferToWav(made.buffer, `${pick.name} — ${pick.styleName} ${made.bpm} BPM.wav`);
+    const rec = await ctx.importFile(file);
+    if (!rec) throw new Error('That track could not be added to the pool.');
+    rec.generated = true;          // written here, so nothing tries to "repair" it
+    ctx.beats = { bpm: made.bpm, period: 60 / made.bpm, beats: made.beats, confidence: 1 };
+    ctx.beatBuffer = made.buffer;
+    return `"${pick.name}" — ${pick.styleName}, ${made.bpm} BPM, ${made.seconds.toFixed(0)}s.`;
+  },
+
+  /**
+   * Clean up the sound: hum, hiss, clicks and a wandering level.
+   *
+   * Real signal processing rather than a preset — spectral subtraction for
+   * the noise, notch filters at whatever mains frequency is actually present,
+   * de-clicking against a running median, and RMS levelling. The report it
+   * returns is the app's own, so what the plan says happened is what happened
+   * rather than a hopeful summary.
+   */
+  async repairAudio(p, { target = null, noise = 1.5, hum = true, clicks = true, level = true }, ctx = {}) {
+    const clips = target ? resolveTarget(p, target, ctx) : null;
+    /*
+     * With nothing named, this means the recording — not the music.
+     *
+     * "Clean up the audio" asked over a montage used to run the noise
+     * reduction over the backing track as well, which is both pointless and
+     * audible: a synthesised beat has no hiss to remove and de-clicking eats
+     * its transients. Camera audio first, then imported audio, and never a
+     * track the app wrote itself.
+     */
+    const speech = p.media.filter((m) => m.kind === 'video' && m.hasAudio);
+    const wanted = clips && clips.length
+      ? [...new Set(clips.map((c) => c.mediaId))].map((id) => p.media.find((m) => m.id === id))
+      : (speech.length ? speech : p.media.filter((m) => m.kind === 'audio' && !m.generated));
+    const list = wanted.filter((m) => m && (m.hasAudio || m.kind === 'audio') && !m.repaired && !m.generated);
+    if (!list.length) {
+      const already = p.media.some((m) => m.repaired);
+      throw new Error(already ? 'That audio has already been cleaned up.' : 'Nothing here has sound in it to clean up.');
+    }
+    const done = [];
+    for (const m of list) {
+      // eslint-disable-next-line no-await-in-loop -- one file at a time keeps the tab alive
+      const buffer = await decode(m);
+      if (!buffer) continue;
+      // eslint-disable-next-line no-await-in-loop
+      const { buffer: fixed, report } = await repair(buffer, { noise, hum, clicks, level });
+      // eslint-disable-next-line no-await-in-loop
+      await replaceAudio(m, fixed);
+      done.push(describeRepair(report).replace(/\.$/, ''));
+    }
+    if (!done.length) throw new Error('That audio could not be decoded to clean up.');
+    return done.length === 1 ? `${done[0]}.` : `${done.length} files cleaned up: ${done[0]}, and the same on the rest.`;
   },
 
   addTransitions(p, { type = 'dissolve', dur = 0.4, section = null }) {
@@ -1147,8 +1226,14 @@ export const OP_SPEC = {
   structuredCut: { args: 'targetDur?: seconds, sections: [{name, share: 0-1, every: beats per cut}], shuffle?: bool',
     does: 'Replace the video tracks with a cut whose pace changes per section (intro slow, drop fast). Remembers the sections so later steps can target one. Use for any montage.' },
   sectionRamp: { args: 'section: index, ramp: id', does: 'A speed ramp on every shot in a section. Ramps: velocity, slowmo-hit, bullet-time, punch, kickback, land, ease-in, ease-out, dip, double-tap, stutter, timelapse, hyper, reveal, freeze-go, heartbeat.' },
-  generateBeat: { args: 'style?: "phonk"|"trap"|"drill"|"house"|"hype"|"cinematic"|"lofi"|"dnb", bpm?: number, seconds?: number',
-    does: 'When there is no music, make a beat in the pool to cut to. Its grid is exact. Put it before structuredCut.' },
+  generateBeat: { args: 'style?: a BEAT_STYLES id, bpm?: number, seconds?: number',
+    does: 'A bare beat in a named style, at a tempo you choose. Prefer addMusic unless the tempo matters.' },
+  addMusic: {
+    args: 'want?: what the person said, style?: a BEAT_STYLES id, mood?: "dark"|"hard"|"chill"|"smooth"|"uplifting"|"epic"|"sad"|"warm", track?: a library id, seconds?: number',
+    does: 'When there is no music, pick a track from the 544-track library and put it in the pool to cut to. Pass the person\'s own words as `want` and it matches the style and mood from them. Its grid is exact. Put it before structuredCut.' },
+  repairAudio: {
+    args: 'target?, noise?: 0-3 (0 to skip), hum?: bool, clicks?: bool, level?: bool',
+    does: 'Clean up recorded sound: spectral noise reduction, a notch at whatever mains frequency is present, de-clicking and levelling. Use for "the audio is rough", "get rid of the hiss". Not AI — real signal processing.' },
   fitMusic: { args: 'fadeOut?: seconds, duck?: bool', does: 'Trim the music to the edit length. Always last but one.' },
   fadeEnds: { args: 'dur?: seconds', does: 'Fade the first and last shot.' },
 

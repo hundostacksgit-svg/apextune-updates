@@ -1001,6 +1001,16 @@ input[type=checkbox]{accent-color:var(--blue)}
 
 /* preset chips */
 .chips{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+/*
+ * A filter row is not a chooser.
+ *
+ * The two-column grid is right for picking one of eight beat styles, where
+ * each chip is a decision. It is wrong for a row of filters: twenty-five of
+ * them at two a row is thirteen rows of chrome above the list they filter,
+ * which on a phone is the whole screen. These flow instead, and shrink.
+ */
+.chips.flow{display:flex;flex-wrap:wrap;gap:6px}
+.chips.flow .chip{padding:5px 11px;font-size:12px;min-height:0;line-height:1.5}
 .chip{padding:9px 8px;border-radius:var(--r-s);border:1px solid var(--line);background:var(--surface-2);
   font-size:11.5px;font-weight:600;color:var(--text-2);text-align:center;transition:.15s;
   position:relative;overflow:hidden}

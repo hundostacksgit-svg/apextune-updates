@@ -245,10 +245,14 @@ export function buildMontage(spec, ctx = {}) {
   }
 
   if (!ctx.hasMusic && spec.beat) {
+    /* A finished track out of the library rather than a bare beat: same
+       engine, but it has a key, a progression, a tune and a name somebody can
+       find again. A style named in the request wins over the montage's
+       default, which is what `want` carries. */
     steps.push({
-      op: 'generateBeat', args: { style: spec.beat, seconds: targetDur + 2 },
-      label: `Make a ${spec.beat} beat to cut to`,
-      detail: 'There is no music in the pool, so a beat is made to order — its grid is known to the sample, so every cut lands. Swap in your own song afterwards and "sync to the music" re-times the cuts.',
+      op: 'addMusic', args: { style: spec.beat, want: ctx.request || '', seconds: targetDur + 2 },
+      label: `Pick a ${spec.beat} track to cut to`,
+      detail: 'There is no music in the pool, so one is written here from the library — nothing to licence, nothing to be claimed on upload, and its grid is known to the sample so every cut lands. Swap in your own song afterwards and "sync to the music" re-times the cuts.',
     });
   }
 

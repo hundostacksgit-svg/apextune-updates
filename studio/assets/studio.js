@@ -402,6 +402,9 @@ const COMPARE = [
   ['Voice isolation &amp; noise removal', false, false, 'Building'],
 
   ['— Audio', null, null, null],
+  ['Music library, written by the app', '544 tracks', '544 tracks', '544 tracks'],
+  ['Bring your own music from a file', true, true, true],
+  ['Sound effects, made on the spot', '32', '32', '32'],
   ['Mixing, fades, volume curves', true, true, true],
   ['Ducking under voice', true, true, true],
   ['Waveforms &amp; beat detection', true, true, true],

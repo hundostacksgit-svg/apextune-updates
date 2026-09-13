@@ -445,6 +445,38 @@ export async function decode(media) {
 }
 
 /** Peak pairs for drawing a waveform: [min, max] per bucket, −1..1. */
+/**
+ * Put a processed buffer where the decoder cache would have put the original.
+ *
+ * Repair is destructive to the decoded audio but not to the file: the upload
+ * stays on disk untouched and this is what the timeline plays and exports.
+ * Written back as a WAV so every later decode — the export included — gets
+ * the processed audio, rather than the cache and the file disagreeing.
+ *
+ * It lives here rather than in the panel that first needed it because the
+ * assistant needs it too, and two copies of "what this clip's audio now is"
+ * is exactly the kind of pair that drifts.
+ */
+export async function replaceAudio(media, buffer) {
+  const { toWav } = await import('./audio-render.js');
+  const wav = toWav(buffer);
+  attach(media, { blob: wav, objectUrl: URL.createObjectURL(wav) });
+  /*
+   * And into the decode cache, which is the part that was missing.
+   *
+   * attach() replaces the bytes but decode() answers from slot().buffer, so
+   * a repair updated the file and left the cache holding the original — the
+   * panel drew the clean waveform and the export wrote out the hiss. Anything
+   * that decodes after this now gets what the timeline is playing.
+   */
+  slot(media.id).buffer = buffer;
+  await store.putMedia(media.hash, new File([wav], `${media.name}.repaired.wav`, { type: 'audio/wav' }),
+    { repaired: true, name: media.name });
+  media.peaks = peaks(buffer, 900);
+  media.repaired = true;
+  return media;
+}
+
 export function peaks(buffer, buckets = 600) {
   if (!buffer) return null;
   const data = buffer.getChannelData(0);

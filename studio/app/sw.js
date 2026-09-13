@@ -51,6 +51,7 @@ const SHELL = [
   './js/engine/text-styles.js',
   './js/engine/speed-ramps.js',
   './js/engine/beatmaker.js',
+  './js/engine/music-library.js',
   './js/engine/montage.js',
   './js/rate.js',
   './js/engine/sfx.js',

@@ -123,6 +123,75 @@ export const EXPRESSION_WORDS = [
   [/\bstop[- ]motion\b|\bstutter\b|\bon twos\b/i, 'stutter'],
 ];
 
+/* ---- music: the style somebody names, and the words that mean "put music on it" ---- */
+/*
+ * The style ids are beatmaker.js's, so a word here reaches the same music the
+ * Sound panel does. Longer names first: "uk drill" must beat "drill", and
+ * "trap soul" must beat "trap", or every R&B request comes back as a trap
+ * beat. The verifier checks every id against BEAT_STYLES.
+ */
+export const MUSIC_WORDS = [
+  [/\buk drill\b|\bbritish drill\b/i, 'ukdrill'],
+  [/\btrap ?soul\b/i, 'trapsoul'],
+  [/\bjersey club\b|\bjersey\b/i, 'jerseyclub'],
+  [/\bdeep house\b/i, 'deephouse'],
+  [/\bboom ?bap\b|\bold school hip ?hop\b|\b90s hip ?hop\b/i, 'boombap'],
+  [/\bjazz ?hop\b|\bjazzy hip ?hop\b/i, 'jazzhop'],
+  [/\bneo ?soul\b/i, 'neosoul'],
+  [/\bslow jam\b/i, 'slowjam'],
+  [/\bsynth ?wave\b|\bretro ?wave\b|\b80s synth\b/i, 'synthwave'],
+  [/\bhyper ?pop\b/i, 'hyperpop'],
+  [/\bamapiano\b/i, 'amapiano'],
+  [/\bafro ?beats?\b|\bafro ?pop\b/i, 'afrobeats'],
+  [/\breggaeton\b|\bdembow\b/i, 'reggaeton'],
+  [/\bdancehall\b/i, 'dancehall'],
+  [/\bdrum (and|n'?|&) bass\b|\bdnb\b|\bjungle\b/i, 'dnb'],
+  [/\bdub ?step\b/i, 'dubstep'],
+  [/\bmemphis\b/i, 'memphis'],
+  [/\bdrill\b/i, 'drill'],
+  [/\bphonk\b/i, 'phonk'],
+  [/\br\s*&\s*b\b|\brnb\b|\br and b\b/i, 'rnb'],
+  [/\btechno\b/i, 'techno'],
+  [/\bhouse\b/i, 'house'],
+  [/\bedm\b|\bfestival\b|\bbig room\b/i, 'edm'],
+  [/\blo-?fi\b/i, 'lofi'],
+  [/\bambient\b/i, 'ambient'],
+  [/\btrailer\b/i, 'trailer'],
+  [/\bcinematic (music|score|track|beat)\b|\bfilm score\b|\borchestral\b/i, 'cinematic'],
+  [/\bhorror (music|score|track)\b|\bscary music\b/i, 'horror'],
+  [/\bindie\b/i, 'indie'],
+  [/\bfunk(y)?\b/i, 'funk'],
+  [/\brock\b|\bguitar (track|music)\b/i, 'rock'],
+  [/\bpop (song|track|music|beat)\b/i, 'pop'],
+  [/\btrap\b/i, 'trap'],
+  [/\bhype (music|track|beat)\b/i, 'hype'],
+];
+
+/** "put music on it" — with or without a named style. */
+export const MUSIC_ASK = /\b(add|put|give me|make me|need|want|find|pick|choose|drop)\b[^.]{0,30}\b(music|beat|song|track|instrumental|backing track|soundtrack)\b|\b(music|a beat|a song|a track)\b[^.]{0,20}\b(on|under|behind|to) (it|this|the (edit|video|clip|montage))\b/i;
+
+/* ---- audio repair: the sound is bad and should not be ---- */
+/*
+ * Deliberately not called AI anywhere. This is spectral subtraction, notch
+ * filters at the mains frequency, de-clicking against a running median and
+ * RMS levelling — describing it as a model would be a claim we cannot back.
+ */
+export const AUDIO_FIX_WORDS = /\b(clean ?up|fix|repair|sort out|improve|rescue|salvage)\b[^.]{0,24}\b(audio|sound|recording|voice|mic|vocals)\b|\b(audio|sound|recording)\b[^.]{0,16}\b(is|sounds)\b[^.]{0,16}\b(bad|rough|terrible|awful|noisy|muddy|rubbish)\b|\b(remove|get rid of|kill|take out|reduce)\b[^.]{0,20}\b(hiss|hum|buzz|background noise|room noise|clicks?|pops?|crackle|static)\b|\bnoise reduction\b|\bde-?noise\b|\bde-?click\b|\bnormali[sz]e the (audio|sound|level)\b|\beven out the (level|volume)\b/i;
+
+/** Which parts of the repair a sentence asked for; all of them by default. */
+export function repairOptions(text) {
+  const s = String(text || '');
+  const only = {
+    noise: /\bhiss|\bnoise|\bstatic|\bde-?noise|\bbackground\b/i.test(s),
+    hum: /\bhum\b|\bbuzz\b|\bmains\b|\b50\s?hz\b|\b60\s?hz\b|\bground loop\b/i.test(s),
+    clicks: /\bclicks?\b|\bpops?\b|\bcrackle\b|\bde-?click\b/i.test(s),
+    level: /\blevel\b|\bvolume\b|\bnormali[sz]e\b|\bquiet\b|\bloud\b|\beven out\b/i.test(s),
+  };
+  /* "clean up the audio" names nothing in particular and means all of it. */
+  if (!only.noise && !only.hum && !only.clicks && !only.level) return { noise: 1.5, hum: true, clicks: true, level: true };
+  return { noise: only.noise ? 1.8 : 0, hum: only.hum, clicks: only.clicks, level: only.level };
+}
+
 /* ---- layers that exist to be parents ---- */
 export const NULL_WORDS = /\b(add|make|create|give me)\b[^.]*\bnull\b|\bnull object\b|\bcontrol(ler)? layer\b/i;
 export const PARENT_WORDS = /\b(parent|attach|pin|stick)\b[^.]{0,40}\bto\b|\bfollow(s)?\b/i;

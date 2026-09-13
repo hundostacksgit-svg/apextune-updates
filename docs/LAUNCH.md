@@ -172,10 +172,13 @@ eyeballed.
   length, on the selection or every cut), Overlays (the 118 leaks, flares,
   frames, weather, grain and tape effects as their own gallery), Stickers
   (91 emoji in sets, 10 shapes and callouts, the shared editor and the
-  reactions), Sound (a beat maker in eight styles at any tempo with an
-  exact grid, and 32 sound effects synthesised on the spot — whooshes,
-  hits, risers, glitches, clicks, beds — placed on their own track at the
-  playhead, one file per sound however often it is used). Every tab
+  reactions), Sound (a 544-track music library the app writes itself across
+  rap, drill, R&B, afrobeats, house, pop, lo-fi and the rest, searchable by
+  style, mood and tempo; a way to bring your own track in from a file; a
+  beat maker in 34 styles at any tempo with an exact grid; and 32 sound
+  effects synthesised on the spot — whooshes, hits, risers, glitches,
+  clicks, beds — placed on their own track at the playhead, one file per
+  sound however often it is used). Every tab
   writes the same fields as the panel it grew out of. Number keys 1–9,
   the Window menu, the palette and the phone's scrolling tab bar all know
   them. Measured in Chromium: 31 checks, including every sound rendering

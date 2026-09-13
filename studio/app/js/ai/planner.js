@@ -20,7 +20,8 @@
 import { matchTemplate, buildTemplate, TEMPLATES } from '../engine/templates.js';
 import { readInstructions } from './direct.js';
 import { EFFECTS } from '../engine/effects.js';
-import { EFFECT_WORDS, SHAPE_WORDS, ANIMATOR_WORDS, EXPRESSION_WORDS, firstMatch } from './vocabulary.js';
+import { EFFECT_WORDS, SHAPE_WORDS, ANIMATOR_WORDS, EXPRESSION_WORDS,
+  MUSIC_WORDS, MUSIC_ASK, AUDIO_FIX_WORDS, repairOptions, firstMatch } from './vocabulary.js';
 import { parseMontage, buildMontage, trimSteps, describeSpec } from '../engine/montage.js';
 
 const NUM_WORDS = {
@@ -104,6 +105,13 @@ export function understand(prompt) {
     reframe: false,
     logo: /add my logo|my logo|watermark my/i.test(s),
     noMusic: /no music|without music|mute the music|silent|no sound|no audio/i.test(s),
+
+    /* Music and the state of the recording. Both are things the assistant
+       could not previously be asked for at all: naming a style did nothing,
+       and "the audio is rough" fell through to a generic template. */
+    musicStyle: (firstMatch(MUSIC_WORDS, s) || [])[1] || null,
+    wantsMusic: MUSIC_ASK.test(s),
+    fixAudio: AUDIO_FIX_WORDS.test(s),
 
     /* Keep what is already on the timeline and only re-time it. This is a
        different request from "build me an edit" and getting them confused
@@ -317,8 +325,26 @@ export function plan(prompt, context) {
       hasPhotos: videos.some((m) => m.kind === 'image') && videos.every((m) => m.kind === 'image'),
       hasSpeech: context.media.some((m) => m.kind === 'video' && m.hasAudio),
       targetDur: intent.targetDur || montage.targetDur,
+      /* So "make me a phonk edit with a drill beat" gets the drill beat: the
+         music step reads the sentence, not only the montage's default. */
+      request: prompt,
     };
     let msteps = trimSteps(montage, buildMontage(montage, mctx));
+    /* A style named in the sentence beats the montage's default, and the plan
+       has to say so — a step labelled "a phonk track" that adds an R&B one is
+       a plan nobody can check. */
+    if (intent.musicStyle) {
+      const music = msteps.find((st) => st.op === 'addMusic' || st.op === 'generateBeat');
+      if (music) {
+        music.op = 'addMusic';
+        music.args = { ...music.args, style: intent.musicStyle, want: prompt };
+        music.label = `Pick a ${intent.musicStyle} track to cut to`;
+      }
+    }
+    if (intent.fixAudio) {
+      msteps.push({ op: 'repairAudio', args: repairOptions(prompt), label: 'Clean up the recorded sound',
+        detail: 'Spectral noise reduction, a notch at the mains frequency, de-clicking and levelling.' });
+    }
     if (intent.look) {
       const graded = msteps.find((st) => st.op === 'applyLook');
       if (graded) graded.args = { look: intent.look, strength: 1 };
@@ -351,6 +377,42 @@ export function plan(prompt, context) {
   }
 
   /* ---------------- 3. things asked for on top of the style ---------------- */
+
+  /*
+   * Music, whoever built the timeline.
+   *
+   * A style named in the sentence beats the template's default, and a
+   * template that already asked for music has its style corrected rather
+   * than a second track added on top of the first. Templates and the generic
+   * composer both come through here, which is the point: this used to live
+   * only in the composer, so naming a style and a template in one sentence
+   * quietly dropped the style.
+   */
+  if (!ctx.hasMusic && !intent.noMusic && (intent.wantsMusic || intent.musicStyle)) {
+    const already = steps.find((st) => st.op === 'addMusic' || st.op === 'generateBeat');
+    if (already && intent.musicStyle) {
+      already.op = 'addMusic';
+      already.args = { ...already.args, style: intent.musicStyle, want: intent.raw || '' };
+      already.label = `Pick a ${intent.musicStyle} track from the library`;
+      already.detail = 'You named the style, so it replaces the one this edit normally uses.';
+    } else if (!already) {
+      steps.push({
+        op: 'addMusic',
+        args: { style: intent.musicStyle, want: intent.raw || '', seconds: (ctx.targetDur || 30) + 2 },
+        label: intent.musicStyle ? `Pick a ${intent.musicStyle} track from the library` : 'Pick a track from the library',
+        detail: 'Written here rather than licensed, so nothing gets claimed on upload — and its beat grid is exact, so the cuts land to the sample.',
+      });
+    }
+  }
+
+  if (intent.fixAudio && !steps.some((st) => st.op === 'repairAudio')) {
+    const opts = repairOptions(intent.raw || '');
+    steps.push({
+      op: 'repairAudio', args: opts,
+      label: 'Clean up the recorded sound',
+      detail: 'Spectral noise reduction, a notch at whatever mains frequency is actually there, de-clicking and levelling. The original file stays on disk untouched.',
+    });
+  }
 
   /*
    * An explicit request always beats the template's default. "Cinematic but
@@ -580,7 +642,8 @@ function validateSteps(steps, ctx, warnings) {
   // Anything that builds the timeline has to come before anything that
   // decorates it, whatever order the template or the model emitted.
   const RANK = {
-    setRatio: 0, generateBeat: 0.5, syncToTrack: 1, beatCut: 1, layout: 1, structuredCut: 1, removeSilence: 2,
+    setRatio: 0, generateBeat: 0.5, addMusic: 0.5, syncToTrack: 1, beatCut: 1, layout: 1, structuredCut: 1, removeSilence: 2,
+    repairAudio: 2.5,
     setSpeed: 3, speedRamp: 3, sectionRamp: 3,
     applyLook: 4, addEffect: 5, beatZoom: 5, impactFrames: 5, kenBurns: 5, autoZoomSpeech: 5,
     addTransitions: 6, numberClips: 7, addTitle: 7, addSticker: 7, captions: 8, fitMusic: 9, fadeEnds: 10,
@@ -662,6 +725,8 @@ function truncate(s, n) {
 
 /** Examples the panel offers when someone doesn't know what to type. */
 export const EXAMPLES = [
+  'Make me a 20 second edit with a dark drill beat',
+  'Build a smooth R&B edit and clean up the audio',
   'Fast edit with snow and sparks, title "WINTER" typed on letter by letter',
   'Make every shot pop on the beat, add a light sweep on the title',
   'Make me an anime montage that starts slow and goes crazy, 30 seconds, speed ramps, title that says "JJK"',
@@ -676,4 +741,6 @@ export const EXAMPLES = [
   'Slow cinematic 16:9 montage with a fade at the start and end',
   'Top 10 countdown with a number on every clip',
   'Blur out his face for the whole clip',
+  'Add an afrobeats track and cut on the beat',
+  'The audio is rough — get rid of the hiss and the hum',
 ];

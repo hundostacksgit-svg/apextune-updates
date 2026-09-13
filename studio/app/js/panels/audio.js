@@ -8,7 +8,7 @@ import { $, $$, esc, toast, slider } from '../ui.js';
 import { MeterState, drawMeter, gainLabel, gainToFader, faderToGain } from '../engine/meters.js';
 import { S, actions, engine } from '../main.js';
 import { stripMarkup, loudnessMarkup, handleStripInput, handleStripClick } from './strip.js';
-import { decode, detectBeats, detectSilence, peaks } from '../engine/media.js';
+import { decode, detectBeats, detectSilence, peaks, replaceAudio } from '../engine/media.js';
 import { repair, describeRepair, detectHum } from '../engine/audio-repair.js';
 import { AUDIO_FX, makeAudioFx } from '../engine/audio-fx.js';
 import { clipById } from '../engine/project.js';
@@ -475,9 +475,7 @@ async function runRepair(host) {
 
     // Swap the repaired audio in and rebuild the waveform so the timeline
     // shows what you will actually hear.
-    replaceBuffer(media, fixed);
-    media.peaks = peaks(fixed, 900);
-    media.repaired = true;
+    await replaceAudio(media, fixed);
     actions.commit('Repair audio');
 
     note.textContent = describeRepair(report);
@@ -492,15 +490,4 @@ async function runRepair(host) {
   }
 }
 
-/** Put a repaired buffer where the decoder cache would have put the original. */
-async function replaceBuffer(media, buffer) {
-  const { attach } = await import('../engine/media.js');
-  const { toWav } = await import('../engine/audio-render.js');
-  const wav = toWav(buffer);
-  // Written back as a WAV so every later decode — export included — gets the
-  // repaired audio, rather than the cache and the file disagreeing.
-  attach(media, { blob: wav, objectUrl: URL.createObjectURL(wav) });
-  const store = await import('../store.js');
-  await store.putMedia(media.hash, new File([wav], `${media.name}.repaired.wav`, { type: 'audio/wav' }),
-    { repaired: true, name: media.name });
-}
+
