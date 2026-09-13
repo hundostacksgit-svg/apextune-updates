@@ -46,6 +46,16 @@ const FREE_ITEMS = ['Unlimited tracks', 'No watermark', '78 effects', '8 transit
 const AUDIO_ITEMS = ['Noise reduction', 'Hum removal', 'Click repair', 'Level matching', 'Ducking under voice', 'Loudness to spec', 'EQ + dynamics', '17 creative filters'];
 const TIME_ITEMS = ['Speed ramp', 'Time remap', 'Freeze frame', 'Reverse', 'Slow-mo', 'Velocity edit', 'Posterize time', 'Stutter'];
 const TRACK_ITEMS = ['Titles', 'Stickers', 'Lens flare', 'Blur a face', 'Transitions', 'Callouts', 'Emoji', 'Masks'];
+/*
+ * The limitations, as a video. This is the one people share: a feature list is
+ * an advert and everybody discounts it, while the list of what a thing cannot
+ * do is the only claim an unknown seller makes against their own interest —
+ * which is exactly why it gets believed, and why it earns the rest of the set
+ * a hearing. Every line matches studio/trust/#cant word for word.
+ */
+const CANT_ITEMS = [['🚫', 'Generate video that isn\'t there'], ['✍️', 'Type your captions for you, yet'],
+  ['📷', 'Stabilise a shaky shot'], ['🖊️', 'Draw a mask with a pen'], ['🔒', 'Stop a licence being shared'],
+  ['🔄', 'Sync projects between devices, yet'], ['🖥️', 'Beat a $6,000 workstation at 8K']];
 const UPDATE_ITEMS = [['✨', 'Motion blur'], ['🌨️', 'Particles'], ['〰️', 'Expressions'], ['🔤', 'Text animators'], ['◇', 'Shape layers'], ['🎯', 'Motion tracking'], ['🎚️', 'Audio repair'], ['📤', 'Export everywhere'], ['⚡', 'Smooth playback'], ['🤖', 'AI montages']];
 
 /* ---- the AI demo ---- */
@@ -270,6 +280,17 @@ export const VIDEOS = [
       { type: 'app', beats: 10, shot: 'panel-effects', box: 'tall', tag: 'what\'s inside', view: [...hold(V.panel, 0, 1.5), { at: 3, ...V.panelTop }], cap: '340 effects. <i>included.</i>' },
       { type: 'statement', beats: 6, lines: ['Own your editor.'], grad: [0] },
       END('Own it for <b>$19.99 once</b>. Free version forever.', '#subscriptionfatigue', '#onetimepurchase'),
+    ],
+  },
+  {
+    id: '21-cant-do', title: "Everything it can't do", music: 'lofi-84-24s',
+    scenes: [
+      { type: 'hook', beats: 6, lines: ['EVERYTHING', 'MY VIDEO EDITOR', "CAN'T DO."], size: 'lg', grad: [2] },
+      { type: 'statement', beats: 4, lines: ['A features list is an advert.', 'This one is not.'], grad: [1] },
+      { type: 'list', beats: 12, title: "the honest list", items: CANT_ITEMS, stepBeats: 0.75, cap: 'all of it is on the site. <em>before you pay.</em>' },
+      { type: 'app', beats: 6, shot: 'editor', box: 'wide', tag: 'everything else works', view: [...hold(V.whole, 0, 1.2), { at: 2.6, ...V.timeline }], cap: 'the rest of it <i>does work.</i>' },
+      { type: 'statement', beats: 4, lines: ['Free version.', 'Find out yourself.'], grad: [1] },
+      { type: 'end', beats: 8, line: 'The full list is at <b>omnidx.net/studio/trust</b>. Free to start, <b>$19.99 once</b>.', tags: tags('#honestreview', '#buildinpublic'), bio: 'omnidx.net' },
     ],
   },
 

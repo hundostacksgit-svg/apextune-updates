@@ -87,12 +87,14 @@ and keep it.
 | 17 | 15 Audio repair | |
 | 18 | 16 Speed ramps | |
 | 19 | 17 Montage styles | |
-| 20 | The trust page on its own: "everything my editor can't do" | |
+| 20 | 21 Everything it can't do *(the shareable one)* | the trust page as a link post |
 | 21 | YouTube tour (long) + re-post day 1 as a Short | |
 
+**Video 21 is new and video 12 is held.** 21 is the limitations video, written to be the most shareable thing in the set; it takes the slot 12 vacated.
+
 **12 Auto captions is deliberately not in this list.** It promises more than the
-app does today; post it when the transcription server is live. That is nineteen
-videos over nineteen days, which is the right number — the twentieth slot is
+app does today; post it when the transcription server is live. That is twenty
+videos over twenty days, which is the right number — the twentieth slot is
 better spent on whichever of the first nineteen worked.
 
 After day 21, re-post the three best performers with a new first line, and
@@ -217,6 +219,23 @@ Hook → the eight export presets → the export dialog, "Export for every platf
 
 **Voice-over**
 > Phone, tablet, laptop. One licence. It's the same editor on your phone and on your desk, same project. Buy once, sign in anywhere. OmniDx Studio, nineteen ninety-nine, once. omnidx dot net.
+
+### 21 · Everything it can't do — `21-cant-do.mp4`
+Hook → "A features list is an advert. This one is not." → the seven honest limits → the editor → "Free version. Find out yourself." → end card pointing at the trust page.
+
+This is the one to expect the most from. A feature list is an advert and readers
+discount it; a list of what a product cannot do is the only claim an unknown
+seller makes against their own interest, so it gets believed — and it earns the
+other eighteen videos a hearing. Post it as the day-20 piece alongside the trust
+page itself. Every line in it matches `omnidx.net/studio/trust/#cant` word for
+word; if you change one, change both.
+
+**Caption**
+> everything my video editor CAN'T do. no stabilisation, no generative fill, captions don't type themselves yet, and it won't beat a $6,000 workstation at 8K 🫡 the full list is on the site, before you pay. omnidx.net
+> #honestreview #buildinpublic #videoediting #videoeditor #editingapp #nosubscription #contentcreator #fyp
+
+**Voice-over**
+> Everything my video editor can't do. It can't generate video that isn't there. It can't type your captions for you, yet. It can't stabilise a shaky shot, draw a mask with a pen, or beat a six thousand dollar workstation at 8K. That's the honest list, it's on the site before you pay, and everything else works. Free version at omnidx dot net.
 
 ### 12 · Auto captions — `12-auto-captions.mp4` — **HOLD, do not post yet**
 
