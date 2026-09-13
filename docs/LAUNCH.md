@@ -79,15 +79,16 @@ themselves weekly from that folder.
 
 ## Done and verified
 
-Every one of the 83 verification suites — app, site, engine, Worker route —
-was run end to end in Chromium after the last change below: 83 ran, 81
-passed on the first run and the other two pass on their own. Both are
-timing checks, not logic: the HSL qualifier's budget is 40 ms a frame at
-1080p and this container measures it at 39.4–40.6 ms (the code has not
-changed in weeks; a real laptop is well inside), and the reference-video
-analysis counted one spurious cut when frame seeking ran under load from a
-second browser and none when it ran alone. Neither budget was loosened to
-make the number go green.
+Every one of the 85 verification suites — app, site, engine, Worker route —
+was run end to end in Chromium after the last change below: 85 ran, 81
+passed on the first run and the other four pass on their own. Three are
+timing checks that slip under the load of a second browser on this
+container (the HSL qualifier's 40 ms budget measures 39–43 ms here; the
+reference-video analysis counted one spurious cut once; a megaphone
+filter's band edges measured off once) and pass every time alone; the
+fourth was the text-animator suite counting pixels on a preview that is
+now drawn at the size it is shown, and it now asks for the project's own
+size first. No budget was loosened to make a number go green.
 
 
 Each of these was tested in a real browser against a real measurement, not
