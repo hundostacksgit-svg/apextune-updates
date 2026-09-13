@@ -17,6 +17,9 @@ const projectApi = { addClip, addTrack };
 import { elementFor } from '../engine/media.js';
 import { trackBox, smoothTrack, applyTrack, describeTrack, findTarget, findFace } from '../engine/tracking.js';
 import { makeEffect } from '../engine/effects.js';
+import { pickRegion, packShape, dilate } from '../engine/erase.js';
+import { buildPlate } from '../engine/matte.js';
+import { keepPlate } from '../engine/erase.js';
 import * as licence from '../licence.js';
 
 let abort = null;
@@ -409,6 +412,224 @@ function sourceOffsetFor(clip, record) {
 }
 
 /* ------------------------------------------------------------------ */
+/* removing a thing: tap it                                            */
+/* ------------------------------------------------------------------ */
+
+/*
+ * The whole interaction is one tap. Tap the can and the can lights up; if
+ * the light spills onto the table, drag the tolerance down; if it misses the
+ * lid, tap the lid too. Then one button. Everything after that — the shape,
+ * the track through the rest of the shot in both directions, the background
+ * plate, the fill every frame — happens without another decision.
+ */
+
+/** The eraser on the selected video clip, or the one under the playhead. */
+export function openEraserForSelected() {
+  const isVideo = (c) => c && mediaById(S.project, c.mediaId)?.kind === 'video';
+  let clip = [...S.sel].map((id) => clipById(S.project, id)).find(isVideo);
+  if (!clip) {
+    const under = S.project.clips.filter((c) => isVideo(c) && S.time >= c.start && S.time < c.start + c.dur);
+    clip = under[under.length - 1] || null;
+  }
+  if (!clip) { toast('Put the playhead on a video clip first — that is the shot the thing gets removed from', 'bad', 4200); return; }
+  licence.gate('keyframes', () => openEraser(clip), { what: 'Removing an object' });
+}
+
+/* What the test harness and the AI panel can read back: the picked region so far. */
+let eraseState = null;
+export function eraserState() { return eraseState; }
+
+export function openEraser(clip) {
+  const layer = $('#track-layer');
+  const hint = $('#track-hint');
+  const cv = $('#preview');
+  if (!layer || !cv) return;
+  const media = mediaById(S.project, clip.mediaId);
+  if (!media || media.kind !== 'video') { toast('Removing something needs a video clip', 'bad'); return; }
+  if (S.time < clip.start || S.time >= clip.start + clip.dur) actions.seek(clip.start + Math.min(0.5, clip.dur / 2));
+  S.sel = new Set([clip.id]);
+  actions.refresh();
+
+  layer.hidden = false;
+  layer.classList.remove('working');
+  layer.classList.add('erasing');
+  let overlay = $('#erase-overlay');
+  if (!overlay) {
+    overlay = document.createElement('canvas');
+    overlay.id = 'erase-overlay';
+    overlay.className = 'erase-overlay';
+    layer.insertBefore(overlay, hint);
+  }
+  const state = { mask: null, w: 0, h: 0, bbox: null, area: 0, tolerance: 30, add: false, taps: 0 };
+  eraseState = state;
+
+  const paint = () => {
+    overlay.width = state.w || cv.width;
+    overlay.height = state.h || cv.height;
+    const g = overlay.getContext('2d');
+    g.clearRect(0, 0, overlay.width, overlay.height);
+    if (!state.mask) return;
+    /* The region as a mint tint with a bright rim, so it reads as "this, exactly this". */
+    const img = g.createImageData(state.w, state.h);
+    const d = img.data, m = state.mask, w = state.w, h = state.h;
+    for (let i = 0; i < m.length; i++) {
+      if (!m[i]) continue;
+      const x = i % w, y = (i - x) / w;
+      const rim = x === 0 || y === 0 || x === w - 1 || y === h - 1 || !m[i - 1] || !m[i + 1] || !m[i - w] || !m[i + w];
+      d[i * 4] = 49; d[i * 4 + 1] = 217; d[i * 4 + 2] = 167; d[i * 4 + 3] = rim ? 255 : 120;
+    }
+    g.putImageData(img, 0, 0);
+  };
+
+  const pickAt = (fx, fy) => {
+    const w = cv.width, h = cv.height;
+    if (!w || !h) return;
+    const rgba = cv.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, w, h).data;
+    const r = pickRegion(rgba, w, h, fx * w, fy * h, { tolerance: state.tolerance });
+    if (!r.bbox) { toast('Nothing to pick there — tap on the thing itself', '', 3000); return; }
+    if (state.add && state.mask && state.w === w && state.h === h) {
+      for (let i = 0; i < r.mask.length; i++) if (r.mask[i]) state.mask[i] = 1;
+      state.bbox = {
+        x0: Math.min(state.bbox.x0, r.bbox.x0), y0: Math.min(state.bbox.y0, r.bbox.y0),
+        x1: Math.max(state.bbox.x1, r.bbox.x1), y1: Math.max(state.bbox.y1, r.bbox.y1),
+      };
+      state.area += r.area;
+    } else {
+      state.mask = r.mask; state.w = w; state.h = h; state.bbox = r.bbox; state.area = r.area;
+    }
+    state.taps++;
+    paint();
+    const area = $('#er-area');
+    if (area) area.textContent = `${((state.area / (w * h)) * 100).toFixed(1)}% of the frame`;
+    const go = $('#er-go');
+    if (go) go.disabled = false;
+  };
+
+  const onDown = (e) => {
+    if (e.target.closest('button, input, label, select')) return;
+    const rect = layer.getBoundingClientRect();
+    const fx = (e.clientX - rect.left) / rect.width;
+    const fy = (e.clientY - rect.top) / rect.height;
+    if (fx < 0 || fy < 0 || fx > 1 || fy > 1) return;
+    if (e.shiftKey) state.add = true;
+    pickAt(fx, fy);
+    e.preventDefault();
+  };
+  layer.addEventListener('pointerdown', onDown);
+
+  hint.innerHTML = `
+    <span class="tiny" id="er-msg">Tap the thing you want gone</span>
+    <span class="er-ctl" title="How far the pick spreads from where you tapped: lower if it takes the table too, higher if it misses part of the thing">
+      Reach <input type="range" id="er-tol" min="8" max="80" value="30"></span>
+    <label class="er-ctl" title="Each tap adds to the region instead of starting over"><input type="checkbox" id="er-add"> Add taps</label>
+    <button class="btn btn-sm btn-ghost" id="er-clear" title="Start again">Clear</button>
+    <button class="btn btn-sm btn-primary" id="er-go" disabled>Remove it</button>
+    <button class="btn btn-sm btn-ghost" id="er-cancel">Cancel</button>
+    <span class="er-area" id="er-area"></span>`;
+  hint.style.pointerEvents = 'auto';
+  $('#er-tol').addEventListener('input', (e) => { state.tolerance = Number(e.target.value); });
+  $('#er-add').addEventListener('change', (e) => { state.add = e.target.checked; });
+  $('#er-clear').addEventListener('click', () => { state.mask = null; state.area = 0; state.bbox = null; paint(); $('#er-go').disabled = true; $('#er-area').textContent = ''; });
+
+  const close = () => {
+    layer.hidden = true;
+    layer.classList.remove('erasing', 'working');
+    layer.removeEventListener('pointerdown', onDown);
+    hint.style.pointerEvents = 'none';
+    overlay.getContext('2d').clearRect(0, 0, overlay.width, overlay.height);
+    abort?.abort();
+    abort = null;
+    eraseState = null;
+  };
+  $('#er-cancel').addEventListener('click', close);
+  $('#er-go').addEventListener('click', () => removeIt(clip, media, state, layer, hint, close));
+}
+
+async function removeIt(clip, media, state, layer, hint, close) {
+  if (!state.mask || !state.bbox) return;
+  const { w, h, bbox } = state;
+  /* A little margin round the pick: the rim of a thing is where its colour
+     blends into the background, and that is the part a tight pick misses. */
+  const grown = state.mask.slice();
+  dilate(grown, w, h, Math.max(1, Math.round(Math.max(w, h) / 320)));
+  const shape = packShape(grown, w, h, {
+    x0: Math.max(0, bbox.x0 - 2), y0: Math.max(0, bbox.y0 - 2), x1: Math.min(w - 1, bbox.x1 + 2), y1: Math.min(h - 1, bbox.y1 + 2),
+  });
+  const cx = (bbox.x0 + bbox.x1 + 1) / 2 / w;
+  const cy = (bbox.y0 + bbox.y1 + 1) / 2 / h;
+
+  const fx = makeEffect('eraseObject');
+  fx.params.x = cx * 100;
+  fx.params.y = cy * 100;
+  fx.params.shape = shape;
+  clip.effects ||= [];
+  clip.effects = clip.effects.filter((f) => f.id !== 'eraseObject');
+  clip.effects.push(fx);
+  for (const k of ['x', 'y', 'scale']) delete clip.keyframes?.[`effects.eraseObject.${k}`];
+  actions.commit('Remove object');
+
+  const node = elementFor(media, clip.id);
+  if (!node?.videoWidth) { toast('It is gone where you tapped. The clip is still loading, so it could not be followed yet.', '', 5000); close(); return; }
+
+  layer.classList.add('working');
+  abort = new AbortController();
+  hint.innerHTML = '<span class="tiny">Following it through the shot… <b id="er-pct">0%</b></span> '
+    + '<button class="btn btn-sm btn-ghost" id="er-stop">Stop</button>';
+  $('#er-stop').addEventListener('click', () => abort?.abort());
+
+  const at = sourceTime(clip, S.time >= clip.start && S.time < clip.start + clip.dur ? S.time : clip.start);
+  const begin = sourceTime(clip, clip.start);
+  const end = sourceTime(clip, clip.start + clip.dur - 0.01);
+  const box = { x: cx, y: cy, w: (bbox.x1 - bbox.x0 + 1) / w, h: (bbox.y1 - bbox.y0 + 1) / h };
+  const progress = (base) => ({ done, total }) => { const el = $('#er-pct'); if (el) el.textContent = `${Math.round(base + (done / total) * 45)}%`; };
+
+  /*
+   * The background plate first: the median of frames across the clip. On a
+   * still camera the thing, having moved, is not in it, and that plate is
+   * what the hole is filled from. It is built here, once, rather than every
+   * frame, and kept in memory for the effect.
+   */
+  try {
+    const plate = await buildPlate(node, { from: begin, to: end, samples: 9, signal: abort.signal });
+    if (plate) keepPlate(clip.id, plate);
+  } catch { /* no plate: the fill comes from the surroundings, which still works */ }
+
+  try {
+    const fwd = end - at > 0.2
+      ? await trackBox(node, { box, from: at, to: end, fps: 15, signal: abort.signal, onProgress: progress(5) })
+      : { points: [], lostAt: null, mean: 1 };
+    const back = at - begin > 0.2
+      ? await trackBox(node, { box, from: at, to: begin, fps: 15, signal: abort.signal, onProgress: progress(50) })
+      : { points: [], lostAt: null, mean: 1 };
+    const points = [...back.points.slice(1).reverse(), ...fwd.points];
+    if (points.length > 1) {
+      const record = {
+        id: `mt${Date.now().toString(36)}`,
+        name: `${media.name.slice(0, 18)} · removed`,
+        sourceClipId: clip.id,
+        clipStart: clip.start,
+        points: smoothTrack(points, 0.4),
+        mean: ((fwd.mean || 0) + (back.mean || 0)) / 2,
+        lostAt: fwd.lostAt ?? back.lostAt ?? null,
+      };
+      S.project.motionTracks ||= [];
+      S.project.motionTracks.push(record);
+      applyTrack(clip, record, { mode: 'effect', effectId: 'eraseObject', clipStart: clip.in, followScale: true });
+      actions.commit('Remove object — followed through the shot');
+      toast(record.lostAt !== null
+        ? 'Removed, and followed until it was lost. Where it comes back, tap it again there.'
+        : 'Removed, and followed through the whole shot. Margin, softness and the fill are in the Effects panel.', 'ok', 5200);
+    } else {
+      toast('Removed where you tapped. It could not be followed, so it stays put — fine for a still shot.', '', 5200);
+    }
+  } catch (err) {
+    if (!abort?.signal.aborted) toast(`Removed where you tapped. Following it did not work: ${err.message}`, '', 6000);
+  }
+  close();
+  actions.refresh();
+}
+
+/* ------------------------------------------------------------------ */
 /* the inspector section                                               */
 /* ------------------------------------------------------------------ */
 
@@ -425,6 +646,8 @@ export function trackSection(clip) {
       </p>
       ${canTrack
         ? '<button class="btn btn-sm btn-full" data-act="track">Track something in this clip</button>'
+          + '<button class="btn btn-sm btn-full" data-act="erase" style="margin-top:7px" '
+          + 'title="Tap a thing in the picture and it is taken out of the shot">⌫ Remove something from the shot</button>'
           + '<p class="tiny muted" style="margin:7px 0 0">'
           + 'Or press <b>✨ Find it for me</b> in the viewer and it picks the subject itself.</p>'
         : '<p class="tiny muted" style="margin:0">Tracking needs a video clip — this one is a '
@@ -456,6 +679,7 @@ export function handleInspectorClick(act, dataset) {
     licence.gate('keyframes', () => openTracker(clip), { what: 'Motion tracking' });
     return true;
   }
+  if (act === 'erase') { openEraserForSelected(); return true; }
   if (dataset?.pintrack) {
     const record = (S.project.motionTracks || []).find((t) => t.id === dataset.pintrack);
     if (record) pin(record, 'selected');

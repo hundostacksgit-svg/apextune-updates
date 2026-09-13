@@ -392,6 +392,8 @@ async function doApply(host, plan) {
       // What is highlighted right now, so "this clip" and "the selected ones"
       // mean something rather than quietly applying to the whole timeline.
       selection: [...S.sel],
+      // "Remove the can": the viewer asks for a tap on it.
+      openEraser: (what) => import('./tracking.js').then((m) => { m.openEraserForSelected(); toast(`Tap the ${what} in the picture`, '', 4200); }),
       transcribe: cloudAvailable() ? (project) => transcribeProject(project) : null,
       // A generated beat goes through the same import as an upload.
       importFile: async (file) => { const made = await actions.importFiles([file], { silent: true }); return made?.[0] || S.project.media.find((m) => m.name === file.name) || null; },

@@ -86,6 +86,8 @@ export const ICONS = {
   solo: wrap('<path d="M15 8.5a3.5 3.5 0 0 0-3.5-3c-2 0-3.5 1.2-3.5 2.8 0 4 7 1.6 7 5.7 0 1.8-1.6 3-3.6 3A3.6 3.6 0 0 1 8 14.4"/>'),
   duck: wrap('<path d="M12 4v12M7 11l5 5 5-5"/><path d="M5 20h14"/>'),
   parent: wrap('<circle cx="12" cy="12" r="3"/><path d="M12 2v5M12 17v5M2 12h5M17 12h5"/>'),
+  /* an eraser, tilted, with the sweep it leaves */
+  erase: wrap('<path d="M13.5 4.5l6 6-8.5 8.5H7l-3.5-3.5 10-11z"/><path d="M9 9l6 6M4 21h16"/>'),
 };
 
 /* Where each icon goes: the button, found by what it is for. */
@@ -99,6 +101,7 @@ const PLACES = [
   ['#btn-undo .ico', 'undo'], ['#btn-redo .ico', 'redo'], ['#btn-palette .ico', 'search'], ['#btn-theme .ico', 'theme'],
   ['#btn-account .ico', 'account'], ['#btn-install .ico', 'install'], ['#btn-export .ico', 'export'], ['#btn-more .ico', 'more'], ['#btn-proj .ico', 'gear'],
   ['#toolstrip [data-tool="select"]', 'select'], ['#toolstrip [data-tool="trim"]', 'trim'], ['#toolstrip [data-tool="razor"]', 'razor'],
+  ['#toolstrip [data-tool="erase"]', 'erase'],
   ['#toolstrip [data-add="title"]', 'title'], ['#toolstrip [data-add="shape"]', 'shape'], ['#toolstrip [data-add="sticker"]', 'sticker'],
   ['#toolstrip [data-add="adjust"]', 'adjust'], ['#toolstrip [data-add="null"]', 'nullObj'],
 ];

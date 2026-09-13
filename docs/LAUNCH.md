@@ -371,6 +371,25 @@ per-platform downloads, an account that remembers you.
   every slide resets when it goes off; with reduced motion the slides
   still rotate, finished, without the cursor. `verify-showcase`
 
+**Removing a thing from a shot**
+- Tap it. The region under the tap grows while the colour stays the thing's
+  colour and no hard edge is crossed, and anything it surrounds (the label on
+  the can) is part of it. One button: the shape rides on a "Remove an object"
+  effect, the tracker follows it forward and backward through the clip (the
+  tracker can now run in reverse) and writes its position and size as
+  keyframes, and a background plate — the median of frames across the clip —
+  is built once. Every frame the shape is filled from the plate where the
+  camera held still, and from the surroundings (a pull-push fill with grain
+  matched to the rim) where it did not; the margin and soft edge scale with
+  the thing. The ⌫ tool above the picture, the Inspector's Motion tracking
+  section, the Effects panel and "remove the can" in the AI all open the
+  same tap. `verify-erase`: one tap picks the can with its label, follows it
+  0 → 6 s in both directions, and the table behind it is the real table.
+- Found on the way: the preview box took its size from the canvas inside it
+  and the canvas from the box, so a ratio change or a narrower window shrank
+  them a step at a time to a stamp. The box is now fitted into the viewer in
+  pixels, and the viewer is what the resize observer watches.
+
 **The promo pack**
 - Twenty TikTok videos (also Reels and Shorts), an 83-second YouTube tour,
   six Instagram feed posts and a YouTube thumbnail, rendered from the real

@@ -370,6 +370,7 @@ const COMPARE = [
   ['Speed ramps &amp; time remap', false, true, true],
   ['One-tap edit styles', 'All 11', 'All 11', 'All 11'],
   ['Motion tracking', false, true, true],
+  ['Remove an object by tapping it', false, true, true],
   ['Multicam sync', false, false, 'Building'],
 
   ['— Look', null, null, null],

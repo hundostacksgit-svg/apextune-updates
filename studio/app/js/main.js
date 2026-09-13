@@ -159,6 +159,9 @@ export const actions = {
   },
 
   setTool(tool) {
+    /* Removing a thing is a moment, not a mode: the button opens the tap-to-
+       remove overlay and the pointer stays whatever it was. */
+    if (tool === 'erase') { import('./panels/tracking.js').then((m) => m.openEraserForSelected()); return; }
     S.tool = tool;
     $$('[data-tool]').forEach((b) => b.classList.toggle('on', b.dataset.tool === tool));
     // The timeline carries the class so the cursor can change per region —
@@ -1146,6 +1149,22 @@ function sizeCanvas() {
   canvas.style.aspectRatio = `${width} / ${height}`;
   const wrap = $('#canvas-wrap');
   wrap.style.aspectRatio = `${width} / ${height}`;
+  /*
+   * The box is fitted into the viewer here, in pixels, and never left to the
+   * canvas to decide. Left to CSS, the box took its size from the canvas and
+   * the canvas took its size from the box: change the ratio, or narrow the
+   * window, and the two shrank each other a step at a time down to a stamp.
+   */
+  const viewer = $('#viewer');
+  if (viewer && viewer.clientWidth > 40 && viewer.clientHeight > 40) {
+    const cs = getComputedStyle(viewer);
+    const availW = viewer.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    const availH = viewer.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+    const boxW = Math.max(2, Math.floor(Math.min(availW, availH * width / height)));
+    const boxH = Math.max(2, Math.floor(boxW * height / width));
+    wrap.style.width = `${boxW}px`;
+    wrap.style.height = `${boxH}px`;
+  }
   S.previewAdapt = 1;
   const size = previewSize(1);
   S.previewScale = size.scale;
@@ -1715,7 +1734,7 @@ function wireChrome() {
     new ResizeObserver(() => {
       clearTimeout(sizeTimer);
       sizeTimer = setTimeout(() => { if (!S.playing) sizeCanvas(); }, 120);
-    }).observe($('#canvas-wrap'));
+    }).observe($('#viewer') || $('#canvas-wrap'));
   }
 
   // timeline toolbar

@@ -160,7 +160,9 @@ export function mount(host) {
     const add = e.target.closest('[data-fx]');
     if (add) {
       const feature = add.dataset.tier === 'free' ? 'basic-filters' : 'all-filters';
-      licence.gate(feature, () => addEffect(add.dataset.fx), { what: EFFECTS[add.dataset.fx]?.name });
+      licence.gate(feature, () => (add.dataset.fx === 'eraseObject'
+        ? import('./tracking.js').then((m) => m.openEraserForSelected())
+        : addEffect(add.dataset.fx)), { what: EFFECTS[add.dataset.fx]?.name });
       return;
     }
     const trans = e.target.closest('[data-trans]');

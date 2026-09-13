@@ -17,7 +17,8 @@
  */
 
 import { valueAt } from './project.js';
-import { scratch, snapshot, channel, noise, clamp01, hexToRgba, pixels, cellSize, blurred, edgeMap, stretch } from './fx-utils.js';
+import { scratch, snapshot, channel, noise, clamp01, hexToRgba, pixels, cellSize, blurred, edgeMap, stretch, isFast } from './fx-utils.js';
+import { eraseRegion, plateFor } from './erase.js';
 import { EFFECT_PACKS } from './effects-library.js';
 import { MOTION_EFFECTS } from './effects-motion.js';
 import { chromaKey, keyAgainstPlate, plateById, portraitMatte } from './matte.js';
@@ -581,6 +582,40 @@ export const EFFECTS = {
       if (mode === 'glow') ctx.globalAlpha = 0.55 + amount * 0.45;
       ctx.drawImage(s.canvas, 0, 0);
       ctx.restore();
+    },
+  },
+
+  /*
+   * Removing a thing, not hiding it.
+   *
+   * The shape was picked by tapping the thing (panels/tracking.js) and rides
+   * on this effect; x, y and scale are written by the tracker so it follows.
+   * Every frame the shape is filled — from the clip's background plate where
+   * the camera held still, and from the surroundings where it did not or
+   * where the plate still has the thing in it. The engine is erase.js; this
+   * is the wiring.
+   */
+  eraseObject: {
+    name: 'Remove an object', group: 'Utility', tier: 'creator', icon: '⌫',
+    params: { x: { label: 'X', min: 0, max: 100, def: 50 },
+              y: { label: 'Y', min: 0, max: 100, def: 50 },
+              scale: { label: 'Size', min: 20, max: 400, def: 100 },
+              grow: { label: 'Margin', min: 0, max: 30, def: 6, step: 0.5 },
+              feather: { label: 'Soft edge', min: 0, max: 30, def: 5, step: 0.5 },
+              fill: { label: 'Fill it with', type: 'select', def: 'auto',
+                      options: [['auto', 'Whatever works best'], ['background', 'The background behind it'], ['surroundings', 'The surroundings']] },
+              texture: { label: 'Grain', min: 0, max: 100, def: 35 } },
+    draw(ctx, w, h, p, context) {
+      const shape = p.shape;
+      if (!shape || !shape.rle) return;
+      const clip = context.clip;
+      const plate = clip ? plateFor(clip.id) : null;
+      const others = plate && p.fill !== 'surroundings' ? () => [{ canvas: plate.canvas, clear: true }] : null;
+      eraseRegion(ctx, w, h, shape, {
+        cx: (p.x ?? 50) / 100, cy: (p.y ?? 50) / 100, scale: (p.scale ?? 100) / 100,
+        grow: p.grow ?? 6, feather: p.feather ?? 5, fill: p.fill || 'auto', texture: (p.texture ?? 35) / 100,
+        fast: isFast(), frameIndex: Math.round((context.local || 0) * (context.fps || 30)), others,
+      });
     },
   },
 

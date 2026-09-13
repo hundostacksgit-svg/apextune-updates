@@ -186,6 +186,18 @@ export const GUIDE = [
     ],
   },
   {
+    id: 'remove',
+    group: 'Effects',
+    title: 'Taking a thing out of a shot',
+    body: [
+      ['One tap', 'Press the ⌫ tool above the picture (or Inspector → Motion tracking → **Remove something from the shot**), then tap the thing. It lights up. If the light spills onto the table, drag **Reach** down; if it misses part of the thing, turn on **Add taps** and tap that part too. Then **Remove it**.'],
+      ['What happens next', 'The shape is followed through the rest of the shot in both directions, and the background is worked out from the frames where the thing was somewhere else. Where the camera held still you get the real background behind it; where it moved, the hole is filled from what surrounds it. Either way, one tap.'],
+      ['Fixing the edge', 'It is an effect on the clip, **Remove an object**, so the Effects panel has it: **Margin** takes a little more round the edge, **Soft edge** blends it, **Fill it with** chooses the background or the surroundings if the automatic choice guessed wrong. Undo takes the whole thing back in one step.'],
+      ['When it works best', 'A still or slowly moving camera and a thing that moves, or a thing that stays put on a plain-ish background. A hand-held shot of something in front of a busy pattern is the hard case for every tool, and here it will look like a smudge rather than a hole.'],
+      ['Ask for it', '*"Remove the can"*, *"get rid of the sign in the background"* — the AI opens the same tap and asks you to point at it.'],
+    ],
+  },
+  {
     id: 'ai',
     group: 'The AI',
     title: 'Telling it what to do',

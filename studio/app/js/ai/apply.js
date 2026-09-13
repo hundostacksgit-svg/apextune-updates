@@ -745,6 +745,15 @@ const OPS = {
    */
 
   /** Colour on chosen clips: a look, or individual controls, or both. */
+  /** Removing a thing from the picture needs a tap on it: the viewer asks for one. */
+  eraseObject(p, { what = 'that' }, ctx = {}) {
+    if (typeof ctx.openEraser !== 'function') {
+      throw new Error(`To remove the ${what}, press the ⌫ tool above the picture and tap it.`);
+    }
+    ctx.openEraser(what);
+    return `Tap the ${what} in the picture and it is taken out of the shot.`;
+  },
+
   setColor(p, { target, look, strength = 1, ...values }, ctx = {}) {
     const clips = resolveTarget(p, target, ctx);
     const known = ['exposure', 'contrast', 'saturation', 'temperature', 'tint',
@@ -1174,6 +1183,9 @@ export const OP_SPEC = {
   removeEffect: {
     args: 'target?, effect?: id (omit to clear everything on them)',
     does: 'Take effects back off chosen clips.' },
+  eraseObject: {
+    args: 'what: the thing, in words',
+    does: 'Take a thing out of the picture — a can, a sign, a person at the back. It asks for one tap on the thing, then follows it through the shot and fills in behind it.' },
 
   /* motion design — target may also be "title" (the newest title), "titles", "shape", "shapes", "null", "sticker" */
   addExpression: {

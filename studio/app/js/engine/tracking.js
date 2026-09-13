@@ -203,8 +203,14 @@ export async function trackBox(video, {
   const reader = new FrameReader(video);
   const end = to ?? video.duration;
   const step = 1 / Math.max(2, fps);
-  const total = Math.max(1, Math.ceil((end - from) / step));
-  if (!(end > from)) throw new Error('The range to track is empty.');
+  /*
+   * `to` before `from` runs the track backwards. Removing a thing that was
+   * tapped in the middle of a shot needs its position before the tap as much
+   * as after, and a matcher does not care which way time goes.
+   */
+  const dir = end < from ? -1 : 1;
+  const total = Math.max(1, Math.ceil(Math.abs(end - from) / step));
+  if (Math.abs(end - from) < step * 0.5) throw new Error('The range to track is empty.');
 
   // Template size in analysis pixels, clamped: too small and it latches onto
   // noise, too large and it cannot follow anything that moves quickly.
@@ -229,8 +235,8 @@ export async function trackBox(video, {
    * locking onto nothing.
    */
   if (tStats.norm / template.length < 0.4) {
-    const nudged = Math.min(from + step * 2, end - step);
-    if (nudged > from) {
+    const nudged = dir > 0 ? Math.min(from + step * 2, end - step) : Math.max(from - step * 2, end + step);
+    if (dir > 0 ? nudged > from : nudged < from) {
       // eslint-disable-next-line no-await-in-loop -- one retry, deliberately
       await reader.seek(nudged);
       first = reader.luma();
@@ -271,7 +277,7 @@ export async function trackBox(video, {
 
   for (let i = 1; i <= total; i++) {
     if (signal?.aborted) break;
-    const t = Math.min(end, from + i * step);
+    const t = dir > 0 ? Math.min(end, from + i * step) : Math.max(end, from - i * step);
     // eslint-disable-next-line no-await-in-loop -- frames must be read in order
     const ok = await reader.seek(t);
     if (!ok) break;
@@ -535,12 +541,18 @@ export function applyTrack(clip, track, {
   } else {
     const px = `effects.${effectId}.x`;
     const py = `effects.${effectId}.y`;
+    const ps = `effects.${effectId}.scale`;
     delete clip.keyframes[px];
     delete clip.keyframes[py];
+    if (followScale) delete clip.keyframes[ps];
+    const base = points[0];
     for (const p of points) {
       const local = p.t - clipStart;
       write(px, p.x * 100, local);          // effect params are 0..100
       write(py, p.y * 100, local);
+      // Size as a percentage of what it was when tracking started: an effect
+      // that carries a shape (removing a thing) grows and shrinks with it.
+      if (followScale) write(ps, (p.scale / (base.scale || 1)) * 100, local);
     }
   }
 

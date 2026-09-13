@@ -131,6 +131,10 @@ function parseSeconds(s) {
  * enough to act on — which is how "speed it up" (to what?) asks instead of
  * guessing a number.
  */
+/* "remove the <thing>" — as opposed to removing an effect, a clip, the audio, a gap. */
+const ERASE_THING = /\b(remove|get rid of|erase|take out|cut out|delete|hide|wipe out|paint out)\s+(the|that|this|my|a|an|those|these)\s+([a-z][a-z' -]{1,40}?)(?=\s+(from|in|out of)\b|\s*[.!]?\s*$)/i;
+const EDIT_NOUNS = /\b(effect|effects|filter|filters|look|grade|audio|sound|music|song|track|clip|clips|shot|shots|cut|cuts|title|titles|text|sticker|stickers|transition|transitions|watermark|caption|captions|subtitle|subtitles|layer|layers|silence|silences|gap|gaps|noise|hum|hiss|frame|frames|second|seconds|keyframe|keyframes|expression|animator|mask|masks|marker|markers|selection|everything|all of it|last one|first one)\b/i;
+
 const RULES = [
   /* ---- motion design: the specific phrase before the general word ---- */
   {
@@ -177,6 +181,16 @@ const RULES = [
       const hit = firstMatch(EXPRESSION_WORDS, s);
       return { op: 'addExpression', args: { target, preset: hit[1] },
         label: `${hit[1].replace(/([A-Z])/g, ' $1').toLowerCase().trim()} on ${describe(target)}`, detail: 'An expression, not keyframes: it runs for the whole clip.' };
+    },
+  },
+  /* A thing in the picture, by name: "remove the can", "get rid of the sign in the back". */
+  {
+    id: 'erase',
+    test: (s) => ERASE_THING.test(s) && !firstMatch(EFFECT_WORDS, s) && !EDIT_NOUNS.test(s),
+    build: (s, target) => {
+      const what = (s.match(ERASE_THING)?.[3] || 'that').trim().replace(/\s+(from|in|out of)\s+.*$/, '');
+      return { op: 'eraseObject', args: { target, what },
+        label: `Remove the ${what} from the shot`, detail: 'Tap it in the picture when the viewer asks; it is followed through the shot and filled in behind.' };
     },
   },
   {

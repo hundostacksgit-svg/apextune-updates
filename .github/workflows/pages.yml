@@ -54,7 +54,7 @@ jobs:
                    studio/app/js/history-ui.js studio/app/js/tips.js studio/app/js/more-sheet.js \
                    studio/app/js/desktop.js studio/app/js/updates.js version.json \
                    studio/app/js/engine/effects.js studio/app/js/engine/stickers.js \
-                   studio/app/js/engine/templates-library.js studio/app/js/engine/templates.js studio/app/js/engine/tracking.js studio/app/js/engine/broll.js \
+                   studio/app/js/engine/templates-library.js studio/app/js/engine/templates.js studio/app/js/engine/tracking.js studio/app/js/engine/erase.js studio/app/js/engine/broll.js \
                    studio/app/js/engine/mask.js studio/app/js/mask-ui.js studio/app/js/panels/masks.js \
                    studio/app/js/engine/audio-strip.js studio/app/js/engine/loudness.js studio/app/js/panels/strip.js \
                    studio/app/js/engine/scenes.js studio/app/js/start.js \

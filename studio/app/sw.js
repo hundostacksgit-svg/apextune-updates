@@ -10,7 +10,7 @@
  * origin's storage quota for no benefit.
  */
 
-const VERSION = 'omnidx-studio-v1.5.0';
+const VERSION = 'omnidx-studio-v1.6.0';
 
 /*
  * Fonts live in their own cache, outside the versioned one.
@@ -113,6 +113,7 @@ const SHELL = [
   './js/engine/templates-library.js',
   './js/engine/titles.js',
   './js/engine/tracking.js',
+  './js/engine/erase.js',
   './js/engine/transitions.js',
   './js/engine/transitions-library.js',
   './js/levels.js',
