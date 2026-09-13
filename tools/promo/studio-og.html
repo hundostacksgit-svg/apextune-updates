@@ -1,0 +1,100 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Studio share card</title>
+<!--
+  The link-preview card for OmniDx Studio. Rendered to studio/assets/og-card.png
+  by tools/promo/render-studio-og.mjs. Edit here, re-render, commit the PNG.
+
+  1200x630 is the size every scraper crops to. Everything important stays well
+  inside the middle, because Twitter and iMessage crop the edges differently.
+-->
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1200px;height:630px;overflow:hidden;background:#04060d}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
+  color:#e9eefc;-webkit-font-smoothing:antialiased}
+#s{position:relative;width:1200px;height:630px;overflow:hidden;
+  background:
+    radial-gradient(760px 460px at 84% 8%,rgba(47,125,255,.30),transparent 62%),
+    radial-gradient(620px 420px at 12% 96%,rgba(122,92,255,.22),transparent 64%),
+    #04060d}
+#s::before{content:"";position:absolute;inset:0;opacity:.5;
+  background-image:linear-gradient(#121a2c 1px,transparent 1px),linear-gradient(90deg,#121a2c 1px,transparent 1px);
+  background-size:56px 56px;
+  -webkit-mask-image:radial-gradient(ellipse 90% 70% at 50% 0%,#000,transparent 72%)}
+.left{position:absolute;left:76px;top:0;bottom:0;width:640px;display:flex;flex-direction:column;
+  justify-content:center;gap:22px;z-index:2}
+.brand{display:flex;align-items:center;gap:16px}
+.mark{width:62px;height:62px;border-radius:16px;
+  background:linear-gradient(125deg,#7a5cff,#2f7dff 45%,#00d1ff);
+  box-shadow:0 12px 34px -8px rgba(47,125,255,.7);display:grid;place-items:center}
+.mark svg{width:38px;height:38px}
+.brand b{font-size:44px;font-weight:800;letter-spacing:-.025em}
+.brand small{font-size:19px;font-weight:700;letter-spacing:.16em;color:#66718d;text-transform:uppercase}
+h1{font-size:56px;line-height:1.04;font-weight:800;letter-spacing:-.038em}
+.grad{background:linear-gradient(115deg,#7a5cff,#2f7dff 42%,#00d1ff);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+p{font-size:23px;line-height:1.45;color:#9aa6c4;max-width:600px}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.chip{padding:9px 19px;border:2px solid #1e2740;border-radius:999px;font-size:19px;
+  color:#9aa6c4;font-weight:600}
+.chip.on{border-color:#2f7dff;color:#e9eefc}
+
+/* A slice of the real editor, on the right. */
+.app{position:absolute;right:-56px;top:76px;width:600px;height:480px;border-radius:18px;
+  border:1px solid #1e2740;background:#0b0f1a;overflow:hidden;z-index:1;
+  box-shadow:0 40px 90px rgba(0,0,0,.65);transform:perspective(1500px) rotateY(-13deg) rotateX(3deg)}
+.bar{display:flex;align-items:center;gap:7px;padding:12px 16px;background:#111828;
+  border-bottom:1px solid #1e2740}
+.bar i{width:11px;height:11px;border-radius:50%;background:#1e2740;display:block}
+.bar i:nth-child(1){background:#ff5f57}.bar i:nth-child(2){background:#ffbd2e}
+.bar i:nth-child(3){background:#28c840}
+.bar span{margin-left:10px;font-size:14px;color:#5f6b87;font-family:ui-monospace,Menlo,monospace}
+.stage{padding:16px;display:flex;flex-direction:column;gap:12px;height:calc(100% - 44px)}
+.canvas{flex:1;border-radius:11px;position:relative;overflow:hidden;
+  background:linear-gradient(150deg,#0b1830,#123057 55%,#07101f);display:grid;place-items:center}
+.canvas .cap{font-weight:800;font-size:30px;letter-spacing:-.02em;color:#fff;
+  text-shadow:0 3px 18px rgba(0,0,0,.75)}
+.canvas .cap em{font-style:normal;color:#00d1ff}
+.track{height:34px;border-radius:8px;background:#111828;position:relative;overflow:hidden;
+  border:1px solid #161d30}
+.clip{position:absolute;top:3px;bottom:3px;border-radius:6px;
+  background:linear-gradient(125deg,#7a5cff,#2f7dff 45%,#00d1ff);opacity:.9;
+  display:flex;align-items:center;padding-left:9px;font-size:12px;color:#fff;font-weight:650}
+.clip.alt{background:linear-gradient(120deg,#1f8f6d,#2fd39c)}
+.ph{position:absolute;top:0;bottom:0;left:42%;width:2px;background:#00d1ff;
+  box-shadow:0 0 14px #00d1ff}
+</style></head><body>
+<div id="s">
+  <div class="app">
+    <div class="bar"><i></i><i></i><i></i><span>summer-trailer.omnidx</span></div>
+    <div class="stage">
+      <div class="canvas"><div class="cap">cut on the <em>beat</em></div></div>
+      <div class="track">
+        <span class="clip" style="left:1%;width:23%">beach_a</span>
+        <span class="clip" style="left:25%;width:18%">drone_02</span>
+        <span class="clip" style="left:44%;width:26%">sunset</span>
+        <span class="clip" style="left:71%;width:28%">beach_a</span>
+        <span class="ph"></span>
+      </div>
+      <div class="track"><span class="clip alt" style="left:1%;width:98%">track.mp3</span></div>
+    </div>
+  </div>
+
+  <div class="left">
+    <div class="brand">
+      <span class="mark"><svg viewBox="0 0 64 64">
+        <rect x="13" y="18" width="26" height="6" rx="3" fill="#fff" opacity=".92"/>
+        <rect x="13" y="29" width="18" height="6" rx="3" fill="#fff" opacity=".68"/>
+        <rect x="13" y="40" width="30" height="6" rx="3" fill="#fff" opacity=".45"/>
+        <path d="M43 24.5 L54 32 L43 39.5 Z" fill="#fff"/></svg></span>
+      <b>OmniDx</b><small>Studio</small>
+    </div>
+    <h1>Tell it what you want.<br><span class="grad">Watch it cut itself.</span></h1>
+    <p>A full video editor with an AI that turns a sentence into a finished edit.</p>
+    <div class="chips">
+      <span class="chip on">Free, no watermark</span>
+      <span class="chip">Works offline</span>
+      <span class="chip">Mac · Win · iOS · Android</span>
+    </div>
+  </div>
+</div>
+</body></html>

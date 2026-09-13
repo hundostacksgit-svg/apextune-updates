@@ -1,0 +1,17 @@
+{
+  "version": "1.3.0",
+  "date": "2026-09-10",
+  "headline": "A cleaner site, creative audio filters, no subscriptions, and a professional finishing layout",
+  "notes": [
+    "The top menu box: Products, Download, Pricing and Help, with the same links in a proper drawer on a phone.",
+    "A section rail down the right-hand edge that marks where you are as you scroll, with a progress line under the menu.",
+    "17 creative audio filters \u2014 underwater, telephone, old radio, megaphone, cathedral, vinyl, robot, 8-bit, nightcore and more. Thirteen are free.",
+    "Subscriptions are gone. Every edition is one payment: nothing renews, nothing expires, nothing to cancel.",
+    "AI editing now starts at Creator. Everything that runs on your own device \u2014 including the one-tap edit styles that build a whole edit \u2014 stays free.",
+    "Professional replaces Expert: a finishing-suite layout with tighter rows, tabular figures and a neutral grey chrome.",
+    "Sliders no longer rebuild the panel under your finger, and keyboard focus survives an edit.",
+    "The offline app now caches every module, so audio repair, codecs, bundles and proxies work on a cold start with no signal."
+  ],
+  "minimum": "1.0.0",
+  "app": "studio"
+}

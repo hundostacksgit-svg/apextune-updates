@@ -1,0 +1,30 @@
+{
+  "appId": "net.omnidx.studio",
+  "appName": "OmniDx Studio",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  },
+  "ios": {
+    "contentInset": "always",
+    "limitsNavigationsToAppBoundDomains": true,
+    "preferredContentMode": "mobile"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 600,
+      "backgroundColor": "#04060d",
+      "showSpinner": false
+    },
+    "Keyboard": {
+      "resize": "none"
+    }
+  },
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "https"
+  }
+}

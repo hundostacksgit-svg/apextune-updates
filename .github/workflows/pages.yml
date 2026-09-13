@@ -5,7 +5,7 @@ name: Publish to GitHub Pages
 # contents:write — no Pages API call, and no repository setting to switch on.
 on:
   push:
-    branches: [main, master, "claude/universal-diagnostics-app-6x8tot"]
+    branches: [main, master, "claude/universal-diagnostics-app-6x8tot", "claude/omnidx-editing-platform-9phdcc"]
   workflow_dispatch:
 
 permissions:
@@ -24,7 +24,7 @@ jobs:
       - name: Verify the site is complete
         run: |
           set -euo pipefail
-          for f in index.html .nojekyll assets/site.css assets/site.js \
+          for f in index.html .nojekyll \
                    app/index.html app/manifest.webmanifest app/sw.js app/css/app.css \
                    app/js/app.js app/js/ui.js app/js/store.js app/js/report.js \
                    app/js/pro.js app/js/config.js app/js/modules/pro.js \
@@ -34,19 +34,74 @@ jobs:
                    icons/icon-192.png icons/icon-512.png icons/icon.ico icons/icon.icns; do
             [ -f "$f" ] || { echo "missing required file: $f"; exit 1; }
           done
+          for f in studio/index.html studio/pricing/index.html studio/download/index.html studio/trust/index.html \
+                   studio/account/index.html studio/activate/index.html studio/activate/activate.js \
+                   studio/assets/studio.css studio/assets/studio.js studio/assets/showcase.css studio/assets/showcase.js \
+                   studio/assets/config.js studio/assets/auth.js studio/assets/rate.js studio/assets/mark.svg \
+                   studio/assets/og-card.png \
+                   studio/assets/icons/icon-192.png studio/assets/icons/icon-512.png \
+                   studio/assets/icons/maskable-192.png studio/assets/icons/maskable-512.png \
+                   studio/assets/icons/apple-touch-icon.png \
+                   studio/assets/mark-small.svg studio/assets/avatar.svg \
+                   studio/assets/avatar-512.png studio/assets/avatar-400.png \
+                   studio/app/index.html studio/app/manifest.webmanifest studio/app/sw.js \
+                   studio/app/css/app.css studio/app/js/main.js studio/app/js/ui.js \
+                   studio/app/js/store.js studio/app/js/licence.js studio/app/js/levels.js \
+                   studio/app/js/timeline-ui.js studio/app/js/keyframes-ui.js \
+                   studio/app/js/context-menu.js studio/app/js/menus.js \
+                   studio/app/js/palette.js studio/app/js/tutorial.js studio/app/js/guide.js \
+                   studio/app/js/mobile.js studio/app/js/menubar.js \
+                   studio/app/js/history-ui.js studio/app/js/tips.js studio/app/js/more-sheet.js \
+                   studio/app/js/desktop.js studio/app/js/updates.js version.json \
+                   studio/app/js/engine/effects.js studio/app/js/engine/stickers.js \
+                   studio/app/js/engine/templates-library.js studio/app/js/engine/templates.js studio/app/js/engine/tracking.js studio/app/js/engine/erase.js studio/app/js/engine/broll.js \
+                   studio/app/js/engine/mask.js studio/app/js/mask-ui.js studio/app/js/panels/masks.js \
+                   studio/app/js/engine/audio-strip.js studio/app/js/engine/loudness.js studio/app/js/panels/strip.js \
+                   studio/app/js/engine/scenes.js studio/app/js/start.js \
+                   studio/app/js/engine/muxer.js studio/app/js/engine/exporter-wc.js \
+                   studio/app/js/engine/audio-render.js studio/app/js/engine/audio-repair.js \
+                   studio/app/js/engine/audio-fx.js studio/app/js/engine/audio-fx-library.js studio/app/js/engine/text-styles.js studio/app/js/engine/speed-ramps.js studio/app/js/engine/beatmaker.js studio/app/js/engine/montage.js studio/app/js/engine/sfx.js studio/app/js/engine/reframe.js studio/app/js/engine/expressions.js studio/app/js/engine/frame-context.js studio/app/js/engine/audio-analysis.js studio/app/js/expr-ui.js studio/app/js/icons.js studio/app/js/install.js studio/app/js/project-settings.js studio/app/js/engine/shapes.js studio/app/js/panels/shapes.js studio/app/js/rate.js studio/app/js/panels/filters.js studio/app/js/panels/transitions.js studio/app/js/panels/overlays.js studio/app/js/panels/stickers.js studio/app/js/panels/sound.js studio/app/js/engine/reference.js \
+                   studio/app/js/engine/looks-library.js studio/app/js/engine/share.js \
+                   studio/app/js/engine/transitions-library.js \
+                   studio/app/js/panels/transition-picker.js \
+                   studio/app/js/engine/effects-library.js studio/app/js/engine/effects-motion.js studio/app/js/engine/fx-utils.js \
+                   studio/app/js/engine/fonts-library.js studio/app/js/engine/preview.js \
+                   studio/app/js/engine/lut.js studio/app/js/panels/curves.js \
+                   studio/app/js/engine/multiframe.js studio/app/js/engine/matte.js \
+                   studio/app/js/engine/tags.js studio/app/js/engine/brand.js \
+                   studio/app/js/engine/scopes.js studio/app/js/engine/meters.js \
+                   studio/app/js/engine/bundle.js studio/app/js/engine/proxy.js \
+                   studio/app/js/panels/templates.js studio/app/js/panels/tracking.js \
+                   studio/app/js/engine/project.js studio/app/js/engine/render.js \
+                   studio/app/js/engine/filters.js studio/app/js/engine/transitions.js \
+                   studio/app/js/engine/titles.js studio/app/js/engine/media.js \
+                   studio/app/js/engine/audio.js studio/app/js/engine/playback.js \
+                   studio/app/js/engine/media-clock.js studio/app/js/workspace.js studio/app/js/wheels-ui.js \
+                   studio/app/js/engine/presets.js studio/app/js/engine/presets-library.js studio/app/js/engine/edits.js studio/app/js/engine/multicam.js \
+                   studio/app/js/engine/exporter.js studio/app/js/engine/history.js \
+                   studio/app/js/ai/planner.js studio/app/js/ai/vocabulary.js studio/app/js/ai/apply.js studio/app/js/ai/remote.js \
+                   studio/app/js/ai/direct.js \
+                   studio/app/js/panels/index.js studio/app/js/panels/media.js \
+                   studio/app/js/panels/ai.js studio/app/js/panels/effects.js \
+                   studio/app/js/panels/color.js studio/app/js/panels/text.js \
+                   studio/app/js/panels/audio.js studio/app/js/panels/captions.js \
+                   studio/app/js/panels/settings.js studio/app/js/panels/help.js \
+                   studio/app/js/panels/inspector.js studio/app/js/panels/export.js \
+                   server/worker.js server/schema.sql; do
+            [ -f "$f" ] || { echo "missing required file: $f"; exit 1; }
+          done
           python3 -c "import json; json.load(open('app/manifest.webmanifest'))"
+          python3 -c "import json; json.load(open('studio/app/manifest.webmanifest'))"
+          python3 -c "import json; json.load(open('version.json'))"
+          python3 -c "import json; json.load(open('studio/desktop/package.json'))"
+          python3 -c "import json; json.load(open('studio/mobile/capacitor.config.json'))"
           python3 -m py_compile tools/sysreport.py tools/make-licence.py tools/set-domain.py \
+            tools/make-studio-key.py tools/release.py \
             desktop/omnidx.py desktop/install.py
 
-          # Every screenshot the landing page references must actually exist.
-          python3 - <<'PYCHK'
-          import re, sys, pathlib
-          html = pathlib.Path('index.html').read_text()
-          missing = [s for s in re.findall(r'src="(assets/[^"]+)"', html) if not pathlib.Path(s).exists()]
-          if missing:
-              print('landing page references missing assets:', missing); sys.exit(1)
-          print(f'landing page assets present ({html.count("assets/shots/")} screenshots)')
-          PYCHK
+          # The root must send visitors to Studio, or omnidx.net is a dead page.
+          grep -q 'url=studio/' index.html || { echo "root index.html no longer redirects to studio/"; exit 1; }
+          grep -q "location.replace('studio/" index.html || { echo "root index.html lost its script redirect"; exit 1; }
           echo "site looks complete"
 
       - name: Publish to gh-pages

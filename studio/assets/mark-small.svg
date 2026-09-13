@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="OmniDx Studio">
+  <!--
+    The small mark: favicons, app icons, anything under about 48 pixels.
+    A different drawing from mark.svg, on purpose.
+
+    The full mark's three nested frames are its idea — one edit, three places to
+    post it — and at 16 pixels all three merge into a grey smudge while the
+    solid upright frame thins into a sliver you cannot identify. Rendering the
+    same file smaller does not solve that; it is a different problem, so it
+    gets a different drawing.
+
+    Here the frame is wider and shorter, filling the square rather than sitting
+    in it, and everything else is gone. It keeps the one thing that has to
+    survive: a portrait rectangle with a play triangle punched out of it, which
+    is a silhouette almost no other app icon has.
+  -->
+  <defs>
+    <linearGradient id="sm-g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7a5cff"/>
+      <stop offset="0.45" stop-color="#2f7dff"/>
+      <stop offset="1" stop-color="#00d1ff"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="13" y="5" width="38" height="54" rx="12" fill="url(#sm-g)"/>
+  <!-- Bigger and blunter than the full mark's triangle. A slim one closes up
+       into a dot the moment the icon is scaled down. -->
+  <path d="M25 21.5c0-2.6 2.9-4.2 5.1-2.9l13 7.7c2.1 1.3 2.1 4.4 0 5.7l-13 7.7
+           c-2.2 1.3-5.1-.3-5.1-2.9z" fill="#05070c"/>
+  <rect x="28" y="45" width="8" height="9" rx="4" fill="#05070c" opacity=".8"/>
+</svg>

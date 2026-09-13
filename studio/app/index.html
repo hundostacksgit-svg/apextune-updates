@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-level="intermediate">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>OmniDx Studio</title>
+<meta name="description" content="A full multitrack video editor with a built-in AI editor. Works offline, installs to your home screen, and never uploads your footage.">
+<meta name="theme-color" content="#04060d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="OmniDx Studio">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<link rel="stylesheet" href="css/app.css">
+<script>
+(function(){try{
+  /*
+   * The editor is dark unless somebody has said otherwise.
+   *
+   * Not a style preference — a bright interface around a picture changes how
+   * that picture reads. Simultaneous contrast is real: the same shot looks
+   * darker and less saturated surrounded by white than surrounded by black,
+   * so a light editor makes you grade brighter and more saturated than you
+   * meant, and the file you deliver is wrong. Every grading and finishing
+   * application is dark for this reason.
+   *
+   * So the system's light-mode preference is honoured on the website, and
+   * deliberately not here. An explicit choice — the toggle in the toolbar —
+   * still wins, because somebody who wants light after being told why should
+   * get light.
+   */
+  var t=localStorage.getItem('omnidx.theme')||'dark';
+  document.documentElement.setAttribute('data-theme',t);
+  var l=localStorage.getItem('omnidx.studio.level')||'beginner';
+  document.documentElement.setAttribute('data-level',l);
+}catch(e){}})();
+</script>
+</head>
+<body>
+
+<div id="splash" class="splash">
+  <div class="splash-mark"></div>
+  <div class="splash-name">OmniDx <b>Studio</b></div>
+  <div class="spinner"></div>
+</div>
+
+<!-- ===================== top bar ===================== -->
+<header class="topbar" id="topbar">
+  <div class="tb-left">
+    <a class="brand" href="../" title="Back to omnidx.net/studio">
+      <span class="mark"></span><span class="bname">OmniDx <b>Studio</b></span>
+    </a>
+    <!--
+      The menu bar. File, Edit, Clip, Timeline, View, Settings, Help — the same
+      seven every editing application has, in the order people already expect
+      them. Contents are built in menubar.js when each one opens, so labels
+      like "Undo Add clip" name the thing that will actually happen.
+    -->
+    <nav class="menubar" id="menubar" aria-label="Menus"></nav>
+    <!-- The tool strip: what the pointer does, then what a press adds. -->
+    <div class="toolstrip" id="toolstrip" role="toolbar" aria-label="Tools" data-min="intermediate">
+      <button data-tool="select" title="Select (V)"></button>
+      <button data-tool="trim" title="Trim (T)"></button>
+      <button data-tool="razor" title="Razor (C)"></button>
+      <button data-tool="erase" title="Remove an object — tap it in the picture"></button>
+      <span class="ts-div"></span>
+      <button data-add="title" title="Add a title"></button>
+      <button data-add="shape" title="Add a shape layer"></button>
+      <button data-add="sticker" title="Add a sticker"></button>
+      <button data-add="adjust" title="Add an adjustment layer"></button>
+      <button data-add="null" title="Add a null object"></button>
+    </div>
+    <input class="proj-name" id="proj-name" value="Untitled project" aria-label="Project name" spellcheck="false">
+    <button class="tb-btn" id="btn-proj" title="Project settings — size, frame rate, start timecode, background"><span class="ico">⚙</span></button>
+    <span class="saved" id="saved-dot" title="Saved">Saved</span>
+  </div>
+
+  <div class="tb-mid">
+    <div class="level-switch" id="level-switch" role="tablist" aria-label="Skill level">
+      <button data-level="beginner"     title="Guided — nine tools, nothing else on screen">Beginner</button>
+      <button data-level="intermediate" title="Editing — the full timeline and inspector">Intermediate</button>
+      <button data-level="expert"       title="Finishing — full density, neutral chrome, nothing hidden">Professional</button>
+    </div>
+  </div>
+
+  <div class="tb-right">
+    <!--
+      Phones get a different set of controls here, not a smaller version of
+      the same ones. Six buttons plus a project name does not fit 390 pixels:
+      measured on an iPhone 13, Export sat at x=590 on a 390-wide screen —
+      completely unreachable. You could not export from a phone at all.
+
+      So on a phone this collapses to what somebody actually needs at the top
+      — undo and export — and everything else moves into the overflow sheet,
+      which is reachable with a thumb rather than in a corner.
+    -->
+    <button class="tb-btn tb-more" id="btn-more" title="More" aria-haspopup="true" aria-expanded="false">
+      <span class="ico">⋯</span></button>
+    <button class="tb-btn tb-undo" id="btn-undo" title="Undo (Ctrl+Z)" disabled>
+      <span class="ico">↶</span><span class="lbl">Undo</span></button>
+    <button class="tb-btn" id="btn-redo" title="Redo (Ctrl+Shift+Z)" disabled><span class="ico">↷</span></button>
+    <button class="tb-btn" id="btn-palette" title="Find anything (Ctrl+K)"><span class="ico">⌘</span><span class="lbl">Find</span></button>
+    <button class="tb-btn" id="btn-theme" title="Dark / light"><span class="ico">◐</span></button>
+    <button class="tb-btn" id="btn-account" title="Account and licence"><span class="ico">👤</span><span class="lbl" id="acct-lbl">Free</span></button>
+    <!-- Install as an app. Hidden once it is one, and where the browser cannot. -->
+    <button class="tb-btn tb-install" id="btn-install" title="Install as an app" hidden><span class="ico">⇩</span><span class="lbl">Install</span></button>
+    <!--
+      The way up, from inside the app.
+
+      In a browser the pricing page is one tab away; in the desktop build
+      there is no site around the editor at all, so without this the only
+      route to paying is hitting a locked feature. The mark is the animated
+      one — the three frames breathe outward from the play head — because a
+      button that reads "Upgrade" in the same grey as Undo is a button nobody
+      notices. Hidden once there is nothing left to upgrade to.
+    -->
+    <a class="tb-btn tb-upgrade" id="btn-upgrade" href="../pricing/" target="_blank" rel="noopener"
+       title="See the plans" hidden>
+      <svg class="up-mark" viewBox="0 0 64 64" width="20" height="20" aria-hidden="true">
+        <defs><linearGradient id="up-g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#7a5cff"/><stop offset=".45" stop-color="#2f7dff"/><stop offset="1" stop-color="#00d1ff"/>
+        </linearGradient></defs>
+        <rect class="up-r3" x="2" y="18" width="60" height="28" rx="7" fill="none" stroke="url(#up-g)" stroke-width="3"/>
+        <rect class="up-r2" x="10" y="10" width="44" height="44" rx="9" fill="none" stroke="url(#up-g)" stroke-width="3"/>
+        <rect class="up-r1" x="19" y="2" width="26" height="60" rx="9" fill="url(#up-g)"/>
+        <path class="up-play" d="M27 22 L41 32 L27 42 Z" fill="#fff"/>
+      </svg>
+      <span class="lbl">Upgrade to Pro</span>
+    </a>
+    <button class="tb-btn primary" id="btn-export" title="Export (Ctrl+E)"><span class="ico">⇪</span><span class="lbl">Export</span></button>
+  </div>
+</header>
+
+<!-- ===================== workspace ===================== -->
+<div class="workspace">
+
+  <!-- icon rail -->
+  <nav class="rail" id="rail" aria-label="Panels">
+    <button data-panel="media"    class="on" title="Media (1)"><span>🎞</span><i>Media</i></button>
+    <button data-panel="ai"       title="AI editor (2)"><span>✨</span><i>AI</i></button>
+    <button data-panel="templates" title="Styles &amp; montages (3)"><span>🎞</span><i>Styles</i></button>
+    <button data-panel="filters"  title="Filters (4)"><span>🌈</span><i>Filters</i></button>
+    <button data-panel="effects"  title="Effects (5)"><span>🎛</span><i>Effects</i></button>
+    <button data-panel="transitions" title="Transitions (6)"><span>⇄</span><i>Transit.</i></button>
+    <button data-panel="overlays" title="Overlays — leaks, frames, weather, grain (7)"><span>✦</span><i>Overlays</i></button>
+    <button data-panel="color"    title="Colour (8)" data-min="intermediate"><span>🎨</span><i>Colour</i></button>
+    <button data-panel="text"     title="Text &amp; titles (9)"><span>T</span><i>Text</i></button>
+    <button data-panel="stickers" title="Stickers, shapes &amp; callouts"><span>😎</span><i>Stickers</i></button>
+    <button data-panel="shapes"   title="Shape layers — trim paths, repeaters, sabre strokes"><span>◇</span><i>Shapes</i></button>
+    <button data-panel="audio"    title="Audio"><span>🔊</span><i>Audio</i></button>
+    <button data-panel="sound"    title="Sound — beats and sound effects"><span>🥁</span><i>Sound</i></button>
+    <button data-panel="captions" title="Captions"><span>💬</span><i>Captions</i></button>
+    <button data-panel="settings" title="Settings"><span>⚙</span><i>Settings</i></button>
+    <button data-panel="help"     class="rail-end" title="Tutorial &amp; shortcuts"><span>?</span><i>Learn</i></button>
+  </nav>
+
+  <!-- left panel -->
+  <aside class="panel" id="panel" aria-live="polite"></aside>
+
+  <!-- viewer -->
+  <main class="stage">
+    <div class="viewer" id="viewer">
+      <div class="canvas-wrap" id="canvas-wrap">
+        <canvas id="preview" width="1080" height="1920"></canvas>
+        <div class="safe" id="safe" hidden>
+          <div class="safe-top">platform UI</div>
+          <div class="safe-bottom">caption / UI area</div>
+        </div>
+        <!-- Mask handles, drawn over the picture in the picture's own space so
+             a window drawn on a preview means the same thing in a 4K export. -->
+        <div class="mask-layer" id="mask-layer" hidden></div>
+        <div class="track-layer" id="track-layer" hidden>
+          <div class="track-box" id="track-box">
+            <span class="th tl"></span><span class="th tr"></span>
+            <span class="th bl"></span><span class="th br"></span>
+          </div>
+          <div class="track-hint" id="track-hint">Drag a box around what you want to follow</div>
+        </div>
+
+        <div class="drop-hint" id="drop-hint">
+          <div class="dh-icon">＋</div>
+          <h3>Drop your clips here</h3>
+          <p>Video, photos or music. Nothing gets uploaded — it all stays on this device.</p>
+          <button class="btn btn-primary" id="btn-import-hero">Choose files</button>
+        </div>
+      </div>
+    </div>
+
+    <!--
+      Every platform's crop of the current frame, side by side.
+
+      Off by default: it is a checking tool, not a viewing one, and a permanent
+      strip of thumbnails under the picture is clutter for anyone cutting a
+      video for one place. The button that opens it sits in the transport, next
+      to the other things that change what you are looking at.
+    -->
+    <div class="ratio-check" id="ratio-check" hidden>
+      <div class="rc-head">
+        <b>How it crops elsewhere</b>
+        <span class="tiny muted">Shaded areas are where the app's own buttons sit</span>
+        <button class="btn btn-sm btn-ghost" id="rc-close" aria-label="Close">✕</button>
+      </div>
+      <div class="rc-row" id="rc-row"></div>
+    </div>
+
+    <div class="transport">
+      <button class="tp" id="tp-start" title="Go to start (Home)">⏮</button>
+      <button class="tp" id="tp-back" title="Back 1 frame (←)">◀|</button>
+      <button class="tp play" id="tp-play" title="Play / pause (Space)">▶</button>
+      <button class="tp" id="tp-fwd" title="Forward 1 frame (→)">|▶</button>
+      <button class="tp" id="tp-end" title="Go to end (End)">⏭</button>
+      <span class="tc mono" id="tc">00:00:00:00</span>
+      <span class="tc-sep">/</span>
+      <span class="tc mono muted" id="tc-total">00:00:00:00</span>
+      <div class="tp-spacer"></div>
+      <label class="tp-toggle" title="Show where the platform's buttons cover your video">
+        <input type="checkbox" id="tg-safe"> Safe zones
+      </label>
+      <label class="tp-toggle" title="See this frame cropped for TikTok, YouTube and a square feed at the same time">
+        <input type="checkbox" id="tg-ratios"> All platforms
+      </label>
+      <select class="tp-select" id="ratio" title="Aspect ratio" data-min="intermediate">
+        <option value="9:16">9:16 · TikTok / Reels</option>
+        <option value="16:9">16:9 · YouTube</option>
+        <option value="1:1">1:1 · Square</option>
+        <option value="4:5">4:5 · Instagram feed</option>
+        <option value="2.39:1">2.39:1 · Cinemascope</option>
+      </select>
+      <select class="tp-select" id="quality" title="Preview quality" data-min="expert">
+        <option value="auto">Preview: auto</option>
+        <option value="full">Preview: full</option>
+        <option value="half">Preview: half</option>
+      </select>
+    </div>
+  </main>
+
+  <!-- inspector -->
+  <aside class="inspector" id="inspector" data-min="intermediate"></aside>
+</div>
+
+<!-- ===================== timeline ===================== -->
+<section class="timeline" id="timeline">
+  <div class="tl-bar">
+    <div class="tl-tools">
+      <!--
+        Import, always here, never conditional.
+
+        The only import control a phone used to have was the big button on the
+        empty-state hint, and that hint hides itself the moment you have any
+        media — so on a phone you could add a first clip and then had no way to
+        add a second, short of finding the Media sheet and scrolling it. The
+        one action every edit starts and continues with belongs on the bar
+        that is always on screen.
+      -->
+      <button class="tl-btn tl-import" id="tl-import" title="Import video, photos or music (I)">＋ Import</button>
+      <span class="tl-div"></span>
+      <button class="tl-btn" data-tool="select" title="Select (V)">▣</button>
+      <button class="tl-btn" data-tool="trim"
+        title="Trim (T) — grab a cut to roll it, an outer edge to ripple, the middle to slip. Hold Alt for ripple at a cut, or to slide."
+        data-min="intermediate">⇹</button>
+      <button class="tl-btn" data-tool="razor" title="Razor (C)">✂</button>
+      <button class="tl-btn" id="tl-split" title="Split at playhead (S)">⌗ Split</button>
+      <button class="tl-btn" id="tl-delete" title="Delete selected (Del)">🗑</button>
+      <button class="tl-btn" id="tl-dup" title="Duplicate (Ctrl+D)">⧉</button>
+      <span class="tl-div"></span>
+      <label class="tl-toggle" title="Clips stick to edges and the playhead">
+        <input type="checkbox" id="tg-snap" checked> Snap
+      </label>
+      <label class="tl-toggle" data-min="intermediate" title="Closing a gap pushes everything after it">
+        <input type="checkbox" id="tg-ripple" checked> Ripple
+      </label>
+      <button class="tl-btn" id="tl-marker" title="Add marker (M)" data-min="intermediate">⚑</button>
+      <span class="tl-div"></span>
+      <!--
+        Layers, as buttons and not only as a gesture.
+
+        Dragging a clip above the top track has always made an overlay layer,
+        and nobody finds a gesture they have not been told about. These say the
+        feature exists.
+      -->
+      <button class="tl-btn" id="tl-add-video" title="Add a video layer for overlays">＋ Video layer</button>
+      <button class="tl-btn" id="tl-add-audio" title="Add an audio layer">＋ Audio layer</button>
+    </div>
+    <div class="tl-zoom">
+      <button class="tl-btn" id="zoom-fit" title="Fit the whole timeline (Shift+Z)">Fit</button>
+      <button class="tl-btn" id="zoom-out" title="Zoom out (−)">−</button>
+      <input type="range" id="zoom" min="8" max="400" value="60" aria-label="Timeline zoom">
+      <button class="tl-btn" id="zoom-in" title="Zoom in (+)">+</button>
+      <span class="tl-div"></span>
+      <!-- The timeline over the whole window, for when the edit is the thing
+           you are looking at rather than the picture. -->
+      <button class="tl-btn" id="tl-full" title="Timeline full screen (Shift+F)"
+        aria-pressed="false">⤢</button>
+    </div>
+  </div>
+  <div class="tl-body" id="tl-body">
+    <div class="tl-heads" id="tl-heads"></div>
+    <div class="tl-scroll" id="tl-scroll">
+      <div class="tl-inner" id="tl-inner">
+        <div class="tl-ruler" id="tl-ruler"></div>
+        <div class="tl-tracks" id="tl-tracks"></div>
+        <div class="playhead" id="playhead"><span class="ph-grip"></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== overlays ===================== -->
+<div id="toast-host" class="toast-host" aria-live="assertive"></div>
+
+<dialog id="modal" class="modal"><div class="modal-body"></div></dialog>
+
+<div class="palette" id="palette" hidden>
+  <div class="pal-box">
+    <input class="pal-input" id="pal-input" placeholder="Search tools, effects, settings, clips…" aria-label="Search everything">
+    <div class="pal-list" id="pal-list"></div>
+    <div class="pal-foot"><span><span class="kbd">↑</span><span class="kbd">↓</span> move</span>
+      <span><span class="kbd">↵</span> run</span><span><span class="kbd">esc</span> close</span></div>
+  </div>
+</div>
+
+<div class="coach" id="coach" hidden>
+  <div class="coach-box">
+    <div class="coach-step" id="coach-step">Step 1 of 8</div>
+    <h3 id="coach-title">Welcome</h3>
+    <p id="coach-body">…</p>
+    <div class="coach-actions">
+      <button class="btn btn-ghost btn-sm" id="coach-skip">Skip the tutorial</button>
+      <div style="flex:1"></div>
+      <button class="btn btn-sm" id="coach-prev">Back</button>
+      <button class="btn btn-primary btn-sm" id="coach-next">Next</button>
+    </div>
+  </div>
+  <div class="coach-ring" id="coach-ring"></div>
+</div>
+
+<div class="render-overlay" id="render-overlay" hidden>
+  <div class="ro-box">
+    <h3 id="ro-title">Exporting…</h3>
+    <div class="ro-bar"><i id="ro-fill"></i></div>
+    <p class="small muted" id="ro-note">Rendering frame 0</p>
+    <video id="ro-preview" class="ro-preview" muted playsinline></video>
+    <div class="btn-row"><button class="btn" id="ro-cancel">Cancel</button></div>
+  </div>
+</div>
+
+<!--
+  The file picker.
+
+  Deliberately NOT `hidden`, and not display:none.
+
+  A display:none file input is the standard trick for styling an upload button,
+  and it is the reason importing did nothing at all on phones: iOS Safari and
+  the in-app browsers inside TikTok and Instagram — which is exactly how people
+  arrive from a promo link — refuse to open a picker for an input that is not
+  rendered. The tap registers, the click fires, and nothing happens, with no
+  error to go on.
+
+  So it is rendered, at one pixel, pinned out of sight and out of the tab order.
+  The browser considers it a real control and opens the picker; nobody ever
+  sees it.
+
+  There is also no `accept` list any more. Android pickers treat `video/*` as a
+  filter on some devices and a hard restriction on others, and a phone that
+  hands over a .mov from Photos with an empty MIME type — which they do — could
+  be refused its own camera roll. kindOf() in media.js already identifies files
+  properly by type and extension, and rejects what it cannot read with a
+  sentence that says so. Better to accept the file and explain than to have the
+  picker silently hide it.
+-->
+<input type="file" id="file-input" multiple class="file-hidden" tabindex="-1" aria-hidden="true">
+<div id="media-pool" class="media-pool" aria-hidden="true"></div>
+
+<script type="module" src="js/main.js"></script>
+<noscript><p style="padding:2rem;color:#eee">OmniDx Studio needs JavaScript. Nothing is uploaded — the whole editor runs in this tab.</p></noscript>
+</body>
+</html>

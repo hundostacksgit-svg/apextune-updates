@@ -1,10 +1,86 @@
 # OmniDx
 
+Two apps, one idea: software that tells you the truth, runs on your own machine,
+and doesn't rent itself to you.
+
+| | What it is | Try it |
+|---|---|---|
+| **OmniDx Diagnostics** | Reads your car's engine fault codes, tests your phone's hardware, benchmarks your computer. | [Open the app](https://omnidx.net/app/) |
+| **OmniDx Studio** | A full video editor with an AI that turns a sentence into a finished edit. | [Open the editor](https://omnidx.net/studio/app/) · [Site](https://omnidx.net/studio/) |
+
+---
+
+## OmniDx Studio
+
+**Tell it what you want. Watch it cut itself.**
+
+A real multitrack video editor — timeline, colour, keyframes, audio mixing,
+export — with an AI layer on top. Drop your clips in, type *"make me a 30
+second TikTok trailer, fast cuts on the beat, teal and orange, captions on"*,
+and it plans the edit, shows you every step, and puts it on the timeline as
+ordinary clips you can drag, trim or undo.
+
+- **Free is the product, not a trial.** The whole editor, no watermark, no
+  export limit, no account needed. Paid tiers are $19.99 and $39.99, once.
+- **Works offline.** Install it and edit with the wifi off.
+- **Your footage never leaves your machine.** Editing and export happen on the
+  device. Only an AI request ever goes out, and only if you use one.
+- **Three skill levels.** Beginner shows nine tools; Expert hides nothing.
+- **Autosave every five seconds** with real crash recovery.
+- **Runs everywhere** — macOS, Windows, Linux, iOS, Android, or a browser tab.
+
+**One-tap styles.** Eleven finished edits — anime AMV, velocity, phonk, aesthetic,
+cinematic, gaming, product, meme, sports, listicle, talking-head cleanup — each
+showing its plan before it runs. Free on every tier.
+
+**Motion tracking.** Draw a box round a face or a number plate, and pin a blur, a
+sticker or a title to it. Runs on the device with no model to download.
+
+**Effects that make the edits people copy**: real motion blur sampled from actual
+movement, chromatic split that pulses on the beat, inverted impact frames, drawn
+speed lines, zoom blur, bloom, halftone, cel shading, VHS wobble, CRT.
+
+**Three-way colour wheels** — lift, gamma, gain — as a GPU filter, so grading stays
+real-time on a laptop.
+
+**Professional export.** H.264 and H.265 encoded frame by frame, faster than real
+time, with the tab free to go in the background. Apple ProRes 422 and Avid DNxHR
+from the desktop app, with no extra licence to buy.
+
+**Studio audio repair.** Spectral noise reduction, mains-hum removal, click repair
+and automatic levelling — the four things people open a DAW for.
+
+**Projects that move.** A bundle carries your footage with the edit, so it opens
+intact on a phone, a friend's laptop or a desktop install. It's also just a ZIP.
+
+**Proxies and awkward files.** Automatic 540p proxies for old machines — never used
+for export. Variable-frame-rate phone video and screen recordings open as they are.
+
+**Creative audio filters.** Underwater, telephone, old radio, megaphone, cathedral,
+vinyl, robot, 8-bit, nightcore — seventeen of them, live on playback and rendered
+into the export. Thirteen are free.
+
+**One payment, never a subscription.** $19.99, $39.99, or $69.99 for three people.
+Nothing renews and nothing expires.
+
+Read next:
+[what it does and why](docs/STUDIO-COMPLAINTS.md) ·
+[how it's built](docs/STUDIO.md) ·
+[**take money in ten minutes**](docs/SQUARE-SETUP.md) ·
+[getting paid, in full](docs/STUDIO-PAYMENTS.md) ·
+[shipping to the stores](docs/STUDIO-BUILD.md) ·
+[pushing updates](docs/STUDIO-UPDATES.md) ·
+[deploying the API](docs/STUDIO-DEPLOY.md)
+
+---
+
+## OmniDx Diagnostics
+
 **All-around diagnostics.** One app that reads your car's engine fault codes, tests your
 phone's hardware, and benchmarks your computer — offline, with nothing uploaded anywhere.
 
-- **Site:** <https://hundostacksgit-svg.github.io/apextune-updates/>
-- **App:** <https://hundostacksgit-svg.github.io/apextune-updates/app/>
+- **Site:** <https://omnidx.net/diagnostics/>
+- **App:** <https://omnidx.net/app/>
 - **Launch kit:** [`docs/LAUNCH-KIT.md`](docs/LAUNCH-KIT.md) — videos, scripts, what to buy, how to get paid
 - **What to build next:** [`docs/NEXT-PRODUCTS.md`](docs/NEXT-PRODUCTS.md) — other products worth the effort, and the ones that aren't
 - **The business:** [`docs/THE-BUSINESS.md`](docs/THE-BUSINESS.md) — what $30k a year actually costs by route, and the order to do things in
