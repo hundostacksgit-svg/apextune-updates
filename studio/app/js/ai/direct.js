@@ -38,7 +38,7 @@ const ORDINALS = {
  */
 
 import { EFFECT_WORDS, SHAPE_WORDS, ANIMATOR_WORDS, EXPRESSION_WORDS, NULL_WORDS, PARENT_WORDS,
-  MUSIC_WORDS, MUSIC_ASK, AUDIO_FIX_WORDS, repairOptions, firstMatch } from './vocabulary.js';
+  MUSIC_WORDS, MUSIC_ASK, AUDIO_FIX_WORDS, BG_REMOVE_WORDS, repairOptions, firstMatch } from './vocabulary.js';
 
 export function parseTarget(text) {
   const s = ` ${String(text || '').toLowerCase()} `;
@@ -183,6 +183,14 @@ const RULES = [
       return { op: 'addExpression', args: { target, preset: hit[1] },
         label: `${hit[1].replace(/([A-Z])/g, ' $1').toLowerCase().trim()} on ${describe(target)}`, detail: 'An expression, not keyframes: it runs for the whole clip.' };
     },
+  },
+  /* The background, which is a matte and not a patch. */
+  {
+    id: 'remove-background',
+    test: (s) => BG_REMOVE_WORDS.test(s),
+    build: (s, target) => ({ op: 'addEffect', args: { target: target ?? 'all', effect: 'removeBackground', params: {} },
+      label: `Remove the background on ${describe(target)}`,
+      detail: 'The background is worked out from the clip itself — no green screen. Adjust the sensitivity in the Effects panel.' }),
   },
   /* The sound is bad. Named parts if they were named, all of it if not. */
   {

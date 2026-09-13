@@ -123,6 +123,25 @@ export const EXPRESSION_WORDS = [
   [/\bstop[- ]motion\b|\bstutter\b|\bon twos\b/i, 'stutter'],
 ];
 
+/* ---- taking the background out, which is not the same as taking a thing out ---- */
+/*
+ * "Remove the background" read as tap-to-remove an object called "the
+ * background": the eraser opened and waited for a tap that could never mean
+ * anything. It is its own feature — a matte, not a patch — and this is the
+ * phrase that reaches it.
+ */
+export const BG_REMOVE_WORDS = new RegExp([
+  /* The background has to be what the verb acts on. Allowing anything between
+     the two turned "get rid of the sign in the background" — which is about
+     the sign, and is tap-to-remove — into a background key. */
+  '\\b(remove|cut out|get rid of|take out|drop|kill|knock out)\\s+(the\\s+|this\\s+|my\\s+)?background\\b(?!\\s+(noise|hiss|hum|buzz|sound|audio|music))',
+  '\\bbackground remov',
+  '\\bgreen ?screen\\b',
+  '\\bchroma ?key\\b',
+  '\\bcut (me|him|her|them|the subject|the person) out\\b',
+  '\\bmatte (out )?the background\\b',
+].join('|'), 'i');
+
 /* ---- music: the style somebody names, and the words that mean "put music on it" ---- */
 /*
  * The style ids are beatmaker.js's, so a word here reaches the same music the

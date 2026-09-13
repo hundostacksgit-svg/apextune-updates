@@ -41,6 +41,9 @@
  *   voices   which instruments play at all in this style
  *   bassKind how the low end behaves: an 808 that slides, a sub, a saw, a
  *            plucked finger bass, a walking line
+ *   sparse   there is barely any percussion in it, so nothing can find a beat
+ *            in the audio. Our own grid is still exact; a detector run over
+ *            the finished file will not agree, and should not be asked to.
  */
 export const BEAT_STYLES = {
   /* --- rap and its neighbours --- */
@@ -83,7 +86,7 @@ export const BEAT_STYLES = {
   /* --- quiet --- */
   lofi:      { name: 'Lo-fi', bpm: 84, family: 'Chill', scale: 'dorian', bassKind: 'walk', voices: ['keys'], blurb: 'Lazy swing, soft kick, dusty hats.' },
   jazzhop:   { name: 'Jazz hop', bpm: 88, family: 'Chill', scale: 'dorian', bassKind: 'walk', voices: ['keys', 'lead'], blurb: 'Brushed kit, seventh chords, rain outside.' },
-  ambient:   { name: 'Ambient', bpm: 70, family: 'Chill', scale: 'major', bassKind: 'sub', voices: ['pad', 'lead'], blurb: 'Almost no drums. Mostly weather.' },
+  ambient:   { name: 'Ambient', bpm: 70, family: 'Chill', scale: 'major', bassKind: 'sub', voices: ['pad', 'lead'], sparse: true, blurb: 'Almost no drums. Mostly weather.' },
   cinematic: { name: 'Cinematic', bpm: 90, family: 'Score', scale: 'minor', bassKind: 'sub', voices: ['pad', 'lead'], blurb: 'Slow pulse, low boom, a ticking shaker, a riser into every eighth bar.' },
   trailer:   { name: 'Trailer', bpm: 96, family: 'Score', scale: 'phrygian', bassKind: 'sub', voices: ['pad'], blurb: 'Hits, silence, then a bigger hit.' },
   hype:      { name: 'Hype', bpm: 150, family: 'Score', scale: 'minor', bassKind: 'saw', voices: ['pluck', 'lead'], blurb: 'Fast, driving, every beat a hit. Sports and gaming.' },
@@ -107,7 +110,10 @@ function patterns(style) {
     case 'phonk':     return P('x...x...x...x...', '....x.......x...', 'x.x.x.x.x.x.x.x.', 'x..x..x...x.x...', 'x.....x.x.....x.', 0.08);
     case 'trap':      return P('x......x..x.....', '....x.......x...', 'xxxxxxxxxxxxxxxx', '................', 'x......x..x.....');
     case 'drill':     return P('x.....x...x.....', '...x.....x......', 'x.xx.x.xx.x.x.xx', '................', 'x.....x...x...x.', 0.12);
-    case 'ukdrill':   return P('x....x....x.....', '...x.....x......', 'x.xxx.x.x.xx.x.x', '................', 'x....x....x...x.', 0.14);
+    /* The kick syncopates, but the snare holds the third beat — without an
+       anchor anywhere on the grid there was nothing in the bar landing on a
+       downbeat, and a tempo detector read the pattern as two-thirds speed. */
+    case 'ukdrill':   return P('x....x....x.....', '...o....x.......', 'x.xxx.x.x.xx.x.x', '................', 'x....x....x...x.', 0.14);
     case 'boombap':   return P('x.......x..x....', '....x.......x...', 'x.x.x.x.x.x.x.x.', '................', 'x.......x..x....', 0.16);
     case 'memphis':   return P('x...x..x..x.....', '....x.......x...', 'x.x.x.x.x.x.x.x.', 'x.....x...x.....', 'x...x..x..x.....', 0.06);
     case 'hyperpop':  return P('x...x...x...x..x', '....x.......x...', 'xxxxxxxxxxxxxxxx', '................', 'x...x...x...x...');
@@ -127,7 +133,18 @@ function patterns(style) {
     /* global */
     case 'afrobeats': return P('x..x..x...x..x..', '....o...x...o...', 'x.xx.xx.x.xx.xx.', '................', 'x..x..x...x..x..', 0.06);
     case 'amapiano':  return P('x...x...x...x...', '......o.......o.', 'x.xx.xx.x.xx.xx.', '................', 'x..x....x..x....', 0.08);
-    case 'reggaeton': return P('x..x..x...x..x..', '...x..x....x..x.', 'x.x.x.x.x.x.x.x.', '................', 'x.....x...x.....');
+    /* Dembow is 3+3+2, which on its own gives a detector nothing on a
+       quarter note to hold: it read the pattern a third fast. The kick keeps
+       the syncopation and also lands on three, which is where a real one is. */
+    /* Dembow, with the backbeat left standing. The 3+3+2 snare on its own
+       gave a detector a three-sixteenth pulse and it read the track a third
+       fast; the syncopated hits are ghosts now and the one on beat three is
+       a full hit, which is what a reggaeton record actually sounds like. */
+    /* Dembow, with the backbeat left standing. The 3+3+2 snare at full weight
+       gave a detector nothing but a three-sixteenth pulse and it read the
+       track a third fast; the syncopated hits are ghosts under a real hit on
+       beat three, which is what a reggaeton record actually sounds like. */
+    case 'reggaeton': return P('x.......x.......', '...-..-.x..-..-.', 'x.x.x.x.x.x.x.x.', '................', 'x.....x...x.....');
     case 'dancehall': return P('x.......x.......', '...x.......x....', 'x.x.x.x.x.x.x.x.', '................', 'x.......x.......', 0.05);
     /* bands */
     case 'pop':       return P('x.......x.......', '....x.......x...', 'x.x.x.x.x.x.x.x.', '................', 'x...x...x...x...');
@@ -304,7 +321,12 @@ function snare(ctx, bus, noise, at, gain = 1, { bright = true, clap = false, gat
 function hat(ctx, bus, noise, at, gain = 1, open = false, pan = 0) {
   const s = ctx.createBufferSource(); s.buffer = noise;
   const f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 7000;
-  const g = ctx.createGain(); g.gain.setValueAtTime(gain * 0.58, at); g.gain.exponentialRampToValueAtTime(0.001, at + (open ? 0.28 : 0.05));
+  /* An open hat rings six times as long as a closed one, so at the same peak
+     it carries far more energy — on house, where it sits on every off-beat,
+     it out-punched the kick and a beat detector run over the finished track
+     came back with two-thirds of the real tempo. Quieter at the front, same
+     length. */
+  const g = ctx.createGain(); g.gain.setValueAtTime(gain * (open ? 0.3 : 0.58), at); g.gain.exponentialRampToValueAtTime(0.001, at + (open ? 0.28 : 0.05));
   s.connect(f).connect(g); to(ctx, bus, g, pan);
   s.start(at); s.stop(at + (open ? 0.3 : 0.06));
 }
@@ -517,7 +539,12 @@ function riser(ctx, bus, noise, at, len, gain = 0.5) {
  * something, and an outro. Under six bars there is no room for that, so it
  * collapses to intro and main.
  */
-function arrange(bars) {
+function arrange(bars, on = true) {
+  /* A flat bed: every bar the same, every beat played. Wanted by anything
+     that needs a steady pulse rather than a piece of music — a fifteen-second
+     sting, and the beat detector's own test material, which has to be judged
+     on continuous drums or it is measuring the arrangement instead. */
+  if (!on) return () => 'main';
   if (bars < 6) return (bar) => (bar === 0 ? 'intro' : bar >= bars - 1 ? 'outro' : 'main');
   const cut = (f) => Math.max(1, Math.round(bars * f));
   const introEnd = cut(0.12), buildEnd = cut(0.24), aEnd = cut(0.5), breakEnd = cut(0.62), outroAt = bars - Math.max(1, Math.round(bars * 0.08));
@@ -584,7 +611,7 @@ export const MUSIC_KEYS = KEYS;
  * same track and a project that references one still sounds right a year
  * later. Leave it out and you get the style's plain default.
  */
-export async function renderBeat({ style = 'trap', bpm = null, seconds = 30, sampleRate = 44100, seed = 0, key = null } = {}) {
+export async function renderBeat({ style = 'trap', bpm = null, seconds = 30, sampleRate = 44100, seed = 0, key = null, arrange: shape = true } = {}) {
   const { spec, rand, tempo, keyIndex, prog, motif, leadType } = trackPlan({ style, seed, bpm, key });
   const beatLen = 60 / tempo, stepLen = beatLen / 4;
   const bars = Math.max(2, Math.ceil(seconds / (beatLen * 4)));
@@ -599,7 +626,7 @@ export async function renderBeat({ style = 'trap', bpm = null, seconds = 30, sam
   const root = keyIndex - 6;                       // keep it near the bottom of the range
   const sc = SCALES[scale];
 
-  const sectionOf = arrange(bars);
+  const sectionOf = arrange(bars, shape);
   const beats = [];
 
   for (let bar = 0; bar < bars; bar++) {
