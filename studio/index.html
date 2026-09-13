@@ -28,6 +28,7 @@
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="assets/studio.css">
+<link rel="stylesheet" href="assets/showcase.css">
 <script>
 /* Set the theme before first paint so a light-mode visitor never sees a black
    flash. Everything else waits for the module. */
@@ -135,6 +136,122 @@
       <a class="btn btn-primary btn-lg" href="app/">Start editing — free</a>
       <a class="btn btn-lg btn-ghost" href="download/">Download for desktop</a>
     </div>
+    <!-- The showcase: the editor's own chrome, in HTML, doing the things it
+         does. Five slides that advance on their own; a cursor works the
+         timeline, a sentence becomes an edit, a slider grades a shot, a
+         title arrives letter by letter, one frame goes to every platform.
+         Not a screenshot: it cannot go stale, and it loads at once. -->
+    <div class="show reveal in d4" id="showcase" aria-roledescription="carousel" aria-label="What OmniDx Studio looks like" tabindex="0">
+      <div class="show-frame">
+        <div class="show-bar"><i></i><i></i><i></i><span class="t" id="show-title">summer-trailer.omnidx</span><span class="show-badge" id="show-badge">Timeline</span></div>
+        <div class="show-stage" id="show-stage" aria-hidden="true">
+
+          <section class="slide on" data-slide="timeline" data-badge="Timeline" data-title="summer-trailer.omnidx — 00:00:12:04"
+            data-caption="A real multitrack timeline: drag, ripple, roll, slip, and a razor that cuts where you click.">
+            <div class="pane"><p class="pane-h">Media</p>
+              <div class="row on"><span class="sw"></span>beach_a.mp4</div><div class="row"><span class="sw b"></span>drone_02.mov</div>
+              <div class="row"><span class="sw c"></span>sunset.mp4</div><div class="row"><span class="sw"></span>track.mp3</div></div>
+            <div class="stage">
+              <div class="pic"><span class="sun"></span><span class="hill"></span><div class="cap">cut on the <b>beat</b></div></div>
+              <div class="tracks">
+                <div class="ruler"><span style="left:0">0s</span><span style="left:25%">3s</span><span style="left:50%">6s</span><span style="left:75%">9s</span></div>
+                <div class="track" style="overflow:visible"><span class="clip" data-clip="1" style="left:1%;width:21%">beach_a</span><span class="clip" data-clip="2" style="left:25%;width:15%">drone_02</span><span class="clip" data-clip="3" style="left:52%;width:44%">sunset</span><span class="split" data-split></span><span class="head" data-head></span></div>
+                <div class="track"><span class="clip audio" style="left:1%;width:97%">track.mp3</span></div>
+              </div>
+              <div class="tools"><span class="tb on" title="Select"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M5 3l14 9-6 1-4 6z"/></svg></span><span class="tb" data-tool="trim"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><path d="M4 12h16M8 7l-4 5 4 5M16 7l4 5-4 5"/></svg></span><span class="tb" data-tool="razor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75"><circle cx="7" cy="17" r="3"/><circle cx="17" cy="17" r="3"/><path d="M9.5 15L20 4M14.5 15L4 4"/></svg></span></div>
+            </div>
+            <div class="pane"><p class="pane-h">Inspector</p>
+              <div class="row on">Scale · 104%</div><div class="row">Position · 0, −12</div><div class="row">Speed · 100%</div>
+              <p class="pane-h" style="margin-top:1.2em">Parent</p><div class="row">Null 1</div></div>
+            <div class="foot"><span>Video 1 · Audio 1</span><span><b>1080×1920</b> · 30 fps · 3.4 ms</span></div>
+          </section>
+
+          <section class="slide" data-slide="ai" data-badge="AI editor" data-title="summer-trailer.omnidx — AI"
+            data-caption="Say what you want. It builds the cut — the shape, the beats, the look, the captions — then it is yours to change.">
+            <div class="pane"><p class="pane-h">Media</p>
+              <div class="row"><span class="sw"></span>beach_a.mp4</div><div class="row"><span class="sw b"></span>drone_02.mov</div>
+              <div class="row"><span class="sw c"></span>sunset.mp4</div><div class="row on"><span class="sw"></span>track.mp3</div></div>
+            <div class="stage">
+              <div class="prompt"><i data-prompt></i><span class="go" data-go>Build it</span></div>
+              <div class="pic" style="flex:1"><span class="sun"></span><span class="hill"></span><div class="cap">trailer · <b>9:16</b></div></div>
+              <div class="built" data-built><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            </div>
+            <div class="pane"><p class="pane-h">The plan</p>
+              <ul class="plan" data-plan><li>Shape 9:16</li><li>Cut on the beat</li><li>Look: Punch</li><li>Speed ramps</li><li>Captions on</li><li>Fit the music</li></ul></div>
+            <div class="foot"><span>6 steps · 30.0 s</span><span><b>Ctrl+Z</b> takes it all back</span></div>
+          </section>
+
+          <section class="slide" data-slide="colour" data-badge="Colour &amp; effects" data-title="summer-trailer.omnidx — Colour"
+            data-caption="Colour wheels, curves, scopes and 340 effects, live on your own footage — and off again with one press.">
+            <div class="pane"><p class="pane-h">Looks</p>
+              <div class="row on"><span class="sw b"></span>Teal &amp; Orange</div><div class="row"><span class="sw"></span>Kodak 2383</div>
+              <div class="row"><span class="sw c"></span>Punch</div><div class="row"><span class="sw"></span>Bleach bypass</div></div>
+            <div class="stage">
+              <div class="pic" data-frame><span class="sun"></span><span class="hill"></span><div class="scope" data-scope><i></i></div><div class="cap">before · <b>after</b></div></div>
+            </div>
+            <div class="pane"><p class="pane-h">Colour</p>
+              <div class="lbl"><span>Contrast</span><b data-val>0</b></div>
+              <div class="slider"><b style="--v:40%"></b><span class="knob" data-knob></span></div>
+              <div class="lbl"><span>Saturation</span><b>+12</b></div>
+              <div class="slider"><b style="--v:56%"></b><span class="knob" style="left:56%"></span></div>
+              <p class="pane-h" style="margin-top:1.2em">Effects</p>
+              <div class="chips"><span class="chip" data-chip>Glow</span><span class="chip">Halftone</span><span class="chip">Speed lines</span></div></div>
+            <div class="foot"><span>Node 1 · Serial</span><span><b>Waveform</b> · Vectorscope · Parade</span></div>
+          </section>
+
+          <section class="slide" data-slide="motion" data-badge="Motion design" data-title="summer-trailer.omnidx — Motion"
+            data-caption="Expressions, shape layers, text animators and particles — the After Effects half, built in. In Creator and Studio.">
+            <div class="pane"><p class="pane-h">Layers</p>
+              <div class="row on"><span class="sw"></span>SUMMER</div><div class="row"><span class="sw c"></span>Ring</div>
+              <div class="row"><span class="sw b"></span>Embers</div><div class="row"><span class="sw"></span>Null 1</div></div>
+            <div class="stage">
+              <div class="pic"><svg class="ring" data-ring viewBox="0 0 100 100"><circle cx="50" cy="50" r="45"/></svg>
+                <div class="particles" data-particles><i style="--x:12%;--d:0s"></i><i style="--x:28%;--d:.7s"></i><i style="--x:47%;--d:1.4s"></i><i style="--x:63%;--d:.3s"></i><i style="--x:78%;--d:1.9s"></i><i style="--x:90%;--d:1.1s"></i></div>
+                <p class="word" data-word><b>S</b><b>U</b><b>M</b><b>M</b><b>E</b><b>R</b></p></div>
+            </div>
+            <div class="pane"><p class="pane-h">SUMMER</p>
+              <div class="lane">Scale<span class="fx" data-fx>ƒ</span></div>
+              <div class="expr" data-expr>value + beatPulse(8) * 0.12</div>
+              <div class="lane" style="margin-top:.4em">Opacity<span class="fx">ƒ</span></div>
+              <div class="lane">Animator · Rise by character</div></div>
+            <div class="foot"><span>Pop on the beat · Trim paths 0→100%</span><span><b>Creator</b> and Studio</span></div>
+          </section>
+
+          <section class="slide" data-slide="export" data-badge="Export" data-title="summer-trailer.omnidx — Deliver"
+            data-caption="Export for every platform at once, with the subject kept in frame. 4K, no watermark, nothing uploaded.">
+            <div class="pane"><p class="pane-h">Deliver</p>
+              <div class="row on"><span class="sw"></span>H.264 · 4K</div><div class="row"><span class="sw c"></span>H.265</div>
+              <div class="row"><span class="sw b"></span>ProRes 422</div><div class="row"><span class="sw"></span>All platforms</div></div>
+            <div class="stage">
+              <div class="prompt" style="min-height:0"><span>Every platform, from one edit</span><span class="exp-btn" data-export>Export</span></div>
+              <div class="tiles"><div class="tile" data-tile data-r="9:16"><span>TikTok</span></div><div class="tile" data-tile data-r="16:9"><span>YouTube</span></div><div class="tile" data-tile data-r="1:1"><span>Square</span></div><div class="tile" data-tile data-r="4:5"><span>Reels</span></div></div>
+              <div class="bar" data-bar><i></i></div>
+              <div class="done" data-done>Exported · 4 files · no watermark · nothing left your device</div>
+            </div>
+            <div class="pane"><p class="pane-h">Safe zones</p>
+              <div class="row on">TikTok UI</div><div class="row">YouTube Shorts</div><div class="row">Instagram Reels</div>
+              <p class="pane-h" style="margin-top:1.2em">Reframe</p><div class="row">Follow the subject</div></div>
+            <div class="foot"><span>4 shapes · 1 render</span><span><b>Background</b> rendering</span></div>
+          </section>
+
+          <div class="cursor" id="show-cursor"><svg viewBox="0 0 24 24"><path d="M5 3l14 9-6.2 1.2L9.5 21z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+        </div>
+      </div>
+      <div class="show-nav">
+        <button class="show-arrow" type="button" data-dir="-1" aria-label="Previous slide">‹</button>
+        <div class="show-dots" role="tablist" aria-label="Slides">
+          <button type="button" role="tab" class="on" aria-selected="true" aria-label="The timeline"></button>
+          <button type="button" role="tab" aria-selected="false" aria-label="The AI editor"></button>
+          <button type="button" role="tab" aria-selected="false" aria-label="Colour and effects"></button>
+          <button type="button" role="tab" aria-selected="false" aria-label="Motion design"></button>
+          <button type="button" role="tab" aria-selected="false" aria-label="Export"></button>
+        </div>
+        <button class="show-arrow" type="button" data-dir="1" aria-label="Next slide">›</button>
+        <div class="show-cap" id="show-cap" aria-live="polite">A real multitrack timeline: drag, ripple, roll, slip, and a razor that cuts where you click.</div>
+        <div class="show-progress" id="show-progress"><i></i></div>
+      </div>
+    </div>
+
     <div class="hero-note reveal in d3">
       <span><b>Free forever</b> — the whole editor, no watermark</span>
       <span>·</span>
@@ -145,49 +262,6 @@
     <div class="trust reveal in d3">
       <span>🖥 macOS &amp; Windows</span><span>📱 iOS &amp; Android</span>
       <span>🌐 Any browser</span><span>✈️ Works offline</span><span>🔓 Open project format</span>
-    </div>
-
-    <!-- A slice of the real app chrome, animated. Not a screenshot: this can't
-         go stale, and it loads instantly. -->
-    <div class="mock reveal in d4" aria-hidden="true">
-      <div class="mock-bar"><i></i><i></i><i></i><span class="t">summer-trailer.omnidx — 00:00:12:04</span></div>
-      <div class="mock-body">
-        <div class="mock-left">
-          <div class="mock-h">Media</div>
-          <div class="mock-item on"><span class="sw"></span>beach_a.mp4</div>
-          <div class="mock-item"><span class="sw"></span>drone_02.mov</div>
-          <div class="mock-item"><span class="sw"></span>sunset.mp4</div>
-          <div class="mock-item"><span class="sw"></span>track.mp3</div>
-          <div class="mock-h" style="margin-top:18px">Looks</div>
-          <div class="mock-item"><span class="sw"></span>Teal &amp; Orange</div>
-          <div class="mock-item"><span class="sw"></span>Kodak 2383</div>
-        </div>
-        <div class="mock-stage">
-          <div class="mock-canvas">
-            <div class="cap">cut on the <b>beat</b>, every time</div>
-          </div>
-          <div class="mock-track">
-            <span class="mock-clip" style="left:1%;width:22%">beach_a</span>
-            <span class="mock-clip" style="left:24%;width:17%">drone_02</span>
-            <span class="mock-clip" style="left:42%;width:26%">sunset</span>
-            <span class="mock-clip" style="left:69%;width:29%">beach_a</span>
-            <span class="mock-play"></span>
-          </div>
-          <div class="mock-track">
-            <span class="mock-clip alt" style="left:1%;width:97%">track.mp3</span>
-          </div>
-        </div>
-        <div class="mock-right">
-          <div class="mock-h">Inspector</div>
-          <div class="mock-item on">Scale · 104%</div>
-          <div class="mock-item">Position · 0, −12</div>
-          <div class="mock-item">Speed · 100%</div>
-          <div class="mock-h" style="margin-top:18px">Colour</div>
-          <div class="mock-item">Contrast · +18</div>
-          <div class="mock-item">Saturation · +12</div>
-          <div class="mock-item">Temp · −220K</div>
-        </div>
-      </div>
     </div>
 
     <div class="stat-row reveal">

@@ -344,6 +344,32 @@ per-platform downloads, an account that remembers you.
 - Verified by `verify-expressions`, `verify-shapes`, `verify-text-animators`,
   `verify-motion-fx`, `verify-ai-motion`
 
+**Playback**
+- Smooth. The preview used to be drawn at the project's size capped at
+  1080 whatever the viewer on screen was: a vertical project in a viewer
+  167 pixels tall was composited at 608×1080 sixty times a second and every
+  effect ran at that size — a timeline with a glow on it played at fifteen
+  frames a second. Now the canvas is the size it is shown (times the pixel
+  ratio, capped at 1080; "Preview: full" still asks for the project's own
+  size), a dynamic scaler steps it down while frames overrun and brings it
+  back sharp on pause, per-pixel effects work at a smaller cap while the
+  picture is moving and never for an export, and the playhead moves by
+  transform so it no longer forces a layout on every frame. Measured: two
+  effects on every clip went from 64 ms a frame to a steady 16.7, and the
+  scaler brings a hopeless six-effect stack from 163 ms to 55.
+  `verify-smooth` holds the cadence to numbers
+
+**The front page**
+- A showcase where the static mock-up was: five slides of the editor's own
+  chrome doing things — a cursor drags a clip, picks the razor and cuts, a
+  sentence types itself and becomes a plan and a timeline, a slider grades
+  a shot and lights an effect, a title arrives letter by letter inside a
+  ring that draws itself with embers rising, one frame goes to every
+  platform. It advances on its own every 6.8 seconds, always; pauses while
+  the pointer or focus is on it; dots, arrows and the keyboard move it;
+  every slide resets when it goes off; with reduced motion the slides
+  still rotate, finished, without the cursor. `verify-showcase`
+
 **Installing it**
 - The editor installs itself: an Install button in the top bar, File →
   Install as an app, a row in the phone's More sheet, and one offer after

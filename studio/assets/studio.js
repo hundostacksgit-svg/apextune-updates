@@ -1216,6 +1216,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initNavAccount();
   initAccount();
   mountRating($('#rate-us'));
+  // The front page's showcase; the module is only fetched where it is used.
+  if ($('#showcase')) import('./showcase.js').then((m) => { window.__showcase = m; m.initShowcase(); }).catch(() => {});
 
   // Mark the current page in the nav without hard-coding it per page.
   const here = location.pathname.replace(/index\.html$/, '');
