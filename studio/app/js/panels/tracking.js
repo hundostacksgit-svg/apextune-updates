@@ -449,6 +449,9 @@ export function openEraser(clip) {
   if (S.time < clip.start || S.time >= clip.start + clip.dur) actions.seek(clip.start + Math.min(0.5, clip.dur / 2));
   S.sel = new Set([clip.id]);
   actions.refresh();
+  /* On a phone a panel is a sheet with a scrim over the picture, and the tap
+     must reach the picture: whatever sheet is open closes first. */
+  import('../mobile.js').then((mob) => { mob.closeSheets?.(); mob.syncScrim?.(); }).catch(() => {});
 
   layer.hidden = false;
   layer.classList.remove('working');

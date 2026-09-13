@@ -1113,7 +1113,14 @@ input[type=checkbox]{accent-color:var(--blue)}
 /* Removing a thing: the box goes, a tinted copy of the picked region comes. */
 .track-layer.erasing .track-box{display:none}
 /* The controls sit on the picture; a tap beside them is a tap on the picture. */
-.track-layer.erasing .track-hint{pointer-events:none!important}
+.track-layer.erasing .track-hint{pointer-events:none!important;white-space:normal;max-width:calc(100% - 12px);
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 8px;padding:8px 12px;border-radius:12px}
+/* On a phone the picture is small and the controls would cover it: they sit
+   over the timeline instead, just above the tab bar, and taps land on the picture. */
+@media(max-width:760px){
+  .track-layer.erasing .track-hint{position:fixed;left:8px;right:8px;bottom:calc(var(--tabbar-h,60px) + 10px);
+    transform:none;max-width:none;z-index:40}
+}
 .track-layer.erasing .track-hint > *{pointer-events:auto}
 .erase-overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .track-hint .er-ctl{display:inline-flex;align-items:center;gap:5px;margin-left:8px;font-weight:600;color:var(--text-2)}
