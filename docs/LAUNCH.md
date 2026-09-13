@@ -371,6 +371,21 @@ per-platform downloads, an account that remembers you.
   every slide resets when it goes off; with reduced motion the slides
   still rotate, finished, without the cursor. `verify-showcase`
 
+**The promo pack**
+- Twenty TikTok videos (also Reels and Shorts), an 83-second YouTube tour,
+  six Instagram feed posts and a YouTube thumbnail, rendered from the real
+  editor: the app is opened with drawn footage and a beat from its own
+  beatmaker, every panel is photographed at 2x, and each video zooms into
+  those shots with a cursor and a spotlight, between hooks, the two ways to
+  pay, feature lists that land on the beat, the AI editor typing, and a
+  timeline being cut on the beat. The logo and omnidx.net are on every
+  frame; every video ends on the price, the address and the hashtags. No
+  stock footage, no licensed music, no screen recording: frames are asked
+  for by time and piped into ffmpeg, so a render is exact and repeatable.
+  Generator in `tools/promo/studio/`; captions, hashtags, voice-over scripts
+  for TikTok's text-to-speech, the three-week schedule and the copy for
+  YouTube, Reddit, X, Product Hunt and Hacker News in `docs/PROMO-KIT.md`.
+
 **Installing it**
 - The editor installs itself: an Install button in the top bar, File →
   Install as an app, a row in the phone's More sheet, and one offer after
@@ -421,9 +436,6 @@ background all work today, because those are solvable without generation.
 content-aware expansion from surrounding pixels, which is honest and good
 enough for backgrounds, but it is not the same thing and should not be sold as
 it.
-
-**The promo trailer pack.** Ready to build — it is waiting on the TikTok audios
-you were going to send. Send them and it gets made.
 
 **Multi-lingual captions.** The transcription runs on the server, so it turns
 on with step 2.

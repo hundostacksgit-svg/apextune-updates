@@ -1,5 +1,10 @@
 # Promo video generator
 
+> **OmniDx Studio's promo pack lives in [`studio/`](studio/README.md):** twenty
+> TikTok videos, the YouTube tour, feed posts and the thumbnail, rendered from
+> the real editor. What to post with each is in `docs/PROMO-KIT.md`. The rest
+> of this file is the ApexTune promo.
+
 Renders the 28-second vertical TikTok/Reels promo from the app's own screenshots.
 No stock footage, no external services.
 
