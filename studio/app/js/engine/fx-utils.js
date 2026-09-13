@@ -87,7 +87,22 @@ export function hexToRgba(hex, alpha) {
  * scaling back up costs detail an effect like a threshold or a duotone does not
  * have anyway — and keeps the scrub interactive, which the person notices.
  */
+/*
+ * Fast mode: while the transport is running or the playhead is being
+ * dragged, the per-pixel helpers work at a smaller cap. Smooth beats sharp
+ * during playback — a stutter is seen at once, a coarser halftone is not —
+ * and the moment it pauses the frame is drawn again at full quality. The
+ * export never sees this: the renderer sets it per draw and clears it for
+ * an export, so a rendered file is always the sharp one.
+ */
+let fast = false;
+const FAST_CAP = 420;
+const FAST_CELLS = 4000;
+export function setFast(on) { fast = Boolean(on); }
+export function isFast() { return fast; }
+
 export function pixels(src, w, h, cap, fn, index = 1) {
+  if (fast) cap = Math.min(cap, FAST_CAP);
   const scale = Math.min(1, cap / Math.max(w, h));
   const sw = Math.max(1, Math.round(w * scale));
   const sh = Math.max(1, Math.round(h * scale));
@@ -115,6 +130,7 @@ export function pixels(src, w, h, cap, fn, index = 1) {
  * deliberately coarse mosaic stays coarse.
  */
 export function cellSize(want, w, h, budget = 16000) {
+  if (fast) budget = Math.min(budget, FAST_CELLS);
   const scaled = Math.max(2, want * (Math.max(w, h) / 900));
   const cells = (w / scaled) * (h / scaled);
   return cells <= budget ? scaled : scaled * Math.sqrt(cells / budget);
@@ -128,7 +144,7 @@ export function cellSize(want, w, h, budget = 16000) {
  * costs eight times what 1080p does and produces the same lines.
  */
 export function edgeMap(src, w, h, radius, index) {
-  const scale = Math.min(1, 900 / Math.max(w, h));
+  const scale = Math.min(1, (fast ? FAST_CAP : 900) / Math.max(w, h));
   const sw = Math.max(1, Math.round(w * scale)), sh = Math.max(1, Math.round(h * scale));
   const s = scratch(sw, sh, index);
   s.ctx.filter = `blur(${Math.max(0.5, radius * scale).toFixed(2)}px)`;
@@ -154,6 +170,7 @@ export function edgeMap(src, w, h, radius, index) {
  * pixel: `ctx.drawImage(b, 0, 0, b.width, b.height, 0, 0, w, h)`.
  */
 export function blurred(src, w, h, radius, extra, index, cap = 900) {
+  if (fast) cap = Math.min(cap, FAST_CAP);
   const k = Math.min(1, cap / Math.max(w, h));
   const bw = Math.max(1, Math.round(w * k)), bh = Math.max(1, Math.round(h * k));
   const s = scratch(bw, bh, index);

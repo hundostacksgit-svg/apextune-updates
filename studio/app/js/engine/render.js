@@ -22,6 +22,7 @@ import {
 import { drawTransition } from './transitions.js';
 import { drawText, CAPTION_STYLES } from './titles.js';
 import { applyEffects } from './effects.js';
+import { setFast } from './fx-utils.js';
 import { drawSticker } from './stickers.js';
 import { drawShape } from './shapes.js';
 import { elementFor } from './media.js';
@@ -118,6 +119,9 @@ export class Renderer {
     const w = this.canvas.width, h = this.canvas.height;
     // What expressions and audio-reactive effects may ask about this frame.
     setFrame(this._frameContext(project, t));
+    // Per-pixel effects work coarser while the picture is moving, and never
+    // for an export — see fx-utils.js.
+    setFast(!forExport && Boolean(opts.playing || opts.scrub));
 
     /*
      * Looking at the matte instead of the picture.

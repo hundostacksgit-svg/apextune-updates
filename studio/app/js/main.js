@@ -78,7 +78,11 @@ export const S = {
   beats: null,          // cached beat detection for the current music track
   // How long a frame takes to draw, as a running average; the page bar shows
   // it. `worst` is the slowest frame since the last seek, for the guide.
-  stats: { frameMs: 0, worst: 0, frames: 0 },
+  stats: { frameMs: 0, tickMs: 0, worst: 0, frames: 0 },
+  // The preview's resolution: the size it is drawn at as a fraction of the
+  // size it would be drawn at for its box, lowered while playback overruns
+  // its frame budget and restored on pause. See adaptPreview().
+  previewAdapt: 1,
 };
 
 let renderer = null;
@@ -1101,23 +1105,102 @@ function paintSaved(state) {
 /* preview                                                             */
 /* ------------------------------------------------------------------ */
 
+/*
+ * How big to draw the preview.
+ *
+ * The backing canvas used to be the project's size capped at 1080 on the
+ * long edge, whatever the viewer on screen was. A 1080×1920 project in a
+ * viewer 167 pixels tall was drawn at 608×1080 sixty times a second, forty
+ * times the pixels anyone could see, and every effect ran at that size too
+ * — which is what made a timeline with a glow on it play at fifteen frames
+ * a second. Now the canvas is the size it is shown at (times the device's
+ * pixel ratio, so it is still sharp on a retina screen), capped by the
+ * quality setting; "full" is the one way to ask for the project's own size.
+ *
+ * `adapt` is the playback scaler: 1 normally, less while frames overrun.
+ */
+function previewSize(adapt = 1) {
+  const { width, height } = S.project.settings;
+  const quality = $('#quality')?.value || 'auto';
+  const wrap = $('#canvas-wrap');
+  const long = Math.max(width, height);
+  let cap;
+  if (quality === 'full') {
+    cap = long;
+  } else {
+    // The box's size along the picture's long edge, in device pixels. Before
+    // layout has happened (first paint) fall back to the old fixed cap.
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    const boxW = wrap?.clientWidth || 0, boxH = wrap?.clientHeight || 0;
+    const shownLong = boxW && boxH ? (width >= height ? Math.min(boxW, boxH * width / height) : Math.min(boxH, boxW * height / width)) : 0;
+    const ceiling = quality === 'half' ? 640 : 1080;
+    cap = shownLong > 0 ? Math.min(ceiling, Math.max(160, Math.round(shownLong * dpr))) : ceiling;
+  }
+  const scale = Math.min(1, (cap * adapt) / long);
+  return { scale, w: Math.max(2, Math.round(width * scale)), h: Math.max(2, Math.round(height * scale)) };
+}
+
 function sizeCanvas() {
   const { width, height } = S.project.settings;
-  // A 4K preview on a 500px viewer is wasted work; cap the long edge and let
-  // the export use full resolution.
-  const quality = $('#quality')?.value || 'auto';
-  const cap = quality === 'full' ? Infinity : quality === 'half' ? 640 : 1080;
-  const scale = Math.min(1, cap / Math.max(width, height));
-  S.previewScale = scale;
-  renderer.resize(Math.round(width * scale), Math.round(height * scale));
-
   const canvas = $('#preview');
   canvas.style.aspectRatio = `${width} / ${height}`;
   const wrap = $('#canvas-wrap');
   wrap.style.aspectRatio = `${width} / ${height}`;
+  S.previewAdapt = 1;
+  const size = previewSize(1);
+  S.previewScale = size.scale;
+  renderer.resize(size.w, size.h);
   const ratio = S.project.settings.ratio;
   $('#ratio').value = ratio;
   drawFrame();
+}
+
+/*
+ * Dynamic resolution while playing.
+ *
+ * Smooth beats sharp during playback: a frame that misses its slot is a
+ * stutter the eye catches at once, a frame drawn at three-quarter size is
+ * not. So the draw time is watched (a running average the renderer keeps),
+ * and when it runs past the budget the canvas steps down a notch; when it
+ * has headroom again it steps back up, slowly, so it does not oscillate. On
+ * pause the full size comes back and the frame is redrawn, so what is
+ * inspected is always the sharp one. Nothing about the export is touched.
+ */
+let adaptLast = 0;        // when the size last changed
+let adaptFrames = 0;      // frames drawn since then
+function adaptPreview(playing) {
+  if (!playing) {
+    if (S.previewAdapt !== 1) { S.previewAdapt = 1; const size = previewSize(1); S.previewScale = size.scale; renderer.resize(size.w, size.h); }
+    adaptFrames = 0;
+    return;
+  }
+  adaptFrames += 1;
+  const now = performance.now();
+  /*
+   * Decide on a settled average, and not too often.
+   *
+   * A resize empties every pooled canvas, so the frames right after one are
+   * slow for reasons that have nothing to do with the new size; deciding on
+   * them steps the wrong way, and stepping the wrong way every half second
+   * is a resize every half second — which was the stutter this was meant
+   * to remove. So: at least a second and twenty frames since the last
+   * change, and a gap between the down and up thresholds wide enough that
+   * no size sits on both.
+   */
+  if (now - adaptLast < 1000 || adaptFrames < 20) return;
+  const fps = S.project.settings.fps || 30;
+  const budget = Math.min(1000 / 60, 1000 / fps) * 0.75;   // the whole tick, not just the draw
+  const ms = S.stats.tickMs;
+  let next = S.previewAdapt;
+  if (ms > budget && next > 0.35) next = Math.max(0.35, next * 0.8);
+  else if (ms < budget * 0.5 && next < 1) next = Math.min(1, next * 1.15);
+  if (Math.abs(next - S.previewAdapt) < 0.001) return;
+  adaptLast = now;
+  adaptFrames = 0;
+  S.previewAdapt = next;
+  const size = previewSize(next);
+  S.previewScale = size.scale;
+  renderer.resize(size.w, size.h);
 }
 
 function drawFrame(scrub = false) {
@@ -1625,6 +1708,15 @@ function wireChrome() {
   });
   $('#ratio').addEventListener('change', (e) => actions.setRatio(e.target.value));
   $('#quality').addEventListener('change', sizeCanvas);
+  // The viewer changes size with the window, the docks and the pages; the
+  // canvas follows, a beat later, so a resize does not re-render on every pixel.
+  if ('ResizeObserver' in window) {
+    let sizeTimer = null;
+    new ResizeObserver(() => {
+      clearTimeout(sizeTimer);
+      sizeTimer = setTimeout(() => { if (!S.playing) sizeCanvas(); }, 120);
+    }).observe($('#canvas-wrap'));
+  }
 
   // timeline toolbar
   $('#tl-split').addEventListener('click', () => actions.splitAtPlayhead());
@@ -1936,7 +2028,13 @@ async function importProjectJson(file) {
       S.time = t;
       S.playing = playing;
       renderer.beats = S.beats;
+      const t0 = performance.now();
       renderer.draw(S.project, t, { playing });
+      const dt = performance.now() - t0;
+      const st = S.stats;
+      st.frames += 1;
+      st.frameMs = st.frameMs ? st.frameMs * 0.85 + dt * 0.15 : dt;
+      if (dt > st.worst) st.worst = dt;
       audio.sync(S.project, t, playing);
       /*
        * Last, and once.
@@ -1950,15 +2048,22 @@ async function importProjectJson(file) {
       clock.commit(playing);
       timeline.renderPlayhead();
       ws.onFrame();
-      $('#tc').textContent = tc(t + (S.project.settings.startTc || 0), S.project.settings.fps);
+      const clock_ = tc(t + (S.project.settings.startTc || 0), S.project.settings.fps);
+      const tcEl = $('#tc');
+      if (tcEl.textContent !== clock_) tcEl.textContent = clock_;
+      // The whole tick, which is what has to fit in a frame slot.
+      const tick = performance.now() - t0;
+      st.tickMs = st.tickMs ? st.tickMs * 0.85 + tick * 0.15 : tick;
+      adaptPreview(playing);
     },
     onStateChange: (tp) => {
       S.playing = tp.playing;
       if (!tp.playing) audio.stopAll();
       paintTransport();
       // Parking every element on the frame it stopped at, so the picture on
-      // screen is the frame the playhead is actually sitting on.
-      if (!tp.playing) drawFrame();
+      // screen is the frame the playhead is actually sitting on — at full
+      // size, whatever the playback scaler had dropped to.
+      if (!tp.playing) { adaptPreview(false); drawFrame(); }
     },
   });
 

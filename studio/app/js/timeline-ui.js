@@ -58,7 +58,10 @@ export class TimelineUI {
     document.documentElement.classList.toggle('kf-graph-open', kf.isGraphOpen());
     // Always leave a screen of empty space past the end so there's somewhere to
     // drag a clip to. A timeline you can't extend feels broken.
-    const total = Math.max(duration(p) + 4, this.scroll.clientWidth / this.zoom);
+    // Measured once per render rather than once per frame: renderPlayhead
+    // runs sixty times a second and must not ask for layout.
+    this._viewWidth = this.scroll.clientWidth;
+    const total = Math.max(duration(p) + 4, this._viewWidth / this.zoom);
     this.inner.style.width = `${this.toPx(total)}px`;
 
     this._renderRuler(total);
@@ -271,13 +274,21 @@ export class TimelineUI {
 
   renderPlayhead() {
     const x = this.toPx(this.state.time);
-    this.playhead.style.left = `${x}px`;
+    // Reads before writes: `left` used to be written and the scroll metrics
+    // read straight after, which made the browser lay the timeline out again
+    // on every frame of playback. The head now moves by transform, which
+    // never invalidates layout, and the scroll position is read first.
+    const view = this.scroll;
+    const left = view.scrollLeft, width = this._viewWidth || (this._viewWidth = view.clientWidth);
+    if (this._playheadX !== x) {
+      this._playheadX = x;
+      this.playhead.style.transform = `translateX(${x}px)`;
+    }
     // Keep the playhead on screen while playing, without fighting a user who
     // is scrolling somewhere else on purpose.
     if (this.state.playing && !this._userScrolling) {
-      const view = this.scroll;
-      if (x < view.scrollLeft + 40 || x > view.scrollLeft + view.clientWidth - 60) {
-        view.scrollLeft = Math.max(0, x - view.clientWidth * 0.35);
+      if (x < left + 40 || x > left + width - 60) {
+        view.scrollLeft = Math.max(0, x - width * 0.35);
       }
     }
   }
