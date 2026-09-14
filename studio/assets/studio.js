@@ -289,7 +289,10 @@ function initPricing() {
       ['Everything in Creator', 1],
       ['Unlimited AI editing', 1],
       ['Apple ProRes and DNxHR on desktop', 1],
-      ['Project sync across 10 devices', 1],
+      /* Two claims, and only one of them is true today: the licence really does
+         cover ten devices, and the projects on them do not sync yet. */
+      ['Use it on 10 devices', 1],
+      ['Project sync between them — building', 2],
       ['Custom LUT slots, unlimited', 1],
       ['Scopes and the full colour panel', 1],
       ['Every future update included, free', 1],
@@ -408,7 +411,7 @@ const COMPARE = [
   ['Mixing, fades, volume curves', true, true, true],
   ['Ducking under voice', true, true, true],
   ['Waveforms &amp; beat detection', true, true, true],
-  ['Creative audio filters (underwater, radio…)', '13', 'All 17', 'All 17'],
+  ['Creative audio filters (underwater, radio…)', '136 of 148', 'All 148', 'All 148'],
   ['Noise reduction, hum and click repair', false, true, true],
   ['Automatic level matching', false, true, true],
 
@@ -428,7 +431,10 @@ const COMPARE = [
   ['Autosave &amp; crash recovery', true, true, true],
   ['People on the licence', '1', '1', '1'],
   ['Devices per licence', '2', '3', '10'],
-  ['Project sync across devices', false, false, true],
+  /* Not built: the entitlement exists and nothing reads it, and the trust page
+     says out loud that projects do not sync yet. A tick here against that is
+     the kind of contradiction the trust page exists to prevent. */
+  ['Project sync across devices', false, false, 'Building'],
   ['Brand kit (fonts, colours, logo)', false, true, true],
   ['Future updates included', true, true, true],
   ['How you pay', 'Free', 'Once', 'Once'],

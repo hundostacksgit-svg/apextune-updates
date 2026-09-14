@@ -289,8 +289,28 @@ export function plan(prompt, context) {
    * else — treating it as a style request is exactly the behaviour that made
    * the assistant feel like it only followed premade lines.
    */
+  /*
+   * ...and it must be an instruction rather than a brief.
+   *
+   * readInstructions says what it could not follow, and it says nothing at all
+   * for "make a 20 second phonk edit, cut on the beat, speed lines on the drops
+   * and a VHS look": it comes back as one change to one clip, with the style,
+   * the length, the look and both effects quietly dropped. So count what the
+   * sentence actually asked for. When the direct parse covers fewer of those
+   * than the sentence names, it has not understood the sentence — it has found
+   * one phrase in it, and the edit belongs to the montage or the style path.
+   *
+   * A matched style is deliberately not one of the things counted. A tag list
+   * is a loose thing — "clean up the audio" matches a template on the word
+   * "clean" — and counting it would send a one-line instruction off to build a
+   * whole edit, which is the failure this rule exists to prevent.
+   */
+  const asks = [intent.targetDur, intent.ratio, intent.look, intent.musicStyle,
+    intent.beatSync, intent.captions, intent.speed, intent.animator, intent.expression,
+    intent.transition, intent.title || intent.hook, intent.removeSilence, intent.fixAudio,
+    intent.effects.length ? 'effects' : null, intent.shapes.length ? 'shapes' : null].filter(Boolean).length;
   const direct = readInstructions(prompt, { clipCount: onTimeline });
-  if (direct && onTimeline > 0) {
+  if (direct && onTimeline > 0 && direct.steps.length >= asks) {
     return {
       intent, steps: direct.steps,
       warnings: direct.unhandled.length

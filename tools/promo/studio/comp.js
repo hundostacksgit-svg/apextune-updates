@@ -60,8 +60,18 @@ function keyAt(keys, l, fields) {
 }
 const CURSOR_SVG = '<svg viewBox="0 0 24 24" width="56" height="56"><path d="M5 3l14 8.2-6.3 1.3 3.6 7.2-2.7 1.3-3.6-7.3L5 17.4z" fill="#fff" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/></svg>';
 
-/* ---------------------------------------------------------------- music */
-const music = await fetch(`${A}/music/${spec.music}.json`).then((r) => r.json()).catch(() => ({ bpm: 120, beats: [] }));
+/* ---------------------------------------------------------------- music, or a voice */
+/*
+ * A narrated tour has no music and takes its timing from the speech instead:
+ * voice.mjs says each line, measures it, and writes the start and length of
+ * every scene here. The picture then holds for exactly as long as the
+ * sentence about it, which is the whole reason these read like a tour rather
+ * than a slideshow with a voice laid over it.
+ */
+const VOICE = spec.voice ? await fetch(`${A}/voice/${spec.id}.json`).then((r) => r.json()).catch(() => null) : null;
+const music = spec.music
+  ? await fetch(`${A}/music/${spec.music}.json`).then((r) => r.json()).catch(() => ({ bpm: 120, beats: [] }))
+  : { bpm: 120, beats: [] };
 /* The audio-repair scene draws measurements, not a drawing of measurements:
    this file is written by running the app's own audio-repair.js over a
    deliberately awful recording. Missing is fine — no scene needs it. */
@@ -71,6 +81,9 @@ const BEAT = 60 / BPM;
 const BEATS = music.beats && music.beats.length ? music.beats : Array.from({ length: 600 }, (_, i) => i * BEAT);
 let pulseNow = 0;
 function pulseAt(t) {
+  /* Nothing is playing, so nothing pulses. Scenes that scale on the beat sit
+     still instead of throbbing to a track that is not there. */
+  if (!spec.music) return 0;
   let last = -Infinity;
   for (const b of BEATS) { if (b <= t + 1e-6) last = b; else break; }
   return Math.exp(-5 * ((t - last) / BEAT));
@@ -79,12 +92,14 @@ function pulseAt(t) {
 /* ---------------------------------------------------------------- timing */
 let at = 0;
 const scenes = (spec.scenes || []).map((s, index) => {
-  const dur = s.dur ?? (s.beats ?? 4) * BEAT;
-  const o = { ...s, index, start: at, dur };
-  at += dur;
+  const line = VOICE?.lines?.[index];
+  const dur = line ? line.dur : (s.dur ?? (s.beats ?? 4) * BEAT);
+  const o = { ...s, index, start: line ? line.start : at, dur };
+  at = o.start + dur;
   return o;
 });
-window.DURATION = at;
+/* The tail after the last word, so the end card is not cut off mid-breath. */
+window.DURATION = VOICE ? VOICE.total : at;
 
 /* ---------------------------------------------------------------- ground + chrome */
 const bg = el('div', null, '<div class="blob a"></div><div class="blob b"></div><div class="vignette"></div>');
@@ -94,6 +109,10 @@ const layer = el('div');
 const flash = el('div'); flash.id = 'flash';
 const cap = el('div'); cap.id = 'cap'; const capBox = el('div', 'box'); cap.appendChild(capBox);
 const wm = el('div', null, `<img src="${A}/mark.svg" alt=""><span><b>omnidx</b>.net</span>`); wm.id = 'wm';
+/* A small mark in the top-left rather than the banner across the top: it has
+   to be readable for a minute without sitting on the picture, and the top
+   left is the one corner TikTok puts nothing of its own in. */
+if (spec.wm === 'corner') wm.classList.add('corner');
 stage.append(bg, layer, flash, cap, wm);
 if (spec.noWatermark) wm.style.display = 'none';
 
@@ -152,9 +171,11 @@ const BUILD = {
       tag = el('div', 'tag', s.tag); root.appendChild(tag);
       /* Above the frame when there is room under the watermark; otherwise beside
          a phone, or in the frame's top-right corner — never below, where the
-         caption lives. */
+         caption lives. A corner watermark is a small pill in the top-left, so
+         the middle of that band is free and the tag can sit above the frame
+         rather than on top of the editor's own chrome. */
       const above = box.top - 84;
-      const wmBottom = FMT === 'yt' ? 0 : (FMT === 'feed' ? 170 : 300);
+      const wmBottom = FMT === 'yt' || spec.wm === 'corner' ? 0 : (FMT === 'feed' ? 170 : 300);
       if (above > wmBottom) tag.style.top = `${above}px`;
       else if (s.frame === 'phone') { tag.style.top = `${box.top + 24}px`; tag.style.left = `calc(50% + ${box.sw / 2 + box.pad + 18}px)`; tag.style.transform = 'none'; tag.style.fontSize = '24px'; tag.style.padding = '9px 18px'; }
       else { tag.style.top = `${box.top + box.pad + 16}px`; tag.style.left = 'auto'; tag.style.right = `${(W - box.sw) / 2 + 4}px`; tag.style.transform = 'none'; }
@@ -483,6 +504,25 @@ const built = scenes.map((s) => {
   return { s, ...b };
 });
 
+/*
+ * A caption that wraps to a second line grows upwards, and the app frame above
+ * it has a fixed bottom edge — so a long caption lands on top of the editor.
+ * Shrink it until it is one line instead of policing the copy: at the floor it
+ * is still the biggest thing on screen, and a caption that already fits keeps
+ * the size it has always had, so nothing else in the set moves.
+ *
+ * offsetHeight, not the bounding rect: the caption is mid-pop when this runs
+ * and a scale transform would report a height that has nothing to do with the
+ * text.
+ */
+const CAP_MAX = 58, CAP_MIN = 42;
+function fitCaption() {
+  for (let size = CAP_MAX; ; size -= 2) {
+    capBox.style.fontSize = `${size}px`;
+    if (size <= CAP_MIN || capBox.offsetHeight <= size * 1.15 + 56) return;
+  }
+}
+
 /* ---------------------------------------------------------------- the frame */
 let current = null, capKey = null, capAt = 0;
 window.seek = function seek(t) {
@@ -501,7 +541,7 @@ window.seek = function seek(t) {
   let text = s.cap || null, since = 0;
   if (s.caps) for (const [b, tx] of s.caps) if (l >= b * BEAT) { text = tx; since = b * BEAT; }
   const key = `${s.index}:${text}`;
-  if (key !== capKey) { capKey = key; capAt = since; capBox.innerHTML = text || ''; }
+  if (key !== capKey) { capKey = key; capAt = since; capBox.innerHTML = text || ''; fitCaption(); }
   if (text) { cap.style.display = ''; pop(capBox, prog(l, capAt, capAt + 0.28), { y: 24, from: 0.85 }); }
   else cap.style.display = 'none';
 };

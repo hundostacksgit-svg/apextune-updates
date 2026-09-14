@@ -507,6 +507,29 @@ export const TEMPLATE_GROUPS_ALL = TEMPLATES.reduce((acc, t) => {
 
 export const TEMPLATE_BY_ID = Object.fromEntries(TEMPLATES.map((t) => [t.id, t]));
 
+/*
+ * Words that name the material, not a style.
+ *
+ * Tag lists are written one template at a time and nobody checks them against
+ * the rest, so a single generic word makes every sentence about editing match
+ * a style nobody asked for — "mute clip 2" came back as a gaming montage on
+ * the strength of the word "clip". These never score.
+ */
+const GENERIC_TAGS = new Set(['clip', 'clips', 'video', 'videos', 'shot', 'shots', 'footage', 'cut', 'cuts', 'timeline']);
+
+/* Word-boundary tests, built once. A tag has to be a word in the sentence: on
+   a plain substring, "ad" matches inside "add a wiggle to the title" and the
+   whole sentence becomes a product advert. */
+const TAG_RE = new Map();
+function saysTag(s, tag) {
+  let re = TAG_RE.get(tag);
+  if (!re) {
+    re = new RegExp(`(^|[^a-z0-9])${tag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^a-z0-9])`, 'i');
+    TAG_RE.set(tag, re);
+  }
+  return re.test(s);
+}
+
 /**
  * Which template best matches a phrase.
  *
@@ -520,12 +543,16 @@ export function matchTemplate(text) {
   let bestScore = 0;
   for (const template of TEMPLATES) {
     let score = 0;
-    for (const tag of template.tags) {
-      if (!s.includes(tag)) continue;
+    /* Through a Set: a variant's tags are its family's plus its own, so
+       "gaming" and "montage" appear twice on the gaming templates and used to
+       score twice — enough for "fast anime edit for my gaming clips" to come
+       back as a gaming montage. */
+    for (const tag of new Set(template.tags)) {
+      if (GENERIC_TAGS.has(tag) || !saysTag(s, tag)) continue;
       // A longer tag is a more specific match: "sync to the beat" beats "sync".
       score += 1 + tag.length / 10;
     }
-    if (s.includes(template.name.toLowerCase())) score += 5;
+    if (saysTag(s, template.name.toLowerCase())) score += 5;
     if (score > bestScore) { bestScore = score; best = template; }
   }
   return bestScore >= 1 ? { template: best, score: bestScore } : null;

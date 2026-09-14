@@ -103,12 +103,29 @@ const shot = async (page, name) => {
     await page.waitForTimeout(700);
     await shot(page, `panel-${p}`);
   }
+  /*
+   * The audio panel scrolled to the bottom. The channel strip and the loudness
+   * meter sit under the fold, so a shot of the panel's top shows the master
+   * meter and nothing a claim about EQ, dynamics or loudness could point at.
+   */
+  await page.click('#rail button[data-panel="audio"]');
+  await page.waitForTimeout(500);
+  await page.evaluate(() => { const el = document.getElementById('panel'); el.scrollTop = el.scrollHeight; });
+  await page.waitForTimeout(450);
+  await shot(page, 'panel-audio-chain');
+
   /* The AI panel with a real plan on screen: the planner runs on-device, so this is the app's own answer. */
   await page.click('#rail button[data-panel="ai"]');
   await page.waitForTimeout(500);
   await page.fill('#ai-prompt', 'Make a 20 second phonk edit, cut on the beat, speed lines on the drops and a VHS look');
   await page.click('#ai-plan');
-  await page.waitForTimeout(3500);
+  /* The plan lands in #ai-result, under the prompt and the montage chips, so a
+     shot of the panel's top is a shot of the prompt and no plan at all. Wait
+     for the steps to exist, then put them on screen. */
+  await page.waitForSelector('#ai-steps', { timeout: 30000 });
+  await page.waitForTimeout(600);
+  await page.evaluate(() => document.getElementById('ai-result')?.scrollIntoView({ block: 'center' }));
+  await page.waitForTimeout(450);
   await shot(page, 'panel-ai-plan');
   await page.click('#rail button[data-panel="media"]');
   await page.waitForTimeout(400);

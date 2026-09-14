@@ -101,6 +101,17 @@ export const ANIMATOR_WORDS = [
   [/\bjitter(s|ing|y)?\b[^.]*\b(letters|text|title)\b|\b(letters|text|title)\b[^.]*\bjitter/i, 'jitterLoop'],
 ];
 
+/*
+ * Cutting on the beat is not the beat expression.
+ *
+ * "Bounce on the beat" makes a property pulse; "cut on the beat" is where the
+ * edit lands, which beat-synced cutting does. They share four words, and the
+ * expression rule used to take both — so a whole brief ("make a 20 second
+ * phonk edit, cut on the beat, speed lines on the drops and a VHS look") came
+ * back as one expression on one clip, with nothing reported as unhandled.
+ */
+export const BEAT_CUT_WORDS = /\b(cut|cuts|cutting|sync|syncs|synced|syncing|snap|snaps|snapped|snapping|edit|edits|edited|time|timed|land|lands|landing|change|changes|switch|switches)\b[^.]{0,30}?\bon (the |every |each )?beat\b|\b(cut|cuts|cutting|sync|syncs|synced|syncing|snap|snaps|snapped|edit|edits|edited)\b[^.]{0,30}?\bto the beat\b/i;
+
 /* ---- expressions: a movement without keys, by what it does ---- */
 export const EXPRESSION_WORDS = [
   [/\bflash(es|ing)?\b[^.]*\bbeat\b|\bbeat\b[^.]*\bflash/i, 'beatOpacity'],

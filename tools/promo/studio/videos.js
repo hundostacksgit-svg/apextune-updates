@@ -31,6 +31,9 @@ const move = (a, t0, b, t1) => [{ at: t0, ...a }, { at: t1, ...b }];
 const BASE_TAGS = ['#videoediting', '#videoeditor', '#editingapp', '#nosubscription', '#contentcreator', '#fyp'];
 const tags = (...extra) => [...extra, ...BASE_TAGS].slice(0, 8);
 const END = (line, ...extra) => ({ type: 'end', beats: 10, line, tags: tags(...extra) });
+/* TikTok allows five hashtags in a caption, so the narrated tours carry five
+   and no more: four chosen for the video plus #fyp. */
+const tags5 = (...extra) => [...extra, '#fyp'].slice(0, 5);
 const PRICE_LINE = 'Free to start. <b>$19.99 once</b> for everything in Creator.';
 
 /* ---- lists that recur ---- */
@@ -45,6 +48,8 @@ const MONTAGE_ITEMS = ['Beat montage', 'Anime opening', 'Phonk', 'Velocity', 'Ci
 const FREE_ITEMS = ['Unlimited tracks', 'No watermark', '78 effects', '8 transitions', '11 edit styles', 'Titles + stickers', '1080p export', 'Works offline', 'Autosave'];
 const AUDIO_ITEMS = ['Noise reduction', 'Hum removal', 'Click repair', 'Level matching', 'Ducking under voice', 'Loudness to spec', 'EQ + dynamics', '17 creative filters'];
 const TIME_ITEMS = ['Speed ramp', 'Time remap', 'Freeze frame', 'Reverse', 'Slow-mo', 'Velocity edit', 'Posterize time', 'Stutter'];
+const MUSIC_ITEMS = [['🎤', 'Rap, trap, drill'], ['🇬🇧', 'UK drill, grime'], ['💿', 'R&B, trap soul'], ['🌍', 'Afrobeats, amapiano'],
+  ['🏝️', 'Reggaeton, dancehall'], ['🏠', 'House, techno, EDM'], ['🎸', 'Pop, indie, rock'], ['📼', 'Lo-fi, jazz hop'], ['🎬', 'Cinematic, trailer']];
 const TRACK_ITEMS = ['Titles', 'Stickers', 'Lens flare', 'Blur a face', 'Transitions', 'Callouts', 'Emoji', 'Masks'];
 /*
  * The limitations, as a video. This is the one people share: a feature list is
@@ -328,6 +333,139 @@ export const VIDEOS = [
         cap: 'then EQ, dynamics, <i>loudness to spec.</i>' },
       { type: 'end', beats: 7, line: 'Both are in Creator. Free to start, <b>$19.99 once</b>, no subscription.',
         tags: tags('#objectremoval', '#audiorepair'), bio: 'omnidx.net' },
+    ],
+  },
+
+  /* ===================================================================== *
+   * The narrated tours: no music, a voice, and a mark in the corner.
+   *
+   * A different shape from everything above. Those are twenty seconds of cuts
+   * on a beat; these are a minute of somebody showing you the thing and
+   * telling you what it is, which is what people actually watch to the end of
+   * when they are deciding whether to try software.
+   *
+   * Every scene has a `say`. voice.mjs speaks each one, measures it, and the
+   * scene holds for exactly that long — so the picture never arrives early or
+   * outstays the sentence. `cap` is the same line cut down for sound-off
+   * viewers, which is most of them.
+   *
+   * The rules the copy follows are docs/PROMOTION.md §3: no number that is not
+   * on the pricing page, nothing about transcription, and the audio repair is
+   * never called AI.
+   * ===================================================================== */
+  {
+    id: 'tour-01-what-it-is', title: 'The tour: what it actually is', voice: true, wm: 'corner', formats: ['tiktok'],
+    scenes: [
+      { type: 'hook', size: 'lg', lines: ['A VIDEO EDITOR', 'YOU BUY ONCE.'], grad: [1],
+        say: 'This is a full video editor that runs in your browser. You buy it once. Let me show you what is actually in it.',
+        cap: 'a full editor. <em>bought once.</em>' },
+      { type: 'app', shot: 'editor', box: 'wide', tag: 'the editor', view: [...hold(V.whole, 0, 2), { at: 4.5, ...V.timeline }],
+        say: 'Unlimited video and audio tracks. Trim, ripple, roll, slip and razor, the same tools a desktop editor gives you.',
+        cap: 'unlimited tracks. <i>every trim mode.</i>' },
+      { type: 'app', shot: 'editor', box: 'wide', tag: 'the viewer', view: [...hold({ cx: 0.51, cy: 0.30, w: 0.72 }, 0, 1.6), { at: 4, cx: 0.51, cy: 0.36, w: 0.5 }],
+        say: 'It plays back at sixty frames a second with the effects on, so what you see while you cut is what you get when you export.',
+        cap: '60fps playback, <em>effects on</em>' },
+      { type: 'app', shot: 'panel-effects', box: 'tall', tag: 'effects', view: [...hold(V.panel, 0, 1.8), { at: 4, ...V.panelTop }],
+        say: 'Three hundred and forty effects are built in. No plugins to buy, no packs, and every one previews on your own clip before you commit.',
+        cap: '340 effects. <em>no packs to buy.</em>' },
+      { type: 'app', shot: 'panel-color', box: 'tall', tag: 'colour', view: hold(V.panel, 0, 4),
+        say: 'The colour page has three way wheels, curves, LUTs and real scopes. A waveform, a vectorscope and an R G B parade.',
+        cap: 'wheels, curves, <i>real scopes</i>' },
+      { type: 'app', shot: 'panel-audio-chain', box: 'tall', tag: 'audio', view: [...hold({ cx: 0.13, cy: 0.44, w: 0.31 }, 0, 1.5), { at: 4, cx: 0.13, cy: 0.5, w: 0.26 }],
+        say: 'The sound side is a proper chain. E Q, dynamics, ducking under a voice, and loudness set to whatever the platform wants.',
+        cap: 'EQ, dynamics, <i>loudness to spec</i>' },
+      { type: 'app', shot: 'export', box: 'wide', tag: 'export', view: hold(V.dialog, 0, 4),
+        say: 'One edit goes out to TikTok, YouTube, Reels and Shorts at the same time, each one reframed to fit, with no watermark on any of them.',
+        cap: 'one edit → <em>four platforms</em>' },
+      { type: 'statement', lines: ['Free to start.', 'No account.'], mint: [0],
+        say: 'The free version asks you for nothing. No account, no email, no card, no download. Open the link and start cutting.',
+        cap: 'no account. no card. <em>open it and cut.</em>' },
+      { type: 'end', dur: 5.2, line: 'Free to start. <b>$19.99 once</b> for everything in Creator.', tags: tags5('#videoediting', '#videoeditor', '#nosubscription', '#capcutalternative'), bio: 'omnidx.net',
+        say: 'It is at Omni D X dot net. Free to start, nineteen ninety nine once for everything.' },
+    ],
+  },
+  {
+    id: 'tour-02-the-ai', title: 'The tour: the AI, and the two tricks', voice: true, wm: 'corner', formats: ['tiktok'],
+    scenes: [
+      { type: 'hook', size: 'lg', lines: ['I TYPED', 'ONE SENTENCE.'], grad: [1],
+        say: 'I typed one sentence into this editor and it built the whole thing. Here is exactly what it did.',
+        cap: 'one sentence. <em>a whole edit.</em>' },
+      { type: 'typing', prompt: AI_PROMPT, steps: AI_STEPS,
+        say: 'You describe the edit you want. It plans every cut, every speed ramp, every effect, and shows you the list before it touches your timeline.',
+        cap: 'it plans it. <em>you approve it.</em>' },
+      { type: 'app', shot: 'panel-ai-plan', box: 'tall', tag: 'the plan', view: hold({ cx: 0.13, cy: 0.3, w: 0.32 }, 0, 4),
+        say: 'Every step lands on the timeline as something you can drag, change or undo. Nothing is applied that you cannot see.',
+        cap: 'every step is <i>yours to change</i>' },
+      { type: 'app', shot: 'panel-ai', box: 'tall', tag: 'on your device', view: hold({ cx: 0.13, cy: 0.3, w: 0.32 }, 0, 3.5),
+        say: 'It runs on your device. Your footage is not uploaded anywhere, and it works with the wifi switched off.',
+        cap: 'runs on your device. <em>nothing uploads.</em>' },
+      { type: 'wipe', pair: 'erase', labels: ['the shot', 'the can, gone'], tap: { x: 0.199, y: 0.56, at: 1.1, label: 'tap the can' },
+        say: 'Then there is this. Tap the thing you want gone and it is gone, followed through the whole shot, with the background filled in behind it.',
+        cap: 'tap it. <em>it is gone.</em>' },
+      { type: 'sound', labels: ['straight off the phone', 'after one pass'], chips: ['60Hz hum', 'hiss', 'clicks', 'wandering level'],
+        say: 'And the sound. One pass takes out the mains hum, drops the hiss, repairs the clicks and evens out a level that wanders.',
+        cap: 'hum, hiss, clicks, level. <em>one pass.</em>' },
+      { type: 'statement', lines: ['Not a demo.', 'That is the app.'], grad: [0],
+        say: 'None of that is a mock up. That is the app, on a phone or a laptop, from a link.',
+        cap: 'that is the app. <i>from a link.</i>' },
+      { type: 'end', dur: 5.2, line: 'The AI editor, object removal and audio repair are in Creator. <b>$19.99 once</b>.', tags: tags5('#aivideoediting', '#videoeditor', '#objectremoval', '#nosubscription'), bio: 'omnidx.net',
+        say: 'Omni D X dot net. Free to start, nineteen ninety nine once.' },
+    ],
+  },
+  {
+    id: 'tour-03-whats-included', title: 'The tour: everything included', voice: true, wm: 'corner', formats: ['tiktok'],
+    scenes: [
+      { type: 'hook', size: 'lg', lines: ['EVERYTHING', 'IS INCLUDED.'], mint: [1],
+        say: 'Here is everything you get for one payment, with nothing else to buy afterwards. I will count it out.',
+        cap: 'one payment. <em>nothing else to buy.</em>' },
+      { type: 'list', count: 340, title: 'effects', items: EFFECT_ITEMS.slice(0, 14), stepBeats: 0.5,
+        say: 'Three hundred and forty effects. Motion blur, R G B split, glow, speed lines, particles, light leaks, the lot.',
+        cap: '340 effects, <em>all included</em>' },
+      { type: 'list', title: 'music, written by the app', items: MUSIC_ITEMS, stepBeats: 0.5,
+        say: 'Five hundred and forty four music tracks, and the app writes every one of them on your device. Nothing to licence, and nothing that gets claimed or muted when you upload.',
+        cap: '544 tracks. <em>never claimed.</em>' },
+      { type: 'app', shot: 'panel-sound', box: 'tall', tag: 'the music library', view: hold(V.panel, 0, 4),
+        say: 'Search them by style, mood or tempo. Rap, drill, R and B, afrobeats, house, lo-fi. Or bring your own song in from a file.',
+        cap: 'search by style, mood, tempo' },
+      { type: 'list', title: 'text animators', items: ANIMATOR_ITEMS.slice(0, 10), stepBeats: 0.45,
+        say: 'Forty nine text styles with animators that run per character. Typewriter, rise, blur in, bounce on the beat.',
+        cap: '49 styles, <i>per character</i>' },
+      { type: 'list', big: true, title: 'expressions', items: EXPRESSION_ITEMS, stepBeats: 0.4,
+        say: 'After Effects style expressions, one click each. Wiggle, loop, react to the music, settle with inertia.',
+        cap: 'expressions, <em>one click each</em>' },
+      { type: 'list', title: 'export presets', items: PLATFORM_ITEMS, stepBeats: 0.5,
+        say: 'Export presets for every platform with the safe zones built in, up to four K at sixty, and no watermark on any tier including the free one.',
+        cap: '4K 60. <em>no watermark, ever.</em>' },
+      { type: 'price', ours: { checks: ['No subscription. Ever.', 'Every update free, forever.', 'Every device you own.'] },
+        say: 'All of it for nineteen ninety nine, once. Not a month. Once.',
+        cap: '$19.99. <em>once.</em>' },
+      { type: 'end', dur: 5.2, line: 'Everything above is in Creator, <b>$19.99 once</b>. Free version forever.', tags: tags5('#videoeditor', '#contentcreator', '#onetimepurchase', '#editingapp'), bio: 'omnidx.net',
+        say: 'Omni D X dot net. There is a free version and it never expires.' },
+    ],
+  },
+  {
+    id: 'tour-04-no-subscription', title: 'The tour: why there is no subscription', voice: true, wm: 'corner', formats: ['tiktok'],
+    scenes: [
+      { type: 'hook', size: 'lg', lines: ['THERE IS NO', 'SUBSCRIPTION.'], grad: [1],
+        say: 'There is no subscription. Not a cheap one, not a hidden one. I want to explain exactly how this is priced, because you should be suspicious.',
+        cap: 'no subscription. <em>at all.</em>' },
+      { type: 'price', other: { name: 'a subscription editor', price: 22.99, years: 5, note: 'and you still own nothing' }, ours: { checks: ['You own it', 'Every device', 'Every update'] },
+        say: 'Five years of a subscription editor is about thirteen hundred dollars, and at the end of it you own nothing. This is nineteen ninety nine, once.',
+        cap: 'five years: <em>$1,379</em> vs <em>$19.99</em>' },
+      { type: 'list', title: 'in the free version', items: FREE_ITEMS, stepBeats: 0.5,
+        say: 'The free version is not a trial. Unlimited tracks, seventy eight effects, titles, ten eighty p export, and no watermark. It does not expire.',
+        cap: 'not a trial. <em>the free one.</em>' },
+      { type: 'statement', lines: ['Every update free.', 'No version 2.'], mint: [0],
+        say: 'Every update after you buy it is free, forever. There is no version two and no upgrade fee. That is a promise about what I will never charge you for.',
+        cap: 'every update free. <i>no version 2.</i>' },
+      { type: 'list', title: "what it can't do", items: CANT_ITEMS, stepBeats: 0.55,
+        say: 'And here is what it cannot do, because a feature list is an advert. No stabilisation. No generative video. Captions do not type the words for you yet.',
+        cap: 'the honest list. <em>before you pay.</em>' },
+      { type: 'app', shot: 'editor', box: 'wide', tag: 'check it yourself', view: [...hold(V.whole, 0, 1.6), { at: 4, ...V.timeline }],
+        say: 'You do not have to believe any of this. Open it, turn your wifi off, and keep editing. Then decide.',
+        cap: 'turn your wifi off. <em>keep editing.</em>' },
+      { type: 'end', dur: 5.6, line: 'Everything it can\'t do is at <b>omnidx.net/studio/trust</b>. Free to start, <b>$19.99 once</b>.', tags: tags5('#nosubscription', '#onetimepurchase', '#videoeditor', '#honestreview'), bio: 'omnidx.net',
+        say: 'The full list is on the site at Omni D X dot net, before you pay rather than after.' },
     ],
   },
 

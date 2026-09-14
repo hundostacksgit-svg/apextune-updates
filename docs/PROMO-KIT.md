@@ -21,6 +21,7 @@ device, and features the subscription editors do not have.**
 | Where | Files | Size |
 |---|---|---|
 | TikTok / Reels / Shorts | `out/tiktok/01-…22-*.mp4` | 1080x1920, 17–27 s, 30 fps, beat underneath |
+| Narrated tours | `out/tiktok/tour-01…04-*.mp4` | 1080x1920, 53–69 s, 30 fps, spoken, no music |
 | YouTube | `out/yt/yt-showcase.mp4` | 1920x1080, 83 s |
 | YouTube thumbnail | `out/stills/yt-thumb.png` | 1280x720 |
 | Instagram feed | `out/stills/feed-01…06-*.png` | 1080x1350 |
@@ -44,7 +45,15 @@ to licence and nothing TikTok can mute.
 
 ## Voice-over
 
-The videos have no spoken track — on purpose. TikTok's built-in text-to-speech
+Two kinds of video are in this pack, and they treat the voice differently.
+
+The **four narrated tours** (`tour-01` … `tour-04`) already carry a spoken
+track: a male voice, no music under it, timed so every scene lasts exactly as
+long as the line that goes with it. Upload those as they are — do not add
+TikTok's reader on top, and do not put a track under them. They are the long
+ones, and the section below explains when to post them.
+
+Everything else has no spoken track — on purpose. TikTok's built-in text-to-speech
 is free, sounds native to the platform, and gets the video into the
 "has a voice" ranking bucket. Each video below has a script sized to its
 length. To add it:
@@ -109,6 +118,110 @@ further slot is better spent on whichever of them worked than on a new one.
 After day 22, re-post the three best performers with a new first line, and
 keep making them: the generator is in the repo, and a new video is a new
 entry in `videos.js`.
+
+---
+
+## The narrated tours
+
+Four long ones, 53–69 seconds each, with a male voice over them and **no music
+at all**. They exist for the half of the audience the short videos do not
+reach: people who are not looking for a hook, they are trying to decide whether
+this is real. A tour holds them by talking through the app the way a person
+would demo it, not by cutting on a beat.
+
+**Post them as they are.** The voice is already in the file. Do not add
+TikTok's text-to-speech on top of it, do not lay a track under it, and do not
+trim the end card — the address is read out and shown at the same time, which
+is when people actually type it in.
+
+**What they have in common**
+- A small **omnidx.net sticker in the top-left corner of every frame**, from
+  the first frame to the last, so a screen-recorded repost still carries the
+  address.
+- A sound-off caption at the bottom of every scene, because most of the first
+  watch is muted.
+- The end card with the logo, `omnidx.net`, the price and the hashtags.
+- **Exactly five hashtags** in each caption, which is TikTok's limit for a
+  caption that still reads as a sentence rather than a tag dump.
+
+**About the voice.** It is a neural text-to-speech voice running on the machine
+that renders the videos — no licence, no per-word cost, and the same script
+always produces the same take, so a script fix is a re-render rather than a
+re-record. It is a synthetic voice and this kit says so; what it is not is the
+platform reader everyone recognises. If someone asks in the comments, the
+honest answer is short: *"synthetic voice, the editor is real — open it and
+see."* Swapping it for your own recording is one command: record over
+`tools/promo/studio/voice.mjs`'s output and re-render.
+
+**Where they go in the schedule.** Post one tour a week, on the day after a
+short video did well, and pin the one that gets the most comments. `tour-04`
+is the one to pin on a new account — it is the one that answers the
+"this is a scam" reflex before anyone has to ask.
+
+---
+
+### T1 · What it actually is — `tour-01-what-it-is.mp4` · 68 s
+The whole app, top to bottom. Hook → the editor and its timeline → the viewer
+with the transport and the 9:16 preset on screen → the effects panel → colour
+→ the audio chain (repair, 148 filters, ducking, channel strip, loudness) →
+the export dialog → "Free to start. No account." → end card.
+
+**Caption**
+> a full video editor that runs in your browser. unlimited tracks, every trim mode, 340 effects, colour wheels and scopes, a real audio chain, and one export that goes to every platform 🎬 free version has no watermark and no account. omnidx.net
+> #videoediting #videoeditor #nosubscription #capcutalternative #fyp
+
+**What the voice says**
+> This is a full video editor that runs in your browser. You buy it once. Let me show you what is actually in it. Unlimited video and audio tracks. Trim, ripple, roll, slip and razor, the same tools a desktop editor gives you. It plays back at sixty frames a second with the effects on, so what you see while you cut is what you get when you export. Three hundred and forty effects are built in. No plugins to buy, no packs, and every one previews on your own clip before you commit. The colour page has three way wheels, curves, LUTs and real scopes. A waveform, a vectorscope and an RGB parade. The sound side is a proper chain. EQ, dynamics, ducking under a voice, and loudness set to whatever the platform wants. One edit goes out to TikTok, YouTube, Reels and Shorts at the same time, each one reframed to fit, with no watermark on any of them. The free version asks you for nothing. No account, no email, no card, no download. Open the link and start cutting. It is at omnidx dot net. Free to start, nineteen ninety nine once for everything.
+
+---
+
+### T2 · The AI, and the two tricks — `tour-02-the-ai.mp4` · 53 s
+The three things people do not believe. Hook → a sentence being typed and the
+plan being built from it, step by step → the real AI panel with that plan on
+screen → "runs on your device" → a tap on a can and a wipe to the same frame
+without it → a dirty waveform and the same three seconds after one repair pass
+→ "Not a demo. That is the app." → end card.
+
+**Caption**
+> i typed one sentence and it planned every cut, every ramp, every effect — then showed me the list before touching the timeline 🤖 it runs on your device, so nothing uploads. then: tap an object, it's gone. one pass on the audio, hum and hiss gone. omnidx.net
+> #aivideoediting #videoeditor #objectremoval #nosubscription #fyp
+
+**What the voice says**
+> I typed one sentence into this editor and it built the whole thing. Here is exactly what it did. You describe the edit you want. It plans every cut, every speed ramp, every effect, and shows you the list before it touches your timeline. Every step lands on the timeline as something you can drag, change or undo. Nothing is applied that you cannot see. It runs on your device. Your footage is not uploaded anywhere, and it works with the wifi switched off. Then there is this. Tap the thing you want gone and it is gone, followed through the whole shot, with the background filled in behind it. And the sound. One pass takes out the mains hum, drops the hiss, repairs the clicks and evens out a level that wanders. None of that is a mock up. That is the app, on a phone or a laptop, from a link. omnidx dot net. Free to start, nineteen ninety nine once.
+
+**Note on the wipe and the waveform.** Both are the app's own output, produced
+by `tools/promo/studio/pairs.mjs`, which refuses to write a pair that would
+mislead. If anyone asks, that is the answer — and the free version lets them
+check the eraser without an account.
+
+---
+
+### T3 · Everything that is included — `tour-03-whats-included.mp4` · 69 s
+The counting video. Hook → 340 effects landing one by one → 544 music tracks by
+genre → the sound panel, searchable by style, mood and tempo → text animators →
+expressions → export presets → "$19.99. Once." → end card.
+
+**Caption**
+> everything included for one payment: 340 effects, 544 music tracks the app writes itself (so nothing gets claimed), 49 text styles with per-character animators, expressions, 4K 60 export with no watermark 🧾 $19.99 once, not a month. omnidx.net
+> #videoeditor #contentcreator #onetimepurchase #editingapp #fyp
+
+**What the voice says**
+> Here is everything you get for one payment, with nothing else to buy afterwards. I will count it out. Three hundred and forty effects. Motion blur, RGB split, glow, speed lines, particles, light leaks, the lot. Five hundred and forty four music tracks, and the app writes every one of them on your device. Nothing to licence, and nothing that gets claimed or muted when you upload. Search them by style, mood or tempo. Rap, drill, R and B, afrobeats, house, lo-fi. Or bring your own song in from a file. Forty nine text styles with animators that run per character. Typewriter, rise, blur in, bounce on the beat. After Effects style expressions, one click each. Wiggle, loop, react to the music, settle with inertia. Export presets for every platform with the safe zones built in, up to four K at sixty, and no watermark on any tier including the free one. All of it for nineteen ninety nine, once. Not a month. Once. omnidx dot net. There is a free version and it never expires.
+
+---
+
+### T4 · Why there is no subscription — `tour-04-no-subscription.mp4` · 57 s
+The trust one, and the one to pin. Hook → five years of a subscription against
+one payment → what the free version has → "Every update free. No version 2." →
+**what it cannot do**, in full → "Open it, turn your wifi off, keep editing" →
+end card pointing at `omnidx.net/studio/trust`.
+
+**Caption**
+> no subscription. not a cheap one, not a hidden one. five years of a subscription editor is $1,379 and you still own nothing — this is $19.99 once, every update after it free 🫡 and the list of what it can't do is on the site before you pay. omnidx.net
+> #nosubscription #onetimepurchase #videoeditor #honestreview #fyp
+
+**What the voice says**
+> There is no subscription. Not a cheap one, not a hidden one. I want to explain exactly how this is priced, because you should be suspicious. Five years of a subscription editor is about thirteen hundred dollars, and at the end of it you own nothing. This is nineteen ninety nine, once. The free version is not a trial. Unlimited tracks, seventy eight effects, titles, ten eighty p export, and no watermark. It does not expire. Every update after you buy it is free, forever. There is no version two and no upgrade fee. That is a promise about what I will never charge you for. And here is what it cannot do, because a feature list is an advert. No stabilisation. No generative video. Captions do not type the words for you yet. You do not have to believe any of this. Open it, turn your wifi off, and keep editing. Then decide. The full list is on the site at omnidx dot net, before you pay rather than after.
 
 ---
 

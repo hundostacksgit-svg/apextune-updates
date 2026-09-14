@@ -94,14 +94,29 @@ async function renderVideo(spec, fmt) {
   const { ctx, page, cdp, duration } = await openComp(spec.id, fmt);
   const dir = path.join(OUT, fmt); fs.mkdirSync(dir, { recursive: true });
   const out = path.join(dir, `${spec.id}.mp4`);
-  const wav = path.join(ASSETS, 'music', `${spec.music}.wav`);
+  /*
+   * A tour is narrated and has no music; everything else has music and no
+   * narration. The voice is not faded out at the end — a fade over the last
+   * second of a sentence sounds like the upload broke.
+   */
+  const wav = spec.voice
+    ? path.join(ASSETS, 'voice', `${spec.id}.wav`)
+    : path.join(ASSETS, 'music', `${spec.music}.wav`);
+  if (!fs.existsSync(wav)) {
+    throw new Error(spec.voice
+      ? `No narration for ${spec.id}. Run voice.mjs first.`
+      : `No music track ${spec.music} for ${spec.id}.`);
+  }
   const total = Math.round(duration * FPS);
   const fade = Math.min(1.2, duration / 4);
+  const audio = spec.voice
+    ? `[1:a]atrim=0:${duration.toFixed(3)},afade=t=in:st=0:d=0.04,volume=1.0[a]`
+    : `[1:a]atrim=0:${duration.toFixed(3)},afade=t=in:st=0:d=0.05,afade=t=out:st=${(duration - fade).toFixed(3)}:d=${fade.toFixed(3)},volume=0.9[a]`;
   const ff = spawn(FFMPEG, [
     '-y', '-loglevel', 'error',
     '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-',
     '-i', wav,
-    '-filter_complex', `[1:a]atrim=0:${duration.toFixed(3)},afade=t=in:st=0:d=0.05,afade=t=out:st=${(duration - fade).toFixed(3)}:d=${fade.toFixed(3)},volume=0.9[a]`,
+    '-filter_complex', audio,
     '-map', '0:v', '-map', '[a]',
     '-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p', '-r', String(FPS),
     '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', out,

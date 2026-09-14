@@ -1,8 +1,9 @@
 # OmniDx Studio promo videos
 
-Twenty-two TikTok videos, an 80-second YouTube tour, six Instagram feed posts
-and a YouTube thumbnail, rendered from the real editor with no stock footage,
-no licensed music and no screen recording. What to post with each one — captions,
+Twenty-two short TikTok videos, four narrated one-minute tours, an 80-second
+YouTube tour, six Instagram feed posts and a YouTube thumbnail, rendered from
+the real editor with no stock footage, no licensed music and no screen
+recording. What to post with each one — captions,
 hashtags, voice-over scripts, the schedule — is in `docs/PROMO-KIT.md`.
 
 ## Rebuild everything
@@ -15,6 +16,8 @@ node tools/promo/studio/music.mjs               # beats from the app's own beatm
 node tools/promo/studio/footage.mjs             # five drawn clips for the editor to hold
 node tools/promo/studio/shots.mjs               # screenshots of the editor with those clips, every panel, 2x
 node tools/promo/studio/pairs.mjs               # the before/after pairs, made by running the app's own engines
+PIPER=/usr/local/bin/piper VOICE=/path/en-us-ryan-high.onnx \
+  node tools/promo/studio/voice.mjs             # the narration for the tours, and the timing they take from it
 node tools/promo/studio/render.mjs --fmt tiktok --video all --jobs 2 --out $PROMO_ASSETS/out
 node tools/promo/studio/render.mjs --fmt yt --video yt-showcase --out $PROMO_ASSETS/out
 node tools/promo/studio/render.mjs --stills --out $PROMO_ASSETS/out
@@ -39,12 +42,35 @@ minute; the whole set in under half an hour.
 - `render.mjs` — opens the composition in headless Chromium, asks for each
   frame by time, pipes the JPEGs straight into ffmpeg with the beat muxed
   under it. `--frame 4.2 --video <id>` writes one PNG to check a moment.
+- `voice.mjs` — the narration for the videos marked `voice: true`. Speaks each
+  scene's `say` line with Piper, measures it, and writes
+  `$PROMO_ASSETS/voice/<id>.wav` plus a `<id>.json` of per-scene start times.
+  Lines are placed at their own start rather than joined end to end, so
+  re-recording one line cannot drift the rest.
 - `shots.mjs`, `footage.mjs`, `pairs.mjs`, `music.mjs`, `fonts.mjs` — make the
   inputs.
 
 Scene durations are in beats of the chosen track, so cuts land on the music.
 The app-scene coordinates are fractions of the screenshot, measured from a
 1600x1000 capture; re-shooting at that size keeps them valid.
+
+## The narrated tours
+
+A video with `voice: true` has no music and no beat grid. Its scene durations
+come out of `voice/<id>.json` instead: the line is spoken first, measured, and
+the scene it belongs to lasts exactly that long plus a short pause. So the
+picture follows the voice — editing a `say` line and re-running `voice.mjs`
+re-times the video by itself, and nothing has to be counted by hand. A scene
+with its own `dur` uses that as a floor, which is how the end card stays up
+long enough for the address to be read rather than just said.
+
+`wm: 'corner'` puts the watermark in a small pill in the top-left instead of
+under the middle of the frame, so it survives a screen-recorded repost without
+sitting in the middle of the picture.
+
+The voice is a neural TTS model running locally — no key, no request, and the
+same script always produces the same take. `VOICE` points at the `.onnx`;
+`PIPER` at the binary.
 
 ## Changing a video
 

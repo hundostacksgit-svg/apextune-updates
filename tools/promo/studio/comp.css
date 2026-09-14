@@ -50,6 +50,13 @@ img { display: block; }
 #wm img { width: 66px; height: 66px; }
 #wm span { font-weight: 800; font-size: 46px; letter-spacing: -.02em; color: #fff; }
 #wm span b { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+/* The corner mark, for the narrated tours: small enough to leave a minute of
+   picture alone, solid enough to survive a re-upload and a crop. */
+#wm.corner { left: 40px; top: 54px; transform: none; gap: 11px; padding: 9px 20px 9px 11px; border-radius: 999px;
+  background: rgba(5,8,16,.6); border: 2px solid rgba(255,255,255,.14); box-shadow: 0 6px 22px rgba(0,0,0,.4); }
+#wm.corner img { width: 40px; height: 40px; }
+#wm.corner span { font-size: 27px; }
+.fmt-yt #wm.corner { left: 44px; top: 44px; }
 
 /* ---- the caption: the words a person reads with the sound off ---- */
 #cap { position: absolute; left: 60px; right: 60px; bottom: 470px; display: flex; justify-content: center; pointer-events: none; }

@@ -38,7 +38,23 @@ const ORDINALS = {
  */
 
 import { EFFECT_WORDS, SHAPE_WORDS, ANIMATOR_WORDS, EXPRESSION_WORDS, NULL_WORDS, PARENT_WORDS,
-  MUSIC_WORDS, MUSIC_ASK, AUDIO_FIX_WORDS, BG_REMOVE_WORDS, repairOptions, firstMatch } from './vocabulary.js';
+  MUSIC_WORDS, MUSIC_ASK, AUDIO_FIX_WORDS, BG_REMOVE_WORDS, BEAT_CUT_WORDS, repairOptions, firstMatch } from './vocabulary.js';
+
+/*
+ * The expression the sentence asks for, or nothing.
+ *
+ * One place rather than two, because the rule's test and its build have to
+ * agree: a test that matches and a build that returns something else is a step
+ * nobody asked for. The beat expression is the case — "cut on the beat" says
+ * where the cuts land, not that a property should pulse, and beat-synced
+ * cutting handles it.
+ */
+function expressionHit(s) {
+  const hit = firstMatch(EXPRESSION_WORDS, s);
+  if (!hit) return null;
+  if ((hit[1] === 'beat' || hit[1] === 'beatOpacity') && BEAT_CUT_WORDS.test(s)) return null;
+  return hit;
+}
 
 export function parseTarget(text) {
   const s = ` ${String(text || '').toLowerCase()} `;
@@ -177,9 +193,9 @@ const RULES = [
   },
   {
     id: 'expression',
-    test: (s) => Boolean(firstMatch(EXPRESSION_WORDS, s)),
+    test: (s) => Boolean(expressionHit(s)),
     build: (s, target) => {
-      const hit = firstMatch(EXPRESSION_WORDS, s);
+      const hit = expressionHit(s);
       return { op: 'addExpression', args: { target, preset: hit[1] },
         label: `${hit[1].replace(/([A-Z])/g, ' $1').toLowerCase().trim()} on ${describe(target)}`, detail: 'An expression, not keyframes: it runs for the whole clip.' };
     },
