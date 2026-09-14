@@ -377,7 +377,9 @@ export const VIDEOS = [
         say: 'Three hundred and forty effects are built in. No plugins to buy, no packs, and every one previews on your own clip before you commit.',
         cap: '340 effects. <em>no packs to buy.</em>' },
       { type: 'app', shot: 'panel-color', box: 'tall', tag: 'colour', view: hold(V.panel, 0, 4), spotBelow: true,
-        spots: [{ at: 1.1, on: 'scope', label: 'waveform · vectorscope · parade' }],
+        /* The label clears before the cursor gets there: the pointer on a mint
+           pill is a pointer nobody can see. */
+        spots: [{ at: 1.1, until: 3.8, on: 'scope', label: 'waveform · vectorscope · parade' }],
         cursor: [{ at: 3.4, x: 0.22, y: 0.46 }, { at: 4.4, on: 'looks' }, { at: 4.9, on: 'looks', click: true }],
         say: 'The colour page has three way wheels, curves, LUTs and real scopes. A waveform, a vectorscope and an R G B parade.',
         cap: 'wheels, curves, <i>real scopes</i>' },

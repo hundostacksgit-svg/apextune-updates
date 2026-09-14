@@ -247,7 +247,11 @@ const BUILD = {
       for (const sp of spots) if (l >= sp.at && (sp.until == null || l < sp.until)) shown = sp;
       if (shown) {
         const p = prog(l, shown.at, shown.at + 0.35);
-        spot.style.opacity = p;
+        /* A spotlight with an `until` fades out rather than vanishing: cutting
+           it to nothing on one frame reads as a dropped frame, not as a label
+           that has finished saying its piece. */
+        const out = shown.until == null ? 1 : 1 - prog(l, shown.until - 0.35, shown.until);
+        spot.style.opacity = p * out;
         spot.style.left = `${px(shown.x)}px`; spot.style.top = `${py(shown.y)}px`;
         spot.style.width = `${shown.w * imgW}px`; spot.style.height = `${shown.h * imgH}px`;
         spot.style.transform = `scale(${lerp(1.12, 1, outCubic(p))})`;
