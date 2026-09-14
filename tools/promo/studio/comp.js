@@ -76,6 +76,13 @@ const music = spec.music
    this file is written by running the app's own audio-repair.js over a
    deliberately awful recording. Missing is fine — no scene needs it. */
 const AUDIO = await fetch(`${A}/audio-repair.json`).then((r) => r.json()).catch(() => null);
+/*
+ * Where the controls are in each screenshot, measured by shots.mjs at the
+ * instant it took them. A scene says `on: 'plan'` and the cursor goes to the
+ * middle of the thing that was actually on screen — so a layout change moves
+ * the cursor with it instead of leaving it pointing at empty chrome.
+ */
+const MARKS = await fetch(`${A}/shots/shots.json`).then((r) => r.json()).catch(() => ({}));
 const BPM = music.bpm || 120;
 const BEAT = 60 / BPM;
 const BEATS = music.beats && music.beats.length ? music.beats : Array.from({ length: 600 }, (_, i) => i * BEAT);
@@ -180,9 +187,35 @@ const BUILD = {
       else if (s.frame === 'phone') { tag.style.top = `${box.top + 24}px`; tag.style.left = `calc(50% + ${box.sw / 2 + box.pad + 18}px)`; tag.style.transform = 'none'; tag.style.fontSize = '24px'; tag.style.padding = '9px 18px'; }
       else { tag.style.top = `${box.top + box.pad + 16}px`; tag.style.left = 'auto'; tag.style.right = `${(W - box.sw) / 2 + 4}px`; tag.style.transform = 'none'; }
     }
-    const views = Array.isArray(s.view) ? s.view : [{ at: 0, ...(s.view || { cx: 0.5, cy: 0.5, w: 1 }) }];
-    const cursors = s.cursor || [];
-    const spots = s.spots || (s.spot ? [s.spot] : []);
+    /* `on: '<mark>'` anywhere a coordinate is wanted: the cursor goes to the
+       middle of that control, a spotlight takes its box, and a view centres on
+       it. An unknown mark says so and falls back to whatever was written by
+       hand, because a silently mis-aimed cursor is the failure worth shouting
+       about. */
+    const markOf = (name) => {
+      const b = MARKS[s.shot]?.[name];
+      if (!b) console.warn(`comp: no mark "${name}" in ${s.shot}`);
+      return b;
+    };
+    const centre = (k) => {
+      if (!k.on) return k;
+      const b = markOf(k.on);
+      return b ? { ...k, x: b.x + b.w / 2, y: b.y + b.h / 2 } : k;
+    };
+    const views = (Array.isArray(s.view) ? s.view : [{ at: 0, ...(s.view || { cx: 0.5, cy: 0.5, w: 1 }) }])
+      .map((v) => {
+        if (!v.on) return v;
+        const b = markOf(v.on);
+        return b ? { ...v, cx: b.x + b.w / 2, cy: b.y + b.h / 2 } : v;
+      });
+    const cursors = (s.cursor || []).map(centre);
+    const spots = (s.spots || (s.spot ? [s.spot] : [])).map((sp) => {
+      if (!sp.on) return sp;
+      const b = markOf(sp.on);
+      if (!b) return sp;
+      const pad = sp.pad ?? 0.008;
+      return { ...sp, x: b.x - pad, y: b.y - pad * 1.6, w: b.w + pad * 2, h: b.h + pad * 3.2 };
+    });
     return { el: root, update(l) {
       const asp = (img.naturalWidth && img.naturalHeight) ? img.naturalWidth / img.naturalHeight : 1.6;
       const v = keyAt(views, l, ['cx', 'cy', 'w']);

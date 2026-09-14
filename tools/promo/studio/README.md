@@ -54,6 +54,34 @@ Scene durations are in beats of the chosen track, so cuts land on the music.
 The app-scene coordinates are fractions of the screenshot, measured from a
 1600x1000 capture; re-shooting at that size keeps them valid.
 
+## Pointing at a control
+
+An app scene can drive a cursor across the screenshot and put a spotlight on
+something. Both take `on: '<mark>'` rather than coordinates:
+
+```js
+{ type: 'app', shot: 'export', view: hold(V.dialog, 0, 4),
+  cursor: [{ at: 1.0, x: 0.42, y: 0.36 }, { at: 2.0, on: 'preset' },
+           { at: 2.5, on: 'preset', click: true }, { at: 4.7, on: 'all', click: true }],
+  spots:  [{ at: 4.95, until: 6.2, on: 'all', label: 'every platform, one render' }] }
+```
+
+The marks come from `shots.json`, which `shots.mjs` writes next to the PNGs:
+for every shot a video points into, it records the box of each control it
+named, measured off the live page at the instant of the screenshot. Reading
+those coordinates off by eye is what the file exists to stop — an eyeballed
+cursor keeps pointing at the same spot after the layout moves, lands on empty
+chrome, and nobody notices until the video is posted. A mark that is off the
+top or bottom of the panel is dropped rather than recorded, because the
+screenshot does not contain it; comp.js warns in the console for an `on` it
+cannot resolve and falls back to whatever was written by hand.
+
+To point at something new, add it to that shot's mark list in `shots.mjs`
+(a CSS selector, `{ sel, nth }`, or `{ sel, text }`) and re-shoot.
+
+`view` keyframes take `on` too, so a scene can frame a control by name:
+`{ at: 2, on: 'plan', w: 0.3 }`.
+
 ## The narrated tours
 
 A video with `voice: true` has no music and no beat grid. Its scene durations

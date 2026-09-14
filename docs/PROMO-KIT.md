@@ -138,6 +138,12 @@ is when people actually type it in.
 - A small **omnidx.net sticker in the top-left corner of every frame**, from
   the first frame to the last, so a screen-recorded repost still carries the
   address.
+- **A cursor that actually uses the app.** Wherever a tour is on a panel, a
+  mouse pointer moves to the control being talked about and clicks it, with the
+  click ring you get on a screen recording. It is not decoration: the cursor's
+  coordinates come out of `shots.json`, where the screenshot tool records the
+  measured box of every control it photographed — so it lands on the real
+  button, and it keeps landing on it after the app's layout moves.
 - A sound-off caption at the bottom of every scene, because most of the first
   watch is muted.
 - The end card with the logo, `omnidx.net`, the price and the hashtags.
@@ -161,10 +167,13 @@ is the one to pin on a new account — it is the one that answers the
 ---
 
 ### T1 · What it actually is — `tour-01-what-it-is.mp4` · 68 s
-The whole app, top to bottom. Hook → the editor and its timeline → the viewer
-with the transport and the 9:16 preset on screen → the effects panel → colour
-→ the audio chain (repair, 148 filters, ducking, channel strip, loudness) →
-the export dialog → "Free to start. No account." → end card.
+The whole app, top to bottom. Hook → the editor, where the cursor picks up the
+razor, splits a clip and selects another → the viewer with the transport and
+the 9:16 preset on screen → the effects panel, searching and clicking a preset
+→ colour, with the RGB parade lit up and a look applied → the audio chain
+(repair, 148 filters, ducking, channel strip, loudness) → the export dialog,
+where it ticks **Export for every platform** and presses Export → "Free to
+start. No account." → end card.
 
 **Caption**
 > a full video editor that runs in your browser. unlimited tracks, every trim mode, 340 effects, colour wheels and scopes, a real audio chain, and one export that goes to every platform 🎬 free version has no watermark and no account. omnidx.net
@@ -178,8 +187,10 @@ the export dialog → "Free to start. No account." → end card.
 ### T2 · The AI, and the two tricks — `tour-02-the-ai.mp4` · 53 s
 The three things people do not believe. Hook → a sentence being typed and the
 plan being built from it, step by step → the real AI panel with that plan on
-screen → "runs on your device" → a tap on a can and a wipe to the same frame
-without it → a dirty waveform and the same three seconds after one repair pass
+screen, and the cursor **clearing two of its steps**, which is the whole claim:
+the plan is a list you edit, not something that happens to your timeline →
+"runs on your device", typing a prompt and pressing Plan the edit → a tap on a
+can and a wipe to the same frame without it → a dirty waveform and the same three seconds after one repair pass
 → "Not a demo. That is the app." → end card.
 
 **Caption**
@@ -198,7 +209,8 @@ check the eraser without an account.
 
 ### T3 · Everything that is included — `tour-03-whats-included.mp4` · 69 s
 The counting video. Hook → 340 effects landing one by one → 544 music tracks by
-genre → the sound panel, searchable by style, mood and tempo → text animators →
+genre → the sound panel, where the cursor does the whole search in one take:
+the search box, a genre, a mood, then **+ Add** on a track → text animators →
 expressions → export presets → "$19.99. Once." → end card.
 
 **Caption**
@@ -214,7 +226,8 @@ expressions → export presets → "$19.99. Once." → end card.
 The trust one, and the one to pin. Hook → five years of a subscription against
 one payment → what the free version has → "Every update free. No version 2." →
 **what it cannot do**, in full → "Open it, turn your wifi off, keep editing" →
-end card pointing at `omnidx.net/studio/trust`.
+the editor again, cursor cutting a clip → end card pointing at
+`omnidx.net/studio/trust`.
 
 **Caption**
 > no subscription. not a cheap one, not a hidden one. five years of a subscription editor is $1,379 and you still own nothing — this is $19.99 once, every update after it free 🫡 and the list of what it can't do is on the site before you pay. omnidx.net

@@ -85,11 +85,57 @@ async function openEditor({ level, viewport, scale, mobile }) {
   return { ctx, page };
 }
 
-const shot = async (page, name) => {
+/*
+ * Where the controls are, measured rather than eyeballed.
+ *
+ * The videos drive a cursor across these screenshots and put a spotlight on
+ * things, at coordinates that are fractions of the image. Reading those off by
+ * eye means they quietly stop pointing at the control the moment the layout
+ * moves — the cursor lands on empty chrome and nobody notices until the video
+ * is posted. So every shot a video points into also records the boxes it cares
+ * about, taken from the live page at the instant of the screenshot, and
+ * comp.js resolves `on: 'apply'` against them.
+ *
+ * A mark is a CSS selector, or { sel, nth } for the nth match, or
+ * { sel, text } for the first whose text starts with that.
+ */
+const marks = {};
+async function mark(page, name, map) {
+  const vp = page.viewportSize();
+  const got = await page.evaluate((entries) => {
+    const out = {};
+    for (const [key, m] of entries) {
+      const spec = typeof m === 'string' ? { sel: m } : m;
+      const all = [...document.querySelectorAll(spec.sel)];
+      const el = spec.text
+        ? all.find((n) => n.textContent.trim().toLowerCase().startsWith(spec.text.toLowerCase()))
+        : all[spec.nth || 0];
+      if (!el) continue;
+      const r = el.getBoundingClientRect();
+      /* A box off the top or bottom of the panel is a box the screenshot does
+         not contain: pointing at it would point at whatever scrolled into its
+         place. */
+      if (r.width <= 0 || r.height <= 0 || r.bottom <= 0 || r.top >= innerHeight) continue;
+      out[key] = { x: r.left, y: r.top, w: r.width, h: r.height };
+    }
+    return out;
+  }, Object.entries(map));
+  const box = {};
+  for (const [key, r] of Object.entries(got)) {
+    box[key] = { x: +(r.x / vp.width).toFixed(5), y: +(r.y / vp.height).toFixed(5),
+      w: +(r.w / vp.width).toFixed(5), h: +(r.h / vp.height).toFixed(5) };
+  }
+  const missing = Object.keys(map).filter((k) => !box[k]);
+  if (missing.length) console.log(`  ${name}: could not find ${missing.join(', ')}`);
+  marks[name] = { ...(marks[name] || {}), ...box };
+}
+
+const shot = async (page, name, map) => {
   /* The multicam dock reserves a band above the timeline while the page carries
      ws-angles; a screenshot with an empty band in it looks broken. */
   await page.evaluate(() => document.documentElement.classList.remove('ws-angles'));
   await page.waitForTimeout(250);
+  if (map) await mark(page, name, map);
   await page.screenshot({ path: path.join(OUT, `${name}.png`) });
   console.log('shot', name);
 };
@@ -97,11 +143,29 @@ const shot = async (page, name) => {
 /* Desktop, Professional level, 2x. */
 {
   const { ctx, page } = await openEditor({ level: 'expert', viewport: { width: 1600, height: 1000 }, scale: 2, mobile: false });
-  await shot(page, 'editor');
+  await shot(page, 'editor', {
+    razor: '.tl-btn[data-tool="razor"]', split: '#tl-split', playhead: '#playhead',
+    clip2: { sel: '#tl-inner [data-clip]', nth: 1 }, clip3: { sel: '#tl-inner [data-clip]', nth: 2 },
+    exportBtn: '#btn-export', viewer: '#viewer', ruler: '#tl-ruler',
+  });
+  /*
+   * Only what the shot actually contains. A panel opens scrolled to its top, so
+   * the effects search and the colour wheels are below the fold in their
+   * screenshots — mark() drops a box that is off-screen rather than record a
+   * coordinate the picture does not have.
+   */
+  const PANEL_MARKS = {
+    effects: { search: '#pr-search', preset: { sel: '#pr-lib [data-preset]', nth: 2 },
+      preset2: { sel: '#pr-lib [data-preset]', nth: 5 }, group: '#pr-group > summary' },
+    color: { looks: '#c-look-search', look: { sel: '#c-looks [data-look]', nth: 1 }, scope: '#c-scope-box' },
+    sound: { search: '#ml-q', family: { sel: '#ml-fam [data-fam]', nth: 2 }, mood: { sel: '#ml-mood [data-mood]', nth: 1 },
+      add: { sel: '#ml-list [data-track]', nth: 0 }, track2: { sel: '#ml-list [data-track]', nth: 1 } },
+    ai: { prompt: '#ai-prompt', plan: '#ai-plan' },
+  };
   for (const p of ['effects', 'ai', 'templates', 'filters', 'transitions', 'overlays', 'color', 'text', 'stickers', 'shapes', 'audio', 'sound', 'captions']) {
     await page.click(`#rail button[data-panel="${p}"]`);
     await page.waitForTimeout(700);
-    await shot(page, `panel-${p}`);
+    await shot(page, `panel-${p}`, PANEL_MARKS[p]);
   }
   /*
    * The audio panel scrolled to the bottom. The channel strip and the loudness
@@ -112,7 +176,12 @@ const shot = async (page, name) => {
   await page.waitForTimeout(500);
   await page.evaluate(() => { const el = document.getElementById('panel'); el.scrollTop = el.scrollHeight; });
   await page.waitForTimeout(450);
-  await shot(page, 'panel-audio-chain');
+  await shot(page, 'panel-audio-chain', {
+    strip: { sel: '#panel details.group > summary', text: 'channel strip' },
+    loudness: { sel: '#panel details.group > summary', text: 'loudness' },
+    filters: { sel: '#panel details.group > summary', text: 'audio filters' },
+    repair: { sel: '#panel details.group > summary', text: 'repair the audio' },
+  });
 
   /* The AI panel with a real plan on screen: the planner runs on-device, so this is the app's own answer. */
   await page.click('#rail button[data-panel="ai"]');
@@ -126,12 +195,15 @@ const shot = async (page, name) => {
   await page.waitForTimeout(600);
   await page.evaluate(() => document.getElementById('ai-result')?.scrollIntoView({ block: 'center' }));
   await page.waitForTimeout(450);
-  await shot(page, 'panel-ai-plan');
+  await shot(page, 'panel-ai-plan', {
+    step1: { sel: '#ai-steps [data-step]', nth: 0 }, step2: { sel: '#ai-steps [data-step]', nth: 1 },
+    step3: { sel: '#ai-steps [data-step]', nth: 2 }, doit: '#ai-apply',
+  });
   await page.click('#rail button[data-panel="media"]');
   await page.waitForTimeout(400);
   await page.click('#btn-export');
   await page.waitForTimeout(900);
-  await shot(page, 'export');
+  await shot(page, 'export', { preset: '#x-preset', all: '#x-all', go: '#x-go', quality: '#x-quality' });
   await ctx.close();
 }
 
@@ -193,4 +265,6 @@ const shot = async (page, name) => {
 
 await browser.close();
 server.close();
+fs.writeFileSync(path.join(OUT, 'shots.json'), JSON.stringify(marks, null, 1));
 console.log('shots written to', OUT);
+console.log('marks:', Object.entries(marks).map(([k, v]) => `${k}(${Object.keys(v).length})`).join(' '));
