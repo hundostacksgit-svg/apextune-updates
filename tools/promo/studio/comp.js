@@ -120,11 +120,17 @@ const wm = el('div', null, `<img src="${A}/mark.svg" alt=""><span><b>omnidx</b>.
    to be readable for a minute without sitting on the picture, and the top
    left is the one corner TikTok puts nothing of its own in. */
 if (spec.wm === 'corner') wm.classList.add('corner');
+/* A whole-video look, not a per-scene one: `style: 'native'` drops the studio
+   ground and moves the caption to where a phone would put it. */
+if (spec.style) stage.classList.add(spec.style);
 stage.append(bg, layer, flash, cap, wm);
 if (spec.noWatermark) wm.style.display = 'none';
 
 /* ---------------------------------------------------------------- layout of the device frame */
 function deviceBox(s) {
+  /* Edge to edge, no frame: what a screen recording looks like when somebody
+     posts one, as against a product shot sitting in a rounded rectangle. */
+  if (s.bleed) return { sw: W, sh: H, top: 0, pad: 0, bleed: true };
   const phone = s.frame === 'phone';
   if (FMT === 'yt' || FMT === 'thumb') {
     const sh = FMT === 'yt' ? 810 : 560;
@@ -165,7 +171,7 @@ const BUILD = {
   app(s) {
     const root = el('div', 'app');
     const box = deviceBox(s);
-    const device = el('div', 'device' + (s.frame === 'phone' ? ' phone' : ''));
+    const device = el('div', 'device' + (s.frame === 'phone' ? ' phone' : '') + (s.bleed ? ' bleed' : ''));
     device.style.top = `${box.top}px`; device.style.padding = `${box.pad}px`;
     const screen = el('div', 'screen'); screen.style.width = `${box.sw}px`; screen.style.height = `${box.sh}px`;
     const img = el('img', 'shot'); img.src = `${A}/shots/${s.shot}.png`;
@@ -259,9 +265,12 @@ const BUILD = {
         lbl.style.display = shown.label ? '' : 'none';
       } else spot.style.opacity = 0;
       if (tag) { const p = prog(l, 0.1, 0.5); tag.style.opacity = p; }
-      const pd = prog(l, 0, 0.45);
+      /* A full-bleed shot does not fly in. A screen recording is either on or
+         it is not, and an entrance animation is the tell that it is an advert. */
+      const pd = s.bleed ? 1 : prog(l, 0, 0.45);
       device.style.opacity = pd;
-      device.style.transform = `translateX(-50%) translateY(${(1 - pd) * 40}px) scale(${lerp(0.96, 1, outCubic(pd))})`;
+      device.style.transform = s.bleed ? 'translateX(-50%)'
+        : `translateX(-50%) translateY(${(1 - pd) * 40}px) scale(${lerp(0.96, 1, outCubic(pd))})`;
     } };
   },
 
@@ -285,6 +294,41 @@ const BUILD = {
       cnt.textContent = money(total * outCubic(prog(l, 0.9, 2.6)));
       strike.style.width = `${outCubic(prog(l, 2.8, 3.2)) * 106}%`;
       lis.forEach((li, k) => pop(li, prog(l, 3.0 + k * 0.28, 3.4 + k * 0.28), { y: 24, from: 0.85 }));
+    } };
+  },
+
+  /*
+   * A question from the feed, and the answer.
+   *
+   * The format that travels furthest from an account nobody has heard of,
+   * because it does not look like an advert — it looks like somebody
+   * answering. The question has to be a real objection asked the way people
+   * type, lower case and unpunctuated: a tidy one reads as invented, and a
+   * question nobody would ask reads as an advert wearing a costume.
+   */
+  comment(s) {
+    const root = el('div', 'cmt' + (s.small ? ' sm' : ''));
+    const bubble = el('div', 'bubble', `<span class="av"></span>
+      <div><div class="who">${s.who || 'a comment'}</div><p class="q">${s.q}</p>
+      ${s.badge ? `<span class="badge">${s.badge}</span>` : ''}</div>`);
+    /*
+     * The answer arrives in chunks, not words: it carries markup, and splitting
+     * a string on spaces cuts a tag in half and colours one word by accident.
+     * A chunk is a clause, which is the beat you want anyway.
+     */
+    const ans = el('div', 'ans');
+    const parts = (Array.isArray(s.a) ? s.a : [s.a]).map((chunk, i, all) => {
+      const span = el('span', 'w', chunk + (i < all.length - 1 ? ' ' : ''));
+      ans.appendChild(span);
+      return span;
+    });
+    root.append(bubble, ans);
+    /* After the question has been read, not with it. */
+    const gap = s.read ?? 1.1;
+    const step = Math.min(0.6, (s.dur ? (s.dur - gap - 0.8) : 2) / Math.max(1, parts.length));
+    return { el: root, update(l) {
+      pop(bubble, prog(l, 0.05, 0.45), { y: 34, from: 0.9 });
+      parts.forEach((w, k) => pop(w, prog(l, gap + k * step, gap + 0.36 + k * step), { y: 26, from: 0.85 }));
     } };
   },
 

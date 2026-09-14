@@ -107,8 +107,10 @@ async function mark(page, name, map) {
     for (const [key, m] of entries) {
       const spec = typeof m === 'string' ? { sel: m } : m;
       const all = [...document.querySelectorAll(spec.sel)];
+      /* `includes`, not `startsWith`: a card's text starts with an emoji and a
+         summary starts with whatever the panel put in front of it. */
       const el = spec.text
-        ? all.find((n) => n.textContent.trim().toLowerCase().startsWith(spec.text.toLowerCase()))
+        ? all.find((n) => n.textContent.trim().toLowerCase().includes(spec.text.toLowerCase()))
         : all[spec.nth || 0];
       if (!el) continue;
       const r = el.getBoundingClientRect();
@@ -161,12 +163,37 @@ const shot = async (page, name, map) => {
     sound: { search: '#ml-q', family: { sel: '#ml-fam [data-fam]', nth: 2 }, mood: { sel: '#ml-mood [data-mood]', nth: 1 },
       add: { sel: '#ml-list [data-track]', nth: 0 }, track2: { sel: '#ml-list [data-track]', nth: 1 } },
     ai: { prompt: '#ai-prompt', plan: '#ai-plan' },
+    audio: { beats: { sel: '#panel .group', text: 'phonk_132' }, cut: '#a-beatcut', find: '#a-beats' },
+    templates: { montage: { sel: '#panel [data-montage]', nth: 0 }, montage2: { sel: '#panel [data-montage]', nth: 1 } },
   };
   for (const p of ['effects', 'ai', 'templates', 'filters', 'transitions', 'overlays', 'color', 'text', 'stickers', 'shapes', 'audio', 'sound', 'captions']) {
     await page.click(`#rail button[data-panel="${p}"]`);
     await page.waitForTimeout(700);
     await shot(page, `panel-${p}`, PANEL_MARKS[p]);
   }
+  /*
+   * One shot per edit style, searched for by name.
+   *
+   * The styles panel opens on the first two montages, so a phonk video that
+   * points a cursor at whatever is on screen points it at "Anime opening" —
+   * true of the panel, false of the video. Typing the name puts the right card
+   * under the cursor and shows the search working at the same time.
+   */
+  for (const name of ['phonk', 'anime', 'velocity']) {
+    await page.click('#rail button[data-panel="templates"]');
+    await page.waitForTimeout(450);
+    const found = await page.evaluate((n) => {
+      const card = [...document.querySelectorAll('#panel [data-montage]')]
+        .find((el) => el.textContent.toLowerCase().includes(n));
+      if (!card) return false;
+      card.scrollIntoView({ block: 'center' });
+      return true;
+    }, name);
+    if (!found) console.log(`  no ${name} montage on screen`);
+    await page.waitForTimeout(450);
+    await shot(page, `panel-styles-${name}`, { card: { sel: '#panel [data-montage]', text: name } });
+  }
+
   /*
    * The audio panel scrolled to the bottom. The channel strip and the loudness
    * meter sit under the fold, so a shot of the panel's top shows the master
@@ -252,14 +279,14 @@ const shot = async (page, name, map) => {
   await page.waitForTimeout(700);
   const picked = await page.evaluate(async () => (await import('/studio/app/js/panels/tracking.js')).eraserState()?.area || 0);
   console.log('  eraser picked', picked, 'px');
-  await shot(page, 'panel-erase');
+  await shot(page, 'panel-erase', { remove: '#er-go', reach: '#er-tol', msg: '#er-msg' });
   await ctx.close();
 }
 
 /* A phone, Beginner level, 3x. */
 {
   const { ctx, page } = await openEditor({ level: 'beginner', viewport: { width: 390, height: 844 }, scale: 3, mobile: true });
-  await shot(page, 'phone');
+  await shot(page, 'phone', { timeline: '#tl-scroll', viewer: '#viewer' });
   await ctx.close();
 }
 

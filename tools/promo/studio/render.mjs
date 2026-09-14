@@ -51,6 +51,19 @@ const CHROME = process.env.CHROME || '/opt/pw-browsers/chromium-1194/chrome-linu
 const PORT = Number(process.env.PORT || 8262);
 const SIZES = { tiktok: [1080, 1920], yt: [1920, 1080], feed: [1080, 1350], thumb: [1280, 720] };
 
+/** Seconds of a WAV, read out of its header rather than by decoding it. */
+function wavSeconds(file) {
+  const b = fs.readFileSync(file);
+  const rate = b.readUInt32LE(24), bytesPerSec = b.readUInt32LE(28);
+  let off = 12, dataLen = 0;
+  while (off + 8 <= b.length) {
+    const id = b.toString('ascii', off, off + 4), len = b.readUInt32LE(off + 4);
+    if (id === 'data') { dataLen = len; break; }
+    off += 8 + len + (len % 2);
+  }
+  return bytesPerSec ? dataLen / bytesPerSec : dataLen / (rate * 2);
+}
+
 for (const need of ['shots', 'music', 'fonts', 'footage']) {
   if (!fs.existsSync(path.join(ASSETS, need))) { console.error(`missing ${path.join(ASSETS, need)} — run shots.mjs / music.mjs / footage.mjs first (see README)`); process.exit(1); }
 }
@@ -106,6 +119,19 @@ async function renderVideo(spec, fmt) {
     throw new Error(spec.voice
       ? `No narration for ${spec.id}. Run voice.mjs first.`
       : `No music track ${spec.music} for ${spec.id}.`);
+  }
+  /*
+   * A bed shorter than the video is not a small problem: -shortest then cuts
+   * the picture to the length of the audio, and the video quietly comes out
+   * missing its end card. Looping would be worse — the cuts are on this
+   * track's grid, so a seam puts every cut after it off the beat. Say so and
+   * stop, so the fix is a shorter video or a longer bed rather than a file
+   * nobody checked the end of.
+   */
+  const bed = wavSeconds(wav);
+  if (bed + 0.05 < duration) {
+    throw new Error(`${spec.id} is ${duration.toFixed(1)}s but ${path.basename(wav)} is only ${bed.toFixed(1)}s. `
+      + 'Shorten the scenes, or make a longer bed in music.mjs.');
   }
   const total = Math.round(duration * FPS);
   const fade = Math.min(1.2, duration / 4);

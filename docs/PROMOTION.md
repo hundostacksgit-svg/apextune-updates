@@ -248,6 +248,60 @@ Read this before anything goes out. If any answer is no, do not post it.
 
 ---
 
+## 7b. When you have posted and nothing is happening
+
+The first version of this kit assumed the problem would be credibility. On a
+new account it is usually distribution, and the two have different fixes. Work
+down this list in order — the first three cost nothing and are where the
+answer almost always is.
+
+**First, find out which failure it is.** Open each post's analytics and read
+the view count, not the feeling:
+
+| What you see | What it means | What to do |
+|---|---|---|
+| 0–20 views | Not distribution — a block. New account posting the same link in every caption, or a flagged video. | Take the URL out of the captions for a fortnight. Put it in the bio only. Post three videos with no link, no price and no "link in bio". |
+| 100–400 views, every time | Normal cold start. The algorithm showed it to a test batch and they scrolled. | The hook is the problem, not the reach. Everything below. |
+| One video at 2k, the rest at 200 | The format works and the rest do not. | Make four more of whatever that one was. Nothing else matters until you have. |
+| Good views, no clicks | Distribution is fine, the offer is not landing. | Pin a comment with the link. Say the price out loud in the video. |
+
+**Then the three things that actually move it.**
+
+1. **The first second cannot look like an advert.** A title card on a gradient
+   with a logo in the corner is the single most reliable way to be scrolled
+   past, because the feed has been trained on a decade of them. Open on the
+   thing happening instead — a finger landing on an object that then vanishes,
+   a waveform going from filthy to clean, a timeline snapping to a beat. The
+   claim can come at second four, once somebody is already watching.
+2. **Post more of them, sooner.** One a day is a schedule for an account that
+   already has an audience. A cold account is running an experiment and needs
+   samples: three or four a day for a fortnight, then keep whichever shape
+   worked. Reposting the same video after a week is normal and works.
+3. **Go where the subject already is.** "Video editing" is not a community;
+   phonk edits, AMVs, velocity edits, gym edits and podcast clipping are. A
+   video about the thing one of those rooms does all day gets watched by
+   people who need the tool. A video about "a video editor" gets watched by
+   nobody.
+
+**Then the things that compound.**
+
+- **Reply to comments with a video.** It is a native format, it starts with a
+  real question on screen, and it does not read as an advert. The `c1`–`c3`
+  videos in the kit are built as this shape; swap the invented question for a
+  real one the moment you get one.
+- **Answer every comment in the first hour, including the rude ones.** Replies
+  are a ranking signal and they are the only free one.
+- **Say the address out loud, once, near the end.** People do not read
+  watermarks; they hear a name and search it.
+- **Stop optimising hashtags.** They have not decided TikTok distribution for
+  years — the video itself does. Five relevant ones so the post is filed
+  correctly, then forget them.
+
+**What will not fix it:** posting at a different time of day, more hashtags,
+buying views, deleting and reposting the same video hoping for a better roll,
+or making the videos glossier. Every one of those is a way of avoiding the
+first item on the list.
+
 ## 8. The thing that actually decides it
 
 None of this makes an app spread. The videos, the posts and the honest page get

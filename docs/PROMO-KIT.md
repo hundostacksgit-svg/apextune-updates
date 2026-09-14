@@ -121,6 +121,123 @@ entry in `videos.js`.
 
 ---
 
+## Four sets of three
+
+Twenty-six videos in one register is one experiment run twenty-six times. The
+short ones so far all open the same way — a claim, in big type, on a gradient,
+with a logo in the corner — and if a feed has decided that shape is an advert,
+it will keep deciding it. These twelve vary the one thing that decision is made
+on: **what the first second looks like.**
+
+Post them **as four A/B tests, not as twelve videos**. One set a week, three
+videos, same slot, same days as the originals. Then read the analytics and keep
+the shape that got distribution. If none of them beat the originals, the
+problem is not the videos and `PROMOTION.md` §7b is the next place to look.
+
+Every one of the twelve carries the omnidx.net sticker in the corner and
+**exactly five hashtags**.
+
+---
+
+### Set 1 · `n` — the result, before any claim
+`n1-tap-it-gone.mp4` · `n2-bad-audio.mp4` · `n3-its-a-phone.mp4`
+
+No studio ground, no gradient, no end card — a near-black frame, the caption at
+the top where a phone would put it, and the thing already happening in frame
+one. **This is the set to watch.** If the branded ones are being filed as ads,
+these are the three that will show it, because nothing else about them changed.
+
+**n1 — a finger lands on a can and the can is gone** · 14 s
+> nobody believes this one until they try it. tap the thing you don't want. it's gone, and it stays gone for the whole clip — it fills in the background behind it 🫡 free version, no account: omnidx.net
+> #objectremoval #videoediting #videoeditor #editingapp #fyp
+
+**n2 — a filthy waveform and the same three seconds after one pass** · 19 s
+> recorded on a phone next to a fridge. one pass: mains hum gone, hiss down, clicks repaired, level evened out 🎚️ no second app, no DAW. omnidx.net
+> #audiorepair #podcast #videoediting #videoeditor #fyp
+
+**n3 — the whole editor, full screen, on a phone** · 13 s
+> this is the entire editor running on a phone. no app store, no download, it's a link 📱 unlimited tracks, no watermark, free to start. omnidx.net
+> #mobileediting #videoeditor #editingapp #capcutalternative #fyp
+
+---
+
+### Set 2 · `c` — a question, and the answer
+`c1-is-it-free.mp4` · `c2-whats-the-catch.mp4` · `c3-why-so-cheap.mp4`
+
+The shape that travels furthest from an account nobody has heard of, because it
+does not look like an advert — it looks like somebody answering. The questions
+are written the way people type: lower case, no punctuation. A tidy question
+reads as invented.
+
+**The moment you get a real comment, replace the question with it** — retype it
+in `videos.js` and re-render, or just post the video as an actual video reply.
+That is worth more than any of the three as written.
+
+**c1 — "free" like free trial free or actually free** · 21 s
+> asked in the comments so here's the answer: actually free. no account, no email, no card, no watermark, and it doesn't expire 🆓 omnidx.net
+> #freeapp #capcutalternative #videoeditor #nosubscription #fyp
+
+**c2 — ok so whats the catch** · 22 s
+> the catch is that i'll tell you what it can't do before you pay rather than after. no stabilisation, no generative video, captions don't type themselves yet 🫡 the full list is on the site. omnidx.net
+> #honestreview #buildinpublic #videoeditor #nosubscription #fyp
+
+**c3 — why is it 20 quid once when everyone else is 20 a month** · 19 s
+> because a bill is not a feature. five years of a subscription editor is $1,379 and you still own nothing. this is $19.99, once, and every update after it is free 🧾 omnidx.net
+> #nosubscription #onetimepurchase #videoeditor #editingapp #fyp
+
+---
+
+### Set 3 · `h` — how to do one thing
+`h1-cut-to-the-beat.mp4` · `h2-remove-a-thing.mp4` · `h3-title-that-moves.mp4`
+
+Numbered steps, one job, finished inside twenty seconds. These are made to be
+**saved and sent to somebody**, which is a stronger signal than a like and the
+one that keeps a video alive for weeks rather than hours. Write the caption as
+an instruction, not a boast.
+
+**h1 — cut a whole edit to the beat** · 21 s
+> how to cut a whole edit to the beat in about fifteen seconds. it reads the actual track — 58 beats found, not a guess — then every clip lands on one 🥁 free in every version. omnidx.net
+> #beatsync #montage #videoeditor #editingapp #fyp
+
+**h2 — remove something from a video** · 17 s
+> how to take something out of a video without a mask, a pen tool or a green screen. tap it in the picture, press remove, it's gone for the whole clip 🪄 omnidx.net
+> #objectremoval #vfx #videoeditor #editingapp #fyp
+
+**h3 — a title that types itself** · 18 s
+> how to make a title animate letter by letter. pick a style, pick how it arrives — typewriter, rise, blur in, bounce on the beat. 49 of them, all per character 🔤 omnidx.net
+> #typography #kinetictypography #videoeditor #editingapp #fyp
+
+---
+
+### Set 4 · `e` — one edit style, for the room that already cares
+`e1-phonk.mp4` · `e2-anime.mp4` · `e3-velocity.mp4`
+
+"Video editing" is not a community. Phonk edits, AMVs and velocity edits are,
+and each has its own tags, its own audio and its own people posting daily. A
+video about what one of those rooms does all day gets watched by people who
+need the tool; a video about "a video editor" gets watched by nobody.
+
+Post each one **into its own room** — the tags below are the room, not a
+keyword strategy — and put the matching video in the Discord servers and
+subreddits for it rather than the general editing ones.
+
+The step list in each video is the app's own planner output for that style,
+word for word, so anybody who opens it gets the edit they were shown.
+
+**e1 — phonk drift** · 25 s
+> clips in, phonk edit out. build → drop → outro, kickback ramp, velocity ramp, VHS crush, camera shake, speed lines, whip pans — all on the beat of your own track 🏎️ omnidx.net
+> #phonk #driftedit #videoeditor #montage #fyp
+
+**e2 — anime opening** · 22 s
+> AMV opening in one press. six sections, slow cold open, impact frames on the big hits, chromatic slams, speed lines on the drop — it finds the drop itself ⚔️ omnidx.net
+> #amv #animeedit #videoeditor #montage #fyp
+
+**e3 — velocity edit** · 23 s
+> velocity edit with no keyframes. go → faster → land, ramps into every cut, zoom blur on the acceleration, whip pans on the joins, every ease done for you 💨 omnidx.net
+> #velocityedit #speedramp #videoeditor #editingapp #fyp
+
+---
+
 ## The narrated tours
 
 Four long ones, 53–69 seconds each, with a male voice over them and **no music

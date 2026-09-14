@@ -101,6 +101,46 @@ img { display: block; }
   font-weight: 800; font-size: 30px; white-space: nowrap; letter-spacing: -.01em; }
 .app .spot.below .lbl { bottom: auto; top: 100%; margin: 14px 0 0; }
 
+/* ---- comment: a question from the feed, and the answer ----
+   The format that carries furthest from a small account, because it does not
+   look like an advert — it looks like somebody answering. The question is
+   written the way people actually type, lower case and unpunctuated; a tidy
+   one reads as invented. */
+.cmt { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; gap: 44px; padding: 300px 64px 500px; }
+.cmt .bubble { display: flex; gap: 20px; align-items: flex-start; padding: 26px 30px; border-radius: 28px;
+  background: rgba(255,255,255,.07); border: 2px solid rgba(255,255,255,.12); will-change: transform, opacity; }
+.cmt .av { flex: none; width: 76px; height: 76px; border-radius: 50%; background: linear-gradient(150deg, #4b5675, #2a3350); }
+.cmt .who { font-size: 30px; font-weight: 700; color: var(--text-3); letter-spacing: .01em; }
+.cmt .q { margin: 6px 0 0; font-size: 46px; font-weight: 600; line-height: 1.25; color: #fff; }
+.cmt .badge { display: inline-block; margin-top: 14px; padding: 7px 16px; border-radius: 999px; background: rgba(255,255,255,.1); font-size: 26px; font-weight: 700; color: var(--text-3); }
+.cmt .ans { font-family: var(--head); font-weight: 800; font-size: 74px; line-height: 1.08; letter-spacing: -.03em; }
+.cmt .ans .w { display: inline-block; will-change: transform, opacity; }
+.cmt .ans em { font-style: normal; color: var(--mint); }
+.cmt .ans i { font-style: normal; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.cmt.sm .ans { font-size: 60px; }
+.fmt-yt .cmt { padding: 120px 120px 120px; gap: 36px; }
+.fmt-yt .cmt .q { font-size: 40px; }
+.fmt-yt .cmt .ans { font-size: 62px; }
+
+/* ---- the native look: made on a phone, not in a studio ----
+   No gradient ground, no vignette, and the caption at the top in the
+   platform's own idiom rather than in ours. A branded frame is the thing a
+   feed has learned to scroll past; this is the variant that finds out whether
+   that is what is happening to these. */
+#stage.native { background: #07080c; }
+#stage.native #bg .blob { display: none; }
+#stage.native #bg .vignette { background: none; }
+#stage.native #cap { top: 300px; bottom: auto; }
+#stage.native #cap .box { padding: 14px 24px; border: 0; border-radius: 12px; background: rgba(0,0,0,.66);
+  font-family: var(--sans); font-weight: 700; letter-spacing: -.005em; box-shadow: none; }
+#stage.native #cap .box em { color: #fff; }
+#stage.native #cap .box i { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: #fff; }
+
+/* A shot with no frame around it: the whole picture, edge to edge, the way a
+   screen recording arrives. */
+.app .device.bleed { padding: 0 !important; border: 0; border-radius: 0; background: none; box-shadow: none; }
+.app .device.bleed .screen { border-radius: 0; }
+
 /* ---- price: the two ways to pay ---- */
 .price { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 250px 60px 480px; }
 .price .pc { width: 100%; max-width: 940px; padding: 26px 40px; border-radius: 36px; border: 2px solid rgba(255,255,255,.1); background: rgba(10,14,28,.85); will-change: transform, opacity; }

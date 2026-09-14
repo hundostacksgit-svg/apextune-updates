@@ -31,9 +31,10 @@ const move = (a, t0, b, t1) => [{ at: t0, ...a }, { at: t1, ...b }];
 const BASE_TAGS = ['#videoediting', '#videoeditor', '#editingapp', '#nosubscription', '#contentcreator', '#fyp'];
 const tags = (...extra) => [...extra, ...BASE_TAGS].slice(0, 8);
 const END = (line, ...extra) => ({ type: 'end', beats: 10, line, tags: tags(...extra) });
-/* TikTok allows five hashtags in a caption, so the narrated tours carry five
-   and no more: four chosen for the video plus #fyp. */
+/* TikTok allows five hashtags in a caption, so everything made after the first
+   twenty-two carries five and no more: four chosen for the video plus #fyp. */
 const tags5 = (...extra) => [...extra, '#fyp'].slice(0, 5);
+const END5 = (line, ...extra) => ({ type: 'end', beats: 10, line, tags: tags5(...extra), bio: 'omnidx.net' });
 const PRICE_LINE = 'Free to start. <b>$19.99 once</b> for everything in Creator.';
 
 /* ---- lists that recur ---- */
@@ -61,6 +62,21 @@ const TRACK_ITEMS = ['Titles', 'Stickers', 'Lens flare', 'Blur a face', 'Transit
 const CANT_ITEMS = [['🚫', 'Generate video that isn\'t there'], ['✍️', 'Type your captions for you, yet'],
   ['📷', 'Stabilise a shaky shot'], ['🖊️', 'Draw a mask with a pen'], ['🔒', 'Stop a licence being shared'],
   ['🔄', 'Sync projects between devices, yet'], ['🖥️', 'Beat a $6,000 workstation at 8K']];
+/*
+ * What each edit style actually builds, taken from the app's own planner rather
+ * than written to sound good: `plan('make me a phonk edit', …)` prints these
+ * labels. Anybody who opens the app after one of these videos gets the video
+ * they were shown, which is the only reason to name the steps at all.
+ */
+const PHONK_STEPS = ['Cut in 3 sections', 'Kickback ramp on the build', 'Velocity ramp on the drop', 'Phonk dark grade',
+  'Vignette — hard', 'Film grain', 'Punch in on every beat', 'Impact frames', 'VHS — worn tape', 'Camera shake',
+  'Flash', 'Whip pan on the cuts'];
+const ANIME_STEPS = ['Cut in 6 sections', 'Velocity ramp on the drop', 'Slow-mo hit on the breather', 'Anime pop grade',
+  'Glow / bloom', 'Punch in on every beat', 'Impact frames', 'Chromatic split', 'Speed lines — radial', 'Motion blur',
+  'Zoom punch on the cuts', 'Whip pan on the drop'];
+const VELOCITY_STEPS = ['Cut in 3 sections', 'Punch ramp on the build', 'Stutter ramp on the fast part', 'Punch grade',
+  'Glow / bloom', 'Punch in on every beat', 'Impact frames', 'Zoom blur', 'Motion blur', 'Zoom punch on the cuts',
+  'Whip pan on the cuts', 'Dip to black to land'];
 const UPDATE_ITEMS = [['✨', 'Motion blur'], ['🌨️', 'Particles'], ['〰️', 'Expressions'], ['🔤', 'Text animators'], ['◇', 'Shape layers'], ['🎯', 'Motion tracking'], ['🎚️', 'Audio repair'], ['📤', 'Export everywhere'], ['⚡', 'Smooth playback'], ['🤖', 'AI montages']];
 
 /* ---- the AI demo ---- */
@@ -527,6 +543,175 @@ export const VIDEOS = [
       { type: 'price', beats: 16, cap: 'one payment. <em>every update. every device.</em>' },
       { type: 'statement', beats: 8, lines: ['Free to start.', '$19.99 once.', 'Yours forever.'], grad: [1] },
       { type: 'end', beats: 12, line: 'Free to start. <b>$19.99 once</b> for everything in Creator, <b>$39.99</b> for Studio.', tags: tags('#onetimepurchase', '#capcutalternative'), bio: 'omnidx.net' },
+    ],
+  },
+
+  /* ===================================================================
+   * Four sets of three, each set a different shape, because twenty-six
+   * videos in one register is one experiment run twenty-six times. The
+   * short ones so far all open with a claim over a gradient; a feed that
+   * has decided those are adverts will keep deciding it. These vary the
+   * one thing that decision is made on — what the first second looks like.
+   *
+   *   n1..n3   the result first, in the platform's own idiom, no studio ground
+   *   c1..c3   an objection asked the way people type it, and the answer
+   *   h1..h3   how to do one thing, fast enough to be saved rather than watched
+   *   e1..e3   one edit style, for the rooms that already care about it
+   * =================================================================== */
+
+  /* ---- n: silent proof. The thing happening, before anything is claimed. ---- */
+  {
+    id: 'n1-tap-it-gone', title: 'Native: tap it, it is gone', music: 'trap-140-24s',
+    style: 'native', wm: 'corner', formats: ['tiktok'],
+    scenes: [
+      /* No hook. The first frame is the shot with the can still in it and a
+         finger about to land on it — a title card here is the half second in
+         which the feed decides this is an advert. */
+      { type: 'wipe', beats: 14, pair: 'erase', labels: ['before', 'gone'],
+        tap: { x: 0.199, y: 0.56, at: 1.0, label: 'tap it' }, cap: 'no mask. no keyframes.' },
+      { type: 'app', beats: 10, shot: 'panel-erase', box: 'wide', tag: 'the eraser',
+        view: [{ at: 0, on: 'remove', w: 0.62 }, { at: 4, on: 'remove', w: 0.44 }],
+        cursor: [{ at: 0.8, x: 0.44, y: 0.5 }, { at: 1.8, on: 'remove' }, { at: 2.4, on: 'remove', click: true }],
+        cap: 'it follows it through the whole clip' },
+      { type: 'hook', beats: 8, size: 'lg', lines: ['omnidx.net'], grad: [0], sub: 'free version. no account.' },
+    ],
+  },
+  {
+    id: 'n2-bad-audio', title: 'Native: the sound, fixed', music: 'lofi-84-24s',
+    style: 'native', wm: 'corner', formats: ['tiktok'],
+    scenes: [
+      { type: 'sound', beats: 12, labels: ['what the phone recorded', 'after one pass'],
+        chips: ['60Hz hum', 'hiss', 'clicks', 'wandering level'], cap: 'same three seconds.' },
+      { type: 'app', beats: 8, shot: 'panel-audio-chain', box: 'tall', tag: 'one pass',
+        view: hold({ cx: 0.13, cy: 0.36, w: 0.3 }, 0, 4),
+        cursor: [{ at: 0.7, x: 0.21, y: 0.3 }, { at: 1.7, on: 'repair' }, { at: 2.3, on: 'repair', click: true }],
+        cap: 'hum, hiss, clicks, level' },
+      { type: 'hook', beats: 6, size: 'lg', lines: ['omnidx.net'], grad: [0], sub: 'in the browser. nothing uploads.' },
+    ],
+  },
+  {
+    id: 'n3-its-a-phone', title: 'Native: the whole thing on a phone', music: 'house-126-24s',
+    style: 'native', wm: 'corner', formats: ['tiktok'],
+    scenes: [
+      /* Full bleed, no frame around it: a screen recording arrives edge to edge,
+         and a phone screenshot in a rounded rectangle arrives as a product shot. */
+      { type: 'app', beats: 14, shot: 'phone', bleed: true, view: hold(V.whole, 0, 6),
+        cap: 'this is the whole editor.' },
+      { type: 'hook', beats: 8, size: 'lg', lines: ['NO APP STORE.', 'JUST A LINK.'], mint: [1] },
+      { type: 'hook', beats: 6, size: 'lg', lines: ['omnidx.net'], grad: [0], sub: 'opens in the browser you already have.' },
+    ],
+  },
+
+  /* ---- c: the reply. An objection, asked the way people type it. ---- */
+  {
+    id: 'c1-is-it-free', title: 'Reply: is it actually free', music: 'lofi-84-24s', wm: 'corner', formats: ['tiktok'],
+    scenes: [
+      { type: 'comment', beats: 8, who: 'a comment', q: '"free" like free trial free or actually free',
+        a: ['actually free.', '<em>no account either.</em>'] },
+      { type: 'list', beats: 10, title: 'in the free version', items: FREE_ITEMS, stepBeats: 0.38,
+        cap: 'not a trial. <em>the free one.</em>' },
+      { type: 'hook', beats: 6, lines: ['IT DOES NOT', 'EXPIRE.'], mint: [1] },
+      { ...END5('Free to start. <b>$19.99 once</b> if you ever want the rest.', '#freeapp', '#capcutalternative', '#videoeditor', '#nosubscription'), beats: 6 },
+    ],
+  },
+  {
+    id: 'c2-whats-the-catch', title: 'Reply: what is the catch', music: 'cinematic-90-24s', wm: 'corner', formats: ['tiktok'],
+    scenes: [
+      { type: 'comment', beats: 8, who: 'a comment', q: 'ok so whats the catch',
+        a: ['the catch is', '<i>the list of what it cannot do.</i>'] },
+      { type: 'list', beats: 12, title: "what it can't do", items: CANT_ITEMS, stepBeats: 0.45,
+        cap: 'the honest list. <em>before you pay.</em>' },
+      { type: 'hook', beats: 6, lines: ['IT IS ON THE SITE.', 'BEFORE YOU PAY.'], grad: [1] },
+      { ...END5('Everything it can\'t do is at <b>omnidx.net/studio/trust</b>.', '#honestreview', '#buildinpublic', '#videoeditor', '#nosubscription'), beats: 7 },
+    ],
+  },
+  {
+    id: 'c3-why-so-cheap', title: 'Reply: why is it that cheap', music: 'drill-142-24s', wm: 'corner', formats: ['tiktok'],
+    scenes: [
+      { type: 'comment', beats: 10, who: 'a comment', q: 'why is it 20 quid once when everyone else is 20 a month',
+        a: ['because', '<i>a bill is not a feature.</i>'] },
+      { type: 'price', beats: 16, cap: 'five years: <em>$1,379</em> vs <em>$19.99</em>' },
+      { type: 'hook', beats: 8, lines: ['YOU OWN IT.', 'THAT IS THE WHOLE', 'DIFFERENCE.'], mint: [0] },
+      END5('No subscription. ' + PRICE_LINE, '#nosubscription', '#onetimepurchase', '#videoeditor', '#editingapp'),
+    ],
+  },
+
+  /* ---- h: how to do one thing. Saved, not watched. ---- */
+  {
+    id: 'h1-cut-to-the-beat', title: 'How to: cut to the beat', music: 'phonk-132-24s', wm: 'corner', formats: ['tiktok'],
+    scenes: [
+      { type: 'hook', beats: 6, size: 'lg', lines: ['CUT A WHOLE EDIT', 'TO THE BEAT.'], mint: [1], sub: 'fifteen seconds, no keyframes' },
+      { type: 'app', beats: 10, shot: 'panel-audio', box: 'tall', tag: '1 · find the beat', view: hold({ cx: 0.13, cy: 0.42, w: 0.3 }, 0, 4),
+        spots: [{ at: 0.6, until: 2.4, on: 'beats', label: '58 beats detected' }],
+        cursor: [{ at: 2.6, x: 0.21, y: 0.36 }, { at: 3.4, on: 'cut' }, { at: 3.9, on: 'cut', click: true }],
+        cap: 'it reads the track. <i>not a guess.</i>' },
+      { type: 'timeline', beats: 14, every: 2, note: '2 · every cut on a beat', cap: 'drop the clips. <em>done.</em>' },
+      { type: 'hook', beats: 6, lines: ['THAT IS IT.'], grad: [0], sub: 'free in every version' },
+      END5('Beat-synced cutting is free. ' + PRICE_LINE, '#beatsync', '#montage', '#videoeditor', '#editingapp'),
+    ],
+  },
+  {
+    id: 'h2-remove-a-thing', title: 'How to: remove something', music: 'trap-140-24s', wm: 'corner', formats: ['tiktok'],
+    scenes: [
+      { type: 'hook', beats: 6, size: 'lg', lines: ['REMOVE ANYTHING', 'FROM A VIDEO.'], grad: [1], sub: 'no green screen, no pen tool' },
+      { type: 'app', beats: 10, shot: 'panel-erase', box: 'wide', tag: '1 · tap the thing',
+        view: [{ at: 0, on: 'msg', w: 0.6 }, { at: 4, on: 'remove', w: 0.44 }],
+        cursor: [{ at: 1.0, x: 0.44, y: 0.5 }, { at: 2.0, on: 'remove' }, { at: 2.6, on: 'remove', click: true }],
+        cap: 'tap it in the picture. <i>that is the selection.</i>' },
+      { type: 'wipe', beats: 14, pair: 'erase', labels: ['before', 'after'],
+        tap: { x: 0.199, y: 0.56, at: 0.8, label: '2 · remove it' }, cap: 'it is gone for the whole clip' },
+      END5('Object removal is in Creator. ' + PRICE_LINE, '#objectremoval', '#vfx', '#videoeditor', '#editingapp'),
+    ],
+  },
+  {
+    id: 'h3-title-that-moves', title: 'How to: a title that types itself', music: 'hype-150-24s', wm: 'corner', formats: ['tiktok'],
+    scenes: [
+      { type: 'hook', beats: 6, size: 'lg', lines: ['A TITLE THAT', 'TYPES ITSELF.'], mint: [1], sub: 'one tap, per character' },
+      { type: 'app', beats: 10, shot: 'panel-text', box: 'tall', tag: '1 · pick a style', view: [...hold(V.panel, 0, 2), { at: 4, ...V.panelTop }],
+        cap: '49 styles. <i>all animated.</i>' },
+      { type: 'list', beats: 14, title: 'animators', items: ANIMATOR_ITEMS, stepBeats: 0.45, cap: '2 · pick how it arrives' },
+      { type: 'hook', beats: 6, lines: ['LETTER', 'BY LETTER.'], grad: [1] },
+      END5('Text animators are in Creator. ' + PRICE_LINE, '#typography', '#kinetictypography', '#videoeditor', '#editingapp'),
+    ],
+  },
+
+  /* ---- e: one edit style, for the rooms that already care about it. ----
+     The step lists are the app's own planner output for that style, word for
+     word, so anybody who opens it gets the video they were shown. */
+  {
+    id: 'e1-phonk', title: 'Style: phonk drift', music: 'phonk-132-24s', wm: 'corner', formats: ['tiktok'],
+    scenes: [
+      { type: 'hook', beats: 8, size: 'lg', lines: ['PHONK EDIT.', 'ONE BUTTON.'], mint: [1] },
+      { type: 'app', beats: 10, shot: 'panel-styles-phonk', box: 'tall', tag: 'the styles panel', view: hold(V.panel, 0, 4),
+        cursor: [{ at: 0.8, x: 0.21, y: 0.14 }, { at: 1.9, on: 'card' }, { at: 2.5, on: 'card', click: true }],
+        cap: 'clips in. <em>edit out.</em>' },
+      { type: 'list', beats: 16, title: 'what it builds', items: PHONK_STEPS, stepBeats: 0.5, cap: 'every one of these, on the beat' },
+      { type: 'timeline', beats: 12, every: 1, note: '🥁 Drop — a cut every beat', cap: 'cut to your own track' },
+      END5('21 montage styles, in Creator. ' + PRICE_LINE, '#phonk', '#driftedit', '#videoeditor', '#montage'),
+    ],
+  },
+  {
+    id: 'e2-anime', title: 'Style: anime opening', music: 'hype-150-24s', wm: 'corner', formats: ['tiktok'],
+    scenes: [
+      { type: 'hook', beats: 8, size: 'lg', lines: ['AMV OPENING.', 'SIX SECTIONS.'], grad: [1] },
+      { type: 'app', beats: 10, shot: 'panel-styles-anime', box: 'tall', tag: 'the styles panel', view: hold(V.panel, 0, 4),
+        cursor: [{ at: 0.8, x: 0.21, y: 0.14 }, { at: 1.9, on: 'card' }, { at: 2.5, on: 'card', click: true }],
+        cap: 'intro → build → drop → breather → drop → outro' },
+      { type: 'list', beats: 16, title: 'what it builds', items: ANIME_STEPS, stepBeats: 0.5, cap: 'impact frames on the big hits' },
+      { type: 'timeline', beats: 12, every: 1, note: '⚡ Drop — a cut every beat', cap: 'it finds the drop itself' },
+      END5('The anime opening is in Creator. ' + PRICE_LINE, '#amv', '#animeedit', '#videoeditor', '#montage'),
+    ],
+  },
+  {
+    id: 'e3-velocity', title: 'Style: velocity edit', music: 'dnb-174-24s', wm: 'corner', formats: ['tiktok'],
+    scenes: [
+      { type: 'hook', beats: 10, size: 'lg', lines: ['VELOCITY EDIT.', 'NO KEYFRAMES.'], mint: [1] },
+      { type: 'app', beats: 12, shot: 'panel-styles-velocity', box: 'tall', tag: 'the styles panel', view: hold(V.panel, 0, 4),
+        cursor: [{ at: 1.0, x: 0.21, y: 0.14 }, { at: 2.2, on: 'card' }, { at: 2.9, on: 'card', click: true }],
+        cap: 'go → faster → land' },
+      { type: 'list', beats: 20, title: 'what it builds', items: VELOCITY_STEPS, stepBeats: 0.45, cap: 'every ramp eased, automatically' },
+      { type: 'timeline', beats: 14, every: 1, note: '💨 Faster — a cut every beat', cap: 'smooth by default' },
+      END5('Speed ramping is in Creator. ' + PRICE_LINE, '#velocityedit', '#speedramp', '#videoeditor', '#editingapp'),
     ],
   },
 ];
