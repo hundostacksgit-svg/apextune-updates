@@ -319,44 +319,63 @@ PROMO_ASSETS=... FFMPEG=... node verify-promo-specs.mjs
 `out/tiktok/mog-02-rivals-silent.mp4` · 35.5s · silent · corner sticker
 throughout.
 
-A second edit, rebuilt the same measured way — and then rebuilt again, because
-the first attempt matched the reference's **picture** and never looked at its
-**audio**. Cut times taken off the frames put the cuts in the right places
-relative to each other and say nothing about where the music is, and a cut half
-a beat off reads as a mistake however exactly it matches somebody's frame
-numbers.
+A second edit, rebuilt three times. The first two were wrong in the same way and
+it is worth writing down, because the mistake is the obvious one.
 
-So the track was measured too:
+**Attempt one** took the cut times off the reference's *picture* and never
+looked at its audio. The cuts were in the right places relative to each other
+and had no relationship to the music.
+
+**Attempt two** tried to fix that by deriving a beat grid and cutting to it.
+Three methods, three answers: the app's own `detectBeats` said **122 BPM at 0.44
+confidence** (it had locked onto a hat pattern at ~133ms — worth knowing, since
+that detector ships); autocorrelating the low band said **97.1 BPM**; a
+least-squares fit through the reference's own cut times said **97.26 BPM** with
+a worst residual of 104ms, which looked convincing. A video cut to it did not
+line up with the track at all.
+
+**Measuring the actual transients explains why there is no grid to find:**
+
+- **Nothing before 11.81s.** No strong onset in the whole first third of the
+  track — that section has no beat. So a grid fitted through those cuts was
+  fitting the editor's own even rhythm and calling it tempo.
+- **After the drop it is a groove, not a grid.** Searching every period from
+  0.2s to 1.05s at every phase, the best fit still leaves an RMS error of 48ms
+  and a worst case of 110ms. Nothing lands on a clean multiple of anything.
+
+**Attempt three** is the answer that got walked past twice: **the reference is
+the ground truth.** Somebody cut that footage to that track and it works. So
+every cut here is one of their measured cut times, used directly — `REF_CUTS` in
+`videos.js` — and the rebuild lines up with the track exactly as well as the
+reference does, which is the most that can be claimed and is what was wanted.
+
+Checked on the rendered file, not the spec: **all 35 of the reference's cut
+points are hit, worst offset 23ms, none missing**, and the whole thing is
+35.527s — the reference's length to the millisecond.
 
 | | |
 |---|---|
-| **97.26 BPM**, beat 0 at **1.2673s** | Least-squares fit of a grid to the reference editor's own 33 cut times. They cut to the track, so their cuts are samples of its grid. Worst residual 104ms. |
-| **The drop is beat 17, 11.755s** | The low band sits at 10–19 units until 11.57s and jumps 5× at 11.65s. |
-| Cross-check | Beat 18 of that grid falls at 12.372s. The reference changes subject at 12.367s. **Five milliseconds.** |
+| **0 – 11.17s** | The DaVinci, After Effects and CapCut marks in a row on black, under *what everyone else is using*. Nine shots of the same row on the reference's own cut times — wide, in on one, wide, in on the next — each with its own height, lean and lighting. |
+| **11.17 – 11.81s** | The picture desaturates and **MOGGED** slams on, red on white, for the two thirds of a second before the bass arrives. No fade. |
+| **11.81s** | **The drop** — the first strong low-frequency transient in the track. Hard cut to the OmniDx mark with a chromatic split. The reference changes subject half a second *after* its drop; this changes on it. |
+| **11.81 – 31.47s** | 25 cuts of the app, every one on a time the reference cuts on. |
+| **31.47 – 35.53s** | `omnidx.net` · `$19.99 once. no subscription. ever.` |
 
-Getting the tempo right took three goes. The app's own `detectBeats` said
-**122 BPM at 0.44 confidence**, having locked onto a hat pattern at ~133ms —
-worth knowing, since that detector is a shipped feature and this is a track it
-gets wrong. Autocorrelating the low band over the loud section said **618ms,
-97.1 BPM**, beating the next reading three to one. The fit above is the precise
-version of that.
+### Two files
 
-Every cut in the rebuild lands on that grid, and `verify.mjs` fails the video if
-one does not.
+`mog-02-rivals-silent.mp4` is the one to post. `mog-02-rivals-withsound.mp4` has
+the reference's own audio muxed onto it — **that one is for checking the sync,
+not for posting**: the track belongs to whoever made it. Since the rebuild is
+now the reference's length with its cuts at the reference's times, picking that
+sound on TikTok from the original video lines the whole thing up from the first
+frame with nothing to drag.
 
-**The structure**, in beats rather than seconds:
+Re-make the check copy any time:
 
-| | |
-|---|---|
-| **0 – beat 16** (0 – 11.14s) | The DaVinci, After Effects and CapCut marks in a row on black, under *what everyone else is using*. Nine shots of the same row — wide, in on one, wide, in on the next — two beats each, the last held three. The marks pulse on the beat, phased to the track's own grid rather than to the top of the scene. |
-| **beat 16 – 17** (11.14 – 11.76s) | The picture desaturates and **MOGGED** slams on, red on white, for exactly one beat. No fade. |
-| **beat 17** (11.755s) | **The drop.** Hard cut to the OmniDx mark arriving with a chromatic split. The call-out is the beat before it, so the bass arriving and the mark arriving are the same instant. |
-| **beat 17 – 49** (11.76 – 31.50s) | 24 cuts of the app on the reference's own beat pattern: one two-beat cut then three single-beat ones, over and over, which is what gives the section its gallop. |
-| **beat 49 – end** (31.50 – 35.56s) | `omnidx.net` · `$19.99 once. no subscription. ever.` |
-
-The reference puts its call-out on the drop and changes subject a beat later.
-This puts the call-out a beat *earlier* so the change lands on the drop itself —
-the payoff hits with the bass rather than after it.
+```
+FFMPEG=/path/to/ffmpeg $FFMPEG -y -i out/tiktok/mog-02-rivals-silent.mp4 -i reference.mp4 \
+  -map 0:v -map 1:a -c:v copy -c:a aac -shortest out/tiktok/mog-02-rivals-withsound.mp4
+```
 
 **The logos are not in this repo.** They are three companies' trademarks. The
 generator can use them — showing a competitor is ordinary comparison — but

@@ -24,30 +24,47 @@
  * failure the check exists to catch.
  */
 /*
- * The reference track's beat grid, measured rather than guessed.
+ * The second reference, as measured facts rather than a theory about it.
  *
- * mog-02 is cut to a track, and a cut half a beat off reads as a mistake
- * however exactly it matches the reference's frame numbers — so every cut in it
- * lands on this grid and nowhere else.
+ * Three attempts went into getting this right and the first two were wrong in
+ * the same way: they tried to derive a beat grid and then cut to it.
  *
- * Getting the number right took three attempts. The app's own detectBeats said
- * 122 BPM at 0.44 confidence, having locked onto a hat pattern at ~133ms.
- * Autocorrelating the low band over the loud section said 618ms, 97.1 BPM, and
- * that reading beat the next best three to one. The exact figure below is a
- * least-squares fit of a grid to the reference editor's own thirty-three cut
- * times: they cut to the track, so their cuts are samples of its grid, and
- * thirty-three of them spanning thirty seconds pin the period far better than
- * autocorrelation over a noisy mix. Worst residual is 104ms, about three frames.
+ *  - The app's own detectBeats said 122 BPM at 0.44 confidence.
+ *  - Autocorrelating the low band said 97.1 BPM.
+ *  - A least-squares fit to the reference's cut times said 97.26 BPM, and a
+ *    video cut to it did not line up with the track at all.
  *
- * The check: beat 18 of this grid falls at 12.372s, and the reference changes
- * subject at 12.367s. Five milliseconds.
+ * Measuring the actual transients explains why. There are NO strong onsets in
+ * the first 11.8 seconds — that section of the track has no beat to cut to, so
+ * a grid fitted through those cuts was fitting the editor's own even rhythm and
+ * calling it tempo. After the drop the onsets do not sit on a clean grid
+ * either: the best period found by searching every period from 0.2s to 1.05s
+ * leaves an RMS error of 48ms and a worst case of 110ms, which is not a grid,
+ * it is a groove.
+ *
+ * So there is no grid, and the right answer is the obvious one that got walked
+ * past: THE REFERENCE IS THE GROUND TRUTH. Its editor cut this footage to this
+ * track and the result works. Every cut below is one of their measured cut
+ * times, used directly. The rebuild lines up with the track exactly as well as
+ * the reference does, which is the most that can be claimed and is what was
+ * actually wanted.
+ *
+ * The one deliberate change: the reference's subject changes at 12.367s, half a
+ * second after the drop at 11.81s. Here the mark arrives ON the drop and the
+ * call-out is before it.
  */
-export const REF_BPM = 97.26;
-export const REF_BEAT = 0.61693;
-/* Beat 0 — the reference's first cut after its opening shot. */
-export const REF_PHASE = 1.2673;
-/** The time of beat `k`, which is the only place a cut in mog-02 may land. */
-export const refBeat = (k) => Number((REF_PHASE + k * REF_BEAT).toFixed(4));
+/** The drop: first strong low-frequency transient in the track, measured. */
+export const REF_DROP = 11.81;
+/** The reference editor's own cut times, from dissect.mjs. */
+export const REF_CUTS = [
+  0, 1.3, 2.533, 3.733, 4.933, 6.167, 7.4, 8.633, 9.9,
+  12.367, 13.633, 14.233, 14.867, 15.5, 16.7, 17.333, 17.933, 18.5, 19.8, 20.4,
+  21, 21.633, 22.267, 23.467, 24.067, 24.7, 25.333, 26.533, 27.167, 27.767,
+  28.4, 29, 30.367, 31.467,
+];
+/** Where their end card starts, and the whole thing's length. */
+export const REF_END = 31.467;
+export const REF_LEN = 35.527;
 
 export const DROP_TONES = {
   cool: { b: 0.72, h: -16, s: 0.82 },
@@ -915,46 +932,39 @@ export const VIDEOS = [
        * on the next. `on` is which mark to centre; null is the whole row.
        */
       /*
-       * Everything here is a beat number, not a time.
+       * Nine shots on the reference's own cut times, held to the drop.
        *
-       * The first build took its cut times off the picture and never looked at
-       * the audio, so the cuts matched the reference's frames and missed its
-       * music. Nine shots, two beats each, the last held three — the
-       * reference's own rhythm — and the call-out on beat 16 so that the cut
-       * out of it lands on beat 17, which is where the bass arrives.
+       * Not a fitted grid — see REF_CUTS above for why there is no grid to fit.
+       * The last shot runs 1.91s, longer than any before it, with the call-out
+       * landing inside it so that the cut out of it is the drop.
        */
-      { type: 'rivals', dur: refBeat(17), bpm: REF_BPM, beatPhase: REF_PHASE,
+      { type: 'rivals', dur: REF_DROP, bpm: 121.7,
         logos: ['davinci', 'aftereffects', 'capcut'],
         cap: 'what everyone else is using',
-        /* One beat before the drop, so the drop itself is the cut to the mark. */
-        mog: { at: refBeat(16), text: 'MOGGED' },
+        /* On screen for the two thirds of a second before the bass arrives. */
+        mog: { at: 11.167, text: 'MOGGED' },
         cuts: [
           /* Every shot is a different height, lean and light as well as a
-             different framing. The first version varied only the framing and
+             different framing. An earlier version varied only the framing and
              the three wides came out near-identical, which is what a reframe
              of three small marks on black looks like — nothing. */
-          { at: 0, dur: refBeat(0), on: null, push: 1.18, to: 1.06, drift: 18, dy: 0,
+          { at: 0, dur: 1.3, on: null, push: 1.18, to: 1.06, drift: 18, dy: 0,
             glow: { x: 50, y: 54, r: 58, c: 'rgba(120,140,190,.2)' } },
-          { at: refBeat(0), dur: REF_BEAT * 2, on: 0, push: 1.95, to: 1.06, drift: -22, tilt: -1.5, dy: 18,
+          { at: 1.3, dur: 1.233, on: 0, push: 1.95, to: 1.06, drift: -22, tilt: -1.5, dy: 18,
             glow: { x: 26, y: 46, r: 48, c: 'rgba(90,190,225,.22)' } },
-          { at: refBeat(2), dur: REF_BEAT * 2, on: null, push: 1.22, to: 1.03, drift: 24, dy: 84, tilt: 1.1,
+          { at: 2.533, dur: 1.2, on: null, push: 1.22, to: 1.03, drift: 24, dy: 84, tilt: 1.1,
             glow: { x: 62, y: 72, r: 52, c: 'rgba(200,120,90,.18)' } },
-          { at: refBeat(4), dur: REF_BEAT * 2, on: 1, push: 2.1, to: 1.05, drift: 20, tilt: 1.2, dy: -22,
+          { at: 3.733, dur: 1.2, on: 1, push: 2.1, to: 1.05, drift: 20, tilt: 1.2, dy: -22,
             glow: { x: 54, y: 40, r: 44, c: 'rgba(120,110,230,.26)' } },
-          { at: refBeat(6), dur: REF_BEAT * 2, on: null, push: 1.15, to: 1.08, drift: -26, dy: -70, tilt: -1.4,
+          { at: 4.933, dur: 1.234, on: null, push: 1.15, to: 1.08, drift: -26, dy: -70, tilt: -1.4,
             glow: { x: 38, y: 30, r: 60, c: 'rgba(150,160,200,.16)' } },
-          { at: refBeat(8), dur: REF_BEAT * 2, on: 2, push: 2.0, to: 1.07, drift: 24, tilt: -1, dy: 26,
+          { at: 6.167, dur: 1.233, on: 2, push: 2.0, to: 1.07, drift: 24, tilt: -1, dy: 26,
             glow: { x: 72, y: 56, r: 46, c: 'rgba(230,210,150,.2)' } },
-          { at: refBeat(10), dur: REF_BEAT * 2, on: null, push: 1.25, to: 1.02, drift: -20, dy: -34, tilt: 0.9,
+          { at: 7.4, dur: 1.233, on: null, push: 1.25, to: 1.02, drift: -20, dy: -34, tilt: 0.9,
             glow: { x: 50, y: 24, r: 54, c: 'rgba(110,150,210,.22)' } },
-          { at: refBeat(12), dur: REF_BEAT * 2, on: 1, push: 1.6, to: 1.08, drift: 18, tilt: 0.8, dy: 58,
+          { at: 8.633, dur: 1.267, on: 1, push: 1.6, to: 1.08, drift: 18, tilt: 0.8, dy: 58,
             glow: { x: 44, y: 68, r: 50, c: 'rgba(210,110,140,.2)' } },
-          /* Three beats, the longest shot in the section, with the card landing
-             on the last of them. The reference holds four here and puts its
-             card on the third; the payoff is only as big as the wait was. The
-             light dims through it, because the cut out of it should arrive
-             somewhere darker than it left. */
-          { at: refBeat(14), dur: REF_BEAT * 3, on: null, push: 1.15, to: 1.12, drift: 12, dy: 6,
+          { at: 9.9, dur: 1.91, on: null, push: 1.15, to: 1.12, drift: 12, dy: 6,
             glow: { x: 50, y: 50, r: 40, c: 'rgba(90,100,140,.16)' } },
         ] },
 
@@ -979,12 +989,22 @@ export const VIDEOS = [
        * what gives the section its gallop. The same pattern starting one beat
        * earlier puts the mark's arrival on the drop instead of a beat after it.
        */
-      { type: 'drop', dur: REF_BEAT * 32, impactUnder: 0, noflash: true,
-        cuts: [0, 2, 3, 4, 5, 7, 8, 9, 10, 12, 13, 14, 15, 16, 18, 19, 20, 21, 23, 24, 25, 26, 27, 29]
-          .map((b, i, all) => ({
-            at: Number((b * REF_BEAT).toFixed(4)),
-            dur: Number((((i + 1 < all.length ? all[i + 1] : 32) - b) * REF_BEAT).toFixed(4)),
-          })),
+      /*
+       * The mog, on the reference's own cut times.
+       *
+       * REF_CUTS from index 9 on, minus REF_DROP so they are relative to the
+       * start of this scene. The mark's arrival gets the 0.557s between the
+       * drop and the reference's first B cut, which is why there is one more
+       * frame here than the reference has cuts: it changes subject half a
+       * second after the drop, and this changes on it.
+       */
+      { type: 'drop', dur: REF_END - REF_DROP, impactUnder: 0, noflash: true,
+        /* slice(9, -1): the last entry in REF_CUTS is where their end card
+           starts, which is where this scene ends — not a cut inside it. */
+        cuts: [REF_DROP, ...REF_CUTS.slice(9, -1)].map((t, i, all) => ({
+          at: Number((t - REF_DROP).toFixed(3)),
+          dur: Number(((i + 1 < all.length ? all[i + 1] : REF_END) - t).toFixed(3)),
+        })),
         frames: [
           { mark: true },
           { shot: 'export', cx: 0.5, cy: 0.5, w: 0.44, tone: 'cool', label: 'every platform at once', push: 1.18 },
@@ -1010,9 +1030,10 @@ export const VIDEOS = [
           { shot: 'panel-shapes', cx: 0.13, cy: 0.5, w: 0.3, tone: 'cool', label: 'shape layers', push: 1.12 },
           { shot: 'panel-effects', cx: 0.13, cy: 0.33, w: 0.26, tone: 'warm', label: '<em>340</em> effects', push: 1.12 },
           { shot: 'start', cx: 0.5, cy: 0.4, w: 0.6, tone: 'cool', label: 'opens in a browser', push: 1.16 },
+          { shot: 'panel-stickers', cx: 0.13, cy: 0.3, w: 0.26, tone: 'warm', label: 'stickers that follow', push: 1.15 },
         ] },
 
-      { type: 'slam', dur: 4.06, kick: '$19.99 once. no subscription. ever.', noflash: true },
+      { type: 'slam', dur: Number((REF_LEN - REF_END).toFixed(3)), kick: '$19.99 once. no subscription. ever.', noflash: true },
     ],
   },
 ];
