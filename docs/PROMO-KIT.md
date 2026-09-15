@@ -319,19 +319,44 @@ PROMO_ASSETS=... FFMPEG=... node verify-promo-specs.mjs
 `out/tiktok/mog-02-rivals-silent.mp4` · 35.5s · silent · corner sticker
 throughout.
 
-A second edit, rebuilt the same measured way. `dissect.mjs` read the reference
-as **35.53s, 34 shots**: one white saloon held for twelve seconds at a cut every
-1.23s, the picture desaturating at 11.7s while **MOGGED** lands in red on white
-for a beat, then a hypercar taking over at 12.367s with the cut rate doubled to
-0.6s for nineteen seconds. Those exact times are the two cut lists in
-`videos.js`, and the rebuild comes out at 35.53s to the frame.
+A second edit, rebuilt the same measured way — and then rebuilt again, because
+the first attempt matched the reference's **picture** and never looked at its
+**audio**. Cut times taken off the frames put the cuts in the right places
+relative to each other and say nothing about where the music is, and a cut half
+a beat off reads as a mistake however exactly it matches somebody's frame
+numbers.
+
+So the track was measured too:
 
 | | |
 |---|---|
-| **0 – 11.7s** | The DaVinci, After Effects and CapCut marks in a row on black, under *what everyone else is using*. Nine shots, all of the same row — wide, in on one, wide, in on the next. The marks pulse on the beat, staggered a sixteenth apart, so the hold is never actually still. |
-| **11.7 – 12.37s** | The picture desaturates and **MOGGED** slams on, red on white, for one beat. No fade — the reference cuts to it, and a fade here would read as a title sequence rather than a hit. |
-| **12.37 – 31.5s** | Hard cut to the OmniDx mark arriving with a chromatic split, then 23 more cuts of the app at the reference's own times. |
-| **31.5 – 35.5s** | `omnidx.net` · `$19.99 once. no subscription. ever.` |
+| **97.26 BPM**, beat 0 at **1.2673s** | Least-squares fit of a grid to the reference editor's own 33 cut times. They cut to the track, so their cuts are samples of its grid. Worst residual 104ms. |
+| **The drop is beat 17, 11.755s** | The low band sits at 10–19 units until 11.57s and jumps 5× at 11.65s. |
+| Cross-check | Beat 18 of that grid falls at 12.372s. The reference changes subject at 12.367s. **Five milliseconds.** |
+
+Getting the tempo right took three goes. The app's own `detectBeats` said
+**122 BPM at 0.44 confidence**, having locked onto a hat pattern at ~133ms —
+worth knowing, since that detector is a shipped feature and this is a track it
+gets wrong. Autocorrelating the low band over the loud section said **618ms,
+97.1 BPM**, beating the next reading three to one. The fit above is the precise
+version of that.
+
+Every cut in the rebuild lands on that grid, and `verify.mjs` fails the video if
+one does not.
+
+**The structure**, in beats rather than seconds:
+
+| | |
+|---|---|
+| **0 – beat 16** (0 – 11.14s) | The DaVinci, After Effects and CapCut marks in a row on black, under *what everyone else is using*. Nine shots of the same row — wide, in on one, wide, in on the next — two beats each, the last held three. The marks pulse on the beat, phased to the track's own grid rather than to the top of the scene. |
+| **beat 16 – 17** (11.14 – 11.76s) | The picture desaturates and **MOGGED** slams on, red on white, for exactly one beat. No fade. |
+| **beat 17** (11.755s) | **The drop.** Hard cut to the OmniDx mark arriving with a chromatic split. The call-out is the beat before it, so the bass arriving and the mark arriving are the same instant. |
+| **beat 17 – 49** (11.76 – 31.50s) | 24 cuts of the app on the reference's own beat pattern: one two-beat cut then three single-beat ones, over and over, which is what gives the section its gallop. |
+| **beat 49 – end** (31.50 – 35.56s) | `omnidx.net` · `$19.99 once. no subscription. ever.` |
+
+The reference puts its call-out on the drop and changes subject a beat later.
+This puts the call-out a beat *earlier* so the change lands on the drop itself —
+the payoff hits with the bass rather than after it.
 
 **The logos are not in this repo.** They are three companies' trademarks. The
 generator can use them — showing a competitor is ordinary comparison — but
@@ -363,8 +388,23 @@ twelve seconds renders three empty boxes and nothing else tells you.
 `#editing #capcut #davinciresolve #videoediting #editor`
 
 **Post it** the same way as the other silent cuts — upload, **Add sound** →
-**Trending**, and drag the sound so the drop lands on **11.7s**, where MOGGED
-hits. The whole video is built around that one frame.
+**Trending**, and drag the sound so its drop lands on **11.755s**, where the
+OmniDx mark arrives. Everything is cut to a 97.26 BPM grid from there, so a
+sound near that tempo will hold all the way to the end; one far off it will
+only line up at the drop.
+
+**Checking it stayed on the beat.** Dissect the render and compare each cut to
+the grid:
+
+```
+FFMPEG=... node tools/promo/studio/dissect.mjs out/tiktok/mog-02-rivals-silent.mp4 \
+  --out /tmp/mine --threshold 0.05
+```
+
+`--threshold 0.05` matters here: most of the first twelve seconds is black, and
+at the default 0.25 a cut that is obvious to look at changes too few pixels to
+score. `dissect.mjs` now says so when it suspects this rather than reporting one
+long shot and moving on.
 
 **Worth knowing before you post it.** ByteDance owns both CapCut and TikTok, so
 this is a video that puts MOGGED on CapCut's mark and then goes up on CapCut's

@@ -108,7 +108,9 @@ async function openComp(id, fmt) {
   const page = await ctx.newPage();
   page.on('pageerror', (e) => console.error(`  [${id}] page error: ${e.message}`));
   page.on('console', (m) => { if (m.type() === 'error') console.error(`  [${id}] console: ${m.text()}`); });
-  await page.goto(`http://127.0.0.1:${PORT}/tools/promo/studio/comp.html?video=${encodeURIComponent(id)}&fmt=${fmt}${COLD ? '&cold=1' : ''}`, { waitUntil: 'load' });
+  /* The frame rate goes to the page so a cut can land on the nearest frame
+     rather than the next one — see the half-frame tolerance in comp.js. */
+  await page.goto(`http://127.0.0.1:${PORT}/tools/promo/studio/comp.html?video=${encodeURIComponent(id)}&fmt=${fmt}&fps=${FPS}${COLD ? '&cold=1' : ''}`, { waitUntil: 'load' });
   const t0 = Date.now();
   while (!(await page.evaluate(() => window.READY === true))) {
     if (Date.now() - t0 > 30000) throw new Error(`${id}: composition never became ready`);

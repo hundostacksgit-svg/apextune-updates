@@ -16,6 +16,19 @@
 import { VIDEOS, STILLS, DROP_TONES } from './videos.js';
 
 const q = new URLSearchParams(location.search);
+/*
+ * Half a frame, for deciding which cut is live.
+ *
+ * A cut is asked for at a time; the renderer only samples the composition at
+ * frame boundaries. Testing `l >= cut.at` means a cut asked for at 1.2673s
+ * first appears on the frame at 1.3000 — because frame 38 lands at 1.2667,
+ * six tenths of a millisecond short — so every cut in a beat-locked edit came
+ * out up to a full frame late, and measurably so: the first render of mog-02
+ * was between 21 and 33ms behind its own grid on every cut. Allowing half a
+ * frame of tolerance puts each cut on the NEAREST frame instead of the next
+ * one, which is what an NLE does and which halves the worst error.
+ */
+const HALF_FRAME = 0.5 / (Number(q.get('fps')) || 30);
 const FMT = q.get('fmt') || 'tiktok';
 const SIZES = { tiktok: [1080, 1920], yt: [1920, 1080], feed: [1080, 1350], thumb: [1280, 720] };
 const [W, H] = SIZES[FMT] || SIZES.tiktok;
@@ -501,7 +514,7 @@ const BUILD = {
     return { el: root, update(l) {
       let lit = 0;
       for (const k of cells) {
-        const on = l >= k.c.at && l < k.c.at + k.c.dur;
+        const on = l >= k.c.at - HALF_FRAME && l < k.c.at + k.c.dur - HALF_FRAME;
         k.cell.style.display = on ? '' : 'none';
         if (!on) continue;
         if (k.mark) {
@@ -604,6 +617,9 @@ const BUILD = {
        the same box, so a cut cannot cause a reflow and the marks cannot shift
        between frames for reasons that are not the edit. */
     const beat = 60 / (s.bpm || 97.3);
+    /* Where the track's own beat one falls, so the pulse lands with the music
+       rather than with the top of the scene. */
+    const phase0 = s.beatPhase ?? 0;
     const cuts = s.cuts || [];
     const mogAt = s.mog?.at ?? Infinity;
     /*
@@ -628,7 +644,7 @@ const BUILD = {
       /* Which shot is live. Linear scan over nine entries: a binary search here
          would be faster and harder to read, and this runs once a frame. */
       let k = 0;
-      for (let i = 0; i < cuts.length; i++) if (l >= cuts[i].at) k = i;
+      for (let i = 0; i < cuts.length; i++) if (l >= cuts[i].at - HALF_FRAME) k = i;
       const c = cuts[k] || { at: 0, dur: 1.2 };
       const p = c.dur ? Math.min(1, (l - c.at) / c.dur) : 0;
       /* Only on a cut: writing a gradient string every frame repaints the whole
@@ -656,10 +672,17 @@ const BUILD = {
       const sy = H / 2 - (stage.offsetHeight || H) / 2 + (c.dy ?? 0);
       stage.style.transform = `translate(${sx}px, ${sy}px) scale(${zoom}) rotate(${tilt}deg)`;
 
-      /* The beat, on the marks themselves. Staggered by a sixteenth each so the
-         row reads as three things reacting rather than one thing scaling. */
+      /*
+       * The beat, on the marks themselves.
+       *
+       * Phased to the track's grid, not to the start of the scene: the first
+       * build pulsed from zero and the track's first beat is at 1.2673s, so
+       * every pulse in the whole twelve seconds was a fifth of a beat early.
+       * Staggered a sixteenth each so the row reads as three things reacting
+       * rather than one thing scaling.
+       */
       marks.forEach((m, i) => {
-        const at = (l - i * beat * 0.0625) / beat;
+        const at = (l - phase0 - i * beat * 0.0625) / beat;
         const hit = 1 - (at - Math.floor(at));
         const pulse = 1 + 0.05 * hit * hit * hit;
         const lift = -10 * hit * hit * hit;
@@ -674,7 +697,7 @@ const BUILD = {
        * a title sequence instead of a hit. The card overshoots once and settles
        * inside a fifth of a second.
        */
-      const mogged = l >= mogAt;
+      const mogged = l >= mogAt - HALF_FRAME;
       stage.style.filter = mogged ? 'grayscale(1) contrast(1.15) brightness(.82)' : 'none';
       floor.style.opacity = mogged ? '0.3' : '1';
       floor.style.filter = mogged ? 'grayscale(1)' : 'none';

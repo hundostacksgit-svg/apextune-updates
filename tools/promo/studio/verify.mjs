@@ -24,7 +24,7 @@ const FFMPEG = process.env.FFMPEG || 'ffmpeg';
 let fail = 0;
 const ok = (n, c, d = '') => { console.log(`${c ? '  ok  ' : ' FAIL '} ${n}${d ? ' — ' + d : ''}`); if (!c) fail++; };
 
-const { VIDEOS, DROP_TONES } = await import('./videos.js');
+const { VIDEOS, DROP_TONES, REF_BEAT, REF_PHASE } = await import('./videos.js');
 
 /* Every scene in every video, flattened, so a check can be written once. */
 const scenes = VIDEOS.flatMap((v) => (v.scenes || []).map((s, i) => ({ v, s, i })));
@@ -143,6 +143,49 @@ for (const { v, s: sc, i } of scenes.filter((x) => x.s.type === 'rivals')) {
   const bad = cuts.filter((c) => c.on != null && (c.on < 0 || c.on >= n));
   ok(`${v.id} scene ${i}: every shot frames a mark that exists`, bad.length === 0,
     bad.map((c) => `${c.at}s -> ${c.on}`).join(', '));
+}
+
+console.log('\n== beat-locked videos land on the grid ==');
+{
+  /*
+   * "Every cut has to match the beat 1 to 1" made checkable.
+   *
+   * mog-02 is cut to a measured 97.26 BPM grid. Scene durations accumulate, so
+   * a cut's real time is where it sits inside its scene plus every scene before
+   * it — which means a wrong `dur` two scenes earlier moves cuts that look
+   * correct in the file. Walking the whole video and testing each cut against
+   * the grid catches that; reading the numbers does not.
+   */
+  const TOL = 1 / 30;                    // one frame at the render's frame rate
+  for (const v of VIDEOS.filter((x) => x.id.startsWith('mog-02'))) {
+    const offGrid = [];
+    let base = 0;
+    for (const sc of v.scenes) {
+      for (const c of sc.cuts || []) {
+        const t = base + c.at;
+        /* t=0 is the video starting, not a cut to anything. The reference does
+           the same: its first shot opens at 0 and its first cut is at 1.3. */
+        if (t === 0) continue;
+        const k = Math.round((t - REF_PHASE) / REF_BEAT);
+        const err = Math.abs(t - (REF_PHASE + k * REF_BEAT));
+        if (err > TOL) offGrid.push(`${t.toFixed(3)}s off by ${(err * 1000).toFixed(0)}ms`);
+      }
+      base += sc.dur || 0;
+    }
+    ok(`${v.id}: every cut is on a beat`, offGrid.length === 0, offGrid.slice(0, 5).join(', '));
+
+    /* The two moments the whole edit is built around. */
+    const riv = v.scenes.find((sc) => sc.type === 'rivals');
+    const dropAt = v.scenes.slice(0, v.scenes.findIndex((sc) => sc.type === 'drop'))
+      .reduce((a, sc) => a + (sc.dur || 0), 0);
+    const kDrop = Math.round((dropAt - REF_PHASE) / REF_BEAT);
+    ok(`${v.id}: the mark arrives on the drop`,
+      Math.abs(dropAt - (REF_PHASE + kDrop * REF_BEAT)) < TOL && kDrop === 17,
+      `at ${dropAt.toFixed(3)}s = beat ${kDrop}, drop is beat 17`);
+    const kMog = riv?.mog ? Math.round((riv.mog.at - REF_PHASE) / REF_BEAT) : null;
+    ok(`${v.id}: the call-out is one beat before it`, kMog === kDrop - 1,
+      kMog == null ? 'no call-out' : `call-out beat ${kMog}, arrival beat ${kDrop}`);
+  }
 }
 
 console.log('\n== consecutive cuts are visibly different ==');
