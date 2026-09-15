@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Unlocking your copy — OmniDx Studio</title>
+<meta name="description" content="Your payment went through. OmniDx Studio is unlocking on this device now.">
+<meta name="theme-color" content="#04060d">
+<link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<link rel="canonical" href="https://omnidx.net/studio/activate/">
+<!-- A receipt page is nobody's share target, and a search result for it would
+     only ever confuse. Keep it out of both. -->
+<meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="../assets/studio.css">
+<script>
+(function(){try{var t=localStorage.getItem('omnidx.theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+</script>
+<style>
+  .act-wrap{max-width:640px;margin:0 auto;padding:56px 20px 80px}
+  .act-card{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-l);padding:32px 26px}
+  .act-tick{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-size:32px;
+    margin:0 auto 18px;background:color-mix(in srgb,var(--ok,#35d07f) 18%,transparent);
+    border:1px solid color-mix(in srgb,var(--ok,#35d07f) 45%,transparent)}
+  .act-wrap h1{text-align:center;margin:0 0 8px;font-size:clamp(24px,5vw,32px)}
+  .act-sub{text-align:center;color:var(--text-2);margin:0 0 26px}
+  .act-row{display:flex;justify-content:space-between;gap:14px;padding:11px 0;border-top:1px solid var(--line);
+    font-size:14px}
+  .act-row b{font-weight:600}
+  .act-actions{display:flex;flex-direction:column;gap:10px;margin-top:26px}
+  .act-actions .btn{width:100%;justify-content:center}
+  .act-note{margin-top:22px;font-size:13px;color:var(--text-2);line-height:1.6}
+  .act-spin{width:44px;height:44px;border-radius:50%;margin:0 auto 18px;
+    border:3px solid var(--line);border-top-color:var(--blue);animation:act-turn .8s linear infinite}
+  @keyframes act-turn{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion: reduce){.act-spin{animation-duration:2.4s}}
+</style>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"><div class="grid"></div></div>
+
+<main class="act-wrap">
+  <div class="act-card" id="card">
+    <div class="act-spin" aria-hidden="true"></div>
+    <h1>Unlocking your copy</h1>
+    <p class="act-sub">One moment.</p>
+  </div>
+</main>
+
+<script type="module" src="./activate.js"></script>
+</body>
+</html>

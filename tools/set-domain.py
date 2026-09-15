@@ -31,6 +31,18 @@ ROOT = Path(__file__).resolve().parent.parent
 CNAME = ROOT / "CNAME"
 INDEX = ROOT / "index.html"
 
+# Every page carrying absolute link-preview tags. index.html is first because
+# its canonical tag is what tells us where the site currently lives; the rest
+# are rewritten against the same old base, so a page that was somehow left
+# behind by a previous move still ends up in the right place.
+PAGES = (
+    INDEX,
+    ROOT / "studio" / "index.html",
+    ROOT / "studio" / "pricing" / "index.html",
+    ROOT / "studio" / "download" / "index.html",
+    ROOT / "studio" / "account" / "index.html",
+)
+
 # Every absolute link in the page head. Each is rewritten as a whole URL rather
 # than by substituting a hostname, so a half-updated tag is not possible.
 SITE_TAGS = (
@@ -108,27 +120,34 @@ def check(domain: str) -> tuple[bool, list[str]]:
     return True, notes
 
 
-def rewrite_site_url(base: str) -> list[str]:
-    """Point the link-preview tags at `base`. Returns what changed."""
-    base = base.rstrip("/") + "/"
-    html = INDEX.read_text(encoding="utf-8")
+def site_root(html: str) -> str | None:
+    """Where the site currently lives, read from a page's canonical tag.
 
-    # The canonical tag is the authority on where the site currently lives.
-    # Everything else is rewritten relative to it, because a project page's URL
-    # carries a repository path -- "/user.github.io/omnidx/" -- that belongs to
-    # the site root, not to the file underneath it. Splitting on slashes instead
-    # would fold that path into the filename and produce /omnidx/old-name/....
-    cstart = html.find(SITE_TAGS[0][0])
-    if cstart < 0:
-        return ["! no canonical tag in index.html — cannot tell where the site lives"]
-    cstart += len(SITE_TAGS[0][0])
-    old_base = html[cstart:html.find(SITE_TAGS[0][1], cstart)].rstrip("/") + "/"
+    The canonical tag is the authority, because a project page's URL carries a
+    repository path -- "/user.github.io/omnidx/" -- that belongs to the site
+    root, not to the file underneath it. Splitting on slashes instead would fold
+    that path into the filename and produce /omnidx/old-name/....
+    """
+    prefix, suffix = SITE_TAGS[0]
+    start = html.find(prefix)
+    if start < 0:
+        return None
+    start += len(prefix)
+    return html[start:html.find(suffix, start)]
 
+
+def rewrite_page(page: Path, old_base: str, new_base: str) -> list[str]:
+    """Repoint one page's preview tags. Returns what changed."""
+    if not page.exists():
+        return []
+    html = page.read_text(encoding="utf-8")
+    rel = page.relative_to(ROOT)
     changed = []
+
     for prefix, suffix in SITE_TAGS:
         start = html.find(prefix)
         if start < 0:
-            changed.append(f"! {prefix.strip()} not found in index.html — left alone")
+            changed.append(f"! {prefix.strip()} not found in {rel} — left alone")
             continue
         vstart = start + len(prefix)
         vend = html.find(suffix, vstart)
@@ -136,12 +155,30 @@ def rewrite_site_url(base: str) -> list[str]:
         if not old.startswith(old_base.rstrip("/")):
             changed.append(f"! {old} is not under {old_base} — left alone")
             continue
-        tail = old[len(old_base):] if old.startswith(old_base) else ""
-        new_url = base + tail
+        # The tail is the page's own path under the site root, which is exactly
+        # what has to survive a move.
+        new_url = new_base + old[len(old_base):]
         if new_url != old:
             html = html[:vstart] + new_url + html[vend:]
-            changed.append(f"  {old}\n    -> {new_url}")
-    INDEX.write_text(html, encoding="utf-8")
+            changed.append(f"  {rel}\n    {old}\n    -> {new_url}")
+    page.write_text(html, encoding="utf-8")
+    return changed
+
+
+def rewrite_site_url(base: str) -> list[str]:
+    """Point every page's link-preview tags at `base`. Returns what changed."""
+    new_base = base.rstrip("/") + "/"
+
+    current = site_root(INDEX.read_text(encoding="utf-8"))
+    if current is None:
+        return ["! no canonical tag in index.html — cannot tell where the site lives"]
+    old_base = current.rstrip("/") + "/"
+
+    changed = []
+    for page in PAGES:
+        # Each page's canonical points at its own path, so the shared site root
+        # is taken from index.html and applied to all of them.
+        changed += rewrite_page(page, old_base, new_base)
     return changed
 
 
@@ -159,7 +196,7 @@ def main() -> int:
         changes = rewrite_site_url(args.site_url)
         for c in changes:
             print(c)
-        print("\nNothing to change." if not changes else "\nUpdated index.html. Commit and push.")
+        print("\nNothing to change." if not changes else "\nUpdated the site's preview tags. Commit and push.")
         return 0
 
     if args.remove:

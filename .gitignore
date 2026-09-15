@@ -8,3 +8,17 @@ __pycache__/
 node_modules
 tools/promo/beatmap.json
 omnidx-beatcut.mp4
+
+# OmniDx Studio
+studio/mobile/www/
+studio/mobile/ios/
+studio/mobile/android/
+studio/desktop/out/
+server/.wrangler/
+server/node_modules/
+package-lock.json
+
+# Built installers are large, platform-specific and rebuilt per release.
+# studio/download/files/README.md explains how to publish one.
+studio/download/files/*
+!studio/download/files/README.md

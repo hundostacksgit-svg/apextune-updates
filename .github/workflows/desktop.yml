@@ -1,0 +1,73 @@
+name: Desktop installers
+
+# Builds the macOS, Windows and Linux installers from studio/desktop on the
+# operating systems they are for — a .dmg needs a Mac, an .exe needs Windows —
+# and hands them back as workflow artifacts. Nothing is published anywhere by
+# this workflow: the files go into studio/download/files/ on the site, where
+# the download page serves them and the installed app checks for updates.
+#
+# Run it from the Actions tab (Run workflow), or push a tag like v1.0.0.
+# Signing is optional: set the secrets below and the builds come out signed
+# and notarised; leave them unset and they come out unsigned, which works
+# but warns on first launch.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            script: dist:mac
+            out: 'studio/desktop/out/*.dmg studio/desktop/out/*.zip studio/desktop/out/latest-mac.yml'
+          - os: windows-latest
+            script: dist:win
+            out: 'studio/desktop/out/*.exe studio/desktop/out/latest.yml'
+          - os: ubuntu-latest
+            script: dist:linux
+            out: 'studio/desktop/out/*.AppImage studio/desktop/out/*.deb studio/desktop/out/*.rpm studio/desktop/out/latest-linux.yml'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install
+        working-directory: studio/desktop
+        run: npm install --no-audit --no-fund
+
+      - name: Build
+        working-directory: studio/desktop
+        env:
+          # macOS signing and notarisation; unset means unsigned.
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # Windows signing; unset means unsigned.
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          # electron-builder would otherwise try to publish on a tag build.
+          EP_DRAFT: 'false'
+        run: npm run ${{ matrix.script }} -- --publish never
+
+      - name: List what was built
+        shell: bash
+        run: ls -la studio/desktop/out/ || true
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: omnidx-studio-${{ matrix.os }}
+          path: ${{ matrix.out }}
+          if-no-files-found: error
+          retention-days: 30
