@@ -114,6 +114,41 @@ The PNG lands in `out/check/`. When it looks right, render just that one:
 node tools/promo/studio/render.mjs --video 04-340-effects --out $PROMO_ASSETS/out
 ```
 
+## Copying an edit
+
+`dissect.mjs` takes an MP4 apart so it can be rebuilt: a reference somebody
+sent, a screen recording of a TikTok worth stealing the shape of, or one of
+ours.
+
+```
+FFMPEG=/path/to/ffmpeg node tools/promo/studio/dissect.mjs reference.mp4 --out /tmp/ref
+```
+
+It writes `cuts.json` (every cut time, every shot length, the pace, and the
+tempo those lengths imply if the edit is cut to a track), `shot-NN.jpg` from the
+middle of each shot, and `contact.jpg` — the whole edit as one image, which is
+the thing to look at first.
+
+Two details it gets right that a naive read does not:
+
+- **A flash on the cut is not a shot.** A white frame between two shots trips
+  the scene detector twice, so a five-shot edit reports as nine, four of them a
+  single frame long. Anything under two frames is folded back into the shot it
+  interrupted and counted as a transition instead.
+- **A shot length only implies a tempo if music is made at it.** 60 over a
+  4.5-second shot is 13 BPM, which is arithmetic rather than a tempo. It tries
+  one, two, four and eight beats a cut and keeps the readings that land between
+  60 and 200.
+
+`--threshold` tunes the cut detector: higher for a busy edit full of camera
+movement, lower for a slow one. The value used is recorded in `cuts.json`.
+
+Then build the copy as a normal entry in `videos.js`, with scene durations taken
+from `cuts.json`. What transfers exactly is the structure — cut timing, shot
+count and order, text placement and timing, the moves. What cannot transfer is
+the audio: a commercial track cannot be reproduced and should not be, so those
+rebuilds get rendered `--silent` and the sound goes on in the app.
+
 ## Before and after pairs
 
 Two scenes show a result rather than a panel, and both are the app's real
