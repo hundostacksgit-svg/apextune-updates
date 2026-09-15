@@ -314,6 +314,68 @@ PROMO_ASSETS=... FFMPEG=... node verify-promo-specs.mjs
 
 ---
 
+## The second mog — three logos, called out
+
+`out/tiktok/mog-02-rivals-silent.mp4` · 35.5s · silent · corner sticker
+throughout.
+
+A second edit, rebuilt the same measured way. `dissect.mjs` read the reference
+as **35.53s, 34 shots**: one white saloon held for twelve seconds at a cut every
+1.23s, the picture desaturating at 11.7s while **MOGGED** lands in red on white
+for a beat, then a hypercar taking over at 12.367s with the cut rate doubled to
+0.6s for nineteen seconds. Those exact times are the two cut lists in
+`videos.js`, and the rebuild comes out at 35.53s to the frame.
+
+| | |
+|---|---|
+| **0 – 11.7s** | The DaVinci, After Effects and CapCut marks in a row on black, under *what everyone else is using*. Nine shots, all of the same row — wide, in on one, wide, in on the next. The marks pulse on the beat, staggered a sixteenth apart, so the hold is never actually still. |
+| **11.7 – 12.37s** | The picture desaturates and **MOGGED** slams on, red on white, for one beat. No fade — the reference cuts to it, and a fade here would read as a title sequence rather than a hit. |
+| **12.37 – 31.5s** | Hard cut to the OmniDx mark arriving with a chromatic split, then 23 more cuts of the app at the reference's own times. |
+| **31.5 – 35.5s** | `omnidx.net` · `$19.99 once. no subscription. ever.` |
+
+**The logos are not in this repo.** They are three companies' trademarks. The
+generator can use them — showing a competitor is ordinary comparison — but
+redistributing their artwork is not ours to do, so they live in
+`$PROMO_ASSETS/logos/` with the rest of the generated input, which git ignores.
+Supply your own copies and run:
+
+```
+PROMO_ASSETS=$HOME/omnidx-promo FFMPEG=/path/to/ffmpeg node tools/promo/studio/logos.mjs \
+  --davinci davinci.jpg --ae aftereffects.png --capcut capcut.png
+```
+
+`logos.mjs` cuts each one onto a real alpha channel, three different ways
+because they are three different problems. A coloured mark on white gets the
+white keyed out. A **round** mark on white gets masked to a circle instead —
+DaVinci's three lobes have white specular highlights near their tips and a
+colour key takes those too, leaving holes in the middle of the logo. A **black**
+mark on white (CapCut's) would be invisible on black, so its own luminance
+becomes the alpha and the mark is painted white, which is exact rather than
+thresholded and keeps the anti-aliased edge.
+
+`verify.mjs` fails if any of them is missing, because without them the first
+twelve seconds renders three empty boxes and nothing else tells you.
+
+**Caption**
+
+> they charge monthly for this. omnidx.net is $19.99 once.
+
+`#editing #capcut #davinciresolve #videoediting #editor`
+
+**Post it** the same way as the other silent cuts — upload, **Add sound** →
+**Trending**, and drag the sound so the drop lands on **11.7s**, where MOGGED
+hits. The whole video is built around that one frame.
+
+**Worth knowing before you post it.** ByteDance owns both CapCut and TikTok, so
+this is a video that puts MOGGED on CapCut's mark and then goes up on CapCut's
+owner's platform. Naming and showing a competitor is ordinary comparative
+advertising and nothing here claims anything false about any of them — but the
+moderation risk is real and it is separate from the legal question. If you would
+rather not take it, `mog-01-subscription` makes the same argument with the names
+set as text and no artwork.
+
+---
+
 ## Four sets of three
 
 Twenty-six videos in one register is one experiment run twenty-six times. The

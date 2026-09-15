@@ -137,6 +137,23 @@ const tempos = median > 0.05
     .filter((t) => t.bpm >= 60 && t.bpm <= 200)
   : [];
 
+/*
+ * Say so when the threshold is probably wrong for this picture.
+ *
+ * `scene` scores a cut by how much of the frame changed, so on a mostly-black
+ * picture a cut that is obvious to a person barely registers: a rebuild of one
+ * of these read as a single twelve-second shot at 0.25 and as nine shots — the
+ * right nine — at 0.05. Reporting one long shot and moving on is the worst
+ * outcome, because it looks like an answer. So: if one shot swallows the file,
+ * or the whole thing reads as slower than a cut every four seconds, say what to
+ * try instead.
+ */
+const longest = lens.length ? Math.max(...lens) : 0;
+const dominated = lens.length > 1 && median > 0 && longest > median * 5;
+const sparse = dur > 8 && shots.length < dur / 4;
+const suspect = dominated || sparse;
+const suggested = Number((THRESHOLD / 5).toFixed(3));
+
 const report = {
   file: path.basename(file),
   seconds: Number(dur.toFixed(2)),
@@ -151,6 +168,7 @@ const report = {
     ? tempos.map((t) => `${t.bpm} BPM at ${t.beats === 1 ? 'a cut a beat' : `a cut every ${t.beats} beats`}`)
     : null,
   cuts: shots,
+  ...(suspect ? { warning: `threshold ${THRESHOLD} may be too high for this picture — try --threshold ${suggested}` } : {}),
 };
 fs.writeFileSync(path.join(OUT, 'cuts.json'), JSON.stringify(report, null, 1));
 
@@ -160,4 +178,9 @@ console.log(`${shots.length} shots, median ${report.medianShot}s, mean ${report.
 if (report.looksCutToMusic) console.log(`evenly cut — ${report.impliedTempo.join(', or ')}`);
 else if (even) console.log('evenly cut, but too slow for the shot length to imply a tempo');
 console.log(shots.map((s) => `${s.at}s (${s.dur}s)`).join('  '));
+if (suspect) {
+  console.log(`\n! ${dominated ? `one shot is ${(longest / median).toFixed(0)}x the median` : `only ${shots.length} shots in ${dur.toFixed(0)}s`}`
+    + ` — on a dark or low-contrast picture ${THRESHOLD} misses cuts that are obvious to look at.`);
+  console.log(`  try: --threshold ${suggested}`);
+}
 console.log(`\nwritten to ${OUT}`);

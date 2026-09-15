@@ -514,7 +514,17 @@ const BUILD = {
           const split = (1 - Math.min(1, p * 2.2)) * 26;
           k.wm.style.textShadow = split > 0.4
             ? `${split}px 0 rgba(255,60,80,.9), ${-split}px 0 rgba(0,220,255,.9)` : 'none';
-          lit = Math.max(lit, 1 - Math.min(1, p * 2.4));
+          /*
+           * The flash decays over a fixed eighth of a second, not over a
+           * fraction of the cut.
+           *
+           * As a fraction it scaled with the shot: on a 0.33s cut it was gone
+           * in 140ms, and on the 1.27s opening cut of the second mog it sat at
+           * 40% white for half a second and the arrival looked washed out
+           * rather than bright. How long a flash lasts is a property of the
+           * flash.
+           */
+          lit = Math.max(lit, 1 - Math.min(1, (l - k.c.at) / 0.13));
           continue;
         }
         const asp = (k.img.naturalWidth && k.img.naturalHeight) ? k.img.naturalWidth / k.img.naturalHeight : 1.6;
@@ -553,6 +563,128 @@ const BUILD = {
         if (k.punchy) lit = Math.max(lit, 1 - Math.min(1, p * 1.6));
       }
       flash.style.opacity = String(lit * 0.55);
+    } };
+  },
+
+  /*
+   * Three marks on black, held for twelve seconds, then called out.
+   *
+   * The reference this copies spends twelve seconds on one white saloon at a
+   * cut every 1.23 seconds, desaturates, drops MOGGED in red on white for one
+   * beat, and cuts to a hypercar at double the rate. Twelve seconds is a long
+   * time to hold one subject and the whole gag depends on it: the payoff is
+   * only as big as the wait was boring.
+   *
+   * So the subject is one row of three marks and every cut is a camera move on
+   * it — wide, then in on one, then wide again — which is exactly what the
+   * reference does with a car and a set of lenses. The marks themselves pulse
+   * on the beat, staggered, so the shot is never actually still.
+   *
+   * The logos are cut out by logos.mjs and live in PROMO_ASSETS, not in the
+   * repo: they are other companies' trademarks, and naming or showing a
+   * competitor is ordinary comparison but redistributing their artwork is not
+   * ours to do.
+   */
+  rivals(s) {
+    const root = el('div', 'rivals');
+    const floor = el('div', 'floor');
+    const stage = el('div', 'stage');
+    const marks = (s.logos || []).map((name) => {
+      const img = el('img', 'mark');
+      img.src = `${A}/logos/${name}.png`;
+      stage.appendChild(img);
+      return img;
+    });
+    const grain = el('div', 'grain');
+    const mog = el('div', 'mog', `<b>${s.mog?.text || 'MOGGED'}</b>`);
+    mog.style.opacity = '0';
+    root.append(floor, stage, grain, mog);
+
+    /* The stage is laid out once and never again: every shot is a transform of
+       the same box, so a cut cannot cause a reflow and the marks cannot shift
+       between frames for reasons that are not the edit. */
+    const beat = 60 / (s.bpm || 97.3);
+    const cuts = s.cuts || [];
+    const mogAt = s.mog?.at ?? Infinity;
+    /*
+     * Each shot gets its own light.
+     *
+     * The first build moved the camera on every cut and the whole twelve
+     * seconds still dissected as a single shot: three small marks on black
+     * means a reframe changes almost no pixels, so there is nothing for a cut
+     * to be. The reference does not have this problem because its nine shots
+     * are in different places under different light — the frame changes even
+     * when the subject does not. So every cut here moves and recolours the
+     * floor glow, which changes the whole frame the way a new setup would.
+     */
+    let litK = -1;
+    const light = (c) => {
+      const g = c.glow || {};
+      floor.style.background = `radial-gradient(ellipse at ${g.x ?? 50}% ${g.y ?? 52}%, `
+        + `${g.c || 'rgba(120,140,190,.18)'} 0%, rgba(0,0,0,0) ${g.r ?? 62}%)`;
+    };
+
+    return { el: root, update(l) {
+      /* Which shot is live. Linear scan over nine entries: a binary search here
+         would be faster and harder to read, and this runs once a frame. */
+      let k = 0;
+      for (let i = 0; i < cuts.length; i++) if (l >= cuts[i].at) k = i;
+      const c = cuts[k] || { at: 0, dur: 1.2 };
+      const p = c.dur ? Math.min(1, (l - c.at) / c.dur) : 0;
+      /* Only on a cut: writing a gradient string every frame repaints the whole
+         background sixty times for nothing. */
+      if (k !== litK) { light(c); litK = k; }
+
+      /*
+       * Where the camera is.
+       *
+       * `on` is which mark to centre — a number, or null for the whole row. The
+       * row is centred in the frame at scale 1, so framing mark i means pushing
+       * the stage sideways by how far that mark is from the middle, which is
+       * known from the layout rather than measured.
+       */
+      const n = Math.max(1, marks.length);
+      const step = (stage.offsetWidth || W) / n;
+      const offset = c.on == null ? 0 : (c.on - (n - 1) / 2) * step;
+      /* Every shot drifts across its own length. Still frames are what make a
+         held subject feel like a slideshow. */
+      const drift = lerp(0, c.drift ?? 26, p);
+      const zoom = lerp(c.push ?? 1, (c.push ?? 1) * (c.to ?? 1.06), outCubic(p));
+      const tilt = lerp(c.tilt ?? 0, (c.tilt ?? 0) * 0.3, p);
+
+      const sx = W / 2 - (stage.offsetWidth || W) / 2 - offset * zoom + drift;
+      const sy = H / 2 - (stage.offsetHeight || H) / 2 + (c.dy ?? 0);
+      stage.style.transform = `translate(${sx}px, ${sy}px) scale(${zoom}) rotate(${tilt}deg)`;
+
+      /* The beat, on the marks themselves. Staggered by a sixteenth each so the
+         row reads as three things reacting rather than one thing scaling. */
+      marks.forEach((m, i) => {
+        const at = (l - i * beat * 0.0625) / beat;
+        const hit = 1 - (at - Math.floor(at));
+        const pulse = 1 + 0.05 * hit * hit * hit;
+        const lift = -10 * hit * hit * hit;
+        m.style.transform = `translateY(${lift}px) scale(${pulse})`;
+      });
+
+      /*
+       * The call-out.
+       *
+       * Desaturate the picture and slam the card on in the same frame — the
+       * reference cuts to it rather than fading, and a fade here would read as
+       * a title sequence instead of a hit. The card overshoots once and settles
+       * inside a fifth of a second.
+       */
+      const mogged = l >= mogAt;
+      stage.style.filter = mogged ? 'grayscale(1) contrast(1.15) brightness(.82)' : 'none';
+      floor.style.opacity = mogged ? '0.3' : '1';
+      floor.style.filter = mogged ? 'grayscale(1)' : 'none';
+      if (mogged) {
+        const q = Math.min(1, (l - mogAt) / 0.18);
+        mog.style.opacity = '1';
+        mog.style.transform = `scale(${lerp(1.5, 1, outBack(q))}) rotate(${lerp(-3.5, 0, outBack(q))}deg)`;
+      } else {
+        mog.style.opacity = '0';
+      }
     } };
   },
 

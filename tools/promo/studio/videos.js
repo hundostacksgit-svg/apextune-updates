@@ -857,6 +857,133 @@ export const VIDEOS = [
       { type: 'slam', dur: 3.2, kick: '$19.99 once. no subscription. ever.', noflash: true },
     ],
   },
+
+  /* ===================================================================
+   * mog-02-rivals — the second rebuild, off a second edit the owner sent.
+   *
+   * dissect.mjs measured that one at 35.53s, 34 shots: one white saloon held
+   * twelve seconds at a cut every 1.23s, then the picture desaturates and
+   * MOGGED lands in red on white for a beat at 11.7s, then a hypercar takes
+   * over at 12.367s and the cut rate doubles to 0.6s for nineteen seconds.
+   * Those exact times are the two cut lists below.
+   *
+   * 0.6s a cut is 100 BPM on the beat; 1.233s is two beats at 97.3. The marks
+   * pulse at 97.3 so the hold is never actually still.
+   *
+   * The three logos are supplied by whoever is building this and cut out by
+   * logos.mjs into PROMO_ASSETS. They are not in the repo — showing a
+   * competitor is ordinary comparison, redistributing their artwork is not
+   * ours to do. Render without them and the marks are simply missing, which
+   * verify.mjs reports rather than letting it ship.
+   *
+   * Silent by design, like the other one: the reference's audio belongs to
+   * whoever made it. Render with --silent and pick the sound in TikTok.
+   * =================================================================== */
+  {
+    id: 'mog-02-rivals', title: 'The mog: three logos', music: 'phonk-132-24s',
+    wm: 'corner', formats: ['tiktok'],
+    scenes: [
+      /*
+       * Twelve seconds on three marks. Nine shots, the same subject every time,
+       * which is the reference's structure exactly — wide, in on one, wide, in
+       * on the next. `on` is which mark to centre; null is the whole row.
+       */
+      { type: 'rivals', dur: 12.367, bpm: 97.3,
+        logos: ['davinci', 'aftereffects', 'capcut'],
+        cap: 'what everyone else is using',
+        mog: { at: 11.7, text: 'MOGGED' },
+        /*
+         * The row is 860px wide, so a wide shot at push 1.25 fills 1075 of a
+         * 1080 frame and everything is still in it. Past about 1.26 the outer
+         * two mark start leaving the frame, which is right for a close-up and
+         * wrong for a wide — so the wides sit between 1.15 and 1.25 and the
+         * close-ups go where they like.
+         */
+        cuts: [
+          /* Every shot is a different height, lean and light as well as a
+             different framing. The first version varied only the framing and
+             the three wides came out near-identical, which is what a reframe
+             of three small marks on black looks like — nothing. */
+          { at: 0, dur: 1.3, on: null, push: 1.18, to: 1.06, drift: 18, dy: 0,
+            glow: { x: 50, y: 54, r: 58, c: 'rgba(120,140,190,.2)' } },
+          { at: 1.3, dur: 1.233, on: 0, push: 1.95, to: 1.06, drift: -22, tilt: -1.5, dy: 18,
+            glow: { x: 26, y: 46, r: 48, c: 'rgba(90,190,225,.22)' } },
+          { at: 2.533, dur: 1.2, on: null, push: 1.22, to: 1.03, drift: 24, dy: 84, tilt: 1.1,
+            glow: { x: 62, y: 72, r: 52, c: 'rgba(200,120,90,.18)' } },
+          { at: 3.733, dur: 1.2, on: 1, push: 2.1, to: 1.05, drift: 20, tilt: 1.2, dy: -22,
+            glow: { x: 54, y: 40, r: 44, c: 'rgba(120,110,230,.26)' } },
+          { at: 4.933, dur: 1.233, on: null, push: 1.15, to: 1.08, drift: -26, dy: -70, tilt: -1.4,
+            glow: { x: 38, y: 30, r: 60, c: 'rgba(150,160,200,.16)' } },
+          { at: 6.167, dur: 1.233, on: 2, push: 2.0, to: 1.07, drift: 24, tilt: -1, dy: 26,
+            glow: { x: 72, y: 56, r: 46, c: 'rgba(230,210,150,.2)' } },
+          { at: 7.4, dur: 1.233, on: null, push: 1.25, to: 1.02, drift: -20, dy: -34, tilt: 0.9,
+            glow: { x: 50, y: 24, r: 54, c: 'rgba(110,150,210,.22)' } },
+          { at: 8.633, dur: 1.267, on: 1, push: 1.6, to: 1.08, drift: 18, tilt: 0.8, dy: 58,
+            glow: { x: 44, y: 68, r: 50, c: 'rgba(210,110,140,.2)' } },
+          /* The long one. Twice the length of everything before it, and the
+             card lands inside it rather than on a cut — the reference holds
+             the shot and puts MOGGED over it, which is what makes the cut that
+             follows land instead of being just another cut. It ends at 1.29,
+             tight enough to feel like it closed in and loose enough that all
+             three are still named when the card hits them. The light dims
+             through it, because the payoff should arrive somewhere darker. */
+          { at: 9.9, dur: 2.467, on: null, push: 1.15, to: 1.12, drift: 12, dy: 6,
+            glow: { x: 50, y: 50, r: 40, c: 'rgba(90,100,140,.16)' } },
+        ] },
+
+      /*
+       * The mog. Twenty-four cuts at the reference's own times, opening on the
+       * mark arriving — the hard cut out of MOGGED is the whole transition the
+       * brief asked for, so nothing fades.
+       *
+       * Frames alternate lit and dark with the tone pinned to match, for the
+       * reason set out at length on mog-01: every screenshot in this app is
+       * dark chrome and two in a row will not read as a cut otherwise.
+       */
+      /* impactUnder 0 on purpose: the reference has no flash transitions at all,
+         it is thirty-four hard cuts. The chromatic split on the mark's arrival
+         is its own thing and still fires. */
+      { type: 'drop', dur: 19.1, impactUnder: 0, noflash: true,
+        cuts: [
+          { at: 0, dur: 1.267 }, { at: 1.267, dur: 0.6 }, { at: 1.867, dur: 0.633 },
+          { at: 2.5, dur: 0.633 }, { at: 3.133, dur: 1.2 }, { at: 4.333, dur: 0.633 },
+          { at: 4.966, dur: 0.6 }, { at: 5.566, dur: 0.567 }, { at: 6.133, dur: 1.3 },
+          { at: 7.433, dur: 0.6 }, { at: 8.033, dur: 0.6 }, { at: 8.633, dur: 0.633 },
+          { at: 9.266, dur: 0.634 }, { at: 9.9, dur: 1.2 }, { at: 11.1, dur: 0.6 },
+          { at: 11.7, dur: 0.633 }, { at: 12.333, dur: 0.633 }, { at: 12.966, dur: 1.2 },
+          { at: 14.166, dur: 0.634 }, { at: 14.8, dur: 0.6 }, { at: 15.4, dur: 0.633 },
+          { at: 16.033, dur: 0.6 }, { at: 16.633, dur: 1.367 }, { at: 18, dur: 1.1 },
+        ],
+        frames: [
+          { mark: true },
+          { shot: 'export', cx: 0.5, cy: 0.5, w: 0.44, tone: 'cool', label: 'every platform at once', push: 1.18 },
+          { shot: 'panel-erase', cx: 0.51, cy: 0.42, w: 0.44, tone: 'warm', label: 'tap it. <em>gone.</em>', push: 1.22 },
+          { shot: 'panel-sound', cx: 0.13, cy: 0.3, w: 0.28, tone: 'cool', label: '<em>544</em> tracks', push: 1.1 },
+          { shot: 'phone', cx: 0.5, cy: 0.3, w: 0.6, tone: 'warm', label: 'it runs on your phone', push: 1.2 },
+          { shot: 'panel-templates', cx: 0.13, cy: 0.33, w: 0.26, tone: 'cool', label: '<em>21</em> montages', push: 1.12 },
+          { shot: 'panel-overlays', cx: 0.13, cy: 0.3, w: 0.26, tone: 'warm', label: 'particles', push: 1.14 },
+          { shot: 'panel-ai-plan', cx: 0.13, cy: 0.2, w: 0.3, tone: 'cool', label: 'it plans the edit', push: 1.11 },
+          { shot: 'editor', cx: 0.5, cy: 0.72, w: 0.38, tone: 'warm', label: 'unlimited tracks', push: 1.2 },
+          { shot: 'panel-audio-chain', cx: 0.13, cy: 0.42, w: 0.28, tone: 'cool', label: 'EQ. dynamics. loudness.', push: 1.12 },
+          { shot: 'panel-filters', cx: 0.13, cy: 0.3, w: 0.26, tone: 'warm', label: '<em>176</em> looks', push: 1.11 },
+          { shot: 'panel-color', cx: 0.13, cy: 0.22, w: 0.26, tone: 'cool', label: 'real <em>scopes</em>', push: 1.13 },
+          { shot: 'panel-transitions', cx: 0.13, cy: 0.5, w: 0.3, tone: 'warm', label: 'tracked transitions', push: 1.15 },
+          { shot: 'panel-text', cx: 0.13, cy: 0.25, w: 0.28, tone: 'cool', label: '<em>49</em> text styles', push: 1.1 },
+          { shot: 'editor', cx: 0.51, cy: 0.3, w: 0.52, tone: 'warm', label: '<em>60fps</em>, effects on', push: 1.22 },
+          { shot: 'editor', cx: 0.5, cy: 0.5, w: 0.9, tone: 'cool', label: 'the whole editor', push: 1.18 },
+          { shot: 'panel-erase', cx: 0.44, cy: 0.5, w: 0.3, tone: 'warm', label: 'no mask. no pen.', push: 1.24 },
+          { shot: 'panel-styles-phonk', cx: 0.13, cy: 0.3, w: 0.26, tone: 'cool', label: 'phonk', push: 1.12 },
+          { shot: 'phone', cx: 0.5, cy: 0.62, w: 0.55, tone: 'warm', label: 'same project, both', push: 1.22 },
+          { shot: 'panel-captions', cx: 0.13, cy: 0.3, w: 0.26, tone: 'cool', label: 'captions, timed for you', push: 1.11 },
+          { shot: 'panel-overlays', cx: 0.13, cy: 0.5, w: 0.3, tone: 'warm', label: 'light leaks', push: 1.14 },
+          { shot: 'panel-shapes', cx: 0.13, cy: 0.5, w: 0.3, tone: 'cool', label: 'shape layers', push: 1.12 },
+          { shot: 'panel-effects', cx: 0.13, cy: 0.33, w: 0.26, tone: 'warm', label: '<em>340</em> effects', push: 1.12 },
+          { shot: 'start', cx: 0.5, cy: 0.4, w: 0.6, tone: 'cool', label: 'opens in a browser', push: 1.16 },
+        ] },
+
+      { type: 'slam', dur: 4.06, kick: '$19.99 once. no subscription. ever.', noflash: true },
+    ],
+  },
 ];
 
 /* =============== stills: Instagram feed posts and the YouTube thumbnail =============== */

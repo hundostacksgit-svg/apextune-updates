@@ -401,3 +401,44 @@ img { display: block; }
 .fmt-thumb #wm img { width: 44px; height: 44px; }
 .fmt-thumb #wm span { font-size: 30px; }
 .fmt-thumb #cap { display: none; }
+
+/* ---- rivals: three marks on black, and the moment one of them gets called ----
+   Built off a second edit the owner sent: a white saloon held for twelve
+   seconds at a cut every 1.23s, then the frame desaturates, MOGGED lands in red
+   on white for one beat, and a hypercar takes over at double the cut rate. The
+   subject here is three logos rather than a car, so the "angles" are camera
+   moves on a row of marks instead of angles on a vehicle — same job, which is
+   to make one subject carry twelve seconds without repeating itself. */
+.rivals { position: absolute; inset: 0; overflow: hidden; background: #000; }
+/* The stage is the thing the camera moves on: the three marks sit in a row at a
+   fixed size and every cut is a transform of this, so nothing reflows mid-shot. */
+/* 240 + 70 + 240 + 70 + 240 = 860, which leaves 110px each side of a 1080
+   frame at scale 1. Sized so the widest shot holds all three with air round
+   them: at 300 and a 96 gap the row was 1092 and the outer two were clipped by
+   the frame on every wide, which reads as a layout bug rather than a crop. */
+.rivals .stage { position: absolute; left: 0; top: 0; display: flex; align-items: center;
+  justify-content: center; gap: 70px; will-change: transform, filter; }
+.rivals .mark { width: 240px; height: 240px; object-fit: contain; will-change: transform, opacity; }
+.fmt-yt .rivals .mark { width: 180px; height: 180px; }
+/* A floor glow, so the marks are not three cut-outs floating in a void. The
+   reference's car is always in a lit space; pure black reads as a placeholder. */
+.rivals .floor { position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 52%, rgba(120,140,190,.16) 0%, rgba(0,0,0,0) 62%); }
+.rivals .grain { position: absolute; inset: 0; opacity: .5; mix-blend-mode: overlay;
+  background-image: repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 1px, rgba(0,0,0,0) 1px 3px); }
+/* The card. Red on white, hard edges, spanning most of the frame — copied off
+   the reference frame by frame rather than designed. */
+/* 33% rather than the reference's 41%: there the card lands across the middle of
+   one car and obscuring part of it is the point. Here the subject is three small
+   marks in a row, and a card at 41% covers the middle one — so it sits just
+   above the row and clips its top edge instead, which still reads as slapped on
+   rather than as a title. */
+.rivals .mog { position: absolute; left: 0; right: 0; top: 33%; display: flex; justify-content: center;
+  pointer-events: none; will-change: transform, opacity; }
+/* 132 rather than 188: at 188 "MOGGED" is 1150px wide and the card ran off both
+   edges. The reference's card has picture either side of it, which is what makes
+   it read as a card slapped onto the shot rather than a full-frame title. */
+.rivals .mog b { display: block; background: #fff; color: #f0000d; font-family: var(--head);
+  font-weight: 800; font-size: 132px; line-height: 1.06; letter-spacing: -.01em; padding: 8px 34px 16px;
+  white-space: nowrap; }
+.fmt-yt .rivals .mog b { font-size: 104px; }

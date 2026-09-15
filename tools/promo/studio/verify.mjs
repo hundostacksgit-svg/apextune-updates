@@ -81,6 +81,22 @@ console.log('\n== every asset a spec names exists ==');
     noMusic.map((v) => `${v.id}: ${v.music}`).join(', '));
 
   ok('the mark the end cards use exists', fs.existsSync(path.join(ROOT, 'studio/assets/mark.svg')));
+
+  /*
+   * The competitors' marks a `rivals` scene shows.
+   *
+   * These are not in the repo — they are other companies' trademarks, supplied
+   * by whoever is building and cut out by logos.mjs into PROMO_ASSETS. Missing,
+   * the scene renders three empty boxes and the whole first twelve seconds is
+   * blank, which is exactly the kind of thing nobody notices until it is
+   * posted. So it is checked, and the message says how to make them.
+   */
+  const logoRefs = scenes.filter((x) => x.s.type === 'rivals')
+    .flatMap(({ v, s: sc }) => (sc.logos || []).map((n) => ({ v: v.id, name: n })));
+  const haveLogos = listing('logos');
+  const noLogos = logoRefs.filter((r) => !haveLogos.has(r.name));
+  ok(`${logoRefs.length} competitor marks are cut out`, noLogos.length === 0,
+    noLogos.length ? `${noLogos.map((r) => r.name).join(', ')} — run logos.mjs` : '');
 }
 
 console.log('\n== measured cut lists are coherent ==');
@@ -100,6 +116,33 @@ for (const { v, s, i } of scenes.filter((x) => x.s.type === 'drop')) {
     last ? `scene ${s.dur}s, cuts end ${(last.at + last.dur).toFixed(3)}s` : '');
   ok(`${v.id} scene ${i}: at least one frame per cut to draw`,
     (s.frames || []).length > 0 && cuts.length > 0);
+}
+
+console.log('\n== held scenes are coherent ==');
+for (const { v, s: sc, i } of scenes.filter((x) => x.s.type === 'rivals')) {
+  const cuts = sc.cuts || [];
+  ok(`${v.id} scene ${i}: shots are in order`,
+    cuts.every((c, n) => n === 0 || c.at >= cuts[n - 1].at));
+  const gaps = cuts.filter((c, n) => n + 1 < cuts.length && Math.abs(c.at + c.dur - cuts[n + 1].at) > 1 / 90);
+  ok(`${v.id} scene ${i}: no gap or overlap between shots`, gaps.length === 0,
+    gaps.map((c) => `${c.at}s`).slice(0, 4).join(', '));
+  const last = cuts[cuts.length - 1];
+  ok(`${v.id} scene ${i}: the scene is long enough for its last shot`,
+    !last || sc.dur >= last.at + last.dur - 0.001,
+    last ? `scene ${sc.dur}s, shots end ${(last.at + last.dur).toFixed(3)}s` : '');
+  /* The call-out has to land inside the scene, and inside the last shot rather
+     than on a cut — landing it on a cut is what makes it read as another cut
+     instead of as the moment. */
+  const at = sc.mog?.at;
+  ok(`${v.id} scene ${i}: the call-out lands inside the last held shot`,
+    at == null || (last && at > last.at && at < sc.dur),
+    at == null ? 'none' : `at ${at}s, last shot ${last?.at}..${sc.dur}s`);
+  /* Every mark centred by a shot has to exist, or the camera pushes in on
+     nothing. */
+  const n = (sc.logos || []).length;
+  const bad = cuts.filter((c) => c.on != null && (c.on < 0 || c.on >= n));
+  ok(`${v.id} scene ${i}: every shot frames a mark that exists`, bad.length === 0,
+    bad.map((c) => `${c.at}s -> ${c.on}`).join(', '));
 }
 
 console.log('\n== consecutive cuts are visibly different ==');

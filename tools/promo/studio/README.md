@@ -18,6 +18,8 @@ node tools/promo/studio/shots.mjs               # screenshots of the editor with
 node tools/promo/studio/pairs.mjs               # the before/after pairs, made by running the app's own engines
 PIPER=/usr/local/bin/piper VOICE=/path/en-us-ryan-high.onnx \
   node tools/promo/studio/voice.mjs             # the narration for the tours, and the timing they take from it
+node tools/promo/studio/logos.mjs \
+  --davinci a.jpg --ae b.png --capcut c.png     # optional: cut supplied competitor marks onto alpha (see below)
 node tools/promo/studio/verify.mjs               # check the specs before spending two minutes a video on them
 node tools/promo/studio/render.mjs --fmt tiktok --video all --jobs 2 --out $PROMO_ASSETS/out
 node tools/promo/studio/render.mjs --fmt yt --video yt-showcase --out $PROMO_ASSETS/out
@@ -49,9 +51,18 @@ what tempo, plus a contact sheet of every shot.
 FFMPEG=/path/to/ffmpeg node tools/promo/studio/dissect.mjs reference.mp4 --out /tmp/ref
 ```
 
-`mog-01-subscription` in `videos.js` is one of these — see the mog section of
-`docs/PROMO-KIT.md` for how the times get from `cuts.json` into a `drop` scene,
-and for the two things that went wrong the first time.
+`mog-01-subscription` and `mog-02-rivals` in `videos.js` are both of these —
+see the mog sections of `docs/PROMO-KIT.md` for how the times get from
+`cuts.json` into a `drop` scene, and for what went wrong the first time.
+
+## Competitor marks
+
+`mog-02-rivals` shows the DaVinci, After Effects and CapCut logos. **Those files
+are not in this repo** — they are other companies' trademarks, and while showing
+a competitor is ordinary comparison, redistributing their artwork is not ours to
+do. `logos.mjs` takes copies you supply and cuts them onto alpha into
+`$PROMO_ASSETS/logos/`, which git ignores along with the rest of the generated
+input. `verify.mjs` fails if a `rivals` scene names a mark that is not there.
 
 Outputs land in `$PROMO_ASSETS/out/tiktok/*.mp4` (1080x1920, also Reels and
 Shorts), `out/yt/yt-showcase.mp4` (1920x1080), `out/stills/feed-*.png`
