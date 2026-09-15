@@ -141,6 +141,57 @@ img { display: block; }
 .app .device.bleed { padding: 0 !important; border: 0; border-radius: 0; background: none; box-shadow: none; }
 .app .device.bleed .screen { border-radius: 0; }
 
+/* ---- tension: one shot, a slow push, and something getting worse ----
+   The half of an edit nobody notices and everybody feels. The reference holds a
+   single frame for six seconds and pushes in on it; the cut that follows only
+   hits because of how long it made you wait. */
+.tension { position: absolute; inset: 0; overflow: hidden; background: #05070c; }
+.tension .plate { position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 26px; will-change: transform, filter; }
+.tension .amt { font-family: var(--head); font-weight: 800; font-size: 210px; line-height: .9;
+  letter-spacing: -.05em; color: #fff; text-shadow: 0 0 80px rgba(255,80,90,.35); }
+.tension .per { font-size: 46px; font-weight: 700; letter-spacing: .02em; color: #ff5d6c; text-transform: uppercase; }
+.tension .sub { font-size: 40px; font-weight: 600; color: rgba(255,255,255,.5); letter-spacing: .01em; }
+.tension .tick { font-family: var(--mono, ui-monospace, monospace); font-size: 52px; font-weight: 700;
+  color: rgba(255,255,255,.82); font-variant-numeric: tabular-nums; }
+.tension .veil { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, rgba(120,0,10,0) 30%, rgba(90,0,8,.55) 100%); }
+.fmt-yt .tension .amt { font-size: 150px; }
+
+/* ---- drop: the montage, cut to somebody else's edit ----
+   One cell per cut, all stacked, only the live one displayed. Every cell gets a
+   zoom punch that settles, a shake that decays, and on the two-frame cuts a
+   chromatic split and a flash — which is what the reference does eight times
+   and what makes the section feel like it is hitting rather than playing. */
+.drop { position: absolute; inset: 0; overflow: hidden; background: #04060b; }
+.drop .cell { position: absolute; inset: 0; overflow: hidden; }
+.drop .shot { position: absolute; left: 0; top: 0; max-width: none; will-change: transform, filter; }
+/* The split copies: the same picture screened back over itself, pushed apart and
+   pulled to red and cyan. Cheaper than an SVG filter and it survives the JPEG. */
+.drop .ghost { mix-blend-mode: screen; opacity: 0; }
+.drop .ghost.r { filter: sepia(1) saturate(14) hue-rotate(-32deg); }
+.drop .ghost.c { filter: sepia(1) saturate(9) hue-rotate(140deg); }
+.drop .grade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(4,6,11,.3) 0%, rgba(4,6,11,0) 35%, rgba(4,6,11,.55) 100%); }
+.drop .lbl { position: absolute; left: 0; right: 0; bottom: 300px; text-align: center;
+  font-family: var(--head); font-weight: 800; font-size: 78px; line-height: 1; letter-spacing: -.03em;
+  text-transform: uppercase; color: #fff; text-shadow: 0 6px 40px rgba(0,0,0,.85); padding: 0 50px;
+  will-change: transform, opacity; }
+.drop .lbl em { font-style: normal; color: var(--mint); }
+.drop .flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+.fmt-yt .drop .lbl { bottom: 90px; font-size: 62px; }
+
+/* ---- slam: the end, in the edit's own register ----
+   Not the end card the rest of the set uses. That one is a poster; this has to
+   land like the last hit of the track. */
+.slam { position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 30px; overflow: hidden; background: #04060b; }
+.slam .mark { width: 300px; height: 300px; will-change: transform, opacity; filter: drop-shadow(0 30px 90px rgba(47,125,255,.5)); }
+.slam .url { font-family: var(--head); font-weight: 800; font-size: 120px; letter-spacing: -.045em; will-change: transform, opacity; }
+.slam .url b { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.slam .kick { font-size: 44px; font-weight: 700; color: rgba(255,255,255,.62); letter-spacing: .01em; will-change: transform, opacity; }
+.slam .flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+.fmt-yt .slam .url { font-size: 92px; }
+.fmt-yt .slam .mark { width: 200px; height: 200px; }
+
 /* ---- price: the two ways to pay ---- */
 .price { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 250px 60px 480px; }
 .price .pc { width: 100%; max-width: 940px; padding: 26px 40px; border-radius: 36px; border: 2px solid rgba(255,255,255,.1); background: rgba(10,14,28,.85); will-change: transform, opacity; }

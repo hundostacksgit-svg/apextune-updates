@@ -353,6 +353,148 @@ const BUILD = {
     } };
   },
 
+  /*
+   * The slow half. One frame, a push in, and a number getting worse.
+   *
+   * The reference holds a single shot for six seconds before it cuts anything,
+   * and the drop only hits because of how long that wait was. Copying the cuts
+   * without copying the wait produces a montage that starts loud and stays
+   * there, which is the thing that makes an edit feel cheap.
+   */
+  tension(s) {
+    const root = el('div', 'tension');
+    const plate = el('div', 'plate');
+    plate.innerHTML = `<div class="per">${s.per || 'every month'}</div>
+      <div class="amt">${s.amount || '$22.99'}</div>
+      <div class="sub">${s.sub || 'forever'}</div>
+      <div class="tick">$0.00</div>`;
+    const veil = el('div', 'veil');
+    root.append(plate, veil);
+    const tick = plate.querySelector('.tick');
+    /* What the bill reaches by the time the drop lands. */
+    const total = s.total ?? 22.99 * 60;
+    return { el: root, update(l) {
+      const p = s.dur ? l / s.dur : 0;
+      /* A push that accelerates: slow enough to be uncomfortable, then gone. */
+      plate.style.transform = `scale(${lerp(1, 1.16, p * p)})`;
+      plate.style.filter = `saturate(${lerp(1, 0.45, p)}) brightness(${lerp(1, 0.78, p)})`;
+      veil.style.opacity = String(outCubic(p) * 0.9);
+      tick.textContent = money(total * outCubic(Math.min(1, p * 1.25)));
+      tick.style.opacity = String(prog(l, 0.5, 1.2));
+    } };
+  },
+
+  /*
+   * The drop: somebody else's cut list, our pictures.
+   *
+   * `cuts` comes out of dissect.mjs — the measured times from the reference —
+   * so the section lands where the track lands rather than where a guess put
+   * it. One cell per cut, all built up front and only the live one shown, which
+   * is what keeps a thirty-two cut section renderable frame by frame.
+   */
+  drop(s) {
+    const root = el('div', 'drop');
+    const flash = el('div', 'flash');
+    const cells = (s.cuts || []).map((c, i) => {
+      const f = (s.frames || [])[i % Math.max(1, (s.frames || []).length)] || {};
+      const cell = el('div', 'cell');
+      const img = el('img', 'shot'); img.src = `${A}/shots/${f.shot || 'editor'}.png`;
+      /* The split copies only exist on the cuts that use them: three images a
+         cell across thirty-two cells is a lot of decoding for an effect that
+         fires eight times. */
+      const punchy = c.dur <= (s.impactUnder ?? 0.12);
+      const gr = punchy ? el('img', 'shot ghost r') : null;
+      const gc = punchy ? el('img', 'shot ghost c') : null;
+      if (gr) { gr.src = img.src; gc.src = img.src; }
+      const grade = el('div', 'grade');
+      const lbl = el('div', 'lbl', f.label || '');
+      cell.append(img, ...(gr ? [gr, gc] : []), grade, lbl);
+      root.appendChild(cell);
+      return { cell, img, gr, gc, lbl, c, f, punchy, seed: i * 37.7 };
+    });
+    root.appendChild(flash);
+
+    return { el: root, update(l) {
+      let lit = 0;
+      for (const k of cells) {
+        const on = l >= k.c.at && l < k.c.at + k.c.dur;
+        k.cell.style.display = on ? '' : 'none';
+        if (!on) continue;
+        const asp = (k.img.naturalWidth && k.img.naturalHeight) ? k.img.naturalWidth / k.img.naturalHeight : 1.6;
+        const v = { cx: k.f.cx ?? 0.5, cy: k.f.cy ?? 0.5, w: k.f.w ?? 0.55 };
+        /* Fill the frame, then crop to the region worth looking at. */
+        const imgW = Math.max(W / Math.max(0.05, v.w), H * asp);
+        const imgH = imgW / asp;
+        const p = k.c.dur ? (l - k.c.at) / k.c.dur : 1;
+
+        /* The punch: lands big and settles inside the first third of the cut. */
+        const settle = outCubic(Math.min(1, p * 2.6));
+        const scale = lerp(k.f.push ?? 1.16, 1, settle);
+        /* The shake decays with it, and is deterministic — a random one would
+           make every render of the same frame different. */
+        const amp = (1 - settle) * (k.punchy ? 26 : 13);
+        const dx = Math.sin(l * 71 + k.seed) * amp;
+        const dy = Math.cos(l * 63 + k.seed) * amp;
+        const left = W / 2 - v.cx * imgW + dx;
+        const top = H / 2 - v.cy * imgH + dy;
+
+        const place = (node, off) => {
+          node.style.width = `${imgW}px`;
+          node.style.transform = `translate(${left + off}px, ${top}px) scale(${scale})`;
+        };
+        k.img.style.filter = `saturate(${lerp(1.5, 1.12, settle)}) contrast(${lerp(1.25, 1.06, settle)}) blur(${(1 - settle) * (k.punchy ? 7 : 3.2)}px)`;
+        place(k.img, 0);
+        if (k.gr) {
+          const split = (1 - settle) * 30;
+          place(k.gr, split); place(k.gc, -split);
+          k.gr.style.opacity = k.gc.style.opacity = String((1 - settle) * 0.75);
+        }
+        pop(k.lbl, prog(p, 0.02, 0.3), { y: 30, from: 0.86 });
+        if (k.punchy) lit = Math.max(lit, 1 - Math.min(1, p * 1.6));
+      }
+      flash.style.opacity = String(lit * 0.55);
+    } };
+  },
+
+  /*
+   * The last hit.
+   *
+   * The end card the rest of the set uses is a poster — logo, price, hashtags,
+   * five seconds. Dropped onto the end of an edit like this it reads as the
+   * advert arriving after the video finished. This is the same information
+   * arriving as the final impact instead.
+   */
+  slam(s) {
+    const root = el('div', 'slam');
+    const mark = el('img', 'mark'); mark.src = `${A}/mark.svg`;
+    const url = el('div', 'url', '<b>omnidx</b>.net');
+    const kick = el('div', 'kick', s.kick || '$19.99 once. no subscription.');
+    const flash = el('div', 'flash');
+    root.append(mark, url, kick, flash);
+    return { el: root, update(l) {
+      /* Everything lands on the first frame and settles — nothing fades in,
+         because a fade here is the thing that makes it feel like an advert. */
+      const a = outBack(prog(l, 0, 0.42));
+      /* And then it keeps moving. A frame that freezes for three seconds after
+         nine seconds of cuts reads as the video having ended early; a slow push
+         that never quite stops holds the last beat instead. */
+      const drift = 1 + (s.dur ? l / s.dur : 0) * 0.07;
+      mark.style.opacity = String(prog(l, 0, 0.12));
+      mark.style.transform = `scale(${lerp(2.2, 1, a) * drift}) rotate(${lerp(-9, 0, a)}deg)`;
+      const b = outBack(prog(l, 0.14, 0.6));
+      url.style.opacity = String(prog(l, 0.14, 0.26));
+      /* The wordmark arrives split and pulls itself together, which is the same
+         move the drop makes eight times — the end belongs to the same edit. */
+      const split = (1 - outCubic(prog(l, 0.14, 0.75))) * 22;
+      url.style.transform = `scale(${lerp(1.5, 1, b) * drift})`;
+      url.style.textShadow = split > 0.4
+        ? `${split}px 0 rgba(255,60,80,.85), ${-split}px 0 rgba(0,220,255,.85)`
+        : 'none';
+      pop(kick, prog(l, 0.55, 0.95), { y: 26, from: 0.9 });
+      flash.style.opacity = String(Math.max(0, 1 - l / 0.16) * 0.8);
+    } };
+  },
+
   /* A title, a number that climbs, and chips that arrive on the beat. */
   list(s) {
     const root = el('div', 'list' + (s.big ? ' big' : ''));

@@ -714,6 +714,75 @@ export const VIDEOS = [
       END5('Speed ramping is in Creator. ' + PRICE_LINE, '#velocityedit', '#speedramp', '#videoeditor', '#editingapp'),
     ],
   },
+
+  /* ===================================================================
+   * The mog. Somebody else's cut list, our pictures.
+   *
+   * Built from a BMW edit the owner sent over: dissect.mjs measured it at one
+   * six-second shot, thirty-one cuts in the nine seconds after it, and eight
+   * two-frame impact flashes among them. Those exact times are the `cuts` below
+   * — so the section lands where that track lands rather than where a guess put
+   * it, and dropping the same trending sound on it in the app puts the hits back
+   * where they were.
+   *
+   * Silent by design: the reference's audio is a commercial track and belongs to
+   * whoever made it. Render with --silent and pick the sound in TikTok.
+   * =================================================================== */
+  {
+    id: 'mog-01-subscription', title: 'The mog: what you were paying for', music: 'phonk-132-24s',
+    wm: 'corner', formats: ['tiktok'],
+    scenes: [
+      /* Six seconds of one shot, exactly as long as the reference waits. The
+         drop only hits because of how uncomfortable this got. */
+      { type: 'tension', dur: 6.1, per: 'every month', amount: '$22.99', sub: 'and you own none of it',
+        total: 22.99 * 60, cap: 'five years of renting an editor' },
+
+      { type: 'drop', dur: 9.766, impactUnder: 0.12, noflash: true,
+        cuts: [
+      { at: 0.0, dur: 0.333 }, { at: 0.333, dur: 0.067 }, { at: 0.4, dur: 0.133 }, { at: 0.533, dur: 0.067 },
+      { at: 0.6, dur: 0.133 }, { at: 0.733, dur: 0.067 }, { at: 0.8, dur: 0.333 }, { at: 1.133, dur: 0.767 },
+      { at: 1.9, dur: 0.667 }, { at: 2.567, dur: 0.433 }, { at: 3.0, dur: 0.167 }, { at: 3.167, dur: 0.767 },
+      { at: 3.933, dur: 0.067 }, { at: 4.0, dur: 0.067 }, { at: 4.067, dur: 0.267 }, { at: 4.333, dur: 0.067 },
+      { at: 4.4, dur: 0.167 }, { at: 4.567, dur: 0.567 }, { at: 5.133, dur: 0.067 }, { at: 5.2, dur: 0.7 },
+      { at: 5.9, dur: 0.533 }, { at: 6.433, dur: 0.2 }, { at: 6.633, dur: 0.133 }, { at: 6.767, dur: 0.333 },
+      { at: 7.1, dur: 0.633 }, { at: 7.733, dur: 0.633 }, { at: 8.367, dur: 0.167 }, { at: 8.533, dur: 0.6 },
+      { at: 9.133, dur: 0.067 }, { at: 9.2, dur: 0.333 }, { at: 9.533, dur: 0.233 },
+        ],
+        /*
+         * Bright, dark, bright, dark, all the way down.
+         *
+         * The first build ran six panel screenshots back to back and the cuts
+         * between them did not read as cuts — dissecting the render found six of
+         * them missing, because two crops of the same dark chrome look like one
+         * shot however hard the picture moves. The reference gets this for free
+         * by alternating four wildly different cars; this has to do it on
+         * purpose. Every other frame is footage or a phone, and the crop width
+         * swings with it so the punch lands somewhere new each time.
+         */
+        frames: [
+          { shot: 'editor', cx: 0.5, cy: 0.5, w: 0.9, label: 'the whole editor', push: 1.24 },
+          { shot: 'panel-effects', cx: 0.13, cy: 0.33, w: 0.26, label: '<em>340</em> effects', push: 1.14 },
+          { shot: 'panel-erase', cx: 0.51, cy: 0.42, w: 0.44, label: 'tap it. <em>gone.</em>', push: 1.3 },
+          { shot: 'panel-sound', cx: 0.13, cy: 0.3, w: 0.28, label: '<em>544</em> tracks', push: 1.12 },
+          { shot: 'editor', cx: 0.5, cy: 0.72, w: 0.38, label: 'unlimited tracks', push: 1.26 },
+          { shot: 'panel-color', cx: 0.13, cy: 0.22, w: 0.26, label: 'real <em>scopes</em>', push: 1.16 },
+          { shot: 'phone', cx: 0.5, cy: 0.42, w: 0.85, label: 'on a phone too', push: 1.2 },
+          { shot: 'panel-ai-plan', cx: 0.13, cy: 0.2, w: 0.3, label: 'it plans the edit', push: 1.13 },
+          { shot: 'editor', cx: 0.51, cy: 0.3, w: 0.52, label: '<em>60fps</em>, effects on', push: 1.28 },
+          { shot: 'panel-audio-chain', cx: 0.13, cy: 0.42, w: 0.28, label: 'EQ. dynamics. loudness.', push: 1.15 },
+          { shot: 'export', cx: 0.5, cy: 0.5, w: 0.44, label: 'every platform at once', push: 1.22 },
+          { shot: 'panel-templates', cx: 0.13, cy: 0.33, w: 0.26, label: '<em>21</em> montages', push: 1.14 },
+          { shot: 'panel-erase', cx: 0.44, cy: 0.5, w: 0.3, label: 'no mask. no pen.', push: 1.32 },
+          { shot: 'panel-text', cx: 0.13, cy: 0.25, w: 0.28, label: '<em>49</em> text styles', push: 1.12 },
+          { shot: 'editor', cx: 0.5, cy: 0.5, w: 0.62, label: 'ripple. roll. slip.', push: 1.25 },
+          { shot: 'panel-overlays', cx: 0.13, cy: 0.3, w: 0.26, label: 'particles', push: 1.17 },
+          { shot: 'phone', cx: 0.5, cy: 0.62, w: 0.55, label: 'same project, both', push: 1.3 },
+          { shot: 'panel-filters', cx: 0.13, cy: 0.3, w: 0.26, label: '<em>176</em> looks', push: 1.13 },
+        ] },
+
+      { type: 'slam', dur: 3.2, kick: '$19.99 once. no subscription. ever.', noflash: true },
+    ],
+  },
 ];
 
 /* =============== stills: Instagram feed posts and the YouTube thumbnail =============== */
