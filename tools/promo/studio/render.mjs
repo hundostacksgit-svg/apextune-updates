@@ -41,6 +41,17 @@ const OUT = path.resolve(String(opt('out', path.join(process.env.HOME || '/tmp',
 const FPS = Number(opt('fps', 30));
 const JOBS = Number(opt('jobs', 2));
 const STILL_MODE = args.includes('--stills');
+/*
+ * --silent: the picture, and no audio track at all.
+ *
+ * Not a debug switch. A video posted with a sound already on it is a video
+ * TikTok files as its own; one posted silent lets you pick a trending sound in
+ * the app, which is a real distribution signal and the one lever that costs
+ * nothing. It is also the only honest way to put music people recognise under
+ * these — anything licensed would be claimed or muted on upload, and the claim
+ * lands on your account, not on the song.
+ */
+const SILENT = args.includes('--silent');
 const FRAME = opt('frame', null);
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -106,16 +117,16 @@ const seekTo = (page, t) => page.evaluate((t) => { window.seek(t); return new Pr
 async function renderVideo(spec, fmt) {
   const { ctx, page, cdp, duration } = await openComp(spec.id, fmt);
   const dir = path.join(OUT, fmt); fs.mkdirSync(dir, { recursive: true });
-  const out = path.join(dir, `${spec.id}.mp4`);
+  const out = path.join(dir, SILENT ? `${spec.id}-silent.mp4` : `${spec.id}.mp4`);
   /*
    * A tour is narrated and has no music; everything else has music and no
    * narration. The voice is not faded out at the end — a fade over the last
    * second of a sentence sounds like the upload broke.
    */
-  const wav = spec.voice
+  const wav = SILENT ? null : (spec.voice
     ? path.join(ASSETS, 'voice', `${spec.id}.wav`)
-    : path.join(ASSETS, 'music', `${spec.music}.wav`);
-  if (!fs.existsSync(wav)) {
+    : path.join(ASSETS, 'music', `${spec.music}.wav`));
+  if (wav && !fs.existsSync(wav)) {
     throw new Error(spec.voice
       ? `No narration for ${spec.id}. Run voice.mjs first.`
       : `No music track ${spec.music} for ${spec.id}.`);
@@ -128,7 +139,7 @@ async function renderVideo(spec, fmt) {
    * stop, so the fix is a shorter video or a longer bed rather than a file
    * nobody checked the end of.
    */
-  const bed = wavSeconds(wav);
+  const bed = wav ? wavSeconds(wav) : Infinity;
   if (bed + 0.05 < duration) {
     throw new Error(`${spec.id} is ${duration.toFixed(1)}s but ${path.basename(wav)} is only ${bed.toFixed(1)}s. `
       + 'Shorten the scenes, or make a longer bed in music.mjs.');
@@ -141,11 +152,10 @@ async function renderVideo(spec, fmt) {
   const ff = spawn(FFMPEG, [
     '-y', '-loglevel', 'error',
     '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-',
-    '-i', wav,
-    '-filter_complex', audio,
-    '-map', '0:v', '-map', '[a]',
+    ...(wav ? ['-i', wav, '-filter_complex', audio, '-map', '0:v', '-map', '[a]'] : ['-map', '0:v', '-an']),
     '-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p', '-r', String(FPS),
-    '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', out,
+    ...(wav ? ['-c:a', 'aac', '-b:a', '192k', '-shortest'] : []),
+    '-movflags', '+faststart', out,
   ], { stdio: ['pipe', 'inherit', 'inherit'] });
   const done = new Promise((res, rej) => ff.on('close', (c) => (c ? rej(new Error(`ffmpeg exited ${c} for ${spec.id}`)) : res())));
   const t0 = Date.now();
@@ -158,7 +168,7 @@ async function renderVideo(spec, fmt) {
   ff.stdin.end();
   await done;
   await ctx.close();
-  console.log(`done ${fmt}/${spec.id}.mp4  ${duration.toFixed(1)}s  ${((Date.now() - t0) / 1000).toFixed(0)}s to render`);
+  console.log(`done ${fmt}/${path.basename(out)}  ${duration.toFixed(1)}s  ${((Date.now() - t0) / 1000).toFixed(0)}s to render`);
 }
 
 async function renderStill(spec) {

@@ -117,6 +117,7 @@ const SHELL = [
   './js/engine/erase.js',
   './js/engine/transitions.js',
   './js/engine/transitions-library.js',
+  './js/keymap.js',
   './js/levels.js',
   './js/licence.js',
   './js/main.js',

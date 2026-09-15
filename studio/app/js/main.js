@@ -52,6 +52,7 @@ import { initMobile } from './mobile.js';
 import { openPalette } from './palette.js';
 import { maybeOfferTour, startTour } from './tutorial.js';
 import { openExport } from './panels/export.js';
+import { commandFor } from './keymap.js';
 import { wireDesktop, isDesktop } from './desktop.js';
 import { startUpdateChecks, BUILD } from './updates.js';
 import { applyIcons, icon } from './icons.js';
@@ -1420,110 +1421,114 @@ function onKey(e) {
   // a Space or a Delete meant for a row in the list.
   if (startIsOpen()) return;
   const typing = /^(input|textarea|select)$/i.test(e.target.tagName) || e.target.isContentEditable;
-  const mod = e.ctrlKey || e.metaKey;
 
-  if (mod && e.key.toLowerCase() === 'k') { e.preventDefault(); openPalette(); return; }
+  /*
+   * What was pressed, not which key. keymap.js owns the bindings so they can be
+   * moved in Settings; this switch owns what each command does. The two lists
+   * are joined by the ids, and a command with no case here is a command that
+   * quietly does nothing — so every id in keymap.js appears below.
+   */
+  const cmd = commandFor(e);
+  if (!cmd) return;
+
+  /* The palette is the one thing reachable while typing: it is how you get out
+     of a text field and to a command without using the mouse. */
+  if (cmd === 'palette') { e.preventDefault(); openPalette(); return; }
   if (typing) return;
 
-  if (mod) {
-    const k = e.key.toLowerCase();
-    if (k === 'z') { e.preventDefault(); e.shiftKey ? actions.redo() : actions.undo(); return; }
-    if (k === 'y') { e.preventDefault(); actions.redo(); return; }
-    if (k === 'd') { e.preventDefault(); actions.duplicateSelected(); return; }
-    if (k === 's') { e.preventDefault(); saveNow().then(() => toast('Saved', 'ok')); return; }
-    if (k === 'e') { e.preventDefault(); openExport(); return; }
-    if (k === 'o') { e.preventDefault(); openPanel('settings'); return; }
-    if (k === 'a') { e.preventDefault(); actions.select(S.project.clips.map((c) => c.id)); return; }
-
-    /*
-     * Cut, copy, paste and group.
-     *
-     * These live here, in the one block that handles modifier keys, and not in
-     * a second block further down — which is where they were, behind this
-     * block's unconditional return, doing nothing at all. The context menus
-     * called the same actions directly, so every test passed and the keys were
-     * simply dead.
-     */
-    if (k === 'x' && S.sel.size) { e.preventDefault(); actions.cutSelected(); return; }
-    /*
-     * Attributes first: Ctrl+Alt+C has to be caught before the plain Ctrl+C
-     * line below, which returns for any selection and would eat it.
-     *
-     * Matched on e.code, not e.key. Option+C on a Mac is not "c" — the OS
-     * hands the page "ç", and Option+V hands it "√", so a key comparison here
-     * works everywhere except the platform these two shortcuts came from.
-     */
-    if (e.altKey && e.code === 'KeyC' && S.sel.size) { e.preventDefault(); actions.copyAttributes(); return; }
-    if (e.altKey && e.code === 'KeyV' && actions.hasAttributes()) { e.preventDefault(); actions.pasteAttributes(); return; }
-    if (k === 'c' && S.sel.size) { e.preventDefault(); actions.copySelected(); return; }
-    if (k === 'v' && actions.hasClipboard()) { e.preventDefault(); actions.pasteAt(S.time); return; }
-    if (k === 'g') {
-      e.preventDefault();
-      if (e.shiftKey) actions.ungroupSelected(); else actions.groupSelected();
-      return;
-    }
-    return;
-  }
-
   const fps = S.project.settings.fps;
+  const stop = () => e.preventDefault();
 
-  switch (e.key) {
-    case ' ':
-      e.preventDefault();
+  switch (cmd) {
+    /* ---- transport ---- */
+    case 'play':
+      stop();
       // Space is the plain transport, so it takes the shuttle out of whatever
       // rate it was in rather than playing at 8x with no way to tell.
       if (shuttleRate) { stopShuttle(); break; }
       togglePlay();
       break;
-    case 'ArrowLeft': e.preventDefault(); transport.step(e.shiftKey ? -fps : -1, fps); syncAfterStep(); break;
-    case 'ArrowRight': e.preventDefault(); transport.step(e.shiftKey ? fps : 1, fps); syncAfterStep(); break;
-    case 'Home': e.preventDefault(); actions.seek(0); break;
-    case 'End': e.preventDefault(); actions.seek(duration(S.project)); break;
-    case 'Delete': case 'Backspace': e.preventDefault(); actions.deleteSelected(); break;
-    case 's': case 'S': actions.splitAtPlayhead(); break;
+    case 'stepBack': stop(); transport.step(-1, fps); syncAfterStep(); break;
+    case 'stepFwd': stop(); transport.step(1, fps); syncAfterStep(); break;
+    case 'jumpBack': stop(); transport.step(-fps, fps); syncAfterStep(); break;
+    case 'jumpFwd': stop(); transport.step(fps, fps); syncAfterStep(); break;
+    case 'goStart': stop(); actions.seek(0); break;
+    case 'goEnd': stop(); actions.seek(duration(S.project)); break;
     /*
-     * J, K, L and the three commands that live beside them.
-     *
-     * Upper case is not a different command: Shift is how you reach some of
-     * these on some layouts, and a key that works unshifted and not shifted is
-     * the kind of thing that reads as the app being broken.
+     * J, K and L: the shuttle. The oldest transport controls there are, and
+     * their absence is the first thing somebody trained on tape notices.
      */
-    case 'l': case 'L': e.preventDefault(); shuttle(1); break;
-    case 'j': case 'J': e.preventDefault(); shuttle(-1); break;
-    case 'k': case 'K': e.preventDefault(); stopShuttle(); break;
-    case 'e': case 'E': e.preventDefault(); actions.freezeFrame(); break;
-    case 'y': case 'Y': e.preventDefault(); actions.matchFrame(); break;
-    case 'c': case 'C': actions.setTool(S.tool === 'razor' ? 'select' : 'razor'); break;
-    case 't': case 'T': actions.setTool(S.tool === 'trim' ? 'select' : 'trim'); break;
-    case 'v': case 'V': actions.setTool('select'); break;
-    case 'm': case 'M': actions.addMarker(); break;
-    case '+': case '=': setZoom(S.zoom * 1.4); break;
-    case '-': case '_': setZoom(S.zoom / 1.4); break;
-    case 'f': case 'F':
-      // Shift+F only, so pressing f while reaching for something else does not
-      // rearrange the window.
-      if (e.shiftKey) { e.preventDefault(); toggleTimelineFull(); }
-      break;
-    case 'Escape':
+    case 'shuttleFwd': stop(); shuttle(1); break;
+    case 'shuttleBack': stop(); shuttle(-1); break;
+    case 'shuttleStop': stop(); stopShuttle(); break;
+
+    /* ---- editing ---- */
+    case 'split': actions.splitAtPlayhead(); break;
+    case 'delete': stop(); actions.deleteSelected(); break;
+    case 'undo': stop(); actions.undo(); break;
+    case 'redo': stop(); actions.redo(); break;
+    case 'duplicate': stop(); actions.duplicateSelected(); break;
+    case 'selectAll': stop(); actions.select(S.project.clips.map((c) => c.id)); break;
+    case 'cut': if (S.sel.size) { stop(); actions.cutSelected(); } break;
+    case 'copy': if (S.sel.size) { stop(); actions.copySelected(); } break;
+    case 'paste': if (actions.hasClipboard()) { stop(); actions.pasteAt(S.time); } break;
+    case 'copyAttrs': if (S.sel.size) { stop(); actions.copyAttributes(); } break;
+    case 'pasteAttrs': if (actions.hasAttributes()) { stop(); actions.pasteAttributes(); } break;
+    case 'freezeFrame': stop(); actions.freezeFrame(); break;
+    case 'matchFrame': stop(); actions.matchFrame(); break;
+    case 'marker': actions.addMarker(); break;
+
+    /* ---- tools: pressing the tool you are in goes back to select ---- */
+    case 'toolSelect': actions.setTool('select'); break;
+    case 'toolRazor': actions.setTool(S.tool === 'razor' ? 'select' : 'razor'); break;
+    case 'toolTrim': actions.setTool(S.tool === 'trim' ? 'select' : 'trim'); break;
+
+    /* ---- the window ---- */
+    case 'zoomIn': setZoom(S.zoom * 1.4); break;
+    case 'zoomOut': setZoom(S.zoom / 1.4); break;
+    case 'timelineFull': stop(); toggleTimelineFull(); break;
+    case 'escape':
       if (isTimelineFull()) { toggleTimelineFull(false); break; }
       actions.select([]);
       break;
-    default:
-      if (/^[1-9]$/.test(e.key)) {
-        /*
-         * Numbers cut angles when there is a multicam clip under the playhead,
-         * and open panels otherwise.
-         *
-         * Not a mode and not a modifier: while a multicam clip is live, the
-         * numbers are the only thing anybody wants them to be, and reaching
-         * for a modifier mid-take is how you miss the cut. Away from one they
-         * go back to being panel shortcuts, which is what they have always
-         * been.
-         */
-        if (actions.cutToAngle(Number(e.key) - 1)) { e.preventDefault(); break; }
-        openPanel(PANEL_KEYS[Number(e.key) - 1]);
-      }
+
+    /* ---- the app ---- */
+    case 'save': stop(); saveNow().then(() => toast('Saved', 'ok')); break;
+    case 'export': stop(); openExport(); break;
+    case 'settings': stop(); openPanel('settings'); break;
+
+    default: {
+      /*
+       * Numbers cut angles when there is a multicam clip under the playhead,
+       * and open panels otherwise.
+       *
+       * Not a mode and not a modifier: while a multicam clip is live, the
+       * numbers are the only thing anybody wants them to be, and reaching for
+       * a modifier mid-take is how you miss the cut. Away from one they go
+       * back to being panel shortcuts.
+       */
+      const panel = /^panel([1-9])$/.exec(cmd);
+      if (!panel) break;
+      const n = Number(panel[1]);
+      if (actions.cutToAngle(n - 1)) { stop(); break; }
+      openPanel(PANEL_KEYS[n - 1]);
+    }
   }
+}
+
+/*
+ * Grouping, which the keymap does not own.
+ *
+ * Ctrl+G and Ctrl+Shift+G are one key with two meanings depending on Shift, and
+ * modelling that as two rebindable commands would let somebody put them on
+ * different keys and then wonder why grouping behaves differently each way.
+ */
+function onGroupKey(e) {
+  if (startIsOpen()) return;
+  if (/^(input|textarea|select)$/i.test(e.target.tagName) || e.target.isContentEditable) return;
+  if (!(e.ctrlKey || e.metaKey) || e.code !== 'KeyG') return;
+  e.preventDefault();
+  if (e.shiftKey) actions.ungroupSelected(); else actions.groupSelected();
 }
 
 function syncAfterStep() {
@@ -1843,6 +1848,7 @@ function wireChrome() {
   });
 
   document.addEventListener('keydown', onKey);
+  document.addEventListener('keydown', onGroupKey);
   window.addEventListener('resize', () => timeline.render());
 
   // Never lose work to a closed tab — and never mistake a reload for a crash.

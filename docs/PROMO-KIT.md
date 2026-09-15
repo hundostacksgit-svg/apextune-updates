@@ -121,6 +121,43 @@ entry in `videos.js`.
 
 ---
 
+## The silent cuts — use a trending sound instead
+
+`out/tiktok/*-silent.mp4` are the same videos with **no audio track at all**.
+Six of them: `n1-tap-it-gone`, `n2-bad-audio`, `n3-its-a-phone`,
+`h2-remove-a-thing`, `e1-phonk`, `22-instant-wow`.
+
+**Why they exist.** A video that arrives with its own soundtrack is a video
+TikTok files as an advert. A video posted silent lets you pick a sound from the
+**Trending** list inside the app, and using a trending sound is one of the few
+real distribution levers that costs nothing — the app actively pushes content
+that uses sounds it is promoting that week.
+
+It is also the only honest way to get music people recognise under these. Real
+commercial tracks get claimed or muted on upload, and the claim lands on *your
+account*. TikTok's own sound library is licensed for exactly this and costs you
+nothing.
+
+**How to post one**
+1. Upload the `-silent.mp4`.
+2. Tap **Add sound** → **Trending**, and pick something in the first screen —
+   the newer the better.
+3. Drag the sound so the drop lands on the video's biggest moment (the wipe,
+   the waveform flip, the first cut).
+4. Post. Do not add TikTok's text-to-speech on top; the captions are burnt in.
+
+Render more of them any time:
+
+```
+node tools/promo/studio/render.mjs --fmt tiktok --silent --video <id> --out $PROMO_ASSETS/out
+```
+
+Anything in `videos.js` can be rendered silent — the flag drops the audio track
+and names the file `<id>-silent.mp4`, so the version with sound is not
+overwritten.
+
+---
+
 ## Four sets of three
 
 Twenty-six videos in one register is one experiment run twenty-six times. The

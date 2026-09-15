@@ -427,6 +427,9 @@ const COMPARE = [
   ['Background rendering', true, true, true],
 
   ['— Everything else', null, null, null],
+  ['Keyboard shortcuts', '44', '44', '44'],
+  ['Rebind any shortcut', true, true, true],
+  ['Command palette (Ctrl+K)', true, true, true],
   ['Works offline', true, true, true],
   ['Autosave &amp; crash recovery', true, true, true],
   ['People on the licence', '1', '1', '1'],

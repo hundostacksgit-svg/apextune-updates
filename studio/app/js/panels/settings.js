@@ -37,6 +37,7 @@ import { RATIOS } from '../engine/project.js';
 import { API, setApiBase, EDITIONS, buyUrl, DEVICE_LIMIT } from '../../../assets/config.js';
 import * as auth from '../../../assets/auth.js';
 import * as install from '../install.js';
+import * as keymap from '../keymap.js';
 
 export function mount(host) {
   const st = S.project.settings;
@@ -145,6 +146,22 @@ export function mount(host) {
       </div>
     </details>
 
+    <details class="group" data-min="intermediate" id="s-keys-group">
+      <summary>Keyboard <span class="tiny muted" id="s-keys-count"></span></summary>
+      <div class="gbody">
+        <p class="tiny muted" style="margin-top:0">
+          Every shortcut in the app, and every one of them movable. Tap a key to change it,
+          then press the combination you want. Editors disagree about which key splits a clip;
+          this is how you make it the one your hands already know.
+        </p>
+        <input class="input" id="s-keys-find" placeholder="Find a command — split, marker, export…"
+               style="margin-bottom:10px">
+        <div id="s-keys-list"></div>
+        <button class="btn btn-sm btn-ghost btn-full" id="s-keys-reset" style="margin-top:10px">
+          Put every key back</button>
+      </div>
+    </details>
+
     <details class="group" open>
       <summary>This copy</summary>
       <div class="gbody">
@@ -182,7 +199,119 @@ export function mount(host) {
   paintProjects(host);
   paintStorage(host);
   paintProxies(host);
+  paintKeys(host);
   $('#s-install', host)?.addEventListener('click', () => install.install());
+}
+
+/* ------------------------------------------------------------------ */
+/* the keyboard                                                        */
+/* ------------------------------------------------------------------ */
+
+/*
+ * Rebinding, done by pressing the key rather than by typing its name.
+ *
+ * "Ctrl+Shift+K" written into a box is a spelling test — people get the order
+ * wrong, or write Cmd where the app wants Meta, and then the shortcut does not
+ * work and the app looks broken. Listening for the actual keystroke cannot be
+ * spelled wrong, and it is how every editor worth copying does it.
+ */
+let listening = null;
+
+function paintKeys(host, find = '') {
+  const box = $('#s-keys-list', host);
+  if (!box) return;
+  const q = find.trim().toLowerCase();
+  const all = keymap.bindings();
+  const shown = q
+    ? all.filter((c) => c.label.toLowerCase().includes(q) || c.group.toLowerCase().includes(q)
+        || c.keys.some((k) => k.toLowerCase().includes(q)))
+    : all;
+
+  const count = $('#s-keys-count', host);
+  if (count) {
+    const n = keymap.customCount();
+    count.textContent = n ? `${n} moved` : `${all.length}`;
+  }
+
+  if (!shown.length) {
+    box.innerHTML = '<p class="tiny muted" style="margin:0">Nothing matches that.</p>';
+    return;
+  }
+
+  let group = null;
+  box.innerHTML = shown.map((c) => {
+    const head = c.group === group ? '' :
+      `<p class="pane-h tiny muted" style="margin:12px 0 4px;letter-spacing:.1em;text-transform:uppercase">${esc(c.group)}</p>`;
+    group = c.group;
+    const keys = keymap.shownKeys(c).map((k) =>
+      `<span class="mono tiny" style="padding:3px 8px;border-radius:7px;background:var(--surface-2);border:1px solid var(--line)">${esc(keymap.label(k))}</span>`).join(' ');
+    return `${head}
+      <div class="row" data-key-row="${esc(c.id)}" style="display:flex;gap:10px;align-items:center;justify-content:space-between;padding:6px 2px">
+        <span style="font-size:12.5px;flex:1">${esc(c.label)}${c.custom ? ' <span class="tiny" style="color:var(--ok)">moved</span>' : ''}</span>
+        <span data-keys style="display:flex;gap:4px">${keys}</span>
+        <button class="btn btn-sm" data-rebind="${esc(c.id)}">Change</button>
+        ${c.custom ? `<button class="btn btn-sm btn-ghost" data-unbind="${esc(c.id)}" title="Back to the default">↺</button>` : ''}
+      </div>`;
+  }).join('');
+}
+
+function wireKeys(host) {
+  const find = $('#s-keys-find', host);
+  find?.addEventListener('input', () => paintKeys(host, find.value));
+
+  $('#s-keys-reset', host)?.addEventListener('click', async () => {
+    if (!await confirmDialog({
+      title: 'Put every key back?',
+      body: 'Every shortcut you have moved goes back to the one it shipped with.',
+      confirm: 'Put them back',
+    })) return;
+    keymap.resetAll();
+    paintKeys(host, find?.value || '');
+    toast('Keyboard back to defaults', 'ok');
+  });
+
+  host.addEventListener('click', (e) => {
+    const un = e.target.closest('[data-unbind]');
+    if (un) {
+      keymap.resetKey(un.dataset.unbind);
+      paintKeys(host, find?.value || '');
+      return;
+    }
+    const btn = e.target.closest('[data-rebind]');
+    if (!btn) return;
+    stopListening(host);
+    listening = { id: btn.dataset.rebind, host, btn };
+    btn.textContent = 'Press a key…';
+    btn.classList.add('btn-primary');
+    /* Capture, so the editor's own shortcut handler does not run the command
+       somebody is in the middle of rebinding it to. */
+    window.addEventListener('keydown', onRebindKey, { capture: true });
+  });
+}
+
+function stopListening(host) {
+  if (!listening) return;
+  window.removeEventListener('keydown', onRebindKey, { capture: true });
+  listening.btn.textContent = 'Change';
+  listening.btn.classList.remove('btn-primary');
+  listening = null;
+}
+
+function onRebindKey(e) {
+  if (!listening) return;
+  e.preventDefault();
+  e.stopPropagation();
+  /* Escape means "never mind", which somebody will press, and binding a command
+     to Escape by accident is a thing you cannot undo without the mouse. */
+  if (e.code === 'Escape') { const h = listening.host; stopListening(h); paintKeys(h, $('#s-keys-find', h)?.value || ''); return; }
+  const chord = keymap.chordOf(e);
+  if (!chord) return; // a modifier on its own: wait for the real key
+  const { id, host } = listening;
+  const res = keymap.setKey(id, chord);
+  stopListening(host);
+  paintKeys(host, $('#s-keys-find', host)?.value || '');
+  if (!res.ok) { toast('That key cannot be used', 'warn'); return; }
+  toast(res.tookFrom ? `${keymap.label(chord)} taken from "${res.tookFrom}"` : `Set to ${keymap.label(chord)}`, 'ok');
 }
 
 async function paintProxies(host) {
@@ -239,6 +368,7 @@ async function paintProxies(host) {
 }
 
 function wire(host) {
+  wireKeys(host);
   $('#s-name', host).addEventListener('change', (e) => {
     S.project.name = e.target.value.trim() || 'Untitled project';
     $('#proj-name').value = S.project.name;

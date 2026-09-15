@@ -77,7 +77,7 @@ export const DESCRIPTIONS = {
       'Speed ramping and time remapping',
       'Frame-accurate timecode on every field',
       'ProRes, DNxHR and H.265 delivery',
-      'Custom keyboard maps and the command palette',
+      'Custom keyboard maps — every shortcut movable — and the command palette',
       'Raw project JSON, editable in place'],
   },
 };
