@@ -18,10 +18,40 @@ node tools/promo/studio/shots.mjs               # screenshots of the editor with
 node tools/promo/studio/pairs.mjs               # the before/after pairs, made by running the app's own engines
 PIPER=/usr/local/bin/piper VOICE=/path/en-us-ryan-high.onnx \
   node tools/promo/studio/voice.mjs             # the narration for the tours, and the timing they take from it
+node tools/promo/studio/verify.mjs               # check the specs before spending two minutes a video on them
 node tools/promo/studio/render.mjs --fmt tiktok --video all --jobs 2 --out $PROMO_ASSETS/out
 node tools/promo/studio/render.mjs --fmt yt --video yt-showcase --out $PROMO_ASSETS/out
 node tools/promo/studio/render.mjs --stills --out $PROMO_ASSETS/out
 ```
+
+## Checking the specs
+
+`verify.mjs` reads `videos.js` and resolves everything it claims, without
+rendering anything. It catches the failures that are invisible until you watch
+forty finished videos: a mistyped shot name (which renders a broken image rather
+than throwing), a music bed that was never generated, a cut list with a gap in
+it, **a cut between two pictures too alike to read as a cut** — measured, by
+scaling each crop to a single grey pixel — and the copy rules from
+`docs/PROMOTION.md` §3: no "AI-powered", no claim about a named competitor, no
+price that is not on the pricing page, nothing about transcription until it
+ships, and no more than five hashtags on a TikTok.
+
+It needs `PROMO_ASSETS` pointed at generated assets and `FFMPEG` set, and exits
+non-zero on any failure.
+
+## Copying somebody else's edit
+
+`dissect.mjs` takes any MP4 apart and reports what you need to rebuild it: where
+every cut lands, how long each shot runs, whether it is cut to a track and at
+what tempo, plus a contact sheet of every shot.
+
+```
+FFMPEG=/path/to/ffmpeg node tools/promo/studio/dissect.mjs reference.mp4 --out /tmp/ref
+```
+
+`mog-01-subscription` in `videos.js` is one of these — see the mog section of
+`docs/PROMO-KIT.md` for how the times get from `cuts.json` into a `drop` scene,
+and for the two things that went wrong the first time.
 
 Outputs land in `$PROMO_ASSETS/out/tiktok/*.mp4` (1080x1920, also Reels and
 Shorts), `out/yt/yt-showcase.mp4` (1920x1080), `out/stills/feed-*.png`

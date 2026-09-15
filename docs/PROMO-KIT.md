@@ -202,6 +202,118 @@ overwritten.
 
 ---
 
+## The mog — a rebuild of somebody else's edit
+
+`out/tiktok/mog-01-subscription-silent.mp4` · 19s · silent · corner sticker
+throughout.
+
+This one is not written from scratch. The owner sent over a BMW edit and asked
+for it back one-for-one with OmniDx in place of the car, so it was **measured**
+rather than eyeballed:
+
+```
+FFMPEG=... node tools/promo/studio/dissect.mjs <reference.mp4> --out /tmp/ref
+```
+
+`dissect.mjs` takes any MP4 apart and reports where every cut lands, how long
+each shot runs, whether the thing is cut to a track and at what tempo, and it
+writes a contact sheet of the middle frame of every shot so the content is
+readable at a glance. The reference came back as **one six-second shot, then
+thirty-one cuts in nine seconds, eight of them two frames long**. Those exact
+times are the `cuts` array in `videos.js` — so the section lands where that
+track lands, and dropping a sound on it in the app puts the hits back where
+they were.
+
+**The shape**
+
+| | |
+|---|---|
+| **0 – 6.1s** | One frame. `CapCut`, `DaVinci`, `Adobe` stack up one at a time under **WHAT YOU ARE RENTING**, and a counter runs `MONTH 1` → `MONTH 60` — five years — over *and it still is not yours*. The frame pushes in the whole time and gets blown out in the last third of a second. |
+| **6.1 – 15.9s** | Thirty-one cuts, **thirty-one different pictures** — nothing repeats. The first is the logo arriving, taking the same punch and chromatic split as every cut around it. Then the app, one feature a cut, lit and dark alternating. |
+| **15.9 – 19.1s** | `omnidx.net` · `$19.99 once. no subscription. ever.` — as the last hit of the edit, not as an end card. |
+
+**Three things it took another pass to get right**, all found by dissecting the
+render rather than by watching it:
+
+1. **Six of the thirty-one cuts were missing.** Every screenshot in this app is
+   dark chrome — measured, the crops run 9 to 60 mean luma out of 255 — so two
+   consecutive panels differ by less than a scene detector's threshold however
+   hard the picture moves. The reference gets its cuts for free by being four
+   differently-coloured cars. The fix is `TONES` in `comp.js`: every other cut
+   is crushed and cool, the ones between are lifted and warm. That guarantees a
+   delta on every cut whatever is in frame, and it is what a phonk edit does
+   anyway.
+2. **The intro stack sat on the caption.** It is centred, but it grows downward
+   as each name lands and then gets scaled 1.16 by the push. Padding the plate's
+   bottom moves the centre up, which holds at every stage of the build.
+
+3. **Twelve of the thirty-one cuts showed a picture already used.** Nineteen
+   frames cycling over thirty-one cuts repeats twelve of them, and the repeat is
+   obvious because the *labels* come back round — you notice reading "tap it.
+   gone." twice long before you notice the screenshot. There are now thirty-one
+   frames for thirty-one cuts and nothing repeats.
+
+The first pass at (1) alternated the grade on the **cut index** and still lost
+five cuts, for the same reason as (3): with the list shorter than the cut list
+the same picture came up warm on one pass and cool on the next, and two cuts met
+in the middle. The tone belongs to the picture, not to the cut. `videos.js` pins
+`tone: 'warm'` on the lit crops and `tone: 'cool'` on the dark ones, which puts
+every lit frame above 40 and every dark one below 19.
+
+Fixing (1) also turned up a bug in `dissect.mjs` itself. Folding away every span
+shorter than two frames drops the *whole* burst when three detections cluster —
+a flash going in, the cut, and the punch on the new shot tripping the filter
+again — so the tool reported no cut at 12.0s while the frames either side of it
+were a logo card and an export dialog. It now keeps the first of each burst,
+which is where the cut actually is.
+
+**On the three names.** They are set in OmniDx's own typeface, greyed back, as
+text. No logo artwork, no colours, and — after a second pass — **no numbers
+attached to any of them**. The intro originally showed `$22.99/month` running up
+to `$1,379.40`, which reads well and is a price this project has no source for:
+the pricing page carries OmniDx's prices, not anybody else's, and the house rule
+is that a number on screen is a number the page carries. Counting *months* makes
+the same point, lands harder, and asserts nothing about anyone. The only price in
+the video is `$19.99 once`, on the last frame.
+
+Naming what people already pay for is ordinary comparison. Reproducing
+somebody's trademark is a different thing and is not done here — and it is worth
+knowing that CapCut and TikTok have the same owner, so a video that uses
+CapCut's mark is a video posted to their platform using their mark.
+
+**Caption**
+
+> sixty months of renting an editor. or $19.99 once. omnidx.net
+
+`#editing #capcut #videoediting #contentcreator #editor`
+
+**Post it like the other silent cuts** — upload, **Add sound** → **Trending**,
+and drag the sound so the drop lands on **6.1s**, where the logo arrives. That
+cut is the whole video; everything before it is the wait that makes it work.
+
+**On the labels.** Only the five counts already used elsewhere in `videos.js`
+appear — 544 tracks, 21 montages, 176 looks, 49 text styles, 340 effects. The
+other twenty-five cuts name a feature and no number, because a number invented
+to fill a caption is a number somebody checks.
+
+**Rebuild another one the same way**
+
+```
+FFMPEG=/path/to/ffmpeg node tools/promo/studio/dissect.mjs reference.mp4 --out /tmp/ref
+```
+
+Then copy `cuts.json`'s times into a new `drop` scene in `videos.js`, give it a
+`frames` list that alternates bright and dark with `tone` pinned to match, and
+render it silent. Run the spec verifier before rendering — it re-measures every
+crop and fails a cut that will not read, which is two minutes of render saved
+each time and a whole category of mistake that cannot ship:
+
+```
+PROMO_ASSETS=... FFMPEG=... node verify-promo-specs.mjs
+```
+
+---
+
 ## Four sets of three
 
 Twenty-six videos in one register is one experiment run twenty-six times. The

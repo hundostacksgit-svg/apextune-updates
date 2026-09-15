@@ -13,7 +13,7 @@
  * the beat the app's own beatmaker made. Cheap trick, and the reason the
  * videos feel edited instead of assembled.
  */
-import { VIDEOS, STILLS } from './videos.js';
+import { VIDEOS, STILLS, DROP_TONES } from './videos.js';
 
 const q = new URLSearchParams(location.search);
 const FMT = q.get('fmt') || 'tiktok';
@@ -364,23 +364,70 @@ const BUILD = {
   tension(s) {
     const root = el('div', 'tension');
     const plate = el('div', 'plate');
+    /*
+     * The names are set in our own typeface and greyed back. Naming what people
+     * already pay for is ordinary comparison and needs nobody's permission;
+     * drawing their marks would be a different thing entirely, and is not what
+     * makes this land — the list does.
+     */
+    const names = s.names || [];
+    /*
+     * The big slot counts, or it states a figure — never both.
+     *
+     * `count` makes it tick through a number of months and says nothing about
+     * money, which is the version that survives the house rule that no number
+     * goes on screen unless the pricing page carries it. A monthly price for
+     * somebody else's editor is not on our pricing page and is not ours to
+     * assert; the length of time somebody has been renting one is not a claim
+     * about anybody.
+     */
+    const counting = Boolean(s.count);
     plate.innerHTML = `<div class="per">${s.per || 'every month'}</div>
-      <div class="amt">${s.amount || '$22.99'}</div>
+      ${names.length ? `<div class="names">${names.map((n, i) =>
+        `<div class="name${i === names.length - 1 ? ' last' : ''}">${n}</div>`).join('')}</div>` : ''}
+      <div class="amt${counting ? ' count' : ''}">${counting ? `${s.count.pre || ''} 1` : (s.amount || '')}</div>
       <div class="sub">${s.sub || 'forever'}</div>
-      <div class="tick">$0.00</div>`;
+      ${counting ? '' : '<div class="tick">$0.00</div>'}`;
     const veil = el('div', 'veil');
     root.append(plate, veil);
     const tick = plate.querySelector('.tick');
+    const nameEls = [...plate.querySelectorAll('.name')];
+    const amt = plate.querySelector('.amt');
     /* What the bill reaches by the time the drop lands. */
     const total = s.total ?? 22.99 * 60;
+    /* The last beat before the cut: everything is blown out of the frame, so the
+       drop arrives into a hole rather than over the top of a still picture. */
+    const blowAt = (s.dur || 6) - (s.blow ?? 0.34);
     return { el: root, update(l) {
       const p = s.dur ? l / s.dur : 0;
       /* A push that accelerates: slow enough to be uncomfortable, then gone. */
-      plate.style.transform = `scale(${lerp(1, 1.16, p * p)})`;
-      plate.style.filter = `saturate(${lerp(1, 0.45, p)}) brightness(${lerp(1, 0.78, p)})`;
+      const blow = prog(l, blowAt, s.dur || 6);
+      plate.style.transform = `scale(${lerp(1, 1.16, p * p) * lerp(1, 1.7, outCubic(blow))})`;
+      plate.style.filter = `saturate(${lerp(1, 0.45, p)}) brightness(${lerp(1, 0.78, p)}) blur(${blow * 26}px)`;
+      plate.style.opacity = String(1 - blow);
       veil.style.opacity = String(outCubic(p) * 0.9);
-      tick.textContent = money(total * outCubic(Math.min(1, p * 1.25)));
-      tick.style.opacity = String(prog(l, 0.5, 1.2));
+      if (counting) {
+        /*
+         * Accelerating, and it lands on the last number with time to read it.
+         *
+         * An ease-out reached sixty at the halfway mark and then sat there for
+         * three seconds, which is the opposite of the feeling — the months are
+         * supposed to pile up faster the longer this goes on. Slightly
+         * accelerating instead, arriving at 0.88 of the scene, so the final
+         * number holds for about four tenths of a second before the blowout
+         * blurs it.
+         */
+        const n = Math.max(1, Math.round(1 + (s.count.to - 1) * Math.min(1, p / 0.88) ** 1.3));
+        amt.textContent = `${s.count.pre || ''} ${n}`.trim();
+      } else if (tick) {
+        tick.textContent = money(total * outCubic(Math.min(1, p * 1.25)));
+        tick.style.opacity = String(prog(l, 0.5, 1.2));
+      }
+      /* One name at a time, each landing harder than the last. */
+      const step = s.nameStep ?? 0.95;
+      nameEls.forEach((n, i) => pop(n, prog(l, 0.35 + i * step, 0.75 + i * step), { y: 40, from: 0.72 }));
+      if (amt) pop(amt, prog(l, counting ? 0.35 : 0.35 + nameEls.length * step,
+        counting ? 0.85 : 0.85 + nameEls.length * step), { y: 30, from: 0.8 });
     } };
   },
 
@@ -395,8 +442,45 @@ const BUILD = {
   drop(s) {
     const root = el('div', 'drop');
     const flash = el('div', 'flash');
+    /*
+     * Why every other cut is graded differently.
+     *
+     * The first rebuild lost six of its thirty-one cuts — dissecting the render
+     * found them missing — and measuring the crops explained it: every shot in
+     * this app is dark chrome, mean luma 9 to 60 out of 255, so two consecutive
+     * panels differ by less than the scene detector's threshold however hard the
+     * picture moves. The reference does not have this problem because it is four
+     * differently-coloured cars. This is the same lever done on purpose: one cut
+     * crushed and cool, the next lifted and warm, alternating all the way down.
+     * It guarantees a delta on every cut no matter what is in frame, and it is
+     * what a phonk edit does anyway.
+     */
+    const TONES = DROP_TONES;
+    /*
+     * A frame says which way it goes, because only the frame knows.
+     *
+     * Alternating on the cut index looks like it should work and does not: the
+     * frame list is shorter than the cut list and cycles through it, so the same
+     * picture comes up warm on one pass and cool on the next, and two cuts meet
+     * in the middle. The tone belongs to the picture — a dark panel goes darker,
+     * a lit one goes brighter — and videos.js pins it from the measured luma.
+     * The index fallback is for a drop scene that has not been measured yet; it
+     * is better than nothing and worse than measuring.
+     */
+    const toneOf = (i, f) => TONES[f.tone] || (i % 2 ? TONES.warm : TONES.cool);
     const cells = (s.cuts || []).map((c, i) => {
       const f = (s.frames || [])[i % Math.max(1, (s.frames || []).length)] || {};
+      /* A cut that is the mark rather than a screenshot: the arrival. It takes
+         the same punch and shake as every other cut, so it reads as part of the
+         montage instead of as a card dropped into the middle of one. */
+      if (f.mark) {
+        const cell = el('div', 'cell markcard');
+        const mk = el('img', 'mk'); mk.src = `${A}/mark.svg`;
+        const wm = el('div', 'wm', '<b>omnidx</b>.net');
+        cell.append(mk, wm);
+        root.appendChild(cell);
+        return { cell, mark: true, mk, wm, c, f, punchy: c.dur <= (s.impactUnder ?? 0.12), seed: i * 37.7 };
+      }
       const cell = el('div', 'cell');
       const img = el('img', 'shot'); img.src = `${A}/shots/${f.shot || 'editor'}.png`;
       /* The split copies only exist on the cuts that use them: three images a
@@ -410,7 +494,7 @@ const BUILD = {
       const lbl = el('div', 'lbl', f.label || '');
       cell.append(img, ...(gr ? [gr, gc] : []), grade, lbl);
       root.appendChild(cell);
-      return { cell, img, gr, gc, lbl, c, f, punchy, seed: i * 37.7 };
+      return { cell, img, gr, gc, lbl, c, f, punchy, tone: toneOf(i, f), seed: i * 37.7 };
     });
     root.appendChild(flash);
 
@@ -420,6 +504,19 @@ const BUILD = {
         const on = l >= k.c.at && l < k.c.at + k.c.dur;
         k.cell.style.display = on ? '' : 'none';
         if (!on) continue;
+        if (k.mark) {
+          const p = k.c.dur ? (l - k.c.at) / k.c.dur : 1;
+          const settle = outBack(Math.min(1, p * 2.2));
+          const amp = (1 - Math.min(1, p * 2.6)) * 18;
+          const dx = Math.sin(l * 71 + k.seed) * amp;
+          k.mk.style.transform = `translateX(${dx}px) scale(${lerp(2.6, 1, settle)}) rotate(${lerp(-12, 0, settle)}deg)`;
+          k.wm.style.transform = `translateX(${dx}px) scale(${lerp(1.8, 1, settle)})`;
+          const split = (1 - Math.min(1, p * 2.2)) * 26;
+          k.wm.style.textShadow = split > 0.4
+            ? `${split}px 0 rgba(255,60,80,.9), ${-split}px 0 rgba(0,220,255,.9)` : 'none';
+          lit = Math.max(lit, 1 - Math.min(1, p * 2.4));
+          continue;
+        }
         const asp = (k.img.naturalWidth && k.img.naturalHeight) ? k.img.naturalWidth / k.img.naturalHeight : 1.6;
         const v = { cx: k.f.cx ?? 0.5, cy: k.f.cy ?? 0.5, w: k.f.w ?? 0.55 };
         /* Fill the frame, then crop to the region worth looking at. */
@@ -442,7 +539,10 @@ const BUILD = {
           node.style.width = `${imgW}px`;
           node.style.transform = `translate(${left + off}px, ${top}px) scale(${scale})`;
         };
-        k.img.style.filter = `saturate(${lerp(1.5, 1.12, settle)}) contrast(${lerp(1.25, 1.06, settle)}) blur(${(1 - settle) * (k.punchy ? 7 : 3.2)}px)`;
+        /* The tone rides on top of the punch grade rather than replacing it: the
+           punch still opens hot and settles, it just settles somewhere else. */
+        k.img.style.filter = `saturate(${lerp(1.5, 1.12, settle) * k.tone.s}) contrast(${lerp(1.25, 1.06, settle)})`
+          + ` brightness(${k.tone.b}) hue-rotate(${k.tone.h}deg) blur(${(1 - settle) * (k.punchy ? 7 : 3.2)}px)`;
         place(k.img, 0);
         if (k.gr) {
           const split = (1 - settle) * 30;

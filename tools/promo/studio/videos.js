@@ -13,6 +13,21 @@
  *  - the address is on every frame (the watermark) and again on the end card.
  */
 
+/*
+ * The two grades a drop scene's cuts come in.
+ *
+ * Here rather than in comp.js because comp.js is a page script with nothing
+ * exported, and verify-promo-specs.mjs has to apply the same numbers to the
+ * same screenshots to tell whether a cut will read as a cut. Two copies of
+ * these four numbers is two copies that drift, and the drift would show up as
+ * a verifier that passes while the video loses cuts — which is the exact
+ * failure the check exists to catch.
+ */
+export const DROP_TONES = {
+  cool: { b: 0.72, h: -16, s: 0.82 },
+  warm: { b: 1.55, h: 18, s: 1.35 },
+};
+
 /* ---- views into the editor screenshots: where to look, and how close ---- */
 const V = {
   whole:     { cx: 0.5,  cy: 0.5,  w: 1 },
@@ -209,12 +224,17 @@ export const VIDEOS = [
   {
     id: '12-auto-captions', title: 'Captions that look good', music: 'trap-140-24s',
     scenes: [
-      { type: 'hook', beats: 8, lines: ['AUTO CAPTIONS', 'THAT ACTUALLY', 'LOOK GOOD.'], grad: [2] },
+      /* Not "auto captions". With no key configured the app finds every phrase
+         of speech and lays out a styled, timed caption for each one, and you
+         type the words — which is what captions.js says on the button, in those
+         words. A promo that claims the half the app deliberately does not claim
+         is the exact thing that gets a small app called a scam. */
+      { type: 'hook', beats: 8, lines: ['CAPTIONS', 'TIMED TO', 'THE WORD.'], grad: [2] },
       { type: 'app', beats: 14, shot: 'panel-captions', box: 'tall', tag: 'the captions panel', view: hold(V.panel, 0, 6),
         cursor: [{ at: 0.5, x: 0.16, y: 0.25 }, { at: 1.4, x: 0.13, y: 0.171, click: true }], spots: [{ at: 1.6, x: 0.046, y: 0.152, w: 0.17, h: 0.04, label: 'one click', below: true }],
-        caps: [[0, 'one click. <em>it finds the speech.</em>'], [7, 'styled for TikTok. <em>timed to the word.</em>']] },
+        caps: [[0, 'one click. <em>it finds every phrase.</em>'], [7, 'styled for TikTok. <em>timed to the word.</em>']] },
       { type: 'statement', beats: 6, lines: ['Sound off?', 'Still watched.'], grad: [1] },
-      { type: 'end', beats: 12, line: 'Auto-captions are in Creator. ' + PRICE_LINE, tags: tags('#captions', '#accessibility') },
+      { type: 'end', beats: 12, line: 'Caption timing and styles are in Creator. ' + PRICE_LINE, tags: tags('#captions', '#accessibility') },
     ],
   },
   {
@@ -734,8 +754,18 @@ export const VIDEOS = [
     scenes: [
       /* Six seconds of one shot, exactly as long as the reference waits. The
          drop only hits because of how uncomfortable this got. */
-      { type: 'tension', dur: 6.1, per: 'every month', amount: '$22.99', sub: 'and you own none of it',
-        total: 22.99 * 60, cap: 'five years of renting an editor' },
+      /*
+       * The names, then the bill, then the frame is blown out of the way.
+       *
+       * Set in our own face and greyed: naming what people already pay for is
+       * ordinary comparison, and no claim is made about any of them — no price,
+       * no feature, nothing that could be wrong. The number underneath is about
+       * subscription editors generally, which is the product's own position and
+       * is on the pricing page.
+       */
+      { type: 'tension', dur: 6.1, per: 'what you are renting', names: ['CapCut', 'DaVinci', 'Adobe'],
+        nameStep: 0.8, count: { to: 60, pre: 'MONTH' }, sub: 'and it still is not yours',
+        cap: 'five years of renting an editor' },
 
       { type: 'drop', dur: 9.766, impactUnder: 0.12, noflash: true,
         cuts: [
@@ -760,24 +790,68 @@ export const VIDEOS = [
          * swings with it so the punch lands somewhere new each time.
          */
         frames: [
-          { shot: 'editor', cx: 0.5, cy: 0.5, w: 0.9, label: 'the whole editor', push: 1.24 },
-          { shot: 'panel-effects', cx: 0.13, cy: 0.33, w: 0.26, label: '<em>340</em> effects', push: 1.14 },
-          { shot: 'panel-erase', cx: 0.51, cy: 0.42, w: 0.44, label: 'tap it. <em>gone.</em>', push: 1.3 },
-          { shot: 'panel-sound', cx: 0.13, cy: 0.3, w: 0.28, label: '<em>544</em> tracks', push: 1.12 },
-          { shot: 'editor', cx: 0.5, cy: 0.72, w: 0.38, label: 'unlimited tracks', push: 1.26 },
-          { shot: 'panel-color', cx: 0.13, cy: 0.22, w: 0.26, label: 'real <em>scopes</em>', push: 1.16 },
-          { shot: 'phone', cx: 0.5, cy: 0.42, w: 0.85, label: 'on a phone too', push: 1.2 },
-          { shot: 'panel-ai-plan', cx: 0.13, cy: 0.2, w: 0.3, label: 'it plans the edit', push: 1.13 },
-          { shot: 'editor', cx: 0.51, cy: 0.3, w: 0.52, label: '<em>60fps</em>, effects on', push: 1.28 },
-          { shot: 'panel-audio-chain', cx: 0.13, cy: 0.42, w: 0.28, label: 'EQ. dynamics. loudness.', push: 1.15 },
-          { shot: 'export', cx: 0.5, cy: 0.5, w: 0.44, label: 'every platform at once', push: 1.22 },
-          { shot: 'panel-templates', cx: 0.13, cy: 0.33, w: 0.26, label: '<em>21</em> montages', push: 1.14 },
-          { shot: 'panel-erase', cx: 0.44, cy: 0.5, w: 0.3, label: 'no mask. no pen.', push: 1.32 },
-          { shot: 'panel-text', cx: 0.13, cy: 0.25, w: 0.28, label: '<em>49</em> text styles', push: 1.12 },
-          { shot: 'editor', cx: 0.5, cy: 0.5, w: 0.62, label: 'ripple. roll. slip.', push: 1.25 },
-          { shot: 'panel-overlays', cx: 0.13, cy: 0.3, w: 0.26, label: 'particles', push: 1.17 },
-          { shot: 'phone', cx: 0.5, cy: 0.62, w: 0.55, label: 'same project, both', push: 1.3 },
-          { shot: 'panel-filters', cx: 0.13, cy: 0.3, w: 0.26, label: '<em>176</em> looks', push: 1.13 },
+          /*
+           * Thirty-one frames for thirty-one cuts, alternating lit and dark.
+           *
+           * Two separate problems solved by one list. The first: every
+           * screenshot in this app is dark chrome — measured, the crops run 9 to
+           * 86 mean luma out of 255 — so two consecutive panels can differ by
+           * less than a scene detector's threshold however hard the picture
+           * moves, and the first build lost six of these cuts that way. The
+           * second: nineteen frames cycling over thirty-one cuts repeats twelve
+           * of them, and the repeats are obvious because the labels come back
+           * round. So: one frame per cut, ordered lit, dark, lit, dark, with the
+           * grade pinned to whichever it already is — lit goes warm and
+           * brighter, dark goes cool and darker. That puts every lit frame above
+           * 40 and every dark one below 19, so the smallest gap between
+           * consecutive cuts is 21 out of 255 wherever you look.
+           *
+           * An earlier pass alternated the grade on the cut *index* instead and
+           * still lost five: with the list shorter than the cut list the same
+           * picture came up warm on one pass and cool on the next, and two cuts
+           * met in the middle. The tone belongs to the picture, not to the cut.
+           *
+           * verify.mjs re-measures all of it and fails under Δ8, so re-taking a
+           * screenshot cannot quietly undo this.
+           *
+           * Only the five counts already established elsewhere in this file are
+           * used as labels. The rest name the feature and no number, because a
+           * number invented for a caption is a number somebody checks.
+           *
+           * The arrival goes first: the cut straight out of the blowout is the
+           * mark, not a panel, taking the same punch as everything around it.
+           */
+          { mark: true },
+          { shot: 'export', cx: 0.5, cy: 0.5, w: 0.44, tone: 'cool', label: 'every platform at once', push: 1.22 },
+          { shot: 'panel-erase', cx: 0.51, cy: 0.42, w: 0.44, tone: 'warm', label: 'tap it. <em>gone.</em>', push: 1.3 },
+          { shot: 'panel-sound', cx: 0.13, cy: 0.3, w: 0.28, tone: 'cool', label: '<em>544</em> tracks', push: 1.12 },
+          { shot: 'phone', cx: 0.5, cy: 0.3, w: 0.6, tone: 'warm', label: 'it runs on your phone', push: 1.26 },
+          { shot: 'panel-templates', cx: 0.13, cy: 0.33, w: 0.26, tone: 'cool', label: '<em>21</em> montages', push: 1.14 },
+          { shot: 'panel-overlays', cx: 0.13, cy: 0.3, w: 0.26, tone: 'warm', label: 'particles', push: 1.17 },
+          { shot: 'panel-ai-plan', cx: 0.13, cy: 0.2, w: 0.3, tone: 'cool', label: 'it plans the edit', push: 1.13 },
+          { shot: 'editor', cx: 0.5, cy: 0.72, w: 0.38, tone: 'warm', label: 'unlimited tracks', push: 1.26 },
+          { shot: 'panel-audio-chain', cx: 0.13, cy: 0.42, w: 0.28, tone: 'cool', label: 'EQ. dynamics. loudness.', push: 1.15 },
+          { shot: 'panel-filters', cx: 0.13, cy: 0.3, w: 0.26, tone: 'warm', label: '<em>176</em> looks', push: 1.13 },
+          { shot: 'panel-color', cx: 0.13, cy: 0.22, w: 0.26, tone: 'cool', label: 'real <em>scopes</em>', push: 1.16 },
+          { shot: 'panel-transitions', cx: 0.13, cy: 0.5, w: 0.3, tone: 'warm', label: 'tracked transitions', push: 1.18 },
+          { shot: 'panel-text', cx: 0.13, cy: 0.25, w: 0.28, tone: 'cool', label: '<em>49</em> text styles', push: 1.12 },
+          { shot: 'editor', cx: 0.51, cy: 0.3, w: 0.52, tone: 'warm', label: '<em>60fps</em>, effects on', push: 1.28 },
+          { shot: 'editor', cx: 0.5, cy: 0.5, w: 0.9, tone: 'cool', label: 'the whole editor', push: 1.24 },
+          { shot: 'panel-erase', cx: 0.44, cy: 0.5, w: 0.3, tone: 'warm', label: 'no mask. no pen.', push: 1.32 },
+          { shot: 'panel-styles-phonk', cx: 0.13, cy: 0.3, w: 0.26, tone: 'cool', label: 'phonk', push: 1.14 },
+          { shot: 'panel-overlays', cx: 0.13, cy: 0.5, w: 0.3, tone: 'warm', label: 'light leaks', push: 1.16 },
+          { shot: 'panel-captions', cx: 0.13, cy: 0.3, w: 0.26, tone: 'cool', label: 'captions, timed for you', push: 1.13 },
+          { shot: 'phone', cx: 0.5, cy: 0.62, w: 0.55, tone: 'warm', label: 'same project, both', push: 1.3 },
+          { shot: 'panel-shapes', cx: 0.13, cy: 0.5, w: 0.3, tone: 'cool', label: 'shape layers', push: 1.15 },
+          { shot: 'panel-effects', cx: 0.13, cy: 0.33, w: 0.26, tone: 'warm', label: '<em>340</em> effects', push: 1.14 },
+          { shot: 'panel-audio', cx: 0.13, cy: 0.35, w: 0.28, tone: 'cool', label: 'repair bad audio', push: 1.13 },
+          { shot: 'panel-filters', cx: 0.13, cy: 0.55, w: 0.3, tone: 'warm', label: 'one tap, graded', push: 1.17 },
+          { shot: 'panel-styles-anime', cx: 0.13, cy: 0.3, w: 0.26, tone: 'cool', label: 'anime opening', push: 1.14 },
+          { shot: 'editor', cx: 0.5, cy: 0.5, w: 0.62, tone: 'warm', label: 'ripple. roll. slip.', push: 1.25 },
+          { shot: 'start', cx: 0.5, cy: 0.4, w: 0.6, tone: 'cool', label: 'opens in a browser', push: 1.2 },
+          { shot: 'panel-stickers', cx: 0.13, cy: 0.3, w: 0.26, tone: 'warm', label: 'stickers that follow', push: 1.15 },
+          { shot: 'panel-styles-velocity', cx: 0.13, cy: 0.3, w: 0.26, tone: 'cool', label: 'velocity', push: 1.14 },
+          { shot: 'phone', cx: 0.5, cy: 0.42, w: 0.85, tone: 'warm', label: 'no watermark. <em>ever.</em>', push: 1.2 },
         ] },
 
       { type: 'slam', dur: 3.2, kick: '$19.99 once. no subscription. ever.', noflash: true },

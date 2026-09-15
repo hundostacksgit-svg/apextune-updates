@@ -146,16 +146,36 @@ img { display: block; }
    single frame for six seconds and pushes in on it; the cut that follows only
    hits because of how long it made you wait. */
 .tension { position: absolute; inset: 0; overflow: hidden; background: #05070c; }
+/* The padding is what keeps the running total off the caption. The stack is
+   centred, but it grows downward as each name lands and then gets scaled 1.16
+   by the push — so centring on the whole frame puts the last line exactly where
+   the caption pill sits. Padding the bottom moves the centre up instead, which
+   holds at every stage of the build rather than only at the start. */
 .tension .plate { position: absolute; inset: 0; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 26px; will-change: transform, filter; }
-.tension .amt { font-family: var(--head); font-weight: 800; font-size: 210px; line-height: .9;
-  letter-spacing: -.05em; color: #fff; text-shadow: 0 0 80px rgba(255,80,90,.35); }
+  align-items: center; justify-content: center; gap: 20px; padding-bottom: 300px;
+  will-change: transform, filter; }
+.tension .amt { font-family: var(--head); font-weight: 800; font-size: 182px; line-height: .9;
+  letter-spacing: -.05em; color: #fff; text-shadow: 0 0 80px rgba(255,80,90,.35); white-space: nowrap; }
+/* A counter is a word and a number, not a price — "MONTH 60" is eight
+   characters and ran off both edges of a 1080-wide frame at the size a "$22.99"
+   wants. */
+.tension .amt.count { font-size: 138px; letter-spacing: -.04em; }
+.fmt-yt .tension .amt.count { font-size: 118px; }
+/* The names, stacking up. Set in our own face and greyed — this is a list of
+   what people are paying for, not an impression of anybody's branding. */
+.tension .names { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.tension .name { font-family: var(--head); font-weight: 800; font-size: 88px; line-height: 1;
+  letter-spacing: -.04em; text-transform: uppercase; color: rgba(255,255,255,.34);
+  will-change: transform, opacity, filter; }
+.tension .name.last { color: rgba(255,255,255,.5); }
+.fmt-yt .tension .name { font-size: 74px; }
 .tension .per { font-size: 46px; font-weight: 700; letter-spacing: .02em; color: #ff5d6c; text-transform: uppercase; }
 .tension .sub { font-size: 40px; font-weight: 600; color: rgba(255,255,255,.5); letter-spacing: .01em; }
 .tension .tick { font-family: var(--mono, ui-monospace, monospace); font-size: 52px; font-weight: 700;
   color: rgba(255,255,255,.82); font-variant-numeric: tabular-nums; }
 .tension .veil { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, rgba(120,0,10,0) 30%, rgba(90,0,8,.55) 100%); }
 .fmt-yt .tension .amt { font-size: 150px; }
+.fmt-yt .tension .plate { padding-bottom: 120px; }
 
 /* ---- drop: the montage, cut to somebody else's edit ----
    One cell per cut, all stacked, only the live one displayed. Every cell gets a
@@ -177,6 +197,14 @@ img { display: block; }
   will-change: transform, opacity; }
 .drop .lbl em { font-style: normal; color: var(--mint); }
 .drop .flash { position: absolute; inset: 0; background: #fff; opacity: 0; }
+/* A cut that is the logo rather than a screenshot: the arrival. */
+.drop .cell.markcard { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px;
+  background: radial-gradient(ellipse at 50% 45%, #14203a 0%, #04060b 70%); }
+.drop .markcard .mk { width: 340px; height: 340px; will-change: transform; filter: drop-shadow(0 30px 100px rgba(47,125,255,.55)); }
+.drop .markcard .wm { font-family: var(--head); font-weight: 800; font-size: 118px; letter-spacing: -.045em; will-change: transform; }
+.drop .markcard .wm b { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.fmt-yt .drop .markcard .mk { width: 220px; height: 220px; }
+.fmt-yt .drop .markcard .wm { font-size: 84px; }
 .fmt-yt .drop .lbl { bottom: 90px; font-size: 62px; }
 
 /* ---- slam: the end, in the edit's own register ----

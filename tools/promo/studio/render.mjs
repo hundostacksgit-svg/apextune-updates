@@ -89,10 +89,12 @@ const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css
 const server = http.createServer((rq, rs) => {
   const p = decodeURIComponent(rq.url.split('?')[0]);
   let f;
-  if (p === '/promo-assets/mark.svg') f = path.join(ROOT, 'studio/assets/mark.svg');
+  /* The favicon too, so a clean render logs nothing: Chromium asks for it on
+     every page and its 404 was the one line of noise in every render log. */
+  if (p === '/promo-assets/mark.svg' || p === '/favicon.ico') f = path.join(ROOT, 'studio/assets/mark.svg');
   else if (p.startsWith('/promo-assets/')) f = path.join(ASSETS, p.slice('/promo-assets/'.length));
   else f = path.join(ROOT, p);
-  if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) { if (p !== '/favicon.ico') console.error(`  404 ${p}`); rs.writeHead(404); rs.end(); return; }
+  if (!fs.existsSync(f) || fs.statSync(f).isDirectory()) { console.error(`  404 ${p}`); rs.writeHead(404); rs.end(); return; }
   rs.writeHead(200, { 'content-type': MIME[path.extname(f)] || 'application/octet-stream', 'cache-control': 'no-store' });
   fs.createReadStream(f).pipe(rs);
 });

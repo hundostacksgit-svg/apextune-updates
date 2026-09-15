@@ -71,9 +71,20 @@ const MIN = 2 / fps;
 const raw = marks.map((t, i) => ({ at: t, end: i + 1 < marks.length ? marks[i + 1] : dur }));
 const kept = [];
 let flashes = 0;
-for (const r of raw) {
-  if (r.end - r.at < MIN) { flashes++; continue; }
-  kept.push(r);
+/*
+ * Keep the first of each burst, not the last, and never drop the whole burst.
+ *
+ * Dropping every span shorter than two frames looks equivalent and is not: when
+ * three detections cluster — a flash in, the cut, the punch on the new shot
+ * tripping the filter again — both short spans get dropped and the cut vanishes
+ * from the report entirely. That is how this tool said a nineteen-second edit
+ * had no cut at 12.0s while the frames either side of it were a logo card and
+ * an export dialog. A burst is one cut, and the cut is where the burst started.
+ */
+for (let n = 0; n < raw.length; n++) {
+  const start = raw[n];
+  kept.push(start);
+  while (n + 1 < raw.length && raw[n + 1].at - start.at < MIN) { n++; flashes++; }
 }
 /* Each kept shot runs to the next kept one, so the folded frames go back into
    the shot they interrupted rather than vanishing from the running time. */
