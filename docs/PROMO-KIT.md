@@ -121,6 +121,50 @@ entry in `videos.js`.
 
 ---
 
+## The cold-open re-cuts — post these instead of the originals
+
+`out/tiktok/*-cold.mp4`. Same videos, re-ordered so the **app doing something**
+is the first frame and the hook line lands second.
+
+This exists because of what the first twelve posts looked like: every cover was
+a line of text on the same gradient, and every video opened on that card. The
+counts (81, 92, 12, 36, 59, 108, 98, 96, 101) say the account is being
+distributed fine — it is the half second at the start that people are deciding
+on. `PROMOTION.md` §7c has the full read.
+
+**These replace the originals.** Do not post both — to a scroller they are the
+same video, and to the algorithm the second one is a repeat of something that
+already did not hold.
+
+| Re-cut | Now opens on |
+|---|---|
+| `01-no-subscription-cold` | the whole editor, timeline running |
+| `02-ai-sentence-cold` | a sentence being typed into the AI panel |
+| `03-cut-on-the-beat-cold` | clips snapping onto the beat grid |
+| `04-340-effects-cold` | the preset wall, previewing on the clip |
+| `15-audio-repair-cold` | the dirty waveform |
+| `16-speed-ramps-cold` | the ramp curve being dragged |
+| `17-montage-styles-cold` | the styles panel with the beat detected |
+| `18-free-forever-cold` | the editor, free version |
+| `20-vs-subscriptions-cold` | the effects panel |
+| `22-instant-wow-cold` | the tap, and the thing vanishing |
+
+**The best version of all is `-cold-silent`** — result first *and* no audio, so
+you add a trending sound. Five of them are rendered:
+`22-instant-wow`, `03-cut-on-the-beat`, `17-montage-styles`, `04-340-effects`,
+`15-audio-repair`.
+
+Render any video either way, or both:
+
+```
+node tools/promo/studio/render.mjs --fmt tiktok --cold --silent --video <id> --out $PROMO_ASSETS/out
+```
+
+The narrated tours are deliberately excluded — their scene order is the order
+the voice was recorded in, and moving a scene puts the wrong sentence over it.
+
+---
+
 ## The silent cuts — use a trending sound instead
 
 `out/tiktok/*-silent.mp4` are the same videos with **no audio track at all**.

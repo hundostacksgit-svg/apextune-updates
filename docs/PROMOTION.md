@@ -302,6 +302,50 @@ buying views, deleting and reposting the same video hoping for a better roll,
 or making the videos glossier. Every one of those is a way of avoiding the
 first item on the list.
 
+## 7c. What twelve posts actually looked like, and what it proved
+
+Twelve videos on a new account, September 2026. The view counts:
+
+| | | | |
+|---|---|---|---|
+| 81 | 92 | 12 | 36 |
+| 59 | 108 | 98 | 96 |
+| 101 | — | — | — |
+
+**Read what this is and is not.** Nothing is at zero and nothing is capped at a
+suspicious round number, so there is no block and no shadowban — the account is
+being distributed normally. Every video got its test batch of roughly a hundred
+people and roughly a hundred people scrolled. That is the cold-start signature,
+and it points at one thing: **the first second.**
+
+The profile grid proved it. Twelve covers, and every single one was a line of
+white and cyan text on the same dark gradient:
+
+> THERE IS NO SUBSCRIPTION. · EVERYTHING IS INCLUDED. · I TYPED ONE SENTENCE. ·
+> A VIDEO EDITOR YOU BUY ONCE. · FREE. FOREVER. NO WATERMARK. · 340 EFFECTS…
+
+Not one cover showed the app. Not one showed footage, a timeline, a result, or
+anything moving. A person landing on that profile saw twelve adverts stacked in
+a grid, and a person meeting one in the feed saw a title card in the half second
+where they decide. The writing on those cards is good. It was in the wrong
+place.
+
+**The fix, and it is a re-cut rather than a rewrite.** `render.mjs --cold`
+re-orders any video so the first scene that shows something real — the editor,
+the wipe, the waveform, the timeline cutting — plays first, and the hook lands
+second, once somebody is already watching. Nothing is rewritten and nothing is
+thrown away. The covers become the app working.
+
+**Two more things that screenshot showed:**
+
+- **Two videos had nearly the same cover.** "I TYPED ONE SENTENCE." and "I TYPED
+  ONE SENTENCE. IT EDITED THE VIDEO." are the short version and the tour of the
+  same idea, posted close together. To a scroller they are the same video twice,
+  and to the algorithm the second one is a repeat of something that already did
+  not hold. Space duplicates by a fortnight or drop one.
+- **Twelve posts is not a sample.** It is twelve. Three or four a day for a
+  fortnight is what produces enough data to tell a bad hook from a bad day.
+
 ## 8. The thing that actually decides it
 
 None of this makes an app spread. The videos, the posts and the honest page get

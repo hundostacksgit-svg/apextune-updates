@@ -97,8 +97,29 @@ function pulseAt(t) {
 }
 
 /* ---------------------------------------------------------------- timing */
+/*
+ * The cold open: lead with the thing, not the claim about it.
+ *
+ * Twelve videos posted, and every one of their covers was a line of text on the
+ * same gradient — so the profile grid read as twelve adverts and each video's
+ * first frame gave a scroller nothing to look at. The hook scenes are good
+ * writing and they are still in here; they just do not go first. This lifts the
+ * first scene that shows something real to the front, and the words land second,
+ * once somebody is already watching.
+ *
+ * Not applied to the narrated tours: their scene order is the order the voice
+ * was recorded in, and moving a scene would put the wrong sentence over it.
+ */
+const SHOWS_SOMETHING = ['app', 'wipe', 'sound', 'timeline', 'typing'];
+function coldOpen(list) {
+  const i = list.findIndex((s) => SHOWS_SOMETHING.includes(s.type));
+  if (i <= 0) return list;
+  return [list[i], ...list.slice(0, i), ...list.slice(i + 1)];
+}
+const ordered = q.get('cold') === '1' && !spec.voice ? coldOpen(spec.scenes || []) : (spec.scenes || []);
+
 let at = 0;
-const scenes = (spec.scenes || []).map((s, index) => {
+const scenes = ordered.map((s, index) => {
   const line = VOICE?.lines?.[index];
   const dur = line ? line.dur : (s.dur ?? (s.beats ?? 4) * BEAT);
   const o = { ...s, index, start: line ? line.start : at, dur };

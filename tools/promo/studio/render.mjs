@@ -52,6 +52,11 @@ const STILL_MODE = args.includes('--stills');
  * lands on your account, not on the song.
  */
 const SILENT = args.includes('--silent');
+/*
+ * --cold: re-cut so the video opens on the app doing something rather than on a
+ * line of text. The hook still plays, second. See comp.js.
+ */
+const COLD = args.includes('--cold');
 const FRAME = opt('frame', null);
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -101,7 +106,7 @@ async function openComp(id, fmt) {
   const page = await ctx.newPage();
   page.on('pageerror', (e) => console.error(`  [${id}] page error: ${e.message}`));
   page.on('console', (m) => { if (m.type() === 'error') console.error(`  [${id}] console: ${m.text()}`); });
-  await page.goto(`http://127.0.0.1:${PORT}/tools/promo/studio/comp.html?video=${encodeURIComponent(id)}&fmt=${fmt}`, { waitUntil: 'load' });
+  await page.goto(`http://127.0.0.1:${PORT}/tools/promo/studio/comp.html?video=${encodeURIComponent(id)}&fmt=${fmt}${COLD ? '&cold=1' : ''}`, { waitUntil: 'load' });
   const t0 = Date.now();
   while (!(await page.evaluate(() => window.READY === true))) {
     if (Date.now() - t0 > 30000) throw new Error(`${id}: composition never became ready`);
@@ -117,7 +122,7 @@ const seekTo = (page, t) => page.evaluate((t) => { window.seek(t); return new Pr
 async function renderVideo(spec, fmt) {
   const { ctx, page, cdp, duration } = await openComp(spec.id, fmt);
   const dir = path.join(OUT, fmt); fs.mkdirSync(dir, { recursive: true });
-  const out = path.join(dir, SILENT ? `${spec.id}-silent.mp4` : `${spec.id}.mp4`);
+  const out = path.join(dir, `${spec.id}${COLD ? '-cold' : ''}${SILENT ? '-silent' : ''}.mp4`);
   /*
    * A tour is narrated and has no music; everything else has music and no
    * narration. The voice is not faded out at the end — a fade over the last
