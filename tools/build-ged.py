@@ -26,6 +26,7 @@ OUT_MD = ROOT / "docs" / "GED-STUDY-GUIDE.md"
 # key, tab label, subtitle shown under the chapter title
 CHAPTERS = [
     ("plan", "Plan", "Start here. The week, and the method for finding any answer."),
+    ("nj", "New Jersey", "Your state: what it accepts, what it costs, and what it actually issues."),
     ("math", "Math", "Mathematical Reasoning — 115 minutes, 46 questions. The one that needs real hours."),
     ("rla", "Language", "Reasoning Through Language Arts — 150 minutes, 46 questions plus the essay."),
     ("essay", "Essay", "The Extended Response — 45 minutes, 6 raw points."),
