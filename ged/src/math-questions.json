@@ -1,0 +1,887 @@
+[
+  {
+    "id": "MATH-001",
+    "topic": "Order of operations",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "What is the value of 24 ÷ 4 + 3 × (7 − 5)²?",
+    "choices": [
+      "A. 12",
+      "B. 18",
+      "C. 36",
+      "D. 42"
+    ],
+    "answer": "B",
+    "why": "Parentheses first, then the exponent, then multiplication and division left to right, then addition. That gives 6 + 12 = 18.",
+    "howToFind": "1. Parentheses first: 7 − 5 = 2. The expression is now 24 ÷ 4 + 3 × 2².\n2. Exponent next: 2² = 2 × 2 = 4. Now 24 ÷ 4 + 3 × 4.\n3. Multiplication and division, left to right: 24 ÷ 4 = 6, and 3 × 4 = 12. Now 6 + 12.\n4. Addition last: 6 + 12 = 18.\n5. This is a Part 1 (no-calculator) style item. On paper, circle the ÷, the ×, and the exponent before you write anything, and do those first.",
+    "trap": "D (42). You multiply 3 × 2 = 6 first and square that to get 36, then add 6 → 42. The exponent belongs to the parentheses only, so you square the 2 BEFORE multiplying by 3."
+  },
+  {
+    "id": "MATH-002",
+    "topic": "Adding fractions",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "A recipe calls for 2/3 cup of flour and 1/4 cup of cornmeal. What is the total amount of these two dry ingredients, in cups?",
+    "choices": [
+      "A. 1/6",
+      "B. 5/12",
+      "C. 3/7",
+      "D. 11/12"
+    ],
+    "answer": "D",
+    "why": "A common denominator of 3 and 4 is 12. 2/3 = 8/12 and 1/4 = 3/12, and 8/12 + 3/12 = 11/12.",
+    "howToFind": "1. The words 'total amount' mean add.\n2. Find a common denominator for 3 and 4. The smallest number both divide into is 12.\n3. Convert: 2/3 = (2 × 4)/(3 × 4) = 8/12. Convert: 1/4 = (1 × 3)/(4 × 3) = 3/12.\n4. Add the numerators only, keep the denominator: 8 + 3 = 11, so 11/12.\n5. Check it is sensible: 2/3 is about 0.67 and 1/4 is 0.25, so the total is about 0.92. 11/12 = 0.917. Correct.\n6. On the calculator in Part 2: n/d 2 ▼ 3 ► + n/d 1 ▼ 4 ► enter.",
+    "trap": "C (3/7). You add across the top and across the bottom: 2 + 1 = 3 and 3 + 4 = 7. Denominators are never added; they must be made the same first."
+  },
+  {
+    "id": "MATH-003",
+    "topic": "Dividing fractions",
+    "difficulty": "medium",
+    "stimulus": "",
+    "question": "A ribbon 7½ feet long is cut into pieces that are each ¾ foot long, with no ribbon left over. How many pieces are there?",
+    "choices": [],
+    "answer": "10",
+    "why": "Dividing a total by a piece size gives the number of pieces: 7½ ÷ ¾ = 15/2 × 4/3 = 60/6 = 10.",
+    "howToFind": "1. 'Cut into pieces each ___ long, how many pieces' always means divide the total by the piece size.\n2. Convert the mixed number to an improper fraction: 7½ = (7 × 2 + 1)/2 = 15/2.\n3. Dividing by a fraction means multiply by its flip: 15/2 ÷ 3/4 = 15/2 × 4/3.\n4. Multiply across: (15 × 4)/(2 × 3) = 60/6 = 10.\n5. Decimal check on the calculator: 7.5 ÷ 0.75 = 10.\n6. Numeric entry: type 10. No units, no comma.",
+    "trap": "Typing 5.625, which is 7.5 × 0.75. When you see 'each piece is ¾ foot' people multiply because they see a fraction. The piece length goes UNDERNEATH: total ÷ piece size."
+  },
+  {
+    "id": "MATH-004",
+    "topic": "Decimal operations with money",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "Darnell buys 3 notebooks that cost 2.79 dollars each and one pack of pens that costs 4.15 dollars. He pays with a 20 dollar bill. How much change should he receive, in dollars?",
+    "choices": [
+      "A. 7.48",
+      "B. 8.37",
+      "C. 12.52",
+      "D. 13.06"
+    ],
+    "answer": "A",
+    "why": "Three notebooks cost 8.37, plus 4.15 for the pens is 12.52, and 20 − 12.52 = 7.48.",
+    "howToFind": "1. The question asks for CHANGE, so the last step must be a subtraction from 20.\n2. Notebooks: 3 × 2.79 = 8.37.\n3. Add the pens: 8.37 + 4.15 = 12.52. This is what he spends.\n4. Change: 20.00 − 12.52 = 7.48.\n5. Calculator chain: 3 × 2.79 enter, then + 4.15 enter, then take 20 − Ans.\n6. Sense check: he spent a bit over half of 20, so change a bit under 8. 7.48 fits.",
+    "trap": "C (12.52). That is the amount spent, not the change. The question's last word is 'receive', which means what comes back from the 20."
+  },
+  {
+    "id": "MATH-005",
+    "topic": "Ratio",
+    "difficulty": "medium",
+    "stimulus": "A community garden contains only tomato plants and pepper plants. The ratio of tomato plants to pepper plants is 5 to 3. There are 144 plants in the garden in all.",
+    "question": "How many pepper plants are in the garden?",
+    "choices": [
+      "A. 48",
+      "B. 54",
+      "C. 72",
+      "D. 90"
+    ],
+    "answer": "B",
+    "why": "The ratio has 5 + 3 = 8 parts, so one part is 144 ÷ 8 = 18 plants. Peppers are 3 parts, which is 3 × 18 = 54.",
+    "howToFind": "1. Add the ratio numbers to get the number of equal parts: 5 + 3 = 8.\n2. Divide the total by the number of parts to get the size of ONE part: 144 ÷ 8 = 18.\n3. The question asks for peppers, which is the 3 in the ratio: 3 × 18 = 54.\n4. Check by finding the other side too: tomatoes = 5 × 18 = 90, and 54 + 90 = 144. Correct.\n5. If you prefer a proportion: 3/8 = p/144, so p = 3 × 144 ÷ 8 = 54.",
+    "trap": "D (90). That is the number of TOMATO plants, the 5-part side. When a ratio is written '5 to 3' people grab the first number; match the number to the word the question asks for."
+  },
+  {
+    "id": "MATH-006",
+    "topic": "Proportion and scale",
+    "difficulty": "medium",
+    "stimulus": "On a state map, 1 inch represents 24 miles.",
+    "question": "Two towns are 3.75 inches apart on this map. What is the actual distance between the towns, in miles?",
+    "choices": [
+      "A. 6.4",
+      "B. 27.75",
+      "C. 72",
+      "D. 90"
+    ],
+    "answer": "D",
+    "why": "Each inch stands for 24 miles, so 3.75 inches stands for 3.75 × 24 = 90 miles.",
+    "howToFind": "1. Write the scale as a rate: 24 miles per 1 inch.\n2. The map distance is bigger than 1 inch, so the real distance must be bigger than 24 miles. Multiply.\n3. 3.75 × 24 = 90.\n4. If you prefer a proportion, set it up with the same units on top: 1 inch / 24 miles = 3.75 inches / x miles. Cross-multiply: 1 × x = 24 × 3.75, so x = 90.\n5. Sanity check: 4 inches would be 96 miles, and 3.75 is slightly less than 4, so 90 is right.",
+    "trap": "A (6.4). That is 24 ÷ 3.75, which is dividing when you should multiply. Check direction first: real distances are larger than map distances, so the answer must be far bigger than 3.75."
+  },
+  {
+    "id": "MATH-007",
+    "topic": "Unit rate",
+    "difficulty": "easy",
+    "stimulus": "A store sells the same peanut butter in three sizes.\n\nBrand A: 12 ounces for 3.48 dollars\nBrand B: 20 ounces for 5.40 dollars\nBrand C: 32 ounces for 8.96 dollars",
+    "question": "Which brand has the lowest cost per ounce, and what is that cost?",
+    "choices": [
+      "A. Brand A, at 0.29 dollars per ounce",
+      "B. Brand C, at 0.28 dollars per ounce",
+      "C. Brand A, at 0.27 dollars per ounce",
+      "D. Brand B, at 0.27 dollars per ounce"
+    ],
+    "answer": "D",
+    "why": "Cost per ounce is price divided by ounces: A is 0.29, B is 0.27, C is 0.28. Brand B is the cheapest per ounce.",
+    "howToFind": "1. 'Per ounce' means divide the price by the number of ounces. Do all three.\n2. Brand A: 3.48 ÷ 12 = 0.29.\n3. Brand B: 5.40 ÷ 20 = 0.27.\n4. Brand C: 8.96 ÷ 32 = 0.28.\n5. Compare the three: 0.27 is the smallest, and that is Brand B.\n6. The answer choice must match BOTH the brand and the number, so read both halves before clicking.",
+    "trap": "B (Brand C, 0.28). People assume the largest container is always the best value, and 0.28 is a real number from the table, so the choice looks verified. Always compute all three rates; the biggest size is not automatically cheapest per unit."
+  },
+  {
+    "id": "MATH-008",
+    "topic": "Percent of a number",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "A restaurant bill comes to 68.40 dollars before the tip. A customer leaves an 18% tip. What is the total amount the customer pays, to the nearest cent?",
+    "choices": [
+      "A. 12.31",
+      "B. 56.09",
+      "C. 80.71",
+      "D. 86.40"
+    ],
+    "answer": "C",
+    "why": "18% of 68.40 is 12.31, and adding it to the bill gives 80.71. Equivalently, 68.40 × 1.18 = 80.71.",
+    "howToFind": "1. The question asks for the TOTAL, which is the bill plus the tip.\n2. Fastest route, one multiplication: a bill plus 18% is the bill times 1.18. Type 68.40 × 1.18 enter = 80.712.\n3. Round to the nearest cent: 80.71.\n4. Two-step check: 68.40 × 0.18 = 12.312, so the tip is 12.31. Then 68.40 + 12.31 = 80.71. Same answer.\n5. Sense check: 20% of 68.40 would be about 13.68, so a tip near 12.31 and a total near 81 is reasonable.",
+    "trap": "A (12.31). That is the tip alone. The word 'total' means the bill AND the tip; the tip by itself is always offered as a choice on these items."
+  },
+  {
+    "id": "MATH-009",
+    "topic": "Percent increase",
+    "difficulty": "medium",
+    "stimulus": "The rent on an apartment rose from 950 dollars per month to 1,045 dollars per month.",
+    "question": "What was the percent increase in the rent?",
+    "choices": [
+      "A. 9.1%",
+      "B. 10%",
+      "C. 11%",
+      "D. 95%"
+    ],
+    "answer": "B",
+    "why": "The increase is 1,045 − 950 = 95 dollars, and 95 divided by the ORIGINAL 950 is 0.10, which is 10%.",
+    "howToFind": "1. Percent change is not on the formula sheet. Memorize: (new − old) ÷ old, then × 100.\n2. Find the change: 1,045 − 950 = 95.\n3. Divide by the ORIGINAL amount, which is the 950: 95 ÷ 950 = 0.1.\n4. Convert to a percent by multiplying by 100: 0.1 × 100 = 10%.\n5. Check by going forward: 950 × 1.10 = 1,045. It matches, so 10% is correct.",
+    "trap": "A (9.1%). That is 95 ÷ 1,045, dividing by the NEW rent instead of the old one. The denominator in percent change is always the earlier, original, 'was' number."
+  },
+  {
+    "id": "MATH-010",
+    "topic": "Discount then tax",
+    "difficulty": "medium",
+    "stimulus": "A jacket is priced at 128 dollars. It is on sale for 25% off. Sales tax of 6% is then applied to the sale price.",
+    "question": "What is the final amount the customer pays, in dollars?",
+    "choices": [
+      "A. 96.00",
+      "B. 101.76",
+      "C. 103.68",
+      "D. 135.68"
+    ],
+    "answer": "B",
+    "why": "25% off means paying 75%: 128 × 0.75 = 96. Adding 6% tax means multiplying by 1.06: 96 × 1.06 = 101.76.",
+    "howToFind": "1. Do the discount first because the problem says tax applies to the SALE price.\n2. 25% off means you pay 100% − 25% = 75%, so multiply by 0.75: 128 × 0.75 = 96.\n3. Adding 6% tax means multiplying by 1 + 0.06 = 1.06: 96 × 1.06 = 101.76.\n4. Chain it on the calculator in one go: 128 × 0.75 × 1.06 enter = 101.76.\n5. Sense check: the sale price is 96 and tax is a few dollars, so the answer must be just above 96. Only 101.76 and 103.68 qualify, and 103.68 uses tax on the wrong base.",
+    "trap": "C (103.68). That is 96 + (6% of the ORIGINAL 128) = 96 + 7.68. The tax is charged on 96, not on 128, because the discount happens first."
+  },
+  {
+    "id": "MATH-011",
+    "topic": "Reverse percent",
+    "difficulty": "hard",
+    "stimulus": "",
+    "question": "After a 35% discount, a mattress sells for 487.50 dollars. What was the original price of the mattress, in dollars?",
+    "choices": [],
+    "answer": "750",
+    "why": "A 35% discount means the sale price is 65% of the original, so the original is 487.50 ÷ 0.65 = 750.",
+    "howToFind": "1. Decide which number is the WHOLE and which is the PART. Here 487.50 is the part (what is left after the discount), and the original price is the unknown whole.\n2. 35% off means you paid 100% − 35% = 65% of the original.\n3. Write it as an equation: 0.65 × (original) = 487.50.\n4. Solve by dividing: original = 487.50 ÷ 0.65 = 750.\n5. Check forward: 750 × 0.35 = 262.50 discount, and 750 − 262.50 = 487.50. It matches.\n6. Numeric entry: type 750. Do not type a dollar sign or a comma.",
+    "trap": "Typing 658.13, from 487.50 × 1.35. When the price you are given is the RESULT of a percent change, you must divide, not multiply. Multiplying by 1.35 undoes nothing, because 35% of 750 is not 35% of 487.50."
+  },
+  {
+    "id": "MATH-012",
+    "topic": "Simple interest",
+    "difficulty": "medium",
+    "stimulus": "",
+    "question": "Renata deposits 4,500 dollars in an account that pays 3.5% simple annual interest. How much interest will the account earn in 4 years, in dollars?",
+    "choices": [],
+    "answer": "630",
+    "why": "Simple interest is I = prt, so I = 4,500 × 0.035 × 4 = 630.",
+    "howToFind": "1. The formula I = prt IS on the on-screen formula sheet, in the Algebra block. Click Formula Sheet and copy it.\n2. Identify the pieces: p (principal) = 4,500; r (rate) = 3.5% = 0.035; t (time) = 4 years.\n3. Substitute before you calculate: I = 4,500 × 0.035 × 4.\n4. 4,500 × 0.035 = 157.50 (that is one year's interest).\n5. 157.50 × 4 = 630.\n6. Numeric entry: type 630. The question asks for the INTEREST, not the balance, so do not add the 4,500.",
+    "trap": "Typing 5130, which is the ending balance (4,500 + 630). The formula I = prt gives interest only. Read whether the question wants 'interest earned' or 'total in the account'."
+  },
+  {
+    "id": "MATH-013",
+    "topic": "Scientific notation",
+    "difficulty": "hard",
+    "stimulus": "",
+    "question": "What is the value of (3.2 × 10⁶)(2.5 × 10⁻³), expressed in scientific notation?",
+    "choices": [
+      "A. 5.7 × 10³",
+      "B. 8 × 10³",
+      "C. 8 × 10⁻¹⁸",
+      "D. 8 × 10⁹"
+    ],
+    "answer": "B",
+    "why": "Multiply the front numbers, 3.2 × 2.5 = 8, and add the exponents, 6 + (−3) = 3, giving 8 × 10³.",
+    "howToFind": "1. Separate the problem into two pieces: the decimal fronts and the powers of ten.\n2. Multiply the fronts: 3.2 × 2.5 = 8.\n3. When you MULTIPLY powers of the same base you ADD the exponents: 10⁶ × 10⁻³ = 10⁽⁶ ⁺ ⁽⁻³⁾⁾ = 10³.\n4. Put them together: 8 × 10³. The front number 8 is between 1 and 10, so it is already proper scientific notation.\n5. Calculator route: 3.2 x10ⁿ 6 × 2.5 x10ⁿ (-) 3 enter. Note the (-) key, not the subtraction key, for the negative exponent. The display reads 8000, which is 8 × 10³.",
+    "trap": "D (8 × 10⁹). You add 6 and 3 and ignore the minus sign on the exponent. Write the exponent addition out as 6 + (−3) = 3 on the note board before combining."
+  },
+  {
+    "id": "MATH-014",
+    "topic": "Square and cube roots",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "What is the value of √144 + ∛64?",
+    "choices": [
+      "A. 16",
+      "B. 20",
+      "C. 76",
+      "D. 80"
+    ],
+    "answer": "A",
+    "why": "√144 = 12 because 12 × 12 = 144, and ∛64 = 4 because 4 × 4 × 4 = 64. Their sum is 16.",
+    "howToFind": "1. √144 asks what number times itself is 144. From the squares list, 12² = 144, so √144 = 12.\n2. ∛64 asks what number times itself three times is 64. 4 × 4 = 16 and 16 × 4 = 64, so ∛64 = 4.\n3. Add: 12 + 4 = 16.\n4. Calculator route for Part 2: 2nd x² 144 ► gives 12; then 3 2nd ^ 64 ► gives 4 (the index goes first for an nth root).\n5. Memorize the squares 1 through 15 and the cubes 1 through 6. This item appears in the no-calculator part, where the calculator route is unavailable.",
+    "trap": "B (20). You read ∛64 as √64 and get 8, giving 12 + 8 = 20. The small 3 in front of the radical means cube root; 4 cubed is 64, 8 squared is 64, and only one of those is being asked for."
+  },
+  {
+    "id": "MATH-015",
+    "topic": "Unit conversion",
+    "difficulty": "medium",
+    "stimulus": "A hallway measures 7 yards 2 feet in length. (1 yard = 3 feet; 1 foot = 12 inches.)",
+    "question": "What is the length of the hallway, in inches?",
+    "choices": [
+      "A. 84",
+      "B. 108",
+      "C. 276",
+      "D. 828"
+    ],
+    "answer": "C",
+    "why": "7 yards is 21 feet, plus the extra 2 feet is 23 feet, and 23 × 12 = 276 inches.",
+    "howToFind": "1. Convert everything to one unit at a time. Start by getting all of it into feet.\n2. 7 yards × 3 feet per yard = 21 feet.\n3. Add the loose 2 feet: 21 + 2 = 23 feet.\n4. Convert feet to inches: 23 × 12 = 276 inches.\n5. Sense check the direction: inches are smaller than yards, so the number must get much bigger. 276 is bigger than 23, which is bigger than 7. Correct direction.",
+    "trap": "B (108). You read '7 yards 2 feet' as 7 + 2 = 9 and multiply 9 × 12. The 7 and the 2 are in different units, so the 7 must be converted to 21 feet before anything is added."
+  },
+  {
+    "id": "MATH-016",
+    "topic": "Composite area",
+    "difficulty": "medium",
+    "stimulus": "A patio is shaped like the letter L. It fits inside a rectangle measuring 20 feet by 14 feet, and a rectangular corner measuring 6 feet by 5 feet has been cut out of it.",
+    "question": "What is the area of the patio, in square feet?",
+    "choices": [
+      "A. 68",
+      "B. 250",
+      "C. 280",
+      "D. 310"
+    ],
+    "answer": "B",
+    "why": "The full rectangle is 20 × 14 = 280 square feet and the missing corner is 6 × 5 = 30 square feet, so the patio is 280 − 30 = 250 square feet.",
+    "howToFind": "1. For an L-shape, the fastest method is: find the area of the big rectangle it came from, then subtract the piece that was removed.\n2. Big rectangle: A = lw from the formula sheet, so 20 × 14 = 280 square feet.\n3. Removed corner: 6 × 5 = 30 square feet.\n4. Subtract: 280 − 30 = 250 square feet.\n5. Check the units in the choices: the answer must be in square feet because it is an area, and 68 is a perimeter-sized number, not an area.",
+    "trap": "C (280). That is the whole enclosing rectangle before the corner is removed. An L-shape is always less than the rectangle it fits inside, so any answer equal to lw is automatically wrong."
+  },
+  {
+    "id": "MATH-017",
+    "topic": "Circumference",
+    "difficulty": "easy",
+    "stimulus": "A circular flower bed measures 18 feet across. Use π ≈ 3.14.",
+    "question": "How many feet of edging are needed to go all the way around the flower bed?",
+    "choices": [
+      "A. 28.26",
+      "B. 56.52",
+      "C. 113.04",
+      "D. 254.34"
+    ],
+    "answer": "B",
+    "why": "'Across' means diameter, so C = πd = 3.14 × 18 = 56.52 feet.",
+    "howToFind": "1. 'All the way around' a circle means circumference, not area.\n2. The formula sheet gives two versions: C = 2πr OR C = πd. You are given the distance ACROSS, which is the diameter, so use C = πd.\n3. Substitute: C = 3.14 × 18.\n4. Multiply: 3.14 × 18 = 56.52 feet.\n5. Check with the other version: r = 18 ÷ 2 = 9, so C = 2 × 3.14 × 9 = 56.52. Same answer, which confirms you used the right one.",
+    "trap": "C (113.04). You treat the 18 as the radius and compute 2π(18). The words 'across', 'wide', and 'diameter' all mean the full width; halve it before using any formula that asks for r."
+  },
+  {
+    "id": "MATH-018",
+    "topic": "Volume of a cylinder",
+    "difficulty": "medium",
+    "stimulus": "A cylindrical water tank has a radius of 3 feet and a height of 10 feet. Use π ≈ 3.14.",
+    "question": "What is the volume of the tank, to the nearest cubic foot?",
+    "choices": [],
+    "answer": "283",
+    "why": "V = πr²h = 3.14 × 3² × 10 = 3.14 × 9 × 10 = 282.6, which rounds to 283 cubic feet.",
+    "howToFind": "1. Click Formula Sheet and find 'cylinder': V = πr²h.\n2. Write it with the numbers already in it: V = 3.14 × (3)² × 10.\n3. Square the radius FIRST: 3² = 9.\n4. Multiply left to right: 3.14 × 9 = 28.26, then 28.26 × 10 = 282.6.\n5. Round to the nearest whole cubic foot: 282.6 → 283.\n6. Numeric entry: type 283. No units, no decimal, because the question says 'to the nearest cubic foot'.",
+    "trap": "Typing 94 or 94.2, which comes from 3.14 × 3 × 10 with the radius never squared. The little 2 on r² is the whole difference between a volume and a nonsense number; write the squared value down as a separate line."
+  },
+  {
+    "id": "MATH-019",
+    "topic": "Surface area of a prism",
+    "difficulty": "hard",
+    "stimulus": "A closed rectangular shipping crate measures 4 feet long, 3 feet wide, and 2.5 feet high.",
+    "question": "What is the total surface area of the crate, in square feet?",
+    "choices": [
+      "A. 29.5",
+      "B. 30",
+      "C. 59",
+      "D. 118"
+    ],
+    "answer": "C",
+    "why": "SA = 2lw + 2lh + 2wh = 2(12) + 2(10) + 2(7.5) = 24 + 20 + 15 = 59 square feet.",
+    "howToFind": "1. Surface area means the total of all six faces of the box.\n2. Use SA = 2lw + 2lh + 2wh with l = 4, w = 3, h = 2.5.\n3. Top and bottom: lw = 4 × 3 = 12, and 2 × 12 = 24.\n4. Front and back: lh = 4 × 2.5 = 10, and 2 × 10 = 20.\n5. Two ends: wh = 3 × 2.5 = 7.5, and 2 × 7.5 = 15.\n6. Add all three: 24 + 20 + 15 = 59 square feet.\n7. Check the unit: surface area is in square feet, so the exponent on the unit in the right choice is 2.",
+    "trap": "B (30). That is 4 × 3 × 2.5, the VOLUME. Surface area and volume use the same three numbers, so the only way to tell them apart is the word in the question and the unit (ft² versus ft³)."
+  },
+  {
+    "id": "MATH-020",
+    "topic": "Volume of a cone",
+    "difficulty": "hard",
+    "stimulus": "A cone-shaped paper cup has a radius of 4 centimeters and a height of 9 centimeters. Use π ≈ 3.14.",
+    "question": "What is the volume of the cup, in cubic centimeters?",
+    "choices": [
+      "A. 37.68",
+      "B. 150.72",
+      "C. 452.16",
+      "D. 602.88"
+    ],
+    "answer": "B",
+    "why": "V = ⅓πr²h = ⅓ × 3.14 × 16 × 9 = ⅓ × 452.16 = 150.72 cubic centimeters.",
+    "howToFind": "1. Click Formula Sheet and find 'cone': V = ⅓πr²h.\n2. Substitute r = 4 and h = 9: V = ⅓ × 3.14 × 4² × 9.\n3. Square the radius: 4² = 16.\n4. Multiply the top part: 3.14 × 16 = 50.24, then 50.24 × 9 = 452.16.\n5. Take one third: 452.16 ÷ 3 = 150.72 cubic centimeters.\n6. Quick sanity rule: a cone is exactly one third of the cylinder with the same base and height, so your answer should be about one third of 452. It is.",
+    "trap": "C (452.16). You use the cylinder formula V = πr²h and forget the ⅓. Cone, pyramid: both have the ⅓ in front. If your answer matches the cylinder value exactly, you dropped it."
+  },
+  {
+    "id": "MATH-021",
+    "topic": "Pythagorean theorem",
+    "difficulty": "medium",
+    "stimulus": "A 25-foot ladder leans against a vertical wall. The base of the ladder sits on level ground 7 feet from the wall.",
+    "question": "How far up the wall does the top of the ladder reach, in feet?",
+    "choices": [],
+    "answer": "24",
+    "why": "The ladder is the hypotenuse, so a² + b² = c² gives 7² + b² = 25², and b = √(625 − 49) = √576 = 24 feet.",
+    "howToFind": "1. Draw the right triangle. The right angle is where the wall meets the ground. The LADDER does not touch that corner, so the ladder is the hypotenuse c = 25.\n2. The known leg is the distance along the ground, a = 7. The unknown leg is the height up the wall, b.\n3. Use a² + b² = c² from the formula sheet: 7² + b² = 25².\n4. Compute the squares: 49 + b² = 625.\n5. Subtract to isolate b²: b² = 625 − 49 = 576.\n6. Take the square root: b = √576 = 24.\n7. Sense check: a leg must be shorter than the hypotenuse, and 24 < 25. Correct.\n8. Numeric entry: type 24.",
+    "trap": "Typing 25.96, from √(625 + 49). When the hypotenuse is already given and you want a leg, you SUBTRACT the squares. Adding is only for finding the hypotenuse from two legs."
+  },
+  {
+    "id": "MATH-022",
+    "topic": "Median from a data set",
+    "difficulty": "easy",
+    "stimulus": "Daily high temperatures, in degrees Fahrenheit, recorded at a weather station during one week:\n\nMonday 68\nTuesday 74\nWednesday 71\nThursday 80\nFriday 79\nSaturday 66\nSunday 77",
+    "question": "What is the median of these seven temperatures?",
+    "choices": [
+      "A. 14",
+      "B. 73.6",
+      "C. 74",
+      "D. 80"
+    ],
+    "answer": "C",
+    "why": "Sorted, the values are 66, 68, 71, 74, 77, 79, 80. With seven values the median is the fourth one, which is 74.",
+    "howToFind": "1. Median means the middle value AFTER the numbers are put in order. The list in the table is in day order, not number order, so sort it first.\n2. Sorted: 66, 68, 71, 74, 77, 79, 80.\n3. Count the values: there are 7, an odd number, so there is one exact middle.\n4. The middle position is the 4th value (three below it, three above it).\n5. The 4th value is 74. That is the median.\n6. Cross-check the wrong-answer values so you can rule them out fast: the mean is 515 ÷ 7 = 73.6 and the range is 80 − 66 = 14.",
+    "trap": "D (80). You take the middle of the list AS PRINTED (Thursday is the 4th row) without sorting. Sorting is not optional; it is part of the definition of median."
+  },
+  {
+    "id": "MATH-023",
+    "topic": "Finding a value to reach a target mean",
+    "difficulty": "hard",
+    "stimulus": "Andre's first five test scores are 78, 85, 91, 82, and 88. There is one test left, and all six tests count equally.",
+    "question": "What score does Andre need on the sixth test so that his mean score for all six tests is exactly 86?",
+    "choices": [],
+    "answer": "92",
+    "why": "Six tests averaging 86 need a total of 516. The first five total 424, so the sixth score must be 516 − 424 = 92.",
+    "howToFind": "1. Work backwards from the mean. Mean = total ÷ count, so total = mean × count.\n2. The total he NEEDS: 86 × 6 = 516.\n3. The total he HAS: 78 + 85 = 163; 163 + 91 = 254; 254 + 82 = 336; 336 + 88 = 424.\n4. The missing score is the difference: 516 − 424 = 92.\n5. Check it: (424 + 92) ÷ 6 = 516 ÷ 6 = 86. Correct.\n6. Numeric entry: type 92.",
+    "trap": "Typing 86, on the reasoning that scoring the target on the last test produces the target average. His current average is 424 ÷ 5 = 84.8, below 86, so the last score must be ABOVE 86 to pull the average up."
+  },
+  {
+    "id": "MATH-024",
+    "topic": "Probability without replacement",
+    "difficulty": "hard",
+    "stimulus": "A drawer contains 6 black socks and 4 grey socks. Two socks are pulled out at random, one after the other, and the first sock is not put back.",
+    "question": "What is the probability that both socks are black?",
+    "choices": [
+      "A. 1/3",
+      "B. 9/25",
+      "C. 2/5",
+      "D. 3/5"
+    ],
+    "answer": "A",
+    "why": "The first black sock has probability 6/10, and then only 5 black socks remain out of 9, so the probability of both is 6/10 × 5/9 = 30/90 = 1/3.",
+    "howToFind": "1. There are 6 + 4 = 10 socks in total.\n2. First pull: P(black) = 6 black ÷ 10 total = 6/10.\n3. The first sock is NOT replaced, so both counts drop by one for the second pull: 5 black socks left out of 9 socks left. P(second black) = 5/9.\n4. 'Both' means AND, and AND means multiply: 6/10 × 5/9.\n5. Multiply across: (6 × 5)/(10 × 9) = 30/90.\n6. Simplify: 30/90 = 1/3.\n7. Sense check: a probability must be between 0 and 1, and 1/3 ≈ 0.33 is reasonable for two events that are each a bit more likely than not.",
+    "trap": "B (9/25). That is (6/10) × (6/10), treating the draws as if the first sock were put back. The phrase 'not put back' means the second fraction has 5 on top and 9 on the bottom."
+  },
+  {
+    "id": "MATH-025",
+    "topic": "Reading a bar graph",
+    "difficulty": "easy",
+    "stimulus": "A bar graph titled 'Units Sold by Month' has one bar for each month. The value at the top of each bar is:\n\nJanuary 120\nFebruary 150\nMarch 135\nApril 180\nMay 165",
+    "question": "How many more units were sold in April than in March?",
+    "choices": [
+      "A. 15",
+      "B. 45",
+      "C. 60",
+      "D. 315"
+    ],
+    "answer": "B",
+    "why": "April is 180 and March is 135, and 180 − 135 = 45.",
+    "howToFind": "1. 'How many MORE ... than' always means subtract, larger minus smaller.\n2. Find the two bars named in the question and read only those. April = 180. March = 135.\n3. Subtract: 180 − 135 = 45.\n4. Check which way round: April is the larger, and the question asks how many more April had, so the answer is positive. 45.\n5. Ignore January, February, and May entirely. Extra rows in a graph stimulus exist to feed the wrong answers.",
+    "trap": "D (315). That is 180 + 135, adding the two bars instead of comparing them. 'More than' in a comparison question is a subtraction; 'in all' or 'combined' would be the addition."
+  },
+  {
+    "id": "MATH-026",
+    "topic": "Evaluating expressions",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "What is the value of 3x² − 5y when x = −4 and y = 2?",
+    "choices": [
+      "A. −58",
+      "B. 28",
+      "C. 38",
+      "D. 58"
+    ],
+    "answer": "C",
+    "why": "Substituting gives 3(−4)² − 5(2) = 3(16) − 10 = 48 − 10 = 38.",
+    "howToFind": "1. Substitute with parentheses around every value: 3(−4)² − 5(2).\n2. Exponent first: (−4)² = (−4)(−4) = +16. A negative times a negative is positive.\n3. Multiply: 3 × 16 = 48, and 5 × 2 = 10.\n4. Subtract: 48 − 10 = 38.\n5. On the calculator, the parentheses matter: press ( (-) 4 ) x² to get 16. Without the parentheses, (-) 4 x² returns −16 and the whole line collapses to −58.",
+    "trap": "A (−58). You treat (−4)² as −16 instead of +16, giving 3(−16) − 10 = −48 − 10 = −58. Squaring a negative always gives a positive; on the calculator you must press ( (-) 4 ) x², because (-) 4 x² returns −16."
+  },
+  {
+    "id": "MATH-027",
+    "topic": "Combining like terms",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "Which expression is equivalent to 7a − 3b + 2 − 4a + 8b − 9?",
+    "choices": [
+      "A. 3a − 5b − 7",
+      "B. 3a + 11b + 7",
+      "C. 11a + 5b − 7",
+      "D. 3a + 5b − 7"
+    ],
+    "answer": "D",
+    "why": "The a terms give 7a − 4a = 3a, the b terms give −3b + 8b = 5b, and the numbers give 2 − 9 = −7.",
+    "howToFind": "1. Group by letter. Each term keeps the sign written directly in front of it.\n2. The a terms: +7a and −4a. 7 − 4 = 3, so 3a.\n3. The b terms: −3b and +8b. −3 + 8 = 5, so +5b.\n4. The plain numbers: +2 and −9. 2 − 9 = −7.\n5. Write them together: 3a + 5b − 7.\n6. Verify by picking numbers: let a = 1 and b = 1. Original: 7 − 3 + 2 − 4 + 8 − 9 = 1. Answer D: 3 + 5 − 7 = 1. They match.",
+    "trap": "A (3a − 5b − 7). You subtract the b terms in the order they appear, 3 − 8 style, instead of adding −3 and +8. Carry the sign that sits in FRONT of each term when you move it into a group."
+  },
+  {
+    "id": "MATH-028",
+    "topic": "Distributive property",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "Which expression is equivalent to 5 − 2(3x − 4)?",
+    "choices": [
+      "A. −6x − 3",
+      "B. 3x − 4",
+      "C. 9x − 12",
+      "D. 13 − 6x"
+    ],
+    "answer": "D",
+    "why": "Distributing −2 across both terms gives −6x + 8, and 5 + 8 = 13, so the expression equals 13 − 6x.",
+    "howToFind": "1. The −2 multiplies BOTH terms inside the parentheses. Draw an arrow from −2 to 3x and another from −2 to −4.\n2. −2 × 3x = −6x.\n3. −2 × (−4) = +8. Negative times negative is positive.\n4. Rewrite: 5 − 6x + 8.\n5. Combine the plain numbers: 5 + 8 = 13, giving 13 − 6x.\n6. Check by picking a number: let x = 2. Original: 5 − 2(6 − 4) = 5 − 4 = 1. Answer D: 13 − 12 = 1. They match.",
+    "trap": "A (−6x − 3). You distribute the −2 to the 3x but not to the −4, giving 5 − 6x − 4 = 1 − 6x, or you keep the minus on the 8. The second term's sign flips too, which is why 5 becomes 13 and not 1."
+  },
+  {
+    "id": "MATH-029",
+    "topic": "Writing an expression",
+    "difficulty": "medium",
+    "stimulus": "A gym charges a one-time sign-up fee of 45 dollars plus 29 dollars for each month of membership.",
+    "question": "Which expression gives the total cost, in dollars, of a membership lasting m months?",
+    "choices": [
+      "A. 29 + 45m",
+      "B. 74m",
+      "C. 45m + 29m",
+      "D. 45 + 29m"
+    ],
+    "answer": "D",
+    "why": "The 45 dollar fee is paid once and does not depend on m, while 29 dollars is paid for each of the m months, which is 29m. The total is 45 + 29m.",
+    "howToFind": "1. Decide which number happens ONCE and which happens REPEATEDLY. 'One-time sign-up fee' = once. 'For each month' = repeatedly.\n2. The repeated charge gets the variable attached: 29 dollars each month for m months is 29m.\n3. The one-time charge stands alone: 45.\n4. Total = 45 + 29m.\n5. Test it with a number. For 3 months the real cost is 45 + 29 + 29 + 29 = 132. Check D: 45 + 29(3) = 45 + 87 = 132. Correct. Check A: 29 + 45(3) = 164. Wrong.",
+    "trap": "A (29 + 45m). The two numbers are swapped. Whichever number follows the words 'each', 'per', or 'every' is the one that multiplies the variable."
+  },
+  {
+    "id": "MATH-030",
+    "topic": "Solving a linear equation",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "What is the solution to 4x + 9 = 33?",
+    "choices": [
+      "A. 6",
+      "B. 8.25",
+      "C. 10.5",
+      "D. 24"
+    ],
+    "answer": "A",
+    "why": "Subtracting 9 from both sides gives 4x = 24, and dividing by 4 gives x = 6.",
+    "howToFind": "1. Undo the operations in reverse order. The 9 is added last, so remove it first.\n2. Subtract 9 from both sides: 4x + 9 − 9 = 33 − 9, so 4x = 24.\n3. The 4 multiplies x, so divide both sides by 4: x = 24 ÷ 4 = 6.\n4. Check by substituting back: 4(6) + 9 = 24 + 9 = 33. Correct.\n5. Working backwards also settles this in one line: try the middle choice, then adjust. 4(6) + 9 = 33 on the first try.",
+    "trap": "D (24). That is the value of 4x, an intermediate step, not of x. The question asks for x; anything you compute before the final division is a planted wrong answer."
+  },
+  {
+    "id": "MATH-031",
+    "topic": "Equation with a fraction",
+    "difficulty": "medium",
+    "stimulus": "",
+    "question": "Solve for x: (2x)/3 − 5 = 7",
+    "choices": [],
+    "answer": "18",
+    "why": "Adding 5 gives (2x)/3 = 12, multiplying by 3 gives 2x = 36, and dividing by 2 gives x = 18.",
+    "howToFind": "1. Undo in reverse order. The −5 is outside the fraction, so clear it first.\n2. Add 5 to both sides: (2x)/3 = 7 + 5 = 12.\n3. The whole left side is divided by 3, so multiply both sides by 3: 2x = 12 × 3 = 36.\n4. Divide both sides by 2: x = 36 ÷ 2 = 18.\n5. Check by substituting: (2 × 18)/3 − 5 = 36/3 − 5 = 12 − 5 = 7. Correct.\n6. Numeric entry: type 18.",
+    "trap": "Typing 6, from dividing 12 by 2 and forgetting to multiply by 3 first. Or typing 3, from adding 5 then dividing by 3 and by 2 in the wrong order. Clear the denominator before you touch the coefficient."
+  },
+  {
+    "id": "MATH-032",
+    "topic": "Linear equation word problem",
+    "difficulty": "medium",
+    "stimulus": "A plumber charges a 65 dollar call-out fee plus 48 dollars for each hour of work. A customer's bill for one job was 281 dollars.",
+    "question": "How many hours did the plumber work on that job?",
+    "choices": [
+      "A. 4",
+      "B. 4.5",
+      "C. 5.85",
+      "D. 7.2"
+    ],
+    "answer": "B",
+    "why": "65 + 48h = 281, so 48h = 216 and h = 4.5 hours.",
+    "howToFind": "1. Build the equation from the story: fixed fee + hourly rate × hours = total, so 65 + 48h = 281.\n2. Subtract the fixed fee from both sides: 48h = 281 − 65 = 216.\n3. Divide by the hourly rate: h = 216 ÷ 48 = 4.5.\n4. Check by putting it back: 65 + 48(4.5) = 65 + 216 = 281. Correct.\n5. Working backwards is just as fast here: try B, 65 + 48(4.5) = 281, and stop.",
+    "trap": "C (5.85). That is 281 ÷ 48, dividing the whole bill by the hourly rate without first removing the 65 dollar call-out fee. Any flat fee must come off the total before you divide."
+  },
+  {
+    "id": "MATH-033",
+    "topic": "Rearranging a formula",
+    "difficulty": "medium",
+    "stimulus": "The area of a trapezoid is given by A = ½h(b₁ + b₂).",
+    "question": "Which equation correctly solves this formula for b₂?",
+    "choices": [
+      "A. b₂ = (2A − b₁)/h",
+      "B. b₂ = A/(2h) − b₁",
+      "C. b₂ = 2A/(h − b₁)",
+      "D. b₂ = 2A/h − b₁"
+    ],
+    "answer": "D",
+    "why": "Multiplying both sides by 2 gives 2A = h(b₁ + b₂), dividing by h gives 2A/h = b₁ + b₂, and subtracting b₁ isolates b₂ = 2A/h − b₁.",
+    "howToFind": "1. Treat b₂ like x and undo everything attached to it, outermost first.\n2. The ½ multiplies the whole right side, so multiply both sides by 2: 2A = h(b₁ + b₂).\n3. The h multiplies the whole bracket, so divide both sides by h: 2A/h = b₁ + b₂.\n4. Subtract b₁ from both sides: 2A/h − b₁ = b₂.\n5. Verify with numbers. Let h = 4, b₁ = 3, b₂ = 5. Then A = ½(4)(8) = 16. Test D: 2(16)/4 − 3 = 8 − 3 = 5. Correct. Test A: (32 − 3)/4 = 7.25. Wrong.",
+    "trap": "A ((2A − b₁)/h). You subtract b₁ while it is still inside the bracket being divided by h. You can only subtract b₁ after the division by h has already been applied to the whole side."
+  },
+  {
+    "id": "MATH-034",
+    "topic": "Linear inequality",
+    "difficulty": "medium",
+    "stimulus": "",
+    "question": "What is the solution set of −3x + 7 ≥ 22?",
+    "choices": [
+      "A. x ≥ 5",
+      "B. x ≤ 5",
+      "C. x ≥ −5",
+      "D. x ≤ −5"
+    ],
+    "answer": "D",
+    "why": "Subtracting 7 gives −3x ≥ 15, and dividing both sides by −3 reverses the inequality, giving x ≤ −5.",
+    "howToFind": "1. Solve it exactly like an equation until the last step.\n2. Subtract 7 from both sides: −3x ≥ 22 − 7, so −3x ≥ 15.\n3. Divide both sides by −3. Because you are dividing by a NEGATIVE, the inequality sign flips from ≥ to ≤.\n4. 15 ÷ (−3) = −5, so x ≤ −5.\n5. Test a number in the region to confirm: try x = −6. −3(−6) + 7 = 18 + 7 = 25, and 25 ≥ 22 is true. Now try x = 0: 0 + 7 = 7, and 7 ≥ 22 is false. So the solutions really are the values at or below −5.",
+    "trap": "C (x ≥ −5). You get the −5 right but do not flip the sign. The ONLY trigger for flipping is multiplying or dividing both sides by a negative number; adding or subtracting a negative never flips it."
+  },
+  {
+    "id": "MATH-035",
+    "topic": "Inequality word problem",
+    "difficulty": "hard",
+    "stimulus": "A delivery van is rated so that the combined weight of the driver and the cargo must not exceed 1,800 pounds. The driver weighs 190 pounds. Each identical box of cargo weighs 55 pounds.",
+    "question": "What is the greatest number of boxes the van can carry?",
+    "choices": [
+      "A. 29",
+      "B. 30",
+      "C. 32",
+      "D. 33"
+    ],
+    "answer": "A",
+    "why": "190 + 55b ≤ 1,800 gives 55b ≤ 1,610 and b ≤ 29.27, and since boxes are whole, the greatest number is 29.",
+    "howToFind": "1. 'Must not exceed' means ≤. Write the inequality: 190 + 55b ≤ 1,800.\n2. Subtract the driver's weight from both sides: 55b ≤ 1,800 − 190 = 1,610.\n3. Divide by 55: b ≤ 1,610 ÷ 55 = 29.27...\n4. You cannot load a fraction of a box, and going over the limit is not allowed, so round DOWN: 29 boxes.\n5. Check both sides of the line: 29 boxes weigh 29 × 55 = 1,595, and 1,595 + 190 = 1,785, which is under 1,800. But 30 boxes weigh 1,650, and 1,650 + 190 = 1,840, which is over. So 29 is the greatest.",
+    "trap": "B (30). You round 29.27 up out of habit. 'How many fit / how many can I carry' always rounds DOWN, because the extra box would break the limit. Only 'how many trips / containers do I need' rounds up."
+  },
+  {
+    "id": "MATH-036",
+    "topic": "System of equations word problem",
+    "difficulty": "medium",
+    "stimulus": "A theater sells adult tickets for 12 dollars and child tickets for 7 dollars. For one show, 240 tickets were sold in total and 2,180 dollars was collected.",
+    "question": "How many child tickets were sold?",
+    "choices": [
+      "A. 100",
+      "B. 120",
+      "C. 140",
+      "D. 180"
+    ],
+    "answer": "C",
+    "why": "With a + c = 240 and 12a + 7c = 2,180, substitution gives a = 100, so c = 240 − 100 = 140 child tickets.",
+    "howToFind": "1. Name the unknowns: a = adult tickets, c = child tickets.\n2. Equation from the COUNT: a + c = 240.\n3. Equation from the MONEY: 12a + 7c = 2,180.\n4. Solve the first for c: c = 240 − a, and substitute into the second: 12a + 7(240 − a) = 2,180.\n5. Distribute: 12a + 1,680 − 7a = 2,180, so 5a + 1,680 = 2,180.\n6. Subtract: 5a = 500, so a = 100.\n7. The question asks for CHILD tickets: c = 240 − 100 = 140.\n8. Check the money: 12(100) + 7(140) = 1,200 + 980 = 2,180. Correct.\n9. Faster on test day: test the choices. If c = 140 then a = 100, and 1,200 + 980 = 2,180 on the first try.",
+    "trap": "A (100). That is the number of ADULT tickets, which is the value the algebra hands you first. Underline the word 'child' in the question before you start and check it again before you click."
+  },
+  {
+    "id": "MATH-037",
+    "topic": "Solving a system",
+    "difficulty": "hard",
+    "stimulus": "",
+    "question": "What is the value of y in the system 3x + 2y = 16 and x − 2y = 4?",
+    "choices": [
+      "A. 0.5",
+      "B. 1",
+      "C. 2",
+      "D. 5"
+    ],
+    "answer": "A",
+    "why": "Adding the two equations eliminates y and gives 4x = 20, so x = 5; substituting back into x − 2y = 4 gives 5 − 2y = 4 and y = 0.5.",
+    "howToFind": "1. Look at the y terms: +2y and −2y. They are already opposites, so ADD the two equations to eliminate y.\n2. Add straight down: (3x + x) + (2y − 2y) = 16 + 4, which is 4x = 20.\n3. Solve: x = 20 ÷ 4 = 5.\n4. Put x = 5 into either original equation. Use the simpler one: 5 − 2y = 4.\n5. Subtract 5: −2y = −1. Divide by −2: y = 0.5.\n6. Check in the other equation: 3(5) + 2(0.5) = 15 + 1 = 16. Correct.",
+    "trap": "D (5). That is x, not y. When a system question names one variable, solve for the other one first if it is easier, then finish the job. The value of x is always offered as a choice."
+  },
+  {
+    "id": "MATH-038",
+    "topic": "Subtracting polynomials",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "Which expression is equivalent to (5x² − 3x + 8) − (2x² + 7x − 5)?",
+    "choices": [
+      "A. 3x² − 10x + 13",
+      "B. 3x² + 4x + 3",
+      "C. 3x² − 10x + 3",
+      "D. 7x² + 4x + 13"
+    ],
+    "answer": "A",
+    "why": "Subtracting flips every sign in the second group: 5x² − 3x + 8 − 2x² − 7x + 5, which combines to 3x² − 10x + 13.",
+    "howToFind": "1. The minus sign in front of the second parenthesis applies to EVERY term inside it. Rewrite with the signs flipped: 5x² − 3x + 8 − 2x² − 7x + 5.\n2. Combine the x² terms: 5x² − 2x² = 3x².\n3. Combine the x terms: −3x − 7x = −10x.\n4. Combine the constants: 8 + 5 = 13.\n5. Put it together: 3x² − 10x + 13.\n6. Check by picking a number. Let x = 1. Original: (5 − 3 + 8) − (2 + 7 − 5) = 10 − 4 = 6. Answer A: 3 − 10 + 13 = 6. They match.",
+    "trap": "C (3x² − 10x + 3). You flip the sign on 7x but leave the −5 alone, giving 8 − 5 = 3 instead of 8 + 5 = 13. The last term is the one people forget; flip all three before combining anything."
+  },
+  {
+    "id": "MATH-039",
+    "topic": "Multiplying binomials",
+    "difficulty": "medium",
+    "stimulus": "",
+    "question": "Which expression is equivalent to (2x − 5)(3x + 4)?",
+    "choices": [
+      "A. 6x² − 20",
+      "B. 6x² + 7x − 20",
+      "C. 6x² − 23x − 20",
+      "D. 6x² − 7x − 20"
+    ],
+    "answer": "D",
+    "why": "FOIL gives 6x² + 8x − 15x − 20, and 8x − 15x = −7x, so the product is 6x² − 7x − 20.",
+    "howToFind": "1. Use FOIL: First, Outer, Inner, Last.\n2. First: 2x × 3x = 6x².\n3. Outer: 2x × 4 = 8x.\n4. Inner: −5 × 3x = −15x.\n5. Last: −5 × 4 = −20.\n6. Combine the two middle terms: 8x + (−15x) = −7x.\n7. Final answer: 6x² − 7x − 20.\n8. Check by picking a number. Let x = 1: (2 − 5)(3 + 4) = (−3)(7) = −21. Answer D: 6 − 7 − 20 = −21. They match.",
+    "trap": "B (6x² + 7x − 20). You get 15 − 8 = 7 instead of 8 − 15 = −7. Write both middle terms WITH their signs on the note board before adding, rather than combining them in your head."
+  },
+  {
+    "id": "MATH-040",
+    "topic": "Factoring a trinomial",
+    "difficulty": "medium",
+    "stimulus": "",
+    "question": "Which of the following is the complete factorization of x² − 3x − 40?",
+    "choices": [
+      "A. (x + 8)(x − 5)",
+      "B. (x − 10)(x + 4)",
+      "C. (x − 8)(x + 5)",
+      "D. (x − 4)(x + 10)"
+    ],
+    "answer": "C",
+    "why": "You need two numbers that multiply to −40 and add to −3. Those are −8 and +5, so the factorization is (x − 8)(x + 5).",
+    "howToFind": "1. For x² + bx + c, find two numbers that MULTIPLY to c and ADD to b. Here c = −40 and b = −3.\n2. List factor pairs of 40: 1 and 40, 2 and 20, 4 and 10, 5 and 8.\n3. Because the product is negative, one number is negative. Because the sum is −3, the bigger number is the negative one. Test 5 and 8: −8 + 5 = −3. Correct pair.\n4. Write the factors: (x − 8)(x + 5).\n5. Verify by multiplying back out: x² + 5x − 8x − 40 = x² − 3x − 40. Correct.\n6. On test day, expanding each choice is usually faster than factoring from scratch. Four quick FOILs will always find it.",
+    "trap": "A ((x + 8)(x − 5)). The signs are swapped, which gives a middle term of +3x instead of −3x. Multiply your chosen factors back out and check the MIDDLE term, not just the first and last."
+  },
+  {
+    "id": "MATH-041",
+    "topic": "Difference of squares",
+    "difficulty": "medium",
+    "stimulus": "",
+    "question": "Which of the following is equivalent to 9x² − 49?",
+    "choices": [
+      "A. (3x − 7)(3x + 7)",
+      "B. (3x − 7)²",
+      "C. (9x − 7)(x + 7)",
+      "D. (3x − 49)(3x + 1)"
+    ],
+    "answer": "A",
+    "why": "Both 9x² and 49 are perfect squares and the expression is a subtraction, so it factors as (3x − 7)(3x + 7).",
+    "howToFind": "1. Recognize the pattern: two perfect squares with a minus sign between them, and no middle term.\n2. Take the square root of each piece: √(9x²) = 3x and √49 = 7.\n3. Apply a² − b² = (a − b)(a + b): 9x² − 49 = (3x − 7)(3x + 7).\n4. Verify by FOIL: 9x² + 21x − 21x − 49 = 9x² − 49. The middle terms cancel, which is exactly what makes this pattern work.\n5. Memorize this: it is not on the formula sheet, and it appears most years.",
+    "trap": "B ((3x − 7)²). That expands to 9x² − 42x + 49, which has a middle term and the wrong sign on 49. A difference of squares needs one PLUS factor and one MINUS factor, never two of the same."
+  },
+  {
+    "id": "MATH-042",
+    "topic": "Solving a quadratic by factoring",
+    "difficulty": "medium",
+    "stimulus": "",
+    "question": "What are the solutions to x² + 2x − 15 = 0?",
+    "choices": [
+      "A. x = 5 and x = −3",
+      "B. x = −5 and x = −3",
+      "C. x = 15 and x = −1",
+      "D. x = −5 and x = 3"
+    ],
+    "answer": "D",
+    "why": "The expression factors as (x + 5)(x − 3) = 0, so either x + 5 = 0 giving x = −5, or x − 3 = 0 giving x = 3.",
+    "howToFind": "1. The equation is already set equal to zero, which is required before factoring.\n2. Find two numbers that multiply to −15 and add to +2. Test 5 and 3: 5 × (−3) = −15 and 5 + (−3) = 2. So the numbers are +5 and −3.\n3. Write the factors: (x + 5)(x − 3) = 0.\n4. Set each factor to zero: x + 5 = 0 gives x = −5; x − 3 = 0 gives x = 3.\n5. Check both: (−5)² + 2(−5) − 15 = 25 − 10 − 15 = 0. And 3² + 2(3) − 15 = 9 + 6 − 15 = 0. Both work.\n6. Note the sign flip: the factor (x + 5) produces the solution x = −5, not +5.",
+    "trap": "A (x = 5 and x = −3). You read the numbers straight out of the factors without flipping their signs. The factor (x + 5) is zero when x is NEGATIVE five; always set each factor equal to zero rather than copying the numbers across."
+  },
+  {
+    "id": "MATH-043",
+    "topic": "Quadratic equation",
+    "difficulty": "hard",
+    "stimulus": "One solution to the equation 2x² − 7x + 3 = 0 is x = 3.",
+    "question": "What is the other solution? Enter your answer as a decimal.",
+    "choices": [],
+    "answer": "0.5",
+    "why": "The equation factors as (2x − 1)(x − 3) = 0, so besides x = 3 the other factor gives 2x − 1 = 0 and x = 0.5.",
+    "howToFind": "1. A quadratic has two solutions. One is given, so find the partner.\n2. Factoring route: 2x² − 7x + 3 = (2x − 1)(x − 3). Check by FOIL: 2x² − 6x − x + 3 = 2x² − 7x + 3. Correct.\n3. Set the other factor to zero: 2x − 1 = 0, so 2x = 1 and x = 0.5.\n4. Quadratic formula route, using the formula that IS on the formula sheet, with a = 2, b = −7, c = 3:\n   b² − 4ac = (−7)² − 4(2)(3) = 49 − 24 = 25, and √25 = 5.\n   x = (7 + 5)/(2 × 2) = 12/4 = 3, and x = (7 − 5)/4 = 2/4 = 0.5.\n5. Check: 2(0.5)² − 7(0.5) + 3 = 0.5 − 3.5 + 3 = 0. Correct.\n6. Numeric entry: type 0.5 (or .5). The question says decimal, so do not type 1/2.",
+    "trap": "Typing 1 or 2, from splitting the constant 3 and the coefficient 2 incorrectly and ignoring that a = 2 must divide the roots. When a is not 1, the roots are usually not whole numbers; use the quadratic formula off the sheet if factoring does not fall out in fifteen seconds."
+  },
+  {
+    "id": "MATH-044",
+    "topic": "Coordinate plane",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "In which quadrant of the coordinate plane does the point (−6, 4) lie?",
+    "choices": [
+      "A. Quadrant I",
+      "B. Quadrant II",
+      "C. Quadrant III",
+      "D. Quadrant IV"
+    ],
+    "answer": "B",
+    "why": "The x-coordinate is negative, so the point is to the left of the y-axis, and the y-coordinate is positive, so it is above the x-axis. That combination is Quadrant II.",
+    "howToFind": "1. Read the point as (x, y): x = −6 and y = 4.\n2. Negative x means go LEFT from the origin. Positive y means go UP.\n3. Left and up is the upper-left region.\n4. Quadrants are numbered starting at the upper RIGHT and going counterclockwise: I upper right, II upper left, III lower left, IV lower right.\n5. Upper left is Quadrant II.\n6. Sign shortcut worth memorizing: I is (+,+), II is (−,+), III is (−,−), IV is (+,−).",
+    "trap": "D (Quadrant IV). You reverse the coordinates and read the point as (4, −6), which is right and down. The FIRST number is always the horizontal one; on a hot-spot item this same reversal puts your click in the wrong place entirely."
+  },
+  {
+    "id": "MATH-045",
+    "topic": "Slope from two points",
+    "difficulty": "medium",
+    "stimulus": "",
+    "question": "What is the slope of the line that passes through the points (−2, 7) and (4, −5)?",
+    "choices": [],
+    "answer": "-2",
+    "why": "Using m = (y₂ − y₁)/(x₂ − x₁), the slope is (−5 − 7)/(4 − (−2)) = −12/6 = −2.",
+    "howToFind": "1. The slope formula IS on the formula sheet: m = (y₂ − y₁)/(x₂ − x₁).\n2. Label the points so you do not mix them up. Point 1 = (−2, 7), so x₁ = −2 and y₁ = 7. Point 2 = (4, −5), so x₂ = 4 and y₂ = −5.\n3. Numerator (the y values): −5 − 7 = −12.\n4. Denominator (the x values): 4 − (−2) = 4 + 2 = 6.\n5. Divide: −12 ÷ 6 = −2.\n6. Sense check: as x increases from −2 to 4 the y value drops from 7 to −5, so the line falls and the slope must be negative.\n7. Numeric entry: type -2, using the keyboard minus sign.",
+    "trap": "Typing 2, by dropping the negative, or typing -0.5, by putting the x differences on top. Keep the SAME point first in both the top and the bottom, and confirm the sign by asking whether the line rises or falls."
+  },
+  {
+    "id": "MATH-046",
+    "topic": "Interpreting slope in context",
+    "difficulty": "medium",
+    "stimulus": "A repair shop posts the following table of charges.\n\nHours of labor | Total charge (dollars)\n0 | 30\n1 | 54\n2 | 78\n3 | 102",
+    "question": "Which statement correctly describes the slope of the linear relationship shown in the table?",
+    "choices": [
+      "A. The total charge starts at 24 dollars.",
+      "B. The total charge increases by 30 dollars for each additional hour of labor.",
+      "C. The total charge increases by 54 dollars for each additional hour of labor.",
+      "D. The total charge increases by 24 dollars for each additional hour of labor."
+    ],
+    "answer": "D",
+    "why": "The charge rises from 30 to 54 to 78 to 102, a steady increase of 24 dollars per hour, and that constant rate of change is the slope.",
+    "howToFind": "1. Slope from a table is the change in the output divided by the change in the input.\n2. Change in charge from row to row: 54 − 30 = 24; 78 − 54 = 24; 102 − 78 = 24.\n3. Change in hours from row to row: 1 − 0 = 1 each time.\n4. Slope = 24 ÷ 1 = 24 dollars per hour.\n5. Translate into words: for every one extra hour, the bill goes up 24 dollars. That is choice D.\n6. Note what the other number means: the 30 at 0 hours is the y-INTERCEPT, the flat fee, not the slope.",
+    "trap": "B (30 dollars per hour). The 30 is the value at zero hours, which is the starting fee, not the rate. Slope answers 'how much does it change EACH time'; the intercept answers 'where does it start'."
+  },
+  {
+    "id": "MATH-047",
+    "topic": "Writing the equation of a line",
+    "difficulty": "medium",
+    "stimulus": "",
+    "question": "A line has a slope of −3 and passes through the point (2, 5). Which equation represents this line?",
+    "choices": [
+      "A. y = −3x + 11",
+      "B. y = −3x − 1",
+      "C. y = −3x + 5",
+      "D. y = 3x − 1"
+    ],
+    "answer": "A",
+    "why": "Substituting the point into y = mx + b gives 5 = −3(2) + b, so 5 = −6 + b and b = 11, making the equation y = −3x + 11.",
+    "howToFind": "1. Start from y = mx + b, which is on the formula sheet. You already know m = −3.\n2. Substitute the point (2, 5), meaning x = 2 and y = 5: 5 = −3(2) + b.\n3. Multiply: 5 = −6 + b.\n4. Add 6 to both sides: b = 5 + 6 = 11.\n5. Write the equation: y = −3x + 11.\n6. Check by plugging the point into your answer: −3(2) + 11 = −6 + 11 = 5. That matches the y of the given point, so it is right.\n7. Faster route on test day: test each choice at x = 2 and keep the one that returns y = 5.",
+    "trap": "B (y = −3x − 1). You compute b as 5 − 3(2) = −1, subtracting instead of solving 5 = −6 + b. Substitute the point into your final equation and confirm it returns the right y before clicking."
+  },
+  {
+    "id": "MATH-048",
+    "topic": "Equation of a line from two points",
+    "difficulty": "hard",
+    "stimulus": "",
+    "question": "Which equation represents the line that passes through the points (−1, 8) and (3, −4)?",
+    "choices": [
+      "A. y = −3x + 11",
+      "B. y = 3x + 5",
+      "C. y = −3x + 5",
+      "D. y = −(1/3)x + 5"
+    ],
+    "answer": "C",
+    "why": "The slope is (−4 − 8)/(3 − (−1)) = −12/4 = −3, and substituting (−1, 8) gives 8 = −3(−1) + b, so b = 5 and the equation is y = −3x + 5.",
+    "howToFind": "1. Find the slope first, using m = (y₂ − y₁)/(x₂ − x₁) from the formula sheet.\n2. Numerator: −4 − 8 = −12. Denominator: 3 − (−1) = 3 + 1 = 4.\n3. Slope: m = −12 ÷ 4 = −3.\n4. Now find b using either point in y = mx + b. Use (−1, 8): 8 = −3(−1) + b.\n5. Simplify: −3 × −1 = +3, so 8 = 3 + b, giving b = 5.\n6. Equation: y = −3x + 5.\n7. Check with the OTHER point: −3(3) + 5 = −9 + 5 = −4. That matches the y of (3, −4), so both points are on the line.",
+    "trap": "A (y = −3x + 11). You get the slope right but make a sign error on −3(−1), treating it as −3 and getting b = 11. Two negatives multiply to a positive; always test your finished equation against the second point."
+  },
+  {
+    "id": "MATH-049",
+    "topic": "Intercepts",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "What is the x-intercept of the line 4x − 5y = 20?",
+    "choices": [
+      "A. (5, 0)",
+      "B. (−4, 0)",
+      "C. (0, −4)",
+      "D. (4, 0)"
+    ],
+    "answer": "A",
+    "why": "At the x-intercept y = 0, so 4x = 20 and x = 5, making the point (5, 0).",
+    "howToFind": "1. The x-intercept is where the line crosses the x-axis, and every point on the x-axis has y = 0.\n2. Substitute y = 0 into the equation: 4x − 5(0) = 20, which is 4x = 20.\n3. Divide by 4: x = 5.\n4. Write the answer as an ordered pair with the zero in the y slot: (5, 0).\n5. For contrast, the y-intercept would come from x = 0: −5y = 20, so y = −4, giving (0, −4). That is the planted distractor.",
+    "trap": "C ((0, −4)). That is the Y-intercept. The two are easy to swap: x-intercept means you SET y to zero, and the answer has the zero in the second position."
+  },
+  {
+    "id": "MATH-050",
+    "topic": "Perpendicular lines",
+    "difficulty": "hard",
+    "stimulus": "",
+    "question": "Which equation represents the line that is perpendicular to y = (2/5)x − 3 and passes through the point (4, 1)?",
+    "choices": [
+      "A. y = (2/5)x − 3/5",
+      "B. y = (5/2)x − 9",
+      "C. y = −(2/5)x + 13/5",
+      "D. y = −(5/2)x + 11"
+    ],
+    "answer": "D",
+    "why": "Perpendicular slopes are negative reciprocals, so the new slope is −5/2, and substituting (4, 1) gives 1 = −(5/2)(4) + b = −10 + b, so b = 11.",
+    "howToFind": "1. Read the slope off the given equation: it is in y = mx + b form, so m = 2/5.\n2. Perpendicular means the negative reciprocal: flip the fraction to 5/2 and change the sign to get −5/2. (This rule is NOT on the formula sheet; memorize it.)\n3. Use y = mx + b with m = −5/2 and the point (4, 1): 1 = −(5/2)(4) + b.\n4. Compute: (5/2) × 4 = 10, so 1 = −10 + b.\n5. Add 10: b = 11.\n6. Equation: y = −(5/2)x + 11.\n7. Check: −(5/2)(4) + 11 = −10 + 11 = 1, which matches the point.",
+    "trap": "B (y = (5/2)x − 9). You flip the fraction but forget to change the sign. Perpendicular requires BOTH moves, flip and negate; a line with slope 5/2 is not perpendicular to one with slope 2/5, because their product must equal −1."
+  },
+  {
+    "id": "MATH-051",
+    "topic": "Function notation",
+    "difficulty": "easy",
+    "stimulus": "The function f is defined by f(x) = 2x² − 5x + 1.",
+    "question": "What is the value of f(−3)?",
+    "choices": [
+      "A. −2",
+      "B. 4",
+      "C. 34",
+      "D. 52"
+    ],
+    "answer": "C",
+    "why": "Substituting −3 gives 2(−3)² − 5(−3) + 1 = 2(9) + 15 + 1 = 34.",
+    "howToFind": "1. f(−3) means replace every x in the rule with −3. Use parentheses: f(−3) = 2(−3)² − 5(−3) + 1.\n2. Exponent first: (−3)² = 9.\n3. Multiply: 2 × 9 = 18.\n4. The middle term: −5 × (−3) = +15. Negative times negative is positive.\n5. Add everything: 18 + 15 + 1 = 34.\n6. On the calculator, press ( (-) 3 ) x² to get 9. Typing (-) 3 x² returns −9 and wrecks the whole line.",
+    "trap": "B (4). You compute −5(−3) as −15, giving 18 − 15 + 1 = 4. The subtraction sign in the rule belongs to the coefficient, so −5 times a negative input produces a POSITIVE term."
+  },
+  {
+    "id": "MATH-052",
+    "topic": "Solving f(x) = k",
+    "difficulty": "medium",
+    "stimulus": "The function f is defined by f(x) = 3x − 7.",
+    "question": "For what value of x does f(x) = 26?",
+    "choices": [
+      "A. 6.33",
+      "B. 11",
+      "C. 19",
+      "D. 71"
+    ],
+    "answer": "B",
+    "why": "Setting the rule equal to 26 gives 3x − 7 = 26, so 3x = 33 and x = 11.",
+    "howToFind": "1. f(x) = 26 means the OUTPUT is 26 and the input is unknown. Set the rule equal to 26: 3x − 7 = 26.\n2. Add 7 to both sides: 3x = 26 + 7 = 33.\n3. Divide by 3: x = 33 ÷ 3 = 11.\n4. Check: f(11) = 3(11) − 7 = 33 − 7 = 26. Correct.\n5. Note the difference from f(26): that would be 3(26) − 7 = 71, which is a different question and is offered as a choice.",
+    "trap": "D (71). You compute f(26) instead of solving f(x) = 26. When the number is INSIDE the parentheses it is the input; when it is on the other side of the equals sign it is the output and you must solve backwards."
+  },
+  {
+    "id": "MATH-053",
+    "topic": "Comparing two functions",
+    "difficulty": "hard",
+    "stimulus": "Function A is given by this table.\n\nx | f(x)\n0 | 5\n1 | 9\n2 | 13\n3 | 17\n\nFunction B is given by the equation g(x) = 6x + 2.",
+    "question": "Which statement about the two functions is true?",
+    "choices": [
+      "A. Function A has the greater rate of change.",
+      "B. Function B has the greater rate of change and the greater value at x = 0.",
+      "C. Function B has the greater rate of change, but Function A has the greater value at x = 0.",
+      "D. The two functions have the same rate of change."
+    ],
+    "answer": "C",
+    "why": "Function A rises by 4 each step so its rate of change is 4, while Function B has a rate of change of 6. At x = 0, Function A gives 5 and Function B gives 2, so A starts higher.",
+    "howToFind": "1. Get both functions into the same language: rate of change (slope) and starting value (value at x = 0).\n2. Function A rate of change, from the table: 9 − 5 = 4, 13 − 9 = 4, 17 − 13 = 4, and x goes up by 1 each time. Rate of change = 4.\n3. Function A value at x = 0: read the table's first row. It is 5.\n4. Function B is already in y = mx + b form, so the rate of change is the coefficient of x, which is 6, and the value at x = 0 is the constant, which is 2. (Confirm: g(0) = 6(0) + 2 = 2.)\n5. Compare rates: 6 > 4, so B changes faster.\n6. Compare starting values: 5 > 2, so A starts higher.\n7. The only statement that says both of those things is C.",
+    "trap": "B (B greater in both). You assume the function with the steeper slope must also be bigger everywhere. A steeper line can start lower; these two only cross at x = 1.5, and before that point Function A is larger."
+  },
+  {
+    "id": "MATH-054",
+    "topic": "Arithmetic sequence",
+    "difficulty": "medium",
+    "stimulus": "A sequence begins 7, 11, 15, 19, ... and continues with the same pattern.",
+    "question": "What is the 20th term of the sequence?",
+    "choices": [],
+    "answer": "83",
+    "why": "The sequence adds 4 each time, so the 20th term is 7 + 19 × 4 = 7 + 76 = 83.",
+    "howToFind": "1. Find the step by subtracting consecutive terms: 11 − 7 = 4, 15 − 11 = 4, 19 − 15 = 4. The common difference d is 4.\n2. Use aₙ = a₁ + (n − 1)d, with a₁ = 7, d = 4, and n = 20. (This is NOT on the formula sheet; memorize it.)\n3. Compute n − 1 first: 20 − 1 = 19. This is the number of STEPS taken, which is one fewer than the term number.\n4. Multiply: 19 × 4 = 76.\n5. Add the first term: 7 + 76 = 83.\n6. Spot-check the formula on a term you can see: the 4th term should be 7 + (4 − 1)(4) = 7 + 12 = 19, and the list shows 19. The formula is being used correctly.\n7. Numeric entry: type 83.",
+    "trap": "Typing 87, from 7 + 20 × 4. The first term needs zero steps, so getting to the 20th term takes 19 steps, not 20. Always test the formula on a term you can see in the list before trusting it on term 20."
+  },
+  {
+    "id": "MATH-055",
+    "topic": "Exponential growth",
+    "difficulty": "hard",
+    "stimulus": "A town has a population of 24,000 people, and the population is increasing by 3% each year.",
+    "question": "Which expression gives the population of the town after t years, assuming the growth rate stays the same?",
+    "choices": [
+      "A. 24000(1.03)ᵗ",
+      "B. 24000 + 0.03t",
+      "C. 24000(0.03)ᵗ",
+      "D. 24000(1.3)ᵗ"
+    ],
+    "answer": "A",
+    "why": "Growing 3% per year means multiplying by 1.03 once per year, so after t years the population is 24,000 × (1.03)ᵗ.",
+    "howToFind": "1. Decide whether the growth is by a fixed AMOUNT each year (linear, add) or a fixed PERCENT each year (exponential, multiply). 'Increasing by 3% each year' is a percent, so it is multiplication.\n2. One year of 3% growth means multiplying by 1 + 0.03 = 1.03.\n3. Each additional year multiplies by 1.03 again, so t years means (1.03) raised to the power t.\n4. Start with the beginning population: 24000(1.03)ᵗ.\n5. Test it on t = 1: 24000 × 1.03 = 24,720, which is 24,000 plus 3% of 24,000 (720). Correct.\n6. Test choice C on t = 1: 24000 × 0.03 = 720, which is only the increase, not the population. Wrong.",
+    "trap": "D (24000(1.3)ᵗ). You convert 3% to 1.3 instead of 1.03. Three percent is 0.03, so the multiplier is 1.03; 1.3 would be a 30% annual increase, ten times too fast."
+  }
+]

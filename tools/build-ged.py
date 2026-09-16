@@ -41,7 +41,7 @@ CHAPTERS = [
 # --------------------------------------------------------------------------
 
 _CODE = re.compile(r"`([^`]+)`")
-_BOLD = re.compile(r"\*\*([^*]+)\*\*")
+_BOLD = re.compile(r"\*\*(.+?)\*\*")   # non-greedy so **bold with *italic* inside** works
 _ITAL = re.compile(r"(?<![*\w])\*([^*\n]+)\*(?![*\w])")
 _LINK = re.compile(r"\[([^\]]+)\]\((https?://[^)\s]+)\)")
 _BARE = re.compile(r"(?<![\"'>=])(https?://[^\s<>\")]+)")

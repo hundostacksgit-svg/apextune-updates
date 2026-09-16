@@ -271,6 +271,23 @@ LICENSE                 published source, not an open licence
 
 ---
 
+---
+
+## Also in this repo: the GED study guide
+
+Unrelated to the app, and deliberately self-contained in `ged/`.
+
+- **Read it:** <https://hundostacksgit-svg.github.io/apextune-updates/ged/> — works offline once
+  loaded, and drills a bank of practice questions. Every question shows why the answer is right,
+  the step-by-step method for finding it under test conditions, and the wrong answer most people
+  pick.
+- **Or read the text:** [`docs/GED-STUDY-GUIDE.md`](docs/GED-STUDY-GUIDE.md)
+- **Sources:** the chapters live in `ged/src/` as markdown and JSON. Edit those and run
+  `python3 tools/build-ged.py` to rebuild both outputs.
+
+Written for a New Jersey test taker: NJ accepts only the GED, charges $36 a subject, and the
+pass mark is 145 on each of the four subjects with no averaging.
+
 ## Privacy
 
 Everything runs on your device. There is no server, no analytics and no network calls

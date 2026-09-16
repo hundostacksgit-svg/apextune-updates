@@ -1,0 +1,662 @@
+[
+  {
+    "id": "SCIENCE-001",
+    "topic": "Reading a data table (cell structures)",
+    "difficulty": "easy",
+    "stimulus": "A student examined four different cells under a microscope and recorded which structures were present in each.\n\nStructures Observed in Four Cells\n\n| Structure     | Cell 1 | Cell 2 | Cell 3 | Cell 4 |\n|---------------|--------|--------|--------|--------|\n| Cell wall     | yes    | no     | yes    | no     |\n| Chloroplast   | yes    | no     | no     | no     |\n| Nucleus       | yes    | yes    | yes    | no     |\n| Mitochondrion | yes    | yes    | yes    | no     |\n| Ribosome      | yes    | yes    | yes    | yes    |",
+    "question": "According to the table, which structure was present in all four cells?",
+    "choices": [
+      "A. Cell wall",
+      "B. Nucleus",
+      "C. Mitochondrion",
+      "D. Ribosome"
+    ],
+    "answer": "D",
+    "why": "The ribosome row reads yes, yes, yes, yes across all four columns. Every other row contains at least one no: cell wall is missing from Cells 2 and 4, and nucleus and mitochondrion are both missing from Cell 4.",
+    "howToFind": "1. This is a pure retrieval question. Do not think about biology at all.\n2. Go to the table. Read across one row at a time, left to right.\n3. Cell wall row: yes, no, yes, no. It has a no, so eliminate choice A.\n4. Nucleus row: yes, yes, yes, no. It has a no, so eliminate choice B.\n5. Mitochondrion row: yes, yes, yes, no. It has a no, so eliminate choice C.\n6. Ribosome row: yes, yes, yes, yes. Four yeses, no gaps. Choice D.\n7. The answer was printed in the table. You never needed to know what a ribosome does.",
+    "trap": "Choice B. People who remember 'all living things have a nucleus' pick nucleus from memory instead of reading the Cell 4 column, which says no. On this test the table always beats what you think you remember."
+  },
+  {
+    "id": "SCIENCE-002",
+    "topic": "Punnett square (monohybrid cross)",
+    "difficulty": "medium",
+    "stimulus": "In guinea pigs, black coat colour (B) is dominant over brown coat colour (b).\n\nA breeder crosses a guinea pig that is heterozygous for coat colour (Bb) with a guinea pig that has a brown coat (bb).",
+    "question": "What percentage of the offspring from this cross would be expected to have a black coat?",
+    "choices": [
+      "A. 0%",
+      "B. 25%",
+      "C. 50%",
+      "D. 75%"
+    ],
+    "answer": "C",
+    "why": "A Bb by bb cross produces two Bb offspring and two bb offspring out of four boxes. Bb shows the dominant black phenotype, so 2 out of 4, or 50%, are expected to be black.",
+    "howToFind": "1. Draw a 2 by 2 box on your scratch paper. Takes four seconds.\n2. Write the first parent's two alleles across the top: B and b.\n3. Write the second parent's two alleles down the left side: b and b.\n4. Fill each box by combining its row letter and column letter:\n   top-left = Bb, top-right = bb, bottom-left = Bb, bottom-right = bb.\n5. Count boxes containing at least one capital B: that is 2 boxes (Bb and Bb).\n6. 2 out of 4 = 1/2 = 50%. Choice C.\n7. Check what was asked: 'black coat' is a phenotype, so count any box with a B, not just BB boxes.",
+    "trap": "Choice D (75%). People recite the famous 3:1 ratio from memory, but 3:1 only comes from Bb by Bb. This cross is Bb by bb, which is 1:1. Always draw the actual box instead of reciting a ratio."
+  },
+  {
+    "id": "SCIENCE-003",
+    "topic": "Working backwards from offspring data to parent genotypes",
+    "difficulty": "hard",
+    "stimulus": "In a certain rabbit population, black fur (B) is dominant over white fur (b).\n\nA breeder mated two black-furred rabbits with each other several times. The offspring of these matings are shown below.\n\nOffspring of Two Black-Furred Rabbits\n\n| Fur colour | Number of offspring |\n|------------|---------------------|\n| Black      | 31                  |\n| White      | 9                   |\n| Total      | 40                  |",
+    "question": "Based on the data, what are the most likely genotypes of the two parent rabbits?",
+    "choices": [
+      "A. BB and BB",
+      "B. BB and Bb",
+      "C. Bb and Bb",
+      "D. Bb and bb"
+    ],
+    "answer": "C",
+    "why": "White offspring are bb, so each parent must have passed a b allele; yet both parents are black, so each must also carry a B. That makes both parents Bb. A Bb by Bb cross predicts 3 black to 1 white, which for 40 offspring is 30 black and 10 white, very close to the observed 31 and 9.",
+    "howToFind": "1. Start with the white rabbits, because recessive offspring give away the parents.\n2. White is recessive, so a white rabbit must be bb. It got one b from each parent. So BOTH parents carry at least one b.\n3. But the stimulus says both parents are black, so each parent must also carry a B.\n4. One B and one b in each parent means both parents are Bb. That is already choice C.\n5. Confirm with the numbers: Bb by Bb gives 3 dominant to 1 recessive. Out of 40 offspring, 3/4 of 40 = 30 black and 1/4 of 40 = 10 white.\n6. Observed was 31 black and 9 white. Real data never lands exactly on the prediction, and 31/9 is the closest match to 30/10. Choice C.\n7. Quick elimination check: any parent that is BB could never produce a white offspring, which kills A and B immediately. Bb by bb would predict 20 black and 20 white, nowhere near the data, which kills D.",
+    "trap": "Choice B (BB and Bb). Test takers see 'mostly black offspring' and reach for a cross with a BB parent. But a BB parent has no b allele to give, so a white offspring would be impossible. One single white offspring rules out every BB parent."
+  },
+  {
+    "id": "SCIENCE-004",
+    "topic": "Photosynthesis and cellular respiration",
+    "difficulty": "easy",
+    "stimulus": "Two chemical equations are shown below.\n\nPhotosynthesis:\n6CO2 + 6H2O + light energy  ->  C6H12O6 + 6O2\n\nCellular respiration:\nC6H12O6 + 6O2  ->  6CO2 + 6H2O + energy (ATP)",
+    "question": "Which statement is best supported by the two equations?",
+    "choices": [
+      "A. The products of photosynthesis are the reactants of cellular respiration.",
+      "B. Both processes release oxygen gas into the atmosphere.",
+      "C. Both processes require light energy in order to occur.",
+      "D. Cellular respiration produces glucose from carbon dioxide and water."
+    ],
+    "answer": "A",
+    "why": "In the photosynthesis equation the substances to the right of the arrow are C6H12O6 and 6O2, and those same two substances appear to the left of the arrow in the respiration equation. The output of one is the input of the other, which is exactly what choice A says.",
+    "howToFind": "1. Remember the rule: whatever is LEFT of the arrow is a reactant (goes in), whatever is RIGHT of the arrow is a product (comes out).\n2. Photosynthesis products (right side): C6H12O6 and 6O2.\n3. Respiration reactants (left side): C6H12O6 and 6O2.\n4. They are the same two substances. That matches choice A word for word.\n5. Check the others against the equations:\n   B: oxygen appears on the RIGHT only in photosynthesis; in respiration O2 is on the LEFT, so it is used up, not released. Eliminate.\n   C: the words 'light energy' appear only in the photosynthesis equation. Eliminate.\n   D: glucose (C6H12O6) is on the LEFT of the respiration arrow, so it is consumed, not produced. Eliminate.\n6. Choice A.",
+    "trap": "Choice D. People know the two processes are opposites and then attach the wrong half to the wrong equation. The fix is purely mechanical: point at the arrow and read which side the substance is on."
+  },
+  {
+    "id": "SCIENCE-005",
+    "topic": "Energy flow and the 10% rule",
+    "difficulty": "medium",
+    "stimulus": "An ecologist measured the energy stored in the organisms at each level of a meadow food chain.\n\ngrass  ->  grasshoppers  ->  shrews  ->  hawks\n\nThe producers (grass) in the study area store 24,000 kilocalories (kcal) of energy. On average, only about 10% of the energy stored at one level is transferred to the next level. The rest is lost, mostly as heat.",
+    "question": "Using the 10% transfer rate, how many kilocalories of energy are available to the shrews?",
+    "choices": [],
+    "answer": "240",
+    "why": "Energy transfers twice to reach the shrews: from grass to grasshoppers, and from grasshoppers to shrews. 10% of 24,000 is 2,400 kcal at the grasshopper level, and 10% of 2,400 is 240 kcal at the shrew level.",
+    "howToFind": "1. Count how many ARROWS separate the shrews from the grass in the food chain shown in the stimulus.\n   grass -> grasshoppers is one arrow. grasshoppers -> shrews is a second arrow. Two arrows means multiply by 10% twice.\n2. First transfer: 24,000 x 0.10 = 2,400 kcal (grasshoppers).\n3. Second transfer: 2,400 x 0.10 = 240 kcal (shrews).\n4. Type 240 in the box.\n5. Calculator shortcut on the TI-30XS: type 24000, then divide by 10, then divide by 10 again. Dividing by 10 and taking 10% are the same move.\n6. Sanity check: each level should be about one tenth the size of the one before it, so 24,000 -> 2,400 -> 240 -> 24. The numbers should shrink fast.",
+    "trap": "Typing 2,400. That is the grasshopper level, one arrow in, not two. People stop after a single 10% step because they count the shrews as the 'second' level and forget that the grass level is where the counting starts. Count arrows, not levels."
+  },
+  {
+    "id": "SCIENCE-006",
+    "topic": "Food webs and population change",
+    "difficulty": "medium",
+    "stimulus": "The diagram described below shows part of a meadow food web. Each arrow points from an organism to the organism that eats it.\n\n- Grass  ->  grasshopper\n- Grass  ->  field mouse\n- Grasshopper  ->  frog\n- Frog  ->  snake\n- Field mouse  ->  snake\n- Snake  ->  hawk\n\nA disease spreads through the meadow and kills nearly all of the frogs.",
+    "question": "Based on the food web, which change is most likely to occur immediately after the frogs die off?",
+    "choices": [
+      "A. The grass population will decrease because grasshoppers will have less to eat.",
+      "B. The grasshopper population will increase and the snake population will decrease.",
+      "C. The hawk population will increase because there will be more snakes.",
+      "D. The field mouse population will decrease because mice eat frogs."
+    ],
+    "answer": "B",
+    "why": "Frogs eat grasshoppers, so removing frogs removes a predator and grasshopper numbers rise. Frogs are also one of only two food sources for snakes, so snakes lose part of their food supply and their numbers fall.",
+    "howToFind": "1. Find frog in the arrow list and write down its two connections.\n   Arrow INTO frog: grasshopper -> frog. So frogs EAT grasshoppers.\n   Arrow OUT of frog: frog -> snake. So snakes EAT frogs.\n2. Apply the two standard rules:\n   Remove a predator, and its prey increases. Frogs gone means grasshoppers increase.\n   Remove a food source, and the consumer decreases. Frogs gone means snakes decrease.\n3. Look for the choice that says both of those things. That is choice B.\n4. Kill the others using the arrow list:\n   A: more grasshoppers would mean grass DECREASES from being eaten more, but A says grasshoppers have less to eat, which reverses the arrow. Eliminate.\n   C: snakes go DOWN, not up, so hawks would not increase. Eliminate.\n   D: there is no arrow from frog to field mouse, so mice do not eat frogs. Eliminate.",
+    "trap": "Choice A. People read 'grass -> grasshopper' as 'grass eats grasshopper.' The arrow points toward the eater, meaning energy flows that way. Always translate every arrow into the sentence 'X is eaten by Y' before you reason."
+  },
+  {
+    "id": "SCIENCE-007",
+    "topic": "Natural selection from data",
+    "difficulty": "medium",
+    "stimulus": "A species of beetle on a small island exists in two colours, light tan and dark grey. Birds hunt the beetles by sight. In early 2016 a volcanic eruption covered the island's pale sandy ground with a layer of dark grey ash, which has remained since.\n\nBeetle Colour in the Island Population\n\n| Year | Light tan beetles (%) | Dark grey beetles (%) |\n|------|-----------------------|-----------------------|\n| 2015 | 78                    | 22                    |\n| 2018 | 55                    | 45                    |\n| 2021 | 31                    | 69                    |\n| 2024 | 18                    | 82                    |",
+    "question": "Which statement best explains the change in the beetle population shown in the table?",
+    "choices": [
+      "A. Individual light tan beetles gradually changed colour so they could survive on the dark ash.",
+      "B. The volcanic ash caused mutations that turned light tan beetles into dark grey beetles.",
+      "C. The beetles decided to become darker in order to adapt to their new environment.",
+      "D. Dark grey beetles were harder for birds to see against the ash, so more of them survived and reproduced."
+    ],
+    "answer": "D",
+    "why": "The table shows dark grey beetles rising from 22% to 82% after the ground darkened. Because birds hunt by sight, dark beetles on dark ash were caught less often, survived more, and passed the dark trait to more offspring, so the proportion of dark beetles in the population rose over generations.",
+    "howToFind": "1. Read the trend in the table first. Dark grey column: 22, 45, 69, 82. It rises steadily. Light tan falls from 78 to 18.\n2. Find the event in the passage that lines up with the change: ash covered the ground in early 2016, and the shift begins after 2015.\n3. Find the selection pressure. The passage says 'Birds hunt the beetles by sight.' That is the mechanism sentence. Circle it.\n4. Now apply the one rule you must memorise: natural selection means individuals that ALREADY have a helpful variation survive and reproduce more, so the trait becomes more common in the POPULATION. Individuals never change themselves.\n5. Scan the four choices for the one that talks about surviving and reproducing rather than about individuals changing.\n   A says individuals changed colour. Eliminate.\n   B says the ash caused the mutations. The table does not mention mutations, and environments do not create the exact mutation that is needed. Eliminate.\n   C says the beetles 'decided.' Organisms do not choose traits. Eliminate.\n   D says harder to see, more survived and reproduced. Choice D.",
+    "trap": "Choice A. It sounds like the textbook story because the population really did get darker. But it describes individual beetles changing during their lifetimes, which is the classic wrong model of evolution. Any answer containing 'changed to,' 'decided to,' 'tried to,' or 'in order to' is almost always wrong on a natural selection item."
+  },
+  {
+    "id": "SCIENCE-008",
+    "topic": "Molecular evidence for common ancestry",
+    "difficulty": "medium",
+    "stimulus": "Scientists compared the amino acid sequence of the same protein in several species with the human version of that protein. The table shows how many amino acids in each species' protein differ from the human protein.\n\nAmino Acid Differences from the Human Protein\n\n| Species        | Number of amino acid differences |\n|----------------|----------------------------------|\n| Chimpanzee     | 0                                |\n| Rhesus monkey  | 1                                |\n| Horse          | 12                               |\n| Chicken        | 13                               |\n| Yeast          | 44                               |",
+    "question": "Which conclusion is best supported by the data in the table?",
+    "choices": [
+      "A. Yeast evolved from chickens, which evolved from horses.",
+      "B. The chimpanzee protein does not function in the same way as the human protein.",
+      "C. All five species have exactly the same number of genes.",
+      "D. Humans share a more recent common ancestor with the rhesus monkey than with the chicken."
+    ],
+    "answer": "D",
+    "why": "Fewer amino acid differences means the two species' proteins have diverged less, which indicates a more recent common ancestor. The rhesus monkey differs from humans by 1 amino acid while the chicken differs by 13, so the rhesus monkey lineage separated from the human lineage more recently.",
+    "howToFind": "1. Establish what the numbers mean. The column heading says 'Number of amino acid differences' from the human protein. Small number means very similar to humans; large number means very different.\n2. The single rule to apply: more similarity = more recently shared common ancestor.\n3. Find the two species named in each choice and compare their numbers.\n   Choice D names rhesus monkey (1) and chicken (13). 1 is smaller than 13, so the monkey is more similar, so the monkey shares a more recent ancestor. That matches D exactly.\n4. Test the others against the table:\n   A: the table only compares each species to humans. It says nothing about yeast descending from chickens, and species do not evolve from other modern species. Eliminate.\n   B: the table shows 0 differences for chimpanzee, which is maximum similarity, the opposite of what B claims. Eliminate.\n   C: the table is about amino acids in one protein, not about numbers of genes. Nothing in the stimulus supports it. Eliminate.\n5. Choice D.",
+    "trap": "Choice A. Ranking the table from smallest to largest and reading it as a chain of descent. A comparison table is a set of separate measurements against humans, not an evolutionary sequence. Modern species do not evolve from other modern species."
+  },
+  {
+    "id": "SCIENCE-009",
+    "topic": "Human body systems",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "Oxygen from the air must reach the cells throughout a person's body. Which two body systems work together directly to accomplish this?",
+    "choices": [
+      "A. The digestive system and the excretory system",
+      "B. The respiratory system and the circulatory system",
+      "C. The nervous system and the skeletal system",
+      "D. The endocrine system and the muscular system"
+    ],
+    "answer": "B",
+    "why": "The respiratory system brings air into the lungs, where oxygen crosses into the blood. The circulatory system then pumps that oxygen-carrying blood to every cell in the body. No other pair performs this transfer.",
+    "howToFind": "1. Break the question into two jobs: getting oxygen from the AIR into the body, and MOVING it to cells.\n2. Match each job to a system using the one-word job descriptions:\n   respiratory = breathing and gas exchange, so it handles job one.\n   circulatory = heart and blood, transport, so it handles job two.\n3. Look for the choice containing both. That is choice B.\n4. Rule out by job description:\n   A: digestive breaks down food, excretory removes waste. Neither handles air. Eliminate.\n   C: nervous sends signals, skeletal supports. Neither transports oxygen. Eliminate.\n   D: endocrine releases hormones, muscular moves. Neither brings in air. Eliminate.\n5. Memorise these pairings, because this exact question type recurs: respiratory + circulatory for oxygen; digestive + circulatory for nutrients; nervous + muscular for movement; nervous + endocrine for control.",
+    "trap": "Choice D. The muscular system is involved in breathing (the diaphragm is a muscle), so people who over-think it reach for muscular. But the question asks which systems accomplish the oxygen delivery itself, not which ones assist it."
+  },
+  {
+    "id": "SCIENCE-010",
+    "topic": "Reading a line graph (enzyme activity)",
+    "difficulty": "easy",
+    "stimulus": "A line graph is described below. The horizontal axis is labelled 'pH' and runs from 1 to 8. The vertical axis is labelled 'Reaction rate (units per minute)' and runs from 0 to 40. A single curve passes through the following points.\n\n| pH | Reaction rate (units/min) |\n|----|---------------------------|\n| 2  | 0                         |\n| 3  | 5                         |\n| 4  | 18                        |\n| 5  | 34                        |\n| 6  | 22                        |\n| 7  | 8                         |\n| 8  | 0                         |",
+    "question": "According to the graph, at which pH does this enzyme catalyse the reaction at the greatest rate?",
+    "choices": [
+      "A. pH 2",
+      "B. pH 4",
+      "C. pH 5",
+      "D. pH 8"
+    ],
+    "answer": "C",
+    "why": "The reaction rate column peaks at 34 units per minute, and that value occurs at pH 5. Every other pH listed gives a lower rate.",
+    "howToFind": "1. Pure retrieval. Do not think about enzymes at all.\n2. The question asks for the GREATEST rate, so look only at the right-hand column and find the biggest number.\n3. Scan down: 0, 5, 18, 34, 22, 8, 0. The largest is 34.\n4. Read across that row to the left-hand column: pH 5.\n5. Choice C.\n6. Shape check: the numbers rise to a peak and then fall. On a graph this is a hill, and the question is asking for the top of the hill.",
+    "trap": "Choice B (pH 4). People look for where the curve is rising fastest (the steepest climb is from pH 4 to pH 5) instead of where it is highest. Steepest and highest are different questions. The word in the stem is 'greatest rate,' meaning the largest y-value."
+  },
+  {
+    "id": "SCIENCE-011",
+    "topic": "Independent and dependent variables",
+    "difficulty": "easy",
+    "stimulus": "A group of students investigated how salt affects seed sprouting. They filled five identical cups with the same amount of the same potting soil and planted 20 radish seeds in each cup. Each day they watered every cup with 50 mL of a salt solution. The cups received solutions containing 0, 1, 2, 3, and 4 grams of salt per litre of water. All five cups were kept at 22 degrees C under the same lamp. After 10 days the students counted how many seeds in each cup had sprouted.",
+    "question": "What is the independent variable in this investigation?",
+    "choices": [
+      "A. The amount of salt in the water given to each cup",
+      "B. The number of seeds that sprouted in each cup",
+      "C. The temperature at which the cups were kept",
+      "D. The type of potting soil used in each cup"
+    ],
+    "answer": "A",
+    "why": "The independent variable is the one factor the students deliberately changed from cup to cup. The salt concentration was set at five different levels (0, 1, 2, 3, and 4 g/L) while everything else was held the same, so salt concentration is the independent variable.",
+    "howToFind": "1. Hunt for the sentence in the passage that lists several DIFFERENT amounts of something. Here it is: 'The cups received solutions containing 0, 1, 2, 3, and 4 grams of salt per litre.' Five different values of one thing means that thing is the independent variable.\n2. Confirm with the second test: the independent variable is what the experimenter SET before the experiment ran. They chose those salt amounts.\n3. Contrast with the dependent variable, which is what they MEASURED at the end. Hunt for a measuring verb: 'counted how many seeds had sprouted.' That is the dependent variable, so choice B is the DV, not the IV.\n4. Anything described with words like 'the same,' 'identical,' or 'all five' is a constant, not a variable. The passage says the same soil and the same temperature, which kills choices C and D.\n5. Choice A.",
+    "trap": "Choice B. People pick the thing the experiment is 'about,' which is usually the result. The number of sprouted seeds is the OUTCOME, so it is the dependent variable. Use the verb test: 'set/varied/gave different amounts' = independent; 'counted/measured/recorded' = dependent."
+  },
+  {
+    "id": "SCIENCE-012",
+    "topic": "Identifying the control group",
+    "difficulty": "easy",
+    "stimulus": "A gardener wanted to know whether a new fertiliser increases tomato yield. She prepared four plots of the same size in the same field, planted the same variety of tomato in each, and gave all four plots the same amount of water and sunlight. She then treated the plots as follows.\n\n| Plot | Fertiliser added per week |\n|------|---------------------------|\n| 1    | 0 g                       |\n| 2    | 10 g                      |\n| 3    | 20 g                      |\n| 4    | 30 g                      |\n\nAt the end of the season she weighed the tomatoes harvested from each plot.",
+    "question": "Which plot serves as the control group in this investigation?",
+    "choices": [
+      "A. Plot 1",
+      "B. Plot 2",
+      "C. Plot 3",
+      "D. Plot 4"
+    ],
+    "answer": "A",
+    "why": "A control group receives none of the treatment being tested, so it provides the baseline for comparison. Plot 1 received 0 grams of fertiliser while everything else about it matched the other plots, so Plot 1 is the control.",
+    "howToFind": "1. Identify the treatment being tested. The first sentence says it: the new fertiliser.\n2. Look in the table for the row where the amount of that treatment is ZERO.\n3. The fertiliser column reads 0, 10, 20, 30. The zero is in the Plot 1 row.\n4. Choice A.\n5. Check the other requirement for a control: everything else must match. The passage says same size, same field, same variety, same water, same sunlight. It qualifies.",
+    "trap": "Choice B (Plot 2). People pick the smallest DOSE and call it the control. A control gets none of the treatment, not a little of it. If every group in an experiment gets some of the treatment, the experiment has no control at all, and that is often the correct answer to 'what is the biggest weakness in this design.'"
+  },
+  {
+    "id": "SCIENCE-013",
+    "topic": "Evaluating whether a conclusion is supported",
+    "difficulty": "hard",
+    "stimulus": "A researcher studied whether a daily vitamin supplement reduces the number of colds people catch. She posted a notice at a gym asking for volunteers. Volunteers were allowed to choose whether they joined the supplement group or the no-supplement group. One hundred people joined, 50 in each group.\n\nResults After Six Months\n\n| Group          | Number of people | Average colds reported per person |\n|----------------|------------------|-----------------------------------|\n| Supplement     | 50               | 1.2                               |\n| No supplement  | 50               | 2.1                               |\n\nThe researcher concluded that taking the daily supplement prevents colds.",
+    "question": "Which is the strongest reason the researcher's conclusion is not well supported by this investigation?",
+    "choices": [
+      "A. Six months is not long enough for a supplement to have any effect on the body.",
+      "B. The two groups had the same number of people, so the results cannot be compared.",
+      "C. The difference between 1.2 colds and 2.1 colds is too small to measure accurately.",
+      "D. Volunteers chose their own group, so the two groups may have differed in other ways that affected their health."
+    ],
+    "answer": "D",
+    "why": "Because participants selected their own group, the groups were not equivalent at the start. People who chose to take a supplement may already have had healthier habits, better sleep, or less exposure to sick contacts. Any of those differences, rather than the supplement, could explain the lower cold count, so the study cannot show that the supplement caused the difference.",
+    "howToFind": "1. On any 'why is this conclusion weak' item, run the standard four-item checklist against the passage: no control group, small sample, only one trial, or groups that differ in more than one way.\n2. Reread the design sentences, not the results table. The key sentence is 'Volunteers were allowed to choose whether they joined the supplement group or the no-supplement group.'\n3. Self-selection is the flaw. It means the two groups may differ in many ways besides the supplement, so you cannot tell which difference caused the result.\n4. Scan the choices for the one describing that flaw. Choice D says exactly it.\n5. Eliminate the rest by checking them against the stimulus:\n   A: nothing in the passage says six months is too short, and you have no data on that. This is invented information. Eliminate.\n   B: equal group sizes are a STRENGTH of a study, not a weakness. Eliminate.\n   C: 2.1 is nearly double 1.2. That is a substantial difference, and the passage gives no reason to doubt the counts. Eliminate.\n6. Choice D.",
+    "trap": "Choice C. People attack the numbers because the values look small. The numbers are fine; 2.1 versus 1.2 is a large relative difference. The flaw is always in the DESIGN sentences, above the table, not in the results. Read the method, not the data, when the question asks why a conclusion fails."
+  },
+  {
+    "id": "SCIENCE-014",
+    "topic": "Recessive inheritance and carriers",
+    "difficulty": "hard",
+    "stimulus": "A certain human condition is caused by a recessive allele (a). A person with two copies of the recessive allele (aa) has the condition. A person with at least one dominant allele (A) does not have the condition.\n\nA couple, neither of whom has the condition, have a daughter who does have the condition.",
+    "question": "What are the genotypes of the two parents, and what is the probability that their next child will have the condition?",
+    "choices": [
+      "A. AA and Aa; 0%",
+      "B. Aa and Aa; 25%",
+      "C. Aa and aa; 50%",
+      "D. Aa and Aa; 75%"
+    ],
+    "answer": "B",
+    "why": "The daughter has the condition, so she is aa and received one a from each parent. Neither parent has the condition, so neither can be aa; each must therefore be Aa. An Aa by Aa cross gives 1 AA, 2 Aa, and 1 aa out of 4, so each future child has a 1 in 4, or 25%, chance of being aa.",
+    "howToFind": "1. Work backwards from the affected child, which is always where these problems open.\n2. The daughter has the condition, so her genotype must be aa. She got one a from each parent, so each parent carries at least one a.\n3. Neither parent has the condition, so neither can be aa. Each parent must therefore have one A and one a. Both parents are Aa. That narrows you to choice B or D.\n4. Now draw the 2 by 2 box for Aa by Aa. Alleles A and a across the top, A and a down the side.\n   Boxes: AA, Aa, Aa, aa.\n5. Count the boxes with the condition (aa): exactly 1 out of 4.\n6. 1 divided by 4 = 0.25 = 25%. Choice B.\n7. Note the phrase 'next child.' Each pregnancy is independent, so the already-affected daughter does not change the 25% for the next child.",
+    "trap": "Choice D (75%). People remember the 3:1 ratio and grab the 75% number, but 75% is the fraction that does NOT have the condition. Underline whether the question wants the dominant phenotype (75%) or the recessive one (25%) before you choose."
+  },
+  {
+    "id": "SCIENCE-015",
+    "topic": "Osmosis from percent mass change data",
+    "difficulty": "hard",
+    "stimulus": "Students cut five cores of equal mass from the same potato. Each core was weighed, soaked for 24 hours in a sugar solution of a different concentration, then blotted dry and weighed again. The percent change in mass was calculated for each core.\n\n| Sugar concentration of solution (mol/L) | Percent change in core mass |\n|-----------------------------------------|-----------------------------|\n| 0.0                                     | +12.4%                      |\n| 0.2                                     | +6.1%                       |\n| 0.4                                     | +0.2%                       |\n| 0.6                                     | -5.8%                       |\n| 0.8                                     | -11.3%                      |",
+    "question": "Based on the data, the concentration of dissolved substances inside the potato cells is closest to the concentration of which solution?",
+    "choices": [
+      "A. 0.0 mol/L",
+      "B. 0.2 mol/L",
+      "C. 0.4 mol/L",
+      "D. 0.8 mol/L"
+    ],
+    "answer": "C",
+    "why": "A core gains mass when water moves into it and loses mass when water moves out. At 0.4 mol/L the mass change is only +0.2%, essentially zero, meaning water moved in and out at equal rates. That balance point occurs when the solution and the cell contents have the same concentration.",
+    "howToFind": "1. Translate the sign of the percent change into water movement:\n   Positive means the core GAINED mass, so water moved INTO the cells. That happens when the outside solution is more dilute than the cells.\n   Negative means the core LOST mass, so water moved OUT. That happens when the outside solution is more concentrated than the cells.\n2. Therefore the cells match the solution when the mass change is ZERO, with no net water movement.\n3. Scan the right-hand column for the value nearest zero: +12.4, +6.1, +0.2, -5.8, -11.3. The smallest magnitude is +0.2%.\n4. Read across that row to the concentration column: 0.4 mol/L.\n5. Choice C.\n6. Cross-check the sign flip: the values go from positive above 0.4 to negative below it. The crossover between plus and minus sits at about 0.4, which confirms the answer.",
+    "trap": "Choice A (0.0 mol/L). People see the LARGEST number, +12.4%, and pick that row because the biggest effect feels like the important one. The question asks where the concentrations MATCH, which is where the effect is smallest, not largest. Read the stem for 'closest to' and look for the value nearest zero."
+  },
+  {
+    "id": "SCIENCE-016",
+    "topic": "Reading a population trend",
+    "difficulty": "medium",
+    "stimulus": "A wildlife agency has counted the deer on a protected island every five years.\n\nDeer Population on Blackrock Island\n\n| Year | Number of deer |\n|------|----------------|\n| 1995 | 120            |\n| 2000 | 310            |\n| 2005 | 640            |\n| 2010 | 880            |\n| 2015 | 905            |\n| 2020 | 898            |\n| 2025 | 902            |",
+    "question": "Which statement is best supported by the data in the table?",
+    "choices": [
+      "A. The deer population increased at a steady rate throughout the entire period.",
+      "B. The deer population grew rapidly until about 2010 and then remained close to 900.",
+      "C. The deer population reached its highest value in 2025 and is still rising.",
+      "D. The deer population began to decline sharply after 2015."
+    ],
+    "answer": "B",
+    "why": "From 1995 to 2010 the count rises from 120 to 880, a large increase in each five-year step. From 2010 onward the values are 880, 905, 898, and 902, which vary by only a few dozen animals and stay near 900. That is rapid growth followed by levelling off.",
+    "howToFind": "1. Split the table in half and describe each half separately. This is the standard move on any trend question.\n2. Early half (1995 to 2010): 120, 310, 640, 880. Compute the jumps: +190, +330, +240. Big increases. Growing fast.\n3. Late half (2010 to 2025): 880, 905, 898, 902. Compute the jumps: +25, -7, +4. Tiny changes in both directions. Flat.\n4. Your one-sentence description: 'rises fast, then levels off near 900.' Now find the choice that matches that sentence. Choice B.\n5. Test the others against your two-half description:\n   A: 'steady rate' fails because the later jumps are far smaller than the earlier ones. Eliminate.\n   C: the highest value is 905 in 2015, not 2025, and 902 is lower than 905. Eliminate.\n   D: after 2015 the values are 898 and 902. A drop of 7 then a rise of 4 is not a sharp decline. Eliminate.",
+    "trap": "Choice D. People see 905 fall to 898 and read it as the start of a crash. Always check the magnitude of a change against the size of the numbers: a change of 7 out of about 900 is under 1%, which is noise, not a trend. One down-tick is never a decline."
+  },
+  {
+    "id": "SCIENCE-017",
+    "topic": "Density calculation",
+    "difficulty": "easy",
+    "stimulus": "The density of an object is found using the relationship\n\ndensity = mass / volume\n\nA student places a solid metal block on a balance and finds that its mass is 96 grams. She then determines that the block's volume is 12 cubic centimetres.",
+    "question": "What is the density of the metal block?",
+    "choices": [
+      "A. 0.125 g/cm3",
+      "B. 8 g/cm3",
+      "C. 84 g/cm3",
+      "D. 1,152 g/cm3"
+    ],
+    "answer": "B",
+    "why": "Density is mass divided by volume. Dividing 96 grams by 12 cubic centimetres gives 8 grams per cubic centimetre.",
+    "howToFind": "1. Write down what you are given with units: mass = 96 g, volume = 12 cm3.\n2. Write the formula from the stimulus: density = mass / volume. Memorise this one; it is not always printed.\n3. Substitute: density = 96 / 12.\n4. Calculator: 96 divided by 12 = 8.\n5. Attach the unit. Grams divided by cubic centimetres gives g/cm3, which matches the answer choices.\n6. Choice B.\n7. Sanity check the size: metals typically have densities between about 2 and 20 g/cm3. An answer of 1,152 or 0.125 would be absurd for a solid metal block, which confirms 8 is reasonable.",
+    "trap": "Choice D (1,152). Multiplying 96 by 12 instead of dividing. If you cannot remember whether to multiply or divide, use the units: the answer must be in grams PER cubic centimetre, and 'per' always means divide."
+  },
+  {
+    "id": "SCIENCE-018",
+    "topic": "Reading speed from a distance-time table",
+    "difficulty": "easy",
+    "stimulus": "A cyclist's distance from her starting point was recorded every 10 minutes.\n\n| Elapsed time (min) | 0 | 10  | 20  | 30  | 40   |\n|--------------------|---|-----|-----|-----|------|\n| Distance (km)      | 0 | 3.0 | 6.0 | 9.0 | 10.5 |",
+    "question": "According to the table, during which 10-minute interval was the cyclist travelling most slowly?",
+    "choices": [
+      "A. 0 to 10 minutes",
+      "B. 10 to 20 minutes",
+      "C. 20 to 30 minutes",
+      "D. 30 to 40 minutes"
+    ],
+    "answer": "D",
+    "why": "In each of the first three intervals the cyclist covered 3.0 km, but in the final interval she covered only 10.5 minus 9.0, which is 1.5 km. Covering the least distance in the same 10 minutes means travelling most slowly.",
+    "howToFind": "1. Since every interval lasts the same 10 minutes, you do not need the speed formula at all. You only need to compare DISTANCE COVERED in each interval. Least distance means slowest.\n2. Subtract each pair of neighbouring distance values:\n   0 to 10 min: 3.0 - 0 = 3.0 km\n   10 to 20 min: 6.0 - 3.0 = 3.0 km\n   20 to 30 min: 9.0 - 6.0 = 3.0 km\n   30 to 40 min: 10.5 - 9.0 = 1.5 km\n3. The smallest is 1.5 km, in the 30 to 40 minute interval.\n4. Choice D.\n5. If you prefer to check with speed: 1.5 km in 10 min = 9 km/h, versus 3.0 km in 10 min = 18 km/h for the others. Same conclusion.",
+    "trap": "Choice A. People glance at the row and pick the interval with the smallest distance READING (3.0 next to 0) instead of the smallest CHANGE in distance. On a cumulative distance table you must subtract consecutive values; the raw numbers only ever go up."
+  },
+  {
+    "id": "SCIENCE-019",
+    "topic": "Acceleration calculation",
+    "difficulty": "medium",
+    "stimulus": "Acceleration describes how quickly an object's velocity changes and is calculated as\n\nacceleration = (final velocity - initial velocity) / time\n\nA car travelling in a straight line speeds up from 8 m/s to 26 m/s over a period of 6 seconds.",
+    "question": "What is the car's average acceleration?",
+    "choices": [
+      "A. 3 m/s2",
+      "B. 4.3 m/s2",
+      "C. 5.7 m/s2",
+      "D. 108 m/s2"
+    ],
+    "answer": "A",
+    "why": "The change in velocity is 26 m/s minus 8 m/s, which is 18 m/s. Dividing 18 m/s by 6 seconds gives an average acceleration of 3 m/s squared.",
+    "howToFind": "1. List the values with labels before touching the calculator:\n   final velocity = 26 m/s\n   initial velocity = 8 m/s\n   time = 6 s\n2. Do the subtraction INSIDE the parentheses first. This is the step people skip.\n   26 - 8 = 18 m/s. This is the CHANGE in velocity.\n3. Divide by the time: 18 / 6 = 3.\n4. Unit is m/s2 because velocity in m/s is divided by seconds.\n5. Choice A.\n6. TI-30XS keystrokes: ( 26 - 8 ) divided by 6 = . Type the parentheses; they force the subtraction to happen first.",
+    "trap": "Choice B (4.3). Dividing the FINAL velocity by the time (26 / 6 = 4.33) and forgetting to subtract the starting velocity. Any acceleration formula has a subtraction in it. If you did not subtract anything, you did it wrong."
+  },
+  {
+    "id": "SCIENCE-020",
+    "topic": "Newton's second law (F = ma)",
+    "difficulty": "medium",
+    "stimulus": "Newton's second law of motion relates the net force on an object to its mass and acceleration:\n\nforce = mass x acceleration\n\nForce is measured in newtons (N), mass in kilograms (kg), and acceleration in metres per second squared (m/s2).\n\nA car with a mass of 1,400 kg accelerates at a rate of 2.5 m/s2.",
+    "question": "What is the net force acting on the car?",
+    "choices": [
+      "A. 560 N",
+      "B. 1,402.5 N",
+      "C. 3,500 N",
+      "D. 3.5 N"
+    ],
+    "answer": "C",
+    "why": "Substituting into force = mass times acceleration gives 1,400 kg times 2.5 m/s squared, which equals 3,500 newtons.",
+    "howToFind": "1. Identify the two given quantities by their units, which the stimulus spells out for you.\n   kg is mass, so mass = 1,400 kg.\n   m/s2 is acceleration, so acceleration = 2.5 m/s2.\n2. Write the formula: F = m x a. Memorise this one; the test does not always print it.\n3. Substitute: F = 1,400 x 2.5.\n4. Calculator: 1400 x 2.5 = 3500.\n5. Unit is newtons because kg x m/s2 = N. That is the definition of a newton.\n6. Choice C.\n7. Magnitude check: multiplying by 2.5 should give an answer between 2 and 3 times the mass. 3,500 is 2.5 times 1,400. Correct.",
+    "trap": "Choice A (560). Dividing 1,400 by 2.5 instead of multiplying. This happens when people half-remember 'a = F/m' and rearrange in the wrong direction. Read the formula printed in the stimulus and substitute into it exactly as written; do not rearrange from memory."
+  },
+  {
+    "id": "SCIENCE-021",
+    "topic": "Newton's third law",
+    "difficulty": "medium",
+    "stimulus": "A swimmer standing in a pool pushes backward against the water with her hands. She then moves forward through the water.",
+    "question": "Which statement best explains why the swimmer moves forward?",
+    "choices": [
+      "A. The swimmer's forward force on the water is greater than the water's backward force on her.",
+      "B. The swimmer pushes backward on the water and the water pushes forward on the swimmer with an equal force.",
+      "C. The water has no mass, so it cannot push back on the swimmer at all.",
+      "D. The swimmer's inertia carries her forward once she stops pushing on the water."
+    ],
+    "answer": "B",
+    "why": "Newton's third law states that when one object exerts a force on a second object, the second exerts an equal force in the opposite direction on the first. The swimmer pushes the water backward, so the water pushes her forward with an equal force, and that forward force on her is what moves her.",
+    "howToFind": "1. Spot the signature of Newton's third law in the scenario: two objects, and a push in one direction producing motion in the opposite direction. Here the objects are the swimmer and the water.\n2. State the law in the fixed template: object A pushes object B one way, object B pushes object A the other way, with EQUAL force.\n3. Fill in the template with the stimulus nouns: swimmer pushes water backward, water pushes swimmer forward, equal forces.\n4. Find the choice that matches that sentence. Choice B.\n5. Eliminate the others:\n   A says the forces are unequal. Newton's third law pairs are always equal. Eliminate.\n   C says water has no mass, which is false and also would leave nothing to explain the motion. Eliminate.\n   D describes inertia (first law), which explains why she KEEPS moving, not why she STARTS moving. Eliminate.\n6. Word check for third-law items: the correct answer will almost always contain 'equal' and 'opposite.'",
+    "trap": "Choice A. People reason that if the forces were truly equal nothing would move, so one must be bigger. The resolution is that the two forces act on DIFFERENT objects: the backward force acts on the water, the forward force acts on the swimmer. Equal-and-opposite pairs never cancel, because they are never on the same object."
+  },
+  {
+    "id": "SCIENCE-022",
+    "topic": "Work",
+    "difficulty": "medium",
+    "stimulus": "Work is done on an object only when a force causes that object to move in the direction of the force. Work is calculated as\n\nwork = force x distance\n\nWork is measured in joules (J) when force is in newtons (N) and distance is in metres (m).\n\nWorker 1 pushes a crate across a warehouse floor with a steady horizontal force of 150 N, and the crate slides 8 m in the direction of the push.\n\nWorker 2 pushes on a loading-dock wall with a steady horizontal force of 300 N for 8 seconds. The wall does not move.",
+    "question": "What is the total amount of work done by the two workers?",
+    "choices": [
+      "A. 0 J",
+      "B. 1,200 J",
+      "C. 2,400 J",
+      "D. 3,600 J"
+    ],
+    "answer": "B",
+    "why": "Worker 1 does 150 N times 8 m, which is 1,200 J. Worker 2 does no work at all, because the wall does not move and work requires motion in the direction of the force. The total is 1,200 J plus 0 J, which is 1,200 J.",
+    "howToFind": "1. Handle each worker separately.\n2. Worker 1: force = 150 N, distance = 8 m, and the crate moved in the direction of the push.\n   work = 150 x 8 = 1,200 J.\n3. Worker 2: read the last sentence of that paragraph carefully. 'The wall does not move.' Distance = 0 m.\n   work = 300 x 0 = 0 J. The 8 seconds is irrelevant; time never appears in the work formula.\n4. Add them: 1,200 + 0 = 1,200 J.\n5. Choice B.\n6. The rule to memorise: no movement, no work, no matter how hard the push or how long it lasts.",
+    "trap": "Choice D (3,600). Treating the 8 SECONDS as a distance and computing 300 x 8 = 2,400 J for Worker 2, then adding it to 1,200. Check the unit on every number before you use it: 8 m is a distance, 8 s is a time, and only the distance belongs in the work formula."
+  },
+  {
+    "id": "SCIENCE-023",
+    "topic": "Power with a unit conversion",
+    "difficulty": "hard",
+    "stimulus": "Power is the rate at which work is done:\n\npower = work / time\n\nPower is measured in watts (W), where 1 watt equals 1 joule of work done per second.\n\nAn electric motor in a factory does 18,000 joules of work in 2.5 minutes.",
+    "question": "What is the average power output of the motor, in watts?",
+    "choices": [],
+    "answer": "120",
+    "why": "Watts require time in seconds, so 2.5 minutes must be converted to 150 seconds. Dividing 18,000 joules by 150 seconds gives 120 joules per second, which is 120 watts.",
+    "howToFind": "1. Read the unit definition given in the stimulus: 1 watt = 1 joule PER SECOND. That tells you the time must be in seconds before you divide.\n2. Convert first, always before substituting.\n   2.5 minutes x 60 seconds per minute = 150 seconds.\n3. Write the formula: power = work / time.\n4. Substitute: power = 18,000 / 150.\n5. Calculator: 18000 divided by 150 = 120.\n6. Type 120 in the box. Do not type the unit if the box already shows 'watts.'\n7. Reasonableness check: 18,000 J in 150 s is roughly 120 J each second, and a 120 W motor is an ordinary size. If you had got 7,200 you would be claiming a 7.2 kW motor from a small job, which should make you recheck the units.",
+    "trap": "Typing 7,200. Dividing 18,000 by 2.5 without converting minutes to seconds. The giveaway is in the stimulus itself: it defines a watt as joules per SECOND. Whenever a question mixes minutes or hours with watts or newtons, convert to seconds and kilograms first."
+  },
+  {
+    "id": "SCIENCE-024",
+    "topic": "Ohm's law",
+    "difficulty": "medium",
+    "stimulus": "In a simple electric circuit, voltage, current, and resistance are related by Ohm's law:\n\nvoltage = current x resistance\n\nVoltage is measured in volts (V), current in amperes or amps (A), and resistance in ohms.\n\nA circuit contains a single resistor of 48 ohms connected across a 12-volt battery.",
+    "question": "What is the current flowing through the resistor, in amps?",
+    "choices": [],
+    "answer": "0.25",
+    "why": "Rearranging voltage = current times resistance gives current = voltage divided by resistance. Dividing 12 volts by 48 ohms gives 0.25 amps.",
+    "howToFind": "1. Label the two given values by their units:\n   12 V is voltage.\n   48 ohms is resistance.\n   Current is what you are solving for.\n2. Start from the printed formula: V = I x R.\n3. To get I by itself, divide both sides by R: I = V / R.\n4. Substitute: I = 12 / 48.\n5. Calculator: 12 divided by 48 = 0.25.\n6. Type 0.25 in the box.\n7. Memory aid for the rearrangement: cover the letter you want in the triangle with V on top and I and R side by side underneath. Cover I and you are left with V over R, which means divide.\n8. Sanity check: a 48-ohm resistor is a large resistance, so it should let only a small current through. A number less than 1 is expected.",
+    "trap": "Typing 4. Dividing 48 by 12 instead of 12 by 48, because 48 divided by 12 gives a tidy whole number and 0.25 feels wrong. Always put the VOLTAGE on top. Current equals volts over ohms, never ohms over volts."
+  },
+  {
+    "id": "SCIENCE-025",
+    "topic": "Percent efficiency",
+    "difficulty": "hard",
+    "stimulus": "Every energy conversion wastes some energy, usually as heat. The percent efficiency of a device is\n\npercent efficiency = (useful energy output / total energy input) x 100\n\nFour light bulbs were tested. For each bulb, the electrical energy supplied and the energy given off as visible light were measured over the same period.\n\n| Bulb | Electrical energy input (J) | Light energy output (J) |\n|------|-----------------------------|-------------------------|\n| W    | 100                         | 5                       |\n| X    | 100                         | 15                      |\n| Y    | 250                         | 45                      |\n| Z    | 400                         | 60                      |",
+    "question": "Which bulb converts electrical energy to light most efficiently?",
+    "choices": [
+      "A. Bulb W",
+      "B. Bulb X",
+      "C. Bulb Y",
+      "D. Bulb Z"
+    ],
+    "answer": "C",
+    "why": "Efficiency is a ratio, not a raw amount. Bulb W is 5%, Bulb X is 15%, Bulb Y is 45 divided by 250 which is 18%, and Bulb Z is 60 divided by 400 which is 15%. Bulb Y has the highest percentage.",
+    "howToFind": "1. Notice that the inputs are not all the same, so you cannot compare the output column directly. You must compute all four ratios.\n2. Apply the printed formula to each row: output divided by input, times 100.\n   W: 5 / 100 = 0.05, x 100 = 5%\n   X: 15 / 100 = 0.15, x 100 = 15%\n   Y: 45 / 250 = 0.18, x 100 = 18%\n   Z: 60 / 400 = 0.15, x 100 = 15%\n3. Compare the four percentages: 5, 15, 18, 15. The largest is 18%.\n4. That is Bulb Y. Choice C.\n5. Check: efficiency can never exceed 100%. All four are well under, so the arithmetic is sound.",
+    "trap": "Choice D (Bulb Z). Picking the bulb with the biggest light output (60 J) and calling it the most efficient. Efficiency measures how much of what you PUT IN comes out useful, so Bulb Z's 60 J looks good only until you notice it consumed 400 J to get there. Whenever the word 'efficient' appears, compute a ratio for every row."
+  },
+  {
+    "id": "SCIENCE-026",
+    "topic": "Balancing a chemical equation",
+    "difficulty": "hard",
+    "stimulus": "Aluminium metal reacts with oxygen gas to form aluminium oxide. The unbalanced equation for this reaction is\n\n___ Al + ___ O2  ->  ___ Al2O3\n\nA chemical equation is balanced when the number of atoms of each element is the same on both sides of the arrow.",
+    "question": "Which set of coefficients correctly balances this equation?",
+    "choices": [
+      "A. 2, 3, 2",
+      "B. 4, 3, 2",
+      "C. 2, 3, 4",
+      "D. 4, 6, 2"
+    ],
+    "answer": "B",
+    "why": "With coefficients 4, 3, 2 the left side has 4 aluminium atoms and 6 oxygen atoms (3 times 2), and the right side has 4 aluminium atoms (2 times 2) and 6 oxygen atoms (2 times 3). Both elements balance.",
+    "howToFind": "1. Take each answer choice and test it. That is faster than balancing from scratch, and it cannot go wrong.\n2. Set up a two-column count for each element. Multiply each coefficient by the subscript already in the formula.\n3. Test choice B, coefficients 4, 3, 2:\n   Left side Al: 4 x 1 = 4\n   Left side O: 3 x 2 = 6\n   Right side Al: 2 x 2 = 4\n   Right side O: 2 x 3 = 6\n   Al matches 4 to 4. O matches 6 to 6. Balanced. Choice B.\n4. If you want to confirm the others are wrong, test choice A, coefficients 2, 3, 2:\n   Left Al = 2, Right Al = 2 x 2 = 4. Does not match. Eliminate.\n5. The only rule that matters: you may change the big numbers in FRONT (coefficients), never the small numbers inside a formula (subscripts). Al2O3 always stays Al2O3.",
+    "trap": "Choice A (2, 3, 2). People balance the oxygen first (3 x 2 = 6 on the left, 2 x 3 = 6 on the right), see it work, and stop without rechecking aluminium. After you balance one element, you must recount EVERY element again. Do the full two-column count before you commit."
+  },
+  {
+    "id": "SCIENCE-027",
+    "topic": "Conservation of mass",
+    "difficulty": "medium",
+    "stimulus": "A student places 12.5 g of sodium bicarbonate into a flask and adds 40.0 g of vinegar. The mixture bubbles vigorously, producing carbon dioxide gas that escapes into the air through the open top of the flask.\n\nWhen the bubbling stops, the student weighs the flask's remaining contents and finds 47.9 g of liquid and solid material.",
+    "question": "According to the law of conservation of mass, what mass of carbon dioxide gas escaped from the flask, in grams?",
+    "choices": [],
+    "answer": "4.6",
+    "why": "Mass is conserved, so the total mass before the reaction must equal the total mass after. Before the reaction there were 12.5 plus 40.0, which is 52.5 g. After the reaction 47.9 g remained, so 52.5 minus 47.9, or 4.6 g, left as gas.",
+    "howToFind": "1. Add everything that went IN.\n   12.5 g + 40.0 g = 52.5 g total starting mass.\n2. Identify what is still in the flask at the end: 47.9 g.\n3. The law of conservation of mass says nothing is destroyed, so any missing mass left as gas.\n   52.5 - 47.9 = 4.6 g.\n4. Type 4.6 in the box.\n5. Calculator: 12.5 + 40 = 52.5, then 52.5 - 47.9 = 4.6.\n6. Sanity check: the escaping gas must be less than the total starting mass, and it should be a modest amount. 4.6 g out of 52.5 g is reasonable.",
+    "trap": "Typing 35.4 (47.9 minus 12.5) or 7.9 (47.9 minus 40.0). People subtract one reactant instead of adding both reactants first. Write the total starting mass on scratch paper as a single number before you subtract anything."
+  },
+  {
+    "id": "SCIENCE-028",
+    "topic": "Reading a periodic table element box",
+    "difficulty": "easy",
+    "stimulus": "A single box from the periodic table is shown below.\n\n    15\n     P\n  30.97\n\nThe top number is the atomic number, the letter is the element symbol, and the bottom number is the average atomic mass in atomic mass units.",
+    "question": "How many protons, neutrons, and electrons are in a neutral atom of this element?",
+    "choices": [
+      "A. 15 protons, 16 neutrons, 15 electrons",
+      "B. 15 protons, 15 neutrons, 15 electrons",
+      "C. 15 protons, 31 neutrons, 15 electrons",
+      "D. 31 protons, 15 neutrons, 31 electrons"
+    ],
+    "answer": "A",
+    "why": "The atomic number 15 is the number of protons, and in a neutral atom the number of electrons equals the number of protons, so there are 15 electrons. Rounding the atomic mass 30.97 to 31 and subtracting the 15 protons leaves 16 neutrons.",
+    "howToFind": "1. Read the atomic number off the box: 15. Atomic number ALWAYS equals the number of protons. Protons = 15.\n2. The atom is described as neutral, so electrons equal protons. Electrons = 15.\n3. For neutrons, round the atomic mass to the nearest whole number: 30.97 rounds to 31.\n4. Subtract: neutrons = 31 - 15 = 16.\n5. Match your three numbers (15 protons, 16 neutrons, 15 electrons) to the choices. Choice A.\n6. Memorise the three lines, because this exact box appears in some form on most forms of the test:\n   protons = atomic number\n   electrons = protons (neutral atom only)\n   neutrons = rounded atomic mass - atomic number",
+    "trap": "Choice C (31 neutrons). Using the atomic mass itself as the neutron count instead of subtracting the protons from it. The atomic mass counts protons AND neutrons together, so you must subtract the protons out."
+  },
+  {
+    "id": "SCIENCE-029",
+    "topic": "Predicting a periodic trend from a table",
+    "difficulty": "medium",
+    "stimulus": "All of the elements listed below are in Group 1 of the periodic table, listed in order from top to bottom of the group.\n\n| Element   | Melting point (degrees C) |\n|-----------|---------------------------|\n| Lithium   | 181                       |\n| Sodium    | 98                        |\n| Potassium | 63                        |\n| Rubidium  | 39                        |\n| Caesium   | 28                        |\n\nFrancium is the next element below caesium in Group 1.",
+    "question": "Based on the pattern in the table, what is the best prediction for the melting point of francium?",
+    "choices": [
+      "A. About 181 degrees C",
+      "B. Below 28 degrees C",
+      "C. About 63 degrees C",
+      "D. Above 200 degrees C"
+    ],
+    "answer": "B",
+    "why": "Reading down the group, the melting points fall in every step: 181, 98, 63, 39, 28. Since francium is the next element below caesium, the pattern predicts a melting point lower than caesium's 28 degrees C.",
+    "howToFind": "1. This is a pure pattern-extension question. You do not need to know anything about Group 1 chemistry.\n2. Read the melting point column from top to bottom and decide whether it goes up or down: 181, 98, 63, 39, 28. It decreases every time.\n3. Confirm the direction by computing the steps: -83, -35, -24, -11. All negative, so the trend is a steady decrease that is also getting gentler.\n4. Francium is the next one DOWN, so its value should be below the last value in the table, which is 28.\n5. Scan the choices for 'below 28.' Choice B.\n6. Eliminate: A and C repeat values already in the table for elements higher up, which contradicts a decreasing trend. D goes up, which is the wrong direction entirely.",
+    "trap": "Choice D. People recall vaguely that 'reactivity increases down Group 1' and assume everything increases down the group. Ignore what you remember and read the actual column direction in the table. The direction of the trend is printed in front of you."
+  },
+  {
+    "id": "SCIENCE-030",
+    "topic": "Wave speed, frequency, and wavelength",
+    "difficulty": "hard",
+    "stimulus": "The speed of a wave is related to its frequency and wavelength by\n\nwave speed = frequency x wavelength\n\nWave speed is measured in metres per second (m/s), frequency in hertz (Hz), and wavelength in metres (m).\n\nA sound wave travels through air at 340 m/s. The wave has a frequency of 850 Hz.",
+    "question": "What is the wavelength of this sound wave?",
+    "choices": [
+      "A. 0.4 m",
+      "B. 2.5 m",
+      "C. 510 m",
+      "D. 289,000 m"
+    ],
+    "answer": "A",
+    "why": "Rearranging wave speed equals frequency times wavelength gives wavelength equals wave speed divided by frequency. Dividing 340 m/s by 850 Hz gives 0.4 m.",
+    "howToFind": "1. Label the given values using the units the stimulus supplies:\n   340 m/s is the wave speed.\n   850 Hz is the frequency.\n   The wavelength, in metres, is the unknown.\n2. Start from the printed formula: speed = frequency x wavelength.\n3. Isolate wavelength by dividing both sides by frequency: wavelength = speed / frequency.\n4. Substitute: wavelength = 340 / 850.\n5. Calculator: 340 divided by 850 = 0.4.\n6. Choice A.\n7. Reasonableness check: sound waves you can hear have wavelengths from a few centimetres up to a few metres. 0.4 m is right in that range; 289,000 m would be 289 kilometres long, which is absurd.",
+    "trap": "Choice B (2.5 m). Dividing 850 by 340 instead of 340 by 850, because dividing the larger number by the smaller one feels natural. The formula tells you the order: speed goes on top. Write the rearranged formula down before you touch the calculator."
+  },
+  {
+    "id": "SCIENCE-031",
+    "topic": "Specific heat calculation",
+    "difficulty": "hard",
+    "stimulus": "The heat energy needed to change the temperature of a substance is given by\n\nQ = m x c x (change in temperature)\n\nwhere Q is heat energy in joules (J), m is mass in grams (g), c is the specific heat in joules per gram per degree Celsius, and the temperature change is in degrees Celsius.\n\n| Substance | Specific heat, c (J/g per degree C) |\n|-----------|-------------------------------------|\n| Water     | 4.18                                |\n| Aluminium | 0.90                                |\n| Copper    | 0.39                                |\n| Iron      | 0.45                                |\n\nA technician heats a 200 g block of aluminium and raises its temperature by 25 degrees C.",
+    "question": "How much heat energy is absorbed by the aluminium block?",
+    "choices": [
+      "A. 4,500 J",
+      "B. 5,000 J",
+      "C. 20,900 J",
+      "D. 180 J"
+    ],
+    "answer": "A",
+    "why": "Aluminium's specific heat from the table is 0.90 J per gram per degree C. Substituting gives 200 times 0.90 times 25, which equals 4,500 joules.",
+    "howToFind": "1. Pull the correct specific heat out of the table. The substance is ALUMINIUM, so go to the aluminium row: c = 0.90. Do not use the first row out of habit.\n2. List the three values: m = 200 g, c = 0.90, temperature change = 25 degrees C.\n3. Write the formula from the stimulus: Q = m x c x temperature change.\n4. Substitute: Q = 200 x 0.90 x 25.\n5. Multiply in two steps on the calculator:\n   200 x 0.90 = 180\n   180 x 25 = 4,500\n6. Unit is joules. Choice A.\n7. Note that 180 appears as choice D. That is the partial answer after step one, so do not stop there; you still have to multiply by the temperature change.",
+    "trap": "Choice C (20,900 J). Using water's specific heat of 4.18 instead of aluminium's 0.90, because water is the first row in the table and the most familiar substance. When a table of constants is provided, put your finger on the row named in the question before you read any number."
+  },
+  {
+    "id": "SCIENCE-032",
+    "topic": "Energy transformation and conservation of energy",
+    "difficulty": "medium",
+    "stimulus": "An object held above the ground stores gravitational potential energy, which is calculated as\n\nGPE = m x g x h\n\nwhere m is mass in kilograms, g is 9.8 m/s2, and h is height in metres. When the object falls, its potential energy is converted into kinetic energy.\n\nA 2.0 kg ball is held 5.0 m above the ground and then released. Air resistance can be ignored.",
+    "question": "What is the kinetic energy of the ball at the instant just before it reaches the ground?",
+    "choices": [
+      "A. 10 J",
+      "B. 49 J",
+      "C. 98 J",
+      "D. 196 J"
+    ],
+    "answer": "C",
+    "why": "Energy is conserved, so all of the gravitational potential energy the ball had at the top becomes kinetic energy at the bottom. The potential energy is 2.0 times 9.8 times 5.0, which equals 98 joules, so the kinetic energy just before impact is also 98 joules.",
+    "howToFind": "1. Recognise the structure of the problem: the question gives you the formula for the energy at the START and asks for the energy at the END. The link between them is that energy is conserved, so the two numbers are equal.\n2. Compute the potential energy at the top using the printed formula.\n   GPE = m x g x h = 2.0 x 9.8 x 5.0\n3. Multiply in two steps: 2.0 x 9.8 = 19.6, then 19.6 x 5.0 = 98.\n4. GPE at the top = 98 J. Because air resistance is ignored, none is lost to heat, so all 98 J becomes kinetic energy.\n5. Kinetic energy just before impact = 98 J. Choice C.\n6. You never needed the kinetic energy formula. The phrase 'air resistance can be ignored' is the signal that the energy transfers completely.",
+    "trap": "Choice B (49 J). Dividing by 2 because the kinetic energy formula contains a one-half. The one-half belongs with mass times velocity squared, and you were never given a velocity. When the problem says air resistance is ignored, the answer is simply the starting energy, unchanged."
+  },
+  {
+    "id": "SCIENCE-033",
+    "topic": "Plate boundaries",
+    "difficulty": "medium",
+    "stimulus": "A diagram of the sea floor is described below.\n\nA long ridge runs down the middle of an ocean basin. Arrows on the diagram show the two oceanic plates on either side of the ridge moving directly away from each other. Molten rock rises at the ridge and hardens into new sea floor. Rock samples collected across the basin show that the rock at the ridge is newly formed, and the rock gets progressively older with distance from the ridge, at about the same rate on both sides.",
+    "question": "Which type of plate boundary is shown, and what feature does it produce?",
+    "choices": [
+      "A. A convergent boundary, producing a deep ocean trench",
+      "B. A divergent boundary, producing new oceanic crust",
+      "C. A transform boundary, producing only earthquakes",
+      "D. A convergent boundary, producing folded mountain ranges"
+    ],
+    "answer": "B",
+    "why": "The arrows show the plates moving apart, which defines a divergent boundary. Molten rock rising and hardening at the gap creates new sea floor, which is why the rock is youngest at the ridge and older in both directions.",
+    "howToFind": "1. Find the sentence that states the direction of plate motion. Here it is 'moving directly away from each other.' Direction of motion is the whole question.\n2. Match the motion to the boundary name using the three-item list you must memorise:\n   apart = divergent\n   together = convergent\n   sliding past = transform\n   Moving apart means DIVERGENT, so eliminate A, C, and D immediately.\n3. Confirm with the second piece of evidence: 'molten rock rises and hardens into new sea floor.' New crust forming is the signature of a divergent boundary.\n4. Confirm with the third: rock gets older symmetrically outward from the ridge, which is exactly what happens when new material is added at the centre and pushes older material aside. This is sea-floor spreading.\n5. Choice B.",
+    "trap": "Choice A. The word 'ocean' triggers a memory of deep ocean trenches, which do occur at ocean plate boundaries, but trenches form where one plate SINKS BENEATH another at a convergent boundary. Read the arrows, not the setting."
+  },
+  {
+    "id": "SCIENCE-034",
+    "topic": "Rock cycle",
+    "difficulty": "easy",
+    "stimulus": "A flowchart of the rock cycle is described below. Boxes are connected by labelled arrows.\n\nIgneous rock  --(weathering and erosion)-->  Sediment\nSediment  --(compaction and cementation)-->  Sedimentary rock\nSedimentary rock  --( ? )-->  Metamorphic rock\nMetamorphic rock  --(melting)-->  Magma\nMagma  --(cooling and solidifying)-->  Igneous rock",
+    "question": "Which process belongs in the box marked with a question mark?",
+    "choices": [
+      "A. Weathering and erosion",
+      "B. Melting and cooling",
+      "C. Evaporation",
+      "D. Heat and pressure"
+    ],
+    "answer": "D",
+    "why": "Metamorphic rock forms when existing rock is subjected to intense heat and pressure without melting. That is the process that converts sedimentary rock into metamorphic rock on the flowchart.",
+    "howToFind": "1. Locate the arrow with the question mark. It runs from Sedimentary rock TO Metamorphic rock.\n2. Use the definition hidden in the word: 'metamorphic' means changed form. Rock is changed in form by heat and pressure.\n3. Match to a choice. Choice D says heat and pressure.\n4. Eliminate using the other arrows already labelled on the chart, since a process is not usually reused:\n   A, weathering and erosion, is already labelled on the igneous-to-sediment arrow. Eliminate.\n   B, melting, is already labelled on the metamorphic-to-magma arrow, and melting would produce magma, not metamorphic rock. Eliminate.\n   C, evaporation, belongs to the water cycle and appears nowhere on this chart. Eliminate.\n5. Choice D.",
+    "trap": "Choice B. People pick melting because it involves heat, but melting destroys the rock and produces magma, which the chart already shows as the next step. Metamorphic rock forms WITHOUT melting. On a flowchart question, check which processes are already used elsewhere on the diagram."
+  },
+  {
+    "id": "SCIENCE-035",
+    "topic": "Water cycle",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "During which process does water move from inside a plant's leaves into the atmosphere as water vapour?",
+    "choices": [
+      "A. Condensation",
+      "B. Runoff",
+      "C. Infiltration",
+      "D. Transpiration"
+    ],
+    "answer": "D",
+    "why": "Transpiration is the release of water vapour from plant leaves into the air. It is one of the main routes by which water returns to the atmosphere, along with evaporation from open water.",
+    "howToFind": "1. Match each term to its one-line definition. These four come up constantly and are worth memorising as a set.\n   Condensation: gas turning back into liquid, forming clouds and dew.\n   Runoff: liquid water flowing over the ground surface into streams and the ocean.\n   Infiltration: water soaking down into the soil to become groundwater.\n   Transpiration: water vapour leaving plant leaves.\n2. The question specifies a PLANT and specifies water becoming VAPOUR in the atmosphere. Only transpiration involves plants.\n3. Choice D.\n4. Memory hook: 'trans' means across, and 'transpire' shares its root with 'respire'; the plant is breathing water out.",
+    "trap": "Choice A (condensation). People see 'water vapour' and grab the nearest vapour word. Condensation is the opposite direction, vapour turning INTO liquid. Check the direction of the change of state in the question before choosing: into the atmosphere as vapour means liquid turning to gas."
+  },
+  {
+    "id": "SCIENCE-036",
+    "topic": "Reading weather station data",
+    "difficulty": "medium",
+    "stimulus": "A weather station recorded the following conditions during one afternoon.\n\n| Time | Air temperature (degrees C) | Air pressure (mb) | Wind direction |\n|------|-----------------------------|-------------------|----------------|\n| 1:00 | 24                          | 1012              | Southwest      |\n| 2:00 | 24                          | 1010              | Southwest      |\n| 3:00 | 23                          | 1008              | Southwest      |\n| 4:00 | 17                          | 1009              | Northwest      |\n| 5:00 | 15                          | 1013              | Northwest      |\n| 6:00 | 14                          | 1016              | Northwest      |",
+    "question": "Based on the data, a cold front most likely passed the station during which interval?",
+    "choices": [
+      "A. Between 1:00 and 2:00",
+      "B. Between 2:00 and 3:00",
+      "C. Between 3:00 and 4:00",
+      "D. Between 5:00 and 6:00"
+    ],
+    "answer": "C",
+    "why": "Between 3:00 and 4:00 all three measurements change at once: the temperature drops sharply from 23 to 17 degrees C, the wind shifts from southwest to northwest, and the pressure stops falling and begins to rise. Those three simultaneous changes are the standard signature of a cold front passing a station.",
+    "howToFind": "1. Memorise the three-part signature of a front passing: a sharp temperature change, a wind-direction SHIFT, and a pressure minimum followed by a rise. Then hunt the table for the row where all three happen at once.\n2. Temperature column: 24, 24, 23, 17, 15, 14. The one big drop is from 23 to 17, a fall of 6 degrees, which happens between 3:00 and 4:00. Every other step changes by at most 2 degrees.\n3. Wind column: Southwest, Southwest, Southwest, Northwest, Northwest, Northwest. The direction changes between 3:00 and 4:00.\n4. Pressure column: 1012, 1010, 1008, 1009, 1013, 1016. The lowest value is 1008 at 3:00, and the pressure rises after it. The turning point is between 3:00 and 4:00.\n5. All three point to the same interval. Choice C.",
+    "trap": "Choice D. People look for the LOWEST temperature (14 at 6:00) and assume the cold front arrives with the coldest reading. A front is marked by the sharpest CHANGE, not by the extreme value. Compute the differences between consecutive rows rather than scanning for the biggest or smallest number."
+  },
+  {
+    "id": "SCIENCE-037",
+    "topic": "Correlation versus causation in climate data",
+    "difficulty": "hard",
+    "stimulus": "The table shows decade averages for atmospheric carbon dioxide concentration and for global surface temperature, expressed as the difference from the twentieth-century average.\n\n| Decade | Average atmospheric CO2 (ppm) | Average global temperature difference (degrees C) |\n|--------|-------------------------------|---------------------------------------------------|\n| 1960s  | 320                           | -0.02                                             |\n| 1970s  | 331                           | -0.01                                             |\n| 1980s  | 345                           | +0.18                                             |\n| 1990s  | 360                           | +0.32                                             |\n| 2000s  | 380                           | +0.51                                             |\n| 2010s  | 402                           | +0.70                                             |",
+    "question": "Which conclusion is best supported by the data in the table alone?",
+    "choices": [
+      "A. Rising carbon dioxide concentration is the only cause of the temperature increase.",
+      "B. Global temperature will rise by exactly 0.19 degrees C in every future decade.",
+      "C. Atmospheric carbon dioxide concentration will stop increasing after 2030.",
+      "D. As atmospheric carbon dioxide concentration increased, average global temperature also increased."
+    ],
+    "answer": "D",
+    "why": "Both columns rise steadily from the 1960s to the 2010s, so the data show the two quantities increasing together. That is a description of the relationship the table actually contains. The table alone cannot establish that one caused the other, cannot fix an exact future rate, and contains no information about years after the 2010s.",
+    "howToFind": "1. Note the exact wording of the stem: 'best supported by the data in the table ALONE.' That phrase means you may use nothing but the numbers printed.\n2. Describe both columns in plain words.\n   CO2: 320, 331, 345, 360, 380, 402. Increasing every decade.\n   Temperature difference: -0.02, -0.01, +0.18, +0.32, +0.51, +0.70. Increasing every decade.\n3. The honest one-sentence summary is 'both went up together.' Find the choice that says that and nothing more. Choice D.\n4. Apply the elimination filters to the rest:\n   A contains 'the only cause.' That is both a causal claim and an absolute, and the table shows only that they moved together. Eliminate.\n   B says 'exactly 0.19 in every future decade.' The steps in the table are +0.01, +0.19, +0.14, +0.19, +0.19, which are not all equal, and the table says nothing about the future. Eliminate.\n   C makes a prediction about 2030, which is beyond the last row of the table. Eliminate.\n5. Choice D.",
+    "trap": "Choice A. It matches what most people believe to be true about climate, which makes it feel like the right answer. But the question asks what the TABLE supports, and a table of two rising columns shows correlation only. On this test, the choice containing 'caused,' 'only,' 'proves,' or 'always' loses to the choice that merely describes the relationship."
+  },
+  {
+    "id": "SCIENCE-038",
+    "topic": "Reading a planetary data table",
+    "difficulty": "medium",
+    "stimulus": "| Planet  | Average distance from the Sun (AU) | Orbital period (Earth years) |\n|---------|------------------------------------|------------------------------|\n| Mercury | 0.39                               | 0.24                         |\n| Venus   | 0.72                               | 0.62                         |\n| Earth   | 1.00                               | 1.00                         |\n| Mars    | 1.52                               | 1.88                         |\n| Jupiter | 5.20                               | 11.86                        |\n\nOne astronomical unit (AU) is the average distance from Earth to the Sun. Saturn's average distance from the Sun is 9.58 AU.",
+    "question": "Based on the pattern in the table, what is the best prediction for Saturn's orbital period?",
+    "choices": [
+      "A. Less than 0.24 Earth years",
+      "B. About 1.00 Earth years",
+      "C. Between 1.88 and 11.86 Earth years",
+      "D. Greater than 11.86 Earth years"
+    ],
+    "answer": "D",
+    "why": "In the table, orbital period increases every time distance from the Sun increases. Saturn at 9.58 AU is farther from the Sun than Jupiter at 5.20 AU, so its orbital period must be longer than Jupiter's 11.86 Earth years.",
+    "howToFind": "1. Establish the relationship between the two columns by reading them side by side.\n   Distance: 0.39, 0.72, 1.00, 1.52, 5.20. Increasing.\n   Period: 0.24, 0.62, 1.00, 1.88, 11.86. Also increasing.\n   So greater distance always goes with a longer period.\n2. Place Saturn on the distance scale. 9.58 AU is larger than every distance in the table, including Jupiter's 5.20.\n3. Therefore Saturn's period must be larger than every period in the table, including Jupiter's 11.86.\n4. Find the choice that says greater than 11.86. Choice D.\n5. Eliminate: A and B put Saturn's period below Earth's, which would require Saturn to be closer to the Sun than Earth. C caps Saturn below Jupiter, which contradicts Saturn being farther out.",
+    "trap": "Choice C. People see that Saturn sits between two rows in some mental picture of the solar system and choose the 'in between' range without checking that 9.58 is beyond the last distance listed. Locate the new value on the number line of the column you were given before you pick a range."
+  },
+  {
+    "id": "SCIENCE-039",
+    "topic": "Cause of the seasons",
+    "difficulty": "medium",
+    "stimulus": "A student claims: 'The Northern Hemisphere has summer in June, July, and August because that is when Earth is closest to the Sun.'\n\nThe following measurements are well established.\n\n| Time of year | Earth's distance from the Sun |\n|--------------|-------------------------------|\n| Early January| About 147 million km (closest point) |\n| Early July   | About 152 million km (farthest point) |\n\nEarth's axis is tilted about 23.5 degrees relative to its orbit. In June, July, and August the Northern Hemisphere is tilted toward the Sun.",
+    "question": "Which statement best evaluates the student's claim using the information provided?",
+    "choices": [
+      "A. The claim is incorrect, because Earth is actually farthest from the Sun during Northern Hemisphere summer; the seasons are caused by the tilt of Earth's axis.",
+      "B. The claim is correct, because the 5 million km difference in distance is large enough to cause the seasons.",
+      "C. The claim cannot be evaluated, because the table does not give temperatures for each month.",
+      "D. The claim is correct for the Northern Hemisphere but incorrect for the Southern Hemisphere."
+    ],
+    "answer": "A",
+    "why": "The table shows Earth is at its farthest point from the Sun in early July, which is in the middle of Northern Hemisphere summer. That directly contradicts the student's claim. The information provided also gives the real cause: in those months the Northern Hemisphere is tilted toward the Sun, so sunlight strikes it more directly and days are longer.",
+    "howToFind": "1. Restate the claim as a testable prediction: if the claim were true, Earth would be CLOSEST to the Sun during June, July, and August.\n2. Check that prediction against the table. Early July is listed as the FARTHEST point, 152 million km. Early January, which is Northern Hemisphere winter, is the closest point.\n3. The data contradict the claim, so any choice beginning with 'the claim is correct' is dead. Eliminate B and D.\n4. Now choose between A and C. Choice C says the claim cannot be evaluated, but you just evaluated it using the distance table, so C is false.\n5. Choice A also supplies the real cause, and the last line of the stimulus supports it: the Northern Hemisphere is tilted toward the Sun during those months.\n6. Choice A.\n7. Memorise the fact behind this, because it is tested repeatedly: seasons come from axial tilt, not from distance.",
+    "trap": "Choice D. It sounds sophisticated because the hemispheres really do have opposite seasons. But the claim is about WHY, and the distance explanation fails for both hemispheres equally. Watch for answers that accept a wrong mechanism while adding a true-sounding qualification."
+  },
+  {
+    "id": "SCIENCE-040",
+    "topic": "Human impact and evaluating a conclusion",
+    "difficulty": "medium",
+    "stimulus": "A city introduced a vehicle emissions-control rule in 2017. The table shows the number of registered vehicles in the city and the average annual concentration of fine particulate pollution (PM2.5) measured at the city's monitoring stations.\n\n| Year | Registered vehicles (thousands) | Average PM2.5 (micrograms per cubic metre) |\n|------|---------------------------------|--------------------------------------------|\n| 2016 | 210                             | 34                                         |\n| 2018 | 224                             | 29                                         |\n| 2020 | 238                             | 24                                         |\n| 2022 | 251                             | 21                                         |\n| 2024 | 265                             | 18                                         |",
+    "question": "Which conclusion is best supported by the data in the table?",
+    "choices": [
+      "A. The emissions-control rule eliminated PM2.5 pollution in the city.",
+      "B. PM2.5 levels fell because the number of vehicles in the city decreased.",
+      "C. Average PM2.5 concentration decreased even though the number of registered vehicles increased.",
+      "D. Average PM2.5 concentration will reach 0 micrograms per cubic metre by 2030."
+    ],
+    "answer": "C",
+    "why": "The vehicle column rises from 210 thousand to 265 thousand while the PM2.5 column falls from 34 to 18 micrograms per cubic metre. Choice C states exactly that pattern without adding a cause or a prediction, so it is the only conclusion the table itself supports.",
+    "howToFind": "1. Read each column separately and write down its direction.\n   Registered vehicles: 210, 224, 238, 251, 265. Increasing.\n   PM2.5: 34, 29, 24, 21, 18. Decreasing.\n2. Your honest one-sentence summary is 'vehicles up, pollution down.' Look for the choice that says only that. Choice C.\n3. Run the elimination filters on the rest:\n   A uses 'eliminated,' an absolute. The final row still reads 18, which is not zero. Eliminate.\n   B says the number of vehicles decreased, which is the direct opposite of the vehicles column. Always check the direction. Eliminate.\n   D predicts a value for 2030, a year not in the table, and predicts zero, which nothing in the data supports. Eliminate.\n4. Choice C.\n5. Note what the table does NOT prove: it does not prove the rule caused the drop, because no comparison city without the rule is given. Any choice naming a cause would be unsupported.",
+    "trap": "Choice A. The rule was introduced and pollution did fall, so people credit the rule and accept the word 'eliminated' without checking it. Two errors in one: an absolute word the data contradict (18 is not zero), and a causal claim the table cannot support without a control city."
+  }
+]
