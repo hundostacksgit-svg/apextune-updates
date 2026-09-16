@@ -2,8 +2,6 @@
 
 Everything on all four GED tests, the cheat sheets, a bank of worked practice questions, and the method for finding the answer to anything they ask.
 
-**The interactive version, with the drillable question bank, is at [`ged/index.html`](../ged/index.html)** (live: <https://hundostacksgit-svg.github.io/apextune-updates/ged/>).
-
 Pass mark is **145 on each subject, out of 100-200**. There is no averaging: 165 on three and 140 on the fourth is not a pass.
 
 
@@ -1576,10 +1574,6 @@ Ranked by points-per-hour-of-study. Do them strictly in this order and stop wher
 
 **The night before:** do one timed 46-question practice set, score it, and then spend the remaining time **only** on the categories you missed in items 1–5 above. Do not learn a new topic in the last 12 hours — convert near-misses into hits instead.
 
-### Practice bank
-
-55 questions for this subject live in [`ged/src/math-questions.json`](../ged/src/math-questions.json) and are drillable in the interactive guide.
-
 
 ---
 
@@ -1935,10 +1929,6 @@ Sit one 60-minute block of about 29 items with a real clock, no pausing. You are
 **What to skip if you are short on time:** comparing-two-passages technique (4%, and the general reading method covers it), text-structure terminology beyond recognising compare-contrast and cause-effect, capitalisation edge cases beyond titles and regions, and drag-and-drop mechanics — they are rare and the underlying skill is one you are already drilling.
 
 **The target, one more time:** about 30 of 46 items correct plus a 4 of 6 essay puts you over 145. You can miss 16 items and pass.
-
-### Practice bank
-
-45 questions for this subject live in [`ged/src/rla-questions.json`](../ged/src/rla-questions.json) and are drillable in the interactive guide.
 
 
 ---
@@ -2965,10 +2955,6 @@ Skip memorising the EM spectrum in detail, star life cycles beyond "fusion power
 - Work 10 mixed practice questions, timed at 2 minutes each, to set your internal clock.
 - Do not learn anything new. Sleep.
 
-### Practice bank
-
-40 questions for this subject live in [`ged/src/science-questions.json`](../ged/src/science-questions.json) and are drillable in the interactive guide.
-
 
 ---
 
@@ -3711,10 +3697,6 @@ Read only three things: the three-branch/checks table, the amendments table, and
 `HOUSE money+impeach | SENATE confirm+treaties+try | 2/3 override | 15 race 19 sex 24 poll 26 age | FISCAL=Congress tax/spend | MONETARY=Fed rates | demand↑→price↑ | supply↑→price↓ | unemp = unemployed ÷ labor force`
 
 That takes 45 seconds and it converts memory into something you can look at while your hands are shaking.
-
-### Practice bank
-
-40 questions for this subject live in [`ged/src/social-questions.json`](../ged/src/social-questions.json) and are drillable in the interactive guide.
 
 
 ---

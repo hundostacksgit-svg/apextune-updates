@@ -227,182 +227,236 @@ def parse_list(lines, start):
 # page template
 # --------------------------------------------------------------------------
 
-PAGE = r"""<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>GED Study Guide &mdash; pass it first try</title>
-<meta name="description" content="A complete GED study guide: what is on all four tests, the cheat sheets, __QCOUNT__ practice questions with worked answers, and how to find the answer to anything they ask.">
-<meta name="color-scheme" content="light dark">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#127891;</text></svg>">
-<style>
+FONTS = (
+    '<link rel="preconnect" href="https://fonts.googleapis.com">'
+    '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
+    '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?'
+    "family=Archivo:wght@500;600;700&"
+    "family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&"
+    "family=IBM+Plex+Mono:wght@500&display=swap\">"
+)
+
+STYLE = r"""<style>
+/* Exam blue-book: cool paper, flat indigo, semantics kept separate from the accent. */
 :root{
-  --bg:#fbfaf8; --panel:#fff; --ink:#15181d; --dim:#5c6370; --line:#e4e2dd;
-  --accent:#1f6feb; --accent-ink:#fff; --ok:#137a3e; --okbg:#e7f6ec;
-  --bad:#b42318; --badbg:#fdeceb; --warn:#8a5a00; --warnbg:#fdf3e2;
-  --mark:#fff3b0; --radius:12px;
-  --safe-t:env(safe-area-inset-top,0px); --safe-b:env(safe-area-inset-bottom,0px);
+  --paper:#f6f7f9; --panel:#fff; --sunk:#eef0f4;
+  --ink:#131820; --dim:#5a6472; --faint:#8b93a1; --line:#dfe3ea;
+  --accent:#2d4ea8; --accent-ink:#fff; --accent-soft:#e8edf9;
+  --ok:#0f7a4a; --ok-bg:#e6f4ec; --bad:#b3261e; --bad-bg:#fceceb;
+  --warn:#8a5a00; --warn-bg:#fdf4e3;
+  --display:'Archivo',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --body:'Source Serif 4',Georgia,'Times New Roman',serif;
+  --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:10px;
 }
 @media (prefers-color-scheme:dark){
-  :root{
-    --bg:#101215; --panel:#171a1f; --ink:#e8eaed; --dim:#9aa3b0; --line:#272b32;
-    --accent:#539bf5; --accent-ink:#06121f; --ok:#57c98b; --okbg:#122a1d;
-    --bad:#ff8b80; --badbg:#2d1614; --warn:#e3b341; --warnbg:#2a2113;
-    --mark:#4a4110;
+  :root:not([data-theme="light"]){
+    --paper:#0f1218; --panel:#171c24; --sunk:#12161d;
+    --ink:#e6e9ee; --dim:#98a2b3; --faint:#6b7585; --line:#262d38;
+    --accent:#7d9cf0; --accent-ink:#0c1220; --accent-soft:#1a2235;
+    --ok:#4ec98a; --ok-bg:#11291e; --bad:#ff8f84; --bad-bg:#2b1513;
+    --warn:#e0b341; --warn-bg:#271f10;
   }
+}
+:root[data-theme="dark"]{
+  --paper:#0f1218; --panel:#171c24; --sunk:#12161d;
+  --ink:#e6e9ee; --dim:#98a2b3; --faint:#6b7585; --line:#262d38;
+  --accent:#7d9cf0; --accent-ink:#0c1220; --accent-soft:#1a2235;
+  --ok:#4ec98a; --ok-bg:#11291e; --bad:#ff8f84; --bad-bg:#2b1513;
+  --warn:#e0b341; --warn-bg:#271f10;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
-body{margin:0;background:var(--bg);color:var(--ink);
-  font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
-  padding-bottom:calc(24px + var(--safe-b))}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font:400 17px/1.66 var(--body);
+  padding-bottom:calc(30px + env(safe-area-inset-bottom,0px))}
 img{max-width:100%}
 [hidden]{display:none!important}
 a{color:var(--accent)}
-code{font:0.88em/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-  background:color-mix(in srgb,var(--ink) 8%,transparent);padding:.12em .36em;border-radius:5px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+code,.mono{font-family:var(--mono);font-size:.86em}
+code{background:var(--sunk);padding:.14em .4em;border-radius:5px;border:1px solid var(--line)}
 
-header.top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 92%,transparent);
-  backdrop-filter:blur(10px);border-bottom:1px solid var(--line);
-  padding-top:var(--safe-t)}
-.bar{max-width:940px;margin:0 auto;padding:10px 16px 0;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-.bar h1{font-size:17px;margin:0;letter-spacing:-.01em}
-.bar .sub{color:var(--dim);font-size:13px}
-nav.tabs{max-width:940px;margin:0 auto;padding:8px 8px 0;display:flex;gap:2px;overflow-x:auto;
-  scrollbar-width:none}
+/* ---- masthead ---- */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;
+  background:color-mix(in srgb,var(--paper) 93%,transparent);
+  backdrop-filter:saturate(1.6) blur(10px);border-bottom:1px solid var(--line)}
+.bar{max-width:1000px;margin:0 auto;padding:11px 20px 0;
+  display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.bar h1{font:700 17px/1.2 var(--display);margin:0;letter-spacing:-.015em}
+.bar .band{font-family:var(--mono);font-size:11.5px;color:var(--dim);
+  border:1px solid var(--line);border-radius:999px;padding:3px 9px;background:var(--panel)}
+nav.tabs{max-width:1000px;margin:0 auto;padding:9px 12px 0;display:flex;gap:1px;
+  overflow-x:auto;scrollbar-width:none}
 nav.tabs::-webkit-scrollbar{display:none}
-nav.tabs button{flex:0 0 auto;background:none;border:0;border-bottom:2px solid transparent;color:var(--dim);
-  font:inherit;font-size:14px;font-weight:600;padding:8px 12px 9px;cursor:pointer;white-space:nowrap;border-radius:8px 8px 0 0}
-nav.tabs button:hover{color:var(--ink);background:color-mix(in srgb,var(--ink) 5%,transparent)}
+nav.tabs button{flex:0 0 auto;background:none;border:0;border-bottom:2px solid transparent;
+  color:var(--dim);font:600 13.5px/1 var(--display);letter-spacing:.01em;
+  padding:9px 13px 10px;cursor:pointer;white-space:nowrap;border-radius:7px 7px 0 0}
+nav.tabs button:hover{color:var(--ink);background:var(--sunk)}
 nav.tabs button[aria-selected=true]{color:var(--accent);border-bottom-color:var(--accent)}
 
-main{max-width:940px;margin:0 auto;padding:0 16px}
-section.chapter{padding:22px 0 60px}
-.chaphead h2.title{font-size:27px;line-height:1.2;margin:.2em 0 .15em;letter-spacing:-.02em}
-.chaphead p.sub{color:var(--dim);margin:0 0 18px}
+main{max-width:1000px;margin:0 auto;padding:0 20px}
+section.chapter{padding:26px 0 64px}
+.chaphead{max-width:68ch}
+.chaphead .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--faint);margin:0 0 7px}
+.chaphead h2.title{font:700 clamp(29px,6vw,40px)/1.08 var(--display);
+  margin:0 0 .18em;letter-spacing:-.028em;text-wrap:balance}
+.chaphead p.sub{color:var(--dim);margin:0 0 22px;font-size:17.5px;line-height:1.5}
 
-.toc{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin:0 0 26px}
-.toc b{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim)}
-.toc ol{margin:8px 0 0;padding-left:20px;columns:2;column-gap:22px}
-@media(max-width:620px){.toc ol{columns:1}}
-.toc li{margin:3px 0}
-.toc a{text-decoration:none}
-.toc a:hover{text-decoration:underline}
+.toc{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+  padding:14px 17px;margin:0 0 30px;max-width:68ch}
+.toc b{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--faint);font-weight:500}
+.toc ol{margin:9px 0 0;padding-left:0;list-style:none;counter-reset:t;
+  columns:2;column-gap:26px}
+@media(max-width:640px){.toc ol{columns:1}}
+.toc li{margin:4px 0;counter-increment:t;break-inside:avoid;
+  font-family:var(--display);font-size:14px}
+.toc li::before{content:counter(t,decimal-leading-zero);font-family:var(--mono);
+  font-size:10.5px;color:var(--faint);margin-right:9px}
+.toc a{text-decoration:none;color:var(--ink)}
+.toc a:hover{color:var(--accent);text-decoration:underline}
 
-.prose h2{font-size:21px;margin:2.1em 0 .5em;padding-top:.3em;letter-spacing:-.015em;scroll-margin-top:110px;
-  border-top:1px solid var(--line)}
-.prose h2:first-child{border-top:0;margin-top:.4em}
-.prose h3{font-size:17px;margin:1.6em 0 .4em;scroll-margin-top:110px}
-.prose h4{font-size:15px;margin:1.3em 0 .3em;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
-.prose{overflow-wrap:break-word}
-.prose code,.prose a,.stimulus,.explain .how{overflow-wrap:anywhere;word-break:break-word}
-.prose p{margin:.7em 0}
-.prose ul,.prose ol{margin:.6em 0;padding-left:24px}
-.prose li{margin:.3em 0}
-.prose li>ul,.prose li>ol{margin:.25em 0}
-.prose blockquote{margin:1em 0;padding:.6em 14px;border-left:3px solid var(--accent);
-  background:var(--panel);border-radius:0 8px 8px 0;color:var(--ink)}
-.prose strong{font-weight:680}
+/* ---- long-form prose ---- */
+.prose{max-width:68ch;overflow-wrap:break-word}
+.prose code,.prose a{overflow-wrap:anywhere;word-break:break-word}
+.prose h2{font:600 25px/1.2 var(--display);letter-spacing:-.02em;
+  margin:2.3em 0 .55em;padding-top:1.1em;border-top:1px solid var(--line);
+  scroll-margin-top:120px;text-wrap:balance}
+.prose h2:first-child{border-top:0;padding-top:0;margin-top:.3em}
+.prose h3{font:600 18.5px/1.3 var(--display);margin:1.9em 0 .45em;
+  scroll-margin-top:120px;letter-spacing:-.01em}
+.prose h4{font:500 12px/1.4 var(--mono);margin:1.5em 0 .35em;color:var(--faint);
+  text-transform:uppercase;letter-spacing:.12em}
+.prose p{margin:.85em 0}
+.prose ul,.prose ol{margin:.75em 0;padding-left:26px}
+.prose li{margin:.38em 0}
+.prose li>ul,.prose li>ol{margin:.3em 0}
+.prose strong{font-weight:600;color:var(--ink)}
+.prose blockquote{margin:1.25em 0;padding:.85em 18px;background:var(--accent-soft);
+  border-left:3px solid var(--accent);border-radius:0 var(--r) var(--r) 0}
+.prose blockquote p:first-child{margin-top:0}
+.prose blockquote p:last-child{margin-bottom:0}
+.prose hr{border:0;border-top:1px solid var(--line);margin:2em 0}
 .tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%;width:100%;
-  margin:1em 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--panel)}
-table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:0}
-th,td{min-width:74px}
-th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
-th{background:color-mix(in srgb,var(--ink) 4%,transparent);font-size:12.5px;text-transform:uppercase;
-  letter-spacing:.05em;color:var(--dim);font-weight:700}
+  margin:1.3em 0;border:1px solid var(--line);border-radius:var(--r);background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:0;
+  font:400 15px/1.5 var(--display);font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);
+  vertical-align:top;min-width:74px}
+th{background:var(--sunk);font:500 10.5px/1.4 var(--mono);text-transform:uppercase;
+  letter-spacing:.11em;color:var(--dim)}
 tbody tr:last-child td{border-bottom:0}
 
-.btn{display:inline-flex;align-items:center;gap:7px;background:var(--accent);color:var(--accent-ink);
-  border:0;border-radius:10px;font:inherit;font-weight:650;font-size:15px;padding:11px 18px;cursor:pointer}
-.btn:hover{filter:brightness(1.08)}
-.btn.ghost{background:var(--panel);color:var(--ink);border:1px solid var(--line)}
+/* ---- buttons ---- */
+.btn{display:inline-flex;align-items:center;gap:7px;background:var(--accent);
+  color:var(--accent-ink);border:1px solid transparent;border-radius:9px;
+  font:600 14.5px/1 var(--display);padding:12px 18px;cursor:pointer}
+.btn:hover{filter:brightness(1.09)}
+.btn.ghost{background:var(--panel);color:var(--ink);border-color:var(--line)}
+.btn.ghost:hover{background:var(--sunk);filter:none}
 .btn:disabled{opacity:.45;cursor:default}
 
-.drillbar{position:sticky;bottom:0;z-index:15;margin:30px -16px 0;padding:12px 16px calc(12px + var(--safe-b));
-  background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(10px);
-  border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.drillbar .count{color:var(--dim);font-size:13.5px}
+.drillbar{position:sticky;bottom:0;z-index:15;margin:34px -20px 0;
+  padding:13px 20px calc(13px + env(safe-area-inset-bottom,0px));
+  background:color-mix(in srgb,var(--paper) 93%,transparent);
+  backdrop-filter:saturate(1.6) blur(10px);border-top:1px solid var(--line);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.drillbar select{font:500 13.5px/1 var(--display);padding:10px 11px;border-radius:9px;
+  border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+.drillbar .count{font-family:var(--mono);font-size:12px;color:var(--faint)}
+</style>"""
 
-/* ---------- drill ---------- */
-.modal{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column}
-.modal header{border-bottom:1px solid var(--line);padding:calc(10px + var(--safe-t)) 16px 10px;
+DRILL_STYLE = r"""<style>
+/* ---- drill: styled like an exam screen ---- */
+.modal{position:fixed;inset:0;z-index:50;background:var(--paper);display:flex;flex-direction:column}
+.modal header{border-bottom:1px solid var(--line);background:var(--panel);
+  padding:calc(11px + env(safe-area-inset-top,0px)) 16px 11px;
   display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.modal header .who{font-weight:680;font-size:15px}
-.modal header .score{margin-left:auto;font-size:13.5px;color:var(--dim);font-variant-numeric:tabular-nums}
-.progress{height:4px;background:var(--line)}
-.progress i{display:block;height:100%;background:var(--accent);transition:width .2s}
-.modal .body{flex:1;overflow-y:auto;padding:18px 16px calc(28px + var(--safe-b));-webkit-overflow-scrolling:touch}
-.qwrap{max-width:760px;margin:0 auto}
-.meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-.chip{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;color:var(--dim);
-  border:1px solid var(--line);border-radius:999px;padding:3px 10px;background:var(--panel)}
-.chip.hard{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 40%,var(--line))}
-.chip.medium{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,var(--line))}
-.chip.easy{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,var(--line))}
-.stimulus{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);
-  border-radius:0 var(--radius) var(--radius) 0;padding:13px 15px;margin:0 0 16px;
-  white-space:pre-wrap;font-size:14.6px;line-height:1.6;max-height:44vh;overflow-y:auto}
-.qtext{font-size:18px;line-height:1.45;font-weight:600;margin:0 0 16px}
+.modal header .who{font:600 15px/1 var(--display)}
+.modal header .score{margin-left:auto;font-family:var(--mono);font-size:12.5px;
+  color:var(--dim);font-variant-numeric:tabular-nums}
+.progress{height:3px;background:var(--line)}
+.progress i{display:block;height:100%;background:var(--accent);transition:width .25s ease}
+.modal .body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:20px 16px calc(34px + env(safe-area-inset-bottom,0px))}
+.qwrap{max-width:66ch;margin:0 auto}
+.meta{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 14px}
+.chip{font:500 10.5px/1 var(--mono);text-transform:uppercase;letter-spacing:.1em;
+  color:var(--dim);border:1px solid var(--line);border-radius:999px;
+  padding:5px 10px;background:var(--panel)}
+.chip.hard{color:var(--bad);border-color:color-mix(in srgb,var(--bad) 38%,var(--line))}
+.chip.medium{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 38%,var(--line))}
+.chip.easy{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 38%,var(--line))}
+.stimulus{background:var(--panel);border:1px solid var(--line);
+  border-left:3px solid var(--accent);border-radius:0 var(--r) var(--r) 0;
+  padding:15px 17px;margin:0 0 18px;white-space:pre-wrap;
+  font:400 15.5px/1.62 var(--body);max-height:42vh;overflow-y:auto;
+  overflow-wrap:anywhere;word-break:break-word}
+.qtext{font:600 19.5px/1.38 var(--display);letter-spacing:-.012em;margin:0 0 18px;text-wrap:balance}
 .choices{display:flex;flex-direction:column;gap:9px}
-.choice{display:flex;gap:11px;align-items:flex-start;text-align:left;width:100%;
-  background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:12px 14px;
-  font:inherit;font-size:15.5px;color:var(--ink);cursor:pointer;line-height:1.45}
-.choice:hover:not(:disabled){border-color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,var(--panel))}
-.choice .k{flex:0 0 22px;height:22px;border-radius:6px;background:color-mix(in srgb,var(--ink) 9%,transparent);
-  display:grid;place-items:center;font-size:12.5px;font-weight:800;margin-top:1px}
-.choice.correct{border-color:var(--ok);background:var(--okbg)}
-.choice.correct .k{background:var(--ok);color:#fff}
-.choice.wrong{border-color:var(--bad);background:var(--badbg)}
-.choice.wrong .k{background:var(--bad);color:#fff}
+.choice{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:13px 15px;font:400 16px/1.46 var(--body);color:var(--ink);cursor:pointer}
+.choice:hover:not(:disabled){border-color:var(--accent);background:var(--accent-soft)}
+.choice .k{flex:0 0 23px;height:23px;border-radius:6px;background:var(--sunk);
+  border:1px solid var(--line);display:grid;place-items:center;
+  font:500 11.5px/1 var(--mono);margin-top:1px}
+.choice.correct{border-color:var(--ok);background:var(--ok-bg)}
+.choice.correct .k{background:var(--ok);color:#fff;border-color:var(--ok)}
+.choice.wrong{border-color:var(--bad);background:var(--bad-bg)}
+.choice.wrong .k{background:var(--bad);color:#fff;border-color:var(--bad)}
 .choice:disabled{cursor:default;opacity:1}
 .numeric{display:flex;gap:9px;flex-wrap:wrap}
-.numeric input{flex:1 1 180px;font:inherit;font-size:17px;padding:12px 14px;border-radius:11px;
-  border:1px solid var(--line);background:var(--panel);color:var(--ink)}
-.verdict{margin:18px 0 0;border-radius:var(--radius);padding:13px 15px;font-weight:650}
-.verdict.good{background:var(--okbg);color:var(--ok)}
-.verdict.bad{background:var(--badbg);color:var(--bad)}
-.explain{margin:14px 0 0;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
-.explain section{padding:13px 15px;border-bottom:1px solid var(--line)}
+.numeric input{flex:1 1 180px;font:500 18px/1 var(--mono);padding:13px 15px;
+  border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+.verdict{margin:20px 0 0;border-radius:var(--r);padding:13px 16px;
+  font:600 15.5px/1.4 var(--display)}
+.verdict.good{background:var(--ok-bg);color:var(--ok)}
+.verdict.bad{background:var(--bad-bg);color:var(--bad)}
+.explain{margin:15px 0 0;background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--r);overflow:hidden}
+.explain section{padding:14px 16px;border-bottom:1px solid var(--line)}
 .explain section:last-child{border-bottom:0}
-.explain h5{margin:0 0 6px;font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--dim)}
-.explain .how{white-space:pre-wrap;font-size:14.8px;line-height:1.66}
-.explain .trap{background:var(--warnbg)}
+.explain h5{margin:0 0 7px;font:500 10.5px/1 var(--mono);text-transform:uppercase;
+  letter-spacing:.12em;color:var(--faint)}
+.explain div{font:400 15.5px/1.62 var(--body);overflow-wrap:anywhere}
+.explain .how{white-space:pre-wrap;line-height:1.72}
+.explain .trap{background:var(--warn-bg)}
 .explain .trap h5{color:var(--warn)}
-.navrow{display:flex;gap:10px;margin:20px 0 0;align-items:center;flex-wrap:wrap}
-.summary{max-width:620px;margin:8vh auto 0;text-align:center}
-.summary .big{font-size:56px;font-weight:800;letter-spacing:-.03em;line-height:1;margin:0 0 6px;
+.navrow{display:flex;gap:10px;margin:22px 0 0;align-items:center;flex-wrap:wrap}
+.summary{max-width:60ch;margin:7vh auto 0;text-align:center}
+.summary .big{font:700 62px/1 var(--display);letter-spacing:-.04em;margin:0 0 8px;
   font-variant-numeric:tabular-nums}
-.summary .verdictline{font-size:17px;font-weight:650;margin:0 0 6px}
-.summary p.note{color:var(--dim);margin:0 0 24px}
-.missed{text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
-  padding:6px 0;margin:0 0 20px;max-height:40vh;overflow-y:auto}
-.missed div{padding:9px 15px;border-bottom:1px solid var(--line);font-size:14.5px}
+.summary .verdictline{font:600 18px/1.3 var(--display);margin:0 0 8px}
+.summary p.note{color:var(--dim);margin:0 0 26px;font-size:16px}
+.missed{text-align:left;background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--r);margin:0 0 22px;max-height:38vh;overflow-y:auto}
+.missed div{padding:11px 16px;border-bottom:1px solid var(--line);font-size:15px}
 .missed div:last-child{border-bottom:0}
-.missed b{color:var(--bad)}
+.missed b{font-family:var(--display);font-size:13px;color:var(--bad);
+  display:block;margin-bottom:2px}
 
-.setup{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:0 0 16px}
-.setup label{font-size:13px;color:var(--dim);font-weight:650}
-.setup select{font:inherit;font-size:14px;padding:8px 10px;border-radius:9px;border:1px solid var(--line);
-  background:var(--panel);color:var(--ink)}
-
-footer{max-width:940px;margin:0 auto;padding:26px 16px calc(40px + var(--safe-b));
-  border-top:1px solid var(--line);color:var(--dim);font-size:13.5px}
+footer{max-width:1000px;margin:0 auto;
+  padding:28px 20px calc(44px + env(safe-area-inset-bottom,0px));
+  border-top:1px solid var(--line);color:var(--dim);font-size:15px;max-width:74ch}
+footer p{margin:.6em 0}
 
 @media print{
   header.top,nav.tabs,.drillbar,.modal{display:none!important}
   section.chapter{display:block!important;page-break-after:always}
-  body{background:#fff;color:#000;font-size:11pt}
+  body{background:#fff;color:#000;font-size:10.5pt}
   .tablewrap,blockquote{break-inside:avoid}
 }
-</style>
-</head>
-<body>
+</style>"""
 
+BODY = r"""
 <header class="top">
   <div class="bar">
     <h1>GED Study Guide</h1>
-    <span class="sub">__QCOUNT__ worked practice questions &middot; pass mark 145</span>
+    <span class="band">__QCOUNT__ worked questions &middot; pass = 145</span>
   </div>
   <nav class="tabs" role="tablist">__NAV__</nav>
 </header>
@@ -410,15 +464,17 @@ footer{max-width:940px;margin:0 auto;padding:26px 16px calc(40px + var(--safe-b)
 <main>__CHAPTERS__</main>
 
 <footer>
-  <p>Built __BUILT__. Every practice answer here was worked a second time by an independent
-  checker, but the only scores that count come from <a href="https://ged.com" target="_blank" rel="noopener">ged.com</a>
-  &mdash; confirm price, eligibility and scheduling for your own state there.</p>
+  <p>Every practice answer here was worked a second time by an independent checker, and a
+  sample from each subject verified by hand. The only scores that count come from
+  <a href="https://ged.com" target="_blank" rel="noopener">ged.com</a> &mdash; confirm price,
+  eligibility and scheduling for New Jersey there before you pay. The checkout screen is the
+  only price that binds.</p>
   <p>Your drill history is saved in this browser only. Nothing is uploaded.</p>
 </footer>
 
 <div class="modal" id="drill" hidden>
   <header>
-    <button class="btn ghost" id="d-quit" style="padding:7px 13px;font-size:14px">&larr; Back</button>
+    <button class="btn ghost" id="d-quit" style="padding:8px 13px;font-size:13.5px">&larr; Back</button>
     <span class="who" id="d-who"></span>
     <span class="score" id="d-score"></span>
   </header>
@@ -427,27 +483,27 @@ footer{max-width:940px;margin:0 auto;padding:26px 16px calc(40px + var(--safe-b)
 </div>
 
 <script type="application/json" id="bank">__BANK__</script>
+"""
+
+SCRIPT = r"""
 <script>
 (function(){
 "use strict";
 var BANK = JSON.parse(document.getElementById('bank').textContent);
 var LS = 'ged-drill-v1';
-
 function store(){ try { return JSON.parse(localStorage.getItem(LS)) || {}; } catch(e){ return {}; } }
 function save(o){ try { localStorage.setItem(LS, JSON.stringify(o)); } catch(e){} }
 
-/* ---------- tabs ---------- */
 var tabs = [].slice.call(document.querySelectorAll('nav.tabs button'));
 var panes = [].slice.call(document.querySelectorAll('section.chapter'));
 function show(key, push){
   tabs.forEach(function(t){ t.setAttribute('aria-selected', String(t.dataset.key === key)); });
   panes.forEach(function(p){ p.hidden = p.dataset.key !== key; });
-  if (push !== false && location.hash.slice(1).split('/')[0] !== key) history.replaceState(null,'','#'+key);
+  if (push !== false) { try { history.replaceState(null,'','#'+key); } catch(e){} }
   window.scrollTo(0,0);
 }
 tabs.forEach(function(t){ t.addEventListener('click', function(){ show(t.dataset.key); }); });
 
-/* ---------- drill engine ---------- */
 var modal = document.getElementById('drill');
 var body = document.getElementById('d-body');
 var who = document.getElementById('d-who');
@@ -466,8 +522,11 @@ function shuffle(a){
 function esc(s){
   return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
-function letterOf(c){ var m = /^([A-Z])[.)]/.exec(c.trim()); return m ? m[1] : null; }
+function letterOf(c){ var m = /^([A-Z])[.)]/.exec(String(c).trim()); return m ? m[1] : null; }
 function norm(s){ return String(s).trim().toLowerCase().replace(/[\s,$]/g,'').replace(/^\+/,''); }
+function tally(){
+  return (run.i + 1) + ' / ' + run.qs.length + '  ·  ' + run.right + ' right';
+}
 
 function start(key, opts){
   opts = opts || {};
@@ -475,7 +534,7 @@ function start(key, opts){
   if (opts.only) pool = pool.filter(function(q){ return opts.only.indexOf(q.id) >= 0; });
   if (opts.topic && opts.topic !== 'all') pool = pool.filter(function(q){ return q.topic === opts.topic; });
   if (opts.diff && opts.diff !== 'all') pool = pool.filter(function(q){ return q.difficulty === opts.diff; });
-  if (!pool.length) { alert('No questions match that filter.'); return; }
+  if (!pool.length) return;
   pool = shuffle(pool);
   if (opts.limit && opts.limit < pool.length) pool = pool.slice(0, opts.limit);
   run = { qs: pool, i: 0, right: 0, missed: [], label: opts.label || 'Practice', key: key };
@@ -494,7 +553,7 @@ document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !mod
 function render(){
   var q = run.qs[run.i];
   who.textContent = run.label;
-  scoreEl.textContent = (run.i + 1) + ' / ' + run.qs.length + '  ·  ' + run.right + ' right';
+  scoreEl.textContent = tally();
   prog.style.width = (run.i / run.qs.length * 100) + '%';
 
   var h = '<div class="qwrap">';
@@ -507,13 +566,14 @@ function render(){
     h += '<div class="choices">';
     q.choices.forEach(function(c, idx){
       var k = letterOf(c) || String.fromCharCode(65 + idx);
-      var text = c.replace(/^[A-Z][.)]\s*/, '');
-      h += '<button class="choice" data-k="' + k + '"><span class="k">' + k + '</span><span>' + esc(text) + '</span></button>';
+      var text = String(c).replace(/^[A-Z][.)]\s*/, '');
+      h += '<button class="choice" data-k="' + k + '"><span class="k">' + k +
+           '</span><span>' + esc(text) + '</span></button>';
     });
     h += '</div>';
   } else {
-    h += '<div class="numeric"><input id="d-input" inputmode="decimal" autocomplete="off" placeholder="Type your answer">' +
-         '<button class="btn" id="d-check">Check</button></div>';
+    h += '<div class="numeric"><input id="d-input" inputmode="decimal" autocomplete="off" ' +
+         'placeholder="Type your answer"><button class="btn" id="d-check">Check</button></div>';
   }
   h += '<div id="d-after"></div></div>';
   body.innerHTML = h;
@@ -527,41 +587,40 @@ function render(){
     var inp = document.getElementById('d-input');
     chk.addEventListener('click', function(){ answer(inp.value, null); });
     inp.addEventListener('keydown', function(e){ if (e.key === 'Enter') answer(inp.value, null); });
-    inp.focus();
   }
 }
 
 function answer(given, btn){
   var q = run.qs[run.i];
-  var correctKey = String(q.answer).trim();
+  var key = String(q.answer).trim();
   var ok;
   if (q.choices && q.choices.length){
-    ok = String(given).toUpperCase() === correctKey.toUpperCase().charAt(0);
+    ok = String(given).toUpperCase() === key.toUpperCase().charAt(0);
     [].slice.call(body.querySelectorAll('.choice')).forEach(function(b){
       b.disabled = true;
-      if (b.dataset.k === correctKey.toUpperCase().charAt(0)) b.classList.add('correct');
+      if (b.dataset.k === key.toUpperCase().charAt(0)) b.classList.add('correct');
       else if (b === btn) b.classList.add('wrong');
     });
   } else {
-    ok = norm(given) === norm(correctKey);
+    ok = norm(given) === norm(key);
     var inp = document.getElementById('d-input');
     if (inp) inp.disabled = true;
     var chk = document.getElementById('d-check');
     if (chk) chk.disabled = true;
   }
   if (ok) run.right++; else run.missed.push(q);
-  scoreEl.textContent = (run.i + 1) + ' / ' + run.qs.length + '  \u00b7  ' + run.right + ' right';
+  scoreEl.textContent = tally();
 
   var db = store();
-  db[q.id] = { ok: ok, at: Date.now() };
+  db[q.id] = { ok: ok };
   save(db);
 
   var full = (q.choices && q.choices.length)
-    ? (q.choices.filter(function(c){ return letterOf(c) === correctKey.toUpperCase().charAt(0); })[0] || correctKey)
-    : correctKey;
+    ? (q.choices.filter(function(c){ return letterOf(c) === key.toUpperCase().charAt(0); })[0] || key)
+    : key;
 
   var h = '<div class="verdict ' + (ok ? 'good' : 'bad') + '">' +
-          (ok ? '✓ Correct.' : '✗ Not this time. The answer is ' + esc(full)) + '</div>';
+          (ok ? '✓ Correct.' : '✗ Not this time — the answer is ' + esc(full)) + '</div>';
   h += '<div class="explain">';
   h += '<section><h5>Why</h5><div>' + esc(q.why) + '</div></section>';
   h += '<section><h5>How to find it on test day</h5><div class="how">' + esc(q.howToFind) + '</div></section>';
@@ -573,7 +632,6 @@ function answer(given, btn){
   document.getElementById('d-after').innerHTML = h;
   document.getElementById('d-next').addEventListener('click', next);
   document.getElementById('d-skip').addEventListener('click', quit);
-  document.getElementById('d-next').scrollIntoView({block:'nearest', behavior:'smooth'});
 }
 
 function next(){
@@ -586,7 +644,7 @@ function finish(){
   prog.style.width = '100%';
   scoreEl.textContent = run.right + ' / ' + run.qs.length;
   var verdict, note;
-  if (pct >= 75){ verdict = 'On track to pass.'; note = 'Hold this and keep drilling the topics you missed.'; }
+  if (pct >= 75){ verdict = 'On track to pass.'; note = 'Hold this, and keep drilling whatever you missed.'; }
   else if (pct >= 60){ verdict = 'Close.'; note = 'Roughly the 145 borderline. The misses below are exactly what to study next.'; }
   else { verdict = 'Not yet.'; note = 'Read the chapter for the topics below, then drill them again. This is fixable in days, not months.'; }
 
@@ -596,11 +654,10 @@ function finish(){
   if (run.missed.length){
     h += '<div class="missed">';
     run.missed.forEach(function(q){
-      h += '<div><b>' + esc(q.topic) + '</b> &mdash; ' + esc(q.question.slice(0, 110)) +
-           (q.question.length > 110 ? '…' : '') + '</div>';
+      h += '<div><b>' + esc(q.topic) + '</b>' + esc(q.question.slice(0, 120)) +
+           (q.question.length > 120 ? '…' : '') + '</div>';
     });
-    h += '</div>';
-    h += '<button class="btn" id="d-again">Drill the ' + run.missed.length + ' I missed</button> ';
+    h += '</div><button class="btn" id="d-again">Drill the ' + run.missed.length + ' I missed</button> ';
   }
   h += '<button class="btn ghost" id="d-done">Done</button></div>';
   body.innerHTML = h;
@@ -614,15 +671,13 @@ function finish(){
   document.getElementById('d-done').addEventListener('click', quit);
 }
 
-/* ---------- wire up the per-chapter drill bars ---------- */
 [].slice.call(document.querySelectorAll('[data-drill]')).forEach(function(el){
   el.addEventListener('click', function(){
-    var key = el.dataset.drill;
     var wrap = el.closest('.drillbar');
     var topic = wrap ? wrap.querySelector('[data-topic]') : null;
     var diff = wrap ? wrap.querySelector('[data-diff]') : null;
     var lim = wrap ? wrap.querySelector('[data-limit]') : null;
-    start(key, {
+    start(el.dataset.drill, {
       label: el.dataset.label || 'Practice',
       topic: topic ? topic.value : 'all',
       diff: diff ? diff.value : 'all',
@@ -631,18 +686,19 @@ function finish(){
   });
 });
 
-/* ---------- open on the right tab ---------- */
-var want = location.hash.slice(1).split('/')[0];
+var want = (location.hash || '').slice(1).split('/')[0];
 show(tabs.some(function(t){ return t.dataset.key === want; }) ? want : tabs[0].dataset.key, false);
 window.addEventListener('hashchange', function(){
-  var k = location.hash.slice(1).split('/')[0];
+  var k = (location.hash || '').slice(1).split('/')[0];
   if (tabs.some(function(t){ return t.dataset.key === k; })) show(k, false);
 });
 })();
 </script>
-</body>
-</html>
 """
+
+TITLE = "Pass the GED First Try"
+BLURB = ("Everything on all four GED tests, the cheat sheets, and __QCOUNT__ practice questions "
+         "that each show how to find the answer — written for a New Jersey test taker.")
 
 
 # --------------------------------------------------------------------------
@@ -663,22 +719,20 @@ def load_questions(key, label):
         if missing:
             print(f"   ~ skipped {key}[{idx}] (missing {', '.join(missing)})")
             continue
-        out.append(
-            {
-                "id": q.get("id") or f"{key.upper()}-{idx:03d}",
-                "subject": key,
-                "subjectLabel": label,
-                "topic": q.get("topic", "General"),
-                "difficulty": (q.get("difficulty") or "medium").lower(),
-                "stimulus": q.get("stimulus", "") or "",
-                "question": q["question"],
-                "choices": q.get("choices") or [],
-                "answer": str(q["answer"]),
-                "why": q["why"],
-                "howToFind": q["howToFind"],
-                "trap": q.get("trap", "") or "",
-            }
-        )
+        out.append({
+            "id": q.get("id") or f"{key.upper()}-{idx:03d}",
+            "subject": key,
+            "subjectLabel": label,
+            "topic": q.get("topic", "General"),
+            "difficulty": (q.get("difficulty") or "medium").lower(),
+            "stimulus": q.get("stimulus", "") or "",
+            "question": q["question"],
+            "choices": q.get("choices") or [],
+            "answer": str(q["answer"]),
+            "why": q["why"],
+            "howToFind": q["howToFind"],
+            "trap": q.get("trap", "") or "",
+        })
     return out
 
 
@@ -690,32 +744,29 @@ def drillbar(key, label, questions):
     sizes = [n for n in (10, 20, 30, 50) if n < len(questions)]
     size_opts = "".join(f'<option value="{n}">{n} questions</option>' for n in sizes)
     size_opts += f'<option value="0">All {len(questions)}</option>'
-    return f"""<div class="drillbar">
-  <button class="btn" data-drill="{key}" data-label="{html.escape(label, True)}">Drill this subject</button>
-  <select data-topic aria-label="Topic"><option value="all">Every topic</option>{opts}</select>
-  <select data-diff aria-label="Difficulty"><option value="all">Any difficulty</option><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select>
-  <select data-limit aria-label="How many">{size_opts}</select>
-  <span class="count">{len(questions)} in the bank</span>
-</div>"""
+    return (
+        '<div class="drillbar">'
+        f'<button class="btn" data-drill="{key}" data-label="{html.escape(label, True)}">Drill this subject</button>'
+        f'<select data-topic aria-label="Topic"><option value="all">Every topic</option>{opts}</select>'
+        '<select data-diff aria-label="Difficulty"><option value="all">Any difficulty</option>'
+        '<option value="easy">Easy</option><option value="medium">Medium</option>'
+        '<option value="hard">Hard</option></select>'
+        f'<select data-limit aria-label="How many">{size_opts}</select>'
+        f'<span class="count">{len(questions)} in the bank</span>'
+        "</div>"
+    )
 
 
-def main():
-    if not SRC.exists():
-        sys.exit(f"!! no sources at {SRC}")
-
-    nav, chapters, bank, md_parts = [], [], [], []
-    md_parts.append(
+def assemble():
+    nav, chapters, bank, md = [], [], [], []
+    md.append(
         "# GED Study Guide\n\n"
-        "Everything on all four GED tests, the cheat sheets, a bank of worked practice questions, "
-        "and the method for finding the answer to anything they ask.\n\n"
-        "**The interactive version, with the drillable question bank, is at "
-        "[`ged/index.html`](../ged/index.html)** "
-        "(live: <https://hundostacksgit-svg.github.io/apextune-updates/ged/>).\n\n"
+        "Everything on all four GED tests, the cheat sheets, a bank of worked practice "
+        "questions, and the method for finding the answer to anything they ask.\n\n"
         "Pass mark is **145 on each subject, out of 100-200**. There is no averaging: "
         "165 on three and 140 on the fourth is not a pass.\n"
     )
-
-    for key, label, sub in CHAPTERS:
+    for n, (key, label, sub) in enumerate(CHAPTERS, 1):
         md_path = SRC / f"{key}-guide.md"
         if not md_path.exists():
             print(f"   ~ no {md_path.name}, skipping chapter")
@@ -724,52 +775,69 @@ def main():
         prose, toc = md_to_html(raw, key)
         qs = load_questions(key, label)
         bank.extend(qs)
-
-        nav.append(
-            f'<button role="tab" data-key="{key}" aria-selected="false">{html.escape(label)}</button>'
-        )
+        nav.append(f'<button role="tab" data-key="{key}" aria-selected="false">{html.escape(label)}</button>')
         toc_html = ""
         if len(toc) > 2:
             items = "".join(f'<li><a href="#{a}">{html.escape(t)}</a></li>' for a, t in toc)
             toc_html = f'<div class="toc"><b>In this chapter</b><ol>{items}</ol></div>'
-
         chapters.append(
             f'<section class="chapter" data-key="{key}" hidden>'
-            f'<div class="chaphead"><h2 class="title">{html.escape(label)}</h2>'
+            f'<div class="chaphead"><p class="eyebrow">Chapter {n:02d}</p>'
+            f'<h2 class="title">{html.escape(label)}</h2>'
             f'<p class="sub">{html.escape(sub)}</p></div>'
-            f"{toc_html}"
-            f'<div class="prose">{prose}</div>'
-            f"{drillbar(key, label, qs)}"
-            f"</section>"
+            f'{toc_html}<div class="prose">{prose}</div>'
+            f"{drillbar(key, label, qs)}</section>"
         )
-
-        md_parts.append(f"\n\n---\n\n# {label}\n\n*{sub}*\n\n{raw}\n")
-        if qs:
-            md_parts.append(
-                f"\n### Practice bank\n\n{len(qs)} questions for this subject live in "
-                f"[`ged/src/{key}-questions.json`](../ged/src/{key}-questions.json) and are "
-                f"drillable in the interactive guide.\n"
-            )
+        md.append(f"\n\n---\n\n# {label}\n\n*{sub}*\n\n{raw}\n")
         print(f"   ✓ {label}: {len(raw.split()):,} words, {len(qs)} questions")
 
     if not chapters:
         sys.exit("!! nothing to build")
 
+    content = (
+        STYLE + DRILL_STYLE
+        + BODY.replace("__NAV__", "".join(nav)).replace("__CHAPTERS__", "\n".join(chapters))
+              .replace("__BANK__", json.dumps(bank, ensure_ascii=False).replace("</", "<\\/"))
+        + SCRIPT
+    ).replace("__QCOUNT__", str(len(bank)))
+    return content, "".join(md), len(bank)
+
+
+def main():
+    if not SRC.exists():
+        sys.exit(f"!! no sources at {SRC}")
+    artifact_out = None
+    if "--artifact" in sys.argv:
+        artifact_out = pathlib.Path(sys.argv[sys.argv.index("--artifact") + 1])
+
+    content, markdown, n = assemble()
+    blurb = BLURB.replace("__QCOUNT__", str(n))
+
+    # standalone: carries its own document shell
     OUT_HTML.parent.mkdir(parents=True, exist_ok=True)
-    page = (
-        PAGE.replace("__NAV__", "".join(nav))
-        .replace("__CHAPTERS__", "\n".join(chapters))
-        .replace("__BANK__", json.dumps(bank, ensure_ascii=False).replace("</", "<\\/"))
-        .replace("__QCOUNT__", str(len(bank)))
-        .replace("__BUILT__", "from the sources in ged/src/")
+    OUT_HTML.write_text(
+        '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
+        '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
+        f"<title>{TITLE}</title>\n"
+        f'<meta name="description" content="{html.escape(blurb, True)}">\n'
+        '<meta name="color-scheme" content="light dark">\n'
+        '<link rel="icon" href="data:image/svg+xml,'
+        "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>"
+        "<text y='.9em' font-size='90'>&#127891;</text></svg>\">\n"
+        f"{FONTS}\n</head>\n<body>\n{content}\n</body>\n</html>\n",
+        encoding="utf-8",
     )
-    OUT_HTML.write_text(page, encoding="utf-8")
+
+    # artifact: the publish skeleton supplies doctype, head and body
+    if artifact_out:
+        artifact_out.parent.mkdir(parents=True, exist_ok=True)
+        artifact_out.write_text(f"<title>{TITLE}</title>\n{FONTS}\n{content}\n", encoding="utf-8")
+        print(f"   {artifact_out}  {artifact_out.stat().st_size/1024:.0f} KB")
 
     OUT_MD.parent.mkdir(parents=True, exist_ok=True)
-    OUT_MD.write_text("".join(md_parts), encoding="utf-8")
-
-    print(f"\n   {OUT_HTML.relative_to(ROOT)}  {len(page)/1024:.0f} KB, {len(bank)} questions")
-    print(f"   {OUT_MD.relative_to(ROOT)}  {len(''.join(md_parts))/1024:.0f} KB")
+    OUT_MD.write_text(markdown, encoding="utf-8")
+    print(f"\n   {OUT_HTML.relative_to(ROOT)}  {OUT_HTML.stat().st_size/1024:.0f} KB, {n} questions")
+    print(f"   {OUT_MD.relative_to(ROOT)}  {OUT_MD.stat().st_size/1024:.0f} KB")
 
 
 if __name__ == "__main__":
