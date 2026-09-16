@@ -1,0 +1,672 @@
+[
+  {
+    "id": "SOCIAL-001",
+    "topic": "Preamble to the Constitution",
+    "difficulty": "easy",
+    "stimulus": "From the Preamble to the United States Constitution, written in 1787:\n\n\"We the People of the United States, in Order to form a more perfect Union, establish Justice, insure domestic Tranquility, provide for the common defence, promote the general Welfare, and secure the Blessings of Liberty to ourselves and our Posterity, do ordain and establish this Constitution for the United States of America.\"",
+    "question": "The opening phrase \"We the People of the United States\" is most often cited as evidence of which principle of American government?",
+    "choices": [
+      "A. Federalism",
+      "B. Popular sovereignty",
+      "C. Separation of powers",
+      "D. Judicial review"
+    ],
+    "answer": "B",
+    "why": "The phrase places the authority to create the government in the citizens rather than in a king, a church, or the state legislatures. That is the definition of popular sovereignty. The rest of the Preamble lists purposes of government, not the source of its power.",
+    "howToFind": "1. Read the stem's key words: \"which principle\" and the quoted phrase. The question is about WHO is acting in that phrase.\n2. Translate the phrase into plain English: the people of the country are the ones creating this government.\n3. Now match that sentence against the four principles by definition:\n   - Popular sovereignty = power comes from the people. MATCH.\n   - Federalism = power is split between national and state governments. Not about a source of power.\n   - Separation of powers = three branches with different jobs. Not mentioned.\n   - Judicial review = courts can strike down laws. Not mentioned.\n4. Only one choice describes a source of authority, so choose B.\n5. Check: does anything else in the Preamble contradict B? No. \"do ordain and establish\" confirms the People are the actors.",
+    "trap": "A (Federalism). The words \"United States\" make readers think about states sharing power. But the sentence says \"We the People,\" not \"We the States\" - and that wording was a deliberate change from the Articles of Confederation, where the states were the actors."
+  },
+  {
+    "id": "SOCIAL-002",
+    "topic": "Declaration of Independence",
+    "difficulty": "medium",
+    "stimulus": "From the Declaration of Independence, written mainly by Thomas Jefferson and adopted by the Second Continental Congress on July 4, 1776, to explain to the world why the thirteen colonies were separating from Great Britain:\n\n\"We hold these truths to be self-evident, that all men are created equal, that they are endowed by their Creator with certain unalienable Rights, that among these are Life, Liberty and the pursuit of Happiness. - That to secure these rights, Governments are instituted among Men, deriving their just powers from the consent of the governed, - That whenever any Form of Government becomes destructive of these ends, it is the Right of the People to alter or to abolish it, and to institute new Government.\"",
+    "question": "Which statement best expresses the argument made in this excerpt?",
+    "choices": [
+      "A. Governments may be changed only through an election held by the existing legislature.",
+      "B. Rights are granted to citizens by the government that protects them.",
+      "C. A government that fails to protect people's rights may rightfully be replaced by the people.",
+      "D. Every tax imposed without a vote of the colonists is illegal."
+    ],
+    "answer": "C",
+    "why": "The excerpt builds one chain of reasoning: rights come from birth, government exists only to protect those rights, and therefore a government that destroys those rights may be replaced. The final sentence states that conclusion outright.",
+    "howToFind": "1. SOURCE IT FIRST, in about eight seconds. Who: Jefferson and the Continental Congress. When: July 1776, as they break away. To whom: the world, and Britain. Why: to justify revolution.\n2. That sourcing kills two choices before you read the passage closely. A says change must come through the existing legislature - the exact opposite of what a revolutionary document argues. D is about taxes, which belongs to the grievance list later in the Declaration, not to this philosophical opening.\n3. Now read for the argument. Founding-document excerpts are cut so that the argument lands in the LAST sentence. Here it is: \"it is the Right of the People to alter or to abolish it.\"\n4. Match that sentence to a choice. C says exactly that.\n5. Check B against the text: the passage says rights are \"endowed by their Creator,\" not by government. B reverses the source of rights, so it is out.",
+    "trap": "B. Readers see \"Governments are instituted among Men\" next to the word \"rights\" and conclude that government hands out rights. The passage says the opposite: rights come from the Creator, and government is created afterwards to protect rights it did not grant."
+  },
+  {
+    "id": "SOCIAL-003",
+    "topic": "Articles of Confederation",
+    "difficulty": "hard",
+    "stimulus": "Provisions of the Articles of Confederation, the first national government of the United States, ratified in 1781:\n\nArticle II: Each state retains its sovereignty, freedom, and independence, and every power, jurisdiction, and right, which is not by this confederation expressly delegated to the United States, in Congress assembled.\n\nArticle VIII: All charges of war, and all other expenses that shall be incurred for the common defence or general welfare... shall be defrayed out of a common treasury, which shall be supplied by the several states.\n\nArticle IX: The United States in Congress assembled shall never engage in a war... nor ascertain the sums and expenses necessary for the defense and welfare of the United States... unless nine states assent to the same.\n\nArticle XIII: ...nor shall any alteration at any time hereafter be made in any of them, unless such alteration be agreed to in a Congress of the United States, and be afterwards confirmed by the legislatures of every state.",
+    "question": "A delegate at the Constitutional Convention argued that the national government created by the Articles could not pay the debts left by the Revolutionary War. Which provision best supports that argument?",
+    "choices": [
+      "A. Article II, because powers not listed were kept by the states",
+      "B. Article VIII, because the national treasury depended on money supplied by the states",
+      "C. Article IX, because nine states had to agree before Congress could declare war",
+      "D. Article XIII, because every state had to approve any change to the Articles"
+    ],
+    "answer": "B",
+    "why": "Article VIII shows that Congress had no power to tax anyone directly. It could only ask the states to send money, and states routinely sent less than requested or nothing at all, so the national government could not pay its debts.",
+    "howToFind": "1. Underline the exact claim you must support: the government COULD NOT PAY ITS DEBTS. Not \"was weak\" in general - could not pay.\n2. Go through the four provisions asking one question of each: does this one explain a MONEY problem?\n   - Article II: about which powers are reserved. Not money.\n   - Article VIII: \"a common treasury, which shall be supplied by the several states.\" This is money, and it says the money comes from the states, not from Congress. HIT.\n   - Article IX: about declaring war and setting expenses, with a nine-state vote. Close, but it describes a voting rule, not the source of funds.\n   - Article XIII: about amending the Articles. Not money.\n3. Ask what Article VIII does NOT say: it never gives Congress the power to tax. That absence is the whole answer.\n4. Choose B, then check the stem's last five words again - \"supports that argument\" - and confirm B is about paying, not about process.",
+    "trap": "D. Every choice here names a real weakness of the Articles, so people pick the weakness they remember best - the unanimous amendment rule. It is true and it is famous, but it does not explain why the treasury was empty. This is the classic 'true but does not answer the stem' trap."
+  },
+  {
+    "id": "SOCIAL-004",
+    "topic": "Separation of powers",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "Under the United States Constitution, which branch of the federal government holds the power to declare war?",
+    "choices": [
+      "A. The legislative branch",
+      "B. The executive branch",
+      "C. The judicial branch",
+      "D. The Department of Defense"
+    ],
+    "answer": "A",
+    "why": "Article I of the Constitution lists the powers of Congress, and the power to declare war is one of them. The President commands the armed forces once war exists, but only Congress may formally declare it.",
+    "howToFind": "1. This is a pure recall item with no stimulus. Give it 20 seconds and then move.\n2. Sort the choices by branch first: A legislative = Congress; B executive = President; C judicial = courts; D is not a branch at all, it is an executive department, so eliminate D immediately on structure.\n3. Recall the split you should have written on your scratch paper in minute one: CONGRESS declares war; the PRESIDENT is commander in chief.\n4. Courts never initiate anything, so C is out.\n5. Choose A.",
+    "trap": "B. The President is commander in chief and orders troops into action, so people assume the President declares war. Commanding a war and declaring one are two different powers held by two different branches - that split is exactly what this item is testing."
+  },
+  {
+    "id": "SOCIAL-005",
+    "topic": "How a bill becomes law",
+    "difficulty": "medium",
+    "stimulus": "Steps in the passage of a bill to raise the federal minimum wage:\n\nStep 1 - A representative introduces the bill in the House of Representatives.\nStep 2 - A House committee holds hearings and reports the bill to the floor.\nStep 3 - The House passes the bill by a vote of 232 to 203.\nStep 4 - The Senate passes a different version of the bill by a vote of 54 to 46.\nStep 5 - A conference committee writes a single compromise version.\nStep 6 - Both chambers pass the identical compromise text.\nStep 7 - The President vetoes the bill.\nStep 8 - The House votes 292 to 143 to override the veto. The Senate votes 61 to 39 to override.\n\n(The House has 435 members; the Senate has 100 members.)",
+    "question": "Based on the vote totals in Step 8, what happens to the bill?",
+    "choices": [
+      "A. It becomes law, because both chambers voted by a majority to override the veto.",
+      "B. It does not become law, because the Senate override vote fell short of two-thirds.",
+      "C. It becomes law, because the President's veto expires after ten days.",
+      "D. It returns to a conference committee, because the two chambers passed different versions."
+    ],
+    "answer": "B",
+    "why": "Overriding a veto requires two-thirds of BOTH chambers. Two-thirds of 435 is 290, and the House's 292 clears it. Two-thirds of 100 is 67, and the Senate's 61 does not. Because one chamber failed, the veto stands and the bill dies.",
+    "howToFind": "1. Identify the rule the item is testing: a veto override needs TWO-THIRDS of both houses, not a simple majority.\n2. Do the House arithmetic. Two-thirds of 435 = 435 x 2 / 3 = 290. The House voted 292. 292 is greater than 290, so the House succeeded.\n3. Do the Senate arithmetic. Two-thirds of 100 = 66.67, so 67 votes are needed. The Senate voted 61. 61 is less than 67, so the Senate failed.\n4. Apply the word BOTH. One chamber failing is enough to stop the override.\n5. Eliminate on facts: C invents a rule (a ten-day expiry applies to an UNSIGNED bill, not a vetoed one). D describes Step 5, which already happened, and Step 6 says both chambers passed identical text.\n6. Choose B.",
+    "trap": "A. People see two winning vote totals and stop there. The whole item lives in the difference between a majority and two-thirds. If you do not convert 'two-thirds' into the actual numbers 290 and 67, you cannot answer it."
+  },
+  {
+    "id": "SOCIAL-006",
+    "topic": "Federalism",
+    "difficulty": "medium",
+    "stimulus": "Powers of Government Under the United States Constitution\n\n| National government only | Both national and state | State governments only |\n| Coin money | Collect taxes | Issue driver's and marriage licences |\n| Declare war | Build roads | Establish and run public schools |\n| Regulate trade between the states | Establish courts | Conduct elections |\n| Conduct foreign policy | Borrow money | Set local police and safety rules |",
+    "question": "A state legislature votes to set the minimum age at which a person may be issued a marriage licence in that state. According to the table, this power is best described as",
+    "choices": [
+      "A. a delegated power belonging only to the national government.",
+      "B. a concurrent power shared by the national and state governments.",
+      "C. a reserved power belonging only to the state governments.",
+      "D. an implied power created by the Supremacy Clause."
+    ],
+    "answer": "C",
+    "why": "Licences appear only in the third column, which lists powers held by state governments alone. Powers not given to the national government are reserved to the states by the Tenth Amendment, and these are called reserved powers.",
+    "howToFind": "1. Find the action in the stimulus, not in your memory. The action is issuing a marriage licence.\n2. Scan the three column headings and find which column contains \"licences.\" It is the third: State governments only.\n3. Now translate the column heading into the vocabulary word the choices use:\n   - National only = delegated (also called enumerated or expressed)\n   - Both = concurrent\n   - State only = reserved\n4. State only maps to reserved, so the answer is C.\n5. Kill D on definition: the Supremacy Clause says federal law beats state law. It does not create state powers, so it cannot be the label for anything in the third column.",
+    "trap": "B. 'Concurrent' means shared, and people reason loosely that both governments hand out documents of some kind. The table is the authority here, and it puts licences in exactly one column. When a table is on screen, read the column heading rather than reasoning from what feels true."
+  },
+  {
+    "id": "SOCIAL-007",
+    "topic": "Bill of Rights - Fourth Amendment",
+    "difficulty": "medium",
+    "stimulus": "The Fourth Amendment to the United States Constitution, ratified in 1791 as part of the Bill of Rights:\n\n\"The right of the people to be secure in their persons, houses, papers, and effects, against unreasonable searches and seizures, shall not be violated, and no Warrants shall issue, but upon probable cause, supported by Oath or affirmation, and particularly describing the place to be searched, and the persons or things to be seized.\"",
+    "question": "Police officers enter and search a person's home without a warrant and without the owner's permission. Which right described in this amendment has most likely been violated?",
+    "choices": [
+      "A. The right to refuse to answer questions that might be self-incriminating",
+      "B. The right to have a lawyer present during questioning",
+      "C. The right to a speedy and public trial",
+      "D. The right to be free from searches that are not supported by a warrant based on probable cause"
+    ],
+    "answer": "D",
+    "why": "The amendment protects people and their homes against unreasonable searches and requires a warrant issued on probable cause. Entering a home with neither a warrant nor consent is exactly the situation the text describes.",
+    "howToFind": "1. Read the stem's key nouns: HOME and SEARCH, with NO WARRANT.\n2. Now scan the amendment for those same words. You will hit \"houses\" and \"unreasonable searches\" in the first line, and \"no Warrants shall issue, but upon probable cause\" in the second. The answer lives in those two phrases.\n3. Test each choice against the text of THIS amendment only:\n   - A (self-incrimination) - that phrase is not in this text. It is the Fifth Amendment.\n   - B (a lawyer) - not in this text. Sixth Amendment.\n   - C (speedy public trial) - not in this text. Sixth Amendment.\n   - D (search, warrant, probable cause) - every word appears in the text. HIT.\n4. Choose D. On any 'which right does this text protect' item, the correct choice reuses the stimulus vocabulary.",
+    "trap": "B. Television has welded 'you have the right to an attorney' to every scene involving police, so readers pick the lawyer choice without checking whether the words appear in the amendment on screen. Three of the four choices here are real constitutional rights - just not rights found in this text."
+  },
+  {
+    "id": "SOCIAL-008",
+    "topic": "First Amendment",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "A group of citizens gathers peacefully outside a city hall carrying signs criticising a newly passed local tax, and then formally asks the city council to repeal it. Which amendment to the United States Constitution most directly protects this activity?",
+    "choices": [
+      "A. The First Amendment",
+      "B. The Fourth Amendment",
+      "C. The Fifth Amendment",
+      "D. The Tenth Amendment"
+    ],
+    "answer": "A",
+    "why": "The activity combines three First Amendment freedoms at once: speech (the signs), peaceable assembly (the gathering), and petition for a redress of grievances (the formal request to the council).",
+    "howToFind": "1. Break the scenario into its verbs: they GATHER, they CARRY SIGNS CRITICISING government, they ASK government to change a law.\n2. Match each verb to the First Amendment's five freedoms - Religion, Assembly, Press, Petition, Speech. Gathering is assembly. Signs are speech. Asking the council is petition. Three of five in one scenario.\n3. Check the other choices for any word from the scenario: Fourth is searches, Fifth is due process and self-incrimination, Tenth is state powers. None of those verbs appear.\n4. Choose A in under 20 seconds and bank the time.",
+    "trap": "D. The protest is about a local tax, and the Tenth Amendment is the states-and-local-powers amendment, so people match on the SUBJECT of the protest instead of on the ACTIVITY being protected. The question asks what protects the protesters, not what authorises the tax."
+  },
+  {
+    "id": "SOCIAL-009",
+    "topic": "Voting rights amendments",
+    "difficulty": "easy",
+    "stimulus": "Expansion of the Right to Vote in the United States\n\n1870 - Fifteenth Amendment: the right to vote may not be denied on account of race, colour, or previous condition of servitude\n1920 - Nineteenth Amendment: the right to vote may not be denied on account of sex\n1964 - Twenty-fourth Amendment: poll taxes abolished in federal elections\n1965 - Voting Rights Act: literacy tests banned; federal officials may oversee voter registration in some states\n1971 - Twenty-sixth Amendment: the voting age lowered to eighteen",
+    "question": "Which generalisation is best supported by the timeline?",
+    "choices": [
+      "A. Every change to voting rights in the United States required an amendment to the Constitution.",
+      "B. By 1920 the right to vote had been extended to all adult citizens.",
+      "C. Congress holds the sole power to decide who may vote in state elections.",
+      "D. Over time, the right to vote was extended to more groups of Americans."
+    ],
+    "answer": "D",
+    "why": "Each entry removes one more barrier to voting - race, then sex, then a fee, then a test, then age. Read in order, the list shows a steady widening of who may vote, which is exactly what a generalisation should capture.",
+    "howToFind": "1. Recognise the question type: a GENERALISATION item. The answer must be true of the WHOLE list, not of one entry.\n2. Read down the right-hand side of each entry and write one word for what each removed: race, sex, tax, test, age. Every entry removes a barrier.\n3. Test each choice against ALL five entries:\n   - A: the 1965 entry is an Act of Congress, not an amendment. One counterexample kills it.\n   - B: the 1964, 1965 and 1971 entries exist because voting was still being denied after 1920. Killed by the list itself.\n   - C: nothing in the timeline says Congress has sole power; amendments are ratified by the states.\n   - D: true of all five.\n4. Choose D.",
+    "trap": "A. Four of the five entries are amendments, so the pattern looks total. The 1965 Voting Rights Act is a statute, and it is sitting right in the middle of the list. Whenever a choice says 'every' or 'all,' hunt the list for the one entry that breaks it before you accept it."
+  },
+  {
+    "id": "SOCIAL-010",
+    "topic": "Electoral college",
+    "difficulty": "hard",
+    "stimulus": "Results of a presidential election in six states\n\n| State | Electoral votes | Votes for Candidate X | Votes for Candidate Y |\n| Alpha | 29 | 4,600,000 | 4,700,000 |\n| Bravo | 20 | 2,900,000 | 2,800,000 |\n| Charlie | 16 | 2,300,000 | 2,200,000 |\n| Delta | 11 | 1,300,000 | 1,250,000 |\n| Echo | 10 | 1,100,000 | 1,600,000 |\n| Foxtrot | 6 | 700,000 | 650,000 |\n\nEach of these states awards all of its electoral votes to the candidate who wins the most votes in that state.",
+    "question": "Which statement about these six states is supported by the table?",
+    "choices": [
+      "A. Candidate Y received both more electoral votes and more total votes than Candidate X.",
+      "B. Candidate X received more electoral votes, although Candidate Y received more total votes.",
+      "C. Candidate X received more electoral votes because Candidate X received more total votes.",
+      "D. Each candidate received the same number of electoral votes."
+    ],
+    "answer": "B",
+    "why": "Candidate X wins Bravo, Charlie, Delta and Foxtrot, which is 20 + 16 + 11 + 6 = 53 electoral votes. Candidate Y wins Alpha and Echo, which is 29 + 10 = 39. But summing the popular columns gives X 12,900,000 and Y 13,200,000, so Y leads the popular vote by 300,000 while losing the electoral vote.",
+    "howToFind": "1. Do the electoral count first, one row at a time, writing W for whoever has the larger vote number in that row.\n   Alpha: Y (4.7 beats 4.6). Bravo: X. Charlie: X. Delta: X. Echo: Y (1.6 beats 1.1). Foxtrot: X.\n2. Add the electoral votes for each winner.\n   X: 20 + 16 + 11 + 6 = 53.\n   Y: 29 + 10 = 39.\n   X leads 53 to 39.\n3. DO NOT STOP HERE. Every choice also mentions total votes, so you must add the popular columns.\n   X: 4.6 + 2.9 + 2.3 + 1.3 + 1.1 + 0.7 = 12.9 million.\n   Y: 4.7 + 2.8 + 2.2 + 1.25 + 1.6 + 0.65 = 13.2 million.\n   Y leads by 0.3 million.\n4. Combine the two results: X wins the electoral vote, Y wins the popular vote. That is choice B.\n5. Sense check the mechanism: X won four states by small margins; Y won two states, one of them by a very large margin. Winner-take-all wastes those extra votes.",
+    "trap": "C. Readers finish the electoral tally, see X ahead, and assume the popular vote must match - so they pick the choice that says X won both. The only way to catch it is to actually add the two popular-vote columns, which takes about thirty seconds on the calculator and is the entire point of the item."
+  },
+  {
+    "id": "SOCIAL-011",
+    "topic": "Marbury v. Madison and judicial review",
+    "difficulty": "medium",
+    "stimulus": "From the opinion of Chief Justice John Marshall, writing for the Supreme Court of the United States in Marbury v. Madison, decided in 1803:\n\n\"It is emphatically the province and duty of the judicial department to say what the law is. Those who apply the rule to particular cases, must of necessity expound and interpret that rule. If two laws conflict with each other, the courts must decide on the operation of each... a law repugnant to the constitution is void.\"",
+    "question": "Which power of the Supreme Court is established by the reasoning in this passage?",
+    "choices": [
+      "A. The power to declare an act of Congress unconstitutional",
+      "B. The power to write new laws when Congress fails to act",
+      "C. The power to remove a president from office",
+      "D. The power to decide disputes between two states"
+    ],
+    "answer": "A",
+    "why": "The last clause - \"a law repugnant to the constitution is void\" - combined with the Court's duty \"to say what the law is,\" means the Court may refuse to enforce a law that conflicts with the Constitution. That power is called judicial review.",
+    "howToFind": "1. SOURCE IT. Who: the Chief Justice of the Supreme Court. When: 1803. To whom: the parties and the country. Why: to decide a case and explain the Court's authority. A court opinion explains what a COURT may do, so any choice describing a power of another branch is suspect at once.\n2. That sourcing removes B (writing laws is Congress's job) and C (removing a president is Congress's job, through impeachment and conviction).\n3. Now find the operative line. In court-opinion excerpts the holding is usually the last clause: \"a law repugnant to the constitution is void.\"\n4. Translate it: a law that contradicts the Constitution has no force. Which choice says that? A.\n5. Check D: deciding disputes between states is a real power of the Supreme Court, but nothing in this passage is about states. Out of scope.",
+    "trap": "D. It is a genuine power of the Supreme Court, so it reads as correct to anyone answering from background knowledge rather than from the passage. Nothing in these four sentences mentions states. On 'which power is established by this passage,' the evidence must be on the screen."
+  },
+  {
+    "id": "SOCIAL-012",
+    "topic": "Plessy v. Ferguson and Brown v. Board",
+    "difficulty": "hard",
+    "stimulus": "Source 1: From the majority opinion of the Supreme Court in Plessy v. Ferguson, 1896, upholding a Louisiana law requiring separate railway cars for white and Black passengers:\n\n\"We consider the underlying fallacy of the plaintiff's argument to consist in the assumption that the enforced separation of the two races stamps the colored race with a badge of inferiority. If this be so, it is not by reason of anything found in the act, but solely because the colored race chooses to put that construction upon it.\"\n\nSource 2: From the unanimous opinion of the Supreme Court in Brown v. Board of Education, 1954:\n\n\"To separate them from others of similar age and qualifications solely because of their race generates a feeling of inferiority as to their status in the community that may affect their hearts and minds in a way unlikely ever to be undone... We conclude that in the field of public education the doctrine of 'separate but equal' has no place. Separate educational facilities are inherently unequal.\"",
+    "question": "Which statement best describes how the Court's reasoning changed between 1896 and 1954?",
+    "choices": [
+      "A. In 1954 the Court decided that the Fourteenth Amendment no longer applied to public schools.",
+      "B. In 1896 the Court required states to segregate; in 1954 the Court allowed states to choose.",
+      "C. Both decisions held that state governments may never treat citizens differently by race.",
+      "D. In 1896 the Court held that separation caused no harm by itself; in 1954 the Court held that separation is itself unequal."
+    ],
+    "answer": "D",
+    "why": "Plessy claims any sense of inferiority comes from how Black citizens choose to interpret separation, not from separation itself. Brown says the opposite in almost matching language: separating children by race generates a feeling of inferiority, so separate facilities are inherently unequal.",
+    "howToFind": "1. With two sources, always read for the DISAGREEMENT. Find the sentence in each that makes a claim about the same thing.\n2. Source 1's claim: separation does not stamp anyone with a badge of inferiority; if people feel that, it is because they 'choose to put that construction upon it.'\n3. Source 2's claim: separating them 'generates a feeling of inferiority,' therefore separate is 'inherently unequal.'\n4. State the difference in one sentence before reading the choices: in 1896 separation was said to be harmless in itself; in 1954 it was said to be harmful in itself.\n5. Find the choice that matches your sentence. D.\n6. Check the others fast: A is invented, nothing says the Fourteenth Amendment stopped applying. B reverses 'upheld' into 'required.' C contradicts Source 1, which permitted differential treatment.",
+    "trap": "B. The word 'upheld' in the introduction to Source 1 gets read as 'ordered.' Plessy permitted states to segregate; it did not force them to. Any choice that turns permission into a requirement, or a requirement into permission, is a reversal trap - check that verb every time."
+  },
+  {
+    "id": "SOCIAL-013",
+    "topic": "Political parties and platforms",
+    "difficulty": "easy",
+    "stimulus": "Excerpts from the platforms of two political parties in a recent national election\n\n| Issue | Party A | Party B |\n| Federal income tax | Reduce rates for all taxpayers and simplify the tax code | Raise rates on the highest incomes to pay for public programmes |\n| Health care | Expand private insurance choice and reduce federal rules | Expand government-funded coverage to more people |\n| Environment | Reduce federal regulation of energy production | Increase federal limits on emissions |\n| Federal and state balance | Return more decisions to state governments | Set national standards that all states must meet |",
+    "question": "Which generalisation about the two platforms is supported by the table?",
+    "choices": [
+      "A. Party A favours a larger federal role in the economy than Party B does.",
+      "B. Both parties propose the same approach to health care.",
+      "C. Party B favours a larger federal role in the economy than Party A does.",
+      "D. Neither party takes a position on taxation."
+    ],
+    "answer": "C",
+    "why": "In all four rows, Party A proposes less federal activity - lower taxes, fewer rules, more state control - while Party B proposes more: higher taxes on high incomes, government-funded coverage, tighter limits, national standards.",
+    "howToFind": "1. A generalisation item again: the answer must hold across the whole table, not one row.\n2. Go row by row and write a single symbol for each party. Use 'more federal' or 'less federal.'\n   Tax: A less, B more. Health: A less, B more. Environment: A less, B more. Balance: A less, B more.\n3. The pattern is identical in all four rows: B is the larger-federal-role party.\n4. Match to the choices. C states exactly that.\n5. Kill the rest on the table: A is the reverse of what the rows show. B is contradicted by the health row, where the approaches differ. D is contradicted by the tax row, where both take a position.",
+    "trap": "A. This is a straight reversal, and it is easy to fall into by reading only the tax row and assuming that 'raise rates' must belong to the party that wants less government, since taxes feel like a burden. Check the pattern across every row before choosing between two mirror-image statements."
+  },
+  {
+    "id": "SOCIAL-014",
+    "topic": "Types of government",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "In which type of government is political power held by a small group of people, such as a single wealthy family, a military council, or the leaders of one political party?",
+    "choices": [
+      "A. Direct democracy",
+      "B. Oligarchy",
+      "C. Constitutional monarchy",
+      "D. Republic"
+    ],
+    "answer": "B",
+    "why": "Oligarchy means rule by the few. The defining feature is that a small group, rather than one individual or the whole people, holds the power.",
+    "howToFind": "1. Underline the defining phrase in the stem: 'a small group of people.'\n2. Ask of each choice: how many people rule?\n   - Direct democracy: all citizens vote on laws themselves. Many.\n   - Oligarchy: a few. MATCH.\n   - Constitutional monarchy: one hereditary ruler, whose power is limited by law.\n   - Republic: the people elect representatives. Many, indirectly.\n3. Only one choice means 'the few,' so choose B.\n4. Memory hook if you blank: 'oligo' means few, as in oligopoly - a market with only a few sellers.",
+    "trap": "C. The stem mentions 'a single wealthy family,' which makes people reach for monarchy. But a monarchy is rule by ONE person who inherits the throne, and in a constitutional monarchy that person's power is limited by law. The number of rulers is the whole distinction."
+  },
+  {
+    "id": "SOCIAL-015",
+    "topic": "Checks and balances",
+    "difficulty": "medium",
+    "stimulus": "",
+    "question": "Which action is an example of the legislative branch checking the power of the judicial branch?",
+    "choices": [
+      "A. The Senate votes to reject a treaty negotiated by the President.",
+      "B. The Supreme Court rules that a law passed by Congress is unconstitutional.",
+      "C. The President issues a pardon to a person convicted of a federal crime.",
+      "D. The House of Representatives votes to impeach a federal judge."
+    ],
+    "answer": "D",
+    "why": "Impeachment by the House is a power of Congress, the legislative branch, and it is aimed at a judge, a member of the judicial branch. That is legislative checking judicial.",
+    "howToFind": "1. Write the direction the stem asks for, in arrows: LEGISLATIVE acts on JUDICIAL.\n2. For each choice, label the actor and the target the same way.\n   A: Senate acts on the President. Legislative on executive. Wrong direction.\n   B: Court acts on Congress. Judicial on legislative. This is the reverse of what is asked.\n   C: President acts on a court conviction. Executive on judicial. Wrong actor.\n   D: House acts on a federal judge. Legislative on judicial. MATCH.\n3. Choose D.\n4. This two-label habit - actor, then target - answers every checks-and-balances item on this test without any memorisation beyond which branch is which.",
+    "trap": "B. Judicial review is the single most famous check in American government, so it gets picked reflexively on any checks-and-balances question. It runs in exactly the opposite direction from what this stem asks. Label the actor and the target before you read the choices and the trap disappears."
+  },
+  {
+    "id": "SOCIAL-016",
+    "topic": "Voter turnout and elections",
+    "difficulty": "easy",
+    "stimulus": "Voter Turnout in United States National Elections\n(percentage of the voting-eligible population that cast a ballot)\n\n| Year | Type of election | Turnout |\n| 2012 | Presidential | 58.6% |\n| 2014 | Midterm | 36.7% |\n| 2016 | Presidential | 60.1% |\n| 2018 | Midterm | 50.3% |\n| 2020 | Presidential | 66.8% |\n| 2022 | Midterm | 46.0% |",
+    "question": "Which conclusion is best supported by the table?",
+    "choices": [
+      "A. Turnout in midterm elections is lower than turnout in the presidential elections held before and after them.",
+      "B. Turnout has declined steadily in every election since 2012.",
+      "C. More than two-thirds of eligible voters cast a ballot in every election shown.",
+      "D. Midterm turnout has never risen above 40 percent."
+    ],
+    "answer": "A",
+    "why": "Each midterm figure is lower than the presidential figures on either side of it: 36.7 sits between 58.6 and 60.1; 50.3 sits between 60.1 and 66.8; and 46.0 follows 66.8. The pattern holds for every midterm in the table.",
+    "howToFind": "1. Sort the rows into two groups before comparing anything. Presidential: 58.6, 60.1, 66.8. Midterm: 36.7, 50.3, 46.0.\n2. Look at the two lists side by side. The lowest presidential number, 58.6, is higher than the highest midterm number, 50.3.\n3. Test each choice against the numbers you just sorted.\n   - A: holds for all three midterms. HIT.\n   - B: 2016 is higher than 2012, and 2018 is higher than 2014, so nothing declined steadily.\n   - C: two-thirds is about 66.7%; only 2020 clears it.\n   - D: 50.3 and 46.0 both exceed 40.\n4. Choose A.",
+    "trap": "D. A reader checks the first midterm row, sees 36.7%, and treats it as typical. The other two midterms are 50.3% and 46.0%. When a choice contains 'never' or 'always,' check EVERY row that could break it, not the first one you come to."
+  },
+  {
+    "id": "SOCIAL-017",
+    "topic": "Amending the Constitution",
+    "difficulty": "hard",
+    "stimulus": "",
+    "question": "A member of Congress proposes an amendment to the United States Constitution. Which combination of actions is required before that amendment takes effect?",
+    "choices": [
+      "A. A majority vote in both houses of Congress, followed by the President's signature",
+      "B. A two-thirds vote in both houses of Congress, followed by ratification by three-fourths of the states",
+      "C. A three-fourths vote in both houses of Congress, followed by approval by the Supreme Court",
+      "D. A two-thirds vote in both houses of Congress, followed by the President's signature"
+    ],
+    "answer": "B",
+    "why": "Article V sets out two stages. An amendment is proposed by a two-thirds vote of both houses of Congress (or by a convention called by two-thirds of the states), and it takes effect only after three-fourths of the states ratify it.",
+    "howToFind": "1. Split the process into its two stages before looking at the choices: PROPOSE, then RATIFY. Every correct answer must contain both.\n2. Recall the fractions: propose = two-thirds of Congress; ratify = three-fourths of the states, which is 38 of 50.\n3. Screen the choices for the ratification stage first, because it eliminates fastest.\n   - A ends with the President. No ratification stage. Out.\n   - C ends with the Supreme Court. The Court has no role. Out.\n   - D ends with the President. Out.\n   - B ends with three-fourths of the states. Only survivor.\n4. Confirm B's first stage is two-thirds of Congress. It is.\n5. Remember the rule that kills half the field on any amendment item: THE PRESIDENT HAS NO ROLE IN AMENDING THE CONSTITUTION - no signature, no veto.",
+    "trap": "D. It gets the proposal fraction right, which makes it feel expert, and then attaches the President - because every other thing Congress passes goes to the President. Amendments do not. Reading only the first half of a choice and accepting it on that basis is the error this item is built to punish."
+  },
+  {
+    "id": "SOCIAL-018",
+    "topic": "Political cartoon analysis",
+    "difficulty": "hard",
+    "stimulus": "A political cartoon published in an American newspaper.\n\nThe drawing shows three stone pillars of equal height holding up a heavy roof labelled \"THE CONSTITUTION.\" The pillars are labelled \"CONGRESS,\" \"THE PRESIDENT,\" and \"THE COURTS.\" A large figure in a business suit, also labelled \"CONGRESS,\" stands on a ladder chiselling extra height onto its own pillar while chunks of stone break loose from beneath the roof and tumble to the ground. Cracks are spreading across the roof above all three pillars. A much smaller figure labelled \"THE VOTERS\" stands to one side, pointing up at the cracks.\n\nThe caption reads: \"Careful - you live under there too.\"",
+    "question": "What point is the cartoonist making?",
+    "choices": [
+      "A. Congress should be given more power than the other two branches of government.",
+      "B. The Constitution would work better with a single branch of government instead of three.",
+      "C. When one branch gains power at the expense of the others, the whole system of government is put at risk.",
+      "D. Voters have no way to influence the actions of Congress."
+    ],
+    "answer": "C",
+    "why": "The roof labelled \"THE CONSTITUTION\" rests on three equal pillars, so the drawing presents balance as what holds the system up. Congress raising its own pillar breaks stone loose and cracks the roof, and the caption warns that the damage falls on everyone, including Congress itself.",
+    "howToFind": "1. Read every word in the cartoon before looking at the picture as a whole. Labels are the cartoonist's instructions: THE CONSTITUTION on the roof, CONGRESS / THE PRESIDENT / THE COURTS on the pillars, THE VOTERS on the small figure.\n2. Translate the visual metaphor into a sentence. Three equal pillars holding a roof = three branches supporting the Constitution. This is separation of powers drawn as architecture.\n3. Find the change the cartoonist has drawn: one pillar being made taller than the others, and the consequence drawn right next to it - falling stone and spreading cracks.\n4. Read the caption, because on a cartoon the caption carries the argument: 'Careful - you live under there too.' That is a WARNING, so the cartoonist disapproves.\n5. State the opinion in your own sentence before reading the choices: one branch grabbing power damages the whole structure. Then find the matching choice. C.\n6. Rule: a cartoon always takes a side. A choice that is merely neutral and descriptive, or that endorses what is being criticised, is almost never right.",
+    "trap": "A. The drawing literally shows Congress making itself taller, so a reader who describes the picture instead of interpreting it picks the choice that endorses that. The falling stone, the cracks, and the word 'Careful' in the caption all show the cartoonist is against it. Never confuse what a cartoon DEPICTS with what it RECOMMENDS."
+  },
+  {
+    "id": "SOCIAL-019",
+    "topic": "Federalists and Anti-Federalists",
+    "difficulty": "hard",
+    "stimulus": "From an essay published in a New York newspaper in 1787 under the pen name \"Brutus,\" urging New Yorkers to reject the newly proposed Constitution:\n\n\"In a republic of such vast extent as the United-States, the legislature cannot attend to the various concerns and wants of its different parts. It cannot be sufficiently numerous to be acquainted with the local condition and wants of the different districts... The confidence which the people have in their rulers, in a free republic, arises from their knowing them, from their being responsible to them... but in a republic of the extent of this continent, the people in general would be acquainted with very few of their rulers.\"",
+    "question": "Which position would the author of this essay most likely have supported?",
+    "choices": [
+      "A. Ratifying the proposed Constitution without any changes",
+      "B. Giving the national Congress the power to regulate trade among the states",
+      "C. Keeping more governing power in the state and local governments",
+      "D. Creating a single national court system with final authority over state courts"
+    ],
+    "answer": "C",
+    "why": "The whole argument is that a national legislature covering an enormous country cannot know local conditions or be truly answerable to ordinary people. The remedy implied by that complaint is to keep power at the level where representatives do know their constituents - the states and localities.",
+    "howToFind": "1. SOURCE IT FIRST, and read the attribution line as carefully as the quotation. Who: an anonymous writer using the pen name Brutus. When: 1787, during the ratification fight. To whom: New York voters. Why: to persuade them to REJECT the Constitution.\n2. That single sentence eliminates two choices immediately. A says ratify without changes - the exact opposite of the author's purpose, so it cannot be right no matter how the passage reads. D proposes a stronger national judiciary, which is more national power, not less; a writer opposing national power would not propose it.\n3. Now read the passage for the complaint, which is always what an opposition essay is built around: a distant national legislature is too far from local conditions and too little known to the people.\n4. B also gives power to the national Congress, so it dies on the same logic as D.\n5. The only remaining choice pushes power the other way. Choose C.\n6. Vocabulary note for the test: a writer arguing this way in 1787 is an ANTI-FEDERALIST. Anti-Federalists also demanded a bill of rights as the price of ratification.",
+    "trap": "A. Readers skip the italic attribution line, see an eighteenth-century essay about the Constitution, and assume it must be arguing for it - because the Federalist Papers are the famous essays of 1787. The words 'urging New Yorkers to reject' are printed right there. On document items, the sourcing line is part of the stimulus, not decoration."
+  },
+  {
+    "id": "SOCIAL-020",
+    "topic": "Sixth Amendment and Gideon v. Wainwright",
+    "difficulty": "medium",
+    "stimulus": "The Sixth Amendment to the United States Constitution:\n\n\"In all criminal prosecutions, the accused shall enjoy the right to a speedy and public trial, by an impartial jury of the State and district wherein the crime shall have been committed... to be informed of the nature and cause of the accusation; to be confronted with the witnesses against him; to have compulsory process for obtaining witnesses in his favor, and to have the Assistance of Counsel for his defence.\"\n\nIn Gideon v. Wainwright (1963), the Supreme Court ruled that a state court must provide a lawyer at public expense to a person charged with a serious crime who cannot afford to hire one.",
+    "question": "Which phrase from the amendment is the direct basis for the ruling in Gideon v. Wainwright?",
+    "choices": [
+      "A. \"a speedy and public trial\"",
+      "B. \"by an impartial jury\"",
+      "C. \"to be confronted with the witnesses against him\"",
+      "D. \"to have the Assistance of Counsel for his defence\""
+    ],
+    "answer": "D",
+    "why": "\"Counsel\" is the legal word for a lawyer, so the clause guaranteeing the assistance of counsel is the one the Court applied when it held that a state must supply a lawyer to a defendant who cannot pay for one.",
+    "howToFind": "1. Pull the key noun out of the case description: the ruling is about providing a LAWYER.\n2. Now hunt the amendment text for a word that means lawyer. The eighteenth-century word is COUNSEL. It appears in the final clause.\n3. Check the other three phrases against the case description: 'speedy and public trial' is about timing, 'impartial jury' is about who decides, 'confronted with the witnesses' is about cross-examination. None of those is about a lawyer.\n4. Choose D.\n5. This vocabulary-matching move - modern word in the stem, old word in the text - is how most founding-document items are solved. Other pairs worth knowing: 'abridging' means cutting back, 'unalienable' means cannot be taken away, 'quartering' means housing soldiers, 'redress of grievances' means fixing complaints.",
+    "trap": "A. It is the most quoted phrase in the amendment, and readers grab the first familiar clause rather than matching the case to the text. The whole item is one vocabulary step: lawyer equals counsel. Find the word that means the thing in the stem before you evaluate any choice."
+  },
+  {
+    "id": "SOCIAL-021",
+    "topic": "Colonisation and self-government",
+    "difficulty": "medium",
+    "stimulus": "The Mayflower Compact, signed aboard ship by the adult male passengers of the Mayflower in November 1620, before they went ashore in New England. Spelling has been modernised.\n\n\"Having undertaken a voyage to plant the first colony in the northern parts of Virginia, we do by these presents solemnly and mutually, in the presence of God and of one another, covenant and combine ourselves together into a civil body politic, for our better ordering and preservation... and by virtue hereof to enact, constitute, and frame such just and equal laws, ordinances, acts, constitutions, and offices, from time to time, as shall be thought most fit and convenient for the general good of the colony, unto which we promise all due submission and obedience.\"",
+    "question": "Why do historians consider this document an early step toward self-government in America?",
+    "choices": [
+      "A. It created a government by written agreement among the people who would live under it.",
+      "B. It declared the colony independent of England.",
+      "C. It gave every adult in the colony, including women, the right to vote.",
+      "D. It established freedom of religion as a legal right in the colony."
+    ],
+    "answer": "A",
+    "why": "The signers agree with one another to form a \"civil body politic\" and to make \"just and equal laws\" for the general good, and then promise to obey those laws. A government created by the consent of the governed and recorded in writing is the essence of self-government.",
+    "howToFind": "1. SOURCE IT. Who: ordinary passengers, not officials. When: November 1620, before landing. To whom: each other. Why: to agree on how they would be governed once ashore.\n2. That sourcing already damages B: they call the place 'the northern parts of Virginia,' an English colony, and they promise 'submission and obedience.' People declaring independence do not promise obedience.\n3. Now find the action verbs in the text: 'covenant and combine ourselves together,' 'enact, constitute, and frame such just and equal laws.' They are making a government and making laws, by agreement.\n4. Put that in one sentence: the people themselves agreed in writing to create a government and obey its laws. Match it to a choice. A.\n5. Check C and D against the text: no word about voting, and no word about religion appears anywhere in the excerpt. Out of scope, both.",
+    "trap": "B. The phrase 'combine ourselves together into a civil body politic' sounds like a break with the mother country, and 1620 sits in the mental file marked 'Pilgrims escaping England.' The excerpt names Virginia and promises obedience. Read the whole excerpt for anything that contradicts your choice before you commit."
+  },
+  {
+    "id": "SOCIAL-022",
+    "topic": "Causes of the American Revolution",
+    "difficulty": "easy",
+    "stimulus": "British Laws Applied to the Thirteen Colonies, 1764-1774\n\n| Year | Law | What it did |\n| 1764 | Sugar Act | Taxed imported sugar and molasses |\n| 1765 | Stamp Act | Required a purchased tax stamp on newspapers, legal documents, and playing cards |\n| 1767 | Townshend Acts | Taxed imported glass, paper, paint, and tea |\n| 1773 | Tea Act | Gave one British company the sole right to sell tea in the colonies |\n| 1774 | Coercive (Intolerable) Acts | Closed the port of Boston and placed Massachusetts under direct royal control |\n\nNo colonist held a seat in the British Parliament, which passed each of these laws.",
+    "question": "The table best supports which explanation of colonial anger during this period?",
+    "choices": [
+      "A. Colonists were being taxed and governed by a legislature in which they had no representatives.",
+      "B. Colonists objected to paying any taxes at all to any government.",
+      "C. Britain had forbidden the colonies to trade with any other country.",
+      "D. Britain had begun to abolish slavery in the thirteen colonies."
+    ],
+    "answer": "A",
+    "why": "The table lists a decade of taxes and controls imposed from London, and the final line states that no colonist sat in the Parliament that passed them. Together these give the standard colonial grievance: taxation and government without representation.",
+    "howToFind": "1. Notice the line printed UNDER the table. Test writers put the key to a table in the note more often than anywhere else, and this note says no colonist sat in Parliament.\n2. Summarise the table itself in one phrase: Parliament repeatedly taxed and controlled the colonies.\n3. Combine the table and the note: taxed and controlled by a body they did not elect.\n4. Match to the choices. A says exactly that.\n5. Eliminate by checking the table for support:\n   - B: nothing in the table shows colonists refusing all taxes; they paid taxes to their own colonial assemblies.\n   - C: no row mentions a ban on foreign trade.\n   - D: no row mentions slavery at all. Out of scope.",
+    "trap": "B. The slogan 'no taxation without representation' gets shortened in memory to 'no taxation.' The colonists' objection was procedural - who imposed the tax - not the existence of taxes. Choice A keeps the second half of the slogan; choice B throws it away."
+  },
+  {
+    "id": "SOCIAL-023",
+    "topic": "Constitutional Convention compromises",
+    "difficulty": "medium",
+    "stimulus": "",
+    "question": "At the Constitutional Convention of 1787, states with large populations wanted representation in Congress based on population, while states with small populations wanted every state represented equally. How was this dispute resolved?",
+    "choices": [
+      "A. By counting three-fifths of the enslaved population when apportioning representatives",
+      "B. By giving every state one vote in a single national legislature",
+      "C. By allowing large states to leave the union if they were outvoted",
+      "D. By creating a Congress with one chamber based on population and one chamber giving each state equal representation"
+    ],
+    "answer": "D",
+    "why": "The Great Compromise, also called the Connecticut Compromise, split the difference by creating a two-chamber Congress: the House of Representatives apportioned by population, satisfying the large states, and the Senate with two seats per state, satisfying the small states.",
+    "howToFind": "1. Name the dispute in the stem: LARGE STATES versus SMALL STATES over representation. Hold that phrase; do not let it drift.\n2. Look for a choice that gives each side something. A compromise answer always contains the word 'and' or describes two parts.\n3. Test each choice against the dispute:\n   - A: about counting enslaved people, which was a NORTH versus SOUTH dispute, not large versus small.\n   - B: gives only the small states what they wanted, so it is not a compromise.\n   - C: not a compromise, and never proposed.\n   - D: population for one chamber, equality for the other. Both sides win something. HIT.\n4. Choose D and label it: this is the Great Compromise, and it is why the House and Senate are built differently.",
+    "trap": "A. The Three-Fifths Compromise is the other famous compromise of the same convention, so people pattern-match on 'compromise at Philadelphia in 1787' instead of on the specific dispute named in the stem. Reread the stem's first line before choosing: it says large and small states, not North and South."
+  },
+  {
+    "id": "SOCIAL-024",
+    "topic": "Westward expansion and Manifest Destiny",
+    "difficulty": "medium",
+    "stimulus": "From an article by the newspaper editor John O'Sullivan, published in 1845, arguing that the United States should annex the Republic of Texas:\n\n\"Texas is now ours... Other nations have undertaken to intrude themselves... in a spirit of hostile interference against us, for the avowed object of thwarting our policy and hampering our power, limiting our greatness and checking the fulfilment of our manifest destiny to overspread the continent allotted by Providence for the free development of our yearly multiplying millions.\"",
+    "question": "Which belief is expressed in this excerpt?",
+    "choices": [
+      "A. The United States should avoid acquiring new territory in order to prevent conflict with other nations.",
+      "B. The United States was destined to expand across the North American continent.",
+      "C. Texas should remain an independent republic with a government of its own.",
+      "D. New territories should be admitted to the Union only if they prohibited slavery."
+    ],
+    "answer": "B",
+    "why": "The phrase \"our manifest destiny to overspread the continent allotted by Providence\" states the belief directly: expansion across the continent is not merely desirable but fated and divinely intended.",
+    "howToFind": "1. SOURCE IT. Who: a newspaper editor. When: 1845. To whom: American readers. Why: to argue FOR annexing Texas. A pro-annexation article cannot be arguing against expansion, so A dies on sourcing alone, and C dies too - if Texas should stay independent, there is nothing to annex.\n2. Find the sentence that carries the belief. In persuasive excerpts it is the clause with the strongest language: 'manifest destiny to overspread the continent allotted by Providence.'\n3. Translate it into plain English: it is our fate, granted by God, to spread across the whole continent.\n4. Match to the surviving choices. B is that sentence restated.\n5. Check D against the text: slavery is not mentioned anywhere in the excerpt.",
+    "trap": "D. Whether new territory would be slave or free was the central American argument of the 1840s, so a reader supplies it from background knowledge. It is not in this passage. The word for this on GED Social Studies is 'true but not stated' - and on an 'expressed in this excerpt' stem, not stated means wrong."
+  },
+  {
+    "id": "SOCIAL-025",
+    "topic": "Civil War - the Gettysburg Address",
+    "difficulty": "hard",
+    "stimulus": "Delivered by President Abraham Lincoln on 19 November 1863, at the dedication of a national cemetery on the battlefield at Gettysburg, Pennsylvania, four and a half months after the battle fought there:\n\n\"Four score and seven years ago our fathers brought forth on this continent, a new nation, conceived in Liberty, and dedicated to the proposition that all men are created equal.\n\nNow we are engaged in a great civil war, testing whether that nation, or any nation so conceived and so dedicated, can long endure...\n\nIt is for us the living, rather, to be dedicated here to the unfinished work which they who fought here have thus far so nobly advanced... that we here highly resolve that these dead shall not have died in vain - that this nation, under God, shall have a new birth of freedom - and that government of the people, by the people, for the people, shall not perish from the earth.\"",
+    "question": "Which statement best expresses Lincoln's purpose in this speech?",
+    "choices": [
+      "A. To announce a new military strategy for winning the war",
+      "B. To explain the legal reasons that the southern states could not leave the Union",
+      "C. To honour the soldiers who died by urging the living to preserve the democratic government they died for",
+      "D. To propose a constitutional amendment ending slavery in the United States"
+    ],
+    "answer": "C",
+    "why": "Lincoln turns from the dead to the living: \"It is for us the living... to be dedicated here to the unfinished work.\" The unfinished work is named in the last line - keeping government of, by, and for the people alive. Honouring the dead by charging the living is the structure of the whole speech.",
+    "howToFind": "1. SOURCE IT, and use the occasion. Who: the President. When: November 1863, mid-war. To whom: a crowd at a cemetery dedication. Why: to dedicate a burial ground.\n2. The occasion alone eliminates two choices. A speech dedicating a cemetery is not the place to announce troop movements, so A goes. And a dedication speech does not propose legislation, so D goes - nothing in the text proposes anything.\n3. Now read for the turn in the argument. Founding-document and speech excerpts are cut so the point lands at the end: 'It is for us the living... government of the people, by the people, for the people, shall not perish from the earth.'\n4. State the purpose in one sentence: honour them, and finish what they started, which is keeping this democracy alive.\n5. Match it. C.\n6. Check B: nothing in the excerpt argues about the legality of secession. Out of scope.\n7. Bonus fact worth knowing cold: 'four score and seven' means 87 years. 1863 minus 87 is 1776 - Lincoln is dating the nation from the DECLARATION, not the Constitution.",
+    "trap": "D. The phrase 'a new birth of freedom,' plus everything you know about Lincoln and slavery, points toward emancipation, and the Thirteenth Amendment really was coming. But the speech proposes nothing. Purpose questions are answered from the occasion plus the closing lines, not from what the speaker later did."
+  },
+  {
+    "id": "SOCIAL-026",
+    "topic": "Industrialisation, immigration and urbanisation",
+    "difficulty": "medium",
+    "stimulus": "Immigration to the United States and Urban Population, 1871-1920\n\n| Decade | Immigrants admitted | Share of Americans living in cities at the end of the decade |\n| 1871-1880 | 2.8 million | 28% |\n| 1881-1890 | 5.2 million | 35% |\n| 1891-1900 | 3.7 million | 40% |\n| 1901-1910 | 8.8 million | 46% |\n| 1911-1920 | 5.7 million | 51% |",
+    "question": "Which conclusion about this period is best supported by the table?",
+    "choices": [
+      "A. Immigration rose in every decade shown.",
+      "B. Most immigrants who arrived between 1871 and 1920 settled on farms.",
+      "C. By 1920 the majority of immigrants had returned to their home countries.",
+      "D. The share of Americans living in cities rose in every decade shown, while immigration reached its highest level between 1901 and 1910."
+    ],
+    "answer": "D",
+    "why": "The urban column climbs without interruption: 28, 35, 40, 46, 51. The immigration column peaks at 8.8 million in 1901-1910 and falls afterwards. Both halves of choice D are visible in the table.",
+    "howToFind": "1. Read the two columns separately before you compare anything.\n   Immigration: 2.8, 5.2, 3.7, 8.8, 5.7 - up, DOWN, up, DOWN. Not a steady rise.\n   Urban share: 28, 35, 40, 46, 51 - up every single time.\n2. Find the largest number in the immigration column: 8.8 million, in 1901-1910.\n3. Now test the choices against those two readings.\n   - A: contradicted by 3.7 following 5.2. Out.\n   - B: the table says nothing about where immigrants settled. Out of scope.\n   - C: the table says nothing about anyone returning. Out of scope.\n   - D: both claims match what you read. HIT.\n4. Choose D.\n5. Content note for a related item: rising city population alongside heavy immigration is the definition of URBANISATION, the headline demographic fact of this era.",
+    "trap": "A. The immigration column starts at 2.8 and ends at 5.7, so the overall drift is upward and 'rose in every decade' feels safe. Two decades fell. On any 'every' or 'all' choice, walk the column value by value - it takes eight seconds and it is the most common single error on data tables."
+  },
+  {
+    "id": "SOCIAL-027",
+    "topic": "Great Depression, New Deal and World War II",
+    "difficulty": "hard",
+    "stimulus": "United States Unemployment Rate, 1929-1944\n\nThe graph is a line graph. The horizontal axis is labelled \"Year\" and runs from 1929 to 1944. The vertical axis is labelled \"Unemployment rate (percent of the labor force)\" and runs from 0 to 30 in steps of 5.\n\nThe line begins at about 3 percent in 1929 and climbs steeply to about 25 percent in 1933. It falls to about 17 percent by 1936, rises again to about 19 percent in 1938, then falls: about 17 percent in 1939, 15 percent in 1940, 10 percent in 1941, 5 percent in 1942, 2 percent in 1943, and about 1 percent in 1944.\n\nA note below the graph reads: \"Franklin Roosevelt took office in March 1933. The United States entered the Second World War in December 1941.\"",
+    "question": "Which conclusion is best supported by the graph and the note?",
+    "choices": [
+      "A. Unemployment returned to its 1929 level within three years of Roosevelt taking office.",
+      "B. Unemployment rose every year between 1933 and 1938.",
+      "C. Unemployment fell after 1933 but did not drop below 5 percent until after the United States entered the war.",
+      "D. The Second World War caused unemployment to rise sharply after 1941."
+    ],
+    "answer": "C",
+    "why": "From the 1933 peak of about 25 percent the line falls, but it is still at 15 percent in 1940 and 10 percent in 1941. It reaches 5 percent in 1942 and 2 percent in 1943, both after the December 1941 entry into the war named in the note.",
+    "howToFind": "1. Read the axis labels and units first. Vertical axis is a PERCENT of the labor force, running 0 to 30. Horizontal is years, 1929 to 1944.\n2. Read the note, because the note supplies the two dates the question turns on: March 1933 and December 1941. Mark them mentally on the horizontal axis.\n3. Write down the values the choices need: 1929 = 3. 1933 = 25. 1936 = 17. 1938 = 19. 1941 = 10. 1942 = 5. 1943 = 2.\n4. Test each choice against those numbers.\n   - A: three years after March 1933 is 1936, where the line is at 17 percent, not the 1929 level of 3 percent. Out.\n   - B: the line FELL from 25 in 1933 to 17 in 1936 before rising to 19 in 1938. It did not rise every year. Out.\n   - C: after 1933 the line falls overall; the first value below 5 percent is 1943's 2 percent, which is after December 1941. HIT.\n   - D: the line falls after 1941, it does not rise. Direction reversed. Out.\n5. Choose C.",
+    "trap": "A. Everyone knows the New Deal as the programme that fixed the Depression, so a reader assumes the graph must show recovery by the mid-1930s. The graph shows 17 percent in 1936 - roughly six times the 1929 level. Read the value at the year the choice names instead of answering from the story you already believe."
+  },
+  {
+    "id": "SOCIAL-028",
+    "topic": "The Civil Rights Movement",
+    "difficulty": "medium",
+    "stimulus": "From \"Letter from Birmingham Jail,\" written by Dr Martin Luther King Jr. in April 1963 from a jail cell in Birmingham, Alabama, in reply to a public statement by eight local white clergymen who had called his demonstrations \"unwise and untimely\" and said that a minister from Atlanta should not be leading protests in their city:\n\n\"I am in Birmingham because injustice is here... Injustice anywhere is a threat to justice everywhere. We are caught in an inescapable network of mutuality, tied in a single garment of destiny. Whatever affects one directly, affects all indirectly. Never again can we afford to live with the narrow, provincial 'outside agitator' idea.\"",
+    "question": "The author uses the phrase \"Injustice anywhere is a threat to justice everywhere\" mainly in order to",
+    "choices": [
+      "A. argue that the federal government should stay out of local disputes.",
+      "B. answer the criticism that he had no business protesting in a city where he did not live.",
+      "C. explain why he chose to break the law rather than file a lawsuit.",
+      "D. describe the economic conditions of Birmingham in 1963."
+    ],
+    "answer": "B",
+    "why": "The attribution line names the criticism: a minister from Atlanta should not be leading protests in Birmingham. King's answer is that injustice is not a local matter, because everyone is bound together - and he closes the excerpt by rejecting the \"outside agitator\" idea by name.",
+    "howToFind": "1. SOURCE IT, and this time the sourcing line does almost all the work. Who: King. When: April 1963. To whom: eight white clergymen who criticised him. Why: to answer a specific charge - that he is an outsider.\n2. Because you know the charge, you know what the reply must be about. Any choice not about being an outsider is suspect.\n3. Confirm it inside the text. The excerpt opens with 'I am in Birmingham because injustice is here' and closes with 'the narrow, provincial outside agitator idea.' Those two lines bracket the quoted phrase and tell you what it is doing there.\n4. Match to the choices. B names the criticism the letter is answering.\n5. Eliminate: A reverses his position, since he wanted federal action. C is a real theme elsewhere in the letter but is not what THIS excerpt is doing. D describes nothing in the text.\n6. Rule for 'mainly in order to' items: they ask about PURPOSE, so answer from the audience and the occasion, not from the topic.",
+    "trap": "C. Civil disobedience is what the letter is best known for, and it appears elsewhere in the full document, so readers answer about the famous letter rather than the excerpt in front of them. The words 'outside agitator' in the last line, and the clergymen's complaint in the attribution, both point at B."
+  },
+  {
+    "id": "SOCIAL-029",
+    "topic": "Supply, demand and equilibrium",
+    "difficulty": "medium",
+    "stimulus": "Weekly Market for Bicycle Helmets in One City\n\n| Price per helmet | Quantity demanded | Quantity supplied |\n| $20 | 900 | 300 |\n| $30 | 700 | 450 |\n| $40 | 550 | 550 |\n| $50 | 400 | 700 |\n| $60 | 250 | 900 |",
+    "question": "A city council passes a law setting the highest price a store may charge for a helmet at $30. According to the table, what will happen in this market?",
+    "choices": [
+      "A. A shortage of 250 helmets, because buyers want more helmets than sellers will supply at that price",
+      "B. A surplus of 250 helmets, because sellers will supply more helmets than buyers want at that price",
+      "C. A shortage of 150 helmets, because the equilibrium price is $40",
+      "D. Neither a shortage nor a surplus, because $30 is close to the equilibrium price"
+    ],
+    "answer": "A",
+    "why": "At $30 the table shows 700 helmets demanded and only 450 supplied. Demand exceeds supply by 700 - 450 = 250, which is a shortage. A legal maximum price set below the equilibrium price of $40 always produces a shortage.",
+    "howToFind": "1. Find the row the question names. The law caps the price at $30, so read the $30 row and nothing else at first.\n2. Read across that row and label the numbers. Quantity demanded = 700. Quantity supplied = 450.\n3. Compare: buyers want 700, sellers offer 450. Buyers want MORE than exists. More wanted than supplied is called a SHORTAGE.\n4. Subtract to size it: 700 - 450 = 250.\n5. Answer: a shortage of 250, which is choice A.\n6. Sense check with the equilibrium. Scan down for the row where the two quantity columns are equal: $40, where both are 550. A cap BELOW equilibrium pushes you into the shortage zone, which confirms the direction.",
+    "trap": "B. Two things push people to 'surplus.' First, the phrase 'highest price a store may charge' sounds like it should leave goods on the shelf. Second, the two quantity columns are easy to swap. Point at the column heading with your finger before subtracting: the number that is larger tells you which side of the market is unsatisfied."
+  },
+  {
+    "id": "SOCIAL-030",
+    "topic": "Scarcity and opportunity cost",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "Janelle has one free evening. She can work an extra shift and earn $95, attend a training class that costs $40, or stay home at no cost. She decides to attend the class. What is the opportunity cost of her decision?",
+    "choices": [
+      "A. $40, the price of the class",
+      "B. $95, the pay from the shift she gave up",
+      "C. $135, the price of the class plus the pay she gave up",
+      "D. $0, because staying home would have cost nothing"
+    ],
+    "answer": "B",
+    "why": "Opportunity cost is the value of the next-best alternative you give up, not the price of what you choose and not a total of everything forgone. Her best forgone alternative was the $95 shift.",
+    "howToFind": "1. Recall the definition in exactly these words: opportunity cost is the value of the NEXT-BEST alternative you did not choose.\n2. List the alternatives she did NOT choose: work the shift, worth $95; stay home, worth $0.\n3. Pick the best of those: $95.\n4. That is the opportunity cost, so choose B.\n5. Two rules that settle most items of this type: the price you PAY for the thing you chose is not the opportunity cost, and opportunity cost is never a sum of several alternatives - it is a single one, the best one.",
+    "trap": "C. Adding the $40 she spent to the $95 she forwent feels thorough, and thoroughness is exactly the wrong instinct here. Opportunity cost is one number: the single best thing you gave up. Circle the word 'next-best' in the definition and the addition never happens."
+  },
+  {
+    "id": "SOCIAL-031",
+    "topic": "Inflation and the Consumer Price Index",
+    "difficulty": "medium",
+    "stimulus": "Consumer Price Index for a National Economy\n\n| Year | Consumer Price Index |\n| 2023 | 250.0 |\n| 2024 | 260.0 |\n| 2025 | 267.8 |\n\nThe inflation rate for a year is found with this formula:\ninflation rate = ((CPI this year - CPI last year) / CPI last year) x 100",
+    "question": "What was the inflation rate for 2025, to the nearest tenth of a percent? Type your answer in the box. Do not type a percent sign.",
+    "choices": [],
+    "answer": "3.0",
+    "why": "Subtracting gives 267.8 - 260.0 = 7.8. Dividing by the EARLIER year's index gives 7.8 / 260.0 = 0.03. Multiplying by 100 gives 3.0 percent.",
+    "howToFind": "1. Identify the two years the formula needs. For the 2025 rate, 'this year' is 2025 and 'last year' is 2024. The 2023 row is not used at all - it is there to be misused.\n2. Find the difference: 267.8 - 260.0 = 7.8.\n3. Divide by LAST year's CPI, which is the 2024 value: 7.8 / 260.0 = 0.03.\n4. Multiply by 100: 0.03 x 100 = 3.0.\n5. Calculator keystrokes on the on-screen TI-30XS: 267.8 - 260 = gives 7.8, then / 260 = gives 0.03, then x 100 = gives 3.\n6. Round as asked - to the nearest tenth - and type 3.0.\n7. Sense check: prices rose by about 8 points on a base of 260, and 8 out of 260 is a bit under 1/30, which is about 3 percent. Correct order of magnitude.",
+    "trap": "Typing 7.8. That is the change in index POINTS, not the percentage change, and it is the number sitting at the end of step 2 - so anyone who forgets to divide stops there. The other common error is dividing by the new CPI, 7.8 / 267.8 = 0.0291, and typing 2.9. Always divide by the EARLIER value."
+  },
+  {
+    "id": "SOCIAL-032",
+    "topic": "Unemployment rate",
+    "difficulty": "medium",
+    "stimulus": "Population of the town of Marland, ages 16 and over\n\n| Group | Number of people |\n| Working at a paid job | 8,400 |\n| Not working, but actively looking for work | 600 |\n| Retired | 1,500 |\n| Full-time students, not looking for work | 700 |\n| Not working and no longer looking for work | 300 |\n\nThe labor force is the number of people who are employed plus the number who are unemployed and actively looking for work.\n\nunemployment rate = (number unemployed / labor force) x 100",
+    "question": "What is the unemployment rate in Marland, to the nearest tenth of a percent? Type your answer in the box. Do not type a percent sign.",
+    "choices": [],
+    "answer": "6.7",
+    "why": "The labor force is 8,400 employed plus 600 actively looking, which is 9,000. The unemployment rate is 600 / 9,000 = 0.0667, and multiplying by 100 gives 6.7 percent after rounding.",
+    "howToFind": "1. Build the labor force before you divide anything. The definition printed in the stimulus allows exactly two groups: employed, and unemployed but ACTIVELY LOOKING.\n2. Cross out every row that fails that test. Retired: out. Full-time students not looking: out. Not working and no longer looking: out - these are discouraged workers and they are not in the labor force.\n3. Add the two rows that survive: 8,400 + 600 = 9,000. That is the denominator.\n4. The numerator is the number unemployed AND looking: 600.\n5. Divide: 600 / 9,000 = 0.06666...\n6. Multiply by 100: 6.666... percent.\n7. Round to the nearest tenth: 6.7. Type 6.7.\n8. Calculator: 600 / 9000 = gives 0.0666667, then x 100 = gives 6.6666667.",
+    "trap": "Typing 9.7. That comes from adding the 300 people who stopped looking into both the unemployed count and the labor force: 900 / 9,300 = 9.7 percent. Discouraged workers are the most tested subtlety in GED economics - people without jobs who are not looking are not counted anywhere in this calculation. The other frequent error is dividing by the whole 11,500 population aged 16 and over, which gives 5.2."
+  },
+  {
+    "id": "SOCIAL-033",
+    "topic": "Credit and interest",
+    "difficulty": "medium",
+    "stimulus": "",
+    "question": "Marcus borrows $4,000 for 3 years at a simple annual interest rate of 9 percent. Using the formula I = P x r x t, what is the total amount he will repay?",
+    "choices": [
+      "A. $1,080",
+      "B. $4,360",
+      "C. $5,080",
+      "D. $5,180"
+    ],
+    "answer": "C",
+    "why": "The interest is I = 4,000 x 0.09 x 3 = $1,080. The total repaid is the principal plus the interest: 4,000 + 1,080 = $5,080.",
+    "howToFind": "1. Read the stem's LAST words: 'total amount he will repay.' That means principal plus interest, so there will be two steps, not one.\n2. Label the formula parts. P = 4,000. r = 9 percent, which as a decimal is 0.09. t = 3 years.\n3. Compute the interest: 4,000 x 0.09 = 360, and 360 x 3 = 1,080.\n4. Add the principal back: 4,000 + 1,080 = 5,080.\n5. Choose C.\n6. Calculator: 4000 x .09 x 3 = gives 1080, then + 4000 = gives 5080.\n7. Sense check: 9 percent a year for 3 years is about 27 percent of the loan in interest, and a bit over a quarter of 4,000 is roughly 1,080. The total should land just above 5,000.",
+    "trap": "A ($1,080). That is the interest alone - the number you are holding after step 3, and the natural place to stop. The stem asks for the TOTAL REPAID. Read the last five words of any money question before you pick, because the difference between 'interest' and 'total' is one addition and one wrong answer."
+  },
+  {
+    "id": "SOCIAL-034",
+    "topic": "Fiscal and monetary policy",
+    "difficulty": "hard",
+    "stimulus": "A report from a national business news channel:\n\n\"Prices have risen 7 percent over the past twelve months, the fastest pace in four decades. At its meeting this morning the Federal Reserve raised its benchmark interest rate by half a percentage point, the third increase this year, and said it would continue selling government bonds from its portfolio. The chair told reporters the committee is determined to bring price increases back down to its 2 percent target, even at the risk of slower growth and higher unemployment.\"",
+    "question": "Which statement best describes the action reported and the effect it is meant to have?",
+    "choices": [
+      "A. Fiscal policy intended to increase consumer spending",
+      "B. Fiscal policy intended to reduce government borrowing",
+      "C. Monetary policy intended to expand the money supply and create jobs",
+      "D. Monetary policy intended to reduce borrowing and spending in order to slow inflation"
+    ],
+    "answer": "D",
+    "why": "The actor is the Federal Reserve and the tools are an interest rate and the sale of government bonds, which makes this monetary policy. Raising rates makes borrowing more expensive, which cools spending, and the chair states the goal outright: bringing price increases back to 2 percent.",
+    "howToFind": "1. Identify the ACTOR named in the stimulus. It is the Federal Reserve. Write down the rule: the Fed equals MONETARY policy; Congress and the President equal FISCAL policy (taxing and spending).\n2. That single step kills A and B, because neither describes anything Congress did.\n3. Now get the DIRECTION. Find the verbs: 'raised its benchmark interest rate' and 'selling government bonds.' Both pull money out of the economy.\n4. Translate the direction into an effect: higher rates make loans more expensive, so households and businesses borrow and spend less. Less spending slows price increases.\n5. Confirm against the stated goal in the last sentence: 'bring price increases back down to its 2 percent target.' The purpose is to fight inflation.\n6. Match: monetary, contracting, aimed at inflation. That is D.",
+    "trap": "C. Half the work gets done correctly - the reader recognises the Federal Reserve and picks a monetary choice - and then the direction gets reversed. Raising rates and selling bonds SHRINK the money supply; lowering rates and buying bonds expand it. Read the verb before you read the label: raised and selling both mean tightening."
+  },
+  {
+    "id": "SOCIAL-035",
+    "topic": "Reading a map",
+    "difficulty": "easy",
+    "stimulus": "A map titled \"Riverton County: Land Use.\"\n\nThe legend shows four patterns:\n- Dark green = forest\n- Light yellow = farmland\n- Grey = built-up area, including towns and roads\n- Blue = water\n\nThe Ashe River runs from the north-east corner of the map to the south-west corner. The town of Riverton is shown in grey on the east bank of the river, near the centre of the map. All of the light-yellow area lies in a band along both banks of the river. The dark-green area covers hills in the north-west and south-east corners, away from the river. A scale bar shows that 1 inch on the map equals 5 miles, and a compass rose shows north at the top.",
+    "question": "According to the map, which statement best describes where farming takes place in Riverton County?",
+    "choices": [
+      "A. On the forested hills in the north-west and south-east corners",
+      "B. Inside the town of Riverton",
+      "C. In a band along both banks of the Ashe River",
+      "D. Evenly across the whole county"
+    ],
+    "answer": "C",
+    "why": "The legend assigns light yellow to farmland, and the description states that all of the light-yellow area lies in a band along both banks of the river. That band is where the farming is.",
+    "howToFind": "1. READ THE LEGEND BEFORE THE MAP. Write the four pairs down if you need to: green = forest, yellow = farmland, grey = built-up, blue = water.\n2. Find the colour the question is about. Farming means LIGHT YELLOW.\n3. Now search the description for the words 'light-yellow.' You will find one sentence: all of it lies in a band along both banks of the river.\n4. That sentence is the answer. Choose C.\n5. Check the others against the legend: A describes the dark-green area, which is forest, not farmland. B describes the grey area, which is built-up. D contradicts the sentence you found.",
+    "trap": "A. Green reads as 'growing things,' so people match farmland to the green area without checking the key - where green is explicitly labelled FOREST. Most wrong answers on GED map items are legend errors rather than reasoning errors. The legend is the first thing to read and the last thing to check."
+  },
+  {
+    "id": "SOCIAL-036",
+    "topic": "Migration - push and pull factors",
+    "difficulty": "easy",
+    "stimulus": "Reasons given by people who moved from Country A to Country B, from a survey of recent arrivals\n\n| Reason given | Percentage of movers |\n| Could not find work at home | 34% |\n| Fighting and violence near home | 26% |\n| Family members already living in Country B | 18% |\n| Higher wages available in Country B | 14% |\n| Drought had ruined local crops | 8% |",
+    "question": "A pull factor is a condition that attracts people to a new place, rather than one that drives them out of the place they are leaving. Which reason listed in the table is a pull factor?",
+    "choices": [
+      "A. Could not find work at home",
+      "B. Fighting and violence near home",
+      "C. Drought had ruined local crops",
+      "D. Family members already living in Country B"
+    ],
+    "answer": "D",
+    "why": "Having family already settled in Country B is a feature of the destination that draws people toward it. The other three reasons listed in the choices all describe bad conditions in Country A, which push people out.",
+    "howToFind": "1. The stem defines the term for you, so use its exact words: a pull factor attracts people TO the new place.\n2. Read each choice and ask one question: does this describe the place they LEFT, or the place they are GOING TO?\n   - 'at home' means Country A. Push.\n   - 'near home' means Country A. Push.\n   - 'local crops' means Country A. Push.\n   - 'living in Country B' is the destination. PULL.\n3. Choose D.\n4. Fast rule for every push-pull item: hunt for the location word in each phrase. Anything describing the origin is a push; anything describing the destination is a pull. You never need to judge whether the condition is good or bad.",
+    "trap": "A. Jobs are the classic reason people migrate, so 'work' triggers a match with the well-known pull factor 'better job opportunities.' The wording here is 'could NOT find work AT HOME' - a failure in the country of origin, which pushes. Read the location words, not the topic."
+  },
+  {
+    "id": "SOCIAL-037",
+    "topic": "Human-environment interaction",
+    "difficulty": "medium",
+    "stimulus": "In the 1920s, farmers on the southern Great Plains ploughed up millions of acres of deep-rooted native grasses in order to plant wheat. Those grasses had held the topsoil in place for thousands of years. When a severe drought began in 1931 and the wheat crop failed, nothing remained to anchor the soil. Windstorms lifted the dry earth into enormous black clouds that buried farms, darkened cities hundreds of miles away, and stripped away the layer that had made the land farmable. More than two million people eventually left the region.\n\nIn response, the federal government created the Soil Conservation Service, paid farmers to plant grass and rows of trees as windbreaks, and taught farmers to plough along the contours of slopes rather than straight up and down them.",
+    "question": "Which statement best describes the relationship between people and the environment shown in this passage?",
+    "choices": [
+      "A. The environment changed without any influence from human activity.",
+      "B. The drought on the Great Plains was caused by ploughing up the native grasses.",
+      "C. Changes people made to the land made a natural drought far more damaging, and people then changed their practices in response.",
+      "D. People moved into the region because the environment there made farming easy."
+    ],
+    "answer": "C",
+    "why": "The passage describes both directions of the relationship. People modified the land by removing the grasses that held the soil, which turned a drought into a disaster, and then people adapted by planting windbreaks, changing ploughing methods, and creating an agency to manage soil.",
+    "howToFind": "1. Notice that the passage has two paragraphs, and ask what each one does. Paragraph 1: people changed the land, then disaster. Paragraph 2: people changed their behaviour in response.\n2. A correct answer about a two-part passage will usually cover both parts. Scan the choices for one with two clauses. Only C has two.\n3. Verify each clause of C against the text. 'Changes people made made a natural drought far more damaging' matches paragraph 1. 'People then changed their practices' matches paragraph 2.\n4. Choose C.\n5. Eliminate on the text: A is contradicted by the first sentence, which is entirely about human activity. D is contradicted by the passage, which never says why people came and describes farming there as fragile.",
+    "trap": "B. The passage links ploughing to the disaster so tightly that the link slides from 'made it worse' to 'caused it.' The drought is described as arriving in 1931 on its own; what ploughing removed was the protection. Confusing a factor that WORSENS an event with the CAUSE of that event is one of the most common cause-and-effect errors on this test."
+  },
+  {
+    "id": "SOCIAL-038",
+    "topic": "Resources, settlement and the environment",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "Throughout history, the earliest large settlements have usually developed along rivers and coastlines. Which reason best explains this pattern?",
+    "choices": [
+      "A. Rivers and coasts supplied fresh water, fertile soil, and routes for transport and trade.",
+      "B. Rivers and coasts are the only places where the climate is warm enough to grow crops.",
+      "C. Rivers and coasts contain most of the world's deposits of coal and oil.",
+      "D. Rivers and coasts are naturally protected from invasion by outsiders."
+    ],
+    "answer": "A",
+    "why": "Settlements need drinking water, food, and a way to move goods. Rivers and coasts deliver all three: fresh or accessible water, soil enriched by flooding, and water routes that were far faster and cheaper than land travel before modern roads.",
+    "howToFind": "1. Turn the question into a needs list. What does a large settlement require every single day? Water, food, and a way to move things.\n2. Check each choice against that list.\n   - A names water, soil for food, and transport. Three out of three. HIT.\n   - B claims rivers and coasts are the ONLY warm places, which is plainly false; extreme wording, out.\n   - C is about fossil fuels, which did not matter to early settlements at all. Anachronistic.\n   - D claims natural protection, but water routes are the easiest way for invaders to arrive.\n3. Choose A.",
+    "trap": "D. Defence is a genuine reason settlements were sited where they were - on hills, behind walls, on islands - so the choice sounds historically literate. Rivers and coasts are highways, and highways run both ways. The question asks for the reason that explains the general pattern, and that reason is water, soil, and transport."
+  },
+  {
+    "id": "SOCIAL-039",
+    "topic": "Cold War Europe",
+    "difficulty": "hard",
+    "stimulus": "A map titled \"Europe, 1955.\"\n\nThe legend shows three categories:\n- Diagonal stripes = member of NATO\n- Solid grey = member of the Warsaw Pact\n- White = neutral or non-aligned\n\nStriped countries include the United Kingdom, France, Italy, Norway, Denmark, the Netherlands, Belgium, Portugal, Greece, Turkey, and West Germany.\n\nSolid grey countries include the Soviet Union, Poland, East Germany, Czechoslovakia, Hungary, Romania, Bulgaria, and Albania.\n\nWhite countries include Sweden, Switzerland, Austria, Ireland, Finland, Spain, and Yugoslavia.\n\nA heavy black line runs from the Baltic Sea in the north to the Adriatic Sea in the south, separating the striped countries in the west from the grey countries in the east. The line is labelled \"the Iron Curtain.\"",
+    "question": "Which conclusion about Europe in 1955 is best supported by the map?",
+    "choices": [
+      "A. Germany was a single country that belonged to neither alliance.",
+      "B. Europe was divided into two opposing military alliances, separated along a line running roughly from north to south.",
+      "C. Every country in Europe belonged to one of the two alliances.",
+      "D. The Soviet Union had military allies in western Europe."
+    ],
+    "answer": "B",
+    "why": "The legend names two military alliances, the lists place them on opposite sides of the continent, and the heavy black line running from the Baltic to the Adriatic marks the boundary between them. That is the division the map is drawn to show.",
+    "howToFind": "1. Read the legend first and count the categories. There are THREE, not two: NATO, Warsaw Pact, and neutral. Hold on to that third category - it is what most of the wrong answers ignore.\n2. Read the line description: Baltic Sea in the north to Adriatic Sea in the south. A line joining a northern sea to a southern sea runs roughly north to south, with west on one side and east on the other.\n3. Combine: two alliances, split west and east by a north-south line. That is choice B.\n4. Kill the others using the lists.\n   - A: West Germany appears in the NATO list and East Germany in the Warsaw Pact list, so Germany is neither single nor unaligned.\n   - C: seven countries are listed as neutral. Out.\n   - D: every grey country named is in central or eastern Europe.\n5. Content note: 'Iron Curtain' is the standard term for this divide, and it is worth knowing by name for a fill-in-the-blank item.",
+    "trap": "C. The map is about a two-bloc Europe, so 'every country belonged to one of the two alliances' matches the story a reader already has in mind. The legend lists a third category and the stimulus names seven countries in it. When a legend has three categories and a choice mentions only two, check the third before choosing."
+  },
+  {
+    "id": "SOCIAL-040",
+    "topic": "Population density",
+    "difficulty": "medium",
+    "stimulus": "Population and Land Area of Four Countries\n\n| Country | Population (millions) | Land area (thousands of square kilometres) | Population density (people per square kilometre) |\n| Country W | 145 | 17,100 | 8 |\n| Country X | 84 | 358 | 235 |\n| Country Y | 1,420 | 9,390 | 151 |\n| Country Z | 18 | 42 | 429 |",
+    "question": "Which conclusion is best supported by the table?",
+    "choices": [
+      "A. Country Y has both the largest population and the highest population density.",
+      "B. Country Z has the smallest population and therefore the smallest land area and the lowest population density.",
+      "C. A country with a large population always has a high population density.",
+      "D. Country W has more land than any other country listed and the lowest population density."
+    ],
+    "answer": "D",
+    "why": "Country W's land area of 17,100 thousand square kilometres is the largest in the table, and its density of 8 people per square kilometre is the lowest. Both halves of the statement can be read straight from the table.",
+    "howToFind": "1. Before comparing anything, read the three column headings and their units. Population is in MILLIONS; land area is in THOUSANDS of square kilometres; density is people per square kilometre.\n2. Find the extremes in each column and write them down.\n   Largest population: Y at 1,420. Smallest: Z at 18.\n   Largest area: W at 17,100. Smallest: Z at 42.\n   Highest density: Z at 429. Lowest: W at 8.\n3. Test each choice against that list.\n   - A: Y has the largest population, but the highest density is Z's 429, not Y's 151. Half right, so wrong.\n   - B: Z does have the smallest population and the smallest area, but its density is the HIGHEST, not the lowest.\n   - C: W has 145 million people and a density of 8. One counterexample kills 'always.'\n   - D: W has the largest area, 17,100, and the lowest density, 8. Both true. HIT.\n4. Choose D.\n5. Understand why: density is people divided by area. A huge country can hold many people and still be nearly empty.",
+    "trap": "A. It is the most natural assumption in the table - biggest population, therefore most crowded - and the first clause is genuinely true, which makes the whole choice feel verified. The second clause is false. Read every clause of a choice before accepting it; half-right answers are the most successful distractors on this test."
+  }
+]

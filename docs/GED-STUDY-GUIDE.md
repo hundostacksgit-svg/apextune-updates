@@ -9,6 +9,626 @@ Pass mark is **145 on each subject, out of 100-200**. There is no averaging: 165
 
 ---
 
+# Plan
+
+*Start here. The week, and the method for finding any answer.*
+
+## The honest strategy
+
+You have seven days or fewer. That is enough time to pass some of the GED and not enough to pass all of it comfortably. The plan below is built to maximise the number of subjects you pass this week, not to make you feel prepared.
+
+Start from the four facts that determine everything else.
+
+**One: the four subjects are scored separately and never averaged.** Each one is reported on a 100–200 scale and each one must independently reach **145**. A 190 in Social Studies does not rescue a 140 in Math. This is good news, not bad: it means each subject is a separate, winnable battle, and a loss in one does not contaminate the others.
+
+**Two: three of the four subjects are reading tests.** Social Studies is a reading test in a powdered wig. Science is a reading test in a lab coat. RLA is openly a reading test. Only Mathematical Reasoning demands a skill you cannot fake by reading carefully. That means one method — the one in "How to find any answer" — covers roughly three-quarters of the credential.
+
+**Three: 145 is a low bar.** It is defined as the performance of a graduating high-school senior who would pass the course, and in raw terms it lands around **60–65% of the available points**. You can miss four questions in every ten and still pass. Almost everyone who fails a GED subject fails it by leaving points on the table — blanks, misread stems, time mismanagement — not by lacking knowledge.
+
+**Four: an attempt is cheap and repeatable.** In most jurisdictions your first two retakes per subject within twelve months carry a reduced fee and no waiting period. You only retake the subject you failed. This is the fact that makes "sit it this week" rational rather than reckless: a sitting is a cheap, high-information experiment, and the downside is a discounted retake, not the loss of the credential.
+
+### Which subject to sit first
+
+| Order | Subject | Time | Items | Why here |
+|---|---|---|---|---|
+| 1 | **Social Studies** | 70 min | ~35 | Shortest test on the menu. Reading skill plus a genuinely short content list. Cheapest possible first attempt, and it tells you whether your method works against a real, scored form. |
+| 2 | **Science** | 90 min | ~34 | Same method as Social Studies, more generous clock (2:38 per item), no essay, no formula memorisation beyond a handful. Highest points-per-hour-studied on the whole test. |
+| 3 | **RLA** | 150 min | ~46 + essay | Same reading method plus a finite list of editing rules plus one 45-minute essay you can template. Longer sitting, so it needs stamina you will have built by day 6. |
+| 4 | **Mathematical Reasoning** | 115 min | 46 | The only subject where reading carefully is not enough. Needs actual hours. Sit it last, or sit it next week. |
+
+Sit Social Studies first for three reasons, in order of importance. It is the shortest sitting, so a bad day costs you 70 minutes. It is the purest test of the universal method, so passing it validates the approach you are about to use on Science and RLA. And it produces a real scaled score on a real form, which is worth more than any practice test as a calibration for the rest of the week.
+
+### All four this week, or stagger them?
+
+**Stagger them.** You can legally book all four on one day, and people do. It is roughly seven hours and five minutes of testing plus check-ins and breaks, and it is a reliable way to fail two subjects you would otherwise have passed. Fatigue does not degrade your score gracefully; it degrades it in the back half of every test, which is where the items you needed were sitting.
+
+The staggered plan sits one subject every other day, with the study for the next subject happening on the off day and the morning of the sit.
+
+> **The rule:** never sit two subjects on the same day this week unless they are Social Studies and Science, and even then only with a two-hour gap and only if you are already scoring green on both.
+
+### How to use GED Ready to decide
+
+GED Ready is the official half-length practice test, about **$6.99 per subject**, built on the same scale and the same equating as the real thing. It is the only practice test whose score means anything. It is also the gate for at-home testing: to sit an online-proctored GED you generally need a **green GED Ready on that subject within the last 60 days**.
+
+The zones and what to do about each:
+
+| Zone | Score | What it actually means | Your move this week |
+|---|---|---|---|
+| **Green** | 145–200 | Likely to pass | Book it. Sit it within 72 hours, before the knowledge decays. |
+| **Yellow** | 134–144 | Close, needs a little more | Sit it anyway if it is **Social Studies or Science** — those two respond fast to method, and a half-length form under-measures a test-taker who is about to spend two days on technique. For **RLA**, sit it if your essay is the weak half. For **Math**, do not sit it yet. |
+| **Red** | 100–133 | Not likely to pass | Do not sit that subject this week. Redirect those hours to a subject you can win. |
+
+Three rules about using it honestly:
+
+- **A GED Ready score is only predictive if you took it like a real test.** One sitting, timed, no notes, no pausing, no looking anything up, no phone. If you paused it to make coffee or checked one answer, your score is fiction and you must discard it.
+- **Do not burn all four on Day 1.** That is four hours and roughly $28 spent learning things you already suspect. Take **Math early** — day 1 or 2 — because the Math answer is the one that changes your whole schedule. Take the others **24 to 48 hours before** you sit that subject, close enough that the score is current and far enough that you can act on the report.
+- **The Enhanced Score Report is the point, not the number.** It names the specific skills you missed and points at what to review. Spend twenty minutes reading it. That is the highest-value twenty minutes in your week.
+
+### The highest-expected-value plan, stated plainly
+
+1. **Days 1–2:** learn the universal answer-finding method. Load the Social Studies content list. **Sit Social Studies on Day 2.**
+2. **Days 3–4:** apply the same method to Science plus the short list of Science formulas. **Sit Science on Day 4.**
+3. **Days 5–6:** editing rules and the essay template. **Sit RLA on Day 6.**
+4. **Day 7:** Math, all of it. **Sit Math on Day 7 only if GED Ready came back green or high yellow.** Otherwise book it for the following week and take the extra days.
+
+That ordering is not arbitrary. Social Studies, Science and RLA share one skill, so studying them back-to-back compounds; every hour on the method pays out three times. Math shares nothing with them, which is exactly why it goes last and alone.
+
+> **The honest caveat.** If you are not close in Math, do not sit Math this week. Three banked passes and one deferred subject is a strictly better position than four scattered attempts and three retake fees. There is no prize for finishing in seven days. There is a credential for passing four subjects, whenever that happens.
+
+## The 7-day schedule
+
+The main plan below assumes roughly **six working hours a day**. Blocks are written as hour offsets from whenever you start, not clock times, so it survives a late start. Two variants follow: **evening-only** for someone working full time, and **compressed 3-day** for someone who found this guide on Wednesday.
+
+### Day 1 — The method, and Social Studies content
+
+| Block | Length | What you do |
+|---|---|---|
+| 1 | 20 min | Book your tests. Social Studies for Day 2, Science for Day 4, RLA for Day 6. Hold Math. Seats fill; this is the most time-critical thing you will do all week. |
+| 2 | 40 min | Read "How to find any answer" below. Twice. The second read is not optional — the first read feels obvious and the second read is where it becomes a habit. |
+| 3 | 45 min | **GED Ready: Social Studies.** Timed, one sitting, no notes. |
+| 4 | 30 min | Review every missed item. For each one, name the wrong-answer family you fell for. Write the tally on paper. |
+| — | 15 min | Break. Leave the chair. |
+| 5 | 90 min | Social Studies content: the three branches, checks and balances, how a bill becomes law, the Bill of Rights, the amendments that matter, the landmark cases. |
+| 6 | 90 min | 40 Social Studies practice items, applying the method deliberately and slowly. Predict before you look at the choices, every single time. |
+| 7 | 30 min | Second pass on everything you missed. Do not just read the explanation — re-answer the item. |
+
+### Day 2 — Finish Social Studies, sit it
+
+| Block | Length | What you do |
+|---|---|---|
+| 1 | 60 min | Economics (supply and demand direction, GDP, inflation, unemployment), geography, the ten-event arc of US history. |
+| 2 | 45 min | Stimulus drill: maps, political cartoons, line graphs, data tables. Twenty items, all visual. |
+| 3 | 30 min | Build and memorise your 20-minute morning review list for Social Studies. |
+| — | 30 min | Eat properly. Stop studying. |
+| 4 | 70 min + check-in | **SIT SOCIAL STUDIES.** |
+| — | 60 min | Decompress. Do not review what you just sat. It is done and you cannot change it. |
+| 5 | 60 min | Start Science: the Science Practices, and the short formula list you must memorise because Science has no formula sheet. |
+
+### Day 3 — Science
+
+| Block | Length | What you do |
+|---|---|---|
+| 1 | 45 min | **GED Ready: Science.** Timed, one sitting. |
+| 2 | 30 min | Review every miss by wrong-answer family. Read the Enhanced Score Report. |
+| 3 | 90 min | Life science and Earth/space: cells, genetics basics, ecosystems and energy flow, human body systems, weather, the solar system. Skim, do not master. |
+| — | 15 min | Break. |
+| 4 | 90 min | Physical science: motion, force, energy, waves, atoms, chemical reactions, the memorise-list formulas. |
+| 5 | 90 min | 40 Science items, method-first. Deliberate emphasis on graph and table reading. |
+| 6 | 30 min | Rebuild your morning review list for Science. |
+
+### Day 4 — Sit Science, start RLA
+
+| Block | Length | What you do |
+|---|---|---|
+| 1 | 40 min | Science morning review list plus twenty fast items to warm up. No new content. |
+| — | 30 min | Eat. Stop. |
+| 2 | 90 min + check-in | **SIT SCIENCE.** |
+| — | 60 min | Decompress. |
+| 3 | 60 min | RLA reading: apply the method to one informational and one literary passage set. |
+| 4 | 60 min | The editing rules. Comma splices, subject-verb agreement, pronoun agreement, parallel structure, the homophone set, transitions. |
+| 5 | 45 min | Thirty drop-down editing items. These are the cheapest points on the RLA. |
+
+### Day 5 — RLA, the whole day
+
+| Block | Length | What you do |
+|---|---|---|
+| 1 | 45 min | **GED Ready: RLA.** |
+| 2 | 30 min | Review the misses. Separate reading errors from editing errors — they need different fixes. |
+| 3 | 60 min | The Extended Response: read the prompt structure, internalise the template, study one scored exemplar at each level. |
+| 4 | 45 min | **Write one full timed essay. 45 minutes, hard stop.** Do not extend the clock. |
+| — | 15 min | Break. |
+| 5 | 45 min | Score your own essay against the three traits. Find the one trait costing you most. |
+| 6 | 60 min | Fix that trait, then write the introduction and one body paragraph again — 15 minutes, not a full essay. |
+| 7 | 45 min | Two more passage sets, timed at roughly 2 minutes per item. |
+
+### Day 6 — Sit RLA, start Math
+
+| Block | Length | What you do |
+|---|---|---|
+| 1 | 40 min | RLA morning review: the homophone set, the essay template, the three traits. Nothing new. |
+| — | 30 min | Eat properly. This is a 150-minute sitting; you will need the fuel. |
+| 2 | 150 min + check-in | **SIT RLA.** Three sections, one 10-minute break built in. |
+| — | 90 min | Decompress properly. This is the longest day of the week. |
+| 3 | 45 min | **GED Ready: Math.** Do this even though you are tired — it decides tomorrow. |
+| 4 | 30 min | Read the report. Green or high yellow, confirm the Day 7 booking. Red, move Math to next week and sleep well. |
+
+### Day 7 — Math
+
+| Block | Length | What you do |
+|---|---|---|
+| 1 | 90 min | Number sense and percent: order of operations, negatives, fractions and decimals in context, ratios and unit rates, percent of / off / increase / decrease / finding the original. This is the densest cluster of points on the test. |
+| 2 | 90 min | Linear algebra: writing an expression from a sentence, solving multi-step equations, rearranging formulas, slope and what it means in the story, y-intercept, writing a line's equation, function notation. |
+| — | 15 min | Break. |
+| 3 | 60 min | Geometry and data using the formula sheet. Do not memorise — practise **finding** each formula on the sheet in under four seconds. |
+| 4 | 45 min | The five no-calculator items. Drill these specifically. They are one-way and unforgiving. |
+| — | 30 min | Eat. Stop. |
+| 5 | 115 min + check-in | **SIT MATH** — or defer it, and use the block for a second GED Ready and a plan for next week. |
+
+### Evening-only variant, for someone working full time
+
+Roughly **2.5 hours a night**, seven nights, plus one weekend day. Total is about 17 hours plus one long day, against roughly 40 in the main plan.
+
+Be honest about what that buys: **two subjects, well.** Four subjects in seven evenings is not realistic unless you are already green across the board. The plan below banks Social Studies and Science, which are the two that respond fastest, and sets up RLA and Math for the week after.
+
+| Night | 2.5 hours |
+|---|---|
+| **Mon** | 40 min: read the method, twice. 45 min: GED Ready Social Studies, timed. 30 min: review the misses by family. 35 min: government and civics. |
+| **Tue** | 60 min: Bill of Rights, amendments, landmark cases. 45 min: economics and geography. 45 min: 25 practice items, method-first. |
+| **Wed** | 45 min: US history arc. 60 min: visual stimulus drill — maps, cartoons, graphs, tables. 45 min: build the morning review list. |
+| **Thu** | 45 min: GED Ready Science. 30 min: review misses. 75 min: the Science formula memorise-list plus life science skim. |
+| **Fri** | 90 min: physical science and Earth/space. 60 min: 30 Science items, graph-and-table heavy. |
+| **Sat** | **The long day.** Morning review, then **sit Social Studies (70 min)**. Two-hour gap with food and a walk. Then **sit Science (90 min)**. |
+| **Sun** | Rest, or begin RLA for next week: editing rules plus one timed essay. |
+
+Two notes for the working-full-time version. **Book the Saturday slots on Monday night**, not Friday — the weekend seats go first. And **protect the sleep**, because the single biggest threat to an evening-only plan is arriving at Saturday having slept six hours a night for five nights. Studying until midnight is a false economy that costs more points than it buys.
+
+### Compressed 3-day variant
+
+Three days, roughly eight hours a day. Scope is **two subjects**: Social Studies and Science. Attempting four in three days is not a plan, it is a donation.
+
+| Day | Hours | What |
+|---|---|---|
+| **Day 1** | 8 | 1 h: the method, twice, plus twenty items to make it stick. 45 min: GED Ready Social Studies. 30 min: review by family. 3 h: full Social Studies content sweep — government, civics, economics, geography, history arc. 2 h: 50 items, method-first. 45 min: build the morning review list. |
+| **Day 2** | 8 | 1 h: morning review plus warm-up items. **Sit Social Studies (70 min).** Decompress 1 h. 45 min: GED Ready Science. 3 h: Science formulas, life science, physical science, Earth/space. 1 h: graph and table drill. |
+| **Day 3** | 6 + test | 1 h: 30 Science items, timed. 45 min: morning review list. Eat. **Sit Science (90 min).** Then book RLA and Math for the following week and write down what you learned about your own timing. |
+
+If you have three days and can only sit one subject, sit **Social Studies**. Seventy minutes, shortest content list, highest chance of a pass per hour invested.
+
+## How to find any answer
+
+This is the section that matters. Most of the GED is reading comprehension wearing four different costumes, and a single method extracts the answer from a Social Studies cartoon, a Science data table, an RLA passage and a Math word problem alike.
+
+The premise underneath all of it: **every GED item has exactly one defensible answer, and the defence is a specific piece of the stimulus.** Not a feeling, not a memory, not "it seemed right" — a line, a row, a data point, an axis label. Your job is never "what do I think." Your job is "which of these four can I point at something for."
+
+### The seven-step method
+
+1. **Read the question stem first. Not the passage. Not the choices.** You are reading the stem to find out what job you have been hired to do. Reading a passage without knowing the job means reading it twice.
+2. **Convert the stem into a hunting instruction.** Restate it in your own words as a single question, and pick out the one or two words that define the target. "Which statement is best supported by the data in the table?" becomes "What does this table actually say?" "The author's purpose in paragraph 3 is to..." becomes "Why is paragraph 3 here?"
+3. **Read the stimulus with that instruction live.** Read all of it, but at pace, marking only what touches your instruction. The highlighter tool exists for this. Highlight sparingly — a passage highlighted in full is a passage not highlighted at all.
+4. **Find the line that settles it.** Almost every GED item is decided by one sentence, one table row, one data point, or one axis label. Locate it *before* you look at the choices. If you cannot find it, re-read the stem — usually you have been hunting for the wrong thing.
+5. **Answer in your own words, out loud in your head, before you read the options.** This is the single highest-value habit in this guide. A prediction makes you immune to three of the four wrong-answer families, because you are now matching rather than being persuaded.
+6. **Read all four choices. All four, every time.** Not "until one looks right." The second-best choice is designed to look right to someone who stopped reading.
+7. **Defend the survivor with the line.** Say the sentence: "C, because the third row says 47%." If you cannot complete that sentence, you have not finished the item — you have only formed an opinion about it.
+
+> **The exception to step 1.** When a stimulus carries a *set* of questions — a graph with three items, a literary passage with six — spend 30 to 60 seconds orienting first: read the title, the axis labels, the units, the column headers, the source line and the date. Then go stem-first for each item. Question-first applies to a single item; for a set, orientation pays for itself several times over.
+
+### The four families of wrong answer
+
+Every wrong answer on the GED is wrong in one of four ways. Learn to name them and you stop debating choices and start diagnosing them.
+
+**Family 1 — True but not asked.** A statement that is perfectly correct, often correct *in the passage*, that does not answer the stem. This is the most common trap on Social Studies and Science because it produces the nod of recognition. *Tell:* you find yourself agreeing with it rather than checking it. *Kill it by:* re-reading the stem and asking whether this choice contains the stem's target word. Truth is not the criterion. Responsiveness is.
+
+**Family 2 — Half-right.** The first clause is correct and the second is wrong, or the reverse. Compound choices are where this lives. *Tell:* it is usually the longest choice, and it contains "and," "because," "which led to," "in order to." *Kill it by:* splitting the choice at the conjunction and scoring each half separately. **A choice is only correct if every word in it is correct.** One wrong word makes the whole choice wrong, no matter how good the rest of it is.
+
+**Family 3 — Outside the passage.** Correct-sounding outside information the stimulus never supports. Deadly on Science and Social Studies, where your own knowledge fights the passage. *Tell:* it requires something you know that the stimulus did not give you. *Kill it by:* trying to point at the line. If you cannot point, it is out — no matter how true it is in the real world. **When your knowledge and the passage disagree, the passage wins.** This is the hardest rule to follow and the most profitable.
+
+**Family 4 — Reversed.** The right relationship, backwards. Cause and effect flipped. "Increased" for "decreased." The other side's position. The other group's number. *Tell:* it uses the stimulus's exact vocabulary, which makes it feel familiar and correct. *Kill it by:* checking the direction words — rises/falls, more/less, before/after, because/therefore — and by checking *whose* view or *which* group the choice is describing.
+
+> **The rider:** the **overstated** choice. Right idea, too strong. "Always," "never," "all," "none," "only," "proves," "eliminates." On any stem asking for an inference or what is supported, absolute language is usually fatal. On a stem asking what the passage directly states, absolutes are fine if the passage used one. Check which kind of stem you are on before applying this.
+
+### Elimination order
+
+Do not eliminate randomly. There is a cheapest-first order, and it exists so you only do the expensive thinking once.
+
+1. **Kill "outside the passage" first.** It is pure mechanics: can I point at a line? No thought required, and it often removes two choices in ten seconds.
+2. **Kill "reversed" second.** Check direction words and attribution. Also mechanical, also fast.
+3. **Kill "half-right" third.** Split at conjunctions, score each half. Slower, but still procedural.
+4. **You are now down to "true but not asked" versus the answer.** Resolve this last, by re-reading the stem and asking which of the two survivors answers *that specific question*. This is the only step that requires real judgement, and you have arrived at it with two choices instead of four.
+
+Use the **strikethrough tool** as you go. Cross out a dead choice on screen so your eye stops returning to it. Elimination you have to re-do is elimination you did not do.
+
+### How to handle "which statement is best supported"
+
+This is the single most common stem on Science and Social Studies, and it is misread constantly.
+
+- **"Best supported" means "has evidence in the stimulus."** It does not mean "most true," "most important," or "most interesting." A choice can be entirely true and entirely unsupported, and it loses.
+- **The winner is usually the least impressive choice.** Boring, modest, close to the data, barely worth saying. The sweeping, interesting, insightful-sounding choice is the trap almost every time. If a choice makes you think "huh, good point," be suspicious.
+- **Test each choice by asking: what would I show someone who disagreed?** If the answer is "this row of the table" or "this sentence," it is supported. If the answer is "well, it's obvious," it is not.
+- **Watch the verb, because each one sets a different bar.** "Supported" means evidence exists. "Concluded" means the evidence forces it. "Explains" means it must be a cause. "Predicts" means it must extend forward in time. "Suggests" is the loosest bar of all.
+- **Kill anything that generalises past the sample.** The study used 20 mice; the choice says "in all mammals." Out. The graph covers 1990 to 2010; the choice says "and this trend will continue." Out unless the stem asked for a prediction.
+
+### How to handle two-passage items
+
+Two-passage sets appear throughout RLA and show up in Social Studies as paired documents, paired speeches, or a document paired with a chart.
+
+- **Read the stem first, because many two-passage items only need one passage.** The second passage is often there purely to cost you time. If the stem says "in Passage 1," read Passage 1 and ignore the other entirely.
+- **Never read both passages fully before starting.** Read Passage 1, answer the items that name Passage 1, then read Passage 2, answer its items, and only then take the comparison items. This keeps one passage in working memory at a time instead of blending them into mush.
+- **For comparison stems, build a one-line answer for each passage separately before you look at the choices.** "A says the policy helped the economy. B says it helped the wealthy only." Now the choice must match *both* halves — which converts every comparison item into a half-right hunt, and half-right is a family you already know how to kill.
+- **Know which comparison is being asked.** Do they disagree about a *fact*, about a *cause*, about a *value*? Do they differ in *tone*, in *purpose*, in *type of evidence*? These are different questions and each has a different right answer in the same set.
+- **The signature two-passage trap:** a choice that describes Passage 1 accurately and attributes it to Passage 2. Check the attribution on every comparison choice before you check the content.
+
+### Restatement versus inference
+
+This distinction decides more items than any content knowledge you could cram this week. The stem tells you which one it wants, and then the wrong answer is whichever one it did not ask for.
+
+**When the stem says: "according to the passage," "the passage states," "the author describes," "based on the table."** You want the **restatement**. The answer is a paraphrase of a line, nothing more. The clever, insightful choice is the trap here. If a choice requires you to reason, it is wrong.
+
+**When the stem says: "suggests," "implies," "you can infer," "most likely," "the author would probably agree," "this evidence indicates."** You want the **inference** — exactly one step beyond the text. A choice that merely restates the stimulus in different words is the trap here. It is entirely true, and it is not the answer, because the stem asked you to move and it did not move.
+
+The tests that separate them:
+
+- **On an inference stem, if you can verify a choice by pointing at one line with zero reasoning, it is probably the restatement trap.** The right answer needs the line *plus* one obvious step.
+- **The right inference is always exactly one step.** One fact from the passage plus one piece of ordinary common sense. If getting to a choice requires a second assumption — "well, if that's true, then presumably..." — it is speculation and it is wrong. GED inference is short-range. It never asks you to be clever.
+- **On a "states" stem, if a choice requires any reasoning at all, it is wrong.** Go find the line the answer is paraphrasing.
+
+### When to trust the obvious answer
+
+The GED is not trying to trick you at a high level. It is a criterion-referenced test of whether you read carefully and know some basics, not a puzzle. A large share of the items are straightforward and the obvious answer is simply the answer. Talking yourself out of correct answers is a real and common way to fail.
+
+**Trust the obvious answer when all three of these hold:**
+
+1. You found the line that settles it.
+2. The choice matches the prediction you made before reading the options.
+3. You can name a specific defect in each of the other three.
+
+That is the whole test. If those three are true, select it and move on without ceremony.
+
+**Distrust the obvious answer when:**
+
+- You picked it before you finished reading the stimulus.
+- It is the only choice that lifts a number or a phrase word-for-word from the stimulus, and the stem asked for an inference.
+- It is the most dramatic or most interesting choice on the screen.
+- You cannot articulate what makes the other three wrong.
+- Re-reading the stem shows it answers a slightly different question than the one asked.
+
+> **"It seems too easy" is not evidence of anything.** Easy items exist because the test must produce a range of scores, and you need a score of 145. Do not spend ninety seconds interrogating an item you solved in eight.
+
+### Pace, and the 90-second rule
+
+| Subject | Clock | Items | Per item |
+|---|---|---|---|
+| Social Studies | 70 min | ~35 | 2:00 |
+| Science | 90 min | ~34 | 2:38 |
+| RLA sections 1 and 3 | ~95 min | ~46 | 2:04 |
+| Math | 115 min | 46 | 2:30 |
+
+**The 90-second rule:** if an item has eaten 90 seconds and you are still choosing between two options, pick one, flag it, and go. You have already done the useful thinking. The next sixty seconds will not break the tie — the tie will break on a re-read later, or not at all, and either way that item is worth exactly one point and so is the easy item you are not getting to.
+
+### How to guess well when you are out of time
+
+**There is no penalty for a wrong answer.** A blank and a wrong answer both score zero. A blank is therefore a strictly worse wrong answer — it has the same cost and none of the upside. **Never leave anything blank, in any subject, in any item type.** On a four-choice item, a pure random guess is worth 25%, which means guessing the last five items on a 35-item test hands you about one free point for ten seconds of clicking.
+
+Better than random, in descending order of value:
+
+1. **Ten seconds available:** read the stem only, then scan the choices for the one that uses the stem's target word and stays modest in scope. Pick it.
+2. **Eliminate absolute language** on any inference or "best supported" stem. Always, never, all, none, only, proves.
+3. **Prefer the qualified choice.** Some, often, may, tends to, in many cases. Test writers hedge correct answers because correct answers have to survive scrutiny.
+4. **On a numeric multiple choice with no time to compute:** eliminate the largest and the smallest values and pick from the middle. Distractors are usually built by over- and under-shooting the right answer.
+5. **On an editing drop-down:** read the sentence in your head with each option inserted. The one that sounds like written English rather than spoken English is nearly always right.
+6. **Zero seconds:** pick one letter and use it for every remaining item. Do not spread your guesses across letters "to be safe" — that is superstition, it is no better than a single letter, and it is slower. Decide your letter before test day so you do not spend the decision on the clock.
+
+And always: **guess, then flag.** A guessed item with a flag is a revisit candidate. A guessed item without a flag is simply lost.
+
+## Question-type playbooks
+
+Six item types exist in the GED family. Here is what each one looks like, how it is actually clicked, how it is scored, and the recipe.
+
+### Multiple choice
+
+**What it is:** four options, A through D, exactly one correct. The large majority of every subject.
+
+**How it is clicked and scored:** click the radio button or the choice text. All-or-nothing, normally one raw point.
+
+**Recipe:** the seven-step method above, unmodified. Read all four choices every time. Use strikethrough on the dead ones.
+
+**The trap:** compound choices. When a choice contains "and," "because," or "which led to," split it and score both halves before you fall for the half that is right.
+
+### Drag-and-drop
+
+**What it is:** tiles — words, numbers, short phrases, labels — that you drag into target boxes. Used for classifying, sequencing, completing a table, labelling a diagram, sorting into categories, building an equation.
+
+**How it is clicked and scored:** click and hold a tile, drag it onto a target, release. Dragging a tile back out or onto a different target is allowed and costs nothing. These items frequently carry **more than one raw point and allow partial credit**, which makes them unusually valuable.
+
+**Recipe:**
+
+1. Read the instruction line before you touch anything. It tells you whether every tile is used, whether a tile can be used more than once, and how many targets must be filled.
+2. **Place the ones you are certain of first.** Every confident placement constrains the remaining choices — a six-tile item can collapse to a two-tile guess.
+3. Assume there are **distractor tiles** that belong nowhere. Tile count rarely equals target count.
+4. **Fill every target.** An empty target is a guaranteed zero; a wrong tile costs exactly the same and might be right.
+
+**The trap:** assuming the tiles map one-to-one onto the targets, and freezing when they do not.
+
+### Drop-down and fill-in-the-blank
+
+These are two different types that people confuse, and they fail in opposite ways.
+
+**Drop-down.** A menu embedded inside a sentence: "The power to declare war belongs to [menu]." One sentence can contain two or three menus and be worth two or three points, scored independently. It is the signature RLA editing format, and it is common in Science and Social Studies too.
+
+- Read the **whole sentence with the option in place**, not the option alone.
+- On an editing passage, check the sentence **before and after**. Pronoun agreement, verb tense consistency and transition words all depend on neighbours, and the menu is showing you options that are only wrong in context.
+- **Open every menu.** A menu you never clicked is a blank, and most of them display an unhelpful default. At the end of the section, sweep for any menu still showing its default.
+
+**Fill-in-the-blank and numeric entry.** A typing box with no choices. No partial credit, exact match. Guessing has near-zero value here, but it is not zero, and zero is what a blank is worth.
+
+- Type **digits, a decimal point and a minus sign** only. No units, no commas, no dollar sign, no percent sign — unless the box already displays one.
+- Check whether the box wants a **decimal or a fraction** before you type.
+- **Round only if instructed.** If the item does not tell you to round, do not.
+- For a word answer, spell the common term correctly; exact-match scoring is unforgiving.
+- **Never leave the box empty.** Put in a number of the right order of magnitude.
+
+### Hot spot
+
+**What it is:** a graphic — a coordinate grid, a number line, a map, a diagram, a graph — where you click directly on a point or region.
+
+**How it is clicked and scored:** click the location. Clicking elsewhere usually moves the marker; some items want two clicks. All-or-nothing.
+
+**Recipe:**
+
+1. Read the instruction and count **how many clicks** it wants. Two-click items that get one click score zero.
+2. **Read the scale before you count.** Gridlines are frequently worth 2 or 5 or 10, not 1. This is the number one cause of wrong hot-spot answers.
+3. Count from the origin deliberately — finger on the screen if you need to.
+4. **Read the coordinates back off the axes** after you click, as a check.
+
+**The trap:** reversing x and y, and misreading the gridline scale.
+
+### Short answer
+
+**What it is:** a text box with basic editing tools where you type a paragraph — summarising, designing an experiment, or explaining how evidence supports a conclusion. Typically about 10 minutes, scored 0 to 3 on a rubric.
+
+**Where it stands today:** short answer was **removed from the operational Science test in 2018**, and none of the four current subjects uses it. It still appears in the GED item-type family, in older practice books, and occasionally in practice materials, so it is worth ten minutes of your attention and no more. **Do not spend study time preparing for it.** If a prep book has you drilling Science short answers, that book is years out of date and you should distrust the rest of it.
+
+**Recipe, if you meet one:**
+
+1. **Answer the question in the first sentence.** No introduction, no restatement of the prompt.
+2. **Cite two specific things from the stimulus** — a number, a line, a result. The rubric rewards specific evidence and ignores enthusiasm.
+3. **Explain the link** between each piece of evidence and your answer in one sentence each.
+4. One paragraph. Five to eight sentences. Stop.
+
+### Extended response
+
+**What it is:** the RLA essay. Two short passages arguing opposite sides of an issue, and a prompt asking **which argument is better supported by evidence**. You get **45 minutes, a hard stop**, in its own section with its own clock.
+
+**How it is scored:** three traits, each worth **0 to 2 points**, for a raw 0 to 6. That result is then **double-weighted to 12 raw points on the RLA**, roughly a fifth of the subject score. Responses are scored first by an automated engine that compares your writing against scored exemplar responses; unusual or borderline responses are routed to human scorers.
+
+The three traits:
+
+1. **Creation of arguments and use of evidence** — did you take a position on which argument is better supported, and did you use evidence from **both** passages to defend it?
+2. **Development of ideas and organisational structure** — does it have a shape? Introduction, body, conclusion, with ideas that connect?
+3. **Clarity and command of standard English conventions** — sentence structure, grammar, punctuation, usage.
+
+**Recipe, with the clock:**
+
+1. **Minutes 0–5.** Read both passages. Mark the strongest piece of evidence in each and note which one relies on facts versus which one relies on opinion or emotion.
+2. **Minutes 5–10.** Decide which argument is **better supported** and jot a four-line plan: your position, two reasons, and the specific quotes for each.
+3. **Minutes 10–40.** Write. Four to six paragraphs, 300 to 500 words.
+4. **Minutes 40–45.** Re-read for conventions. Fix fragments, run-ons and homophones. Do not rewrite.
+
+**The rules that decide the score:**
+
+- **The prompt asks which argument is better supported, not which you agree with.** You can think Passage A is morally right and still argue that Passage B is better supported. Answering the wrong question caps trait 1 immediately.
+- **Quote or reference both passages.** An essay that only engages one side cannot score full marks on trait 1.
+- **Never write "I think" or "in my opinion."** Analyse the arguments; do not join them.
+- **Short clean sentences beat ambitious broken ones.** Trait 3 counts errors, not vocabulary.
+- **Always finish.** Off-topic scores 0. No evidence from the passages scores 0. Blank scores 0. An essay with no conclusion reads as structureless and bleeds trait 2.
+
+> A finished three-paragraph essay outscores an abandoned five-paragraph one. If you are at minute 35 with one body paragraph, stop developing and write your conclusion.
+
+## Test-taking mechanics
+
+The platform is not complicated, but the people who lose points to it lose a lot of them.
+
+**The timer.** Top right of the screen. You can minimise it if watching it makes you anxious, and it reappears and stays put in the final minutes regardless. **Look at it at the start of the section and write down your checkpoints.** A clock you glance at every four items costs you nothing; a clock you ignore costs you the last six items.
+
+**Flag for Review.** A flag icon on each item. Clicking it marks the item, and the flag appears filled in blue on the end-of-section review screen so you can jump straight back. Use it as a to-do list with rules:
+
+- Flag anything you guessed on.
+- Flag anything that took more than 90 seconds.
+- Flag anything where you want to check one specific thing.
+- **Do not flag more than about one item in five.** A fifteen-item flag list at the end is not a to-do list, it is a panic list, and you will not work through it.
+
+**The review screen.** At the end of a section you get a list of every item showing answered, unanswered and flagged. This is where sections are won. Work it in this order: **blanks first, flags second.** A blank is a certain zero; a flag is a coin you have already flipped.
+
+**Navigation is within a section only.** RLA moves through three sections in one direction. Math is split into **Part 1 (the first five items, no calculator)** and **Part 2 (the remaining 41, calculator available)**, and **once you submit Part 1 you cannot return to it**. Answer all five before you submit. This is the single most common avoidable loss on the entire GED.
+
+**Never leave a blank.** There is no wrong-answer penalty on any GED item type. Blank and wrong score identically. Every empty box, unopened drop-down and unfilled drag target is a point you chose not to attempt.
+
+**When to change an answer.** The rule is simple and it is about evidence, not feeling.
+
+> You may change an answer if you can complete this sentence with a fact: **"I am changing this because ______."** Because I misread the stem. Because I found the line in paragraph 4. Because I just realised choice C is reversed. Those are reasons. "It feels wrong now" is not a reason, and changes made on that basis lose more than they win.
+
+A first answer made with a found line and a prediction is usually right. A second answer made with new information is usually right. A second answer made with only anxiety is usually wrong.
+
+**The calculator.** An on-screen **TI-30XS MultiView** is available on Math Part 2, on Science, and on Social Studies. At a physical test centre you may bring your own handheld TI-30XS MultiView; for online-proctored testing you must use the on-screen one. A **Calculator Reference Sheet** button explains which key does what.
+
+- **Open it once, early, so the first time is not on a real item.** If you have never used the fraction key or the toggle key, learning them live costs three minutes.
+- **Do not use it for arithmetic you can do.** Twelve times five on a calculator costs eight seconds and a broken train of thought.
+- **Do use it for:** long decimals, percent chains, square roots, awkward fractions, anything where a slip would be fatal.
+- On Science and Social Studies you will touch it two or three times all test. Do not let its presence convince you those are calculation tests.
+
+**The reference sheets.** Math has a **Formula Sheet** button carrying every formula you need, available on both parts including the no-calculator part. **Science has no formula sheet and Social Studies has no content reference sheet** — anything Science needs beyond the short memorise list is printed inside the question itself.
+
+> Memorise the **layout** of the Math formula sheet, not the formulas. Practise finding any given formula in under four seconds. Opening the sheet to browse for ideas is a two-minute leak; opening it because you know you need the volume of a cylinder is four seconds.
+
+**On-screen tools.** A tools menu gives you a **highlighter** (mark the settling line), **strikethrough** (kill dead choices so your eye stops returning to them), and a **notepad**. You can also change **text size and on-screen colour** for readability. Strikethrough is elimination made visible — use it on every item you are not instantly sure of.
+
+**The note board.** At a test centre you are issued an **erasable note board and marker**; physical scratch paper is not allowed, and if you fill the board you can ask for a fresh one. Testing online, there is **no physical board, no paper and no pen** — the room scan enforces it — and you use the **digital whiteboard** inside the software instead. Practise with whichever one you will actually have. Discovering the digital whiteboard's controls during Math Part 2 is an expensive way to learn them.
+
+**The tutorial screens.** They run before the clock starts. Do not rush them and do not study them; use the time to settle your breathing.
+
+## Memory under pressure
+
+Cramming works for about 48 hours and then decays fast. That is fine — you are testing inside 48 hours. The trick is being ruthless about what actually needs to be in your head versus what the screen will hand you.
+
+### What to memorise versus what to reason out
+
+| Memorise it | Reason it out |
+|---|---|
+| **Math:** order of operations, fraction operations, the percent relationships, common squares and roots, unit conversions, what mean/median/mode/range mean, how to read slope from two points | Every formula on the Math formula sheet — it is on the screen. Memorise where it sits, not what it says. |
+| **Science:** speed = distance ÷ time, density = mass ÷ volume, work = force × distance, power = work ÷ time, force = mass × acceleration | Any other Science formula — if the item needs one, the item prints it. Also any definition you can get from the passage. |
+| **Social Studies:** the three branches and their powers, checks and balances, how a bill becomes law, the Bill of Rights, the amendments that matter, supply and demand direction, GDP/inflation/unemployment, the landmark cases | Any date, cause or consequence you can infer from the document in front of you. The document outranks your memory. |
+| **RLA:** comma splice, subject-verb agreement, pronoun agreement, parallel structure, the homophone set, the essay template, the three traits | Vocabulary — take it from context. Author's purpose — take it from the passage. Never guess a word you can read around. |
+
+The governing principle: **memorise only what the screen will not give you.** Everything else is reading, and reading is the skill you have been building all week.
+
+### The 20-minute morning-of review list
+
+Twenty minutes, on the day, for the subject you are about to sit. Then stop. This list is about restoring access, not learning.
+
+| Subject | Minutes | What you actually look at |
+|---|---|---|
+| **Social Studies** | 5 | Three branches and checks and balances. Say them aloud. |
+| | 5 | Bill of Rights greatest hits: 1, 4, 5, 8, plus 13, 14, 15, 19, 26. |
+| | 5 | Supply and demand direction. GDP, inflation, unemployment in one sentence each. |
+| | 5 | The four wrong-answer families. Say all four out loud. |
+| **Science** | 6 | The five memorise-list formulas. Write them out from memory, twice. |
+| | 5 | Independent versus dependent variable; control group; what a valid conclusion requires. |
+| | 5 | How to read a graph: title, axis labels, units, scale, trend. |
+| | 4 | The four wrong-answer families. |
+| **RLA** | 5 | The homophone set: their/there/they're, its/it's, your/you're, to/too/two, then/than, affect/effect. |
+| | 5 | Comma splice, run-on, fragment — one example of each. |
+| | 6 | The essay template: position, reason one plus quote, reason two plus quote, the other side's weakness, conclusion. |
+| | 4 | The four wrong-answer families. |
+| **Math** | 6 | Percent relationships. Percent change. Finding the original amount. |
+| | 5 | Slope from two points, and what slope means in a word problem. |
+| | 5 | Where every formula sits on the formula sheet. Do not read the formulas, locate them. |
+| | 4 | The five no-calculator items: what they look like and the 2-minute cap. |
+
+### Dumping formulas onto the note board in the first minute
+
+The first sixty seconds after the clock starts are the most valuable sixty seconds of the test, and they are not for question 1.
+
+**Write down the six to eight things you are most afraid of forgetting.** Not everything you know — only the fragile items, the ones you have had to look up twice this week. For Math that is typically the percent relationships, percent change, and the slope formula. For Science it is the five formulas plus the words "read the axis" and "the passage wins."
+
+This is not primarily about the formulas. It is about your working memory. As long as those facts are being *held*, part of your attention is spent holding them and part is spent worrying that you will drop them. Once they are on the board, that whole process shuts down and the capacity goes to reading. People who brain-dump report the anxiety dropping in the first minute, and that is the real return.
+
+**Then write your checkpoints on the same board:**
+
+| Subject | Write this on the board |
+|---|---|
+| Social Studies | `item 18 by 35 min · item 30 by 58 min` |
+| Science | `item 17 by 43 min · item 29 by 75 min` |
+| RLA section 1 | `item 9 by 17 min` |
+| RLA section 3 | `item 15 by 30 min` |
+| Math | `Part 1 done by 12 min · item 25 by 70 min` |
+
+Two practical notes. **Do not write before the exam has started** — at a test centre the board is yours once seated and writing during the tutorial screens is fine, but follow the proctor. And **online there is no physical board**: the dump goes into the digital whiteboard instead, which is slower to type into, so shorten the list to the four most fragile items.
+
+## The night before and the morning of
+
+### The night before
+
+**Set a stop time and honour it.** New material learned after that hour lowers your score. It costs sleep, and worse, it destabilises what you already have by crowding it. Your last 60 minutes should be review only — no new topics, no new chapters, no new formulas.
+
+**Do not take a practice test the night before.** A bad score wrecks your sleep. A good score teaches you nothing you can act on. There is no version of this that helps.
+
+**Sleep seven to eight hours.** If you cannot sleep, lying still in the dark with your eyes closed recovers most of the benefit, so do not get up and study out of frustration. Do not take a sleep aid you have never taken before; test morning is a bad time to discover how it makes you feel.
+
+**Pack the night before, physically, in one place:**
+
+- **Non-expired government-issued photo ID** with a recognisable photo and a name that **exactly matches your booking**. No valid ID means turned away and payment lost. Check the name match tonight, not tomorrow.
+- Your appointment confirmation and the test centre address, with a route planned and a backup for traffic.
+- Your approved handheld TI-30XS MultiView if you are bringing one.
+- Water and a snack for the break. A jacket — test centres run cold.
+- A plan for your phone, which cannot be in the room.
+
+**If you are testing online, run the system test the day before.** Not the morning of. Check your camera, microphone, connection and browser. Clear the room of everything — phones, papers, notes on the wall, a second monitor, pens. Tell everyone in the house what is happening and when. You will check in **30 minutes before** your appointment, complete technology checks, photograph yourself and your ID, and do a full 360-degree room scan.
+
+### The morning of
+
+**Eat.** Protein plus something slow-burning. Do not test hungry and do not test on top of a huge meal. **Caffeine: your normal amount.** Today is not the day to start drinking coffee, and it is not the day to quit.
+
+**Do the 20-minute review list. Then stop.** Close the books. More review past that point converts into anxiety, not recall.
+
+**Arrive early.** Thirty minutes ahead at a test centre. Thirty minutes ahead for online check-in. Arriving at your exact appointment time means starting the test with your heart rate already up.
+
+**About the nerves.** Adrenaline and fear are the same physical state — raised heart rate, tight chest, sharpened attention. The only difference is the label you put on it. Telling yourself "I am ready and this is my body getting ready" instead of "I am panicking" is a genuinely well-supported reframe, and it costs nothing. If you need something mechanical: four seconds in, hold four, four out, hold four, for one minute, in the car.
+
+And say the number to yourself:
+
+> **I need 145. Not 200. I can miss four questions out of every ten and still pass.**
+
+### The first 60 seconds of the test
+
+Do these in this order, before you look at question 1.
+
+1. **Read the clock.** Note the actual number of minutes on it — it may not be exactly what you expected for your form.
+2. **Write your checkpoints on the note board.**
+3. **Dump your fragile facts** onto the board.
+4. **Adjust text size and contrast** if it will help you read faster.
+5. **Then start.** Answer question 1 even if it is ugly, because momentum matters — but if it is genuinely horrible, flag it and move on inside 60 seconds. The first item is not a referendum on your week. It is one point out of thirty-five.
+
+## If you are running out of time
+
+The governing fact: **all points are equal.** A four-minute geometry problem and a forty-second civics question are both worth exactly one raw point. Every triage decision follows from that. Leave the expensive items. Harvest the cheap ones.
+
+### The three-pass structure
+
+Run every subject in three passes, from the start, not only when you are in trouble.
+
+1. **Pass 1 — the harvest.** Go straight through from item 1. Answer everything that resolves in under 90 seconds. Guess-and-flag everything else and do not fight it. You should reach the end of pass 1 with roughly 25–30% of the clock remaining.
+2. **Pass 2 — the flags.** Return to flagged items **in order of cheapness, not order of appearance.** Take the two-minute item before the five-minute item, every time.
+3. **Pass 3 — the sweep.** Open the review screen and fill every remaining blank.
+
+### Per-subject triage
+
+**Social Studies — 70 minutes, ~35 items, 2:00 each.**
+
+- **Skip:** paired-document comparison sets; anything hinging on a date you do not know; dense tables with four or more columns.
+- **Harvest:** the stand-alone civics items with no stimulus — pure recall, 20 to 40 seconds each, and there are more of them than people expect. Single-graph "best supported" items.
+- Time pressure here is real. Two minutes an item is not generous when half the items carry a passage.
+
+**Science — 90 minutes, ~34 items, 2:38 each.**
+
+- **Skip:** multi-step calculations; long experimental-design items juggling three variables; genetics items if Punnett squares are slow for you.
+- **Harvest:** read-the-graph, read-the-table, definition items, "which is the independent variable," "what would improve this experiment."
+- Science has the most generous clock on the test. **If you are running out of time on Science, you are over-reading the passages.** Cut reading time, not thinking time.
+
+**RLA — three sections, three separate clocks.**
+
+- **Sections 1 and 3:** skip long literary inference sets. **Harvest the editing drop-downs** — 15 to 30 seconds each and there are a lot of them. They are the cheapest points anywhere on the GED.
+- **The essay, 45 minutes, hard stop:** if you are at minute 35 with one body paragraph written, **stop developing and write your conclusion now.** A finished three-paragraph essay outscores an abandoned five-paragraph one, because trait 2 rewards structure and an essay that stops mid-thought reads as having none.
+- One piece of good news: the clocks are independent. Running long in Section 1 cannot steal essay time, and a slow essay cannot eat Section 3.
+
+**Math — 115 minutes, 46 items, 2:30 each.**
+
+- **Part 1, the five no-calculator items: cap it at 12 minutes.** If one is fighting you, guess and move. **Answer all five before you submit**, because you can never go back. This is the most common avoidable loss on the GED and it is entirely preventable.
+- **Skip in Part 2:** composite 3-D volume and surface area; quadratics that need the formula worked by hand; systems-of-equations word problems if setup is slow for you.
+- **Harvest:** percent, unit rate, mean and median, slope from two points, evaluating a function, reading a graph, simple probability, one-step and two-step equations.
+- **Numeric-entry items with no time left: type a number anyway.** The right order of magnitude occasionally lands, and a blank never does.
+
+### The last-five-minutes protocol
+
+This is a fixed sequence. Do not improvise it under pressure.
+
+1. **Stop working the current item.** Whatever it is, however close you are. Now.
+2. **Open the review screen.**
+3. **Fill every blank first — blanks before flags.** Thirty seconds of blank-filling outscores five more minutes on one hard item, every time.
+4. **For every unanswered multiple choice, use your pre-chosen letter.** Choose that letter before test day so you are not spending decisions at minute 112.
+5. **For every empty numeric box, type a plausible number.**
+6. **For every drop-down still showing its default, open it and pick something.**
+7. **For every drag-and-drop with an empty target, put a tile in it.**
+8. **With whatever seconds remain, go back to flags in order of cheapness.**
+9. **Submit when the clock tells you to, and never leave a section early with blanks on the board.**
+
+### If it is going badly
+
+Finish it anyway. Do not void, do not walk out, do not leave early. You cannot see the equating and you genuinely do not know where you are — people who were certain they failed pass all the time, because 60–65% feels far worse from the inside than it looks on a score report. And a completed attempt gives you a diagnostic score report telling you exactly what to fix, while a walkout gives you nothing and costs the same money.
+
+Then remember what a failed subject actually costs: a discounted retake, no waiting period for the first two attempts in twelve months, and only that one subject. Not the credential. Not the week. One subject, one retake, and everything you learned about how the real test feels — which is worth more than any practice test you could have taken instead.
+
+
+---
+
 # New Jersey
 
 *Your state: what it accepts, what it costs, and what it actually issues.*
@@ -1323,6 +1943,580 @@ Sit one 60-minute block of about 29 items with a real clock, no pausing. You are
 
 ---
 
+# Essay
+
+*The Extended Response — 45 minutes, 6 raw points.*
+
+## What they actually ask
+
+**Only one GED subject still has an essay: Reasoning Through Language Arts (RLA).** If you are revising an essay for Social Studies or Science, stop. That time is wasted.
+
+| Subject | Total time | Essay / extended response? |
+| --- | --- | --- |
+| Reasoning Through Language Arts | 150 minutes | **Yes.** One Extended Response, separately timed at 45 minutes |
+| Social Studies | 70 minutes | **No.** The Extended Response was removed on 1 March 2016 |
+| Science | 90 minutes | **No.** The two short-answer items were dropped at the start of 2018 |
+| Mathematical Reasoning | 115 minutes | **No.** It never had one |
+
+Old study guides, old YouTube videos and old classroom handouts still teach a Social Studies essay. They are out of date. Social Studies is now multiple choice, drag-and-drop, fill-in-the-blank and hot-spot items only, in 70 minutes with no break. Science is the same. There is exactly one piece of extended writing on the whole GED, and it sits in the middle of RLA.
+
+### Where the essay sits in the RLA test
+
+RLA runs 150 minutes in three parts:
+
+1. **Section 1**, about 35 minutes of reading and language questions.
+2. **Section 2**, the Extended Response, 45 minutes, on its own clock.
+3. A 10-minute break.
+4. **Section 3**, about 60 minutes of reading and language questions.
+
+The 45 minutes is ring-fenced. You cannot borrow minutes from Section 1, and if you finish the essay in 30 minutes the spare 15 do **not** roll forward into Section 3. Time you do not use on the essay is simply gone, so there is no reward for finishing early and no penalty for using every second.
+
+The Extended Response is worth roughly **20 percent of your RLA score**. It is scored 0 to 6 and then double-weighted, so it contributes up to **12 raw points** to the test. That is a large block of points to leave on the table, which is why a blank or off-topic response is so hard to recover from.
+
+### What is on the screen
+
+You get two passages and one prompt box. The passages are short: usually 550 to 700 words in total, so roughly 300 to 350 words each. They are everyday texts, not literature: a press release and a letter to the editor, two opinion columns, a company memo and an employee's reply, a speech and a rebuttal. They always argue **opposite sides of the same single question**.
+
+You type into a plain text box. There is no spellchecker. You get cut, copy and paste buttons, an on-screen timer, and an erasable noteboard (or the whiteboard tool, if you are testing online) for planning.
+
+### The directions, word for word
+
+The prompt wording barely changes from form to form. GED Testing Service's own released sample reads:
+
+> Analyze the arguments presented in the press release and the letter to the editor. In your response, develop an argument in which you explain how one position is better supported than the other. Incorporate relevant and specific evidence from both sources to support your argument.
+>
+> Remember, the better-argued position is not necessarily the position with which you agree.
+>
+> This task should take approximately 45 minutes to complete.
+
+Read that middle line again. Then read it a third time.
+
+### The one mistake that sinks more responses than any other
+
+**You are not being asked which side you agree with. You are being asked which author did the better job of proving their case.**
+
+You are not a debater in this argument. You are the referee. Two boxers are fighting and you are scoring the fight. It does not matter which boxer you like. It matters who landed the punches.
+
+Say the topic is whether your town should build a new bypass. You may have driven that road for twenty years. You may have a settled, sensible, well-earned opinion about it. **None of that is on the test.** If the passage you disagree with cites a named state study, gives dated figures with a source, and admits one weakness in its own case, while the passage you agree with says "everyone I have spoken to feels the same way" and "experts agree", then the passage you disagree with is better supported, and that is the one your essay must argue for.
+
+This is genuinely uncomfortable. Do it anyway. It is worth up to 12 raw points.
+
+Two warnings about this, because people overcorrect:
+
+- **You are allowed to pick either passage.** There is no secret right answer keyed into the scoring. A scorer will give full marks to a well-supported case for either side. What you cannot do is pick a side and then defend it with your feelings.
+- **Pick the easier side, not the truer side.** Before you commit, count the quotable pieces of evidence you could use for each passage. If you cannot find at least two solid quotes for a side, switch to the other one. This is a writing test, not a referendum.
+
+### The four ways people throw the essay away
+
+1. **The agreement essay.** "I agree with the second passage because I have always believed schools need more funding, and in my own experience..." This answers a question nobody asked. It is the single most common fatal error.
+2. **The summary essay.** Naming a side in the first paragraph and then simply retelling what each passage said, with no judgement about the quality of the evidence. Summary is not analysis. This caps Trait 1 at 1, usually 0.
+3. **The copy-and-paste essay.** Large slabs lifted from the passages. GED Testing Service is explicit: if too much of the response is source material, it can be scored 0, because it is someone else's writing, not yours. Quote in short pieces, a phrase or a single sentence, and always explain the quote afterwards.
+4. **The short essay.** The official guidance asks for 4 to 7 paragraphs of 3 to 7 sentences, which is 300 to 500 words. A much shorter response risks a 0 simply because there is not enough writing for a scorer to judge. Aim for about 400 to 450 words. Five paragraphs does it comfortably.
+
+### Non-scorable responses
+
+Some responses never reach the rubric at all. A response is flagged non-scorable, and gets nothing, if it is:
+
+- blank, or only a few words
+- entirely copied from the prompt or the source passages
+- off-topic, or showing no engagement with the prompt
+- incomprehensible
+- not written in English
+
+Write something. A rough, imperfect, four-paragraph essay that names a side and quotes the passages beats a beautiful blank screen by twelve raw points.
+
+## The rubric, in plain English
+
+Three traits. Each is scored **0, 1 or 2**. That gives a rubric total of 0 to 6, which is then doubled to give you up to 12 raw points on RLA.
+
+| Trait | What it is really asking | Points |
+| --- | --- | --- |
+| **1. Creation of Arguments and Use of Evidence** | Did you judge the arguments, using the texts? | 0-2 |
+| **2. Development of Ideas and Organizational Structure** | Is it a built essay, or a pile of sentences? | 0-2 |
+| **3. Clarity and Command of Standard English Conventions** | Can a reader get through it without tripping? | 0-2 |
+
+There is no published raw-to-scaled conversion, so nobody can honestly tell you "you need exactly a 4". Treat **4 out of 6 as your target and 5 as your stretch**. Almost nobody needs a 6 to pass RLA, but a 0 or 1 makes passing very hard.
+
+### Trait 1: Creation of Arguments and Use of Evidence
+
+This is where most points are won and lost. It is the trait that punishes the agreement essay and the summary essay.
+
+- **2 points.** You build a text-based argument that directly answers the prompt. That is, you state which position is **better supported** and you say why. You cite **relevant and specific** evidence from **both** passages. And, crucially, you **evaluate**: you separate supported claims from unsupported ones, question assumptions, point out faulty reasoning, and weigh how credible each source is. You stay out of it; the response is about the texts, not about you.
+- **1 point.** There is an argument and it is roughly connected to the prompt, but the support wobbles. Typical shapes: evidence is cited but never explained; some evidence is irrelevant or over-general; evaluation is attempted once and dropped; only one passage is really used; or the response slides in and out of personal opinion.
+- **0 points.** No argument, or one with little connection to the prompt. Evidence is missing, or is just copied text, or comes from outside the passages (your own life, your own knowledge). No evaluation at all. Pure summary and pure opinion both live here.
+
+**The line between a 1 and a 2 is a single habit:** after every quotation, write a sentence that judges it. Not "The author says X." But "The author says X, and because that figure comes from a named state report, a reader can check it."
+
+### Trait 2: Development of Ideas and Organizational Structure
+
+- **2 points.** Ideas are actually developed. Each main point gets several sentences that build on one another, rather than one sentence and a move on. There is a clear, sensible structure with a beginning, a middle and an end. Transitions connect sentences and paragraphs. Details are tied to the main point they belong to. The style and tone are formal and suited to an unknown adult reader. Word choice is clear.
+- **1 point.** Partly developed. Some points get built, others are mentioned and abandoned. There is some structure but it wanders, doubles back, or repeats itself. Transitions appear occasionally or are all the same word. Tone slips informal: "you guys", "kinda", "a ton of", contractions everywhere. Some details float free of any main point.
+- **0 points.** No development, no discernible plan. Ideas are repeated or disjointed, or the response is really a list. The tone is inappropriate or the word choice obscures the meaning.
+
+**The line between a 1 and a 2 here:** three body paragraphs that each do one job, each opened with a transition, each at least four sentences long.
+
+### Trait 3: Clarity and Command of Standard English Conventions
+
+Read the descriptors carefully, because this trait is more forgiving than people fear.
+
+- **2 points.** Sentence structure is largely correct and reasonably varied. You handle the specific conventions the rubric names: subject-verb agreement, pronoun use, modifier placement and word order, capitalisation, apostrophes and possessives, commonly confused words and homophones, and end punctuation. **Errors are allowed.** The standard is on-demand draft writing produced in 45 minutes, not a polished essay revised over a week. Errors simply must not get in the way of understanding.
+- **1 point.** Control is inconsistent. Some clean sentences and some run-ons or fragments. The same error type repeats: agreement, or apostrophes, or their/there. Sentences are nearly all the same short shape. A reader occasionally has to reread, but the meaning survives.
+- **0 points.** Minimal control. Errors are so frequent or so severe that meaning is lost. Almost no sentence variety. Or the response is too short to judge at all.
+
+**Spelling is not a scored category on its own.** But homophones are, and homophones look like spelling. `their / there / they're` and `its / it's` are Trait 3 errors, every time.
+
+### How the traits interact
+
+- Trait 1 is the expensive one to fail and the hardest to fake. Protect it first.
+- Trait 3 is the cheapest to protect, because it rewards correctness, not sophistication. See the last section of this chapter.
+- If a response is non-scorable, you do not get partial credit on Traits 2 and 3. It is zero across the board.
+- Do not trade Trait 1 for Trait 3. Spending your last eight minutes hunting commas instead of writing your third body paragraph swaps a whole point for a fraction of one.
+
+## The 45-minute clock
+
+Forty-five minutes is enough, but only if you spend it in a fixed order. The plan below follows the five-step process GED Testing Service teaches in its own Extended Response materials. Learn the numbers now so that on the day you are executing, not deciding.
+
+| Clock | Minutes | What you are doing |
+| --- | --- | --- |
+| 0:00 - 0:02 | 2 | **Read the prompt box first**, not the passages. Write the topic and the question on your noteboard. |
+| 0:02 - 0:07 | 5 | **Read Passage 1.** Find the claim. Mark strong and weak evidence. |
+| 0:07 - 0:12 | 5 | **Read Passage 2.** Same job. |
+| 0:12 - 0:17 | 5 | **Decide and plan.** Count the evidence on each side, pick the better-supported one, write a five-line outline. |
+| 0:17 - 0:40 | 23 | **Type.** Intro 3, body paragraphs 6 + 6 + 6, conclusion 2. |
+| 0:40 - 0:45 | 5 | **Check**, using the checklist later in this chapter. |
+
+### 0:00 - 0:02, the prompt
+
+Read the prompt box before you read a word of either passage. It tells you the topic and the two text types, so you read the passages already looking for the right thing. On your noteboard write two lines:
+
+> Topic: ____
+> Question: which passage is better supported?
+
+Writing that second line down, every single time, is the cheapest insurance in this chapter against the agreement essay.
+
+### 0:02 - 0:12, the two readings
+
+Five minutes each. Do not read for what you believe. Read for what each author can prove.
+
+Use a fast shorthand on the noteboard. Two columns, headed `P1` and `P2`. Under each:
+
+- `C:` the claim, in six words.
+- `+` next to each piece of **strong** evidence: a named study, a dated statistic with a source, a named expert, a first-hand fact the author is placed to know, an honest concession.
+- `-` next to each piece of **weak** evidence: an unnamed source ("experts say"), a vague reference ("a recent report"), a number with no origin, an appeal to fear or pity, an attack on the other person, an irrelevant but true detail, a prediction with no basis.
+
+You are aiming for four to six marks in total across the two columns. That is plenty.
+
+### 0:12 - 0:17, the decision and the plan
+
+Count the plus signs. Whichever passage has more, and more importantly whichever gives you two or three quotes you can actually explain, is your side. **If you cannot find two quotable pieces of evidence for the side you first preferred, switch.** Switching at minute 13 is free. Switching at minute 32 is not.
+
+Then write five lines and nothing more:
+
+> Thesis: ____ is better supported because ____
+> Body 1: quote ____ , technique ____
+> Body 2: quote ____ , technique ____
+> Body 3: weakness in the other passage ____ , concession ____
+> Conclusion: restate
+
+Five lines. Not sentences, not a paragraph. You are making a map, not a draft.
+
+### 0:17 - 0:40, the typing
+
+Twenty-three minutes for roughly 420 words is about 18 words a minute. That is a comfortable, unhurried pace. You do not need to type fast; you need to not stop.
+
+Do not rewrite sentences as you go. If a sentence comes out badly, leave it and move on. Trait 3 tolerates errors, but Traits 1 and 2 do not tolerate a missing paragraph. You will come back at 0:40.
+
+### 0:40 - 0:45, the check
+
+Five minutes, using the checklist near the end of this chapter. Do not start new ideas here. Repair only.
+
+### If you fall behind
+
+Memorise these three panic rules. They are worth more than any amount of technique.
+
+- **At 20 minutes you must be typing.** If you are still reading or planning, stop, pick the side you have the most notes for, and start the introduction now.
+- **At 30 minutes you must be inside body paragraph 2.** If you are not, shorten the plan: two body paragraphs instead of three is a normal, respectable essay.
+- **At 38 minutes, finish the sentence you are on and write the conclusion.** An essay with a conclusion beats a better essay without one, every time. Trait 2 explicitly wants a beginning, middle and end.
+
+And the rule underneath all of them: **never submit a blank box.** If you have six minutes left and nothing written, type the introduction, one body paragraph with one quote, and one conclusion sentence. That is a scorable response. Blank is not.
+
+## The template
+
+Memorise this. Write it out from memory five times before test day, on paper, filling the blanks with nonsense if you have to. On the morning of the test, the skeleton should arrive without being called.
+
+The shape is five paragraphs. Each body paragraph follows the same five-move pattern, which is easy to remember as **T-Q-T-E-L**: **T**opic sentence, **Q**uote, **T**echnique, **E**xplain, **L**ink.
+
+### Paragraph 1: Introduction (4 sentences)
+
+> Both passages address the question of whether ______.
+>
+> The author of the ______ argues that ______.
+>
+> In contrast, the author of the ______ claims that ______.
+>
+> Although both authors raise reasonable concerns, the ______ presents the **better-supported** argument, because it relies on ______, ______, and ______, while the ______ relies mainly on ______.
+
+That fourth sentence is your thesis and it is the most important sentence in the essay. Three rules for it:
+
+1. It must name the winning passage by its **type or its author**, not "Passage A", though "Passage A" is acceptable if the passages are labelled that way on screen.
+2. The exact words **"better supported"** must appear in it. Scorers are reading fast. Hand them the answer.
+3. It must give the **reasons** in outline: the three things your body paragraphs will prove.
+
+### Paragraph 2: Body 1: the strongest evidence on your side (5-6 sentences)
+
+> The strongest support for ______'s position is ______.
+>
+> The author writes that "______."
+>
+> This is ______ [a statistic from a named source / a documented study / testimony from a named expert / a fact the author is placed to know first-hand].
+>
+> This strengthens the argument because a reader can check it, rather than being asked to take the author's word for it.
+>
+> By contrast, the ______ offers no comparable evidence on this point.
+
+### Paragraph 3: Body 2: your second piece of evidence, set against theirs (5-6 sentences)
+
+> A second reason the ______ is better supported is ______.
+>
+> The passage states, "______," and adds that ______.
+>
+> This evidence is specific and verifiable, because ______.
+>
+> The ______, on the other hand, asserts that "______" but never says where this claim comes from.
+>
+> An unsupported assertion cannot carry the same weight as a figure with a source behind it.
+
+### Paragraph 4: Body 3: the weakness on the other side, plus one concession (6 sentences)
+
+> The weaker argument loses ground chiefly in how it handles evidence.
+>
+> For example, the author of the ______ writes, "______."
+>
+> This is ______ [an appeal to emotion / an overgeneralisation / a false choice / a claim with no named source / an attack on the person rather than the argument].
+>
+> A reader cannot test this claim, so it adds nothing to the case.
+>
+> Admittedly, the ______ makes one fair point: ______.
+>
+> Even so, one reasonable point does not outweigh ______.
+
+That concession sentence, the one beginning "Admittedly", is worth including every time. Acknowledging the other side is one of the clearest signals of genuine evaluation, which is exactly what Trait 1 rewards.
+
+### Paragraph 5: Conclusion (4 sentences)
+
+> In conclusion, both authors clearly care about ______, but only one builds a case a reader can check.
+>
+> The ______ rests on ______, ______, and ______.
+>
+> The ______ rests on ______ and ______.
+>
+> For these reasons, the ______ presents the better-supported argument, whatever a reader may personally feel about ______.
+
+Do not introduce a new point in the conclusion. Do not summarise the passages again. Summarise your **analysis**.
+
+### The exact transition words
+
+Use these and no others. They are short, safe, spellable, and they do the job.
+
+| Job | Words to use |
+| --- | --- |
+| Adding a point | **Furthermore,** / **In addition,** / **Moreover,** / **Another example is** |
+| Contrasting | **However,** / **In contrast,** / **On the other hand,** / **By comparison,** |
+| Conceding | **Admittedly,** / **Although** / **While it is true that** / **Granted,** / **To be fair,** |
+| Showing a result | **Therefore,** / **As a result,** / **Consequently,** / **Because of this,** |
+| Giving an example | **For example,** / **For instance,** / **Specifically,** / **In particular,** |
+| Ordering points | **First,** / **Second,** / **Third,** / **Finally,** |
+| Closing | **In conclusion,** / **For these reasons,** / **Overall,** |
+
+Three usage notes:
+
+- A transition at the start of a sentence takes a comma after it: `However, the letter names no source.` That one comma is nearly the whole of transition punctuation.
+- Use **First / Second / Third**, not Firstly / Secondly / Thirdly. Fewer letters, fewer chances to go wrong.
+- Use **"In conclusion"** exactly once, at the start of the last paragraph. Never twice.
+
+## Sentence stems to memorise
+
+Learn these as fixed phrases. On test day you should be filling in blanks, not composing. Every stem below is grammatically safe and spellable.
+
+### Quoting and introducing evidence
+
+1. The author writes that "______."
+2. The passage states, "______."
+3. According to the ______, "______."
+4. One example of this from the text is when the author says "______."
+5. The author supports this claim by pointing to ______.
+6. In the ______, the author reports that ______.
+7. The ______ cites ______ as the source of this figure.
+
+### Evaluating the quality of evidence
+
+8. This is strong evidence because the source is named and a reader can check it.
+9. This figure is specific and dated, which makes it far harder to dismiss.
+10. Because this claim comes from a published study rather than from the author's own impression, it carries real weight.
+11. The author is well placed to know this, because ______.
+12. This evidence is directly relevant to the question of ______.
+13. This detail is accurate but it does not bear on the question of ______.
+14. The author gives a number without saying where it came from, so a reader has no way to test it.
+15. A single example is not enough to support a claim about ______ as a whole.
+16. The author reports evidence that works against the argument, and that honesty makes the rest of the case easier to trust.
+
+### Naming weak reasoning
+
+You do not need Latin terms. Plain English is safer and the scorer is rewarding your explanation, not your vocabulary.
+
+17. The author appeals to the reader's fear rather than presenting evidence, writing that "______."
+18. The phrase "experts say" names no expert, so the reader cannot check the claim.
+19. The author generalises from one case, concluding that ______ on the basis of a single example.
+20. The author presents the issue as a choice between only two options and ignores the possibility that ______.
+21. The author assumes that because ______ happened after ______, the first caused the second.
+22. The author predicts a chain of consequences without showing that any one of them leads to the next.
+23. The author attacks ______ personally instead of answering the argument.
+24. "Everyone agrees" is not evidence; it is a description of the author's own circle.
+25. The author treats an absence of change as proof of harm, which does not follow.
+26. This claim is asserted rather than supported, and asserting something more forcefully does not make it more likely.
+
+### Conceding the other side
+
+27. Admittedly, the ______ makes one fair point: ______.
+28. To be fair, the author is right that ______.
+29. While it is true that ______, this does not outweigh ______.
+30. The strongest part of the weaker argument is ______, and it deserves an answer.
+31. Granted, ______ is a genuine cost, and the ______ does not pretend otherwise.
+
+### Comparing the two passages
+
+32. By contrast, the ______ offers no comparable evidence on this point.
+33. Where the ______ names its sources, the ______ relies on general impressions.
+34. Both authors make the same claim about ______, but only one of them supports it.
+35. The ______ answers this objection directly, while the ______ never addresses ______ at all.
+
+### Stating and restating your judgement
+
+36. The ______ presents the better-supported argument.
+37. For these reasons, the evidence in the ______ is stronger, whatever a reader may feel about the issue itself.
+38. Overall, one author builds a case a reader can test and the other builds a case a reader must simply accept.
+
+## A full worked example
+
+The prompt below is written in the style of the real thing. **The people, districts, studies and figures in these passages are invented for practice.** Do not quote them as facts anywhere except in a practice essay.
+
+Give yourself 45 minutes and write this before you read the model answers.
+
+> **Prompt.** Analyze the arguments presented in the superintendent's statement and the letter to the editor. In your response, develop an argument in which you explain how one position is better supported than the other. Incorporate relevant and specific evidence from both sources to support your argument.
+>
+> Remember, the better-argued position is not necessarily the position with which you agree.
+>
+> This task should take approximately 45 minutes to complete.
+
+### Passage 1: Statement to the Marrow County Board of Education, from Superintendent Dana Whitfield
+
+> I am asking the Board to approve a four-day school week beginning next August, with classes running Monday through Thursday and each day lengthened by seventy minutes. I make this request for three reasons, and I will give you the figures behind each one.
+>
+> First, the schedule keeps teachers. When Pinebrook County adopted the same calendar in 2019, its teacher vacancies fell from eighteen open positions to four within a single year, according to the staffing reports that district files with the state each October. Our own district posted twenty-two vacancies last September, the highest number in our history, and we filled nine of them with long-term substitutes rather than licensed teachers. A schedule that costs the district nothing and attracts applicants deserves serious consideration.
+>
+> Second, the schedule saves money we do not have. Our transportation contractor bills us per route, per day. Removing one day of routes, together with one day of building heat and electricity, would save an estimated $310,000 a year. That figure comes from our own invoices for the last three years, and every member of this Board is welcome to review them. It represents 2.4 percent of our operating budget, which is close to the shortfall we have carried since 2022.
+>
+> Third, attendance improves. In the eleven districts in this state that have moved to four days, average student attendance rose from 92 percent to 95 percent in the two years following the change. The state Department of Education publishes these figures each spring.
+>
+> I want to be careful about what this schedule does not do. In those same eleven districts, standardized test scores did not rise. They held steady, within one point of where they had been before the change. I will not promise this Board academic gains that the evidence does not show. What the evidence does show is a district that keeps its teachers, closes its budget gap, and gets students into their seats more often.
+>
+> I also recognize that Friday care is a real cost for working families, and that it falls hardest on the families with the least room in their budgets. For that reason I am asking the Board to pair this vote with funding for a free supervised Friday program at our two community centers, staffed by the classroom aides whose hours we would otherwise have to cut.
+
+### Passage 2: Letter to the Editor, the Marrow County Register, from Renata Osei
+
+> The superintendent wants to close our schools on Fridays. I am the parent of two children at Hollis Elementary, and I am asking the Board to vote no.
+>
+> Start with what this will cost families like mine. I work Fridays. If the school is closed, I pay a sitter sixty-five dollars a day. Over a school year of thirty-six Fridays, that is $2,340 out of my pocket so that the district can balance its books. Every parent I have spoken to at pickup says the same thing. Nobody I know thinks this is a fair trade.
+>
+> Experts say that children lose ground when they are out of the classroom. A day out of school is a day lost, every single time. You cannot bolt seventy minutes onto a Thursday afternoon and pretend it replaces a Friday morning. Children are not machines, and tired children do not learn.
+>
+> Look closely at the superintendent's own evidence. She admits that test scores did not go up in the districts she wants to copy. She said it herself, in her own statement, in front of the Board. That admission proves the plan does not work for children. If a change does nothing for learning, why on earth are we making it?
+>
+> And where does this end? First it is four days. Then, when the budget is short again, it will be three. Before long we will be asking parents to teach at home while the district collects the same tax dollars it collects today. The Board has to decide what it values. It can protect our children's futures, or it can protect a spreadsheet. It cannot do both.
+>
+> I will say this plainly. The superintendent has never had to find a sitter on a Friday morning. She has never lost a shift because a school calendar changed. It is easy to recommend a four-day week from an office with a door that closes.
+>
+> Our children deserve five days of school. They deserved it when I was a student in this district, and they deserve it now. Vote no.
+
+### A note before you read the answers
+
+Most readers side with Renata Osei. She is the parent, she is out of pocket, she is the one being done to. That sympathy is exactly the trap. Read both passages again, this time only asking: **which author gives me things I can check?**
+
+Whitfield names her sources three times: the staffing reports Pinebrook County files with the state, her own district's invoices for the last three years, and the state Department of Education. She reports a result that hurts her own case. She anticipates the strongest objection and funds an answer to it.
+
+Osei gives one genuinely specific figure, and it is her own household's. Everything else is an unnamed expert, a conversation at the school gate, a prediction, or a characterisation of the superintendent.
+
+### The model response: this would score 6/6
+
+> Both passages address the same question: whether the Marrow County schools should move to a four-day week. Superintendent Whitfield argues that the change would keep teachers, close a budget gap, and raise attendance. In contrast, Renata Osei argues that it would cost working families money and cost children learning. Although Osei raises one genuine cost, Whitfield's statement presents the better-supported argument, because her claims are attached to named sources, because she reports evidence that works against her own case, and because she answers the strongest objection instead of ignoring it.
+>
+> The strongest support for Whitfield's position is that her numbers come with addresses. She writes that removing one day of bus routes and utilities "would save an estimated $310,000 a year," and adds that the figure "comes from our own invoices for the last three years," which the Board may review. This is evidence a reader can verify, which is the difference between a claim and a supported claim. She does the same with attendance, reporting a rise "from 92 percent to 95 percent" across eleven districts and naming the state Department of Education as its publisher. Osei offers no figure at all about the district as a whole.
+>
+> A second reason Whitfield's argument is better supported is that she limits her own claims. She states plainly that in those same districts "standardized test scores did not rise," and that she "will not promise this Board academic gains that the evidence does not show." An author who reports evidence that damages her own case is easier to trust than one who reports only what helps. Osei, by contrast, supports her claim about public opinion by writing that "every parent I have spoken to at pickup says the same thing." A few conversations at one school door do not measure what a district believes, and no reader can check them.
+>
+> Osei's letter loses most ground in how it reasons. She writes that "experts say that children lose ground when they are out of the classroom," but she names no expert and no study, so the sentence carries no more weight than her own opinion. She then argues that because scores did not rise, that admission "proves the plan does not work for children," which treats an absence of change as proof of harm; steady scores are not damaged scores. She also predicts a slide from four days to three to none without showing that any district has taken that path, and she frames the vote as a choice between children and a spreadsheet when the proposal contains both. Admittedly, Osei makes one fair point: sixty-five dollars a day is a real cost, and it falls on the families least able to absorb it. Even so, Whitfield names that cost herself and attaches funding for a free Friday program to answer it, while Osei never answers Whitfield's figures at all.
+>
+> In conclusion, both authors clearly care about the same children. Whitfield rests her case on state staffing reports, district invoices, published attendance data, and an honest account of what those sources do not show. Osei rests hers on one household's budget, unnamed experts, and a prediction she does not support. For these reasons, the superintendent's statement presents the better-supported argument, whatever a reader may feel about losing a day of school.
+
+That is about 550 words in five paragraphs, which is longer than you need. The official guidance asks for 300 to 500 words, and a tighter version of roughly 400 would have earned exactly the same three 2s. It is printed at full stretch here so that every move is visible. Here is why it earns each 2:
+
+| Trait | Why it scores 2 |
+| --- | --- |
+| **1. Arguments and evidence** | Names the better-supported side in the thesis using the exact phrase. Quotes both passages repeatedly, always in short pieces. Every quote is followed by a judgement of its quality, not a paraphrase. Names four distinct reasoning weaknesses in the losing passage. Concedes one point honestly and then answers it. Nothing from outside the passages. |
+| **2. Development and structure** | Five paragraphs, each with one job, each opened with a transition or a clear topic sentence. Points build rather than repeat. The conclusion summarises the analysis, not the passages. Tone stays formal throughout, with no contractions, no second person and no slang. |
+| **3. Conventions** | Sentence length varies widely, from eight words to thirty. Quotations are punctuated correctly. Semicolon used once and correctly. Agreement, pronouns and possessives are sound. Nothing makes a reader stop. |
+
+### The second response: this would score 3/6
+
+Read this one slowly. It is not a bad-faith effort. It is the essay a hard-working but under-prepared candidate actually writes, and a 3 is a very common outcome.
+
+> In these two passages they are arguing about the four day school week. The superintendent wants it and the parent doesn't want it. I think the parent has the better argument because school is important for kids and four days is just not enough.
+
+- **Trait 1.** "I think the parent has the better argument because school is important for kids" is a personal opinion about the **issue**, not a judgement about **support**. Nothing in this paragraph says whose evidence is stronger. The phrase "better supported" never appears anywhere in the essay.
+- **Trait 1.** Choosing Osei is **not** the error here. You may argue for either passage. The error is that the choice is justified by the writer's own feelings instead of by anything in the texts.
+- **Trait 2.** "In these two passages they are arguing". "They" has no clear referent, and neither author is named. Informal register from the first word.
+- **Trait 3.** "doesn't" is a contraction, which is informal for this task rather than wrong. "four day" should be hyphenated. Neither costs a point by itself.
+
+> The parent makes alot of good points. She says she pays $65 a day for a sitter which is alot of money for a parent, thats $2,340 a year, my mother would not be able to pay that either. Parents work on Fridays and they cant just stay home. The superintendent doesn't understand this because she has never had to find a sitter on a Friday morning.
+
+- **Trait 1, some credit.** There **is** specific evidence from the passage here: the $65 and the $2,340. This is the main reason Trait 1 lands on 1 rather than 0.
+- **Trait 1, points lost.** The figure is reported and never evaluated. Is one household's cost good evidence about a whole district? A single sentence doing that work would have moved this trait.
+- **Trait 1, points lost.** "my mother would not be able to pay that either" imports the writer's own life. The task is text-based; outside anecdote earns nothing and drags the response toward opinion writing.
+- **Trait 1, points lost.** The last sentence repeats Osei's attack on the superintendent as though it were an argument. A strong response would have **named** that as a weakness in Osei's letter.
+- **Trait 3.** "thats" is a missing apostrophe and "cant" is another. Both are squarely inside what this trait scores. "which is alot of money for a parent, thats $2,340 a year, my mother would not be able to pay that either" is a run-on built from comma splices.
+- **Trait 3.** "alot" is a misspelling. Spelling is not its own trait, so this alone would not cost a point.
+
+> Also the parent says experts say that children lose ground when they are out of the classroom. The superintendent even admits that the test scores didn't go up. So the plan is not going to help the students learn anything. Their is no point in changing the schedule if nothing gets better for the kids.
+
+- **Trait 1, the most expensive lost point in the essay.** The writer repeats "experts say" as if it were proof. Evaluating that phrase, on the grounds that nobody is named and so nothing can be checked, would have been the single highest-value sentence available, and it is one sentence long.
+- **Trait 1.** The writer also copies Osei's faulty inference: scores holding steady is treated as evidence that the plan harms children. A scorer sees the writer adopting the weak reasoning instead of spotting it.
+- **Trait 1.** Whitfield's $310,000, her 92-to-95 percent attendance figure, her twenty-two vacancies and her funded Friday program are never mentioned anywhere in the response. Using only one passage caps this trait.
+- **Trait 2.** "Also" is the only transition in the entire essay.
+- **Trait 3.** "Their is no point" is a homophone error, explicitly named in the rubric, and one that a 30-second proofread would have caught.
+
+> In conclusion I think the parent is right and the board should vote no. Kids need five days of school. The superintendent only cares about money and the parent cares about the children.
+
+- **Trait 2.** The conclusion introduces a brand-new claim, "the superintendent only cares about money", which is a characterisation, not analysis, and which the passage actually contradicts.
+- **Trait 1.** There is no concession anywhere in the response. Not one sentence acknowledges that Whitfield has a point.
+- **Trait 2.** The whole response is about 200 words, well below the 300-500 range, so there is simply less writing for a scorer to reward.
+- **Trait 3.** "In conclusion I think" needs a comma after "conclusion". The words "I think" should not be there at all.
+
+**The scores, and exactly what was lost:**
+
+| Trait | Score | What kept it off 2 | What kept it off 0 |
+| --- | --- | --- | --- |
+| **1. Arguments and evidence** | **1** | Defends the choice with personal opinion and outside anecdote; quotes evidence but never judges its quality; adopts two of Osei's reasoning flaws instead of naming them; ignores Whitfield's passage almost entirely; no concession. | A position **is** stated, and some relevant, specific evidence from a source text **is** used. |
+| **2. Development and structure** | **1** | Four paragraphs, but no point is developed beyond two or three sentences; one transition in the whole essay; conversational tone throughout; the conclusion repeats the introduction and then adds a new claim instead of closing the argument; under length. | There is a recognisable introduction, middle and conclusion, and the paragraphs are not random. |
+| **3. Conventions** | **1** | A multi-clause comma splice, two missing apostrophes, one homophone error, and sentences that are nearly all the same short shape. | Meaning survives everywhere. A reader never loses the thread. |
+
+Total: **3 out of 6**, which doubles to 6 raw points. The model response scores 6 out of 6, which doubles to 12. That six-point gap is the whole distance between these two essays.
+
+### Turning the 3 into a 5: four edits, about eight minutes
+
+1. **Rewrite the last sentence of the introduction.** Replace "I think the parent has the better argument because school is important for kids" with "Osei presents the better-supported argument because ______." Then fill that blank from the text, not from your feelings. Worth most of a Trait 1 point on its own.
+2. **Delete the sentence about the writer's mother.** In its place, put one sentence that judges the $65 figure: "This is a precise figure and Osei is well placed to know it, although it describes one household rather than the district."
+3. **Add one judging sentence after every quotation.** Start each with "This is strong evidence because..." or "This is weak evidence because...". Three sentences, ninety seconds, and Trait 1 changes shape.
+4. **Read once for two things only:** `their / there`, and any comma sitting between two complete sentences. Replace those commas with periods. That is Trait 3 fixed.
+
+Note what is **not** on that list. The writer does not have to switch sides, does not have to write longer sentences, and does not have to find better vocabulary. Four small, mechanical edits move a 3 to a 5.
+
+## The checklist
+
+Five minutes, from 0:40 to 0:45. Work down the list in order. Do not start new ideas. Repair only. The first six checks are worth more than all the rest put together.
+
+| # | Check | Fix if the answer is no |
+| --- | --- | --- |
+| 1 | Do the words **"better supported"** actually appear in my first paragraph? | Rewrite the last sentence of the introduction so they do. Thirty seconds. |
+| 2 | Have I written **"I think"**, **"I agree"**, **"in my opinion"**, or **"I feel"** anywhere? | Delete the phrase. Usually the sentence still works. If it does not, rewrite it as a statement about the text. |
+| 3 | Have I used **both** passages? | If one passage is missing, add two sentences to your third body paragraph quoting it. |
+| 4 | Does every body paragraph contain at least one thing inside **quotation marks**? | Go back and add one. Keep it short: a phrase or one sentence. |
+| 5 | After each quotation, is there a sentence that **judges** it ("This is strong evidence because...", "This is weak because...")? | Add it. This is the highest-value repair on the list. |
+| 6 | Have I named at least one **specific weakness** in the losing passage, and made one **concession** to it? | Add "Admittedly, ______ makes one fair point: ______." |
+| 7 | Is there a **conclusion paragraph** starting "In conclusion"? | Write four sentences now, even if a body paragraph is unfinished. |
+| 8 | Have I used any information from **outside** the passages, such as my life, my job, my town, or things I happen to know? | Delete it. It earns nothing and costs Trait 1. |
+| 9 | Is any single quotation longer than about **15 words**? | Cut it down. Long lifted slabs can push a response toward non-scorable. |
+| 10 | Count the paragraphs: is it **4 to 7**? Rough word count: is it at least **300**? | If short, add a sentence of explanation to each body paragraph. Never pad with summary. |
+| 11 | Does every sentence start with a **capital** and end with a **period**? | Scan the left edge of the text, then the right. Ten seconds. |
+| 12 | Is any sentence longer than **two lines** on screen? | Split it at the "and", "but" or "because". Two clear sentences always beat one long one. |
+| 13 | Is there a **comma sitting between two complete sentences** with no **and**, **but** or **so** after it? | Replace that comma with a period. This is the most common Trait 3 error there is. |
+| 14 | Check the four homophone pairs: **their/there/they're**, **its/it's**, **to/too/two**, **your/you're**. | Fix. These are named in the rubric. |
+| 15 | Is my response actually **in the answer box**, and not sitting on the noteboard? | Yes, people do this. Look. |
+
+If you get to the end of the list with time left, reread the introduction and the conclusion only. Those two paragraphs are what a scorer reads most closely.
+
+## If your grammar is shaky
+
+Read this section even if you think it does not apply to you. It contains the easiest two points on the test.
+
+Trait 3 rewards **correctness, not sophistication**. A scorer comparing a plain correct sentence with an ambitious broken one gives the point to the plain one. Nobody has ever gained a mark for attempting a semicolon. The rubric also says something people miss: this is judged as **on-demand draft writing produced in 45 minutes**. Errors are expected. They just must not stop a reader understanding you.
+
+So your whole strategy is: **write sentences you know you can finish correctly.**
+
+### The seven rules
+
+1. **Keep sentences between 10 and 18 words.** If a sentence runs past two lines on screen, split it. Find the "and", the "but" or the "because" and put a period before it.
+2. **One idea per sentence.** The moment you add "and also", start a new sentence instead.
+3. **Use a small, safe punctuation menu.** Period. Comma after an opening transition. Comma before **and**, **but** or **so** when joining two complete sentences. Quotation marks. That is everything you need for a 2.
+4. **Do not use** semicolons, colons, dashes, brackets or exclamation marks. Not one. There is no mark available for them and there are marks available to lose. (The 6/6 model earlier uses one semicolon, because that writer was confident with it. If you are not, do not.)
+5. **Write out contractions in full.** **do not**, **cannot**, **does not**, **it is**, **they are**. This kills half your apostrophe risk and raises your formality at the same time, which quietly helps Trait 2 as well.
+6. **Avoid plural possessives.** Singular is safe: **the author's claim**, **Whitfield's figure**. Plural is a trap: **the parents' concerns**. Write **"the concerns of the parents"** instead, or just **"what the parents say"**.
+7. **Never write a word you cannot spell.** Not because spelling is scored, since on its own it is not, but because the effort of wrestling with it costs you time and confidence you need for Trait 1.
+
+### Swap the hard word for the safe phrase
+
+| Do not write | Write this instead |
+| --- | --- |
+| credibility / credible | the reader can trust / believable |
+| unsubstantiated | with no proof behind it |
+| corroborate | back up |
+| persuasive | convincing |
+| exaggerate | make it sound bigger than it is |
+| subsequently | after that |
+| necessitates | makes it necessary |
+| rhetoric | the way the author writes |
+| anecdotal | based on one person's story |
+| irrefutable | very hard to argue against |
+| the aforementioned | this |
+| utilise | use |
+
+### Sentence variety without risk
+
+Trait 3 asks for varied sentence structure, and people panic and write something baroque. You only need three shapes. Rotate them.
+
+1. **Plain statement.** `The author cites a state report.`
+2. **Transition, comma, statement.** `However, the letter names no source.`
+3. **Because / Although clause first, comma, statement.** `Because the figure has a source, a reader can check it.`
+
+Three shapes in rotation, with lengths that happen to differ, reads as varied. That is enough for the 2.
+
+### Repetition is free
+
+You may write "The author writes that..." five times in one essay and lose nothing. Trait 3 scores **sentence structure**, not vocabulary range. Vary the **length** and the **opening** of your sentences, not your nouns. Reaching for a synonym you are unsure of is a pure downside bet.
+
+### The specific things to proofread for
+
+There is no spellchecker in the answer box, so the last five minutes are the only quality control there is. Check these six, in this order, and nothing else:
+
+1. A comma sitting between two complete sentences. Replace with a period.
+2. `their / there / they're`
+3. `its / it's`
+4. `to / too / two`
+5. `your / you're`
+6. Capital letter at the start of every sentence.
+
+Two more worth knowing: use **then** for time and **than** for comparison; and when you would use **affect** or **effect**, write **changes** or **result** instead and sidestep the whole problem.
+
+### If English is not your first language
+
+The same advice applies, more strongly. The rubric tolerates errors that do not block comprehension, and it is assessing a 45-minute draft. Short declarative sentences, full contractions written out, the three sentence shapes above, and the stems in this chapter will carry you to a 2 on Trait 3 with room to spare. Spend the time you save on Trait 1, where the real points are.
+
+### The last word on this
+
+**Never protect Trait 3 at the expense of Trait 1.** If it is minute 37 and you are choosing between polishing commas and writing your third body paragraph with a quotation in it, write the paragraph. A missing paragraph costs a whole point on the trait that carries the essay. A missed comma costs a fraction of one, and probably nothing at all.
+
+
+---
+
 # Science
 
 *Science — 90 minutes, 34 questions. Mostly a reading test.*
@@ -2517,3 +3711,316 @@ Read only three things: the three-branch/checks table, the amendments table, and
 `HOUSE money+impeach | SENATE confirm+treaties+try | 2/3 override | 15 race 19 sex 24 poll 26 age | FISCAL=Congress tax/spend | MONETARY=Fed rates | demand↑→price↑ | supply↑→price↓ | unemp = unemployed ÷ labor force`
 
 That takes 45 seconds and it converts memory into something you can look at while your hands are shaking.
+
+### Practice bank
+
+40 questions for this subject live in [`ged/src/social-questions.json`](../ged/src/social-questions.json) and are drillable in the interactive guide.
+
+
+---
+
+# Test Day
+
+*Booking it, sitting it, scoring it.*
+
+## Can you even take it
+
+Before you study a single equation, settle whether your state will let you sit the test this week. This is the step that kills one-week plans, and it is almost entirely a state-level question.
+
+**The national floor.** GED Testing Service sets a minimum that every jurisdiction must meet: you must be **at least 16**, **not currently enrolled in high school**, and **not already a high school graduate**. That is the floor, not the rule you will actually face.
+
+**What your state adds on top.** States are free to be stricter, and nearly all of them are. The four things that vary:
+
+- **Minimum age.** Most states require **18**. A few require **18.5 or 19** — New York requires you to be **19** to test outright; at 16, 17, or 18 you must get approval through an Age Eligibility form inside your GED account application.
+- **Underage exceptions (16-17).** Where they exist, they come with paperwork: an **official school withdrawal form or letter signed by a superintendent**, a **parental/guardian consent form**, and sometimes a dedicated **age waiver form**. Some states add a waiting period — Nebraska, for example, requires a 16- or 17-year-old to have been withdrawn from school for **at least 30 days** and to submit a handwritten letter explaining the circumstances. Michigan sets 18 as the default and lets the state workforce agency waive it case by case for 16- and 17-year-olds. California lets 17-year-olds sit the subject tests under conditions but will not issue the credential until you turn 18.
+- **Residency.** Some states have none for adults; some have a hard one. Michigan has no residency requirement at 18+ but requires minors to have established Michigan residency. New York requires **30 calendar days** of state residency. Pennsylvania requires residency and proof of it at the test center (driver's license or equivalent).
+- **A practice-test or prep prerequisite.** Several states will not let you book the real test until you have taken — and in some cases passed — the **GED Ready** practice test. Commonly cited as prerequisite states: **Arkansas, Delaware, District of Columbia, Hawaii, Iowa, Kentucky, Louisiana, Maine, Missouri, New Hampshire, West Virginia**. Kentucky is the strictest version of this: passing scores on the official practice test in all four subjects before you can arrange any GED exam. Arkansas requires passing the pre-test subject by subject.
+
+> If you are in a prerequisite state, your "this week" plan has a mandatory extra step bolted onto the front of it. Budget for it on day one, not day four.
+
+**Some states do not run the GED at all.** The GED is not the only high school equivalency exam. The **TASC is discontinued** (old TASC scores generally remain valid and some states let you combine them, but you cannot sit a new TASC). That leaves the **GED** and the **HiSET** (from ETS). A number of states have moved to HiSET-only; states repeatedly named as not offering the GED include **Iowa, Indiana, Louisiana, Maine, Missouri, Montana, New Hampshire, and West Virginia**. Other states run both — California, for instance, offers GED and HiSET, at test centers and online. These lists change when state contracts are renewed, so treat the list above as a warning flag, not gospel.
+
+**How to resolve all of this for yourself, in about four minutes.** Go to `ged.com/policies/` and open your state's page — the URLs are literally `ged.com/policies/your-state` (for example `ged.com/policies/new-york`, `ged.com/policies/california`, `ged.com/policies/texas`). That single page is the authoritative answer for: minimum age, underage waiver process and forms, residency rule, whether GED Ready is required before booking, whether online proctored testing is permitted, the fee per subject, and the retake rules. There is also a state selector on `ged.com` that routes you to the same page.
+
+The second authoritative check: **create the account** (next section) and look at your dashboard. If your state blocks you on age, residency, or a missing prerequisite, the scheduling flow will refuse to sell you an appointment. The scheduler is the real gatekeeper.
+
+## Booking it this week
+
+### Step 1 — Create the ged.com account
+
+1. Go to **`ged.com`** and choose **Sign Up**. Use an email address you can actually open today; every score notification and receipt goes there.
+2. Enter your **name exactly as it appears on the government-issued photo ID you will present on test day**. This is the single most common self-inflicted wound in the whole process. "Mike" on the account and "Michael" on the license can get you turned away at check-in and cost you the fee. Match it character for character, including middle name or initial if the ID has one.
+3. Enter your **date of birth** and **mailing address** — the address drives which state's rules and pricing you get, and it is where a paper diploma or transcript would be mailed.
+4. Confirm the **state** you intend to test in. It defaults from your address; change it only if you genuinely intend to test elsewhere and can meet that state's residency rule.
+5. Answer **"Are you currently enrolled in high school?"** honestly. Answering yes will generally stop you.
+6. Answer the **accommodations** question. If you need accommodations (extra time, separate room, screen reader), say so now — accommodation requests are reviewed and approved before scheduling and they take **weeks, not days**. A one-week timeline and an accommodations request are usually incompatible; if you need accommodations, apply now and plan to test later.
+7. Add a **phone number**. Pearson VUE uses it for check-in problems on test day.
+
+The dashboard you land on is **MyGED**. Everything else — scheduling, paying, buying GED Ready, viewing scores, ordering transcripts — happens from there.
+
+### Step 2 — The click path to an appointment
+
+From the MyGED dashboard: **Schedule Test** → **choose the subject** (you schedule one subject at a time; there is no "book all four" button) → **choose the test format**: at a **Pearson VUE test center** or **online with OnVUE** → pick the **location or confirm your online eligibility** → pick a **date and time from the live availability calendar** → **pay**.
+
+Nothing is booked until payment clears. Your seat is not held while you think about it.
+
+### Step 3 — In person or at home
+
+| | **Pearson VUE test center** | **GED at home (OnVUE)** |
+|---|---|---|
+| Availability this week | Depends entirely on local seats; small towns may have one center with one open Tuesday | Often same-day or next-day slots, including evenings and weekends |
+| Prerequisite | Usually none beyond state eligibility | **GED Ready "green" in that subject, scored within the last 60 days** |
+| Equipment risk | Zero — their machine, their network | All on you; a failed system test on the day means no test |
+| Note-taking | **Three physical erasable note boards and a marker** | **On-screen whiteboard and scratch pad only** — no physical paper or boards |
+| Calculator | On-screen TI-30XS, plus you may bring a handheld TI-30XS | On-screen TI-30XS only |
+| Cost | Base state fee | Same base fee in many states, **higher in some** (Texas: about $145 for the full battery in person vs about $169 online), plus the mandatory GED Ready purchases |
+| Discounted retakes | Generally available | Often **not** available on online-proctored attempts |
+| Not offered in | — | Several states prohibit it entirely |
+
+**For a one-week timeline, the honest recommendation is the test center if a seat exists.** You avoid the 60-day green-GED-Ready gate, you avoid the technology failure mode, and you keep access to discounted retakes. Check the center calendar first; only fall back to OnVUE if there is no seat in your window.
+
+**Online testing is not available everywhere.** Sources disagree on the exact list — states variously named as not permitting online GED testing include **New York, Florida, Hawaii, Massachusetts, Connecticut, Wyoming, Washington, Tennessee, Montana, Indiana**, plus the states that do not run the GED at all. Do not trust any third-party list including this one. Your ged.com state policy page and the format options the scheduler actually offers you are the answer.
+
+### Step 4 — Protect the booking
+
+**Reschedule or cancel at least 24 hours before your appointment**, through MyGED, the call center, or the test center. Inside 24 hours you cannot move it, and not showing up **forfeits the entire fee**. Some Pearson VUE programs use a 48-hour window; GED Testing Service's own rule is 24 hours. If you are unsure, treat 48 hours as your deadline and you are safe either way.
+
+## What it costs
+
+**The default number is about `$36` per subject**, which is roughly `$144` for all four if you pass everything first time. But this is a state-set price and the spread is wide — from **free to about `$46` per subject**.
+
+| Situation | Typical per-subject cost | Notes |
+|---|---|---|
+| Most states, standard rate | about `$36` | `$144` for the full battery |
+| Higher-fee states | up to about `$46` | Georgia is commonly cited near `$46` per subject, test center or online |
+| Florida | about `$38` | |
+| Texas | about `$36` per subject in person | Full battery about `$145` in person, about `$169` online |
+| State-subsidised | roughly `$11`-`$15` first attempt | Maryland subsidises the first attempt on each subject; the full rate applies to retakes |
+| Free or near-free | `$0` | New York, Connecticut, Illinois, Maine, West Virginia are repeatedly named; California is heavily subsidised. Availability often depends on residency, first-attempt status, or enrolment in an adult-ed program |
+
+Two traps:
+
+- **A few states let test centers add their own administrative fee** on top of the GED Testing Service base. New York and New Jersey are the usual examples; the effective per-subject cost can land at `$45` or more. The price you see at checkout is the real price.
+- **Online can cost more than in person**, both in base fee (see Texas) and unavoidably in prerequisites: four GED Ready purchases at roughly `$7` each is another `$28`-`$32` you must spend before you are allowed to test online at all.
+
+**Discounts and vouchers worth ten minutes of your time before you pay:**
+
+- **GEDWorks.** If your employer participates, your testing is covered — participating employers have included Walmart, Taco Bell, KFC, Hilton, and Red Roof. Some **health plans** also sponsor it for members (Medica, Humana Healthy Horizons, Blue Shield of California, UCare have all run GEDWorks offers). Check by signing into ged.com and looking for a GEDWorks option, or ask your HR/benefits contact directly.
+- **State voucher programs.** Georgia's HOPE HSE Exam Grant, Ohio's Aspire vouchers, New Mexico's HSE vouchers, Pennsylvania's free-testing program, Virginia's discounts, Tennessee's vouchers. Eligibility usually requires state residency, first-attempt status, enrolment in an approved adult education program, or a GED Ready score — sometimes all four.
+- **Your local adult education center or community college.** Many hold voucher allocations and many give GED Ready away free. This is the single highest-yield phone call in the whole process.
+- **Your local workforce development board.** Ask specifically about **high school equivalency funding**; it is often a line item nobody claims.
+
+**Where to check your own number:** your state's page at `ged.com/policies/your-state` lists the fee, and the **checkout screen in MyGED** shows the final total including any center surcharge. Apply vouchers before you pay — refunds after the fact are painful or impossible.
+
+## GED Ready
+
+**GED Ready is the official practice test, written by the people who write the real test, and it is the single best `$7` you will spend on this project.** Everything else in your prep is a guess about what you know. GED Ready is a measurement.
+
+**What it is.** One practice test per subject, purchased and taken through MyGED (**Study** → **Practice** → **Buy Subject**). About `$6.99`-`$7.99` per subject, with a four-subject bundle typically in the `$23`-`$32` range. It is **half the length of the real subject test** — roughly **35 to 90 minutes** depending on subject — and it is timed. **One attempt per purchase**; if you want a second run at the same subject you buy it again.
+
+**How to read the result.** It reports on the same 100-200 scale as the real test, with a three-zone verdict:
+
+| Zone | Score | Meaning |
+|---|---|---|
+| **Red** | **100-133** | Not likely to pass. You need real study, not a week of cramming. |
+| **Yellow** | **134-144** | Too close to call. A coin flip. Fix the specific weaknesses in your study plan before booking. |
+| **Green** | **145-200** | Likely to pass. Book the test. |
+
+**What predicts a pass: 145 or above — green.** That is not a coincidence. 145 is the passing score on the real test, and the practice test is scaled to the same standard. Green does not guarantee a pass; it means you are on the right side of the line with the sample size of a half-length test behind it.
+
+**Why it is worth the money in a one-week sprint, specifically:**
+
+- It converts "I think I'm okay at Science" into a number, and it does it in 90 minutes rather than three days of aimless review.
+- It returns a **personalised study plan** keyed to the exact topics you missed. In a week, targeting is everything; broad review is a waste of the only resource you have.
+- It is the only realistic rehearsal of the timing and the on-screen interface. Half-length, but the same clock pressure and the same tools.
+- It tells you **which subjects to book now and which to postpone**, which is the single most valuable decision in this whole chapter.
+
+**It is mandatory in two situations:**
+
+1. **To test online (OnVUE) anywhere**, you must score **green on GED Ready in that subject within the last 60 days**. Per subject. An old green score does not count; a yellow does not count. Miss the 60-day window and the scheduler will not offer you the online option.
+2. **In prerequisite states**, you cannot book the real test at all without it — commonly cited: Arkansas, Delaware, DC, Hawaii, Iowa, Kentucky, Louisiana, Maine, Missouri, New Hampshire, West Virginia. Texas and New Jersey require it specifically for online testing. Kentucky requires passing scores in all four subjects. Confirm on `ged.com/policies/your-state`.
+
+> Practical sequencing for a one-week plan: take GED Ready for your best subject **today**. If it comes back green, book that subject for the next available slot. If it comes back yellow or red, you have just saved yourself a wasted fee and you know exactly what to study.
+
+Free practice tests from third-party sites are useful for drilling, but they are not scaled to the GED's 100-200 standard and their "you passed!" verdicts mean nothing. Only GED Ready predicts.
+
+## Test day
+
+### What to bring
+
+- **One valid, non-expired, government-issued photo ID.** Acceptable forms: driver's license, state ID card, passport, military ID, national ID, tribal ID, naturalisation certificate, certificate of citizenship, permanent resident card (Green Card). It must show your **name, photograph, and signature**; some centers also expect date of birth and address.
+- **The name on the ID must match the name on your GED account exactly.** Fix a mismatch in MyGED before test day, not at the check-in desk.
+- **Photocopies, photos of an ID on your phone, and expired IDs are refused.** Original document only.
+- Optionally, a **handheld TI-30XS MultiView calculator**. An on-screen TI-30XS is provided regardless, so bring your own only if you have practised on it.
+
+### Arrival and check-in
+
+**Arrive at least 15 minutes before your appointment time.** If you arrive **more than 15 minutes late you may be refused admission and forfeit the fee**. There is no grace and no argument.
+
+Check-in involves signing in, presenting the ID, a **photograph**, a **digital signature**, and where your test sponsor requires it, a **palm vein scan** (a Fujitsu PalmSecure sensor — you hold your palm a few inches above a small pad for a few seconds). You will sign the **Candidate Rules Agreement and NDA** before you start.
+
+### What you must leave outside the room
+
+Everything. Personal items go into a locker or designated storage area: **phones, smart watches, any electronic device, bags, purses, backpacks, wallets, coats, hats, jackets, food, drink, books, dictionaries, notebooks, scratch paper, your own pens and pencils, and your own calculator if the center does not allow it in**. Test centers routinely prohibit accessing your locker during the exam, and in some cases during breaks too — ask at check-in.
+
+### The note board
+
+You are issued **three erasable note boards and a marker**. That is your scratch paper, and you may not bring your own. If you fill them, raise your hand and ask for a replacement — do not just keep writing in the margins. **The boards stay in the room.** Walking out with one, or with anything written on it, is treated as an attempt to remove test content and will invalidate your scores.
+
+### Timing and breaks
+
+| Subject | Time | Structure |
+|---|---|---|
+| Reasoning Through Language Arts | **150 minutes** | Includes a **45-minute Extended Response (essay)** and a scheduled **10-minute break** between sections |
+| Mathematical Reasoning | **115 minutes** | Part 1 (a handful of questions, **no calculator**), then Part 2 (**calculator permitted**) |
+| Science | **90 minutes** | One timed block |
+| Social Studies | **70 minutes** | One timed block, the shortest subject |
+
+All four together is roughly **7.5 hours** of testing time. Scheduled breaks are given where the test provides them. If you leave the room outside a scheduled break, the clock keeps running and depending on the center your session may be ended.
+
+### What gets you thrown out
+
+- Having or accessing a **phone or any electronic device** during the test or during an unauthorised break.
+- **Any reference material**, written note, or unauthorised calculator.
+- **Talking to or receiving help from anyone** other than the proctor.
+- **Taking the note board, marker, or any record of test content** out of the room.
+- **Attempting to copy, photograph, or reproduce test questions** — this is an NDA violation, not just a rules violation.
+- Testing **for someone else**, or having someone test for you.
+- Refusing a reasonable proctor instruction.
+
+Consequences escalate from a terminated session with a forfeited fee, to invalidated scores, to a ban from future testing.
+
+## Taking it at home
+
+GED at home runs on **OnVUE**, Pearson VUE's online proctoring platform. It is genuinely convenient and genuinely unforgiving. Treat the setup as part of the exam.
+
+### Before you book
+
+You need **green on GED Ready in that subject within the last 60 days**, and your state must permit online testing. Both are enforced by the scheduler.
+
+### Run the system test — today, not on test day
+
+OnVUE provides a **system test** that checks your device, webcam, microphone, network stability, permissions, security settings, and its ability to launch the OnVUE application. Run it on the **exact machine, in the exact room, on the exact network** you will use. A pass on your laptop at the library tells you nothing about your kitchen table.
+
+### Equipment and network requirements
+
+- **A working webcam, microphone, and speakers.** **Headphones and headsets are prohibited**, so your speakers must be audible on their own.
+- **The webcam must face forward, sit at eye level, and frame your head and shoulders.** **A mobile phone cannot be used as your webcam** for exam delivery.
+- **A single monitor.** Additional screens must be **physically disconnected**, not merely switched off. **Touch screens are not permitted.**
+- **A private internet connection.** **Corporate networks, public WiFi, and VPNs are prohibited** because they interfere with the proctor's monitoring feed. Tether to a phone hotspot before you test on office WiFi.
+- Close every other application. Disable anything that pops up notifications.
+
+### The room
+
+- **A private, enclosed room with a door you can close.** Not a coffee shop, not a shared office, not a car.
+- **The desk and surrounding area must be clear.** No papers, no books, no sticky notes on the monitor, no second devices.
+- **No physical scratch paper, notebook, or erasable note board.** Note-taking is done entirely with the **on-screen whiteboard** (click the Whiteboard icon at the top of the screen; you can draw and write with the mouse) and the **scratch pad tool**. This is a real disadvantage for Mathematical Reasoning — practise with the on-screen whiteboard before you commit to testing math at home.
+- **Nobody else may be in the room, and nobody may enter or pass through it** once the exam begins. Not for a second, not to hand you a drink. Tell your household, lock the door.
+
+### Check-in
+
+**Begin check-in 30 minutes before your appointment time.** You will:
+
+1. Complete the technology checks.
+2. Take a **photo of yourself**.
+3. Take **photos of your ID** — same ID rules as the test center: valid, non-expired, government-issued, with photo and signature, name matching your GED account.
+4. Complete a **360-degree room scan** with your webcam or phone camera, showing the whole room, the desk surface, and underneath the desk.
+
+**If any requirement is not met, you cannot test and your fee is forfeited.** That is the stated policy. It is the reason the system test matters.
+
+### During the exam
+
+The session is **recorded** — video and audio — for security, quality, and training. A live proctor monitors you and can terminate the session at their discretion if they believe the Candidate Rules Agreement or OnVUE policies have been violated.
+
+**What ends your session:**
+
+- **Leaving the webcam view** for any reason other than a confirmed, approved break. This is the most common termination cause by a wide margin.
+- **Taking an unscheduled break.** Scheduled breaks built into the test are allowed online; unscheduled ones invalidate the exam.
+- **Touching your phone at all**, other than to speak with the proctor when instructed. People have had exams revoked for looking up a single word.
+- **Talking, reading questions aloud, mouthing words, or mumbling.** Proctors warn once; continuing ends the session. Read silently, keep your lips still.
+- **Anyone entering or crossing the room**, or you communicating with anyone but the proctor.
+- **A second monitor, a phone, notes, or anything else discovered on camera** after the room scan.
+- **Losing your internet connection** repeatedly or for an extended period.
+
+Terminated sessions are reported, and the fee is generally gone.
+
+## Scores and what happens next
+
+**Timeline.** Scores are usually in your MyGED account **within 24 hours** of testing; allow **up to 3 business days**. You get an email when the score report posts. The Reasoning Through Language Arts essay does not normally add a separate delay — the extended response raw points are folded into one scaled RLA score.
+
+**The bands.** Every subject is scored **100-200**:
+
+| Band | Score | What it means |
+|---|---|---|
+| **Below Passing** | **100-144** | No credit for that subject. You must retake it. |
+| **GED Passing Score** | **145-164** | Passed. Counts toward the credential. |
+| **GED College Ready** | **165-174** | Passed, plus a signal that many colleges will let you **skip placement testing** in that subject. |
+| **GED College Ready + Credit** | **175-200** | Passed, plus eligibility at participating colleges for **up to 10 college credits per subject**. |
+
+**Scores are not averaged.** You need **145 or higher on each of the four subjects independently**. A 190 in Social Studies does not rescue a 140 in Math.
+
+**Getting the credential.** Once all four subjects are at 145+, your state issues the credential. **How and how fast is entirely a state matter**:
+
+- Some states email an **e-diploma and e-transcript** almost immediately after the final passing score posts.
+- Some mail paper documents. Processing for physical diploma or transcript orders is often 1-2 days, but can run to about 2 weeks.
+- Some are much slower. **New York** completes official score verification and issues the HSE diploma and transcript **approximately 8-10 weeks** after testing finishes.
+
+Order additional transcripts through the transcript service linked from MyGED; electronic transcripts typically go out within about 24 hours of checkout. If a college or employer needs it fast, order the electronic version and send it directly to them.
+
+**How long scores stay valid.** On the **current (2014) GED test series, passing subject scores do not expire** at the national level — pass Science today and it still counts three years from now. Two caveats: **jurisdictions may set their own expiration policies** on partial subject scores, so check your state page if you are going to leave a long gap; and **partial scores from earlier test series (1942, 1978, 1988, 2002) are dead** and cannot be combined with current-series scores. Once you have the full credential, it is permanent.
+
+## If you fail a subject
+
+First: a below-passing score on one subject costs you that subject, nothing else. Your passing scores stand.
+
+**The retake rules.**
+
+- **You can retake a failed subject twice with no waiting period** — book the next available slot the same day if you want.
+- **After the third failed attempt on a subject, you must wait 60 days** before the next attempt, and that 60-day wait applies to every subsequent attempt on that subject.
+- **States may impose stricter waits or attempt limits.** Check `ged.com/policies/your-state`.
+
+**The discounted retake.** Under the GED Discounted Retake Program, **GED Testing Service waives its portion of the fee for one discounted retake per failed subject attempt**, so you pay only the applicable **state and test center fees**. The discount is **valid for 12 months from your initial attempt** on that subject. Two things to know:
+
+- In some states the discounted rate is effectively free; in others you still pay a meaningful state fee. The exact amount is on your state's page and at checkout.
+- **Discounted retakes are commonly restricted to test-center attempts and are often not offered on online-proctored tests.** If you are retaking on a budget, retake in person.
+
+**What to actually fix.** Your score report is not just a number — it includes performance indicators showing which skill areas you were weak on, with links into the study material. Before you rebook:
+
+1. Read the score report's skill breakdown. Do not rebook on vibes.
+2. **Buy a fresh GED Ready for that subject and take it.** If it comes back yellow or red, you are not ready and you will spend another fee learning that again the hard way. Rebook when it is green.
+3. Ask whether the failure was **knowledge** or **timing**. Running out of time is a different problem with a different fix — practise pacing, and learn to skip and flag rather than grinding on one question.
+4. If the subject is Mathematical Reasoning, check whether you lost points in **Part 1 (no calculator)**. That is a very common, very fixable failure point.
+
+## The one-week reality check
+
+Here is the honest version.
+
+**What is realistically achievable in a week.** If you left school recently, read comfortably, and have working arithmetic, **one or two subjects is a realistic target** — plausibly three if you are strong. **Passing all four from a standing start in seven days is not a study plan, it is a lottery ticket**, and at roughly `$36` a subject it is an expensive one. The test is not designed to be beaten by cramming; three of the four subjects reward reading and reasoning skill that takes longer than a week to move.
+
+**Do this first, today.** Take **GED Ready in the subject you are most confident about**. It costs about `$7` and 35-90 minutes and it converts your entire plan from guesswork into data. If it comes back green, you have a subject you can book immediately. If it comes back red, you have just learned — for `$7` instead of `$36` plus a wasted appointment — that the one-week plan needs to become a three-week plan.
+
+**Which subject to sit first.**
+
+- **Social Studies** is the usual best first test: **70 minutes**, the shortest subject, heavily driven by reading passages, charts, and documents in front of you rather than memorised content. It is the subject where general reading ability carries you furthest.
+- **Science** is the close second for the same reason: **90 minutes**, and most questions hand you the data — a passage, a graph, an experiment — and ask you to reason about it. You do not need to have memorised biology.
+- **Reasoning Through Language Arts** is next: **150 minutes** including a **45-minute essay**. If you can write a clear four-paragraph argument citing two sources, this is very passable; if writing under a clock frightens you, practise exactly one thing — writing that essay in 45 minutes — and nothing else.
+- **Mathematical Reasoning** goes last. It is the subject with the most specific, teachable, forgettable content, the **no-calculator Part 1**, and the highest failure rate. It is the one that genuinely rewards weeks of practice. Do not lead with it, and do not sacrifice a likely pass elsewhere to rush it.
+
+**Take one subject at a time.** The scheduler is built for this — you book subjects individually — and there is no bonus for sitting them together. Sitting one at a time gives you:
+
+- **A real score report between attempts.** Results land within 24 hours, so a Monday pass tells you something useful about Wednesday's booking.
+- **Less fatigue.** The full battery is about 7.5 hours. Nobody's Social Studies score improves after five hours of testing.
+- **Contained losses.** Fail one subject and you are out roughly `$36` and one appointment. Fail four in one day and you are out about `$144`, a full day, and your nerve.
+- **Momentum.** One passed subject in the account on day three changes how the rest of the week feels.
+
+**A workable seven-day shape:**
+
+1. **Day 1.** Create the ged.com account. Read your state page at `ged.com/policies/your-state` end to end. Buy and take GED Ready for Social Studies.
+2. **Day 2.** If green, book Social Studies for the earliest available in-person slot. Study the specific weak areas in the study plan. Buy and take GED Ready for Science.
+3. **Day 3.** Sit Social Studies. Book Science if it came back green.
+4. **Day 4.** Score for Social Studies lands. Sit Science. Buy GED Ready for RLA.
+5. **Day 5.** Take GED Ready RLA. Practise the 45-minute essay twice, timed, against real prompts.
+6. **Day 6.** Sit RLA if green.
+7. **Day 7.** Take GED Ready for Math and be honest about the result. Book Math for whenever green actually arrives — this week if you are lucky, in three weeks if you are not. That is not a failure of the plan; that is the plan working.
+
+> The goal is a credential, not a heroic week. Three subjects passed this week and Math passed next month is a complete GED. Four subjects failed this week is `$144` and a reason to quit.
