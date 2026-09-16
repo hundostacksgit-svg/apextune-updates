@@ -9,11 +9,18 @@ Before you study a single equation, settle whether your state will let you sit t
 - **Minimum age.** Most states require **18**. A few require **18.5 or 19** — New York requires you to be **19** to test outright; at 16, 17, or 18 you must get approval through an Age Eligibility form inside your GED account application.
 - **Underage exceptions (16-17).** Where they exist, they come with paperwork: an **official school withdrawal form or letter signed by a superintendent**, a **parental/guardian consent form**, and sometimes a dedicated **age waiver form**. Some states add a waiting period — Nebraska, for example, requires a 16- or 17-year-old to have been withdrawn from school for **at least 30 days** and to submit a handwritten letter explaining the circumstances. Michigan sets 18 as the default and lets the state workforce agency waive it case by case for 16- and 17-year-olds. California lets 17-year-olds sit the subject tests under conditions but will not issue the credential until you turn 18.
 - **Residency.** Some states have none for adults; some have a hard one. Michigan has no residency requirement at 18+ but requires minors to have established Michigan residency. New York requires **30 calendar days** of state residency. Pennsylvania requires residency and proof of it at the test center (driver's license or equivalent).
-- **A practice-test or prep prerequisite.** Several states will not let you book the real test until you have taken — and in some cases passed — the **GED Ready** practice test. Commonly cited as prerequisite states: **Arkansas, Delaware, District of Columbia, Hawaii, Iowa, Kentucky, Louisiana, Maine, Missouri, New Hampshire, West Virginia**. Kentucky is the strictest version of this: passing scores on the official practice test in all four subjects before you can arrange any GED exam. Arkansas requires passing the pre-test subject by subject.
+- **A practice-test or prep prerequisite.** Several states will not let you book the real test until you have taken — and in some cases passed — the **GED Ready** practice test. Commonly cited as prerequisite states: **Arkansas, Delaware, District of Columbia, Hawaii, Kentucky**, plus **Texas and New Jersey for online testing specifically**. Kentucky is the strictest version of this: passing scores on the official practice test in all four subjects before you can arrange any GED exam. Arkansas requires passing the pre-test subject by subject. (Older lists also name Iowa, Louisiana, Maine, Missouri, New Hampshire and West Virginia — but most of those are HiSET jurisdictions where the GED is not offered at all, so a *GED* Ready prerequisite there is moot. See "Some states do not run the GED at all" below.)
 
 > If you are in a prerequisite state, your "this week" plan has a mandatory extra step bolted onto the front of it. Budget for it on day one, not day four.
 
-**Some states do not run the GED at all.** The GED is not the only high school equivalency exam. The **TASC is discontinued** (old TASC scores generally remain valid and some states let you combine them, but you cannot sit a new TASC). That leaves the **GED** and the **HiSET** (from ETS). A number of states have moved to HiSET-only; states repeatedly named as not offering the GED include **Iowa, Indiana, Louisiana, Maine, Missouri, Montana, New Hampshire, and West Virginia**. Other states run both — California, for instance, offers GED and HiSET, at test centers and online. These lists change when state contracts are renewed, so treat the list above as a warning flag, not gospel.
+**Some states do not run the GED at all.** The GED is not the only high school equivalency exam. The **TASC is discontinued** (old TASC scores generally remain valid and some states let you combine them, but you cannot sit a new TASC). That leaves the **GED** and the **HiSET** (from ETS). A number of states have moved to HiSET-only. The states most consistently named as **HiSET-only (no GED)** are **Iowa, Louisiana, Maine, Missouri, Montana, New Hampshire, and Tennessee**.
+
+**Two states where the sources genuinely disagree:**
+
+- **Indiana.** The State of Indiana's own announcement says Indiana Adult Education transitioned to HiSET as the state's HSE credential from 1 July, and Indiana ended online-proctored HSE testing on 1 July 2025. Prep-industry state directories (passged.com) still list Indiana as offering both GED and HiSET. Assume HiSET unless `ged.com/policies/indiana` sells you an appointment.
+- **West Virginia.** Some directories list West Virginia as GED-and-HiSET (and as a *free* GED state); others list it as not offering the GED. `ged.com/policies/west-virginia` settles it.
+
+Other states run both — California, for instance, offers GED and HiSET, at test centers and online. These lists change when state contracts are renewed, so treat every list above as a warning flag, not gospel.
 
 **How to resolve all of this for yourself, in about four minutes.** Go to `ged.com/policies/` and open your state's page — the URLs are literally `ged.com/policies/your-state` (for example `ged.com/policies/new-york`, `ged.com/policies/california`, `ged.com/policies/texas`). That single page is the authoritative answer for: minimum age, underage waiver process and forms, residency rule, whether GED Ready is required before booking, whether online proctored testing is permitted, the fee per subject, and the retake rules. There is also a state selector on `ged.com` that routes you to the same page.
 
@@ -44,17 +51,22 @@ Nothing is booked until payment clears. Your seat is not held while you think ab
 | | **Pearson VUE test center** | **GED at home (OnVUE)** |
 |---|---|---|
 | Availability this week | Depends entirely on local seats; small towns may have one center with one open Tuesday | Often same-day or next-day slots, including evenings and weekends |
-| Prerequisite | Usually none beyond state eligibility | **GED Ready "green" in that subject, scored within the last 60 days** |
+| Prerequisite | Usually none beyond state eligibility | **GED Ready "green" (145+) in that subject, scored within the last 60 days — required before your *first* online attempt in that subject** |
 | Equipment risk | Zero — their machine, their network | All on you; a failed system test on the day means no test |
 | Note-taking | **Three physical erasable note boards and a marker** | **On-screen whiteboard and scratch pad only** — no physical paper or boards |
 | Calculator | On-screen TI-30XS, plus you may bring a handheld TI-30XS | On-screen TI-30XS only |
-| Cost | Base state fee | Same base fee in many states, **higher in some** (Texas: about $145 for the full battery in person vs about $169 online), plus the mandatory GED Ready purchases |
+| Cost | Base state fee | Same base fee in many states, **higher in some** (Texas, as of June 2026: about `$36.25` per subject / `$145` for the full battery in person, vs about `$42.25` per subject / `$169` online), plus the mandatory GED Ready purchases |
 | Discounted retakes | Generally available | Often **not** available on online-proctored attempts |
 | Not offered in | — | Several states prohibit it entirely |
 
 **For a one-week timeline, the honest recommendation is the test center if a seat exists.** You avoid the 60-day green-GED-Ready gate, you avoid the technology failure mode, and you keep access to discounted retakes. Check the center calendar first; only fall back to OnVUE if there is no seat in your window.
 
-**Online testing is not available everywhere.** Sources disagree on the exact list — states variously named as not permitting online GED testing include **New York, Florida, Hawaii, Massachusetts, Connecticut, Wyoming, Washington, Tennessee, Montana, Indiana**, plus the states that do not run the GED at all. Do not trust any third-party list including this one. Your ged.com state policy page and the format options the scheduler actually offers you are the answer.
+**Online testing is not available everywhere.** Roughly 40 states participate in online proctoring, and **the sources genuinely disagree on which ones do not**:
+
+- One commonly published list (tutoriffic, easy-prep, 2026): **Connecticut, Florida, Hawaii, Massachusetts, New York, West Virginia, Wyoming**.
+- A wider list (essentialed / prepsaret, 2026) adds **Indiana, Louisiana, Maine, Missouri, Montana, New Hampshire, Tennessee and Washington** — though most of those are HiSET jurisdictions, where there is no GED to take online in the first place.
+
+Do not trust any third-party list including this one. Your ged.com state policy page and the format options the scheduler actually offers you are the answer.
 
 ### Step 4 — Protect the booking
 
@@ -67,20 +79,21 @@ Nothing is booked until payment clears. Your seat is not held while you think ab
 | Situation | Typical per-subject cost | Notes |
 |---|---|---|
 | Most states, standard rate | about `$36` | `$144` for the full battery |
-| Higher-fee states | up to about `$46` | Georgia is commonly cited near `$46` per subject, test center or online |
-| Florida | about `$38` | |
+| Higher-fee states | up to about `$46` | Georgia is `$46` per subject, test center or online |
+| Florida | `$38` per subject at a test center | Florida does **not** currently offer the online-proctored GED |
 | Texas | about `$36` per subject in person | Full battery about `$145` in person, about `$169` online |
 | State-subsidised | roughly `$11`-`$15` first attempt | Maryland subsidises the first attempt on each subject; the full rate applies to retakes |
-| Free or near-free | `$0` | New York, Connecticut, Illinois, Maine, West Virginia are repeatedly named; California is heavily subsidised. Availability often depends on residency, first-attempt status, or enrolment in an adult-ed program |
+| Free or near-free | `$0` | **New York, Connecticut and West Virginia** are the states most consistently named as free, and **Illinois** is listed at `$36` with the state paying the fee; California is heavily subsidised. (Maine and New Hampshire appear on some "free GED" lists but are HiSET jurisdictions, so the free exam there is the HiSET, not the GED.) Availability often depends on residency, first-attempt status, or enrolment in an adult-ed program |
 
 Two traps:
 
 - **A few states let test centers add their own administrative fee** on top of the GED Testing Service base. New York and New Jersey are the usual examples; the effective per-subject cost can land at `$45` or more. The price you see at checkout is the real price.
-- **Online can cost more than in person**, both in base fee (see Texas) and unavoidably in prerequisites: four GED Ready purchases at roughly `$7` each is another `$28`-`$32` you must spend before you are allowed to test online at all.
+- **Online can cost more than in person**, both in base fee (see Texas) and unavoidably in prerequisites: GED Ready is **`$7.99` per subject or `$25.99` for the four-subject bundle**, so that is another `$26`-`$32` you must spend before you are allowed to test online at all.
 
 **Discounts and vouchers worth ten minutes of your time before you pay:**
 
-- **GEDWorks.** If your employer participates, your testing is covered — participating employers have included Walmart, Taco Bell, KFC, Hilton, and Red Roof. Some **health plans** also sponsor it for members (Medica, Humana Healthy Horizons, Blue Shield of California, UCare have all run GEDWorks offers). Check by signing into ged.com and looking for a GEDWorks option, or ask your HR/benefits contact directly.
+- **GEDWorks.** If your employer participates, your testing is covered — participating employers have included Taco Bell, KFC, Pizza Hut, Southeastern Grocers, Hilton and Red Roof. **Walmart launched the programme in 2015 but is no longer a GEDWorks partner**, so do not count on it if Walmart is your employer.
+ Some **health plans** also sponsor it for members (Medica, Humana Healthy Horizons, Blue Shield of California, UCare have all run GEDWorks offers). Check by signing into ged.com and looking for a GEDWorks option, or ask your HR/benefits contact directly.
 - **State voucher programs.** Georgia's HOPE HSE Exam Grant, Ohio's Aspire vouchers, New Mexico's HSE vouchers, Pennsylvania's free-testing program, Virginia's discounts, Tennessee's vouchers. Eligibility usually requires state residency, first-attempt status, enrolment in an approved adult education program, or a GED Ready score — sometimes all four.
 - **Your local adult education center or community college.** Many hold voucher allocations and many give GED Ready away free. This is the single highest-yield phone call in the whole process.
 - **Your local workforce development board.** Ask specifically about **high school equivalency funding**; it is often a line item nobody claims.
@@ -89,17 +102,17 @@ Two traps:
 
 ## GED Ready
 
-**GED Ready is the official practice test, written by the people who write the real test, and it is the single best `$7` you will spend on this project.** Everything else in your prep is a guess about what you know. GED Ready is a measurement.
+**GED Ready is the official practice test, written by the people who write the real test, and it is the single best `$7.99` you will spend on this project.** Everything else in your prep is a guess about what you know. GED Ready is a measurement.
 
-**What it is.** One practice test per subject, purchased and taken through MyGED (**Study** → **Practice** → **Buy Subject**). About `$6.99`-`$7.99` per subject, with a four-subject bundle typically in the `$23`-`$32` range. It is **half the length of the real subject test** — roughly **35 to 90 minutes** depending on subject — and it is timed. **One attempt per purchase**; if you want a second run at the same subject you buy it again.
+**What it is.** One practice test per subject, purchased and taken through MyGED (**Study** → **Practice** → **Buy Subject**). **`$7.99` per subject, or `$25.99` for the four-subject bundle** (older `$6.99` / `$22.99` figures still circulate on prep sites and are out of date — read the live cart). It is **half the length of the real subject test** — **35 minutes for Social Studies, about 47 for Science, 60 for Math, 90 for RLA** — and it is timed. **One attempt per purchase**; if you want a second run at the same subject you buy it again.
 
 **How to read the result.** It reports on the same 100-200 scale as the real test, with a three-zone verdict:
 
-| Zone | Score | Meaning |
-|---|---|---|
-| **Red** | **100-133** | Not likely to pass. You need real study, not a week of cramming. |
-| **Yellow** | **134-144** | Too close to call. A coin flip. Fix the specific weaknesses in your study plan before booking. |
-| **Green** | **145-200** | Likely to pass. Book the test. |
+| Zone | GED Testing Service's own label | Score | Meaning |
+|---|---|---|---|
+| **Red** | **Not Likely to Pass** | **100-133** | You need real study, not a week of cramming. |
+| **Yellow** | **Too Close to Call** | **134-144** | A coin flip. Fix the specific weaknesses in your study plan before booking. |
+| **Green** | **Likely to Pass** | **145-200** | Book the test. |
 
 **What predicts a pass: 145 or above — green.** That is not a coincidence. 145 is the passing score on the real test, and the practice test is scaled to the same standard. Green does not guarantee a pass; it means you are on the right side of the line with the sample size of a half-length test behind it.
 
@@ -112,8 +125,8 @@ Two traps:
 
 **It is mandatory in two situations:**
 
-1. **To test online (OnVUE) anywhere**, you must score **green on GED Ready in that subject within the last 60 days**. Per subject. An old green score does not count; a yellow does not count. Miss the 60-day window and the scheduler will not offer you the online option.
-2. **In prerequisite states**, you cannot book the real test at all without it — commonly cited: Arkansas, Delaware, DC, Hawaii, Iowa, Kentucky, Louisiana, Maine, Missouri, New Hampshire, West Virginia. Texas and New Jersey require it specifically for online testing. Kentucky requires passing scores in all four subjects. Confirm on `ged.com/policies/your-state`.
+1. **To test online (OnVUE) anywhere**, you must score **green (145 or higher) on GED Ready in that subject within the last 60 days, before your *first* online-proctored attempt in that subject**. Per subject. An old green score does not count; a yellow does not count. Miss the 60-day window and the scheduler will not offer you the online option. (GED Testing Service states the requirement as applying to the first online attempt per subject area; a later online retake of the same subject does not re-trigger it. Confirm in the scheduler before you rely on that.)
+2. **In prerequisite states**, you cannot book the real test at all without it — commonly cited: Arkansas, Delaware, DC, Hawaii, Kentucky. Texas and New Jersey require it specifically for online testing. Kentucky requires passing scores in all four subjects. Confirm on `ged.com/policies/your-state`.
 
 > Practical sequencing for a one-week plan: take GED Ready for your best subject **today**. If it comes back green, book that subject for the next available slot. If it comes back yellow or red, you have just saved yourself a wasted fee and you know exactly what to study.
 
@@ -147,11 +160,11 @@ You are issued **three erasable note boards and a marker**. That is your scratch
 | Subject | Time | Structure |
 |---|---|---|
 | Reasoning Through Language Arts | **150 minutes** | Includes a **45-minute Extended Response (essay)** and a scheduled **10-minute break** between sections |
-| Mathematical Reasoning | **115 minutes** | Part 1 (a handful of questions, **no calculator**), then Part 2 (**calculator permitted**) |
+| Mathematical Reasoning | **115 minutes** | Part 1 (the first **5** questions, **no calculator**), a **3-minute break**, then Part 2 (the remaining **41** questions, **calculator permitted**). You cannot return to Part 1 after submitting it |
 | Science | **90 minutes** | One timed block |
 | Social Studies | **70 minutes** | One timed block, the shortest subject |
 
-All four together is roughly **7.5 hours** of testing time. Scheduled breaks are given where the test provides them. If you leave the room outside a scheduled break, the clock keeps running and depending on the center your session may be ended.
+All four together is **7 hours 5 minutes** of testing time (150 + 115 + 90 + 70 minutes), the figure GED Testing Service itself publishes. Scheduled breaks — the 10 minutes inside RLA and the 3 minutes inside Math — sit on top of that. If you leave the room outside a scheduled break, the clock keeps running and depending on the center your session may be ended.
 
 ### What gets you thrown out
 
@@ -171,7 +184,7 @@ GED at home runs on **OnVUE**, Pearson VUE's online proctoring platform. It is g
 
 ### Before you book
 
-You need **green on GED Ready in that subject within the last 60 days**, and your state must permit online testing. Both are enforced by the scheduler.
+You need **green (145+) on GED Ready in that subject within the last 60 days** before your **first** online-proctored attempt in that subject, and your state must permit online testing. Both are enforced by the scheduler.
 
 ### Run the system test — today, not on test day
 
@@ -221,7 +234,7 @@ Terminated sessions are reported, and the fee is generally gone.
 
 ## Scores and what happens next
 
-**Timeline.** Scores are usually in your MyGED account **within 24 hours** of testing; allow **up to 3 business days**. You get an email when the score report posts. The Reasoning Through Language Arts essay does not normally add a separate delay — the extended response raw points are folded into one scaled RLA score.
+**Timeline.** GED Testing Service's stated target is a score report **within 3 hours** of finishing; in practice scores are usually in your MyGED account **within 24 hours**, and you should allow **up to 3 business days**. You get an email when the score report posts. The Reasoning Through Language Arts essay does not normally add a separate delay — the extended response raw points are folded into one scaled RLA score.
 
 **The bands.** Every subject is scored **100-200**:
 
@@ -230,7 +243,7 @@ Terminated sessions are reported, and the fee is generally gone.
 | **Below Passing** | **100-144** | No credit for that subject. You must retake it. |
 | **GED Passing Score** | **145-164** | Passed. Counts toward the credential. |
 | **GED College Ready** | **165-174** | Passed, plus a signal that many colleges will let you **skip placement testing** in that subject. |
-| **GED College Ready + Credit** | **175-200** | Passed, plus eligibility at participating colleges for **up to 10 college credits per subject**. |
+| **GED College Ready + Credit** | **175-200** | Passed, plus eligibility at participating colleges for **up to 10 college credits** in total. How many credits you actually get, and for which subjects, is set by the individual college, not by GED Testing Service. |
 
 **Scores are not averaged.** You need **145 or higher on each of the four subjects independently**. A 190 in Social Studies does not rescue a 140 in Math.
 
@@ -254,10 +267,12 @@ First: a below-passing score on one subject costs you that subject, nothing else
 - **After the third failed attempt on a subject, you must wait 60 days** before the next attempt, and that 60-day wait applies to every subsequent attempt on that subject.
 - **States may impose stricter waits or attempt limits.** Check `ged.com/policies/your-state`.
 
-**The discounted retake.** Under the GED Discounted Retake Program, **GED Testing Service waives its portion of the fee for one discounted retake per failed subject attempt**, so you pay only the applicable **state and test center fees**. The discount is **valid for 12 months from your initial attempt** on that subject. Two things to know:
+**The discounted retake.** Under the GED Discounted Retake Program, **GED Testing Service waives its portion of the fee for two retests per subject**, so you pay only the applicable **state and test center fees**. The discount applies to **two retests, taken within 12 months of your initial full-price test in that subject**. Two things to know:
 
 - In some states the discounted rate is effectively free; in others you still pay a meaningful state fee. The exact amount is on your state's page and at checkout.
 - **Discounted retakes are commonly restricted to test-center attempts and are often not offered on online-proctored tests.** If you are retaking on a budget, retake in person.
+- **Online-proctored testing has its own tighter limit:** GED Testing Service allows **2 attempts per subject online** before a **60-day wait** on that subject online. At a test center you get the full three attempts before the 60-day wait applies. That asymmetry alone argues for the test center on a marginal subject.
+- **States may set their own discount rules.** New Jersey, for example, publishes a flat `$10` discounted retake at a test center and **no discount at all online**. Check `ged.com/policies/your-state`.
 
 **What to actually fix.** Your score report is not just a number — it includes performance indicators showing which skill areas you were weak on, with links into the study material. Before you rebook:
 
@@ -272,7 +287,7 @@ Here is the honest version.
 
 **What is realistically achievable in a week.** If you left school recently, read comfortably, and have working arithmetic, **one or two subjects is a realistic target** — plausibly three if you are strong. **Passing all four from a standing start in seven days is not a study plan, it is a lottery ticket**, and at roughly `$36` a subject it is an expensive one. The test is not designed to be beaten by cramming; three of the four subjects reward reading and reasoning skill that takes longer than a week to move.
 
-**Do this first, today.** Take **GED Ready in the subject you are most confident about**. It costs about `$7` and 35-90 minutes and it converts your entire plan from guesswork into data. If it comes back green, you have a subject you can book immediately. If it comes back red, you have just learned — for `$7` instead of `$36` plus a wasted appointment — that the one-week plan needs to become a three-week plan.
+**Do this first, today.** Take **GED Ready in the subject you are most confident about**. It costs `$7.99` and 35-90 minutes and it converts your entire plan from guesswork into data. If it comes back green, you have a subject you can book immediately. If it comes back red, you have just learned — for `$7.99` instead of `$36` plus a wasted appointment — that the one-week plan needs to become a three-week plan.
 
 **Which subject to sit first.**
 
@@ -284,7 +299,7 @@ Here is the honest version.
 **Take one subject at a time.** The scheduler is built for this — you book subjects individually — and there is no bonus for sitting them together. Sitting one at a time gives you:
 
 - **A real score report between attempts.** Results land within 24 hours, so a Monday pass tells you something useful about Wednesday's booking.
-- **Less fatigue.** The full battery is about 7.5 hours. Nobody's Social Studies score improves after five hours of testing.
+- **Less fatigue.** The full battery is 7 hours 5 minutes of testing. Nobody's Social Studies score improves after five hours of testing.
 - **Contained losses.** Fail one subject and you are out roughly `$36` and one appointment. Fail four in one day and you are out about `$144`, a full day, and your nerve.
 - **Momentum.** One passed subject in the account on day three changes how the rest of the week feels.
 
@@ -299,3 +314,51 @@ Here is the honest version.
 7. **Day 7.** Take GED Ready for Math and be honest about the result. Book Math for whenever green actually arrives — this week if you are lucky, in three weeks if you are not. That is not a failure of the plan; that is the plan working.
 
 > The goal is a credential, not a heroic week. Three subjects passed this week and Math passed next month is a complete GED. Four subjects failed this week is `$144` and a reason to quit.
+
+## Sources
+
+Every fact in this chapter is checkable. These are the pages that settle each question — go to the official one before you spend money, because state rules and prices move and prep sites (including this guide) lag behind them.
+
+**The one page that overrides everything else here**
+
+- `https://www.ged.com/policies/` — your state's own policy page (`ged.com/policies/new-jersey`, `ged.com/policies/texas`, and so on). Settles minimum age, underage waiver forms, residency, whether GED Ready is required before booking, whether online proctoring is allowed in your state, the exact per-subject fee, and any state-specific retake limits. Where this guide and that page disagree, that page wins.
+
+**Test format and content**
+
+- `https://www.ged.com/about-test/test-subjects.html` — settles the four subjects, each one's length (RLA 150 min, Math 115, Science 90, Social Studies 70), the approximate question counts, and the 7-hour-5-minute total.
+- `https://www.ged.com/about-test/test-subjects/math.html` — settles the Math structure: Part 1 (first 5 items, no calculator), Part 2 (remaining 41, calculator), and the 45% quantitative / 55% algebraic split.
+- `https://www.ged.com/content/dam/websites/ged/resources/en/assessment-guide-for-educators-rla.pdf` — settles the RLA blueprint: 35 + 45 + 10 + 60 minute blocks, 75% informational / 25% literary passages, 450–900 word passage sets.
+- `https://www.ged.com/content/dam/websites/ged/resources/en/assessment-guide-for-educators-math.pdf` — settles the Math assessment targets and which sub-topics are actually tested.
+
+**Reference sheets and the calculator**
+
+- `https://www.ged.com/content/dam/websites/ged/resources/Math-Formula-Sheet-2026-02-v1-revised.pdf` — the current Mathematics Formula Sheet, revised February 2026. Settles exactly which formulas you are handed and which you must memorise. Read the real sheet, not a prep-site copy of an older one. Science and Social Studies have no equivalent sheet.
+- `https://www.ged.com/wp-content/uploads/calculator_sheet.pdf` — the TI-30XS MultiView Calculator Reference Sheet, the same one that appears behind the on-screen button. Settles which keys do what.
+
+**Scores**
+
+- `https://www.ged.com/about-test/scores.html` and `https://www.ged.com/about-test/scores/college-ready.html` — settle the 100–200 scale, the 145 pass line per subject, GED College Ready at 165–174, GED College Ready + Credit at 175–200, and the "up to 10 college credits" claim.
+- `https://www.ged.com/faqs/understanding-scores.html` — settles how fast scores post and what the skill-breakdown report shows you.
+
+**Practice test**
+
+- `https://www.ged.com/faqs/ged-ready.html` — settles the GED Ready price ($7.99 per subject, $25.99 for all four), the one-attempt-per-purchase rule, and the three score bands (Not Likely to Pass 100–133, Too Close to Call 134–144, Likely to Pass 145–200).
+
+**Retakes**
+
+- `https://www.ged.com/faqs/test-retakes.html` — settles the national retake rule: two subsequent retests with no waiting period, a 60-day wait after a third and any later failure, and a discount on two retests taken within 12 months of the initial full-price test in that subject.
+
+**Test day and online testing**
+
+- `https://www.ged.com/faqs/expect-test-day.html` — settles ID requirements, the 15-minute early arrival, the three erasable note boards and marker, and what must go in the locker.
+- `https://www.pearsonvue.com/us/en/ged/onvue.html` — settles the OnVUE rules: 30-minute check-in, room scan, single monitor, no headphones, no physical scratch paper, on-screen whiteboard only.
+- `https://www.pearsonvue.com/us/en/onvue/requirements.html` — settles the equipment and network requirements, and hosts the system test you should run today on the exact machine you will test on.
+- `https://www.ged.com/take-the-ged-test-online.html` — settles the online eligibility gate: a green (145+) GED Ready within 60 days before your first online attempt in a subject, plus the 2-attempts-then-60-days limit on online testing.
+
+**Rules you are agreeing to**
+
+- `https://www.ged.com/content/dam/websites/ged/resources/GED-Policy-Manual-2025.pdf` — the GED Program Policy Manual. Settles the eligibility floor (16, not enrolled, not a graduate), that jurisdictions may be stricter, and that passing subject scores on the current series do not expire nationally while jurisdictions may set their own expiration policies.
+
+**If your state does not run the GED**
+
+- `https://hiset.org/get-started/state-requirements/` — ETS's own list of HiSET jurisdictions. Cross-check it against your `ged.com/policies/` state page; where the two disagree about your state, believe whichever one will actually sell you an appointment.

@@ -3,7 +3,7 @@
     "id": "SCIENCE-001",
     "topic": "Reading a data table (cell structures)",
     "difficulty": "easy",
-    "stimulus": "A student examined four different cells under a microscope and recorded which structures were present in each.\n\nStructures Observed in Four Cells\n\n| Structure     | Cell 1 | Cell 2 | Cell 3 | Cell 4 |\n|---------------|--------|--------|--------|--------|\n| Cell wall     | yes    | no     | yes    | no     |\n| Chloroplast   | yes    | no     | no     | no     |\n| Nucleus       | yes    | yes    | yes    | no     |\n| Mitochondrion | yes    | yes    | yes    | no     |\n| Ribosome      | yes    | yes    | yes    | yes    |",
+    "stimulus": "A student examined four different cells under a microscope and recorded which structures were present in each.\n\nStructures Observed in Four Cells\n\n| Structure     | Cell 1 | Cell 2 | Cell 3 | Cell 4 |\n|---------------|--------|--------|--------|--------|\n| Cell wall     | yes    | no     | yes    | yes    |\n| Chloroplast   | yes    | no     | no     | no     |\n| Nucleus       | yes    | yes    | yes    | no     |\n| Mitochondrion | yes    | yes    | yes    | no     |\n| Ribosome      | yes    | yes    | yes    | yes    |",
     "question": "According to the table, which structure was present in all four cells?",
     "choices": [
       "A. Cell wall",
@@ -12,8 +12,8 @@
       "D. Ribosome"
     ],
     "answer": "D",
-    "why": "The ribosome row reads yes, yes, yes, yes across all four columns. Every other row contains at least one no: cell wall is missing from Cells 2 and 4, and nucleus and mitochondrion are both missing from Cell 4.",
-    "howToFind": "1. This is a pure retrieval question. Do not think about biology at all.\n2. Go to the table. Read across one row at a time, left to right.\n3. Cell wall row: yes, no, yes, no. It has a no, so eliminate choice A.\n4. Nucleus row: yes, yes, yes, no. It has a no, so eliminate choice B.\n5. Mitochondrion row: yes, yes, yes, no. It has a no, so eliminate choice C.\n6. Ribosome row: yes, yes, yes, yes. Four yeses, no gaps. Choice D.\n7. The answer was printed in the table. You never needed to know what a ribosome does.",
+    "why": "The ribosome row reads yes, yes, yes, yes across all four columns. Every other row contains at least one no: cell wall is missing from Cell 2, and nucleus and mitochondrion are both missing from Cell 4.",
+    "howToFind": "1. This is a pure retrieval question. Do not think about biology at all.\n2. Go to the table. Read across one row at a time, left to right.\n3. Cell wall row: yes, no, yes, yes. Cell 2 says no, so eliminate choice A.\n4. Nucleus row: yes, yes, yes, no. It has a no, so eliminate choice B.\n5. Mitochondrion row: yes, yes, yes, no. It has a no, so eliminate choice C.\n6. Ribosome row: yes, yes, yes, yes. Four yeses, no gaps. Choice D.\n7. The answer was printed in the table. You never needed to know what a ribosome does.",
     "trap": "Choice B. People who remember 'all living things have a nucleus' pick nucleus from memory instead of reading the Cell 4 column, which says no. On this test the table always beats what you think you remember."
   },
   {
@@ -341,14 +341,14 @@
     "stimulus": "A swimmer standing in a pool pushes backward against the water with her hands. She then moves forward through the water.",
     "question": "Which statement best explains why the swimmer moves forward?",
     "choices": [
-      "A. The swimmer's forward force on the water is greater than the water's backward force on her.",
+      "A. The swimmer's backward force on the water is greater than the water's forward force on her.",
       "B. The swimmer pushes backward on the water and the water pushes forward on the swimmer with an equal force.",
       "C. The water has no mass, so it cannot push back on the swimmer at all.",
       "D. The swimmer's inertia carries her forward once she stops pushing on the water."
     ],
     "answer": "B",
     "why": "Newton's third law states that when one object exerts a force on a second object, the second exerts an equal force in the opposite direction on the first. The swimmer pushes the water backward, so the water pushes her forward with an equal force, and that forward force on her is what moves her.",
-    "howToFind": "1. Spot the signature of Newton's third law in the scenario: two objects, and a push in one direction producing motion in the opposite direction. Here the objects are the swimmer and the water.\n2. State the law in the fixed template: object A pushes object B one way, object B pushes object A the other way, with EQUAL force.\n3. Fill in the template with the stimulus nouns: swimmer pushes water backward, water pushes swimmer forward, equal forces.\n4. Find the choice that matches that sentence. Choice B.\n5. Eliminate the others:\n   A says the forces are unequal. Newton's third law pairs are always equal. Eliminate.\n   C says water has no mass, which is false and also would leave nothing to explain the motion. Eliminate.\n   D describes inertia (first law), which explains why she KEEPS moving, not why she STARTS moving. Eliminate.\n6. Word check for third-law items: the correct answer will almost always contain 'equal' and 'opposite.'",
+    "howToFind": "1. Spot the signature of Newton's third law in the scenario: two objects, and a push in one direction producing motion in the opposite direction. Here the objects are the swimmer and the water.\n2. State the law in the fixed template: object A pushes object B one way, object B pushes object A the other way, with EQUAL force.\n3. Fill in the template with the stimulus nouns: swimmer pushes water backward, water pushes swimmer forward, equal forces.\n4. Find the choice that matches that sentence. Choice B.\n5. Eliminate the others:\n   A has the two directions right but says the forces are unequal. Newton's third law pairs are always EQUAL in size. Eliminate.\n   C says water has no mass, which is false and also would leave nothing to explain the motion. Eliminate.\n   D describes inertia (first law), which explains why she KEEPS moving, not why she STARTS moving. Eliminate.\n6. Word check for third-law items: the correct answer will almost always contain 'equal' and 'opposite.'",
     "trap": "Choice A. People reason that if the forces were truly equal nothing would move, so one must be bigger. The resolution is that the two forces act on DIFFERENT objects: the backward force acts on the water, the forward force acts on the swimmer. Equal-and-opposite pairs never cancel, because they are never on the same object."
   },
   {
@@ -658,5 +658,73 @@
     "why": "The vehicle column rises from 210 thousand to 265 thousand while the PM2.5 column falls from 34 to 18 micrograms per cubic metre. Choice C states exactly that pattern without adding a cause or a prediction, so it is the only conclusion the table itself supports.",
     "howToFind": "1. Read each column separately and write down its direction.\n   Registered vehicles: 210, 224, 238, 251, 265. Increasing.\n   PM2.5: 34, 29, 24, 21, 18. Decreasing.\n2. Your honest one-sentence summary is 'vehicles up, pollution down.' Look for the choice that says only that. Choice C.\n3. Run the elimination filters on the rest:\n   A uses 'eliminated,' an absolute. The final row still reads 18, which is not zero. Eliminate.\n   B says the number of vehicles decreased, which is the direct opposite of the vehicles column. Always check the direction. Eliminate.\n   D predicts a value for 2030, a year not in the table, and predicts zero, which nothing in the data supports. Eliminate.\n4. Choice C.\n5. Note what the table does NOT prove: it does not prove the rule caused the drop, because no comparison city without the rule is given. Any choice naming a cause would be unsupported.",
     "trap": "Choice A. The rule was introduced and pollution did fall, so people credit the rule and accept the word 'eliminated' without checking it. Two errors in one: an absolute word the data contradict (18 is not zero), and a causal claim the table cannot support without a control city."
+  },
+  {
+    "id": "SCIENCE-041",
+    "topic": "Homeostasis and negative feedback",
+    "difficulty": "medium",
+    "stimulus": "After a person eats a meal, the concentration of glucose in the blood rises. The pancreas responds by releasing the hormone insulin, which causes body cells to take up glucose from the blood.\n\nMeasurements from One Healthy Adult After a Meal\n\n| Time after meal (min) | Blood glucose (mg/dL) | Blood insulin (microunits/mL) |\n|-----------------------|-----------------------|-------------------------------|\n| 0                     | 90                    | 8                             |\n| 30                    | 145                   | 52                            |\n| 60                    | 128                   | 61                            |\n| 90                    | 104                   | 30                            |\n| 120                   | 88                    | 9                             |",
+    "question": "Which statement best describes how the data show negative feedback?",
+    "choices": [
+      "A. Blood glucose rose, insulin rose in response, and blood glucose then fell back to near its starting value.",
+      "B. Blood glucose and insulin both rose steadily and neither returned toward its starting value.",
+      "C. Blood glucose fell first, and that fall caused the pancreas to release insulin.",
+      "D. Insulin had no measurable effect, because blood glucose was higher at 120 minutes than at 0 minutes."
+    ],
+    "answer": "A",
+    "why": "Negative feedback means a change triggers a response that reverses the change. Glucose rose from 90 to 145 mg/dL, insulin then rose from 8 to a peak of 61, and glucose fell back through 128 and 104 to 88 mg/dL, which is essentially where it started. Rise, response, return is exactly the negative-feedback pattern.",
+    "howToFind": "1. Read each column top to bottom and write down its shape before looking at any choice.\n   Glucose: 90, 145, 128, 104, 88. Up, then back down to about where it started.\n   Insulin: 8, 52, 61, 30, 9. Up, then back down.\n2. Check the ORDER of events using the Time column. Glucose is already at 145 at 30 minutes; insulin peaks at 61 at 60 minutes. The glucose rise comes first, the insulin rise follows.\n3. State the definition: negative feedback = a change happens, the body responds, and the response pushes the value BACK toward normal.\n4. Match that three-part sentence to the choices. Choice A has all three parts in the right order.\n5. Eliminate the rest against the numbers:\n   B says neither returned. Both did return: glucose 88, insulin 9, both near their row-0 values. Eliminate.\n   C reverses the order. Glucose went UP first, not down. Eliminate.\n   D claims glucose was higher at 120 min than at 0 min. The table says 88 at 120 min and 90 at 0 min, so it is lower. Eliminate.\n6. Choice A.",
+    "trap": "Choice C. People know insulin and glucose are linked and pick the option that names both, without checking which one moved first. On any feedback table, read the Time column downward and put the two events in order before choosing. In negative feedback the change always comes first and the correction comes second."
+  },
+  {
+    "id": "SCIENCE-042",
+    "topic": "Reading a human health data table",
+    "difficulty": "medium",
+    "stimulus": "Four adults each performed the same three-minute step exercise. For each person, the researcher recorded the resting heart rate before exercise, the peak heart rate during exercise, and the recovery time, which is how long the heart took to return to its resting rate afterwards.\n\n| Person | Resting heart rate (beats/min) | Peak heart rate (beats/min) | Recovery time (min) |\n|--------|--------------------------------|-----------------------------|---------------------|\n| J      | 76                             | 158                         | 5.0                 |\n| K      | 58                             | 141                         | 2.0                 |\n| L      | 70                             | 152                         | 4.0                 |\n| M      | 64                             | 147                         | 3.0                 |",
+    "question": "According to the table, which statement about these four adults is supported by the data?",
+    "choices": [
+      "A. Peak heart rate was the same for all four adults.",
+      "B. The person with the highest peak heart rate had the shortest recovery time.",
+      "C. The person with the lowest resting heart rate had the shortest recovery time.",
+      "D. Recovery time decreased as resting heart rate increased."
+    ],
+    "answer": "C",
+    "why": "Person K has the lowest resting heart rate in the table, 58 beats per minute, and also the shortest recovery time, 2.0 minutes. Both values are read straight off row K, so choice C is directly supported.",
+    "howToFind": "1. This is retrieval plus one comparison. Do not reason about fitness; use only the printed numbers.\n2. Take the choice that names two columns and find the extreme value in each.\n   Resting heart rate column: 76, 58, 70, 64. The LOWEST is 58, which is Person K.\n   Recovery time column: 5.0, 2.0, 4.0, 3.0. The SHORTEST is 2.0, which is Person K.\n3. Same person both times, so choice C is true.\n4. Check the others against the columns:\n   A: peak heart rates are 158, 141, 152, 147. They are all different. Eliminate.\n   B: the highest peak is 158, which is Person J, and J's recovery time is 5.0, the LONGEST not the shortest. Eliminate.\n   D: sort by resting rate and read recovery beside it: 58 goes with 2.0, 64 with 3.0, 70 with 4.0, 76 with 5.0. Recovery time INCREASES as resting rate increases, so D has the direction backwards. Eliminate.\n5. Choice C.",
+    "trap": "Choice D. It describes the right pair of columns and the right shape of relationship, but with the sign flipped. Whenever a choice says one quantity rises 'as' another rises or falls, line the two columns up in order and check the direction before you accept it. Direction-flipped choices are the most common wrong answer on data tables."
+  },
+  {
+    "id": "SCIENCE-043",
+    "topic": "Series and parallel circuits",
+    "difficulty": "medium",
+    "stimulus": "Two circuits are described below. Each is built from one identical battery and three identical bulbs.\n\nCircuit 1: the three bulbs are wired one after another in a single loop, so all of the current that leaves the battery passes through every bulb in turn.\n\nCircuit 2: the three bulbs are wired on three separate branches, so the current leaving the battery splits and part of it passes through each bulb.\n\nA student removes one bulb from each circuit.",
+    "question": "What happens to the remaining two bulbs in each circuit when one bulb is removed?",
+    "choices": [
+      "A. In Circuit 1 the other two bulbs go out; in Circuit 2 the other two bulbs stay lit.",
+      "B. In Circuit 1 the other two bulbs stay lit; in Circuit 2 the other two bulbs go out.",
+      "C. In both circuits the other two bulbs go out.",
+      "D. In both circuits the other two bulbs stay lit."
+    ],
+    "answer": "A",
+    "why": "Circuit 1 is a series circuit: there is only one path, so removing a bulb breaks that path and no current can flow to the other two, which go out. Circuit 2 is a parallel circuit: each bulb sits on its own branch, so removing one bulb breaks only its own branch and the other two branches still carry current.",
+    "howToFind": "1. Do not rely on remembering the words series and parallel. The stimulus defines both circuits for you in plain language, so work from the definitions given.\n2. Circuit 1: 'a single loop, so all of the current passes through every bulb in turn.' One path only. Cut a single path anywhere and nothing flows. The other two bulbs go OUT.\n3. Circuit 2: 'three separate branches, so the current splits.' Three paths. Cut one path and the other two are untouched. The other two bulbs STAY LIT.\n4. You now need a choice that says out for Circuit 1 and lit for Circuit 2. That is choice A.\n5. Eliminate the rest:\n   B has the two circuits swapped. Eliminate.\n   C and D give both circuits the same behaviour, which contradicts the whole point of describing two different wirings. Eliminate.\n6. Vocabulary to attach afterwards: Circuit 1 is SERIES (one path, one break kills all, current is the same everywhere). Circuit 2 is PARALLEL (many paths, one break kills only its own branch, voltage is the same across each branch). House wiring is parallel, which is why one blown bulb does not darken the house.",
+    "trap": "Choice B. People match the word 'single loop' to the tidier-sounding circuit and guess the labels the wrong way round, or they recall 'parallel is the one where they all go out.' It is the reverse. Count the number of PATHS the current can take: one path means every bulb depends on every other, more than one path means each bulb is independent."
+  },
+  {
+    "id": "SCIENCE-044",
+    "topic": "Physical versus chemical change",
+    "difficulty": "easy",
+    "stimulus": "A student carried out four procedures and recorded what she observed.\n\n| Procedure                              | Observation                                                                                                   |\n|----------------------------------------|---------------------------------------------------------------------------------------------------------------|\n| 1. Ice cubes left in a warm room       | The solid ice became liquid water. Cooling the water turned it back into ice.                                   |\n| 2. Sugar stirred into warm water       | The sugar disappeared from view and the water tasted sweet. Sugar crystals reappeared when the water evaporated. |\n| 3. A copper wire bent into a coil      | The wire changed shape. It was still copper and could be straightened again.                                    |\n| 4. Vinegar poured onto baking soda     | The mixture bubbled, the temperature dropped, and a gas was produced that put out a lit splint.                  |",
+    "question": "In which procedure did a chemical change take place?",
+    "choices": [
+      "A. Procedure 1",
+      "B. Procedure 2",
+      "C. Procedure 3",
+      "D. Procedure 4"
+    ],
+    "answer": "D",
+    "why": "A chemical change produces a new substance with new properties. In Procedure 4 a gas that puts out a flame was produced, and the temperature changed, and the original vinegar and baking soda cannot simply be recovered. Procedures 1, 2, and 3 only changed the state or the shape of the same substance, and each one was reversed in the table.",
+    "howToFind": "1. Apply one test to every row: at the end, is the ORIGINAL substance still there, or is there something NEW?\n2. Procedure 1: ice to water to ice. Same substance, H2O, in two different states, and the table says cooling reversed it. Physical change. Eliminate A.\n3. Procedure 2: sugar dissolved, then 'sugar crystals reappeared when the water evaporated.' The sugar was still sugar the whole time; it was only spread through the water. Dissolving is a physical change. Eliminate B.\n4. Procedure 3: the wire 'was still copper and could be straightened again.' Change of shape only. Physical change. Eliminate C.\n5. Procedure 4: look for the signs of a chemical change in the observation. Bubbling, a temperature change, and a NEW gas with a new property, putting out a flame. Three signs at once, and nothing in the row says it reversed.\n6. Choice D.\n7. The list of chemical-change signs worth memorising: gas produced, colour change, a solid forming out of two liquids, a temperature change not caused by heating, light given off, and the change being hard to undo.",
+    "trap": "Choice B. Dissolving looks like a chemical change because the sugar vanishes and the liquid gains a new property, sweetness. But the key sentence is 'sugar crystals reappeared when the water evaporated,' which proves the sugar was never destroyed or turned into anything else. Read the whole observation cell before you judge a row; the test hides the reversal clue in the second half of the sentence."
   }
 ]

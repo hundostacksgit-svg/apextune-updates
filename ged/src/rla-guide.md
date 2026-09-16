@@ -4,16 +4,16 @@ The GED Reasoning Through Language Arts (RLA) test is **one 150-minute sitting**
 
 **The shape of the sitting**
 
-| Block | Roughly how long | What you do |
+| Block | How long | What you do |
 |---|---|---|
-| Section 1 | about 35 minutes | Reading and language items |
+| Section 1 | 35 minutes | Reading and language items |
 | Section 2 | 45 minutes, hard stop | Extended Response essay (covered in its own chapter) |
 | Break | 10 minutes | Leave your seat, drink water |
-| Section 3 | about 60 minutes | Reading and language items |
+| Section 3 | 60 minutes | Reading and language items |
 
-GED Testing Service publishes the 45-minute essay block and the 10-minute break as fixed. The split of the remaining ~95 minutes between the two item sections is set by your test form. Plan on "about 35 up front, about 60 after the break," and read the on-screen clock in the first ten seconds of each section instead of trusting the plan.
+GED Testing Service publishes all four blocks as fixed: **35 + 45 + 10 + 60 = 150**. The two item sections are not interchangeable and the clock does not pool. Time you save in section 1 does not carry into section 3, and time you overspend in section 1 cannot be borrowed back. Read the on-screen clock in the first ten seconds of each section and again at its halfway point.
 
-**Question count.** About **46 scored items** plus the one essay. You will also meet a handful of unscored field-test items that look identical to the rest — you cannot spot them, so do not try.
+**Question count.** GED Testing Service publishes the RLA as **"about 46 questions"**. Prep sources split on whether the Extended Response is counted inside that 46 or sits outside it; plan for roughly 46 item-clicks across sections 1 and 3 plus the one essay, and do not build a strategy that depends on the exact number. You will also meet a handful of unscored field-test items that look identical to the rest — you cannot spot them, so do not try.
 
 **Item types you will actually see**
 
@@ -23,24 +23,24 @@ GED Testing Service publishes the 45-minute essay block and the 10-minute break 
 - **Select-an-area (hot spot)** — click the sentence or phrase in the passage that does a named job.
 - **Fill-in-the-blank** — type a word or short phrase.
 
-**The passages.** Reading sets run **400 to 900 words** with **6 to 8 questions each**. The mix is **about 75% informational** (workplace documents, memos, policy notices, science and history articles, editorials, speeches, how-to material) and **about 25% literary** (fiction excerpts, memoir, occasionally drama). You will see roughly four to six passage sets plus one or two editing passages.
+**The passages.** Reading sets run **450 to 900 words** with **6 to 8 questions each**. The mix is **about 75% informational** (workplace documents, memos, policy notices, science and history articles, editorials, speeches, how-to material) and **about 25% literary** (fiction excerpts, memoir, occasionally drama). You will see roughly four to six passage sets plus one or two editing passages.
 
 **What a 145 means.** Scores are reported on a **100-200 scale** per subject:
 
 | Band | Score | What it gets you |
 |---|---|---|
 | Below passing | 100-144 | No credit for the subject; you retake RLA only |
-| **GED Passing / High School Equivalency** | **145-164** | Counts toward the credential |
+| **GED Passing / High School Equivalency** | **145-164** | Counts toward the credential. 145 on each of the four subjects, never an average |
 | GED College Ready | 165-174 | May waive placement testing or developmental courses |
 | GED College Ready + Credit | 175-200 | May earn up to 10 college credit hours |
 
 145 is a **performance level**, not 145 points. It means you performed at the level of a graduating high school senior who would pass the subject.
 
-**How raw maps to scaled.** The RLA has roughly **65 raw points** available. Most items are worth 1 point; a few technology-enhanced items are worth 2. The essay is scored on **3 traits, 0-2 points each**, and that 0-6 result is **double-weighted to 12 raw points — about 20% of the RLA score**. GED Testing Service does not publish a raw-to-scaled table, because every form is statistically equated so that a 145 on an easy form equals a 145 on a hard one. The working rule that survives every form: **roughly 60-65% of available points lands you at 145.** Concretely — if you get about **30 of 46 items right and score 4 of 6 on the essay**, you are at or just over the line. That is the target. You do not need 40 correct.
+**How raw maps to scaled.** Most items are worth 1 point; a few technology-enhanced items are worth 2. The essay is scored on **3 traits, 0-2 points each**, and that 0-6 result is **double-weighted to 12 raw points**, which GED Testing Service describes as **about 20% of the RLA score** — implying roughly **60 raw points** on the test overall. (GED Testing Service publishes the 12 points and the 20%; the ~60 total is inferred from them, not published.) GED Testing Service does not publish a raw-to-scaled table, because every form is statistically equated so that a 145 on an easy form equals a 145 on a hard one. The working rule that survives every form: **roughly 60-65% of available points lands you at 145.** Concretely — if you get about **30 of 46 items right and score 4 of 6 on the essay**, you are at or just over the line. That is the target. You do not need 40 correct.
 
-**What is supplied on screen.** For RLA: **nothing content-related.** No formula sheet, no dictionary, no thesaurus, no grammar reference, no calculator. Every rule in the cheat sheet below has to be in your head. What you do get are **tools**: a highlighter, a flag-for-review button, an on-screen calculator only in math, adjustable text size and colour, and the passage displayed beside the question the whole time so you can always scroll back.
+**What is supplied on screen.** For RLA: **nothing content-related.** No formula sheet, no dictionary, no thesaurus, no grammar reference, no calculator. Every rule in the cheat sheet below has to be in your head. What you do get are **tools**: a highlighter, a flag-for-review button, adjustable text size and colour, and the passage displayed beside the question the whole time so you can always scroll back. (The on-screen TI-30XS calculator appears on the math, science, and social studies tests - never on this one.)
 
-**Recent changes worth knowing.** The RLA blueprint has been stable — no content overhaul in recent years. What has changed is delivery: the **GED is now routinely available as an online-proctored test taken at home** as well as at a Pearson VUE test centre, and the two versions cover identical content. If you test at home, your workspace must be clear, you cannot use scratch paper unless an erasable whiteboard is approved, and you cannot leave the camera during the break. Check your state's rules — a few states restrict online proctoring or set their own passing requirements above 145.
+**Recent changes worth knowing.** The RLA blueprint has been stable — no content overhaul in recent years. What has changed is delivery: the **GED is now routinely available as an online-proctored test taken at home** as well as at a Pearson VUE test centre, and the two versions cover identical content. If you test at home, your workspace must be clear, **no physical scratch paper and no physical erasable whiteboard are permitted at all** (you get an on-screen whiteboard and scratch pad instead), and you cannot leave the camera during the break. Check your state's rules — states set their own age, residency, and eligibility requirements, a few restrict online proctoring, and a small number of states use a different high school equivalency exam instead of or alongside the GED.
 
 ## What is on it, by weight
 
@@ -54,15 +54,15 @@ The official content domains are **Reading for Meaning in Texts**, **Identifying
 | Supporting detail | ~9% (4 items) | "According to the passage…" — pure retrieval, the answer is printed in the text |
 | Author's purpose and point of view | ~9% (4 items) | Why the author included paragraph 4; the author's attitude toward X; why a quotation or statistic appears where it does |
 | Usage: agreement, tense, parallelism, modifiers | ~9% (4 items) | Subject-verb agreement across an interrupting phrase, pronoun-antecedent match, vague "it/this/they", tense consistency, parallel lists, dangling openers |
-| Word meaning in context | ~7% (3 items) | "As used in line 12, *reserved* most nearly means…" — including everyday words used in an unfamiliar sense |
-| Sentence structure | ~7% (3 items) | Run-ons, comma splices, fragments; choosing the correct join between two independent clauses |
-| Text structure and organisation | ~6% (3 items) | Compare-contrast vs cause-effect vs problem-solution; why the author ordered it this way; the function of a specific paragraph |
-| Mechanics: commas, apostrophes, capitals, homophones | ~6% (3 items) | its/it's, their/there/they're, possessive placement, comma after an introductory clause, capitalising titles and regions |
+| Word meaning in context | ~6.5% (3 items) | "As used in line 12, *reserved* most nearly means…" — including everyday words used in an unfamiliar sense |
+| Sentence structure | ~6.5% (3 items) | Run-ons, comma splices, fragments; choosing the correct join between two independent clauses |
+| Text structure and organisation | ~6.5% (3 items) | Compare-contrast vs cause-effect vs problem-solution; why the author ordered it this way; the function of a specific paragraph |
+| Mechanics: commas, apostrophes, capitals, homophones | ~6.5% (3 items) | its/it's, their/there/they're, possessive placement, comma after an introductory clause, capitalising titles and regions |
 | Tone, connotation, voice | ~4% (2 items) | The tone of the final paragraph; why the author chose *cramped* instead of *small* |
 | Comparing two texts | ~4% (2 items) | Two passages on one subject: where they agree, where they conflict, how one author would answer the other |
 | Transitions and precise word choice | ~2% (1 item) | *However* vs *therefore* vs *furthermore*; replacing a vague or wordy phrase |
 
-**Read the table this way:** reading skills are about **three quarters** of the items and grammar/editing about **one quarter**. But the grammar quarter is the fastest quarter — those items take 30 seconds each and are pure memorisation. Point per minute, the editing items are the single best return on your remaining study time.
+The percentage column sums to 100 and the item column sums to 46. **Read the table this way:** reading skills are about **three quarters** of the items (35 of 46) and grammar/editing about **one quarter** (11 of 46). But the grammar quarter is the fastest quarter — those items take 30 seconds each and are pure memorisation. Point per minute, the editing items are the single best return on your remaining study time.
 
 ## The cheat sheet
 
@@ -124,7 +124,7 @@ Items in a series, a pair, or after a correlative must share the same grammatica
 ### Modifier placement
 
 - **A modifying phrase at the start of a sentence must be immediately followed by the noun it describes.** *Walking to the bus stop, the rain soaked my coat* is wrong — the rain was not walking. Fix: *Walking to the bus stop, **I** got my coat soaked.*
-- **Put *only*, *almost*, *nearly*, *just* directly in front of the word they limit.** *She **only** ate the salad* (nothing else happened) vs *She ate **only** the salad* (nothing else was eaten).
+- **Put *only*, *almost*, *nearly*, *just* directly in front of the word they limit.** *She **only** ate the salad* (eating it was the only thing she did to it - she did not cook it or pay for it) vs *She ate **only** the salad* (the salad was the only thing she ate). The GED tests the second pattern: move the limiter next to what it limits.
 
 ### Capitalisation
 
@@ -280,7 +280,7 @@ Read Passage A, and in one sentence write what its author wants. Read Passage B,
 
 ## Pacing
 
-**The arithmetic.** 150 minutes total, minus 45 for the essay, minus 10 for the break, leaves **about 95 minutes for about 46 items — roughly 2 minutes per item.**
+**The arithmetic.** 150 minutes total, minus 45 for the essay, minus 10 for the break, leaves **exactly 95 minutes for about 46 items — roughly 2 minutes per item.**
 
 That average hides the real structure, because items are not equal:
 
@@ -294,11 +294,11 @@ That average hides the real structure, because items are not equal:
 
 **The banking strategy.** Editing items are cheap. Every drop-down you finish in 40 seconds banks 80 seconds for a hard inference item later. Do not slow down on grammar to feel careful — you either know the rule or you do not, and staring does not help.
 
-**Section 1 (about 35 minutes, about 17 items).** Check the clock at the start. At the halfway mark on the clock, you should be halfway through the items. If you are behind, you are over-reading passages — speed up the first read and lean harder on the hunt.
+**Section 1 (35 minutes, about 17 items).** Check the clock at the start. At the halfway mark on the clock, you should be halfway through the items. If you are behind, you are over-reading passages — speed up the first read and lean harder on the hunt.
 
 **Section 2 (45 minutes, the essay).** Covered in the essay chapter, but one pacing note that affects this one: **do not let the essay bleed into your mental energy for section 3.** When the essay clock ends, it ends. Let it go.
 
-**Section 3 (about 60 minutes, about 29 items).** This is where the test is won. You are tired and the section is long. Set two checkpoints: at 30 minutes remaining you should have about 15 items done; at 15 minutes remaining you should have about 22 done.
+**Section 3 (60 minutes, about 29 items).** This is where the test is won. You are tired and the section is long. Set two checkpoints: at 30 minutes remaining you should have about 15 items done; at 15 minutes remaining you should have about 22 done.
 
 **When to guess and move on.** Use the **90-second rule**: if you have read the stem, scanned the passage, and you still have three live choices at 90 seconds, you are not going to solve it by staying. **Eliminate what you can, pick from what is left, flag it, move.** The flag costs nothing and the item is now worth 25-50% instead of 0% plus a lost minute. Two items you stubbornly grind out are worth less than the six items you never reached.
 
@@ -335,7 +335,7 @@ Cross out everything between subject and verb. Memorise the *each/either/neither
 11%. Learn to state the author's claim in one sentence, then judge each choice against *that exact claim*. Memorise that verifiable data and expert testimony are strong, single anecdotes and unsourced assertions are weak, and that a reported survey result is a **fact**, not an opinion.
 
 **7. Word meaning in context.** (30 minutes)
-7%. The method is one move: cover the word, read the sentence, say your own word out loud, then find the closest choice. Expect common words in uncommon senses.
+About 7% (3 items). The method is one move: cover the word, read the sentence, say your own word out loud, then find the closest choice. Expect common words in uncommon senses.
 
 **8. Pronoun agreement and vague antecedents, parallel structure, dangling modifiers.** (45 minutes)
 About 2 items combined. Worth doing if time remains; the rules are short. For vague antecedents the answer is almost always the version that names the noun.

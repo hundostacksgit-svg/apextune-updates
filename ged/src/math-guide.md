@@ -6,7 +6,7 @@ It is delivered in two parts inside those 115 minutes:
 
 - **Part 1 — the first 5 questions. No calculator.** No calculator button appears on screen and you may not have a handheld one out. You must submit Part 1 before Part 2 opens, and **you cannot go back to Part 1 afterwards**. Treat these five as their own mini-test.
 - **A 3-minute break** between the parts. At a test center this is when you retrieve your handheld calculator if you brought one. The break does not come out of your 115 minutes.
-- **Part 2 — the remaining 41 questions. Calculator allowed.** An on-screen **TI-30XS MultiView** is built into the screen. At a physical test center you may instead use your own approved handheld TI-30XS MultiView. For online-proctored testing you must use the on-screen one — no handheld, no scratch paper beyond the erasable board or whiteboard the proctor approves.
+- **Part 2 — the remaining 41 questions. Calculator allowed.** An on-screen **TI-30XS MultiView** is built into the screen. At a physical test center you may instead use your own approved handheld TI-30XS MultiView. For online-proctored testing you must use the on-screen one — no handheld, and **no physical scratch paper or erasable note board of any kind**; your only workspace is the on-screen whiteboard and scratch pad.
 
 The clock runs for all 115 minutes across both parts. You can flag questions and come back to them **within** a part, not across parts.
 
@@ -46,11 +46,15 @@ Things that are true and that people get wrong:
 
 ### What has changed recently
 
-The 2014-generation test blueprint (115 minutes, 46 items, 45/55 quantitative/algebraic split, TI-30XS, 145 pass line) is still the operating structure. The visible recent changes are: the **Mathematics Formula Sheet was reissued in a revised 2026 edition** (same formulas, cleaner typesetting and wording), the short-answer item type was removed from the test suite years ago and does not appear in math at all, and the item mix has drifted toward **real-world, multi-step problems and data interpretation** rather than bare computation. Nothing about the calculator policy, the timing, or the score bands has moved.
+The 2014-generation test blueprint (115 minutes, 46 items, 45/55 quantitative/algebraic split, TI-30XS, 145 pass line) is still the operating structure. Nothing about the calculator policy, the timing, or the score bands has moved, and the short-answer item type was removed from the test suite years ago and never appeared in math at all. The item mix has drifted toward **real-world, multi-step problems and data interpretation** rather than bare computation.
+
+**One thing you must check yourself: the formula sheet was re-issued.** GED Testing Service publishes a revised **Mathematics Formula Sheet dated February 2026** at `ged.com/content/dam/websites/ged/resources/Math-Formula-Sheet-2026-02-v1-revised.pdf`. The long-standing 2014 sheet carried area, perimeter and circumference; surface area and volume of prism, cylinder, pyramid, cone and sphere; slope, slope-intercept form, point-slope form, the standard form of a quadratic, the **quadratic formula**, the **Pythagorean theorem**, and **simple interest I = prt**. Secondary sources disagree about whether the current sheet also carries **mean and median** formulas: some summaries of the 2026 sheet list them, older descriptions of the 2014 sheet do not. **Open the PDF above and read the actual sheet before test day** — it takes two minutes, and it is the only way to know which side of that disagreement your form is on.
 
 ## What is on it, by weight
 
 The official blueprint splits the test into two domains and four reporting areas:
+
+The only split GED Testing Service publishes officially is the domain split at the bottom of this table — **Quantitative 45% / Algebraic 55%**. The four sub-domain percentages below are the standard working breakdown used across prep sources; treat them as planning weights, not as published blueprint numbers.
 
 | Topic | % of test | What they actually ask |
 |---|---|---|
@@ -408,8 +412,8 @@ Do not start computing while reading. Extract first, compute second. For a table
 **Checkpoints to glance at, and nothing else:**
 
 - After Part 1: **12 minutes gone**. If you are at 20, speed up immediately — stop re-checking work.
-- **Halfway in questions (Q23) should be near 55 minutes.** If you are past 65, start using the 90-second rule below aggressively.
-- **Q40 by 95 minutes.** If you are behind here, go straight to triage: answer every remaining item with your best 30-second effort rather than solving 3 of them perfectly and leaving 3 blank.
+- **Halfway in questions (Q23) should be near 50 minutes**, and the end of the first Part 2 block (Q25) near 54 minutes, which is what the table above budgets. If you are past 60 at Q23, start using the 90-second rule below aggressively.
+- **Q40 by 90 minutes.** The table puts you there at about 87, so 90 is your alarm, not your target. If you are behind here, go straight to triage: answer every remaining item with your best 30-second effort rather than solving 3 of them perfectly and leaving 3 blank.
 
 **The 90-second rule.** Give every question 90 seconds of genuine attempt. At 90 seconds, make a decision:
 
@@ -439,7 +443,7 @@ Ranked by points-per-hour-of-study. Do them strictly in this order and stop wher
 
 **2. Solving linear equations and translating word problems into them.** Two-step, multi-step, variables on both sides, distributing first, equations with fractions (multiply everything by the denominator). Then the translation patterns: "5 more than twice a number" = 2n + 5; "a number decreased by 7" = n − 7; "the total cost is a flat fee plus a per-item charge" = b + mx. Pair this with **working backwards** from the answer choices — it makes half these items trivial. **Budget: 2 hours.**
 
-**3. Slope, y-intercept, and the equation of a line.** Slope from two points (formula is on the sheet), slope from a graph (rise/run), slope from a table (change in y ÷ change in x), and above all **what slope and intercept mean in a story** ("the slope means the cost rises 4 dollars per hour; the intercept is the 25 dollar base fee"). Then y = mx + b given a slope and a point, and given two points. This is about 14% of the test and it is pure pattern. **Budget: 2 hours.**
+**3. Slope, y-intercept, and the equation of a line.** Slope from two points (formula is on the sheet), slope from a graph (rise/run), slope from a table (change in y ÷ change in x), and above all **what slope and intercept mean in a story** ("the slope means the cost rises 4 dollars per hour; the intercept is the 25 dollar base fee"). Then y = mx + b given a slope and a point, and given two points. Slope and the equation of a line are the backbone of the 25% graphs-and-functions area, and they are pure pattern. **Budget: 2 hours.**
 
 **4. Function notation and reading functions from tables and graphs.** f(x) means "put this in, get that out": f(3) means substitute 3. Solving f(x) = 20 means setting the expression equal to 20. Reading a value off a table or graph. Comparing a function given as a table against one given as an equation (evaluate both at the same input). **Budget: 60 minutes.**
 
@@ -453,7 +457,7 @@ Ranked by points-per-hour-of-study. Do them strictly in this order and stop wher
 
 **9. Inequalities and systems.** Solve a one-variable inequality, remembering the sign flips only on multiplying/dividing by a negative; interpret "at most" (≤), "at least" (≥), "no more than" (≤), "more than" (>). Systems: substitution when one equation is already solved for a variable, elimination when the coefficients line up — and remember you can just test the answer choices in both equations. **Budget: 60 minutes.**
 
-**10. Quadratics, last.** Factoring x² + bx + c (find two numbers that multiply to c and add to b), difference of squares, FOIL to expand, and using the **quadratic formula off the sheet** when factoring does not work. Roughly 3% of the test. It is last for a reason — if you run out of time, skip it and accept the 1–2 items. **Budget: 45 minutes, only if items 1–9 are solid.**
+**10. Quadratics, last.** Factoring x² + bx + c (find two numbers that multiply to c and add to b), difference of squares, FOIL to expand, and using the **quadratic formula off the sheet** when factoring does not work. This is the thinnest slice of the algebra half — expect one or two items on a form. It is last for a reason — if you run out of time, skip it and accept the 1–2 items. **Budget: 45 minutes, only if items 1–9 are solid.**
 
 **What to cut entirely if you are short:** surface area of cones and pyramids, permutations and combinations beyond simple multiplication, geometric sequences, domain and range as formal vocabulary, and anything involving three-variable systems (not tested). Together these are worth a handful of points, and you do not need them to clear 145.
 

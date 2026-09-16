@@ -11,7 +11,7 @@ Say the important thing plainly first: **this is a reading test wearing a lab co
 - **No essay. No short answer.** The two typed constructed-response items that used to sit on the Science test were removed at the start of 2018. Nothing on Science today asks you to write a paragraph. (Extended Response still exists on RLA only.)
 - **Calculator: allowed.** The on-screen TI-30XS MultiView is available, and at a test centre you may bring your own handheld TI-30XS MultiView. A **calculator reference sheet** (which buttons do what) is available on screen.
 - **There is no science formula sheet.** This is the single most misunderstood fact about this test. The Mathematical Reasoning test has a formula sheet; Science does not. Instead, **any formula you need that is not on the short memorise list below will be printed inside the question itself.** See "The cheat sheet."
-- **Delivery:** at a Pearson VUE test centre or online-proctored at home. Same test, same length, same item types.
+- **Delivery:** at a Pearson VUE test centre or online-proctored at home. Same test, same length, same item types. Online requires a green (145+) GED Ready in Science within the last 60 days before your first online attempt in this subject, and is not offered in every state.
 
 ### Item types you will actually see
 
@@ -34,7 +34,7 @@ Scores are reported on a **100–200 scale** per subject.
 | 100–144 | Below passing | No credit for this subject. You retake Science only. |
 | **145–164** | **GED Passing Score** | Passing. 145 on all four subjects earns the credential. |
 | 165–174 | GED College Ready | May waive college placement testing or developmental courses. |
-| 175–200 | GED College Ready + Credit | May qualify for up to 10 college credit hours. |
+| 175–200 | GED College Ready + Credit | May qualify for up to 10 college credit hours in total at participating colleges. The college, not GED Testing Service, decides what it actually awards. |
 
 **145 is a per-subject floor, not an average.** Scoring 190 on RLA does not rescue a 140 in Science.
 

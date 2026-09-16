@@ -4,7 +4,7 @@
 
 | Subject | Total time | Essay / extended response? |
 | --- | --- | --- |
-| Reasoning Through Language Arts | 150 minutes | **Yes.** One Extended Response, separately timed at 45 minutes |
+| Reasoning Through Language Arts | 150 minutes (35 + 45 essay + 10 break + 60) | **Yes.** One Extended Response, separately timed at 45 minutes |
 | Social Studies | 70 minutes | **No.** The Extended Response was removed on 1 March 2016 |
 | Science | 90 minutes | **No.** The two short-answer items were dropped at the start of 2018 |
 | Mathematical Reasoning | 115 minutes | **No.** It never had one |
@@ -15,14 +15,16 @@ Old study guides, old YouTube videos and old classroom handouts still teach a So
 
 RLA runs 150 minutes in three parts:
 
-1. **Section 1**, about 35 minutes of reading and language questions.
-2. **Section 2**, the Extended Response, 45 minutes, on its own clock.
+1. **Section 1**, exactly 35 minutes of reading and language questions.
+2. **Section 2**, the Extended Response, exactly 45 minutes, on its own clock.
 3. A 10-minute break.
-4. **Section 3**, about 60 minutes of reading and language questions.
+4. **Section 3**, exactly 60 minutes of reading and language questions.
+
+These four blocks are fixed and published by GED Testing Service: 35 + 45 + 10 + 60 = 150.
 
 The 45 minutes is ring-fenced. You cannot borrow minutes from Section 1, and if you finish the essay in 30 minutes the spare 15 do **not** roll forward into Section 3. Time you do not use on the essay is simply gone, so there is no reward for finishing early and no penalty for using every second.
 
-The Extended Response is worth roughly **20 percent of your RLA score**. It is scored 0 to 6 and then double-weighted, so it contributes up to **12 raw points** to the test. That is a large block of points to leave on the table, which is why a blank or off-topic response is so hard to recover from.
+The Extended Response is worth roughly **20 percent of your RLA score** — GED Testing Service's own figure. It is scored 0 to 6 and then double-weighted, so it contributes up to **12 raw points** to the test. That is a large block of points to leave on the table, which is why a blank or off-topic response is so hard to recover from.
 
 ### What is on the screen
 

@@ -88,7 +88,7 @@
     "id": "SOCIAL-006",
     "topic": "Federalism",
     "difficulty": "medium",
-    "stimulus": "Powers of Government Under the United States Constitution\n\n| National government only | Both national and state | State governments only |\n| Coin money | Collect taxes | Issue driver's and marriage licences |\n| Declare war | Build roads | Establish and run public schools |\n| Regulate trade between the states | Establish courts | Conduct elections |\n| Conduct foreign policy | Borrow money | Set local police and safety rules |",
+    "stimulus": "Powers of Government Under the United States Constitution\n\n| National government only | Both national and state | State governments only |\n|---|---|---|\n| Coin money | Collect taxes | Issue driver's and marriage licences |\n| Declare war | Build roads | Establish and run public schools |\n| Regulate trade between the states | Establish courts | Conduct elections |\n| Conduct foreign policy | Borrow money | Set local police and safety rules |",
     "question": "A state legislature votes to set the minimum age at which a person may be issued a marriage licence in that state. According to the table, this power is best described as",
     "choices": [
       "A. a delegated power belonging only to the national government.",
@@ -156,7 +156,7 @@
     "id": "SOCIAL-010",
     "topic": "Electoral college",
     "difficulty": "hard",
-    "stimulus": "Results of a presidential election in six states\n\n| State | Electoral votes | Votes for Candidate X | Votes for Candidate Y |\n| Alpha | 29 | 4,600,000 | 4,700,000 |\n| Bravo | 20 | 2,900,000 | 2,800,000 |\n| Charlie | 16 | 2,300,000 | 2,200,000 |\n| Delta | 11 | 1,300,000 | 1,250,000 |\n| Echo | 10 | 1,100,000 | 1,600,000 |\n| Foxtrot | 6 | 700,000 | 650,000 |\n\nEach of these states awards all of its electoral votes to the candidate who wins the most votes in that state.",
+    "stimulus": "Results of a presidential election in six states\n\n| State | Electoral votes | Votes for Candidate X | Votes for Candidate Y |\n|---|---|---|---|\n| Alpha | 29 | 4,600,000 | 4,700,000 |\n| Bravo | 20 | 2,900,000 | 2,800,000 |\n| Charlie | 16 | 2,300,000 | 2,200,000 |\n| Delta | 11 | 1,300,000 | 1,250,000 |\n| Echo | 10 | 1,100,000 | 1,600,000 |\n| Foxtrot | 6 | 700,000 | 650,000 |\n\nEach of these states awards all of its electoral votes to the candidate who wins the most votes in that state.",
     "question": "Which statement about these six states is supported by the table?",
     "choices": [
       "A. Candidate Y received both more electoral votes and more total votes than Candidate X.",
@@ -207,7 +207,7 @@
     "id": "SOCIAL-013",
     "topic": "Political parties and platforms",
     "difficulty": "easy",
-    "stimulus": "Excerpts from the platforms of two political parties in a recent national election\n\n| Issue | Party A | Party B |\n| Federal income tax | Reduce rates for all taxpayers and simplify the tax code | Raise rates on the highest incomes to pay for public programmes |\n| Health care | Expand private insurance choice and reduce federal rules | Expand government-funded coverage to more people |\n| Environment | Reduce federal regulation of energy production | Increase federal limits on emissions |\n| Federal and state balance | Return more decisions to state governments | Set national standards that all states must meet |",
+    "stimulus": "Excerpts from the platforms of two political parties in a recent national election\n\n| Issue | Party A | Party B |\n|---|---|---|\n| Federal income tax | Reduce rates for all taxpayers and simplify the tax code | Raise rates on the highest incomes to pay for public programmes |\n| Health care | Expand private insurance choice and reduce federal rules | Expand government-funded coverage to more people |\n| Environment | Reduce federal regulation of energy production | Increase federal limits on emissions |\n| Federal and state balance | Return more decisions to state governments | Set national standards that all states must meet |",
     "question": "Which generalisation about the two platforms is supported by the table?",
     "choices": [
       "A. Party A favours a larger federal role in the economy than Party B does.",
@@ -258,17 +258,17 @@
     "id": "SOCIAL-016",
     "topic": "Voter turnout and elections",
     "difficulty": "easy",
-    "stimulus": "Voter Turnout in United States National Elections\n(percentage of the voting-eligible population that cast a ballot)\n\n| Year | Type of election | Turnout |\n| 2012 | Presidential | 58.6% |\n| 2014 | Midterm | 36.7% |\n| 2016 | Presidential | 60.1% |\n| 2018 | Midterm | 50.3% |\n| 2020 | Presidential | 66.8% |\n| 2022 | Midterm | 46.0% |",
+    "stimulus": "Voter Turnout in United States National Elections\n(percentage of the voting-eligible population that cast a ballot)\n\n| Year | Type of election | Turnout |\n|---|---|---|\n| 2012 | Presidential | 58.6% |\n| 2014 | Midterm | 36.7% |\n| 2016 | Presidential | 60.1% |\n| 2018 | Midterm | 50.3% |\n| 2020 | Presidential | 66.8% |\n| 2022 | Midterm | 46.0% |",
     "question": "Which conclusion is best supported by the table?",
     "choices": [
-      "A. Turnout in midterm elections is lower than turnout in the presidential elections held before and after them.",
+      "A. Every midterm election shown had a lower turnout than every presidential election shown.",
       "B. Turnout has declined steadily in every election since 2012.",
       "C. More than two-thirds of eligible voters cast a ballot in every election shown.",
       "D. Midterm turnout has never risen above 40 percent."
     ],
     "answer": "A",
-    "why": "Each midterm figure is lower than the presidential figures on either side of it: 36.7 sits between 58.6 and 60.1; 50.3 sits between 60.1 and 66.8; and 46.0 follows 66.8. The pattern holds for every midterm in the table.",
-    "howToFind": "1. Sort the rows into two groups before comparing anything. Presidential: 58.6, 60.1, 66.8. Midterm: 36.7, 50.3, 46.0.\n2. Look at the two lists side by side. The lowest presidential number, 58.6, is higher than the highest midterm number, 50.3.\n3. Test each choice against the numbers you just sorted.\n   - A: holds for all three midterms. HIT.\n   - B: 2016 is higher than 2012, and 2018 is higher than 2014, so nothing declined steadily.\n   - C: two-thirds is about 66.7%; only 2020 clears it.\n   - D: 50.3 and 46.0 both exceed 40.\n4. Choose A.",
+    "why": "Sorted into two groups, the presidential figures are 58.6, 60.1 and 66.8 and the midterm figures are 36.7, 50.3 and 46.0. The lowest presidential figure, 58.6, is still higher than the highest midterm figure, 50.3, so every midterm in the table is below every presidential election in the table.",
+    "howToFind": "1. Sort the rows into two groups before comparing anything. Presidential: 58.6, 60.1, 66.8. Midterm: 36.7, 50.3, 46.0.\n2. Compare the two groups at their closest point, which is the only comparison that can break the claim: the LOWEST presidential number against the HIGHEST midterm number. 58.6 against 50.3. The presidential figure still wins, so the claim holds for every pair.\n3. Test each choice against the numbers you just sorted.\n   - A: holds for all nine possible pairs, by step 2. HIT.\n   - B: 2016 (60.1) is higher than 2012 (58.6), and 2018 (50.3) is higher than 2014 (36.7), so nothing declined steadily.\n   - C: two-thirds is about 66.7%; only 2020, at 66.8%, clears it, and the choice says EVERY election.\n   - D: 50.3 and 46.0 both exceed 40.\n4. Choose A.\n5. Note what A does NOT claim. It compares only the six elections printed in the table. A choice that reached outside the table - for example to the presidential election held after 2022, which is not shown - would not be supported, no matter how true it is in real life.",
     "trap": "D. A reader checks the first midterm row, sees 36.7%, and treats it as typical. The other two midterms are 50.3% and 46.0%. When a choice contains 'never' or 'always,' check EVERY row that could break it, not the first one you come to."
   },
   {
@@ -360,7 +360,7 @@
     "id": "SOCIAL-022",
     "topic": "Causes of the American Revolution",
     "difficulty": "easy",
-    "stimulus": "British Laws Applied to the Thirteen Colonies, 1764-1774\n\n| Year | Law | What it did |\n| 1764 | Sugar Act | Taxed imported sugar and molasses |\n| 1765 | Stamp Act | Required a purchased tax stamp on newspapers, legal documents, and playing cards |\n| 1767 | Townshend Acts | Taxed imported glass, paper, paint, and tea |\n| 1773 | Tea Act | Gave one British company the sole right to sell tea in the colonies |\n| 1774 | Coercive (Intolerable) Acts | Closed the port of Boston and placed Massachusetts under direct royal control |\n\nNo colonist held a seat in the British Parliament, which passed each of these laws.",
+    "stimulus": "British Laws Applied to the Thirteen Colonies, 1764-1774\n\n| Year | Law | What it did |\n|---|---|---|\n| 1764 | Sugar Act | Taxed imported sugar and molasses |\n| 1765 | Stamp Act | Required a purchased tax stamp on newspapers, legal documents, and playing cards |\n| 1767 | Townshend Acts | Taxed imported glass, paper, paint, and tea |\n| 1773 | Tea Act | Gave one British company the sole right to sell tea in the colonies |\n| 1774 | Coercive (Intolerable) Acts | Closed the port of Boston and placed Massachusetts under direct royal control |\n\nNo colonist held a seat in the British Parliament, which passed each of these laws.",
     "question": "The table best supports which explanation of colonial anger during this period?",
     "choices": [
       "A. Colonists were being taxed and governed by a legislature in which they had no representatives.",
@@ -428,7 +428,7 @@
     "id": "SOCIAL-026",
     "topic": "Industrialisation, immigration and urbanisation",
     "difficulty": "medium",
-    "stimulus": "Immigration to the United States and Urban Population, 1871-1920\n\n| Decade | Immigrants admitted | Share of Americans living in cities at the end of the decade |\n| 1871-1880 | 2.8 million | 28% |\n| 1881-1890 | 5.2 million | 35% |\n| 1891-1900 | 3.7 million | 40% |\n| 1901-1910 | 8.8 million | 46% |\n| 1911-1920 | 5.7 million | 51% |",
+    "stimulus": "Immigration to the United States and Urban Population, 1871-1920\n\n| Decade | Immigrants admitted | Share of Americans living in cities at the end of the decade |\n|---|---|---|\n| 1871-1880 | 2.8 million | 28% |\n| 1881-1890 | 5.2 million | 35% |\n| 1891-1900 | 3.7 million | 40% |\n| 1901-1910 | 8.8 million | 46% |\n| 1911-1920 | 5.7 million | 51% |",
     "question": "Which conclusion about this period is best supported by the table?",
     "choices": [
       "A. Immigration rose in every decade shown.",
@@ -450,12 +450,12 @@
     "choices": [
       "A. Unemployment returned to its 1929 level within three years of Roosevelt taking office.",
       "B. Unemployment rose every year between 1933 and 1938.",
-      "C. Unemployment fell after 1933 but did not drop below 5 percent until after the United States entered the war.",
+      "C. Unemployment fell from its 1933 peak but did not drop below 5 percent until after the United States entered the war.",
       "D. The Second World War caused unemployment to rise sharply after 1941."
     ],
     "answer": "C",
-    "why": "From the 1933 peak of about 25 percent the line falls, but it is still at 15 percent in 1940 and 10 percent in 1941. It reaches 5 percent in 1942 and 2 percent in 1943, both after the December 1941 entry into the war named in the note.",
-    "howToFind": "1. Read the axis labels and units first. Vertical axis is a PERCENT of the labor force, running 0 to 30. Horizontal is years, 1929 to 1944.\n2. Read the note, because the note supplies the two dates the question turns on: March 1933 and December 1941. Mark them mentally on the horizontal axis.\n3. Write down the values the choices need: 1929 = 3. 1933 = 25. 1936 = 17. 1938 = 19. 1941 = 10. 1942 = 5. 1943 = 2.\n4. Test each choice against those numbers.\n   - A: three years after March 1933 is 1936, where the line is at 17 percent, not the 1929 level of 3 percent. Out.\n   - B: the line FELL from 25 in 1933 to 17 in 1936 before rising to 19 in 1938. It did not rise every year. Out.\n   - C: after 1933 the line falls overall; the first value below 5 percent is 1943's 2 percent, which is after December 1941. HIT.\n   - D: the line falls after 1941, it does not rise. Direction reversed. Out.\n5. Choose C.",
+    "why": "The line peaks at about 25 percent in 1933 and is lower at every later year on the graph, but it is still at 15 percent in 1940 and 10 percent in 1941. It reaches 5 percent in 1942 and does not go below 5 until 1943, which is after the December 1941 entry into the war named in the note.",
+    "howToFind": "1. Read the axis labels and units first. Vertical axis is a PERCENT of the labor force, running 0 to 30. Horizontal is years, 1929 to 1944.\n2. Read the note, because the note supplies the two dates the question turns on: March 1933 and December 1941. Mark them mentally on the horizontal axis.\n3. Write down the values the choices need: 1929 = 3. 1933 = 25 (the peak). 1936 = 17. 1938 = 19. 1940 = 15. 1941 = 10. 1942 = 5. 1943 = 2.\n4. Test each choice against those numbers.\n   - A: three years after March 1933 is 1936, where the line is at 17 percent, not the 1929 level of 3 percent. Out.\n   - B: the line FELL from 25 in 1933 to 17 in 1936 before rising to 19 in 1938. It did not rise every year. Out.\n   - C: every year after 1933 sits below the 1933 peak of 25, so 'fell from its 1933 peak' is true even though 1938 is higher than 1936. Then find the first value BELOW 5: it is 1943's 2 percent, since 1942 is exactly 5, and 1943 is after December 1941. HIT.\n   - D: the line falls after 1941, it does not rise. Direction reversed. Out.\n5. Choose C.\n6. Watch the wording in step 4: 'below 5 percent' excludes 1942's 5 percent. A choice that said 'did not reach 5 percent' would point at 1942 instead. Read the comparison word as carefully as the number.",
     "trap": "A. Everyone knows the New Deal as the programme that fixed the Depression, so a reader assumes the graph must show recovery by the mid-1930s. The graph shows 17 percent in 1936 - roughly six times the 1929 level. Read the value at the year the choice names instead of answering from the story you already believe."
   },
   {
@@ -479,7 +479,7 @@
     "id": "SOCIAL-029",
     "topic": "Supply, demand and equilibrium",
     "difficulty": "medium",
-    "stimulus": "Weekly Market for Bicycle Helmets in One City\n\n| Price per helmet | Quantity demanded | Quantity supplied |\n| $20 | 900 | 300 |\n| $30 | 700 | 450 |\n| $40 | 550 | 550 |\n| $50 | 400 | 700 |\n| $60 | 250 | 900 |",
+    "stimulus": "Weekly Market for Bicycle Helmets in One City\n\n| Price per helmet | Quantity demanded | Quantity supplied |\n|---|---|---|\n| $20 | 900 | 300 |\n| $30 | 700 | 450 |\n| $40 | 550 | 550 |\n| $50 | 400 | 700 |\n| $60 | 250 | 900 |",
     "question": "A city council passes a law setting the highest price a store may charge for a helmet at $30. According to the table, what will happen in this market?",
     "choices": [
       "A. A shortage of 250 helmets, because buyers want more helmets than sellers will supply at that price",
@@ -513,7 +513,7 @@
     "id": "SOCIAL-031",
     "topic": "Inflation and the Consumer Price Index",
     "difficulty": "medium",
-    "stimulus": "Consumer Price Index for a National Economy\n\n| Year | Consumer Price Index |\n| 2023 | 250.0 |\n| 2024 | 260.0 |\n| 2025 | 267.8 |\n\nThe inflation rate for a year is found with this formula:\ninflation rate = ((CPI this year - CPI last year) / CPI last year) x 100",
+    "stimulus": "Consumer Price Index for a National Economy\n\n| Year | Consumer Price Index |\n|---|---|\n| 2023 | 250.0 |\n| 2024 | 260.0 |\n| 2025 | 267.8 |\n\nThe inflation rate for a year is found with this formula:\ninflation rate = ((CPI this year - CPI last year) / CPI last year) x 100",
     "question": "What was the inflation rate for 2025, to the nearest tenth of a percent? Type your answer in the box. Do not type a percent sign.",
     "choices": [],
     "answer": "3.0",
@@ -525,7 +525,7 @@
     "id": "SOCIAL-032",
     "topic": "Unemployment rate",
     "difficulty": "medium",
-    "stimulus": "Population of the town of Marland, ages 16 and over\n\n| Group | Number of people |\n| Working at a paid job | 8,400 |\n| Not working, but actively looking for work | 600 |\n| Retired | 1,500 |\n| Full-time students, not looking for work | 700 |\n| Not working and no longer looking for work | 300 |\n\nThe labor force is the number of people who are employed plus the number who are unemployed and actively looking for work.\n\nunemployment rate = (number unemployed / labor force) x 100",
+    "stimulus": "Population of the town of Marland, ages 16 and over\n\n| Group | Number of people |\n|---|---|\n| Working at a paid job | 8,400 |\n| Not working, but actively looking for work | 600 |\n| Retired | 1,500 |\n| Full-time students, not looking for work | 700 |\n| Not working and no longer looking for work | 300 |\n\nThe labor force is the number of people who are employed plus the number who are unemployed and actively looking for work.\n\nunemployment rate = (number unemployed / labor force) x 100",
     "question": "What is the unemployment rate in Marland, to the nearest tenth of a percent? Type your answer in the box. Do not type a percent sign.",
     "choices": [],
     "answer": "6.7",
@@ -588,8 +588,8 @@
     "id": "SOCIAL-036",
     "topic": "Migration - push and pull factors",
     "difficulty": "easy",
-    "stimulus": "Reasons given by people who moved from Country A to Country B, from a survey of recent arrivals\n\n| Reason given | Percentage of movers |\n| Could not find work at home | 34% |\n| Fighting and violence near home | 26% |\n| Family members already living in Country B | 18% |\n| Higher wages available in Country B | 14% |\n| Drought had ruined local crops | 8% |",
-    "question": "A pull factor is a condition that attracts people to a new place, rather than one that drives them out of the place they are leaving. Which reason listed in the table is a pull factor?",
+    "stimulus": "Reasons given by people who moved from Country A to Country B, from a survey of recent arrivals\n\n| Reason given | Percentage of movers |\n|---|---|\n| Could not find work at home | 34% |\n| Fighting and violence near home | 26% |\n| Family members already living in Country B | 18% |\n| Higher wages available in Country B | 14% |\n| Drought had ruined local crops | 8% |",
+    "question": "A pull factor is a condition that attracts people to a new place, rather than one that drives them out of the place they are leaving. Which of the four reasons below is a pull factor?",
     "choices": [
       "A. Could not find work at home",
       "B. Fighting and violence near home",
@@ -598,7 +598,7 @@
     ],
     "answer": "D",
     "why": "Having family already settled in Country B is a feature of the destination that draws people toward it. The other three reasons listed in the choices all describe bad conditions in Country A, which push people out.",
-    "howToFind": "1. The stem defines the term for you, so use its exact words: a pull factor attracts people TO the new place.\n2. Read each choice and ask one question: does this describe the place they LEFT, or the place they are GOING TO?\n   - 'at home' means Country A. Push.\n   - 'near home' means Country A. Push.\n   - 'local crops' means Country A. Push.\n   - 'living in Country B' is the destination. PULL.\n3. Choose D.\n4. Fast rule for every push-pull item: hunt for the location word in each phrase. Anything describing the origin is a push; anything describing the destination is a pull. You never need to judge whether the condition is good or bad.",
+    "howToFind": "1. The stem defines the term for you, so use its exact words: a pull factor attracts people TO the new place.\n2. Read each of the four CHOICES - not every row of the table - and ask one question: does this describe the place they LEFT, or the place they are GOING TO?\n   - 'at home' means Country A. Push.\n   - 'near home' means Country A. Push.\n   - 'local crops' means Country A. Push.\n   - 'living in Country B' is the destination. PULL.\n3. Choose D.\n4. Fast rule for every push-pull item: hunt for the location word in each phrase. Anything describing the origin is a push; anything describing the destination is a pull. You never need to judge whether the condition is good or bad.\n5. Notice that the table holds a second pull factor - 'higher wages available in Country B' - which is not offered as a choice. That is normal. Answer from the choices in front of you, not from everything the stimulus contains.",
     "trap": "A. Jobs are the classic reason people migrate, so 'work' triggers a match with the well-known pull factor 'better job opportunities.' The wording here is 'could NOT find work AT HOME' - a failure in the country of origin, which pushes. Read the location words, not the topic."
   },
   {
@@ -656,7 +656,7 @@
     "id": "SOCIAL-040",
     "topic": "Population density",
     "difficulty": "medium",
-    "stimulus": "Population and Land Area of Four Countries\n\n| Country | Population (millions) | Land area (thousands of square kilometres) | Population density (people per square kilometre) |\n| Country W | 145 | 17,100 | 8 |\n| Country X | 84 | 358 | 235 |\n| Country Y | 1,420 | 9,390 | 151 |\n| Country Z | 18 | 42 | 429 |",
+    "stimulus": "Population and Land Area of Four Countries\n\n| Country | Population (millions) | Land area (thousands of square kilometres) | Population density (people per square kilometre) |\n|---|---|---|---|\n| Country W | 145 | 17,100 | 8 |\n| Country X | 84 | 358 | 235 |\n| Country Y | 1,420 | 9,390 | 151 |\n| Country Z | 18 | 42 | 429 |",
     "question": "Which conclusion is best supported by the table?",
     "choices": [
       "A. Country Y has both the largest population and the highest population density.",
@@ -668,5 +668,107 @@
     "why": "Country W's land area of 17,100 thousand square kilometres is the largest in the table, and its density of 8 people per square kilometre is the lowest. Both halves of the statement can be read straight from the table.",
     "howToFind": "1. Before comparing anything, read the three column headings and their units. Population is in MILLIONS; land area is in THOUSANDS of square kilometres; density is people per square kilometre.\n2. Find the extremes in each column and write them down.\n   Largest population: Y at 1,420. Smallest: Z at 18.\n   Largest area: W at 17,100. Smallest: Z at 42.\n   Highest density: Z at 429. Lowest: W at 8.\n3. Test each choice against that list.\n   - A: Y has the largest population, but the highest density is Z's 429, not Y's 151. Half right, so wrong.\n   - B: Z does have the smallest population and the smallest area, but its density is the HIGHEST, not the lowest.\n   - C: W has 145 million people and a density of 8. One counterexample kills 'always.'\n   - D: W has the largest area, 17,100, and the lowest density, 8. Both true. HIT.\n4. Choose D.\n5. Understand why: density is people divided by area. A huge country can hold many people and still be nearly empty.",
     "trap": "A. It is the most natural assumption in the table - biggest population, therefore most crowded - and the first clause is genuinely true, which makes the whole choice feel verified. The second clause is false. Read every clause of a choice before accepting it; half-right answers are the most successful distractors on this test."
+  },
+  {
+    "id": "SOCIAL-041",
+    "topic": "Duties and responsibilities of citizens",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "Which of these is a DUTY of a United States citizen - something required by law - rather than a responsibility that is expected but voluntary?",
+    "choices": [
+      "A. Serving on a jury when summoned by a court",
+      "B. Voting in a presidential election",
+      "C. Volunteering for a community organisation",
+      "D. Attending a town council meeting"
+    ],
+    "answer": "A",
+    "why": "Jury service is compelled by law: a summons is a court order, and ignoring it carries a penalty. Voting, volunteering and attending meetings are all encouraged, and all count as civic responsibilities, but no law requires an American to do any of them.",
+    "howToFind": "1. Note the capitalised word in the stem. DUTY has a narrow legal meaning here: the government can punish you for not doing it.\n2. Ask one question of each choice: what happens if I simply do not do this?\n   - A: a court can fine you or hold you in contempt. That is a legal requirement. HIT.\n   - B: nothing. Voting is not compulsory in the United States.\n   - C: nothing.\n   - D: nothing.\n3. Choose A.\n4. Memorise the short duty list, because this distinction is a standard drop-down item: obey the law, pay taxes, serve on a jury when summoned, register for Selective Service (males 18-25), attend school to the state's minimum age. Everything else on a civics list - voting, staying informed, volunteering, contacting officials, peaceful protest - is a RESPONSIBILITY.",
+    "trap": "B. Voting is the first thing anyone names when asked what citizens are supposed to do, and civics lessons call it a citizen's most important act. Important is not the same as required. Some countries do make voting compulsory; the United States does not, and that is exactly the line this item is drawn on."
+  },
+  {
+    "id": "SOCIAL-042",
+    "topic": "Confederal, federal and unitary systems",
+    "difficulty": "medium",
+    "stimulus": "Two descriptions of how power was arranged in the United States.\n\nDescription 1 (1781-1789): Each state kept its sovereignty and every power not expressly given to the central body. The central Congress could not tax, could not regulate trade, and depended on the states to supply money and soldiers.\n\nDescription 2 (1789 to the present): Certain powers are given to the national government, certain powers are kept by the states, and some powers are held by both. Each level acts directly on citizens within its own sphere.",
+    "question": "Which pair of terms best describes the change from Description 1 to Description 2?",
+    "choices": [
+      "A. From a confederal system to a federal system",
+      "B. From a federal system to a unitary system",
+      "C. From a unitary system to a confederal system",
+      "D. From a federal system to a confederal system"
+    ],
+    "answer": "A",
+    "why": "In a confederal system the member states hold the power and the central government is weak and dependent on them, which is exactly Description 1 - the Articles of Confederation. In a federal system power is divided between a national government and the states, with each acting directly on citizens, which is Description 2 - the Constitution.",
+    "howToFind": "1. Define the three words before you look at the choices, because the item is pure vocabulary:\n   - Unitary: the central government holds the power and creates the local units (United Kingdom, France).\n   - Federal: power is DIVIDED between a national government and the states (the United States today).\n   - Confederal: the states hold the power and the centre is weak and depends on them (the United States under the Articles).\n2. Label Description 1. The giveaways are 'each state kept its sovereignty' and 'depended on the states to supply money and soldiers.' Weak centre, strong states: CONFEDERAL.\n3. Label Description 2. The giveaway is 'certain powers are given to the national government, certain powers are kept by the states.' Divided: FEDERAL.\n4. Read the choices as ordered pairs, from-then-to, and find confederal then federal. That is A.\n5. Check the direction on the survivors. B, C and D all put the wrong label on at least one description, and D reverses the direction of the change - the country moved toward a stronger centre in 1789, not away from one.",
+    "trap": "D. It contains both of the right words, just in the wrong order, and a reader who has matched 'federal' and 'confederal' to the passage but not to the arrow grabs it. Order matters in every from-to choice. Decide which description is which BEFORE you read the pairs, then check the arrow direction as a separate step."
+  },
+  {
+    "id": "SOCIAL-043",
+    "topic": "Propaganda and political persuasion",
+    "difficulty": "easy",
+    "stimulus": "A campaign advertisement for a candidate for mayor.\n\nThe screen shows a large, cheering crowd filling a public square. Over the crowd a voice says: \"All across this city, people are joining us. Your neighbours have already made up their minds. Don't be the last one left out - vote Ruiz.\"\n\nThe advertisement gives no information about the candidate's positions on any issue.",
+    "question": "Which propaganda technique does this advertisement rely on?",
+    "choices": [
+      "A. Bandwagon",
+      "B. Testimonial",
+      "C. Card stacking",
+      "D. Name-calling"
+    ],
+    "answer": "A",
+    "why": "The appeal is that everyone else is already doing it and the viewer risks being left behind. That is the bandwagon technique: join because the crowd has joined, not because of any argument about the candidate.",
+    "howToFind": "1. Strip the advertisement down to the reason it gives you to vote for Ruiz. The only reason offered is that other people are voting for Ruiz.\n2. Match that reason to the named techniques by definition:\n   - Bandwagon: everyone is doing it, so you should too. MATCH.\n   - Testimonial: a famous or trusted person endorses it. No person is named or shown speaking for the candidate.\n   - Card stacking: present only the favourable facts and hide the rest. The advertisement presents no facts at all, favourable or otherwise.\n   - Name-calling: attack the opponent. No opponent is mentioned.\n3. Choose A.\n4. Keep the full list on your board, because these come up as drop-downs: bandwagon, testimonial, plain folks, name-calling, card stacking, glittering generalities, transfer.",
+    "trap": "C. The last line of the stimulus - that no positions are given - looks like a hint toward card stacking, because both techniques dodge the issues. Card stacking means telling a one-sided story with selected facts. This advertisement tells no story about the candidate at all; it points at the crowd. Match the technique to the REASON the advertisement gives, not to what it leaves out."
+  },
+  {
+    "id": "SOCIAL-044",
+    "topic": "Reconstruction and its reversal",
+    "difficulty": "medium",
+    "stimulus": "Reconstruction and After in the Southern States, 1865-1896\n\n| Year | Event |\n|---|---|\n| 1865 | Thirteenth Amendment abolishes slavery |\n| 1865-1866 | Southern states pass Black Codes limiting where freedpeople may live, work, and travel |\n| 1868 | Fourteenth Amendment guarantees citizenship, due process, and equal protection of the laws |\n| 1870 | Fifteenth Amendment: the vote may not be denied on account of race |\n| 1877 | The last federal troops are withdrawn from the southern states |\n| 1890-1896 | Southern states adopt poll taxes, literacy tests, and grandfather clauses for voting |\n| 1896 | In Plessy v. Ferguson the Supreme Court upholds \"separate but equal\" segregation laws |",
+    "question": "Which conclusion about this period is best supported by the timeline?",
+    "choices": [
+      "A. The three Reconstruction amendments ended racial discrimination in the southern states.",
+      "B. Rights written into the Constitution between 1865 and 1870 were undermined in practice by state laws and a Supreme Court ruling in the decades that followed.",
+      "C. Southern state governments supported the Fourteenth and Fifteenth Amendments from the start.",
+      "D. The federal government increased its enforcement of civil rights in the South after 1877."
+    ],
+    "answer": "B",
+    "why": "The first half of the list adds rights by amendment - freedom in 1865, citizenship and equal protection in 1868, the vote in 1870. The second half takes them back in practice: troops withdrawn in 1877, then poll taxes, literacy tests and grandfather clauses in the 1890s, then the Court's blessing of segregation in 1896. The shape of the list is rights granted, then rights hollowed out.",
+    "howToFind": "1. Split the timeline at the obvious hinge. Entries through 1870 are federal amendments granting rights. Entries from 1877 on are state laws, a troop withdrawal, and a court ruling restricting rights.\n2. Write one word for each half: GRANTED, then TAKEN BACK.\n3. A conclusion item must cover the whole list, so look for the choice with both halves in it. Only B has two parts.\n4. Test the other three against specific entries.\n   - A: the 1890s and 1896 entries exist only because discrimination continued. One entry kills it.\n   - C: the 1865-1866 Black Codes show southern states resisting from the start, before the Fourteenth Amendment even existed.\n   - D: 1877 is a WITHDRAWAL of federal force, and everything after it restricts rights. The direction is reversed.\n5. Choose B.\n6. Content note you should carry in: the tools listed for 1890-1896 - poll tax, literacy test, grandfather clause - are the standard answer to 'how were the Fifteenth Amendment's guarantees evaded?' The poll tax was finally killed by the Twenty-fourth Amendment in 1964 and literacy tests by the Voting Rights Act in 1965.",
+    "trap": "A. The Thirteenth, Fourteenth and Fifteenth Amendments are taught as the achievement of Reconstruction, so 'they ended discrimination' feels like the lesson. The timeline was built to contradict exactly that feeling: three of its seven entries are dated after the last amendment and every one of them restricts rights. When a timeline runs past the event you remember, the point is usually what happened afterwards."
+  },
+  {
+    "id": "SOCIAL-045",
+    "topic": "Economic systems",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "In one country the government owns the factories and the farms, and a national planning office decides which goods will be produced, in what quantities, and at what prices they will be sold. Which type of economic system is described?",
+    "choices": [
+      "A. Market economy",
+      "B. Traditional economy",
+      "C. Command economy",
+      "D. Mixed economy"
+    ],
+    "answer": "C",
+    "why": "A command economy is one in which the government owns the means of production and central planners, rather than prices and profits, answer the basic questions of what to produce, how much, and at what price.",
+    "howToFind": "1. Pull out the two facts in the stem: the GOVERNMENT owns the productive property, and a PLANNING OFFICE sets output and prices.\n2. Ask the one question that separates all four systems: who decides what gets produced?\n   - Market: private owners and consumers decide, through prices and profit.\n   - Traditional: custom and heredity decide - you farm what your family has always farmed.\n   - Command: the government decides and plans. MATCH on both facts.\n   - Mixed: markets decide most things, with government regulation and public programmes on top.\n3. Choose C.\n4. Know the pairings the test uses: command economies are associated with communist states; every real economy today, including the United States, is MIXED; pure market and pure command are textbook endpoints rather than real countries.",
+    "trap": "D. Because the guide tells you that every real economy is mixed, a reader reaches for 'mixed' as the safe, sophisticated answer. The stem is not describing a real country; it describes a system in which government ownership and planning do all the work, with no private decision-making left in the description. Answer the description on the screen, not the general truth about real economies."
+  },
+  {
+    "id": "SOCIAL-046",
+    "topic": "Latitude and longitude",
+    "difficulty": "easy",
+    "stimulus": "",
+    "question": "A weather service reports that the centre of a hurricane is located at 25 degrees N, 80 degrees W. What does this location mean?",
+    "choices": [
+      "A. 25 degrees north of the prime meridian and 80 degrees west of the equator",
+      "B. 80 degrees north of the equator and 25 degrees west of the prime meridian",
+      "C. 25 degrees west of the equator and 80 degrees north of the prime meridian",
+      "D. 25 degrees north of the equator and 80 degrees west of the prime meridian"
+    ],
+    "answer": "D",
+    "why": "Coordinates are always given latitude first, then longitude. Latitude is measured north or south of the equator, so 25 degrees N is 25 degrees north of the equator. Longitude is measured east or west of the prime meridian, so 80 degrees W is 80 degrees west of the prime meridian.",
+    "howToFind": "1. Read the direction letters, because they tell you which measurement is which. N and S can only be latitude. E and W can only be longitude.\n2. Apply the two definitions in order:\n   - Latitude: distance north or south of the EQUATOR. So 25 N means 25 degrees north of the equator.\n   - Longitude: distance east or west of the PRIME MERIDIAN. So 80 W means 80 degrees west of the prime meridian.\n3. Write your own answer before reading the choices: 25 north of the equator, 80 west of the prime meridian.\n4. Find the choice that matches it word for word. D.\n5. Scan the other three for the two errors the test builds here: swapping the reference lines (equator for prime meridian), and swapping the two numbers. A swaps the lines, B swaps the numbers, C does both.",
+    "trap": "A. It keeps the numbers in the right order, 25 then 80, so it passes the first check a reader makes, and then attaches each number to the wrong reference line. Latitude never has anything to do with the prime meridian. Lock the pairs together in memory - latitude goes with the equator, longitude goes with the prime meridian - and this whole family of items becomes automatic."
   }
 ]

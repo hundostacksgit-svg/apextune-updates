@@ -151,12 +151,12 @@ The $36 is corroborated by a New Jersey county government page — Atlantic Coun
 
 The $36 is two fees stacked: a **$26 GED Testing Service fee** plus a **$10 New Jersey test-centre fee**. On a discounted retake, GED Testing Service waives its $26 and you pay the $10 that remains. That arithmetic is why the $10 figure is credible.
 
-The entitlement: **one discounted retake for every subject you buy at full price and do not pass**, usable within **365 days** of the full-price attempt. The one-full-price-to-one-discount cycle then repeats until you pass.
+The entitlement: GED Testing Service's **national** rule is **two discounted retests per subject, taken within 12 months of your initial full-price test in that subject** — the waived `$26` applies to both, so two `$10` retakes. Some New Jersey sources describe it instead as **one** discounted retake per full-price attempt, with the full-price-then-discount cycle repeating. **The sources disagree**: `ged.com/faqs/test-retakes.html` states the two-retest rule, while the NJ-specific wording circulating in test-centre material states one. Your `ged.com` checkout total is the only figure that binds — check what it charges you before you assume the second `$10` retake exists.
 
 ### Retake waiting periods
 
-- **Test centre:** no wait after the first or second failure on a subject. After **three attempts** at a subject, you wait **60 days**.
-- **Online proctored:** one retake, then a **60-day wait**. Two attempts at a subject online and you are locked out of that subject online for 60 days.
+- **Test centre:** no wait after the first or second failure on a subject. After **three attempts** at a subject, you wait **60 days**. This matches GED Testing Service's national rule: two subsequent retests with no restrictions, then 60 days after the third and any later failure.
+- **Online proctored:** one retake, then a **60-day wait**. GED Testing Service states this as **2 attempts per subject area** online before the 60-day wait — i.e. the initial attempt plus one retake.
 
 If a subject feels marginal, that asymmetry alone argues for the test centre.
 
@@ -166,7 +166,7 @@ GED Ready is the official practice test. It is **optional if you test at a centr
 
 At **$7.99 a subject or $25.99 for all four**, buy the bundle if you need more than three. Each purchase is a single sitting; you cannot re-sit a GED Ready test on the same purchase.
 
-> Prices for GED Ready have shifted in recent years and older figures ($6.99 each, $22.99 bundle) still circulate on prep sites. Budget **$26 to $32** for four and read the live cart. The page that settles it is `https://www.ged.com/faqs/ged-ready.html`.
+> Prices for GED Ready have shifted in recent years and older figures ($6.99 each, $22.99 bundle) still circulate on prep sites. The current published figures are **$7.99 per subject and $25.99 for all four**. Budget **$26 to $32** for four and read the live cart. The page that settles it is `https://www.ged.com/faqs/ged-ready.html`.
 
 ### Realistic totals
 

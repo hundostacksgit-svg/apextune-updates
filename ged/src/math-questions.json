@@ -219,7 +219,7 @@
     ],
     "answer": "A",
     "why": "√144 = 12 because 12 × 12 = 144, and ∛64 = 4 because 4 × 4 × 4 = 64. Their sum is 16.",
-    "howToFind": "1. √144 asks what number times itself is 144. From the squares list, 12² = 144, so √144 = 12.\n2. ∛64 asks what number times itself three times is 64. 4 × 4 = 16 and 16 × 4 = 64, so ∛64 = 4.\n3. Add: 12 + 4 = 16.\n4. Calculator route for Part 2: 2nd x² 144 ► gives 12; then 3 2nd ^ 64 ► gives 4 (the index goes first for an nth root).\n5. Memorize the squares 1 through 15 and the cubes 1 through 6. This item appears in the no-calculator part, where the calculator route is unavailable.",
+    "howToFind": "1. √144 asks what number times itself is 144. From the squares list, 12² = 144, so √144 = 12.\n2. ∛64 asks what number times itself three times is 64. 4 × 4 = 16 and 16 × 4 = 64, so ∛64 = 4.\n3. Add: 12 + 4 = 16.\n4. Calculator route for Part 2: 2nd x² 144 ► gives 12; then 3 2nd ^ 64 ► gives 4 (the index goes first for an nth root).\n5. Memorize the squares 1 through 15 and the cubes 1 through 6. An item like this often lands in Part 1, where the calculator route in step 4 is not available and recall is the only route.",
     "trap": "B (20). You read ∛64 as √64 and get 8, giving 12 + 8 = 20. The small 3 in front of the radical means cube root; 4 cubed is 64, 8 squared is 64, and only one of those is being asked for."
   },
   {
@@ -299,7 +299,7 @@
     ],
     "answer": "C",
     "why": "SA = 2lw + 2lh + 2wh = 2(12) + 2(10) + 2(7.5) = 24 + 20 + 15 = 59 square feet.",
-    "howToFind": "1. Surface area means the total of all six faces of the box.\n2. Use SA = 2lw + 2lh + 2wh with l = 4, w = 3, h = 2.5.\n3. Top and bottom: lw = 4 × 3 = 12, and 2 × 12 = 24.\n4. Front and back: lh = 4 × 2.5 = 10, and 2 × 10 = 20.\n5. Two ends: wh = 3 × 2.5 = 7.5, and 2 × 7.5 = 15.\n6. Add all three: 24 + 20 + 15 = 59 square feet.\n7. Check the unit: surface area is in square feet, so the exponent on the unit in the right choice is 2.",
+    "howToFind": "1. Surface area means the total of all six faces of the box.\n2. Use SA = 2lw + 2lh + 2wh with l = 4, w = 3, h = 2.5. The formula sheet writes the same thing as SA = ph + 2B, where p is the perimeter of the base and B is the area of the base: p = 2(4 + 3) = 14, so ph = 14 × 2.5 = 35, and B = 4 × 3 = 12, so 2B = 24, and 35 + 24 = 59. Either route gives the same number.\n3. Top and bottom: lw = 4 × 3 = 12, and 2 × 12 = 24.\n4. Front and back: lh = 4 × 2.5 = 10, and 2 × 10 = 20.\n5. Two ends: wh = 3 × 2.5 = 7.5, and 2 × 7.5 = 15.\n6. Add all three: 24 + 20 + 15 = 59 square feet.\n7. Check the unit: surface area is in square feet, so the exponent on the unit in the right choice is 2.",
     "trap": "B (30). That is 4 × 3 × 2.5, the VOLUME. Surface area and volume use the same three numbers, so the only way to tell them apart is the word in the question and the unit (ft² versus ft³)."
   },
   {
@@ -345,7 +345,7 @@
     ],
     "answer": "C",
     "why": "Sorted, the values are 66, 68, 71, 74, 77, 79, 80. With seven values the median is the fourth one, which is 74.",
-    "howToFind": "1. Median means the middle value AFTER the numbers are put in order. The list in the table is in day order, not number order, so sort it first.\n2. Sorted: 66, 68, 71, 74, 77, 79, 80.\n3. Count the values: there are 7, an odd number, so there is one exact middle.\n4. The middle position is the 4th value (three below it, three above it).\n5. The 4th value is 74. That is the median.\n6. Cross-check the wrong-answer values so you can rule them out fast: the mean is 515 ÷ 7 = 73.6 and the range is 80 − 66 = 14.",
+    "howToFind": "1. Median means the middle value AFTER the numbers are put in order. The list in the table is in day order, not number order, so sort it first.\n2. Sorted: 66, 68, 71, 74, 77, 79, 80.\n3. Count the values: there are 7, an odd number, so there is one exact middle.\n4. The middle position is the 4th value (three below it, three above it).\n5. The 4th value is 74. That is the median.\n6. Cross-check the wrong-answer values so you can rule them out fast: the mean is 515 ÷ 7 ≈ 73.57, which is the 73.6 in choice B, and the range is 80 − 66 = 14.",
     "trap": "D (80). You take the middle of the list AS PRINTED (Thursday is the 4th row) without sorting. Sorting is not optional; it is part of the definition of median."
   },
   {
@@ -443,7 +443,7 @@
     "answer": "D",
     "why": "Distributing −2 across both terms gives −6x + 8, and 5 + 8 = 13, so the expression equals 13 − 6x.",
     "howToFind": "1. The −2 multiplies BOTH terms inside the parentheses. Draw an arrow from −2 to 3x and another from −2 to −4.\n2. −2 × 3x = −6x.\n3. −2 × (−4) = +8. Negative times negative is positive.\n4. Rewrite: 5 − 6x + 8.\n5. Combine the plain numbers: 5 + 8 = 13, giving 13 − 6x.\n6. Check by picking a number: let x = 2. Original: 5 − 2(6 − 4) = 5 − 4 = 1. Answer D: 13 − 12 = 1. They match.",
-    "trap": "A (−6x − 3). You distribute the −2 to the 3x but not to the −4, giving 5 − 6x − 4 = 1 − 6x, or you keep the minus on the 8. The second term's sign flips too, which is why 5 becomes 13 and not 1."
+    "trap": "A (−6x − 3). You multiply −2 by 3x correctly but then carry the minus onto the second product as well, writing 5 − 6x − 8 = −6x − 3. Negative times negative is positive, so the second product is +8 and the constant is 5 + 8 = 13, not 5 − 8."
   },
   {
     "id": "MATH-029",
@@ -476,7 +476,7 @@
     ],
     "answer": "A",
     "why": "Subtracting 9 from both sides gives 4x = 24, and dividing by 4 gives x = 6.",
-    "howToFind": "1. Undo the operations in reverse order. The 9 is added last, so remove it first.\n2. Subtract 9 from both sides: 4x + 9 − 9 = 33 − 9, so 4x = 24.\n3. The 4 multiplies x, so divide both sides by 4: x = 24 ÷ 4 = 6.\n4. Check by substituting back: 4(6) + 9 = 24 + 9 = 33. Correct.\n5. Working backwards also settles this in one line: try the middle choice, then adjust. 4(6) + 9 = 33 on the first try.",
+    "howToFind": "1. Undo the operations in reverse order. The 9 is added last, so remove it first.\n2. Subtract 9 from both sides: 4x + 9 − 9 = 33 − 9, so 4x = 24.\n3. The 4 multiplies x, so divide both sides by 4: x = 24 ÷ 4 = 6.\n4. Check by substituting back: 4(6) + 9 = 24 + 9 = 33. Correct.\n5. Working backwards also settles this fast. Start in the middle with B (8.25): 4(8.25) + 9 = 42, too big, so move to a smaller choice. Try A (6): 4(6) + 9 = 33. That matches, so stop.",
     "trap": "D (24). That is the value of 4x, an intermediate step, not of x. The question asks for x; anything you compute before the final division is a planted wrong answer."
   },
   {
@@ -489,7 +489,7 @@
     "answer": "18",
     "why": "Adding 5 gives (2x)/3 = 12, multiplying by 3 gives 2x = 36, and dividing by 2 gives x = 18.",
     "howToFind": "1. Undo in reverse order. The −5 is outside the fraction, so clear it first.\n2. Add 5 to both sides: (2x)/3 = 7 + 5 = 12.\n3. The whole left side is divided by 3, so multiply both sides by 3: 2x = 12 × 3 = 36.\n4. Divide both sides by 2: x = 36 ÷ 2 = 18.\n5. Check by substituting: (2 × 18)/3 − 5 = 36/3 − 5 = 12 − 5 = 7. Correct.\n6. Numeric entry: type 18.",
-    "trap": "Typing 6, from dividing 12 by 2 and forgetting to multiply by 3 first. Or typing 3, from adding 5 then dividing by 3 and by 2 in the wrong order. Clear the denominator before you touch the coefficient."
+    "trap": "Typing 6, from dividing 12 by 2 and forgetting to multiply by 3 first. Or typing 2, from dividing 12 by 3 instead of multiplying by 3 and then dividing by 2. The 3 is a denominator, so it comes off by MULTIPLYING both sides; clear it before you touch the coefficient."
   },
   {
     "id": "MATH-032",
@@ -688,7 +688,7 @@
     "answer": "0.5",
     "why": "The equation factors as (2x − 1)(x − 3) = 0, so besides x = 3 the other factor gives 2x − 1 = 0 and x = 0.5.",
     "howToFind": "1. A quadratic has two solutions. One is given, so find the partner.\n2. Factoring route: 2x² − 7x + 3 = (2x − 1)(x − 3). Check by FOIL: 2x² − 6x − x + 3 = 2x² − 7x + 3. Correct.\n3. Set the other factor to zero: 2x − 1 = 0, so 2x = 1 and x = 0.5.\n4. Quadratic formula route, using the formula that IS on the formula sheet, with a = 2, b = −7, c = 3:\n   b² − 4ac = (−7)² − 4(2)(3) = 49 − 24 = 25, and √25 = 5.\n   x = (7 + 5)/(2 × 2) = 12/4 = 3, and x = (7 − 5)/4 = 2/4 = 0.5.\n5. Check: 2(0.5)² − 7(0.5) + 3 = 0.5 − 3.5 + 3 = 0. Correct.\n6. Numeric entry: type 0.5 (or .5). The question says decimal, so do not type 1/2.",
-    "trap": "Typing 1 or 2, from splitting the constant 3 and the coefficient 2 incorrectly and ignoring that a = 2 must divide the roots. When a is not 1, the roots are usually not whole numbers; use the quadratic formula off the sheet if factoring does not fall out in fifteen seconds."
+    "trap": "Typing 1, from reading the factor (2x − 1) as the root x = 1. A factor gives a root only when the WHOLE factor is set to zero: 2x − 1 = 0 gives 2x = 1, so x = 0.5. Also do not type 1/2 — the question says to enter a decimal. When a is not 1 the roots are usually not whole numbers, so use the quadratic formula off the sheet if factoring does not fall out in fifteen seconds."
   },
   {
     "id": "MATH-044",
@@ -883,5 +883,56 @@
     "why": "Growing 3% per year means multiplying by 1.03 once per year, so after t years the population is 24,000 × (1.03)ᵗ.",
     "howToFind": "1. Decide whether the growth is by a fixed AMOUNT each year (linear, add) or a fixed PERCENT each year (exponential, multiply). 'Increasing by 3% each year' is a percent, so it is multiplication.\n2. One year of 3% growth means multiplying by 1 + 0.03 = 1.03.\n3. Each additional year multiplies by 1.03 again, so t years means (1.03) raised to the power t.\n4. Start with the beginning population: 24000(1.03)ᵗ.\n5. Test it on t = 1: 24000 × 1.03 = 24,720, which is 24,000 plus 3% of 24,000 (720). Correct.\n6. Test choice C on t = 1: 24000 × 0.03 = 720, which is only the increase, not the population. Wrong.",
     "trap": "D (24000(1.3)ᵗ). You convert 3% to 1.3 instead of 1.03. Three percent is 0.03, so the multiplier is 1.03; 1.3 would be a 30% annual increase, ten times too fast."
+  },
+  {
+    "id": "MATH-056",
+    "topic": "Parallel lines",
+    "difficulty": "medium",
+    "stimulus": "",
+    "question": "Which equation represents the line that is parallel to y = 4x − 9 and passes through the point (3, 2)?",
+    "choices": [
+      "A. y = −(1/4)x + 11/4",
+      "B. y = 4x − 9",
+      "C. y = 4x − 10",
+      "D. y = 4x + 14"
+    ],
+    "answer": "C",
+    "why": "Parallel lines have equal slopes, so the new line also has slope 4. Substituting (3, 2) into y = 4x + b gives 2 = 12 + b, so b = −10 and the equation is y = 4x − 10.",
+    "howToFind": "1. Read the slope off the given equation. It is already in y = mx + b form, so m = 4.\n2. Parallel means SAME slope, so the new line also has slope 4. (This rule is NOT on the formula sheet; memorize it. Perpendicular would be the negative reciprocal, −1/4.)\n3. Use y = mx + b with m = 4 and the point (3, 2), meaning x = 3 and y = 2: 2 = 4(3) + b.\n4. Multiply: 2 = 12 + b.\n5. Subtract 12 from both sides: b = 2 − 12 = −10.\n6. Equation: y = 4x − 10.\n7. Check by putting x = 3 into your answer: 4(3) − 10 = 12 − 10 = 2, which matches the y of the given point.\n8. Faster route on test day: eliminate A (wrong slope), then test the three slope-4 choices at x = 3 and keep the one that returns 2.",
+    "trap": "B (y = 4x − 9). You copy the original equation because parallel lines share a slope, but the line must also pass through (3, 2), and 4(3) − 9 = 3, not 2. Parallel fixes the slope only; the point fixes b."
+  },
+  {
+    "id": "MATH-057",
+    "topic": "Interpreting slope from a graph",
+    "difficulty": "medium",
+    "stimulus": "A graph shows the amount of fuel, in gallons, remaining in a generator's tank during one run. The graph is a straight line that passes through the points (0, 18) and (6, 3), where x is the number of hours the generator has run.",
+    "question": "What does the slope of this line represent?",
+    "choices": [
+      "A. The generator burns 2.5 gallons of fuel per hour.",
+      "B. The generator starts with 2.5 gallons of fuel.",
+      "C. The generator burns 3 gallons of fuel per hour.",
+      "D. The generator burns 18 gallons of fuel per hour."
+    ],
+    "answer": "A",
+    "why": "The slope is (3 − 18)/(6 − 0) = −15/6 = −2.5, and its units are gallons per hour, so the fuel drops by 2.5 gallons for each hour the generator runs.",
+    "howToFind": "1. Slope is the rate of change: how much the vertical quantity changes for each one-unit change in the horizontal quantity.\n2. Use m = (y₂ − y₁)/(x₂ − x₁) from the formula sheet with (0, 18) and (6, 3): (3 − 18)/(6 − 0).\n3. Numerator: 3 − 18 = −15. Denominator: 6 − 0 = 6.\n4. Divide: −15 ÷ 6 = −2.5.\n5. Attach the units from the axes: gallons on top, hours on the bottom, so the slope is −2.5 gallons per hour.\n6. Read the sign as a direction in the story. Negative means the fuel is going DOWN, so the generator is burning 2.5 gallons each hour.\n7. Check against the picture: in 6 hours it should burn 6 × 2.5 = 15 gallons, and the tank does go from 18 down to 3, a drop of 15. Correct.",
+    "trap": "D (18 gallons per hour). The 18 is the y-value at x = 0, which is the y-INTERCEPT — the fuel in the tank before it starts running — not a rate. Slope answers 'how much per hour'; the intercept answers 'how much at the start'."
+  },
+  {
+    "id": "MATH-058",
+    "topic": "Linear versus exponential behaviour",
+    "difficulty": "medium",
+    "stimulus": "The function h is given by this table.\n\nx | h(x)\n0 | 3\n1 | 6\n2 | 12\n3 | 24",
+    "question": "Which statement best describes the function shown in the table?",
+    "choices": [
+      "A. It is linear, because h(x) increases by 3 each time x increases by 1.",
+      "B. It is linear, because h(x) increases by a constant amount each time x increases by 1.",
+      "C. It is exponential, because h(x) is multiplied by 2 each time x increases by 1.",
+      "D. It is exponential, because h(x) increases by a constant amount each time x increases by 1."
+    ],
+    "answer": "C",
+    "why": "The differences are 3, 6, and 12, so the values do not go up by a constant amount, but each value is exactly twice the one before it (6 ÷ 3 = 2, 12 ÷ 6 = 2, 24 ÷ 12 = 2). A constant multiplier is exponential.",
+    "howToFind": "1. Test for LINEAR first: subtract each value from the next and see whether you get the same number every time.\n2. Differences: 6 − 3 = 3, then 12 − 6 = 6, then 24 − 12 = 12. These are not equal, so the function is not linear, which kills choices A and B.\n3. Now test for EXPONENTIAL: divide each value by the one before it and see whether you get the same number every time.\n4. Ratios: 6 ÷ 3 = 2, 12 ÷ 6 = 2, 24 ÷ 12 = 2. The same multiplier every step, so the function is exponential with a growth factor of 2.\n5. Choice D says exponential but gives the linear REASON, so it is wrong on its own words. Only C states both the right classification and the right reason.\n6. Worth writing on the note board once at the start of the test: add the same each step = linear; multiply by the same each step = exponential.",
+    "trap": "A (linear, up by 3 each time). The first step really is +3, so if you check only one pair of rows the table looks linear. A constant difference has to hold for EVERY pair, and the next step is +6."
   }
 ]

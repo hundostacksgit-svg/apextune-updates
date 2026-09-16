@@ -8,9 +8,9 @@ Start from the four facts that determine everything else.
 
 **Two: three of the four subjects are reading tests.** Social Studies is a reading test in a powdered wig. Science is a reading test in a lab coat. RLA is openly a reading test. Only Mathematical Reasoning demands a skill you cannot fake by reading carefully. That means one method — the one in "How to find any answer" — covers roughly three-quarters of the credential.
 
-**Three: 145 is a low bar.** It is defined as the performance of a graduating high-school senior who would pass the course, and in raw terms it lands around **60–65% of the available points**. You can miss four questions in every ten and still pass. Almost everyone who fails a GED subject fails it by leaving points on the table — blanks, misread stems, time mismanagement — not by lacking knowledge.
+**Three: 145 is a low bar.** It is defined as the performance of a graduating high-school senior who would pass the course, and in raw terms it lands around **60–65% of the available points**. (GED Testing Service does not publish a raw-to-scaled table, because every form is separately equated; 60–65% is a planning estimate, not an official conversion.) You can miss four questions in every ten and still pass. Almost everyone who fails a GED subject fails it by leaving points on the table — blanks, misread stems, time mismanagement — not by lacking knowledge.
 
-**Four: an attempt is cheap and repeatable.** In most jurisdictions your first two retakes per subject within twelve months carry a reduced fee and no waiting period. You only retake the subject you failed. This is the fact that makes "sit it this week" rational rather than reckless: a sitting is a cheap, high-information experiment, and the downside is a discounted retake, not the loss of the credential.
+**Four: an attempt is cheap and repeatable.** GED Testing Service's national rule is **two retests per subject with no waiting period between them, and a discounted fee on both, provided they fall within twelve months of your initial full-price test in that subject**. After a third failure on a subject you wait 60 days. Online-proctored testing is tighter: **two attempts per subject online, then a 60-day wait**. States can be stricter, and some do not discount online retakes at all. You only retake the subject you failed. This is the fact that makes "sit it this week" rational rather than reckless: a sitting is a cheap, high-information experiment, and the downside is a discounted retake, not the loss of the credential.
 
 ### Which subject to sit first
 
@@ -25,7 +25,7 @@ Sit Social Studies first for three reasons, in order of importance. It is the sh
 
 ### All four this week, or stagger them?
 
-**Stagger them.** You can legally book all four on one day, and people do. It is roughly seven hours and five minutes of testing plus check-ins and breaks, and it is a reliable way to fail two subjects you would otherwise have passed. Fatigue does not degrade your score gracefully; it degrades it in the back half of every test, which is where the items you needed were sitting.
+**Stagger them.** You can legally book all four on one day, and people do. It is exactly seven hours and five minutes of testing (150 + 115 + 90 + 70) plus check-ins and breaks, and it is a reliable way to fail two subjects you would otherwise have passed. Fatigue does not degrade your score gracefully; it degrades it in the back half of every test, which is where the items you needed were sitting.
 
 The staggered plan sits one subject every other day, with the study for the next subject happening on the off day and the morning of the sit.
 
@@ -33,7 +33,7 @@ The staggered plan sits one subject every other day, with the study for the next
 
 ### How to use GED Ready to decide
 
-GED Ready is the official half-length practice test, about **$6.99 per subject**, built on the same scale and the same equating as the real thing. It is the only practice test whose score means anything. It is also the gate for at-home testing: to sit an online-proctored GED you generally need a **green GED Ready on that subject within the last 60 days**.
+GED Ready is the official half-length practice test, **$7.99 per subject or $25.99 for the four-subject bundle**, built on the same scale and the same equating as the real thing. It is the only practice test whose score means anything. It is also the gate for at-home testing: before your **first** online-proctored attempt in a subject you need a **green GED Ready (145+) on that subject within the last 60 days**.
 
 The zones and what to do about each:
 
@@ -46,7 +46,7 @@ The zones and what to do about each:
 Three rules about using it honestly:
 
 - **A GED Ready score is only predictive if you took it like a real test.** One sitting, timed, no notes, no pausing, no looking anything up, no phone. If you paused it to make coffee or checked one answer, your score is fiction and you must discard it.
-- **Do not burn all four on Day 1.** That is four hours and roughly $28 spent learning things you already suspect. Take **Math early** — day 1 or 2 — because the Math answer is the one that changes your whole schedule. Take the others **24 to 48 hours before** you sit that subject, close enough that the score is current and far enough that you can act on the report.
+- **Do not burn all four on Day 1.** That is four hours and $25.99 spent learning things you already suspect. Take **Math early** — day 1 or 2 — because the Math answer is the one that changes your whole schedule. Take the others **24 to 48 hours before** you sit that subject, close enough that the score is current and far enough that you can act on the report.
 - **The Enhanced Score Report is the point, not the number.** It names the specific skills you missed and points at what to review. Spend twenty minutes reading it. That is the highest-value twenty minutes in your week.
 
 ### The highest-expected-value plan, stated plainly
@@ -433,14 +433,14 @@ The platform is not complicated, but the people who lose points to it lose a lot
 
 A first answer made with a found line and a prediction is usually right. A second answer made with new information is usually right. A second answer made with only anxiety is usually wrong.
 
-**The calculator.** An on-screen **TI-30XS MultiView** is available on Math Part 2, on Science, and on Social Studies. At a physical test centre you may bring your own handheld TI-30XS MultiView; for online-proctored testing you must use the on-screen one. A **Calculator Reference Sheet** button explains which key does what.
+**The calculator.** An on-screen **TI-30XS MultiView** is available on Math Part 2, and on the items that need it on Science and Social Studies. At a physical test centre you may bring your own handheld TI-30XS MultiView; for online-proctored testing you must use the on-screen one. A **Calculator Reference Sheet** button explains which key does what.
 
 - **Open it once, early, so the first time is not on a real item.** If you have never used the fraction key or the toggle key, learning them live costs three minutes.
 - **Do not use it for arithmetic you can do.** Twelve times five on a calculator costs eight seconds and a broken train of thought.
 - **Do use it for:** long decimals, percent chains, square roots, awkward fractions, anything where a slip would be fatal.
 - On Science and Social Studies you will touch it two or three times all test. Do not let its presence convince you those are calculation tests.
 
-**The reference sheets.** Math has a **Formula Sheet** button carrying every formula you need, available on both parts including the no-calculator part. **Science has no formula sheet and Social Studies has no content reference sheet** — anything Science needs beyond the short memorise list is printed inside the question itself.
+**The reference sheets.** Math has a **Formula Sheet** button, available on both parts including the no-calculator part. It carries the geometry formulas plus slope, slope-intercept and point-slope form, the quadratic formula, the Pythagorean theorem and simple interest — **not** percent change, and not the translation patterns; those you memorise. GED Testing Service re-issued the sheet in **February 2026**, so read the current PDF rather than an old printout. **Science has no formula sheet and Social Studies has no content reference sheet** — anything Science needs beyond the short memorise list is printed inside the question itself.
 
 > Memorise the **layout** of the Math formula sheet, not the formulas. Practise finding any given formula in under four seconds. Opening the sheet to browse for ideas is a two-minute leak; opening it because you know you need the volume of a cylinder is four seconds.
 

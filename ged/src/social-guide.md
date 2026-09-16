@@ -13,7 +13,7 @@ That does **not** mean content is free. About half the items are stand-alone que
 - **No essay. No short answer.** The Social Studies Extended Response — the 25-minute typed essay — was **removed on 1 March 2016** and has not come back. Nothing on Social Studies today asks you to write a paragraph. (Extended Response survives on RLA only.) If a study book tells you to practise the Social Studies essay, that book is at least ten years out of date and you should distrust the rest of it too.
 - **Calculator: allowed.** The on-screen TI-30XS MultiView is available on this test, and at a test centre you may bring your own handheld TI-30XS MultiView. A **calculator reference sheet** (which buttons do what, in what order) is available on screen. You will use it rarely — maybe two or three items involve arithmetic — but it is there.
 - **There is no content reference sheet.** No list of amendments. No timeline. No definitions. No map. Everything in "The cheat sheet" below must be in your head.
-- **Delivery:** at a Pearson VUE test centre, or online-proctored at home. Same test, same length, same item types. To test online you must have scored 145 or better ("green") on the GED Ready practice test for that subject within the last 60 days.
+- **Delivery:** at a Pearson VUE test centre, or online-proctored at home. Same test, same length, same item types. Before your **first** online-proctored attempt in this subject you must have scored 145 or better ("green", GED Testing Service's label is "Likely to Pass") on the GED Ready practice test for Social Studies within the last 60 days. Online testing is not offered in every state — check `ged.com/policies/your-state`.
 - **Stimulus length:** short. A text stimulus is typically one paragraph to three short paragraphs. Nothing is a full essay. If a passage looks long on screen, it is usually two short excerpts stacked for comparison.
 
 ### Item types you will actually see
@@ -57,7 +57,7 @@ Three consequences follow from how this is scored, and all three change how you 
 
 - **2016:** the Social Studies Extended Response (essay) was removed. Test time dropped to 70 minutes. This is still the current structure in 2026.
 - **The 2014 test series is still the current series.** There has been no content overhaul since. Anything written for the "2014 GED" is structurally accurate; anything written for the "2002 GED" (five subjects, a separate Writing test, 80 questions of social studies) is worthless.
-- **Online proctoring is now permanent**, not an emergency measure, with the GED Ready "green score within 60 days" gate.
+- **Online proctoring is now permanent**, not an emergency measure, with the GED Ready "green score within 60 days" gate on your first online attempt per subject. It is still **not available in every state**, and some jurisdictions have withdrawn it (Indiana ended online-proctored HSE testing on 1 July 2025).
 - **Score bands and the 145 cut have not moved.** Some states layer on extra graduation requirements, but 145 per subject is the national GED standard.
 
 ## What is on it, by weight
@@ -176,7 +176,7 @@ Everything below the calculator line is yours to carry in.
 | Members | 435, apportioned by state population | 100, two per state regardless of size |
 | Term | 2 years | 6 years, one third elected every 2 years |
 | Minimum age | 25 | 30 |
-| Unique powers | Starts all revenue (tax) bills; impeaches | Confirms appointments; ratifies treaties (2/3); tries impeachments |
+| Unique powers | Starts all revenue (tax) bills; impeaches | Confirms appointments; approves treaties by a 2/3 vote (the President then ratifies); tries impeachments |
 | Presiding officer | Speaker of the House | Vice President (President of the Senate) |
 
 **Federalism — which level does what.**
@@ -654,11 +654,13 @@ The strategy that follows: **bank time on the easy half, spend it on the hard ha
 
 | Elapsed | You should be at |
 |---|---|
-| 20 minutes | Question 12 |
-| 35 minutes (halfway) | Question 18 |
-| 50 minutes | Question 26 |
-| 60 minutes | Question 33 — start review |
+| 20 minutes | Question 13 |
+| 35 minutes (halfway) | Question 22 |
+| 50 minutes | Question 31 |
+| 60 minutes | Question 35 — every item answered, start review |
 | 70 minutes | Done |
+
+Read the table as slowing down, not speeding up: 13 items in the first 20 minutes is about 90 seconds each, and the last 4 items get 150 seconds each. That is the banking plan in numbers. Notice also that the last checkpoint is question 35, not question 33 — every item must carry an answer before the review block starts, because the review block is for re-checking, not for meeting the test for the first time.
 
 If you fall more than three questions behind a checkpoint, do not try to speed-read your way back. **Take the next two hard items in 20 seconds each** with a flagged guess and you are instantly back on schedule.
 

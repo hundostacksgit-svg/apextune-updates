@@ -21,9 +21,9 @@ Start from the four facts that determine everything else.
 
 **Two: three of the four subjects are reading tests.** Social Studies is a reading test in a powdered wig. Science is a reading test in a lab coat. RLA is openly a reading test. Only Mathematical Reasoning demands a skill you cannot fake by reading carefully. That means one method — the one in "How to find any answer" — covers roughly three-quarters of the credential.
 
-**Three: 145 is a low bar.** It is defined as the performance of a graduating high-school senior who would pass the course, and in raw terms it lands around **60–65% of the available points**. You can miss four questions in every ten and still pass. Almost everyone who fails a GED subject fails it by leaving points on the table — blanks, misread stems, time mismanagement — not by lacking knowledge.
+**Three: 145 is a low bar.** It is defined as the performance of a graduating high-school senior who would pass the course, and in raw terms it lands around **60–65% of the available points**. (GED Testing Service does not publish a raw-to-scaled table, because every form is separately equated; 60–65% is a planning estimate, not an official conversion.) You can miss four questions in every ten and still pass. Almost everyone who fails a GED subject fails it by leaving points on the table — blanks, misread stems, time mismanagement — not by lacking knowledge.
 
-**Four: an attempt is cheap and repeatable.** In most jurisdictions your first two retakes per subject within twelve months carry a reduced fee and no waiting period. You only retake the subject you failed. This is the fact that makes "sit it this week" rational rather than reckless: a sitting is a cheap, high-information experiment, and the downside is a discounted retake, not the loss of the credential.
+**Four: an attempt is cheap and repeatable.** GED Testing Service's national rule is **two retests per subject with no waiting period between them, and a discounted fee on both, provided they fall within twelve months of your initial full-price test in that subject**. After a third failure on a subject you wait 60 days. Online-proctored testing is tighter: **two attempts per subject online, then a 60-day wait**. States can be stricter, and some do not discount online retakes at all. You only retake the subject you failed. This is the fact that makes "sit it this week" rational rather than reckless: a sitting is a cheap, high-information experiment, and the downside is a discounted retake, not the loss of the credential.
 
 ### Which subject to sit first
 
@@ -38,7 +38,7 @@ Sit Social Studies first for three reasons, in order of importance. It is the sh
 
 ### All four this week, or stagger them?
 
-**Stagger them.** You can legally book all four on one day, and people do. It is roughly seven hours and five minutes of testing plus check-ins and breaks, and it is a reliable way to fail two subjects you would otherwise have passed. Fatigue does not degrade your score gracefully; it degrades it in the back half of every test, which is where the items you needed were sitting.
+**Stagger them.** You can legally book all four on one day, and people do. It is exactly seven hours and five minutes of testing (150 + 115 + 90 + 70) plus check-ins and breaks, and it is a reliable way to fail two subjects you would otherwise have passed. Fatigue does not degrade your score gracefully; it degrades it in the back half of every test, which is where the items you needed were sitting.
 
 The staggered plan sits one subject every other day, with the study for the next subject happening on the off day and the morning of the sit.
 
@@ -46,7 +46,7 @@ The staggered plan sits one subject every other day, with the study for the next
 
 ### How to use GED Ready to decide
 
-GED Ready is the official half-length practice test, about **$6.99 per subject**, built on the same scale and the same equating as the real thing. It is the only practice test whose score means anything. It is also the gate for at-home testing: to sit an online-proctored GED you generally need a **green GED Ready on that subject within the last 60 days**.
+GED Ready is the official half-length practice test, **$7.99 per subject or $25.99 for the four-subject bundle**, built on the same scale and the same equating as the real thing. It is the only practice test whose score means anything. It is also the gate for at-home testing: before your **first** online-proctored attempt in a subject you need a **green GED Ready (145+) on that subject within the last 60 days**.
 
 The zones and what to do about each:
 
@@ -59,7 +59,7 @@ The zones and what to do about each:
 Three rules about using it honestly:
 
 - **A GED Ready score is only predictive if you took it like a real test.** One sitting, timed, no notes, no pausing, no looking anything up, no phone. If you paused it to make coffee or checked one answer, your score is fiction and you must discard it.
-- **Do not burn all four on Day 1.** That is four hours and roughly $28 spent learning things you already suspect. Take **Math early** — day 1 or 2 — because the Math answer is the one that changes your whole schedule. Take the others **24 to 48 hours before** you sit that subject, close enough that the score is current and far enough that you can act on the report.
+- **Do not burn all four on Day 1.** That is four hours and $25.99 spent learning things you already suspect. Take **Math early** — day 1 or 2 — because the Math answer is the one that changes your whole schedule. Take the others **24 to 48 hours before** you sit that subject, close enough that the score is current and far enough that you can act on the report.
 - **The Enhanced Score Report is the point, not the number.** It names the specific skills you missed and points at what to review. Spend twenty minutes reading it. That is the highest-value twenty minutes in your week.
 
 ### The highest-expected-value plan, stated plainly
@@ -446,14 +446,14 @@ The platform is not complicated, but the people who lose points to it lose a lot
 
 A first answer made with a found line and a prediction is usually right. A second answer made with new information is usually right. A second answer made with only anxiety is usually wrong.
 
-**The calculator.** An on-screen **TI-30XS MultiView** is available on Math Part 2, on Science, and on Social Studies. At a physical test centre you may bring your own handheld TI-30XS MultiView; for online-proctored testing you must use the on-screen one. A **Calculator Reference Sheet** button explains which key does what.
+**The calculator.** An on-screen **TI-30XS MultiView** is available on Math Part 2, and on the items that need it on Science and Social Studies. At a physical test centre you may bring your own handheld TI-30XS MultiView; for online-proctored testing you must use the on-screen one. A **Calculator Reference Sheet** button explains which key does what.
 
 - **Open it once, early, so the first time is not on a real item.** If you have never used the fraction key or the toggle key, learning them live costs three minutes.
 - **Do not use it for arithmetic you can do.** Twelve times five on a calculator costs eight seconds and a broken train of thought.
 - **Do use it for:** long decimals, percent chains, square roots, awkward fractions, anything where a slip would be fatal.
 - On Science and Social Studies you will touch it two or three times all test. Do not let its presence convince you those are calculation tests.
 
-**The reference sheets.** Math has a **Formula Sheet** button carrying every formula you need, available on both parts including the no-calculator part. **Science has no formula sheet and Social Studies has no content reference sheet** — anything Science needs beyond the short memorise list is printed inside the question itself.
+**The reference sheets.** Math has a **Formula Sheet** button, available on both parts including the no-calculator part. It carries the geometry formulas plus slope, slope-intercept and point-slope form, the quadratic formula, the Pythagorean theorem and simple interest — **not** percent change, and not the translation patterns; those you memorise. GED Testing Service re-issued the sheet in **February 2026**, so read the current PDF rather than an old printout. **Science has no formula sheet and Social Studies has no content reference sheet** — anything Science needs beyond the short memorise list is printed inside the question itself.
 
 > Memorise the **layout** of the Math formula sheet, not the formulas. Practise finding any given formula in under four seconds. Opening the sheet to browse for ideas is a two-minute leak; opening it because you know you need the volume of a cylinder is four seconds.
 
@@ -784,12 +784,12 @@ The $36 is corroborated by a New Jersey county government page — Atlantic Coun
 
 The $36 is two fees stacked: a **$26 GED Testing Service fee** plus a **$10 New Jersey test-centre fee**. On a discounted retake, GED Testing Service waives its $26 and you pay the $10 that remains. That arithmetic is why the $10 figure is credible.
 
-The entitlement: **one discounted retake for every subject you buy at full price and do not pass**, usable within **365 days** of the full-price attempt. The one-full-price-to-one-discount cycle then repeats until you pass.
+The entitlement: GED Testing Service's **national** rule is **two discounted retests per subject, taken within 12 months of your initial full-price test in that subject** — the waived `$26` applies to both, so two `$10` retakes. Some New Jersey sources describe it instead as **one** discounted retake per full-price attempt, with the full-price-then-discount cycle repeating. **The sources disagree**: `ged.com/faqs/test-retakes.html` states the two-retest rule, while the NJ-specific wording circulating in test-centre material states one. Your `ged.com` checkout total is the only figure that binds — check what it charges you before you assume the second `$10` retake exists.
 
 ### Retake waiting periods
 
-- **Test centre:** no wait after the first or second failure on a subject. After **three attempts** at a subject, you wait **60 days**.
-- **Online proctored:** one retake, then a **60-day wait**. Two attempts at a subject online and you are locked out of that subject online for 60 days.
+- **Test centre:** no wait after the first or second failure on a subject. After **three attempts** at a subject, you wait **60 days**. This matches GED Testing Service's national rule: two subsequent retests with no restrictions, then 60 days after the third and any later failure.
+- **Online proctored:** one retake, then a **60-day wait**. GED Testing Service states this as **2 attempts per subject area** online before the 60-day wait — i.e. the initial attempt plus one retake.
 
 If a subject feels marginal, that asymmetry alone argues for the test centre.
 
@@ -799,7 +799,7 @@ GED Ready is the official practice test. It is **optional if you test at a centr
 
 At **$7.99 a subject or $25.99 for all four**, buy the bundle if you need more than three. Each purchase is a single sitting; you cannot re-sit a GED Ready test on the same purchase.
 
-> Prices for GED Ready have shifted in recent years and older figures ($6.99 each, $22.99 bundle) still circulate on prep sites. Budget **$26 to $32** for four and read the live cart. The page that settles it is `https://www.ged.com/faqs/ged-ready.html`.
+> Prices for GED Ready have shifted in recent years and older figures ($6.99 each, $22.99 bundle) still circulate on prep sites. The current published figures are **$7.99 per subject and $25.99 for all four**. Budget **$26 to $32** for four and read the live cart. The page that settles it is `https://www.ged.com/faqs/ged-ready.html`.
 
 ### Realistic totals
 
@@ -1121,7 +1121,7 @@ It is delivered in two parts inside those 115 minutes:
 
 - **Part 1 — the first 5 questions. No calculator.** No calculator button appears on screen and you may not have a handheld one out. You must submit Part 1 before Part 2 opens, and **you cannot go back to Part 1 afterwards**. Treat these five as their own mini-test.
 - **A 3-minute break** between the parts. At a test center this is when you retrieve your handheld calculator if you brought one. The break does not come out of your 115 minutes.
-- **Part 2 — the remaining 41 questions. Calculator allowed.** An on-screen **TI-30XS MultiView** is built into the screen. At a physical test center you may instead use your own approved handheld TI-30XS MultiView. For online-proctored testing you must use the on-screen one — no handheld, no scratch paper beyond the erasable board or whiteboard the proctor approves.
+- **Part 2 — the remaining 41 questions. Calculator allowed.** An on-screen **TI-30XS MultiView** is built into the screen. At a physical test center you may instead use your own approved handheld TI-30XS MultiView. For online-proctored testing you must use the on-screen one — no handheld, and **no physical scratch paper or erasable note board of any kind**; your only workspace is the on-screen whiteboard and scratch pad.
 
 The clock runs for all 115 minutes across both parts. You can flag questions and come back to them **within** a part, not across parts.
 
@@ -1161,11 +1161,15 @@ Things that are true and that people get wrong:
 
 ### What has changed recently
 
-The 2014-generation test blueprint (115 minutes, 46 items, 45/55 quantitative/algebraic split, TI-30XS, 145 pass line) is still the operating structure. The visible recent changes are: the **Mathematics Formula Sheet was reissued in a revised 2026 edition** (same formulas, cleaner typesetting and wording), the short-answer item type was removed from the test suite years ago and does not appear in math at all, and the item mix has drifted toward **real-world, multi-step problems and data interpretation** rather than bare computation. Nothing about the calculator policy, the timing, or the score bands has moved.
+The 2014-generation test blueprint (115 minutes, 46 items, 45/55 quantitative/algebraic split, TI-30XS, 145 pass line) is still the operating structure. Nothing about the calculator policy, the timing, or the score bands has moved, and the short-answer item type was removed from the test suite years ago and never appeared in math at all. The item mix has drifted toward **real-world, multi-step problems and data interpretation** rather than bare computation.
+
+**One thing you must check yourself: the formula sheet was re-issued.** GED Testing Service publishes a revised **Mathematics Formula Sheet dated February 2026** at `ged.com/content/dam/websites/ged/resources/Math-Formula-Sheet-2026-02-v1-revised.pdf`. The long-standing 2014 sheet carried area, perimeter and circumference; surface area and volume of prism, cylinder, pyramid, cone and sphere; slope, slope-intercept form, point-slope form, the standard form of a quadratic, the **quadratic formula**, the **Pythagorean theorem**, and **simple interest I = prt**. Secondary sources disagree about whether the current sheet also carries **mean and median** formulas: some summaries of the 2026 sheet list them, older descriptions of the 2014 sheet do not. **Open the PDF above and read the actual sheet before test day** — it takes two minutes, and it is the only way to know which side of that disagreement your form is on.
 
 ## What is on it, by weight
 
 The official blueprint splits the test into two domains and four reporting areas:
+
+The only split GED Testing Service publishes officially is the domain split at the bottom of this table — **Quantitative 45% / Algebraic 55%**. The four sub-domain percentages below are the standard working breakdown used across prep sources; treat them as planning weights, not as published blueprint numbers.
 
 | Topic | % of test | What they actually ask |
 |---|---|---|
@@ -1523,8 +1527,8 @@ Do not start computing while reading. Extract first, compute second. For a table
 **Checkpoints to glance at, and nothing else:**
 
 - After Part 1: **12 minutes gone**. If you are at 20, speed up immediately — stop re-checking work.
-- **Halfway in questions (Q23) should be near 55 minutes.** If you are past 65, start using the 90-second rule below aggressively.
-- **Q40 by 95 minutes.** If you are behind here, go straight to triage: answer every remaining item with your best 30-second effort rather than solving 3 of them perfectly and leaving 3 blank.
+- **Halfway in questions (Q23) should be near 50 minutes**, and the end of the first Part 2 block (Q25) near 54 minutes, which is what the table above budgets. If you are past 60 at Q23, start using the 90-second rule below aggressively.
+- **Q40 by 90 minutes.** The table puts you there at about 87, so 90 is your alarm, not your target. If you are behind here, go straight to triage: answer every remaining item with your best 30-second effort rather than solving 3 of them perfectly and leaving 3 blank.
 
 **The 90-second rule.** Give every question 90 seconds of genuine attempt. At 90 seconds, make a decision:
 
@@ -1554,7 +1558,7 @@ Ranked by points-per-hour-of-study. Do them strictly in this order and stop wher
 
 **2. Solving linear equations and translating word problems into them.** Two-step, multi-step, variables on both sides, distributing first, equations with fractions (multiply everything by the denominator). Then the translation patterns: "5 more than twice a number" = 2n + 5; "a number decreased by 7" = n − 7; "the total cost is a flat fee plus a per-item charge" = b + mx. Pair this with **working backwards** from the answer choices — it makes half these items trivial. **Budget: 2 hours.**
 
-**3. Slope, y-intercept, and the equation of a line.** Slope from two points (formula is on the sheet), slope from a graph (rise/run), slope from a table (change in y ÷ change in x), and above all **what slope and intercept mean in a story** ("the slope means the cost rises 4 dollars per hour; the intercept is the 25 dollar base fee"). Then y = mx + b given a slope and a point, and given two points. This is about 14% of the test and it is pure pattern. **Budget: 2 hours.**
+**3. Slope, y-intercept, and the equation of a line.** Slope from two points (formula is on the sheet), slope from a graph (rise/run), slope from a table (change in y ÷ change in x), and above all **what slope and intercept mean in a story** ("the slope means the cost rises 4 dollars per hour; the intercept is the 25 dollar base fee"). Then y = mx + b given a slope and a point, and given two points. Slope and the equation of a line are the backbone of the 25% graphs-and-functions area, and they are pure pattern. **Budget: 2 hours.**
 
 **4. Function notation and reading functions from tables and graphs.** f(x) means "put this in, get that out": f(3) means substitute 3. Solving f(x) = 20 means setting the expression equal to 20. Reading a value off a table or graph. Comparing a function given as a table against one given as an equation (evaluate both at the same input). **Budget: 60 minutes.**
 
@@ -1568,7 +1572,7 @@ Ranked by points-per-hour-of-study. Do them strictly in this order and stop wher
 
 **9. Inequalities and systems.** Solve a one-variable inequality, remembering the sign flips only on multiplying/dividing by a negative; interpret "at most" (≤), "at least" (≥), "no more than" (≤), "more than" (>). Systems: substitution when one equation is already solved for a variable, elimination when the coefficients line up — and remember you can just test the answer choices in both equations. **Budget: 60 minutes.**
 
-**10. Quadratics, last.** Factoring x² + bx + c (find two numbers that multiply to c and add to b), difference of squares, FOIL to expand, and using the **quadratic formula off the sheet** when factoring does not work. Roughly 3% of the test. It is last for a reason — if you run out of time, skip it and accept the 1–2 items. **Budget: 45 minutes, only if items 1–9 are solid.**
+**10. Quadratics, last.** Factoring x² + bx + c (find two numbers that multiply to c and add to b), difference of squares, FOIL to expand, and using the **quadratic formula off the sheet** when factoring does not work. This is the thinnest slice of the algebra half — expect one or two items on a form. It is last for a reason — if you run out of time, skip it and accept the 1–2 items. **Budget: 45 minutes, only if items 1–9 are solid.**
 
 **What to cut entirely if you are short:** surface area of cones and pyramids, permutations and combinations beyond simple multiplication, geometric sequences, domain and range as formal vocabulary, and anything involving three-variable systems (not tested). Together these are worth a handful of points, and you do not need them to clear 145.
 
@@ -1587,16 +1591,16 @@ The GED Reasoning Through Language Arts (RLA) test is **one 150-minute sitting**
 
 **The shape of the sitting**
 
-| Block | Roughly how long | What you do |
+| Block | How long | What you do |
 |---|---|---|
-| Section 1 | about 35 minutes | Reading and language items |
+| Section 1 | 35 minutes | Reading and language items |
 | Section 2 | 45 minutes, hard stop | Extended Response essay (covered in its own chapter) |
 | Break | 10 minutes | Leave your seat, drink water |
-| Section 3 | about 60 minutes | Reading and language items |
+| Section 3 | 60 minutes | Reading and language items |
 
-GED Testing Service publishes the 45-minute essay block and the 10-minute break as fixed. The split of the remaining ~95 minutes between the two item sections is set by your test form. Plan on "about 35 up front, about 60 after the break," and read the on-screen clock in the first ten seconds of each section instead of trusting the plan.
+GED Testing Service publishes all four blocks as fixed: **35 + 45 + 10 + 60 = 150**. The two item sections are not interchangeable and the clock does not pool. Time you save in section 1 does not carry into section 3, and time you overspend in section 1 cannot be borrowed back. Read the on-screen clock in the first ten seconds of each section and again at its halfway point.
 
-**Question count.** About **46 scored items** plus the one essay. You will also meet a handful of unscored field-test items that look identical to the rest — you cannot spot them, so do not try.
+**Question count.** GED Testing Service publishes the RLA as **"about 46 questions"**. Prep sources split on whether the Extended Response is counted inside that 46 or sits outside it; plan for roughly 46 item-clicks across sections 1 and 3 plus the one essay, and do not build a strategy that depends on the exact number. You will also meet a handful of unscored field-test items that look identical to the rest — you cannot spot them, so do not try.
 
 **Item types you will actually see**
 
@@ -1606,24 +1610,24 @@ GED Testing Service publishes the 45-minute essay block and the 10-minute break 
 - **Select-an-area (hot spot)** — click the sentence or phrase in the passage that does a named job.
 - **Fill-in-the-blank** — type a word or short phrase.
 
-**The passages.** Reading sets run **400 to 900 words** with **6 to 8 questions each**. The mix is **about 75% informational** (workplace documents, memos, policy notices, science and history articles, editorials, speeches, how-to material) and **about 25% literary** (fiction excerpts, memoir, occasionally drama). You will see roughly four to six passage sets plus one or two editing passages.
+**The passages.** Reading sets run **450 to 900 words** with **6 to 8 questions each**. The mix is **about 75% informational** (workplace documents, memos, policy notices, science and history articles, editorials, speeches, how-to material) and **about 25% literary** (fiction excerpts, memoir, occasionally drama). You will see roughly four to six passage sets plus one or two editing passages.
 
 **What a 145 means.** Scores are reported on a **100-200 scale** per subject:
 
 | Band | Score | What it gets you |
 |---|---|---|
 | Below passing | 100-144 | No credit for the subject; you retake RLA only |
-| **GED Passing / High School Equivalency** | **145-164** | Counts toward the credential |
+| **GED Passing / High School Equivalency** | **145-164** | Counts toward the credential. 145 on each of the four subjects, never an average |
 | GED College Ready | 165-174 | May waive placement testing or developmental courses |
 | GED College Ready + Credit | 175-200 | May earn up to 10 college credit hours |
 
 145 is a **performance level**, not 145 points. It means you performed at the level of a graduating high school senior who would pass the subject.
 
-**How raw maps to scaled.** The RLA has roughly **65 raw points** available. Most items are worth 1 point; a few technology-enhanced items are worth 2. The essay is scored on **3 traits, 0-2 points each**, and that 0-6 result is **double-weighted to 12 raw points — about 20% of the RLA score**. GED Testing Service does not publish a raw-to-scaled table, because every form is statistically equated so that a 145 on an easy form equals a 145 on a hard one. The working rule that survives every form: **roughly 60-65% of available points lands you at 145.** Concretely — if you get about **30 of 46 items right and score 4 of 6 on the essay**, you are at or just over the line. That is the target. You do not need 40 correct.
+**How raw maps to scaled.** Most items are worth 1 point; a few technology-enhanced items are worth 2. The essay is scored on **3 traits, 0-2 points each**, and that 0-6 result is **double-weighted to 12 raw points**, which GED Testing Service describes as **about 20% of the RLA score** — implying roughly **60 raw points** on the test overall. (GED Testing Service publishes the 12 points and the 20%; the ~60 total is inferred from them, not published.) GED Testing Service does not publish a raw-to-scaled table, because every form is statistically equated so that a 145 on an easy form equals a 145 on a hard one. The working rule that survives every form: **roughly 60-65% of available points lands you at 145.** Concretely — if you get about **30 of 46 items right and score 4 of 6 on the essay**, you are at or just over the line. That is the target. You do not need 40 correct.
 
-**What is supplied on screen.** For RLA: **nothing content-related.** No formula sheet, no dictionary, no thesaurus, no grammar reference, no calculator. Every rule in the cheat sheet below has to be in your head. What you do get are **tools**: a highlighter, a flag-for-review button, an on-screen calculator only in math, adjustable text size and colour, and the passage displayed beside the question the whole time so you can always scroll back.
+**What is supplied on screen.** For RLA: **nothing content-related.** No formula sheet, no dictionary, no thesaurus, no grammar reference, no calculator. Every rule in the cheat sheet below has to be in your head. What you do get are **tools**: a highlighter, a flag-for-review button, adjustable text size and colour, and the passage displayed beside the question the whole time so you can always scroll back. (The on-screen TI-30XS calculator appears on the math, science, and social studies tests - never on this one.)
 
-**Recent changes worth knowing.** The RLA blueprint has been stable — no content overhaul in recent years. What has changed is delivery: the **GED is now routinely available as an online-proctored test taken at home** as well as at a Pearson VUE test centre, and the two versions cover identical content. If you test at home, your workspace must be clear, you cannot use scratch paper unless an erasable whiteboard is approved, and you cannot leave the camera during the break. Check your state's rules — a few states restrict online proctoring or set their own passing requirements above 145.
+**Recent changes worth knowing.** The RLA blueprint has been stable — no content overhaul in recent years. What has changed is delivery: the **GED is now routinely available as an online-proctored test taken at home** as well as at a Pearson VUE test centre, and the two versions cover identical content. If you test at home, your workspace must be clear, **no physical scratch paper and no physical erasable whiteboard are permitted at all** (you get an on-screen whiteboard and scratch pad instead), and you cannot leave the camera during the break. Check your state's rules — states set their own age, residency, and eligibility requirements, a few restrict online proctoring, and a small number of states use a different high school equivalency exam instead of or alongside the GED.
 
 ## What is on it, by weight
 
@@ -1637,15 +1641,15 @@ The official content domains are **Reading for Meaning in Texts**, **Identifying
 | Supporting detail | ~9% (4 items) | "According to the passage…" — pure retrieval, the answer is printed in the text |
 | Author's purpose and point of view | ~9% (4 items) | Why the author included paragraph 4; the author's attitude toward X; why a quotation or statistic appears where it does |
 | Usage: agreement, tense, parallelism, modifiers | ~9% (4 items) | Subject-verb agreement across an interrupting phrase, pronoun-antecedent match, vague "it/this/they", tense consistency, parallel lists, dangling openers |
-| Word meaning in context | ~7% (3 items) | "As used in line 12, *reserved* most nearly means…" — including everyday words used in an unfamiliar sense |
-| Sentence structure | ~7% (3 items) | Run-ons, comma splices, fragments; choosing the correct join between two independent clauses |
-| Text structure and organisation | ~6% (3 items) | Compare-contrast vs cause-effect vs problem-solution; why the author ordered it this way; the function of a specific paragraph |
-| Mechanics: commas, apostrophes, capitals, homophones | ~6% (3 items) | its/it's, their/there/they're, possessive placement, comma after an introductory clause, capitalising titles and regions |
+| Word meaning in context | ~6.5% (3 items) | "As used in line 12, *reserved* most nearly means…" — including everyday words used in an unfamiliar sense |
+| Sentence structure | ~6.5% (3 items) | Run-ons, comma splices, fragments; choosing the correct join between two independent clauses |
+| Text structure and organisation | ~6.5% (3 items) | Compare-contrast vs cause-effect vs problem-solution; why the author ordered it this way; the function of a specific paragraph |
+| Mechanics: commas, apostrophes, capitals, homophones | ~6.5% (3 items) | its/it's, their/there/they're, possessive placement, comma after an introductory clause, capitalising titles and regions |
 | Tone, connotation, voice | ~4% (2 items) | The tone of the final paragraph; why the author chose *cramped* instead of *small* |
 | Comparing two texts | ~4% (2 items) | Two passages on one subject: where they agree, where they conflict, how one author would answer the other |
 | Transitions and precise word choice | ~2% (1 item) | *However* vs *therefore* vs *furthermore*; replacing a vague or wordy phrase |
 
-**Read the table this way:** reading skills are about **three quarters** of the items and grammar/editing about **one quarter**. But the grammar quarter is the fastest quarter — those items take 30 seconds each and are pure memorisation. Point per minute, the editing items are the single best return on your remaining study time.
+The percentage column sums to 100 and the item column sums to 46. **Read the table this way:** reading skills are about **three quarters** of the items (35 of 46) and grammar/editing about **one quarter** (11 of 46). But the grammar quarter is the fastest quarter — those items take 30 seconds each and are pure memorisation. Point per minute, the editing items are the single best return on your remaining study time.
 
 ## The cheat sheet
 
@@ -1707,7 +1711,7 @@ Items in a series, a pair, or after a correlative must share the same grammatica
 ### Modifier placement
 
 - **A modifying phrase at the start of a sentence must be immediately followed by the noun it describes.** *Walking to the bus stop, the rain soaked my coat* is wrong — the rain was not walking. Fix: *Walking to the bus stop, **I** got my coat soaked.*
-- **Put *only*, *almost*, *nearly*, *just* directly in front of the word they limit.** *She **only** ate the salad* (nothing else happened) vs *She ate **only** the salad* (nothing else was eaten).
+- **Put *only*, *almost*, *nearly*, *just* directly in front of the word they limit.** *She **only** ate the salad* (eating it was the only thing she did to it - she did not cook it or pay for it) vs *She ate **only** the salad* (the salad was the only thing she ate). The GED tests the second pattern: move the limiter next to what it limits.
 
 ### Capitalisation
 
@@ -1863,7 +1867,7 @@ Read Passage A, and in one sentence write what its author wants. Read Passage B,
 
 ## Pacing
 
-**The arithmetic.** 150 minutes total, minus 45 for the essay, minus 10 for the break, leaves **about 95 minutes for about 46 items — roughly 2 minutes per item.**
+**The arithmetic.** 150 minutes total, minus 45 for the essay, minus 10 for the break, leaves **exactly 95 minutes for about 46 items — roughly 2 minutes per item.**
 
 That average hides the real structure, because items are not equal:
 
@@ -1877,11 +1881,11 @@ That average hides the real structure, because items are not equal:
 
 **The banking strategy.** Editing items are cheap. Every drop-down you finish in 40 seconds banks 80 seconds for a hard inference item later. Do not slow down on grammar to feel careful — you either know the rule or you do not, and staring does not help.
 
-**Section 1 (about 35 minutes, about 17 items).** Check the clock at the start. At the halfway mark on the clock, you should be halfway through the items. If you are behind, you are over-reading passages — speed up the first read and lean harder on the hunt.
+**Section 1 (35 minutes, about 17 items).** Check the clock at the start. At the halfway mark on the clock, you should be halfway through the items. If you are behind, you are over-reading passages — speed up the first read and lean harder on the hunt.
 
 **Section 2 (45 minutes, the essay).** Covered in the essay chapter, but one pacing note that affects this one: **do not let the essay bleed into your mental energy for section 3.** When the essay clock ends, it ends. Let it go.
 
-**Section 3 (about 60 minutes, about 29 items).** This is where the test is won. You are tired and the section is long. Set two checkpoints: at 30 minutes remaining you should have about 15 items done; at 15 minutes remaining you should have about 22 done.
+**Section 3 (60 minutes, about 29 items).** This is where the test is won. You are tired and the section is long. Set two checkpoints: at 30 minutes remaining you should have about 15 items done; at 15 minutes remaining you should have about 22 done.
 
 **When to guess and move on.** Use the **90-second rule**: if you have read the stem, scanned the passage, and you still have three live choices at 90 seconds, you are not going to solve it by staying. **Eliminate what you can, pick from what is left, flag it, move.** The flag costs nothing and the item is now worth 25-50% instead of 0% plus a lost minute. Two items you stubbornly grind out are worth less than the six items you never reached.
 
@@ -1918,7 +1922,7 @@ Cross out everything between subject and verb. Memorise the *each/either/neither
 11%. Learn to state the author's claim in one sentence, then judge each choice against *that exact claim*. Memorise that verifiable data and expert testimony are strong, single anecdotes and unsourced assertions are weak, and that a reported survey result is a **fact**, not an opinion.
 
 **7. Word meaning in context.** (30 minutes)
-7%. The method is one move: cover the word, read the sentence, say your own word out loud, then find the closest choice. Expect common words in uncommon senses.
+About 7% (3 items). The method is one move: cover the word, read the sentence, say your own word out loud, then find the closest choice. Expect common words in uncommon senses.
 
 **8. Pronoun agreement and vague antecedents, parallel structure, dangling modifiers.** (45 minutes)
 About 2 items combined. Worth doing if time remains; the rules are short. For vague antecedents the answer is almost always the version that names the noun.
@@ -1943,7 +1947,7 @@ Sit one 60-minute block of about 29 items with a real clock, no pausing. You are
 
 | Subject | Total time | Essay / extended response? |
 | --- | --- | --- |
-| Reasoning Through Language Arts | 150 minutes | **Yes.** One Extended Response, separately timed at 45 minutes |
+| Reasoning Through Language Arts | 150 minutes (35 + 45 essay + 10 break + 60) | **Yes.** One Extended Response, separately timed at 45 minutes |
 | Social Studies | 70 minutes | **No.** The Extended Response was removed on 1 March 2016 |
 | Science | 90 minutes | **No.** The two short-answer items were dropped at the start of 2018 |
 | Mathematical Reasoning | 115 minutes | **No.** It never had one |
@@ -1954,14 +1958,16 @@ Old study guides, old YouTube videos and old classroom handouts still teach a So
 
 RLA runs 150 minutes in three parts:
 
-1. **Section 1**, about 35 minutes of reading and language questions.
-2. **Section 2**, the Extended Response, 45 minutes, on its own clock.
+1. **Section 1**, exactly 35 minutes of reading and language questions.
+2. **Section 2**, the Extended Response, exactly 45 minutes, on its own clock.
 3. A 10-minute break.
-4. **Section 3**, about 60 minutes of reading and language questions.
+4. **Section 3**, exactly 60 minutes of reading and language questions.
+
+These four blocks are fixed and published by GED Testing Service: 35 + 45 + 10 + 60 = 150.
 
 The 45 minutes is ring-fenced. You cannot borrow minutes from Section 1, and if you finish the essay in 30 minutes the spare 15 do **not** roll forward into Section 3. Time you do not use on the essay is simply gone, so there is no reward for finishing early and no penalty for using every second.
 
-The Extended Response is worth roughly **20 percent of your RLA score**. It is scored 0 to 6 and then double-weighted, so it contributes up to **12 raw points** to the test. That is a large block of points to leave on the table, which is why a blank or off-topic response is so hard to recover from.
+The Extended Response is worth roughly **20 percent of your RLA score** — GED Testing Service's own figure. It is scored 0 to 6 and then double-weighted, so it contributes up to **12 raw points** to the test. That is a large block of points to leave on the table, which is why a blank or off-topic response is so hard to recover from.
 
 ### What is on the screen
 
@@ -2524,7 +2530,7 @@ Say the important thing plainly first: **this is a reading test wearing a lab co
 - **No essay. No short answer.** The two typed constructed-response items that used to sit on the Science test were removed at the start of 2018. Nothing on Science today asks you to write a paragraph. (Extended Response still exists on RLA only.)
 - **Calculator: allowed.** The on-screen TI-30XS MultiView is available, and at a test centre you may bring your own handheld TI-30XS MultiView. A **calculator reference sheet** (which buttons do what) is available on screen.
 - **There is no science formula sheet.** This is the single most misunderstood fact about this test. The Mathematical Reasoning test has a formula sheet; Science does not. Instead, **any formula you need that is not on the short memorise list below will be printed inside the question itself.** See "The cheat sheet."
-- **Delivery:** at a Pearson VUE test centre or online-proctored at home. Same test, same length, same item types.
+- **Delivery:** at a Pearson VUE test centre or online-proctored at home. Same test, same length, same item types. Online requires a green (145+) GED Ready in Science within the last 60 days before your first online attempt in this subject, and is not offered in every state.
 
 ### Item types you will actually see
 
@@ -2547,7 +2553,7 @@ Scores are reported on a **100–200 scale** per subject.
 | 100–144 | Below passing | No credit for this subject. You retake Science only. |
 | **145–164** | **GED Passing Score** | Passing. 145 on all four subjects earns the credential. |
 | 165–174 | GED College Ready | May waive college placement testing or developmental courses. |
-| 175–200 | GED College Ready + Credit | May qualify for up to 10 college credit hours. |
+| 175–200 | GED College Ready + Credit | May qualify for up to 10 college credit hours in total at participating colleges. The college, not GED Testing Service, decides what it actually awards. |
 
 **145 is a per-subject floor, not an average.** Scoring 190 on RLA does not rescue a 140 in Science.
 
@@ -2977,7 +2983,7 @@ That does **not** mean content is free. About half the items are stand-alone que
 - **No essay. No short answer.** The Social Studies Extended Response — the 25-minute typed essay — was **removed on 1 March 2016** and has not come back. Nothing on Social Studies today asks you to write a paragraph. (Extended Response survives on RLA only.) If a study book tells you to practise the Social Studies essay, that book is at least ten years out of date and you should distrust the rest of it too.
 - **Calculator: allowed.** The on-screen TI-30XS MultiView is available on this test, and at a test centre you may bring your own handheld TI-30XS MultiView. A **calculator reference sheet** (which buttons do what, in what order) is available on screen. You will use it rarely — maybe two or three items involve arithmetic — but it is there.
 - **There is no content reference sheet.** No list of amendments. No timeline. No definitions. No map. Everything in "The cheat sheet" below must be in your head.
-- **Delivery:** at a Pearson VUE test centre, or online-proctored at home. Same test, same length, same item types. To test online you must have scored 145 or better ("green") on the GED Ready practice test for that subject within the last 60 days.
+- **Delivery:** at a Pearson VUE test centre, or online-proctored at home. Same test, same length, same item types. Before your **first** online-proctored attempt in this subject you must have scored 145 or better ("green", GED Testing Service's label is "Likely to Pass") on the GED Ready practice test for Social Studies within the last 60 days. Online testing is not offered in every state — check `ged.com/policies/your-state`.
 - **Stimulus length:** short. A text stimulus is typically one paragraph to three short paragraphs. Nothing is a full essay. If a passage looks long on screen, it is usually two short excerpts stacked for comparison.
 
 ### Item types you will actually see
@@ -3021,7 +3027,7 @@ Three consequences follow from how this is scored, and all three change how you 
 
 - **2016:** the Social Studies Extended Response (essay) was removed. Test time dropped to 70 minutes. This is still the current structure in 2026.
 - **The 2014 test series is still the current series.** There has been no content overhaul since. Anything written for the "2014 GED" is structurally accurate; anything written for the "2002 GED" (five subjects, a separate Writing test, 80 questions of social studies) is worthless.
-- **Online proctoring is now permanent**, not an emergency measure, with the GED Ready "green score within 60 days" gate.
+- **Online proctoring is now permanent**, not an emergency measure, with the GED Ready "green score within 60 days" gate on your first online attempt per subject. It is still **not available in every state**, and some jurisdictions have withdrawn it (Indiana ended online-proctored HSE testing on 1 July 2025).
 - **Score bands and the 145 cut have not moved.** Some states layer on extra graduation requirements, but 145 per subject is the national GED standard.
 
 ## What is on it, by weight
@@ -3140,7 +3146,7 @@ Everything below the calculator line is yours to carry in.
 | Members | 435, apportioned by state population | 100, two per state regardless of size |
 | Term | 2 years | 6 years, one third elected every 2 years |
 | Minimum age | 25 | 30 |
-| Unique powers | Starts all revenue (tax) bills; impeaches | Confirms appointments; ratifies treaties (2/3); tries impeachments |
+| Unique powers | Starts all revenue (tax) bills; impeaches | Confirms appointments; approves treaties by a 2/3 vote (the President then ratifies); tries impeachments |
 | Presiding officer | Speaker of the House | Vice President (President of the Senate) |
 
 **Federalism — which level does what.**
@@ -3618,11 +3624,13 @@ The strategy that follows: **bank time on the easy half, spend it on the hard ha
 
 | Elapsed | You should be at |
 |---|---|
-| 20 minutes | Question 12 |
-| 35 minutes (halfway) | Question 18 |
-| 50 minutes | Question 26 |
-| 60 minutes | Question 33 — start review |
+| 20 minutes | Question 13 |
+| 35 minutes (halfway) | Question 22 |
+| 50 minutes | Question 31 |
+| 60 minutes | Question 35 — every item answered, start review |
 | 70 minutes | Done |
+
+Read the table as slowing down, not speeding up: 13 items in the first 20 minutes is about 90 seconds each, and the last 4 items get 150 seconds each. That is the banking plan in numbers. Notice also that the last checkpoint is question 35, not question 33 — every item must carry an answer before the review block starts, because the review block is for re-checking, not for meeting the test for the first time.
 
 If you fall more than three questions behind a checkpoint, do not try to speed-read your way back. **Take the next two hard items in 20 seconds each** with a flagged guess and you are instantly back on schedule.
 
@@ -3716,11 +3724,18 @@ Before you study a single equation, settle whether your state will let you sit t
 - **Minimum age.** Most states require **18**. A few require **18.5 or 19** — New York requires you to be **19** to test outright; at 16, 17, or 18 you must get approval through an Age Eligibility form inside your GED account application.
 - **Underage exceptions (16-17).** Where they exist, they come with paperwork: an **official school withdrawal form or letter signed by a superintendent**, a **parental/guardian consent form**, and sometimes a dedicated **age waiver form**. Some states add a waiting period — Nebraska, for example, requires a 16- or 17-year-old to have been withdrawn from school for **at least 30 days** and to submit a handwritten letter explaining the circumstances. Michigan sets 18 as the default and lets the state workforce agency waive it case by case for 16- and 17-year-olds. California lets 17-year-olds sit the subject tests under conditions but will not issue the credential until you turn 18.
 - **Residency.** Some states have none for adults; some have a hard one. Michigan has no residency requirement at 18+ but requires minors to have established Michigan residency. New York requires **30 calendar days** of state residency. Pennsylvania requires residency and proof of it at the test center (driver's license or equivalent).
-- **A practice-test or prep prerequisite.** Several states will not let you book the real test until you have taken — and in some cases passed — the **GED Ready** practice test. Commonly cited as prerequisite states: **Arkansas, Delaware, District of Columbia, Hawaii, Iowa, Kentucky, Louisiana, Maine, Missouri, New Hampshire, West Virginia**. Kentucky is the strictest version of this: passing scores on the official practice test in all four subjects before you can arrange any GED exam. Arkansas requires passing the pre-test subject by subject.
+- **A practice-test or prep prerequisite.** Several states will not let you book the real test until you have taken — and in some cases passed — the **GED Ready** practice test. Commonly cited as prerequisite states: **Arkansas, Delaware, District of Columbia, Hawaii, Kentucky**, plus **Texas and New Jersey for online testing specifically**. Kentucky is the strictest version of this: passing scores on the official practice test in all four subjects before you can arrange any GED exam. Arkansas requires passing the pre-test subject by subject. (Older lists also name Iowa, Louisiana, Maine, Missouri, New Hampshire and West Virginia — but most of those are HiSET jurisdictions where the GED is not offered at all, so a *GED* Ready prerequisite there is moot. See "Some states do not run the GED at all" below.)
 
 > If you are in a prerequisite state, your "this week" plan has a mandatory extra step bolted onto the front of it. Budget for it on day one, not day four.
 
-**Some states do not run the GED at all.** The GED is not the only high school equivalency exam. The **TASC is discontinued** (old TASC scores generally remain valid and some states let you combine them, but you cannot sit a new TASC). That leaves the **GED** and the **HiSET** (from ETS). A number of states have moved to HiSET-only; states repeatedly named as not offering the GED include **Iowa, Indiana, Louisiana, Maine, Missouri, Montana, New Hampshire, and West Virginia**. Other states run both — California, for instance, offers GED and HiSET, at test centers and online. These lists change when state contracts are renewed, so treat the list above as a warning flag, not gospel.
+**Some states do not run the GED at all.** The GED is not the only high school equivalency exam. The **TASC is discontinued** (old TASC scores generally remain valid and some states let you combine them, but you cannot sit a new TASC). That leaves the **GED** and the **HiSET** (from ETS). A number of states have moved to HiSET-only. The states most consistently named as **HiSET-only (no GED)** are **Iowa, Louisiana, Maine, Missouri, Montana, New Hampshire, and Tennessee**.
+
+**Two states where the sources genuinely disagree:**
+
+- **Indiana.** The State of Indiana's own announcement says Indiana Adult Education transitioned to HiSET as the state's HSE credential from 1 July, and Indiana ended online-proctored HSE testing on 1 July 2025. Prep-industry state directories (passged.com) still list Indiana as offering both GED and HiSET. Assume HiSET unless `ged.com/policies/indiana` sells you an appointment.
+- **West Virginia.** Some directories list West Virginia as GED-and-HiSET (and as a *free* GED state); others list it as not offering the GED. `ged.com/policies/west-virginia` settles it.
+
+Other states run both — California, for instance, offers GED and HiSET, at test centers and online. These lists change when state contracts are renewed, so treat every list above as a warning flag, not gospel.
 
 **How to resolve all of this for yourself, in about four minutes.** Go to `ged.com/policies/` and open your state's page — the URLs are literally `ged.com/policies/your-state` (for example `ged.com/policies/new-york`, `ged.com/policies/california`, `ged.com/policies/texas`). That single page is the authoritative answer for: minimum age, underage waiver process and forms, residency rule, whether GED Ready is required before booking, whether online proctored testing is permitted, the fee per subject, and the retake rules. There is also a state selector on `ged.com` that routes you to the same page.
 
@@ -3751,17 +3766,22 @@ Nothing is booked until payment clears. Your seat is not held while you think ab
 | | **Pearson VUE test center** | **GED at home (OnVUE)** |
 |---|---|---|
 | Availability this week | Depends entirely on local seats; small towns may have one center with one open Tuesday | Often same-day or next-day slots, including evenings and weekends |
-| Prerequisite | Usually none beyond state eligibility | **GED Ready "green" in that subject, scored within the last 60 days** |
+| Prerequisite | Usually none beyond state eligibility | **GED Ready "green" (145+) in that subject, scored within the last 60 days — required before your *first* online attempt in that subject** |
 | Equipment risk | Zero — their machine, their network | All on you; a failed system test on the day means no test |
 | Note-taking | **Three physical erasable note boards and a marker** | **On-screen whiteboard and scratch pad only** — no physical paper or boards |
 | Calculator | On-screen TI-30XS, plus you may bring a handheld TI-30XS | On-screen TI-30XS only |
-| Cost | Base state fee | Same base fee in many states, **higher in some** (Texas: about $145 for the full battery in person vs about $169 online), plus the mandatory GED Ready purchases |
+| Cost | Base state fee | Same base fee in many states, **higher in some** (Texas, as of June 2026: about `$36.25` per subject / `$145` for the full battery in person, vs about `$42.25` per subject / `$169` online), plus the mandatory GED Ready purchases |
 | Discounted retakes | Generally available | Often **not** available on online-proctored attempts |
 | Not offered in | — | Several states prohibit it entirely |
 
 **For a one-week timeline, the honest recommendation is the test center if a seat exists.** You avoid the 60-day green-GED-Ready gate, you avoid the technology failure mode, and you keep access to discounted retakes. Check the center calendar first; only fall back to OnVUE if there is no seat in your window.
 
-**Online testing is not available everywhere.** Sources disagree on the exact list — states variously named as not permitting online GED testing include **New York, Florida, Hawaii, Massachusetts, Connecticut, Wyoming, Washington, Tennessee, Montana, Indiana**, plus the states that do not run the GED at all. Do not trust any third-party list including this one. Your ged.com state policy page and the format options the scheduler actually offers you are the answer.
+**Online testing is not available everywhere.** Roughly 40 states participate in online proctoring, and **the sources genuinely disagree on which ones do not**:
+
+- One commonly published list (tutoriffic, easy-prep, 2026): **Connecticut, Florida, Hawaii, Massachusetts, New York, West Virginia, Wyoming**.
+- A wider list (essentialed / prepsaret, 2026) adds **Indiana, Louisiana, Maine, Missouri, Montana, New Hampshire, Tennessee and Washington** — though most of those are HiSET jurisdictions, where there is no GED to take online in the first place.
+
+Do not trust any third-party list including this one. Your ged.com state policy page and the format options the scheduler actually offers you are the answer.
 
 ### Step 4 — Protect the booking
 
@@ -3774,20 +3794,21 @@ Nothing is booked until payment clears. Your seat is not held while you think ab
 | Situation | Typical per-subject cost | Notes |
 |---|---|---|
 | Most states, standard rate | about `$36` | `$144` for the full battery |
-| Higher-fee states | up to about `$46` | Georgia is commonly cited near `$46` per subject, test center or online |
-| Florida | about `$38` | |
+| Higher-fee states | up to about `$46` | Georgia is `$46` per subject, test center or online |
+| Florida | `$38` per subject at a test center | Florida does **not** currently offer the online-proctored GED |
 | Texas | about `$36` per subject in person | Full battery about `$145` in person, about `$169` online |
 | State-subsidised | roughly `$11`-`$15` first attempt | Maryland subsidises the first attempt on each subject; the full rate applies to retakes |
-| Free or near-free | `$0` | New York, Connecticut, Illinois, Maine, West Virginia are repeatedly named; California is heavily subsidised. Availability often depends on residency, first-attempt status, or enrolment in an adult-ed program |
+| Free or near-free | `$0` | **New York, Connecticut and West Virginia** are the states most consistently named as free, and **Illinois** is listed at `$36` with the state paying the fee; California is heavily subsidised. (Maine and New Hampshire appear on some "free GED" lists but are HiSET jurisdictions, so the free exam there is the HiSET, not the GED.) Availability often depends on residency, first-attempt status, or enrolment in an adult-ed program |
 
 Two traps:
 
 - **A few states let test centers add their own administrative fee** on top of the GED Testing Service base. New York and New Jersey are the usual examples; the effective per-subject cost can land at `$45` or more. The price you see at checkout is the real price.
-- **Online can cost more than in person**, both in base fee (see Texas) and unavoidably in prerequisites: four GED Ready purchases at roughly `$7` each is another `$28`-`$32` you must spend before you are allowed to test online at all.
+- **Online can cost more than in person**, both in base fee (see Texas) and unavoidably in prerequisites: GED Ready is **`$7.99` per subject or `$25.99` for the four-subject bundle**, so that is another `$26`-`$32` you must spend before you are allowed to test online at all.
 
 **Discounts and vouchers worth ten minutes of your time before you pay:**
 
-- **GEDWorks.** If your employer participates, your testing is covered — participating employers have included Walmart, Taco Bell, KFC, Hilton, and Red Roof. Some **health plans** also sponsor it for members (Medica, Humana Healthy Horizons, Blue Shield of California, UCare have all run GEDWorks offers). Check by signing into ged.com and looking for a GEDWorks option, or ask your HR/benefits contact directly.
+- **GEDWorks.** If your employer participates, your testing is covered — participating employers have included Taco Bell, KFC, Pizza Hut, Southeastern Grocers, Hilton and Red Roof. **Walmart launched the programme in 2015 but is no longer a GEDWorks partner**, so do not count on it if Walmart is your employer.
+ Some **health plans** also sponsor it for members (Medica, Humana Healthy Horizons, Blue Shield of California, UCare have all run GEDWorks offers). Check by signing into ged.com and looking for a GEDWorks option, or ask your HR/benefits contact directly.
 - **State voucher programs.** Georgia's HOPE HSE Exam Grant, Ohio's Aspire vouchers, New Mexico's HSE vouchers, Pennsylvania's free-testing program, Virginia's discounts, Tennessee's vouchers. Eligibility usually requires state residency, first-attempt status, enrolment in an approved adult education program, or a GED Ready score — sometimes all four.
 - **Your local adult education center or community college.** Many hold voucher allocations and many give GED Ready away free. This is the single highest-yield phone call in the whole process.
 - **Your local workforce development board.** Ask specifically about **high school equivalency funding**; it is often a line item nobody claims.
@@ -3796,17 +3817,17 @@ Two traps:
 
 ## GED Ready
 
-**GED Ready is the official practice test, written by the people who write the real test, and it is the single best `$7` you will spend on this project.** Everything else in your prep is a guess about what you know. GED Ready is a measurement.
+**GED Ready is the official practice test, written by the people who write the real test, and it is the single best `$7.99` you will spend on this project.** Everything else in your prep is a guess about what you know. GED Ready is a measurement.
 
-**What it is.** One practice test per subject, purchased and taken through MyGED (**Study** → **Practice** → **Buy Subject**). About `$6.99`-`$7.99` per subject, with a four-subject bundle typically in the `$23`-`$32` range. It is **half the length of the real subject test** — roughly **35 to 90 minutes** depending on subject — and it is timed. **One attempt per purchase**; if you want a second run at the same subject you buy it again.
+**What it is.** One practice test per subject, purchased and taken through MyGED (**Study** → **Practice** → **Buy Subject**). **`$7.99` per subject, or `$25.99` for the four-subject bundle** (older `$6.99` / `$22.99` figures still circulate on prep sites and are out of date — read the live cart). It is **half the length of the real subject test** — **35 minutes for Social Studies, about 47 for Science, 60 for Math, 90 for RLA** — and it is timed. **One attempt per purchase**; if you want a second run at the same subject you buy it again.
 
 **How to read the result.** It reports on the same 100-200 scale as the real test, with a three-zone verdict:
 
-| Zone | Score | Meaning |
-|---|---|---|
-| **Red** | **100-133** | Not likely to pass. You need real study, not a week of cramming. |
-| **Yellow** | **134-144** | Too close to call. A coin flip. Fix the specific weaknesses in your study plan before booking. |
-| **Green** | **145-200** | Likely to pass. Book the test. |
+| Zone | GED Testing Service's own label | Score | Meaning |
+|---|---|---|---|
+| **Red** | **Not Likely to Pass** | **100-133** | You need real study, not a week of cramming. |
+| **Yellow** | **Too Close to Call** | **134-144** | A coin flip. Fix the specific weaknesses in your study plan before booking. |
+| **Green** | **Likely to Pass** | **145-200** | Book the test. |
 
 **What predicts a pass: 145 or above — green.** That is not a coincidence. 145 is the passing score on the real test, and the practice test is scaled to the same standard. Green does not guarantee a pass; it means you are on the right side of the line with the sample size of a half-length test behind it.
 
@@ -3819,8 +3840,8 @@ Two traps:
 
 **It is mandatory in two situations:**
 
-1. **To test online (OnVUE) anywhere**, you must score **green on GED Ready in that subject within the last 60 days**. Per subject. An old green score does not count; a yellow does not count. Miss the 60-day window and the scheduler will not offer you the online option.
-2. **In prerequisite states**, you cannot book the real test at all without it — commonly cited: Arkansas, Delaware, DC, Hawaii, Iowa, Kentucky, Louisiana, Maine, Missouri, New Hampshire, West Virginia. Texas and New Jersey require it specifically for online testing. Kentucky requires passing scores in all four subjects. Confirm on `ged.com/policies/your-state`.
+1. **To test online (OnVUE) anywhere**, you must score **green (145 or higher) on GED Ready in that subject within the last 60 days, before your *first* online-proctored attempt in that subject**. Per subject. An old green score does not count; a yellow does not count. Miss the 60-day window and the scheduler will not offer you the online option. (GED Testing Service states the requirement as applying to the first online attempt per subject area; a later online retake of the same subject does not re-trigger it. Confirm in the scheduler before you rely on that.)
+2. **In prerequisite states**, you cannot book the real test at all without it — commonly cited: Arkansas, Delaware, DC, Hawaii, Kentucky. Texas and New Jersey require it specifically for online testing. Kentucky requires passing scores in all four subjects. Confirm on `ged.com/policies/your-state`.
 
 > Practical sequencing for a one-week plan: take GED Ready for your best subject **today**. If it comes back green, book that subject for the next available slot. If it comes back yellow or red, you have just saved yourself a wasted fee and you know exactly what to study.
 
@@ -3854,11 +3875,11 @@ You are issued **three erasable note boards and a marker**. That is your scratch
 | Subject | Time | Structure |
 |---|---|---|
 | Reasoning Through Language Arts | **150 minutes** | Includes a **45-minute Extended Response (essay)** and a scheduled **10-minute break** between sections |
-| Mathematical Reasoning | **115 minutes** | Part 1 (a handful of questions, **no calculator**), then Part 2 (**calculator permitted**) |
+| Mathematical Reasoning | **115 minutes** | Part 1 (the first **5** questions, **no calculator**), a **3-minute break**, then Part 2 (the remaining **41** questions, **calculator permitted**). You cannot return to Part 1 after submitting it |
 | Science | **90 minutes** | One timed block |
 | Social Studies | **70 minutes** | One timed block, the shortest subject |
 
-All four together is roughly **7.5 hours** of testing time. Scheduled breaks are given where the test provides them. If you leave the room outside a scheduled break, the clock keeps running and depending on the center your session may be ended.
+All four together is **7 hours 5 minutes** of testing time (150 + 115 + 90 + 70 minutes), the figure GED Testing Service itself publishes. Scheduled breaks — the 10 minutes inside RLA and the 3 minutes inside Math — sit on top of that. If you leave the room outside a scheduled break, the clock keeps running and depending on the center your session may be ended.
 
 ### What gets you thrown out
 
@@ -3878,7 +3899,7 @@ GED at home runs on **OnVUE**, Pearson VUE's online proctoring platform. It is g
 
 ### Before you book
 
-You need **green on GED Ready in that subject within the last 60 days**, and your state must permit online testing. Both are enforced by the scheduler.
+You need **green (145+) on GED Ready in that subject within the last 60 days** before your **first** online-proctored attempt in that subject, and your state must permit online testing. Both are enforced by the scheduler.
 
 ### Run the system test — today, not on test day
 
@@ -3928,7 +3949,7 @@ Terminated sessions are reported, and the fee is generally gone.
 
 ## Scores and what happens next
 
-**Timeline.** Scores are usually in your MyGED account **within 24 hours** of testing; allow **up to 3 business days**. You get an email when the score report posts. The Reasoning Through Language Arts essay does not normally add a separate delay — the extended response raw points are folded into one scaled RLA score.
+**Timeline.** GED Testing Service's stated target is a score report **within 3 hours** of finishing; in practice scores are usually in your MyGED account **within 24 hours**, and you should allow **up to 3 business days**. You get an email when the score report posts. The Reasoning Through Language Arts essay does not normally add a separate delay — the extended response raw points are folded into one scaled RLA score.
 
 **The bands.** Every subject is scored **100-200**:
 
@@ -3937,7 +3958,7 @@ Terminated sessions are reported, and the fee is generally gone.
 | **Below Passing** | **100-144** | No credit for that subject. You must retake it. |
 | **GED Passing Score** | **145-164** | Passed. Counts toward the credential. |
 | **GED College Ready** | **165-174** | Passed, plus a signal that many colleges will let you **skip placement testing** in that subject. |
-| **GED College Ready + Credit** | **175-200** | Passed, plus eligibility at participating colleges for **up to 10 college credits per subject**. |
+| **GED College Ready + Credit** | **175-200** | Passed, plus eligibility at participating colleges for **up to 10 college credits** in total. How many credits you actually get, and for which subjects, is set by the individual college, not by GED Testing Service. |
 
 **Scores are not averaged.** You need **145 or higher on each of the four subjects independently**. A 190 in Social Studies does not rescue a 140 in Math.
 
@@ -3961,10 +3982,12 @@ First: a below-passing score on one subject costs you that subject, nothing else
 - **After the third failed attempt on a subject, you must wait 60 days** before the next attempt, and that 60-day wait applies to every subsequent attempt on that subject.
 - **States may impose stricter waits or attempt limits.** Check `ged.com/policies/your-state`.
 
-**The discounted retake.** Under the GED Discounted Retake Program, **GED Testing Service waives its portion of the fee for one discounted retake per failed subject attempt**, so you pay only the applicable **state and test center fees**. The discount is **valid for 12 months from your initial attempt** on that subject. Two things to know:
+**The discounted retake.** Under the GED Discounted Retake Program, **GED Testing Service waives its portion of the fee for two retests per subject**, so you pay only the applicable **state and test center fees**. The discount applies to **two retests, taken within 12 months of your initial full-price test in that subject**. Two things to know:
 
 - In some states the discounted rate is effectively free; in others you still pay a meaningful state fee. The exact amount is on your state's page and at checkout.
 - **Discounted retakes are commonly restricted to test-center attempts and are often not offered on online-proctored tests.** If you are retaking on a budget, retake in person.
+- **Online-proctored testing has its own tighter limit:** GED Testing Service allows **2 attempts per subject online** before a **60-day wait** on that subject online. At a test center you get the full three attempts before the 60-day wait applies. That asymmetry alone argues for the test center on a marginal subject.
+- **States may set their own discount rules.** New Jersey, for example, publishes a flat `$10` discounted retake at a test center and **no discount at all online**. Check `ged.com/policies/your-state`.
 
 **What to actually fix.** Your score report is not just a number — it includes performance indicators showing which skill areas you were weak on, with links into the study material. Before you rebook:
 
@@ -3979,7 +4002,7 @@ Here is the honest version.
 
 **What is realistically achievable in a week.** If you left school recently, read comfortably, and have working arithmetic, **one or two subjects is a realistic target** — plausibly three if you are strong. **Passing all four from a standing start in seven days is not a study plan, it is a lottery ticket**, and at roughly `$36` a subject it is an expensive one. The test is not designed to be beaten by cramming; three of the four subjects reward reading and reasoning skill that takes longer than a week to move.
 
-**Do this first, today.** Take **GED Ready in the subject you are most confident about**. It costs about `$7` and 35-90 minutes and it converts your entire plan from guesswork into data. If it comes back green, you have a subject you can book immediately. If it comes back red, you have just learned — for `$7` instead of `$36` plus a wasted appointment — that the one-week plan needs to become a three-week plan.
+**Do this first, today.** Take **GED Ready in the subject you are most confident about**. It costs `$7.99` and 35-90 minutes and it converts your entire plan from guesswork into data. If it comes back green, you have a subject you can book immediately. If it comes back red, you have just learned — for `$7.99` instead of `$36` plus a wasted appointment — that the one-week plan needs to become a three-week plan.
 
 **Which subject to sit first.**
 
@@ -3991,7 +4014,7 @@ Here is the honest version.
 **Take one subject at a time.** The scheduler is built for this — you book subjects individually — and there is no bonus for sitting them together. Sitting one at a time gives you:
 
 - **A real score report between attempts.** Results land within 24 hours, so a Monday pass tells you something useful about Wednesday's booking.
-- **Less fatigue.** The full battery is about 7.5 hours. Nobody's Social Studies score improves after five hours of testing.
+- **Less fatigue.** The full battery is 7 hours 5 minutes of testing. Nobody's Social Studies score improves after five hours of testing.
 - **Contained losses.** Fail one subject and you are out roughly `$36` and one appointment. Fail four in one day and you are out about `$144`, a full day, and your nerve.
 - **Momentum.** One passed subject in the account on day three changes how the rest of the week feels.
 
@@ -4006,3 +4029,51 @@ Here is the honest version.
 7. **Day 7.** Take GED Ready for Math and be honest about the result. Book Math for whenever green actually arrives — this week if you are lucky, in three weeks if you are not. That is not a failure of the plan; that is the plan working.
 
 > The goal is a credential, not a heroic week. Three subjects passed this week and Math passed next month is a complete GED. Four subjects failed this week is `$144` and a reason to quit.
+
+## Sources
+
+Every fact in this chapter is checkable. These are the pages that settle each question — go to the official one before you spend money, because state rules and prices move and prep sites (including this guide) lag behind them.
+
+**The one page that overrides everything else here**
+
+- `https://www.ged.com/policies/` — your state's own policy page (`ged.com/policies/new-jersey`, `ged.com/policies/texas`, and so on). Settles minimum age, underage waiver forms, residency, whether GED Ready is required before booking, whether online proctoring is allowed in your state, the exact per-subject fee, and any state-specific retake limits. Where this guide and that page disagree, that page wins.
+
+**Test format and content**
+
+- `https://www.ged.com/about-test/test-subjects.html` — settles the four subjects, each one's length (RLA 150 min, Math 115, Science 90, Social Studies 70), the approximate question counts, and the 7-hour-5-minute total.
+- `https://www.ged.com/about-test/test-subjects/math.html` — settles the Math structure: Part 1 (first 5 items, no calculator), Part 2 (remaining 41, calculator), and the 45% quantitative / 55% algebraic split.
+- `https://www.ged.com/content/dam/websites/ged/resources/en/assessment-guide-for-educators-rla.pdf` — settles the RLA blueprint: 35 + 45 + 10 + 60 minute blocks, 75% informational / 25% literary passages, 450–900 word passage sets.
+- `https://www.ged.com/content/dam/websites/ged/resources/en/assessment-guide-for-educators-math.pdf` — settles the Math assessment targets and which sub-topics are actually tested.
+
+**Reference sheets and the calculator**
+
+- `https://www.ged.com/content/dam/websites/ged/resources/Math-Formula-Sheet-2026-02-v1-revised.pdf` — the current Mathematics Formula Sheet, revised February 2026. Settles exactly which formulas you are handed and which you must memorise. Read the real sheet, not a prep-site copy of an older one. Science and Social Studies have no equivalent sheet.
+- `https://www.ged.com/wp-content/uploads/calculator_sheet.pdf` — the TI-30XS MultiView Calculator Reference Sheet, the same one that appears behind the on-screen button. Settles which keys do what.
+
+**Scores**
+
+- `https://www.ged.com/about-test/scores.html` and `https://www.ged.com/about-test/scores/college-ready.html` — settle the 100–200 scale, the 145 pass line per subject, GED College Ready at 165–174, GED College Ready + Credit at 175–200, and the "up to 10 college credits" claim.
+- `https://www.ged.com/faqs/understanding-scores.html` — settles how fast scores post and what the skill-breakdown report shows you.
+
+**Practice test**
+
+- `https://www.ged.com/faqs/ged-ready.html` — settles the GED Ready price ($7.99 per subject, $25.99 for all four), the one-attempt-per-purchase rule, and the three score bands (Not Likely to Pass 100–133, Too Close to Call 134–144, Likely to Pass 145–200).
+
+**Retakes**
+
+- `https://www.ged.com/faqs/test-retakes.html` — settles the national retake rule: two subsequent retests with no waiting period, a 60-day wait after a third and any later failure, and a discount on two retests taken within 12 months of the initial full-price test in that subject.
+
+**Test day and online testing**
+
+- `https://www.ged.com/faqs/expect-test-day.html` — settles ID requirements, the 15-minute early arrival, the three erasable note boards and marker, and what must go in the locker.
+- `https://www.pearsonvue.com/us/en/ged/onvue.html` — settles the OnVUE rules: 30-minute check-in, room scan, single monitor, no headphones, no physical scratch paper, on-screen whiteboard only.
+- `https://www.pearsonvue.com/us/en/onvue/requirements.html` — settles the equipment and network requirements, and hosts the system test you should run today on the exact machine you will test on.
+- `https://www.ged.com/take-the-ged-test-online.html` — settles the online eligibility gate: a green (145+) GED Ready within 60 days before your first online attempt in a subject, plus the 2-attempts-then-60-days limit on online testing.
+
+**Rules you are agreeing to**
+
+- `https://www.ged.com/content/dam/websites/ged/resources/GED-Policy-Manual-2025.pdf` — the GED Program Policy Manual. Settles the eligibility floor (16, not enrolled, not a graduate), that jurisdictions may be stricter, and that passing subject scores on the current series do not expire nationally while jurisdictions may set their own expiration policies.
+
+**If your state does not run the GED**
+
+- `https://hiset.org/get-started/state-requirements/` — ETS's own list of HiSET jurisdictions. Cross-check it against your `ged.com/policies/` state page; where the two disagree about your state, believe whichever one will actually sell you an appointment.
