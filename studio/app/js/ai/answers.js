@@ -29,9 +29,64 @@ const EXAMPLES = '"mute clip 2", "make the last shot black and white", "add capt
 /* ---- how-to: the guide, searched properly ---- */
 const STOP = new Set('how do i can you where is are the a an my to it this that what which of in on for with does and or its'.split(' '));
 
+/*
+ * Known topics go straight to their article, by title. Word scoring is the
+ * fallback, and it gets "motion tracking" wrong ("motion" sits in the speed
+ * article's title) — a table of the questions people ask most does not.
+ */
+const TOPICS = [
+  [/\bmotion tracking\b|\btrack(?:ing)? (?:a|the|my|his|her|an) (?:face|person|object|subject|thing)\b|\bface track|\btracker\b/, /Following a face/],
+  [/\bremove (?:a |the |an )?(?:thing|object|can|sign|person|guy|someone)\b|\btake .* out of (?:the|a) shot\b|\berase\b|\btap.to.remove\b/, /Taking a thing out/],
+  [/\bremove (?:the )?background\b|\bgreen ?screen\b|\bchroma\b/, /Finding an effect/],
+  [/\blut|\bcurves\b|\bgrading\b|\bcolou?r wheels?\b|\bcolou?r panel\b|\bgrade\b/, /Grading/],
+  [/\bmulticam\b|\bangles?\b/, /Multicam/],
+  [/\bfreeze frame\b|\bmatch frame\b|\bshuttle\b|\binsert\b|\boverwrite\b/, /Freeze, match frame/],
+  [/\bspeed ramps?\b|\bramps?\b/, /^Speed ramps$/],
+  [/\bspeed\b|\bslow motion\b|\bslo-?mo\b/, /Speed, slow motion/],
+  [/\bexpressions?\b|\bwiggle\b/, /Expressions/],
+  [/\bshape layers?\b|\bshapes?\b/, /Shape layers/],
+  [/\bparent(?:ing)?\b|\bnull object|\banchor point/, /Parenting/],
+  [/\bparticles?\b|\bdisplacement\b|\bfractal\b|\becho\b/, /Particles, noise/],
+  [/\btext animators?\b|\bletter by letter\b/, /Text animators/],
+  [/\binstall\b|\bas an app\b|\bhome screen\b/, /Install it as an app/],
+  [/\bevery platform\b|\ball platforms\b|\bvertical and landscape\b/, /Export for every platform/],
+  [/\bexport|\bposting\b|\bpost (?:it |this )?to\b|\bformats?\b|\bpresets? (?:for|to) export\b/, /Exporting and posting/],
+  [/\blevels?\b|\bbeginner\b|\bexpert\b|\bintermediate\b/, /three skill levels/],
+  [/\bcaptions?\b|\bsubtitles?\b|\btypefaces?\b|\bfonts?\b|\btitles?\b|\btext\b/, /Titles, captions/],
+  [/\bcutaway\b|\bb-?roll\b/, /cutaway/],
+  [/\bcopy (?:an|another|that|this|someone'?s) (?:edit|video|style)\b|\bcopy .* edit\b|\breference video\b/, /Copying another/],
+  [/\bmontage\b/, /whole montage/],
+  [/\bloudness\b|\bchannel strip\b|\blufs\b|\bmix\b|\bmixer\b/, /channel strip/],
+  [/\bmasks?\b|\bwindows?\b|\bqualifier\b|\bgrade one thing\b/, /Windows and the qualifier/],
+  [/\bripple\b|\broll\b|\bslip\b|\bslide edit\b|\btrim modes?\b|\btrims?\b/, /four trims/],
+  [/\bkeyframes?\b|\bgraph editor\b|\banimat(?:e|ing) (?:a |the )?(?:value|property|position|scale)\b/, /keyframes and the graph/],
+  [/\bgroup(?:ing)?\b|\bcompound\b|\bnest\b/, /Grouping clips/],
+  [/\badjustment layers?\b|\bscene detect|\bflat video\b/, /Adjustment layers/],
+  [/\bpages?\b|\bcut page\b|\bdeliver\b/, /Pages: one screen/],
+  [/\bwhere .* (?:files|projects?|saved)\b|\bwhere .* go\b|\bautosave\b|\bsaved\b/, /Where your files/],
+  [/\bstart screen\b|\bprojects? list\b|\bopen (?:a |the )?project\b/, /start screen/],
+  [/\btabs?\b|\bsidebar\b|\brail\b|\bpanels?\b/, /tabs down the side/],
+  [/\bright[- ]click\b|\bcontext menu\b|\bfull[- ]screen timeline\b/, /Right-click/],
+  [/\boverlays?\b|\blayers?\b|\bmute a track\b|\btake the sound off\b|\bsound off a clip\b/, /Layers, overlays/],
+  [/\bundo\b|\bhistory\b|\bgo back\b/, /Undoing/],
+  [/\bpresets?\b/, /Presets: a whole/],
+  [/\baudio\b|\bsound\b|\bnoise\b|\bhiss\b|\bclean(?:ing)? up\b/, /Levels, cleaning up/],
+  [/\baccount\b|\banother device\b|\bsign in\b|\blog in\b/, /account on another device/],
+  [/\beffects?\b|\bfilters?\b|\bfind (?:an|the) effect\b/, /Finding an effect/],
+  [/\bsplit\b|\bimport\b|\bfirst edit\b|\bget(?:ting)? started\b|\bbasics\b/, /Your first edit/],
+];
+
 function guideAnswer(q) {
   const words = q.toLowerCase().match(/[a-z0-9]+/g)?.filter((w) => !STOP.has(w) && w.length > 1) || [];
   if (!words.length) return null;
+  for (const [re, titleRe] of TOPICS) {
+    if (!re.test(q.toLowerCase())) continue;
+    const a = GUIDE.find((x) => titleRe.test(x.title));
+    if (a) {
+      const lines = a.body.slice(0, 3).map(([h, t]) => `**${h}.** ${t.replace(/\*\*/g, '')}`);
+      return `**${a.title}**\n${lines.join('\n')}\n\nThe whole article is under Learn (the ? tab) → ${a.group}.`;
+    }
+  }
   // The question's own phrase, whole: "motion tracking" as two words scores
   // the speed article for "motion"; as a phrase it scores the tracking one.
   const phrase = words.join(' ');
@@ -85,6 +140,8 @@ const REPLIES = [
     say: () => `OmniDx Studio is a video editor that runs in the browser, on your device, with nothing uploaded. ${EDITIONS.free.name} is free with the whole editor in it; ${EDITIONS.creator.name} is ${price('creator')} once, no subscription, and adds this assistant among other things.` },
 
   /* money */
+  { id: 'locked', test: (s) => /\bpaid but\b|\bbought (?:it )?but\b|\bpurchased but\b|\bstill locked\b|\bnot unlocked\b|\bdidn'?t unlock\b|\bwon'?t unlock\b|\bactivat(?:e|ion)\b|\blicen[cs]e (?:key|code|not working|isn'?t working|on another|to another|on my other)\b|\b(?:use|move|transfer) (?:my |the )?(?:licen[cs]e|account|purchase) (?:on|to) (?:another|a new|my other|a second)\b|\banother device\b|\bnew (?:phone|laptop|computer)\b/.test(s),
+    say: () => 'Paid and still locked: open omnidx.net/studio/activate — it unlocks your copy from the receipt, no key to type. For a second device, Learn → "Your account on another device" walks through the move code: a short code from the device that is unlocked, typed into the new one, and both stay unlocked.' },
   { id: 'price', test: (s) => /\b(?:how much|cost|costs|price|prices|pricing|pay|paid|buy|purchase|subscription|subscribe|monthly|per month|a month|free\b|trial|premium|upgrade|plans?)\b/.test(s) && !/\bfree (?:up|space|the)\b/.test(s),
     say: () => `${EDITIONS.free.name} is free: the whole editor, no watermark, no time limit, no account. ${EDITIONS.creator.name} is ${price('creator')}, ${EDITIONS.studio.name} ${price('studio')}, ${EDITIONS.team.name} ${price('team')} — each paid once, ever, and every update after it is free. There is no subscription and never will be. The full comparison is on the pricing page (omnidx.net/studio/pricing).` },
   { id: 'refund', test: (s) => /\brefund|money back|charged|charge me|\bcancel (my |the )?(subscription|plan|payment|order|it)|how do i cancel/.test(s),
@@ -115,6 +172,10 @@ const REPLIES = [
     say: () => 'Ctrl+Z (⌘Z on a Mac) — the Undo button in the top bar says what it will take back before you press it. For something a few steps ago, Edit → History lists every change with the time; click one and the project goes back to exactly then.' },
   { id: 'export', test: (s) => /^(?:export|export it|export this|export the video|save|save it|save the video|download|download it|download the video|render|render it)\b[\s!.]*$/.test(s),
     say: () => 'Press Export (Ctrl+E), pick a preset — 720p to 4K, vertical or wide — and it renders on this device. Projects save themselves every five seconds, so there is no Save to press. After the render it offers to post: on a phone that is the share sheet, so TikTok and the rest are one press away.' },
+  { id: 'howto-music', test: (s) => /\bhow (?:do|can|to) (?:i |you )?(?:add|put|import|use|get|find|pick) (?:some |a |my |my own |the )?(?:music|song|songs|beat|beats|track|tracks|audio|sound)\b|\bwhere (?:is|are) the (?:music|beats|songs|library|sound library)\b|\bmy own (?:music|song|track)\b/.test(s),
+    say: () => 'Two ways. Your own song: + Import (or drag the file in), then double-click it in Media and it lands on the audio track. From the library: open Sound on the rail — 544 tracks written on the device, nothing to licence — or just tell me: "add a phonk beat", "add some lofi", "add a beat at 140 bpm". Either way the beat grid is exact, so "cut on the beat" lands.' },
+  { id: 'howto-transitions', test: (s) => /\bwhere (?:is|are|do i find) (?:the )?transitions?\b|\bhow (?:do|can|to) (?:i |you )?(?:add|put|use|find|do) (?:a |the |some )?transitions?\b/.test(s),
+    say: () => 'The Transitions tab on the rail: drag one onto a cut, or select a clip and press one to put it on its start. Drag either edge on the timeline to change the length. Or say it: "put a dissolve on every cut", "whip pan between the shots", "glitch transition on clip 3".' },
   { id: 'fps4k', test: (s) => /\b(?:make|export|render|do) (?:it|this|the video)?\s*(?:in |at )?(?:4k|8k|1080p|720p|60 ?fps|30 ?fps|24 ?fps|hd|uhd)\b|^(?:4k|60 ?fps)$/.test(s),
     say: () => 'That is an export setting rather than an edit: Export → pick the 4K or 1080p preset (vertical 4K is there too). Frame rate is in Settings — 24, 25, 30, 60, and the broadcast rates. The edit itself does not change.' },
 
@@ -135,8 +196,6 @@ const REPLIES = [
     say: () => 'I cannot open links. Save the video to your device, then use "Copy an edit you like" in this panel — drop the file in and it works out how that edit was cut and rebuilds the same shape with your clips. Nothing from the video you drop in ends up in yours.' },
   { id: 'logo', test: (s) => /\b(?:add|put|insert|place|drop)\b.{0,15}\b(?:my |the |a |our )?(?:logo|watermark|brand mark)\b|\bwatermark (?:it|this|my)\b/.test(s),
     say: () => 'I cannot add a logo I have not seen. Import the image (+ Import, or drag it in), drag it onto a track above the video, and place it with the Inspector. Once it is on the timeline I can work with it — "make the logo wiggle", "spin the logo", "fade the logo in".' },
-  { id: 'locked', test: (s) => /\bpaid but\b|\bbought (?:it )?but\b|\bpurchased but\b|\bstill locked\b|\bnot unlocked\b|\bdidn'?t unlock\b|\bwon'?t unlock\b|\bactivat(?:e|ion)\b|\blicen[cs]e (?:key|code|not working|isn'?t working|on another|to another|on my other)\b|\b(?:use|move|transfer) (?:my |the )?(?:licen[cs]e|account|purchase) (?:on|to) (?:another|a new|my other|a second)\b|\banother device\b|\bnew (?:phone|laptop|computer)\b/.test(s),
-    say: () => 'Paid and still locked: open omnidx.net/studio/activate — it unlocks your copy from the receipt, no key to type. For a second device, Learn → "Your account on another device" walks through the move code: a short code from the device that is unlocked, typed into the new one, and both stay unlocked.' },
   { id: 'copyright', test: (s) => /\bcopyright|copyrighted|royalty|content id|claimed|dmca|licen[cs]e (?:to use|for) .{0,20}(?:song|music|track)|can i use .{0,20}(?:song|music|track)\b/.test(s),
     say: () => 'Every track in the app\'s music library is written on your device, so nothing can be claimed on upload — say "add a phonk beat" or pick one in Sound. A song you import yourself is your own responsibility: TikTok and YouTube match uploads against the labels\' catalogues, and a claimed song can mute or demonetise the post.' },
   { id: 'crash', test: (s) => /\bcrash|crashed|froze|frozen|lost my (?:project|work|edit|video)|where (?:did|is|are|has) my (?:project|video|edit|work|clips|files)|disappeared|gone|not saved|didn'?t save|wiped/.test(s),
