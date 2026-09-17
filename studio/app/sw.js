@@ -40,6 +40,7 @@ const SHELL = [
   './index.html',
   './manifest.webmanifest',
   './css/app.css',
+  './css/looks.css',
   './js/ai/apply.js',
   './js/ai/planner.js',
   './js/ai/vocabulary.js',
