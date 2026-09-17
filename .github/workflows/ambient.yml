@@ -23,7 +23,7 @@ on:
         default: "1"
         options: ["1", "2", "3", "8"]
       size:
-        description: Picture size. 4K is about 1.2 GB an hour, 1080p about a third of that.
+        description: Picture size. 4K is 1.5 to 3 GB an hour depending on the look (rain is the heaviest); 1080p is about a quarter of that. Eight hours needs 1080p.
         type: choice
         default: 4K
         options: [4K, 1080p]
@@ -68,6 +68,15 @@ jobs:
       SIZE: ${{ inputs.size }}
       WHERE: ${{ inputs.where }}
     steps:
+      - name: Check the build fits on the machine
+        run: |
+          # 4K is up to 3 GB an hour; eight hours of it is more than the
+          # runner's disk holds. Say so now rather than after an hour of rendering.
+          if [ "$SIZE" = 4K ] && [ "$HOURS" -ge 8 ]; then
+            echo "::error::8 hours at 4K is around 20 GB, more than this machine holds. Pick 1080p for 8 hours, or 4K for up to 3."
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4

@@ -57,10 +57,18 @@ A release is public, like the repository. That is fine — the video is going
 to be public on YouTube anyway — but it does put the file on the
 repository's front page, so pick `artifact` if you would rather it did not.
 
-Sizes, so you can plan: 4K rain is the heaviest picture at roughly 1.5 GB an
-hour; the other four are lighter. 1080p is about a third of 4K. So 4K fits an
-hour in a release, 1080p fits three, and eight hours of anything goes to an
-artifact.
+Sizes, so you can plan. Measured on the rain loop, the heaviest of the five
+(thin bright streaks are the hardest thing there is to compress):
+
+| | 4K | 1080p |
+|---|---|---|
+| Rain, per hour | about 2.8 GB | about 0.7 GB |
+| Fits in a release (2 GB) | no — artifact | up to 2 hours |
+| 8 hours | too big for the build machine; the run stops at once and says so | about 5.6 GB, artifact |
+
+The other four looks are darker and stiller and come out smaller, so a 4K
+hour of space or embers may well fit a release. The run's summary always
+says where the file went.
 
 ## Doing it on a computer instead
 
