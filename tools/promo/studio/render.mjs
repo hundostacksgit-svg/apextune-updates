@@ -137,6 +137,7 @@ const seekTo = (page, t) => page.evaluate((t) => { window.seek(t); return new Pr
 
 async function renderVideo(spec, fmt) {
   const { ctx, page, cdp, duration } = await openComp(spec.id, fmt);
+  const [w, h] = SIZES[fmt] || SIZES.tiktok;
   const dir = path.join(OUT, fmt); fs.mkdirSync(dir, { recursive: true });
   const out = path.join(dir, `${spec.id}${COLD ? '-cold' : ''}${SILENT ? '-silent' : ''}${RES}${FPS !== 30 ? `-${FPS}fps` : ''}.mp4`);
   /*
@@ -183,7 +184,13 @@ async function renderVideo(spec, fmt) {
   const t0 = Date.now();
   for (let i = 0; i < total; i++) {
     await seekTo(page, i / FPS);
-    const { data } = await cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 93 });
+    /* The clip's `scale` is what makes this a device-pixel capture. Without
+       it CDP hands back CSS pixels — 1080x1920 — however many device pixels
+       the context was given, and a "4K" render silently is not. Playwright's
+       own page.screenshot sets this for you, which is why the check frames
+       were the right size while the video was not. */
+    const { data } = await cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: 93,
+      clip: { x: 0, y: 0, width: w, height: h, scale: SCALE } });
     if (!ff.stdin.write(Buffer.from(data, 'base64'))) await new Promise((r) => ff.stdin.once('drain', r));
     if (i && i % 300 === 0) console.log(`  [${spec.id}] ${i}/${total} frames, ${((Date.now() - t0) / 1000).toFixed(0)}s`);
   }
