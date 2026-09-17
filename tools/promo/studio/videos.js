@@ -1155,6 +1155,25 @@ export const VIDEOS = [
       { type: 'slam', dur: Number((REF3_LEN - REF3_END).toFixed(3)), kick: '$19.99 once. no subscription. ever.', noflash: true },
     ],
   },
+
+  /* ===================================================================
+   * show-01-genesis — the proof piece. Nothing in it is a photograph, a
+   * screenshot or a clip: seven thousand particles, a projected torus, type on
+   * the beat over noise, grids and streaks, and the mark assembled out of the
+   * particles at the end. Render it with --scale 2 --fps 120 for real 4K at
+   * 120 frames a second, or --scale 4 for 8K. Fourteen and a half seconds at
+   * 132 BPM so it sits on the phonk bed the app made itself.
+   * =================================================================== */
+  {
+    id: 'show-01-genesis', title: 'Genesis: a picture from nothing', music: 'phonk-132-24s',
+    wm: 'corner', formats: ['tiktok'],
+    scenes: [
+      { type: 'gen', dur: 14.5, bpm: 132, particles: 7000,
+        phases: { form: 2.7, hits: 5.45, resolve: 9.1, card: 12.7 },
+        hits: ['4K', '120 FPS', 'NO FOOTAGE', 'NO STOCK', 'NO CAMERA', 'PURE MATH', 'DRAWN', 'LIVE'],
+        kick: '$19.99 once. no subscription. ever.' },
+    ],
+  },
 ];
 
 /* =============== stills: Instagram feed posts and the YouTube thumbnail =============== */

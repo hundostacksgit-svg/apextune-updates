@@ -26,6 +26,15 @@ node tools/promo/studio/render.mjs --fmt yt --video yt-showcase --out $PROMO_ASS
 node tools/promo/studio/render.mjs --stills --out $PROMO_ASSETS/out
 ```
 
+## Resolution and frame rate
+
+`--scale 2` renders 4K (2160×3840 for TikTok), `--scale 4` renders 8K, at the
+same layout: the browser is told the device has more pixels per logical pixel,
+so text and vectors are sharp at full resolution and a canvas scene allocates
+at device pixels. `--fps 120` does what it says. The output file carries the
+resolution and rate in its name (`-4k-120fps`). `show-01-genesis` is the piece
+built for this — see the promo kit.
+
 ## Checking the specs
 
 `verify.mjs` reads `videos.js` and resolves everything it claims, without

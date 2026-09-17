@@ -482,6 +482,43 @@ the reference's audio muxed on for checking only — the track is not ours.
 
 ---
 
+## The proof piece — 4K, 120 frames a second, from nothing
+
+`out/tiktok/show-01-genesis-silent-4k-120fps.mp4` · 14.5s · 2160×3840 · 120fps ·
+silent. `show-01-genesis-4k-120fps-bed.mp4` is the same with the app's own
+132 BPM phonk under it.
+
+Nothing in it is a photograph, a screenshot or a clip. Seven thousand particles
+on paths that are functions of time and a seed; a torus projected and rotated;
+type slammed on the beat over backdrops that are noise, a hex grid, radial
+streaks and scanlines; and at the end the particles fly to the silhouette of
+the mark — the one thing read from disk, an SVG sampled once for its points.
+Every frame is a pure function of its time, so any frame renders on its own
+and the same frame always comes out the same.
+
+**Why it is really 4K and really 120.** The composition is laid out at
+1080×1920 and rendered with the browser told the device has two pixels per
+logical pixel — the way a phone screen works — so text, vectors and the canvas
+all come out at 2160×3840, not upscaled from 1080. `--fps 120` renders 1,740
+frames for the fourteen seconds. Motion blur is not a filter: each particle is
+drawn at three recent times along its own path, fading, which is what a
+shutter would have seen.
+
+```
+node tools/promo/studio/render.mjs --fmt tiktok --silent --scale 2 --fps 120 --video show-01-genesis --out $PROMO_ASSETS/out
+node tools/promo/studio/render.mjs --fmt tiktok --silent --scale 4 --fps 60  --video show-01-genesis --out $PROMO_ASSETS/out   # 8K
+```
+
+`--scale 4` is 4320×7680. It works the same way and takes about four times as
+long a frame; a fourteen-second piece at 60fps is a coffee, at 120 is a lunch.
+
+**What it is for.** Not to post as-is — a phonk logo reveal from an unknown
+account is still an ad. It is the thing to send someone who asks "can you
+actually make graphics," and it is the engine for the next kind of video: any
+`gen` scene can take any words on the beat and any silhouette at the end.
+
+---
+
 ## Four sets of three
 
 Twenty-six videos in one register is one experiment run twenty-six times. The

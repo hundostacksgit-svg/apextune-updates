@@ -39,6 +39,18 @@ const FMT = String(opt('fmt', 'tiktok'));
 const WANT = String(opt('video', 'all'));
 const OUT = path.resolve(String(opt('out', path.join(process.env.HOME || '/tmp', 'omnidx-promo', 'out'))));
 const FPS = Number(opt('fps', 30));
+/*
+ * --scale 2 renders 4K, --scale 4 renders 8K, at the same layout.
+ *
+ * The composition is laid out in 1080x1920 logical pixels and every scene is
+ * written against those numbers. Rather than re-lay it out at 2160x3840 — which
+ * would double every constant in every scene — the browser is told the device
+ * has more pixels per logical pixel, exactly as a phone screen does. Text and
+ * vectors come out sharp at the full resolution; a canvas scene reads the
+ * ratio from the page URL and allocates at device pixels so it does too.
+ */
+const SCALE = Number(opt('scale', 1));
+const RES = SCALE >= 4 ? '-8k' : SCALE >= 2 ? '-4k' : '';
 const JOBS = Number(opt('jobs', 2));
 const STILL_MODE = args.includes('--stills');
 /*
@@ -104,13 +116,13 @@ const browser = await chromium.launch({ executablePath: CHROME, args: ['--no-san
 
 async function openComp(id, fmt) {
   const [w, h] = SIZES[fmt] || SIZES.tiktok;
-  const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1 });
+  const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: SCALE });
   const page = await ctx.newPage();
   page.on('pageerror', (e) => console.error(`  [${id}] page error: ${e.message}`));
   page.on('console', (m) => { if (m.type() === 'error') console.error(`  [${id}] console: ${m.text()}`); });
   /* The frame rate goes to the page so a cut can land on the nearest frame
      rather than the next one — see the half-frame tolerance in comp.js. */
-  await page.goto(`http://127.0.0.1:${PORT}/tools/promo/studio/comp.html?video=${encodeURIComponent(id)}&fmt=${fmt}&fps=${FPS}${COLD ? '&cold=1' : ''}`, { waitUntil: 'load' });
+  await page.goto(`http://127.0.0.1:${PORT}/tools/promo/studio/comp.html?video=${encodeURIComponent(id)}&fmt=${fmt}&fps=${FPS}&dpr=${SCALE}${COLD ? '&cold=1' : ''}`, { waitUntil: 'load' });
   const t0 = Date.now();
   while (!(await page.evaluate(() => window.READY === true))) {
     if (Date.now() - t0 > 30000) throw new Error(`${id}: composition never became ready`);
@@ -126,7 +138,7 @@ const seekTo = (page, t) => page.evaluate((t) => { window.seek(t); return new Pr
 async function renderVideo(spec, fmt) {
   const { ctx, page, cdp, duration } = await openComp(spec.id, fmt);
   const dir = path.join(OUT, fmt); fs.mkdirSync(dir, { recursive: true });
-  const out = path.join(dir, `${spec.id}${COLD ? '-cold' : ''}${SILENT ? '-silent' : ''}.mp4`);
+  const out = path.join(dir, `${spec.id}${COLD ? '-cold' : ''}${SILENT ? '-silent' : ''}${RES}${FPS !== 30 ? `-${FPS}fps` : ''}.mp4`);
   /*
    * A tour is narrated and has no music; everything else has music and no
    * narration. The voice is not faded out at the end — a fade over the last
@@ -162,7 +174,8 @@ async function renderVideo(spec, fmt) {
     '-y', '-loglevel', 'error',
     '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-',
     ...(wav ? ['-i', wav, '-filter_complex', audio, '-map', '0:v', '-map', '[a]'] : ['-map', '0:v', '-an']),
-    '-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-pix_fmt', 'yuv420p', '-r', String(FPS),
+    '-c:v', 'libx264', '-preset', SCALE > 1 ? 'fast' : 'medium', '-crf', '18', '-pix_fmt', 'yuv420p', '-r', String(FPS),
+    ...(SCALE > 1 ? ['-level', '6.2', '-x264-params', 'threads=8'] : []),
     ...(wav ? ['-c:a', 'aac', '-b:a', '192k', '-shortest'] : []),
     '-movflags', '+faststart', out,
   ], { stdio: ['pipe', 'inherit', 'inherit'] });

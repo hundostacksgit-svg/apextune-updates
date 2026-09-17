@@ -610,6 +610,208 @@ const BUILD = {
   },
 
   /*
+   * A picture made out of nothing.
+   *
+   * No footage, no screenshots, no stock: seven thousand particles on paths
+   * that are functions of time and a seed, a wireframe drawn by projecting a
+   * torus, type slammed on the beat over backdrops that are noise, grids and
+   * streaks, and at the end the particles fly to the silhouette of the mark,
+   * which is the one thing loaded from disk — an SVG, sampled once to get the
+   * points. Everything is a pure function of the frame time, so any frame can
+   * be rendered on its own and the same frame always comes out the same.
+   *
+   * Drawn on a canvas allocated at device pixels: at --scale 2 the frame is
+   * 2160x3840 and every particle, line and glyph is placed at that resolution.
+   * Motion blur is not a filter — each particle is drawn at three recent times
+   * along its own path, fading, which is what a shutter would have seen.
+   */
+  gen(s) {
+    const root = el('div', 'gen');
+    const canvas = document.createElement('canvas');
+    root.appendChild(canvas);
+    /* In the DOM as an <img> so the ready gate waits for it like any other. */
+    const src = el('img', 'src'); src.src = `${A}/mark.svg`;
+    root.appendChild(src);
+    const dpr = Number(q.get('dpr')) || 1;
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    const g = canvas.getContext('2d', { alpha: false });
+
+    const N = s.particles ?? 7000;
+    const BPM = s.bpm || 132, BEAT = 60 / BPM;
+    /* A seeded generator, so the same frame is always the same frame. */
+    let seed = 1337;
+    const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+    const P = Array.from({ length: N }, (_, i) => ({ a: rnd(), b: rnd(), c: rnd(), d: rnd(), i }));
+
+    /* Backdrop noise, once: a 256 tile of seeded values. */
+    const tile = document.createElement('canvas'); tile.width = tile.height = 256;
+    const tg = tile.getContext('2d'); const img = tg.createImageData(256, 256);
+    for (let k = 0; k < img.data.length; k += 4) { const v = 20 + rnd() * 60; img.data[k] = v; img.data[k + 1] = v * 1.1; img.data[k + 2] = v * 1.5; img.data[k + 3] = 255; }
+    tg.putImageData(img, 0, 0);
+
+    /* The mark's silhouette, sampled on first use once the image is decoded. */
+    let marks = null;
+    const sampleMark = () => {
+      const c = document.createElement('canvas'); c.width = c.height = 160;
+      const x = c.getContext('2d'); x.drawImage(src, 0, 0, 160, 160);
+      const d = x.getImageData(0, 0, 160, 160).data; const pts = [];
+      /* Alpha over 200: the mark's outer rings are translucent and sampling
+         them spread the particles over a shape nobody could read. The solid
+         pill and the play glyph are the silhouette. */
+      for (let y = 0; y < 160; y++) for (let xx = 0; xx < 160; xx++) if (d[(y * 160 + xx) * 4 + 3] > 200) pts.push([(xx - 80) / 80, (y - 80) / 80]);
+      /* Shuffle deterministically so particles fill the shape evenly. */
+      for (let k = pts.length - 1; k > 0; k--) { const j = Math.floor(rnd() * (k + 1)); [pts[k], pts[j]] = [pts[j], pts[k]]; }
+      marks = pts;
+    };
+
+    /* Phase boundaries, in seconds. Hits land on beats. */
+    const T = s.phases || { form: 2.7, hits: 5.45, resolve: 9.1, card: 12.7 };
+    const HITS = s.hits || ['4K', '120 FPS', 'NO FOOTAGE', 'NO STOCK', 'NO CAMERA', 'PURE MATH', 'DRAWN', 'LIVE'];
+    const ease = (x) => x < 0 ? 0 : x > 1 ? 1 : 1 - Math.pow(1 - x, 3);
+    const sm = (x) => x < 0 ? 0 : x > 1 ? 1 : x * x * (3 - 2 * x);
+
+    /* Where a particle is at time l, by phase, blended across boundaries. */
+    const cx = W / 2, cy = H / 2 - 60;
+    const pos = (p, l) => {
+      /* ignition: a spiral inward onto a ring */
+      const u0 = ease(l / T.form);
+      const ang = p.a * Math.PI * 6 + l * (0.7 + p.b * 0.3);
+      const rad = lerp(1500 + p.c * 500, 340 + (p.d - 0.5) * 30, u0);
+      const x0 = cx + Math.cos(ang) * rad, y0 = cy + Math.sin(ang) * rad * 0.62;
+      if (l < T.form - 0.5) return [x0, y0, 0];
+      /* form: a torus, rotating, projected */
+      const u = p.a * Math.PI * 2, v = p.b * Math.PI * 2;
+      const R = 400, r = 150;
+      let X = (R + r * Math.cos(v)) * Math.cos(u), Y = (R + r * Math.cos(v)) * Math.sin(u), Z = r * Math.sin(v);
+      const rx = l * 0.9, ry = l * 0.55;
+      let y1 = Y * Math.cos(rx) - Z * Math.sin(rx), z1 = Y * Math.sin(rx) + Z * Math.cos(rx);
+      let x2 = X * Math.cos(ry) + z1 * Math.sin(ry), z2 = -X * Math.sin(ry) + z1 * Math.cos(ry);
+      const per = 1400 / (1400 + z2);
+      const x1 = cx + x2 * per, yy = cy + y1 * per;
+      const b1 = sm((l - (T.form - 0.5)) / 0.7);
+      let xa = lerp(x0, x1, b1), ya = lerp(y0, yy, b1), za = z2 * b1;
+      if (l < T.resolve - 0.3) return [xa, ya, za];
+      /* resolve: to the silhouette, with a little life left in it */
+      const m = marks ? marks[p.i % marks.length] : [0, 0];
+      const S = 520;
+      const jit = Math.sin(l * 3 + p.c * 20) * 2;
+      const x3 = cx + m[0] * S + jit, y3 = cy - 150 + m[1] * S + Math.cos(l * 2.6 + p.d * 20) * 2;
+      const b2 = ease((l - (T.resolve - 0.3)) / 1.1);
+      return [lerp(xa, x3, b2), lerp(ya, y3, b2), za * (1 - b2)];
+    };
+
+    const hitAt = (l) => Math.floor((l - T.hits) / BEAT);
+    const beatPulse = (l) => { const t = (l / BEAT) % 1; return 1 - t; };
+
+    return { el: root, update(l) {
+      if (!marks && src.complete && src.naturalWidth) sampleMark();
+      const D = dpr;
+      g.setTransform(D, 0, 0, D, 0, 0);
+      g.globalCompositeOperation = 'source-over';
+      g.fillStyle = '#02030a'; g.fillRect(0, 0, W, H);
+
+      const inHits = l >= T.hits && l < T.resolve;
+      const hit = inHits ? Math.max(0, hitAt(l)) : -1;
+      const hp = inHits ? ((l - T.hits) % BEAT) / BEAT : 0;
+
+      /* ---- backdrops for the hits: each a different thing drawn from nothing */
+      if (inHits) {
+        const kind = hit % 4;
+        g.save();
+        if (kind === 0) { g.globalAlpha = 0.55; const pat = g.createPattern(tile, 'repeat'); g.fillStyle = pat; g.translate((l * 300) % 256, (l * 170) % 256); g.fillRect(-512, -512, W + 1024, H + 1024); }
+        else if (kind === 1) { g.strokeStyle = 'rgba(80,140,255,.28)'; g.lineWidth = 1.2; const h = 64, w = h * 0.866; for (let y = -h; y < H + h; y += h * 0.75) for (let x = -w; x < W + w; x += w) { const ox = ((y / (h * 0.75)) % 2) ? w / 2 : 0; g.beginPath(); for (let k = 0; k < 6; k++) { const a = Math.PI / 3 * k + Math.PI / 6; g.lineTo(x + ox + Math.cos(a) * h / 2, y + Math.sin(a) * h / 2); } g.closePath(); g.stroke(); } }
+        else if (kind === 2) { g.translate(cx, cy); g.rotate(l * 0.3); for (let k = 0; k < 90; k++) { const a = k / 90 * Math.PI * 2; g.strokeStyle = `rgba(110,160,255,${0.05 + 0.25 * ((k * 7) % 5) / 5})`; g.lineWidth = 2; g.beginPath(); g.moveTo(Math.cos(a) * 80, Math.sin(a) * 80); g.lineTo(Math.cos(a) * 1600, Math.sin(a) * 1600); g.stroke(); } }
+        else { g.fillStyle = 'rgba(90,150,255,.22)'; for (let y = ((l * 400) % 8); y < H; y += 8) g.fillRect(0, y, W, 2); }
+        g.restore();
+      }
+
+      /* ---- the glow behind the subject */
+      const glowR = l < T.form ? lerp(60, 420, ease(l / T.form)) : l < T.resolve ? 520 : 560;
+      const glow = g.createRadialGradient(cx, cy - 20, 0, cx, cy - 20, glowR);
+      const gi = l < T.form ? ease(l / T.form) * 0.9 : inHits ? 0.35 : 0.9;
+      glow.addColorStop(0, `rgba(60,130,255,${0.55 * gi})`); glow.addColorStop(0.5, `rgba(40,80,220,${0.18 * gi})`); glow.addColorStop(1, 'rgba(0,0,0,0)');
+      g.fillStyle = glow; g.fillRect(0, 0, W, H);
+
+      /* ---- shockwave on every beat in the form and resolve phases */
+      if (l >= T.form - 0.2 && l < T.hits) {
+        const bt = (l / BEAT) % 1, k = Math.floor(l / BEAT);
+        const rr = 200 + bt * 1400;
+        g.strokeStyle = `rgba(120,200,255,${(1 - bt) * 0.35})`; g.lineWidth = 3 + (1 - bt) * 6;
+        g.beginPath(); g.ellipse(cx, cy, rr, rr * 0.62, 0, 0, Math.PI * 2); g.stroke();
+        if (k % 2 === 0) { g.strokeStyle = `rgba(255,90,140,${(1 - bt) * 0.2})`; g.lineWidth = 2; g.beginPath(); g.ellipse(cx, cy, rr * 0.7, rr * 0.7 * 0.62, 0, 0, Math.PI * 2); g.stroke(); }
+      }
+
+      /* ---- the particles, with a three-sample shutter */
+      g.globalCompositeOperation = 'lighter';
+      const shake = inHits ? (1 - hp) * 22 : 0;
+      const sx = Math.sin(l * 97) * shake, sy = Math.cos(l * 83) * shake;
+      const dt = 1 / 240;
+      const alive = inHits ? 0.35 : 1;
+      for (let k = 2; k >= 0; k--) {
+        const t = l - k * dt;
+        const a = (k === 0 ? 0.9 : k === 1 ? 0.45 : 0.2) * alive;
+        for (const p of P) {
+          if (inHits && p.a > 0.35) continue;
+          const [x, y, z] = pos(p, t);
+          const depth = clamp((z + 600) / 1200, 0, 1);
+          const settled = l >= T.resolve ? ease((l - T.resolve) / 1.2) : 0;
+          const sz = (1.4 + p.c * 1.8) * (0.6 + depth * 0.8) * (1 + settled * 0.9);
+          const warm = p.d > 0.93;
+          const aa = a * (0.35 + depth * 0.65) * (1 + settled * 0.6);
+          g.fillStyle = warm ? `rgba(255,120,170,${a * (0.5 + depth * 0.5)})` : `rgba(${80 + depth * 60},${150 + depth * 80},255,${Math.min(1, aa)})`;
+          g.fillRect(x + sx - sz / 2, y + sy - sz / 2, sz, sz);
+        }
+      }
+
+      /* ---- the type: slammed on the beat, split three ways */
+      g.globalCompositeOperation = 'lighter';
+      if (inHits && hit < HITS.length) {
+        const word = HITS[hit];
+        const size = word.length > 8 ? 150 : word.length > 4 ? 200 : 330;
+        const sc = lerp(1.35, 1, ease(hp * 3));
+        const split = (1 - Math.min(1, hp * 3)) * 28;
+        g.save(); g.translate(cx + sx, cy + 40 + sy); g.scale(sc, sc);
+        g.font = `800 ${size}px Sora, Inter, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.fillStyle = 'rgba(255,60,90,.9)'; g.fillText(word, split, 0);
+        g.fillStyle = 'rgba(0,220,255,.9)'; g.fillText(word, -split, 0);
+        g.fillStyle = '#ffffff'; g.fillText(word, 0, 0);
+        g.restore();
+        /* A flash on the first two frames of each hit. */
+        if (hp < 0.05) { g.globalCompositeOperation = 'source-over'; g.fillStyle = `rgba(255,255,255,${0.85 * (1 - hp / 0.05)})`; g.fillRect(0, 0, W, H); }
+      }
+
+      /* ---- the card: drawn, not DOM, so it is on the same pixels */
+      if (l >= T.card - 0.2) {
+        const cp = ease((l - (T.card - 0.2)) / 0.5);
+        g.globalCompositeOperation = 'source-over';
+        g.save(); g.translate(cx, cy + 520); g.globalAlpha = cp;
+        g.font = '800 132px Sora, Inter, sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle';
+        /* Measured, so the two halves sit flush whatever the face renders at. */
+        const w1 = g.measureText('omnidx').width, w2 = g.measureText('.net').width;
+        const x0 = -(w1 + w2) / 2;
+        const grad = g.createLinearGradient(x0, 0, x0 + w1, 0); grad.addColorStop(0, '#2F7DFF'); grad.addColorStop(1, '#69E0FF');
+        g.fillStyle = grad; g.fillText('omnidx', x0, 0);
+        g.fillStyle = '#ffffff'; g.fillText('.net', x0 + w1, 0);
+        g.textAlign = 'center';
+        g.font = '600 46px Inter, sans-serif'; g.fillStyle = 'rgba(255,255,255,.7)';
+        g.fillText(s.kick || '$19.99 once. no subscription. ever.', 0, 120);
+        /* the light sweep across the wordmark */
+        const swp = ((l - T.card) * 900) % 1600 - 800;
+        g.globalCompositeOperation = 'lighter';
+        const lg = g.createLinearGradient(swp - 120, 0, swp + 120, 0); lg.addColorStop(0, 'rgba(255,255,255,0)'); lg.addColorStop(0.5, 'rgba(255,255,255,.35)'); lg.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = lg; g.fillRect(-400, -80, 800, 160);
+        g.restore();
+      }
+
+      /* ---- vignette and a hair of grain, last */
+      g.globalCompositeOperation = 'source-over';
+      const vg = g.createRadialGradient(cx, cy, H * 0.25, cx, cy, H * 0.75);
+      vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.65)');
+      g.fillStyle = vg; g.fillRect(0, 0, W, H);
+    } };
+  },
+
+  /*
    * The mark, held, with the words landing one at a time.
    *
    * The third sent-in reference: eight seconds of a dark red room, a figure
