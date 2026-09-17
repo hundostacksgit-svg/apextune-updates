@@ -80,8 +80,8 @@ jobs:
           sudo apt-get update -q
           sudo apt-get install -y -q ffmpeg
           npm install -g playwright@1.56.1
-          npx playwright install --with-deps chromium
           PW="$(npm root -g)/playwright"
+          node "$PW/cli.js" install --with-deps chromium
           echo "PLAYWRIGHT_MODULE=$PW" >> "$GITHUB_ENV"
           echo "CHROME=$(node -e "console.log(require('$PW').chromium.executablePath())")" >> "$GITHUB_ENV"
           ffmpeg -version | head -1
