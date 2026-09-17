@@ -1174,6 +1174,53 @@ export const VIDEOS = [
         kick: '$19.99 once. no subscription. ever.' },
     ],
   },
+
+  /* ===================================================================
+   * proof-01-nosub — a different body on the principle the mogs proved.
+   *
+   * The mogs are the only videos that beat the first test batch, and the
+   * reason is the first second: something everybody recognises before the
+   * app is named. This keeps that and changes everything after it. It opens
+   * on the dialog every editor puts in front of the export button — no brand
+   * on it, the shape is the recognition — and cuts out of it into the app
+   * doing six real things with visible results, one per four beats, a real
+   * cursor doing the tapping, at the mog's hard-cut rhythm. Rendered with
+   * --scale 2 so every crop of the 2x screenshots lands at native 4K.
+   *
+   * Every number on screen is one already established elsewhere in this
+   * file or on the pricing page. Nothing is claimed that the build cannot do.
+   * =================================================================== */
+  {
+    id: 'proof-01-nosub', title: 'Proof: the dialog, then the editor', music: 'phonk-132-24s',
+    wm: 'corner', formats: ['tiktok'],
+    scenes: [
+      { type: 'paywall', dur: 2.73, shot: 'editor', cap: 'every other editor.' },
+
+      /* Six things with a result on screen, four beats each, on the marks
+         shots.mjs measured — the cursor lands on the actual control. */
+      { type: 'wipe', beats: 5, pair: 'erase', labels: ['tap it', 'gone'], cap: 'tap the thing. <em>it is gone.</em>', noflash: true },
+      { type: 'app', beats: 5, shot: 'panel-ai-plan', box: 'tall', bleed: true, tag: 'one sentence in', view: hold({ cx: 0.13, cy: 0.5, w: 0.3 }, 0, 2.3),
+        cursor: [{ at: 0.2, x: 0.16, y: 0.55 }, { at: 1.0, on: 'doit', click: true }],
+        spots: [{ at: 1.15, on: 'doit', label: 'it does the whole plan', until: 2.2 }],
+        cap: 'one sentence. <em>it plans the edit.</em>' },
+      { type: 'app', beats: 5, shot: 'panel-audio', box: 'tall', bleed: true, tag: 'the sound panel', view: hold(V.panel, 0, 2.3),
+        spots: [{ at: 0.3, on: 'beats', label: '58 beats detected' }],
+        cursor: [{ at: 0.6, x: 0.14, y: 0.45 }, { at: 1.4, on: 'cut', click: true }],
+        cap: 'drop the clips. <em>it cuts on the beat.</em>' },
+      { type: 'app', beats: 5, shot: 'panel-color', box: 'tall', bleed: true, tag: 'the colour page', view: hold(V.panelTop, 0, 2.3),
+        spots: [{ at: 0.4, on: 'scope', label: 'a real waveform, live' }],
+        cursor: [{ at: 0.8, x: 0.15, y: 0.5 }, { at: 1.6, on: 'look', click: true }],
+        cap: 'waveform. vectorscope. <em>parade.</em>' },
+      { type: 'app', beats: 5, shot: 'export', box: 'wide', bleed: true, tag: 'export', view: hold(V.dialog, 0, 2.3),
+        spots: [{ at: 0.3, on: 'preset', label: 'every platform at once' }],
+        cursor: [{ at: 0.7, x: 0.55, y: 0.6 }, { at: 1.5, on: 'go', click: true }],
+        cap: 'no watermark. <em>on any edition.</em>' },
+      { type: 'app', beats: 5, shot: 'phone', frame: 'phone', box: 'tall', tag: 'same project, on a phone',
+        view: hold(V.whole, 0, 2.3), cap: 'and it is on your phone.' },
+
+      { type: 'slam', dur: 3.2, kick: '$19.99 once. no subscription. ever.', noflash: true },
+    ],
+  },
 ];
 
 /* =============== stills: Instagram feed posts and the YouTube thumbnail =============== */

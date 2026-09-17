@@ -610,6 +610,46 @@ const BUILD = {
   },
 
   /*
+   * The dialog everybody has seen.
+   *
+   * Not any particular editor's — the shape is the recognition: a blurred
+   * timeline, a card, a lock, a list of ticks, a big warm button with "/month"
+   * on it. It is the first thing on screen because it is the one thing every
+   * viewer already knows, and the cut out of it is the whole argument. The
+   * amount is scribbled out: the word is "month", and a number that is not on
+   * our pricing page does not go on screen.
+   */
+  paywall(s) {
+    const root = el('div', 'paywall');
+    const behind = el('div', 'behind'); behind.style.backgroundImage = `url(${A}/shots/${s.shot || 'editor'}.png)`;
+    const card = el('div', 'card');
+    card.innerHTML = `<div class="lock">🔒</div>
+      <h2>${s.title || 'Upgrade to Pro'}</h2>
+      <p>${s.line || 'This feature is only available with a Pro subscription.'}</p>
+      <div class="perks">${(s.perks || ['Export without watermark', '4K export', 'All effects and templates']).map((x) => `<div>${x}</div>`).join('')}</div>
+      <div class="sub">Subscribe · <span class="amt">$9.99</span>/month</div>
+      <div class="small">Cancel anytime. Renews automatically.</div>`;
+    const cur = el('div', 'cursor', CURSOR_SVG);
+    root.append(behind, card, cur);
+    const dur = s.dur || 2.7;
+    return { el: root, update(l) {
+      const p = dur ? l / dur : 0;
+      /* The card lands, then the whole thing pushes in slowly — a dialog you are
+         stuck looking at. */
+      const inp = outBack(Math.min(1, l / 0.32));
+      card.style.opacity = String(Math.min(1, l / 0.12));
+      card.style.transform = `translate(-50%, -50%) scale(${lerp(0.86, 1, inp) * lerp(1, 1.06, p)})`;
+      behind.style.transform = `scale(${lerp(1.02, 1.08, p)})`;
+      /* The cursor drifts in from the corner and hovers the button: nobody taps
+         it, which is the joke. */
+      const cp = outCubic(Math.min(1, Math.max(0, (l - 0.5) / 1.4)));
+      const x = lerp(W * 0.86, W * 0.62, cp) + Math.sin(l * 2.1) * 4;
+      const y = lerp(H * 0.86, H * 0.60, cp) + Math.cos(l * 1.7) * 3;
+      cur.style.transform = `translate(${x}px, ${y}px)`;
+    } };
+  },
+
+  /*
    * A picture made out of nothing.
    *
    * No footage, no screenshots, no stock: seven thousand particles on paths

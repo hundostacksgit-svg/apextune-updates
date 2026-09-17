@@ -519,6 +519,36 @@ actually make graphics," and it is the engine for the next kind of video: any
 
 ---
 
+## The proof piece — the dialog, then the editor
+
+`out/tiktok/proof-01-nosub-silent-4k-60fps.mp4` · 20s · 2160×3840 · 60fps ·
+silent. `-bed` has the app's own phonk under it; `-delivery` is the same
+compressed under 30 MB.
+
+The three mogs are the only videos that have beaten the first test batch, and
+the reason is the first second: something everybody recognises before the app
+is named. This keeps that principle and changes the body.
+
+| | |
+|---|---|
+| **0 – 2.7s** | The dialog every editor puts in front of the export button. No brand on it — the shape is the recognition. A lock, three ticks, a warm button with */month*, the amount scribbled out (a number that is not on our pricing page does not go on screen). The cursor drifts to the button and nobody taps it. |
+| **2.7 – 16.4s** | Hard cut. Six things the editor does, with the result on screen, four beats each: tap-to-remove as a before/after wipe; one sentence → the AI plan, cursor on *Do it*; the sound panel with *58 beats detected*, cursor on *Cut to the beat*; the colour page with a live waveform; export with *every platform at once* and no watermark; the same project on a phone. Full-bleed, so every crop of the 2× screenshots lands at native 4K. The cursor lands on the measured control every time. |
+| **16.4 – 19.6s** | `omnidx.net` · `$19.99 once. no subscription. ever.` |
+
+Why it reads as real rather than generated: nothing in it is a rendered
+graphic. Every frame after the dialog is the actual editor's actual panels, a
+cursor doing what a hand would do, and results a viewer can check by opening
+the app. The 4K is what makes the UI text sharp enough to read on a phone,
+which is the difference between "an ad" and "a screen recording."
+
+**Caption**
+
+> the popup you know. then the editor that doesn't have one. omnidx.net
+
+`#capcut #videoediting #editor #editing #nosubscription`
+
+---
+
 ## Four sets of three
 
 Twenty-six videos in one register is one experiment run twenty-six times. The

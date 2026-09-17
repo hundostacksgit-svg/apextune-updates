@@ -500,3 +500,32 @@ img { display: block; }
 .gen { position: absolute; inset: 0; overflow: hidden; background: #02030a; }
 .gen canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .gen .src { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+/* ---- paywall: the thing everybody recognises ----
+   No brand on it, because it does not need one: every editor on a phone puts
+   this dialog in front of the export button, and the shape of it is the
+   recognition. A blurred timeline behind, a card, a lock, a monthly price with
+   the number scribbled out — the point is the word "month", not the amount,
+   and a number that is not on our pricing page does not go on screen. */
+.paywall { position: absolute; inset: 0; overflow: hidden; background: #0b0d12; }
+.paywall .behind { position: absolute; inset: -4%; background-size: cover; background-position: center;
+  filter: blur(18px) brightness(.55) saturate(.8); transform: scale(1.02); }
+.paywall .card { position: absolute; left: 50%; top: 50%; width: 760px; transform: translate(-50%, -50%);
+  background: #1a1c22; border: 1px solid rgba(255,255,255,.12); border-radius: 28px; padding: 46px 44px 40px;
+  box-shadow: 0 40px 120px rgba(0,0,0,.7); text-align: center; will-change: transform, opacity; }
+.paywall .lock { width: 84px; height: 84px; margin: 0 auto 22px; border-radius: 50%;
+  background: linear-gradient(135deg, #ff9d3d, #ff4d6d); display: grid; place-items: center; font-size: 40px; }
+.paywall .card h2 { margin: 0 0 12px; font-family: var(--head); font-weight: 800; font-size: 46px; letter-spacing: -.02em; color: #fff; }
+.paywall .card p { margin: 0 0 30px; font-size: 26px; line-height: 1.35; color: rgba(255,255,255,.62); }
+.paywall .perks { display: grid; gap: 12px; margin: 0 0 30px; text-align: left; font-size: 24px; color: rgba(255,255,255,.85); }
+.paywall .perks div::before { content: "✓"; color: #ffb454; margin-right: 12px; font-weight: 800; }
+.paywall .sub { display: flex; align-items: center; justify-content: center; gap: 12px; height: 92px; border-radius: 18px;
+  background: linear-gradient(135deg, #ff9d3d, #ff4d6d); color: #fff; font-family: var(--head); font-weight: 800; font-size: 30px; }
+.paywall .sub .amt { position: relative; display: inline-block; padding: 0 6px; }
+/* the scribble over the amount */
+.paywall .sub .amt::after { content: ""; position: absolute; left: -4px; right: -4px; top: 40%; height: 14px; background: #fff;
+  border-radius: 6px; transform: rotate(-4deg); opacity: .95; }
+.paywall .small { margin-top: 16px; font-size: 20px; color: rgba(255,255,255,.4); }
+.paywall .cursor { position: absolute; width: 44px; height: 44px; z-index: 5; will-change: transform;
+  filter: drop-shadow(0 6px 12px rgba(0,0,0,.6)); }
+.paywall .cursor svg { width: 100%; height: 100%; }
