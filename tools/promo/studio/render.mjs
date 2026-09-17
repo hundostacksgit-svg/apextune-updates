@@ -52,6 +52,13 @@ const FPS = Number(opt('fps', 30));
 const SCALE = Number(opt('scale', 1));
 const RES = SCALE >= 4 ? '-8k' : SCALE >= 2 ? '-4k' : '';
 const JOBS = Number(opt('jobs', 2));
+/*
+ * --crf: x264 quality, 18 by default (visually lossless for a promo that gets
+ * posted once). An ambient loop is repeated for hours with stream copy, so its
+ * bitrate is the long file's bitrate; 22 halves the file and nobody can tell
+ * on a slow dark picture that YouTube re-encodes anyway.
+ */
+const CRF = String(Number(opt('crf', 18)));
 const STILL_MODE = args.includes('--stills');
 /*
  * --silent: the picture, and no audio track at all.
@@ -175,7 +182,7 @@ async function renderVideo(spec, fmt) {
     '-y', '-loglevel', 'error',
     '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-',
     ...(wav ? ['-i', wav, '-filter_complex', audio, '-map', '0:v', '-map', '[a]'] : ['-map', '0:v', '-an']),
-    '-c:v', 'libx264', '-preset', SCALE > 1 ? 'fast' : 'medium', '-crf', '18', '-pix_fmt', 'yuv420p', '-r', String(FPS),
+    '-c:v', 'libx264', '-preset', SCALE > 1 ? 'fast' : 'medium', '-crf', CRF, '-pix_fmt', 'yuv420p', '-r', String(FPS),
     ...(SCALE > 1 ? ['-level', '6.2', '-x264-params', 'threads=8'] : []),
     ...(wav ? ['-c:a', 'aac', '-b:a', '192k', '-shortest'] : []),
     '-movflags', '+faststart', out,

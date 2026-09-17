@@ -50,6 +50,26 @@ ships, and no more than five hashtags on a TikTok.
 It needs `PROMO_ASSETS` pointed at generated assets and `FFMPEG` set, and exits
 non-zero on any failure.
 
+## Ambient loops
+
+The `sleep` scene and the `amb-01…05` specs are not promos: they are
+one-minute seamless loops with no mark and no text, meant to become hour-long
+sleep videos on a channel of their own. Three tools and a workflow make that a
+finished upload — `docs/AMBIENT.md` is the whole process, including titles.
+
+```
+node tools/promo/studio/render.mjs --fmt yt --silent --scale 2 --crf 22 --video amb-02-rain   # the picture: 3840x2160, last frame = first frame
+node tools/promo/studio/ambient.mjs --only rain                                                 # the sound: synthesised in ffmpeg, nobody's recording
+node tools/promo/studio/longform.mjs --loop <loop.mp4> --bed <bed.mp3> --hours 8 --out rain-8h.mp4   # the length: stream copy, minutes not hours
+```
+
+`--crf 22` matters here: the loop is repeated by stream copy, so its bitrate is
+the long file's bitrate. `ambient.mjs` normalises every bed to -16 LUFS and
+fades both ends so the repeats join silently. The `Ambient video` workflow
+(`.github/workflows/ambient.yml`) runs all three on GitHub's machines from the
+Actions tab and attaches the result to a release, for a phone with nothing
+installed.
+
 ## Copying somebody else's edit
 
 `dissect.mjs` takes any MP4 apart and reports what you need to rebuild it: where

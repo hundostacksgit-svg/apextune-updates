@@ -1221,6 +1221,20 @@ export const VIDEOS = [
       { type: 'slam', dur: 3.2, kick: '$19.99 once. no subscription. ever.', noflash: true },
     ],
   },
+
+  /* ===================================================================
+   * amb-* — one-minute seamless loops for long-form ambient channels.
+   * Render with --scale 2 --fps 30 --silent; longform.mjs joins a loop to an
+   * ambient bed from ambient.mjs for an hour or eight. No watermark and no
+   * end card: the corner sticker is off because these are a product on
+   * somebody else's channel, not a promo for ours.
+   * =================================================================== */
+  ...[['aurora', 'brown'], ['rain', 'rain'], ['space', 'space'], ['embers', 'fire'], ['ocean', 'sea']].map(([look, bed], i) => ({
+    id: `amb-0${i + 1}-${look}`, title: `Ambient loop: ${look}`, music: 'phonk-132-24s', wm: 'none', formats: ['yt'],
+    /* `bed` is the ambient.mjs sound that goes under this picture in the long file. */
+    bed,
+    scenes: [{ type: 'sleep', dur: 60, loop: 60, look, seed: i + 3, noflash: true }],
+  })),
 ];
 
 /* =============== stills: Instagram feed posts and the YouTube thumbnail =============== */

@@ -1,0 +1,183 @@
+name: Ambient video
+
+# Builds a finished, full-length ambient video — a seamless one-minute loop
+# from tools/promo/studio (the `sleep` scene), a synthesised sound bed under
+# it, repeated for the hours asked for — and hands it back as a download, so
+# the file can be uploaded to YouTube from any device with nothing installed.
+# See docs/AMBIENT.md for the whole process.
+#
+# Run it from the Actions tab: "Ambient video" → "Run workflow". One look
+# takes an hour or two, most of it rendering the loop; "all" runs five in
+# parallel. Nothing here runs on its own — only when somebody clicks.
+on:
+  workflow_dispatch:
+    inputs:
+      look:
+        description: Which picture — one loop, or all five
+        type: choice
+        default: rain
+        options: [rain, aurora, space, embers, ocean, all]
+      hours:
+        description: Length of the finished video, in hours
+        type: choice
+        default: "1"
+        options: ["1", "2", "3", "8"]
+      size:
+        description: Picture size. 4K is about 1.2 GB an hour, 1080p about a third of that.
+        type: choice
+        default: 4K
+        options: [4K, 1080p]
+      where:
+        description: Where the file goes. A release is a permanent public link on this repository; an artifact sits on the run page (zipped, gone after 90 days). Files over 2 GB always go to an artifact.
+        type: choice
+        default: release
+        options: [release, artifact]
+
+permissions:
+  contents: write
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      looks: ${{ steps.plan.outputs.looks }}
+    steps:
+      - id: plan
+        env:
+          LOOK: ${{ inputs.look }}
+        run: |
+          if [ "$LOOK" = all ]; then
+            echo 'looks=["rain","aurora","space","embers","ocean"]' >> "$GITHUB_OUTPUT"
+          else
+            echo "looks=[\"$LOOK\"]" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        look: ${{ fromJSON(needs.plan.outputs.looks) }}
+    env:
+      PROMO_ASSETS: ${{ github.workspace }}/build/promo-assets
+      FFMPEG: ffmpeg
+      LOOK: ${{ matrix.look }}
+      HOURS: ${{ inputs.hours }}
+      SIZE: ${{ inputs.size }}
+      WHERE: ${{ inputs.where }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install ffmpeg and Chromium
+        run: |
+          set -euo pipefail
+          sudo apt-get update -q
+          sudo apt-get install -y -q ffmpeg
+          npm install -g playwright@1.56.1
+          npx playwright install --with-deps chromium
+          PW="$(npm root -g)/playwright"
+          echo "PLAYWRIGHT_MODULE=$PW" >> "$GITHUB_ENV"
+          echo "CHROME=$(node -e "console.log(require('$PW').chromium.executablePath())")" >> "$GITHUB_ENV"
+          ffmpeg -version | head -1
+
+      - name: Look up the loop and its sound bed
+        id: spec
+        run: |
+          set -euo pipefail
+          node --input-type=module -e "
+            const { VIDEOS } = await import('./tools/promo/studio/videos.js');
+            const v = VIDEOS.find((v) => v.bed && v.scenes[0].look === process.env.LOOK);
+            if (!v) { console.error('no ambient loop called ' + process.env.LOOK); process.exit(1); }
+            console.log('id=' + v.id);
+            console.log('bed=' + v.bed);
+          " | tee -a "$GITHUB_OUTPUT"
+
+      - name: Render the one-minute loop
+        env:
+          ID: ${{ steps.spec.outputs.id }}
+        run: |
+          set -euo pipefail
+          # render.mjs insists on the asset folders a promo would need; a
+          # silent loop with no text on it uses none of them.
+          mkdir -p "$PROMO_ASSETS"/shots "$PROMO_ASSETS"/music "$PROMO_ASSETS"/fonts "$PROMO_ASSETS"/footage
+          if [ "$SIZE" = 4K ]; then SCALE=2; else SCALE=1; fi
+          node tools/promo/studio/render.mjs --fmt yt --silent --fps 30 --scale "$SCALE" --crf 22 --video "$ID" --out build/out
+          LOOP="$(ls build/out/yt/"$ID"-silent*.mp4)"
+          echo "LOOP=$LOOP" >> "$GITHUB_ENV"
+          ls -la "$LOOP"
+          ffprobe -v error -select_streams v -show_entries stream=width,height,nb_frames -of csv=p=0 "$LOOP"
+
+      - name: Make the sound bed
+        env:
+          BED: ${{ steps.spec.outputs.bed }}
+        run: |
+          set -euo pipefail
+          node tools/promo/studio/ambient.mjs --minutes 20 --only "$BED"
+          echo "BED_FILE=$PROMO_ASSETS/ambient/$BED.mp3" >> "$GITHUB_ENV"
+
+      - name: Join loop and bed for the full length
+        run: |
+          set -euo pipefail
+          NAME="$LOOK-${HOURS}h-$(echo "$SIZE" | tr '[:upper:]' '[:lower:]')"
+          echo "NAME=$NAME" >> "$GITHUB_ENV"
+          node tools/promo/studio/longform.mjs --loop "$LOOP" --bed "$BED_FILE" --hours "$HOURS" --out "build/$NAME.mp4"
+          # A thumbnail from twenty seconds in, at the size YouTube wants.
+          ffmpeg -y -loglevel error -ss 20 -i "$LOOP" -frames:v 1 -vf scale=1920:-2 -q:v 2 "build/$LOOK-thumbnail.jpg"
+          ls -la build/*.mp4 build/*.jpg
+          ffprobe -v error -show_entries format=duration,size -of csv=p=0 "build/$NAME.mp4"
+
+      - name: Decide where it goes
+        id: place
+        run: |
+          set -euo pipefail
+          BYTES=$(stat -c %s "build/$NAME.mp4")
+          echo "MB=$((BYTES / 1048576))" >> "$GITHUB_ENV"
+          if [ "$WHERE" = artifact ] || [ "$BYTES" -ge 2000000000 ]; then
+            echo "artifact=true" >> "$GITHUB_OUTPUT"
+            echo "## $NAME.mp4 ($((BYTES / 1048576)) MB) is attached to this run as an artifact" >> "$GITHUB_STEP_SUMMARY"
+            echo "Scroll down on this run's page to download it. It comes zipped, and it is gone after 90 days." >> "$GITHUB_STEP_SUMMARY"
+            [ "$BYTES" -lt 2000000000 ] || echo "(It is over the 2 GB a release file may be, so it could not go to a release.)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "artifact=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Attach to a release
+        if: steps.place.outputs.artifact == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          TAG="ambient-$NAME-r$GITHUB_RUN_NUMBER"
+          TITLE="Ambient: $LOOK, $HOURS hour(s), $SIZE"
+          {
+            echo "Built by the Ambient video workflow, run #$GITHUB_RUN_NUMBER."
+            echo
+            echo "- \`$NAME.mp4\` — the finished video, ready to upload as it is"
+            echo "- \`$LOOK-thumbnail.jpg\` — a thumbnail"
+            echo "- the one-minute loop it was made from, for previews or shorts"
+            echo
+            echo "Titles, descriptions, tags and the posting schedule are in docs/AMBIENT.md."
+          } > build/notes.md
+          gh release create "$TAG" "build/$NAME.mp4" "build/$LOOK-thumbnail.jpg" "$LOOP" \
+            --title "$TITLE" --notes-file build/notes.md --latest=false --target "$GITHUB_SHA"
+          URL="$(gh release view "$TAG" --json url -q .url)"
+          echo "## $TITLE — $MB MB" >> "$GITHUB_STEP_SUMMARY"
+          echo "Download it here: $URL" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep it as a run artifact
+        if: steps.place.outputs.artifact == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.NAME }}
+          path: |
+            build/${{ env.NAME }}.mp4
+            build/${{ env.LOOK }}-thumbnail.jpg
+          retention-days: 90
+          compression-level: 0

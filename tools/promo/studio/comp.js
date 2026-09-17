@@ -154,6 +154,8 @@ const wm = el('div', null, `<img src="${A}/mark.svg" alt=""><span><b>omnidx</b>.
    to be readable for a minute without sitting on the picture, and the top
    left is the one corner TikTok puts nothing of its own in. */
 if (spec.wm === 'corner') wm.classList.add('corner');
+/* No mark at all on a loop that goes out as somebody else's video. */
+if (spec.wm === 'none') wm.style.display = 'none';
 /* A whole-video look, not a per-scene one: `style: 'native'` drops the studio
    ground and moves the caption to where a phone would put it. */
 if (spec.style) stage.classList.add(spec.style);
@@ -646,6 +648,189 @@ const BUILD = {
       const x = lerp(W * 0.86, W * 0.62, cp) + Math.sin(l * 2.1) * 4;
       const y = lerp(H * 0.86, H * 0.60, cp) + Math.cos(l * 1.7) * 3;
       cur.style.transform = `translate(${x}px, ${y}px)`;
+    } };
+  },
+
+  /*
+   * A minute that loops for eight hours.
+   *
+   * Long-form ambient video for the channels that run it: rain, aurora, space,
+   * embers, ocean. Nothing here is footage, and that is the point twice over —
+   * once because it is original and cannot be claimed or flagged as reused,
+   * and once because an eight-hour render is a day of machine time while a
+   * one-minute loop is an hour, and joining it sixty times is seconds. So the
+   * whole scene is periodic: every path is built on sin/cos of 2π·t/loop, the
+   * frame at t = loop is the frame at t = 0 to the pixel, and the join is
+   * invisible.
+   *
+   * The motion is deliberately below what a viewer would call "animation".
+   * These videos run on a second screen or with the phone face down; the
+   * visual has to change enough that a still would not do and slowly enough
+   * that nothing pulls the eye.
+   */
+  sleep(s) {
+    const root = el('div', 'sleep');
+    const canvas = document.createElement('canvas');
+    root.appendChild(canvas);
+    const dpr = Number(q.get('dpr')) || 1;
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    const g = canvas.getContext('2d', { alpha: false });
+    const LOOP = s.loop || 60;
+    const TAU = Math.PI * 2;
+    /* Seeded, so the same minute is always the same minute. */
+    let seed = (s.seed ?? 7) * 7919 + 1;
+    const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+    const look = s.look || 'aurora';
+    const N = s.count ?? (look === 'space' ? 1400 : look === 'rain' ? 900 : look === 'embers' ? 320 : 220);
+    const P = Array.from({ length: N }, (_, i) => ({ a: rnd(), b: rnd(), c: rnd(), d: rnd(), i }));
+    /* A periodic wobble: sums of sines whose frequencies are whole numbers of
+       cycles per loop, so the sum is periodic in the loop too. */
+    const wob = (t, p, k = 1) => Math.sin(TAU * (t / LOOP) * k + p * TAU) * 0.6 + Math.sin(TAU * (t / LOOP) * (k * 2) + p * 9) * 0.4;
+    const pal = {
+      aurora: ['#0b1a2e', '#123d4a', '#2fbf9a', '#7ae0c8', '#8a6bff'],
+      rain:   ['#0a0f18', '#141c2a', '#5a7fa8', '#9fb8d6', '#2c3a52'],
+      space:  ['#02030a', '#0a0c2a', '#3a4bd6', '#9aa6ff', '#ff9fd6'],
+      embers: ['#0a0503', '#2a120a', '#ff6a2a', '#ffb066', '#ffd9a3'],
+      ocean:  ['#03101c', '#083352', '#1f8ab0', '#8fdcf0', '#0c4a6e'],
+    }[look];
+
+    return { el: root, update(l) {
+      const t = ((l % LOOP) + LOOP) % LOOP;
+      const D = dpr;
+      g.setTransform(D, 0, 0, D, 0, 0);
+      g.globalCompositeOperation = 'source-over';
+      /* Ground: a slow radial that breathes once a loop. */
+      const br = 0.5 + 0.5 * Math.sin(TAU * t / LOOP);
+      const bg = g.createRadialGradient(W * 0.5, H * (0.55 + 0.05 * br), 0, W * 0.5, H * 0.55, H * 0.8);
+      bg.addColorStop(0, pal[1]); bg.addColorStop(1, pal[0]);
+      g.fillStyle = bg; g.fillRect(0, 0, W, H);
+
+      if (look === 'aurora') {
+        /* Curtains: narrow vertical bands, bright at their top edge and
+           fading down, drawn with additive blending so where two overlap
+           they glow. Their x drifts and their height breathes on whole cycles
+           of the loop. The first two passes read as a comb and then as a
+           flat wash; this one has the vertical structure real curtains have. */
+        g.globalCompositeOperation = 'lighter';
+        for (let k = 0; k < 3; k++) {
+          const bands = 90;
+          const c = k === 2 ? '150,110,255' : k === 1 ? '50,200,160' : '120,230,205';
+          for (let i = 0; i < bands; i++) {
+            const bw = W / bands * 2.2;
+            const x = (i / bands) * W * 1.25 - W * 0.12 + wob(t, i * 0.011 + k * 0.31, 1 + k) * 140;
+            const top = H * (0.14 + 0.06 * k) + wob(t, i * 0.017, 2) * 90;
+            const h = H * (0.28 + 0.16 * k) * (0.75 + 0.5 * (0.5 + 0.5 * wob(t, i * 0.023 + 0.5, 1)));
+            const a = (0.06 + 0.07 * (0.5 + 0.5 * wob(t, i * 0.07 + k, 3))) * (1 - k * 0.22);
+            const vgr = g.createLinearGradient(0, top, 0, top + h);
+            vgr.addColorStop(0, `rgba(${c},0)`); vgr.addColorStop(0.12, `rgba(${c},${a})`);
+            vgr.addColorStop(0.45, `rgba(${c},${a * 0.55})`); vgr.addColorStop(1, `rgba(${c},0)`);
+            g.fillStyle = vgr; g.fillRect(x, top, bw, h);
+          }
+        }
+        for (const p of P) {
+          const tw = 0.5 + 0.5 * Math.sin(TAU * t / LOOP * (2 + Math.floor(p.c * 4)) + p.d * TAU);
+          g.fillStyle = `rgba(255,255,255,${0.15 + 0.5 * tw * p.b})`;
+          g.fillRect(p.a * W, p.b * H * 0.7, 1.6, 1.6);
+        }
+        /* dark ground under the curtains, so they end in something */
+        g.globalCompositeOperation = 'source-over';
+        const gnd = g.createLinearGradient(0, H * 0.62, 0, H);
+        gnd.addColorStop(0, 'rgba(3,8,14,0)'); gnd.addColorStop(0.5, 'rgba(3,8,14,.85)'); gnd.addColorStop(1, '#02050a');
+        g.fillStyle = gnd; g.fillRect(0, H * 0.6, W, H * 0.4);
+      } else if (look === 'rain') {
+        /* Bokeh behind glass, then streaks that fall and restart on a cycle. */
+        g.globalCompositeOperation = 'lighter';
+        for (let i = 0; i < 26; i++) {
+          const p = P[i];
+          const x = p.a * W + wob(t, p.c, 1) * 30, y = p.b * H + wob(t, p.d, 1) * 20;
+          const r = 40 + p.c * 120;
+          const gr = g.createRadialGradient(x, y, 0, x, y, r);
+          gr.addColorStop(0, `rgba(159,184,214,${0.10 + 0.08 * p.d})`); gr.addColorStop(1, 'rgba(159,184,214,0)');
+          g.fillStyle = gr; g.fillRect(x - r, y - r, r * 2, r * 2);
+        }
+        g.globalCompositeOperation = 'source-over';
+        for (const p of P) {
+          const cycles = 6 + Math.floor(p.c * 10);            // drops per loop for this streak
+          const ph = (t / LOOP * cycles + p.d) % 1;
+          const y = ph * (H + 200) - 100, x = p.a * W + wob(t, p.b, cycles) * 4;
+          const len = 30 + p.b * 90;
+          const gr = g.createLinearGradient(x, y - len, x, y);
+          gr.addColorStop(0, 'rgba(200,220,255,0)'); gr.addColorStop(1, `rgba(200,220,255,${0.25 + 0.35 * p.c})`);
+          g.strokeStyle = gr; g.lineWidth = 1 + p.c * 1.4;
+          g.beginPath(); g.moveTo(x, y - len); g.lineTo(x, y); g.stroke();
+        }
+      } else if (look === 'space') {
+        /* A slow drift through a star field with two nebula clouds breathing. */
+        g.globalCompositeOperation = 'lighter';
+        for (let k = 0; k < 2; k++) {
+          const cx = W * (0.3 + 0.4 * k) + wob(t, k * 0.4, 1) * 80, cy = H * (0.35 + 0.3 * k) + wob(t, k * 0.7, 1) * 60;
+          const r = H * 0.32;
+          const gr = g.createRadialGradient(cx, cy, 0, cx, cy, r);
+          gr.addColorStop(0, k ? 'rgba(255,159,214,.16)' : 'rgba(58,75,214,.22)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+          g.fillStyle = gr; g.fillRect(cx - r, cy - r, r * 2, r * 2);
+        }
+        for (const p of P) {
+          /* Each star moves one full screen-height per loop times a small integer,
+             so it wraps exactly. Parallax by depth. */
+          const speed = 1 + Math.floor(p.c * 3);
+          const y = ((p.b + t / LOOP * speed * 0.15) % 1) * H;
+          const x = p.a * W;
+          const sz = 0.8 + p.c * 2.2;
+          const tw = 0.6 + 0.4 * Math.sin(TAU * t / LOOP * (3 + Math.floor(p.d * 5)) + p.a * TAU);
+          g.fillStyle = `rgba(${200 + p.d * 55},${210 + p.c * 45},255,${(0.3 + 0.7 * p.c) * tw})`;
+          g.fillRect(x, y, sz, sz);
+        }
+      } else if (look === 'embers') {
+        /* A bed of glow at the bottom and embers that rise, drift and die on
+           whole cycles. */
+        const gl = g.createRadialGradient(W * 0.5, H * 1.05, 0, W * 0.5, H * 1.05, H * 0.75);
+        gl.addColorStop(0, `rgba(255,106,42,${0.35 + 0.1 * br})`); gl.addColorStop(0.5, 'rgba(120,40,10,.25)'); gl.addColorStop(1, 'rgba(0,0,0,0)');
+        g.fillStyle = gl; g.fillRect(0, 0, W, H);
+        g.globalCompositeOperation = 'lighter';
+        for (const p of P) {
+          const cycles = 2 + Math.floor(p.c * 5);
+          const ph = (t / LOOP * cycles + p.d) % 1;
+          const y = H * (1.05 - ph * 1.15), x = p.a * W + Math.sin(ph * TAU * 2 + p.b * TAU) * 40;
+          const a = Math.sin(ph * Math.PI) * (0.5 + 0.5 * p.b);
+          const sz = 2 + p.c * 4;
+          g.fillStyle = `rgba(255,${140 + p.b * 80},${60 + p.c * 60},${a})`;
+          g.beginPath(); g.arc(x, y, sz, 0, TAU); g.fill();
+        }
+      } else if (look === 'ocean') {
+        /* A moon on the horizon and its path on the water, then eight swells
+           back to front, each a low-frequency sine, each darker than the one
+           behind it. Fewer and longer than the first pass, which tiled into a
+           quilt. */
+        const mx = W * 0.62 + wob(t, 0.2, 1) * 10, my = H * 0.36;
+        const moon = g.createRadialGradient(mx, my, 0, mx, my, H * 0.5);
+        moon.addColorStop(0, 'rgba(200,235,255,.55)'); moon.addColorStop(0.08, 'rgba(160,215,245,.25)'); moon.addColorStop(1, 'rgba(0,0,0,0)');
+        g.fillStyle = moon; g.fillRect(0, 0, W, H);
+        for (let k = 0; k < 8; k++) {
+          const base = H * (0.47 + k * 0.065);
+          const shade = 1 - k * 0.09;
+          g.fillStyle = `rgba(${Math.round(8 * shade + 6)},${Math.round(60 * shade + 30)},${Math.round(110 * shade + 40)},0.92)`;
+          g.beginPath(); g.moveTo(0, H);
+          for (let x = 0; x <= W; x += 16) {
+            const y = base + Math.sin(TAU * (x / W * (0.8 + k * 0.15) + t / LOOP * (1 + k % 2))) * (10 + k * 3)
+              + Math.sin(TAU * (x / W * 2.1 - t / LOOP * 2 + k * 0.37)) * 4;
+            g.lineTo(x, y);
+          }
+          g.lineTo(W, H); g.closePath(); g.fill();
+        }
+        /* the moon's path: glints that ride the swell */
+        g.globalCompositeOperation = 'lighter';
+        for (const p of P) {
+          const tw = 0.5 + 0.5 * Math.sin(TAU * t / LOOP * (2 + Math.floor(p.c * 3)) + p.d * TAU);
+          const x = mx + (p.a - 0.5) * W * 0.28 * (0.4 + p.b), y = H * (0.48 + p.b * 0.5);
+          g.fillStyle = `rgba(190,230,250,${(0.05 + 0.3 * tw) * (1 - Math.abs(p.a - 0.5) * 1.6)})`;
+          g.fillRect(x, y, 3, 1.2);
+        }
+      }
+      /* Vignette, so the corners never draw the eye. */
+      g.globalCompositeOperation = 'source-over';
+      const vg = g.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.8);
+      vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.6)');
+      g.fillStyle = vg; g.fillRect(0, 0, W, H);
     } };
   },
 
