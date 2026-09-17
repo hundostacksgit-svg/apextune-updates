@@ -189,6 +189,12 @@ export function resolveTarget(p, target, { selection = [] } = {}) {
     if (!st.length) throw new Error('There is no sticker yet — add one first.');
     return target === 'sticker' ? st.slice(-1) : st;
   }
+  // The music is a clip too: "mute the music", "take the song off".
+  if (target === 'music') {
+    const music = p.clips.filter((c) => mediaById(p, c.mediaId)?.kind === 'audio');
+    if (!music.length) throw new Error('There is no music on the timeline yet — say "add music" first.');
+    return music;
+  }
   const clips = storyClips(p);
   if (!clips.length) return [];
   if (target === undefined || target === null || target === 'all') return clips;
@@ -229,6 +235,13 @@ export function resolveTarget(p, target, { selection = [] } = {}) {
     }
     const single = target.match(/^\s*(\d+)\s*$/);
     if (single) return resolveTarget(p, Number(single[1]), { selection });
+  }
+
+  if (typeof target === 'object' && target.media) {
+    const want = String(target.media).toLowerCase();
+    const out = clips.filter((c) => String(mediaById(p, c.mediaId)?.name || '').toLowerCase().includes(want));
+    if (!out.length) throw new Error(`Nothing on the timeline comes from "${target.media}".`);
+    return out;
   }
 
   if (typeof target === 'object') {
@@ -814,6 +827,59 @@ const OPS = {
     return 'Faded in and out.';
   },
 
+  /** A fade on chosen clips — "fade in the first clip", "fade out the title". */
+  fadeClips(p, { target, fadeIn, fadeOut }, ctx = {}) {
+    const clips = resolveTarget(p, target, ctx);
+    for (const clip of clips) {
+      if (fadeIn !== undefined && fadeIn !== null) clip.fadeIn = Math.min(Number(fadeIn), clip.dur / 2);
+      if (fadeOut !== undefined && fadeOut !== null) clip.fadeOut = Math.min(Number(fadeOut), clip.dur / 2);
+    }
+    return `Faded ${clips.length} clip${clips.length === 1 ? '' : 's'}.`;
+  },
+
+  /**
+   * Make the whole edit a given length, keeping its pacing.
+   *
+   * Every story clip is trimmed (or, where the source has room, extended) in
+   * proportion, so a thirty-second cut asked to be twenty keeps the same
+   * rhythm two thirds as long. The music is not touched; fitMusic does that.
+   */
+  fitDuration(p, { seconds }) {
+    const clips = storyClips(p);
+    if (!clips.length) throw new Error('There is nothing on the timeline yet.');
+    const want = Math.max(1, Number(seconds) || 0);
+    const last = clips.at(-1);
+    const total = last.start + last.dur;
+    if (!total) throw new Error('The timeline has no length yet.');
+    const factor = want / total;
+    for (const clip of clips) {
+      const media = mediaById(p, clip.mediaId);
+      const room = media?.duration ? Math.max(0.3, media.duration - (clip.in || 0)) : Infinity;
+      clip.dur = Math.min(room, Math.max(0.3, clip.dur * factor));
+    }
+    for (const track of videoTracks(p)) {
+      let at = 0;
+      for (const c of clipsOn(p, track.id).filter((c) => c.kind !== 'title' && c.kind !== 'sticker')) { c.start = at; at += c.dur; }
+    }
+    const now = clips.at(-1).start + clips.at(-1).dur;
+    return `The edit is now ${now.toFixed(1)}s${Math.abs(now - want) > 0.5 ? ` — the clips did not have room for exactly ${want}s` : ''}.`;
+  },
+
+  /** The music dips under speech on the other tracks, or stops doing so. */
+  duckMusic(p, { on = true }) {
+    const track = mainAudioTrack(p);
+    track.duck = Boolean(on);
+    return on ? 'The music ducks under the voice.' : 'Ducking off.';
+  },
+
+  /** Transitions off chosen clips: straight cuts again. */
+  removeTransitions(p, { target }, ctx = {}) {
+    const clips = resolveTarget(p, target, ctx);
+    let n = 0;
+    for (const clip of clips) { if (clip.transitionIn) { delete clip.transitionIn; n++; } }
+    return `${n} transition${n === 1 ? '' : 's'} removed.`;
+  },
+
   /* ---------------- one clip at a time ---------------- */
   /*
    * The operations below are what make a specific instruction expressible.
@@ -1236,6 +1302,10 @@ export const OP_SPEC = {
     does: 'Clean up recorded sound: spectral noise reduction, a notch at whatever mains frequency is present, de-clicking and levelling. Use for "the audio is rough", "get rid of the hiss". Not AI — real signal processing.' },
   fitMusic: { args: 'fadeOut?: seconds, duck?: bool', does: 'Trim the music to the edit length. Always last but one.' },
   fadeEnds: { args: 'dur?: seconds', does: 'Fade the first and last shot.' },
+  fadeClips: { args: 'target?, fadeIn?: seconds, fadeOut?: seconds', does: 'A picture-and-sound fade on chosen clips. Use for "fade in the first clip", "fade out the title".' },
+  fitDuration: { args: 'seconds: number', does: 'Make the whole edit this long by trimming every shot in proportion. Use for "make it 20 seconds" on an edit that exists — never layout, which would replace it.' },
+  duckMusic: { args: 'on?: bool', does: 'The music dips under any speech on the other tracks.' },
+  removeTransitions: { args: 'target?', does: 'Straight cuts again on chosen clips.' },
 
   /*
    * Everything below takes a `target`, which is how a specific instruction
@@ -1243,9 +1313,10 @@ export const OP_SPEC = {
    * timeline", and a sentence like "slow the third shot down" had nowhere to
    * land no matter how well it was understood.
    *
-   * target: "all" | "selected" | "first" | "last" | "odd" | "even"
+   * target: "all" | "selected" | "first" | "last" | "odd" | "even" | "music"
    *       | 3 (the third clip, counting from one)
    *       | [1,3,5] | "2-4" | { from: seconds, to: seconds }
+   *       | { media: "drone" } (every clip whose file name contains it)
    */
   setColor: {
     args: 'target?, look?: id, strength?: 0-1.5, exposure?/contrast?/saturation?/temperature?/tint?/highlights?/shadows?/vignette?/grain?/blur?: -100..100',

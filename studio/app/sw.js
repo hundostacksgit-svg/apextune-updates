@@ -46,6 +46,8 @@ const SHELL = [
   './js/ai/vocabulary.js',
   './js/ai/remote.js',
   './js/ai/direct.js',
+  './js/ai/normalise.js',
+  './js/ai/answers.js',
   './js/desktop.js',
   './js/engine/audio-fx.js',
   './js/engine/audio-fx-library.js',

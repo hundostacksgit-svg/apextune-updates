@@ -25,7 +25,7 @@ export const EFFECT_WORDS = [
   [/halftone|manga dots|comic dots/i, 'halftone', { amount: 60 }],
   [/posteri[sz]e time|stepped frame|frame hold look|stop[- ]motion look|\bon twos\b|choppy frames/i, 'posterizeTime', { rate: 8 }],
   [/cel ?shade|posteri[sz]e(?! time)|cartoon|toon/i, 'posterize', { levels: 5, outline: 40 }],
-  [/pixelate|pixel|8.?bit|censor/i, 'pixelate', { size: 14 }],
+  [/pixelate|pixel|8.?bit/i, 'pixelate', { size: 14 }],
   [/scanlines?|crt|old tv|retro screen/i, 'scanlines', { amount: 40 }],
   [/mirror|kaleidoscope|symmetr/i, 'mirror', { mode: 'h' }],
   [/vhs|tape wobble|camcorder wobble/i, 'vhsWobble', { amount: 40 }],
@@ -62,7 +62,7 @@ export const EFFECT_WORDS = [
 /* ---- shape layers: a finished piece by the name a person would use ---- */
 export const SHAPE_WORDS = [
   [/\bprogress bar\b|\bloading bar\b/i, 'progressBar'],
-  [/\bunderline\b/i, 'underline'],
+  [/\bunderline\b|\bline under (the )?(title|text|words|it)\b/i, 'underline'],
   [/\bline reveal\b|\bdraw(s|ing)? (a |the )?line\b|\bline that draws\b/i, 'lineReveal'],
   [/\bring fill\b|\bloading ring\b|\bring loader\b|\bcircular progress\b/i, 'ringFill'],
   [/\bbox outline\b|\boutline(d)? box\b|\bframe (the )?(shot|title|text)\b/i, 'boxOutline'],
@@ -96,7 +96,7 @@ export const ANIMATOR_WORDS = [
   [/\brandom (pop|order)\b|\bpop in randomly\b/i, 'randomPop'],
   [/\bslide in from the left\b|\bletters slide in\b/i, 'slideFromLeft'],
   [/\b(letters|text|title)\b[^.]*\bbounce\b[^.]*\bbeat\b|\bbounce\b[^.]*\b(letters|text|title)\b[^.]*\bbeat\b/i, 'beatBounce'],
-  [/\b(letters|text|title)\b[^.]*\b(scale|grow|pulse)\b[^.]*\b(music|audio|sound)\b/i, 'audioScale'],
+  [/\b(letters|text|title)\b[^.]*\b(scale|grow|pulse)\b[^.]*\b(music|audio|sound)\b|\b(scale|grow|pulse)\b[^.]*\b(letters|text|title)\b[^.]*\b(music|audio|sound)\b/i, 'audioScale'],
   [/\bwave\b[^.]*\b(letters|text|title)\b|\b(letters|text|title)\b[^.]*\bwave\b/i, 'waveLoop'],
   [/\bjitter(s|ing|y)?\b[^.]*\b(letters|text|title)\b|\b(letters|text|title)\b[^.]*\bjitter/i, 'jitterLoop'],
 ];
@@ -145,7 +145,7 @@ export const BG_REMOVE_WORDS = new RegExp([
   /* The background has to be what the verb acts on. Allowing anything between
      the two turned "get rid of the sign in the background" — which is about
      the sign, and is tap-to-remove — into a background key. */
-  '\\b(remove|cut out|get rid of|take out|drop|kill|knock out)\\s+(the\\s+|this\\s+|my\\s+)?background\\b(?!\\s+(noise|hiss|hum|buzz|sound|audio|music))',
+  '\\b(remove|cut out|get rid of|take out|drop|kill|knock out|delete|erase|key out)\\s+(the\\s+|this\\s+|my\\s+)?background\\b(?!\\s+(noise|hiss|hum|buzz|sound|audio|music))',
   '\\bbackground remov',
   '\\bgreen ?screen\\b',
   '\\bchroma ?key\\b',
@@ -198,7 +198,115 @@ export const MUSIC_WORDS = [
 ];
 
 /** "put music on it" — with or without a named style. */
-export const MUSIC_ASK = /\b(add|put|give me|make me|need|want|find|pick|choose|drop)\b[^.]{0,30}\b(music|beat|song|track|instrumental|backing track|soundtrack)\b|\b(music|a beat|a song|a track)\b[^.]{0,20}\b(on|under|behind|to) (it|this|the (edit|video|clip|montage))\b/i;
+export const MUSIC_ASK = /\b(add|put|give me|make me|need|want|find|pick|choose|drop|throw|lay|use)\b[^.]{0,30}\b(music|beat|song|track|instrumental|backing track|soundtrack|tune|audio track)\b|\b(music|a beat|a song|a track)\b[^.]{0,20}\b(on|under|behind|to) (it|this|the (edit|video|clip|montage))\b|^(?:some |a |an )?(music|beat|song)\b/i;
+
+/** "add some uk drill", "put phonk under this" — a style word doing the job of the noun. */
+export const MUSIC_VERB = /\b(add|put|give me|need|want|throw|lay|use|drop|play|under|behind|over|with)\b/i;
+
+/** The transitions people name, shared with the planner so a word means one thing. */
+export const TRANSITION_WORDS = [
+  [/\bzoom (transition|punch)\b|\bpunch in\b|\bzoom cut\b/i, 'zoomPunch'],
+  [/\bwhip\b|\bswipe pan\b|\bwhoosh\b/i, 'whip'],
+  [/\bglitch\b|\bdigital\b|\bbroken\b/i, 'glitch'],
+  [/\bfilm burn\b|\bburn\b/i, 'filmBurn'],
+  [/\bdip to black\b|\bfade to black\b|\bfade through black\b/i, 'dipBlack'],
+  [/\bdip to white\b|\bflash\b/i, 'dipWhite'],
+  [/\bslide\b/i, 'slideLeft'],
+  [/\bspin\b/i, 'spin'],
+  [/\bblur (transition|dissolve)\b/i, 'blurDissolve'],
+  [/\biris\b|\bcircle\b/i, 'circle'],
+  [/\bwipe\b/i, 'wipe'],
+  [/\bdissolve\b|\bcross ?fade\b|\bsmooth transition\b|\bsoft transition\b/i, 'dissolve'],
+];
+
+/** Shapes of the canvas, by the words people use. Word boundaries matter: "shorten" is not "short". */
+export const RATIO_WORDS = [
+  [/\binstagram (feed|post|grid)\b|\bfeed post\b|4:5/i, '4:5'],
+  [/\bsquare\b|1:1/i, '1:1'],
+  [/\bcinemascope\b|2\.39|\banamorphic\b/i, '2.39:1'],
+  [/\btiktok\b|\breels?\b|\bshorts?\b|\bvertical\b|9:16|\bportrait\b|\bstory\b|\bstories\b|\bphone\b|\binstagram\b|\bsnapchat\b/i, '9:16'],
+  [/\byoutube\b|\blandscape\b|16:9|\bwidescreen\b|\bhorizontal\b|\bwide\b|\btv\b/i, '16:9'],
+];
+
+/* The looks people name. Whole words: "hot" inside "shot" used to grade every request sunburn. */
+export const LOOK_WORDS = [
+  [/\bteal (and|&) orange\b|\bblockbuster\b|\bcinematic colou?r/i, 'cinematic'],
+  [/\bblack (and|&) white\b|\bb\s*&\s*w\b|\bmonochrome\b|\bgreyscale\b|\bgrayscale\b|\bmono\b/i, 'mono'],
+  [/\bnoir\b|\bmoody black\b/i, 'noir'],
+  [/\bvintage\b|\bretro\b|\bold school\b|\bfilm look\b|\bfaded\b/i, 'fade'],
+  [/\bvhs\b|\bcamcorder\b|\b90s\b|\bnineties\b/i, 'vhs'],
+  [/\bwarm(er|th)?\b|\bgolden hour\b|\bsunset\b|\bcosy\b|\bcozy\b/i, 'warm'],
+  [/\bcold\b|\bcool tone\b|\bblue tone\b|\bicy\b|\bwinter\b/i, 'cool'],
+  [/\bneon\b|\bcyberpunk\b|\bnight ?life\b/i, 'neon'],
+  [/\bmoonlight\b|\bnight\b|\bdark and blue\b/i, 'moonlight'],
+  [/\bvivid\b|\bcolou?rful\b|\bsaturated\b|\bpop(?:py)? colou?rs?\b/i, 'vivid'],
+  [/\bpunchy\b|\bpunch\b|\bcontrasty\b/i, 'punch'],
+  [/\bkodak\b|\bfilm stock\b|\b2383\b/i, 'kodak'],
+  [/\bpastel\b|\bsoft colou?rs?\b/i, 'pastel'],
+  [/\bbleach\b|\bdesaturated\b/i, 'bleach'],
+  [/\bsunburn\b|\bdesert\b|\bscorching\b/i, 'sunburn'],
+];
+
+/* "without the impact frames", "no shake": the effect a style would add, taken back out. Each row: the words, and the ops or effect ids it removes. */
+export const EFFECT_NEGATIONS = [
+  [/\bimpact frames?\b|\bslams?\b|\bflash frames?\b/i, { ops: ['impactFrames'] }],
+  [/\bshake\b|\bshaky\b/i, { effects: ['shake'] }],
+  [/\bvhs\b|\btape\b/i, { effects: ['vhsWorn', 'vhsWobble'] }],
+  [/\bglow\b|\bbloom\b/i, { effects: ['glow'] }],
+  [/\brgb split\b|\bchromatic\b|\baberration\b/i, { effects: ['rgbSplit'] }],
+  [/\bspeed ?lines?\b|\baction lines\b/i, { effects: ['linesRadial', 'speedLines'] }],
+  [/\bmotion blur\b/i, { effects: ['motionBlur'] }],
+  [/\bflash(es|ing)?\b|\bstrobe\b/i, { effects: ['flash'] }],
+  [/\bglitch(es|y)?\b/i, { effects: ['blockGlitch', 'glitch'] }],
+  [/\bgrain\b/i, { effects: ['filmGrain'] }],
+  [/\bblack bars\b|\bletterbox\b|\bcinematic bars\b/i, { effects: ['crop239', 'letterbox'] }],
+  [/\bzooms?\b|\bbeat zoom\b|\bpunch[- ]ins?\b/i, { ops: ['beatZoom'] }],
+  [/\bvignette\b/i, { effects: ['vignetteHard', 'vignette'] }],
+  [/\bspeed ramps?\b|\bramps?\b/i, { ops: ['sectionRamp', 'speedRamp'] }],
+];
+
+/** The effect negations a sentence carries: "anime edit without the impact frames, no shake". */
+export function negatedEffects(text) {
+  const s = String(text || '');
+  const out = { ops: new Set(), effects: new Set() };
+  for (const [re, what] of EFFECT_NEGATIONS) {
+    const word = (s.match(re) || [''])[0];
+    if (!word) continue;
+    const w = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (new RegExp(`\\b(?:no|without|minus|skip|drop|lose|not|never|don'?t (?:add|want|use|put)|leave out|hold the|none of the)\\s+(?:the |any |a |an |those |that )?${w}`, 'i').test(s)
+      || new RegExp(`${w}\\s+(?:off|out)\\b`, 'i').test(s)) {
+      for (const o of what.ops || []) out.ops.add(o);
+      for (const e of what.effects || []) out.effects.add(e);
+    }
+  }
+  return out;
+}
+
+/* The vague ones: an opinion about the result, not an instruction. Shared so the reply module lets them through to the planner. */
+export const VAGUE = /\b(?:make (?:it|this|them) (?:good|better|great|nice|nicer|cool|cooler|clean|cleaner|pop|pro|professional|look (?:good|better|great|nice|professional|clean|expensive|cinematic)|viral|fire|sick|hard|slap|go viral)|do something (?:cool|nice|good|creative|fun)|surprise me|just edit it|idk|i don'?t know|whatever|anything|your call|you (?:choose|decide|pick)|fix it|clean it up|polish it|improve it|go crazy|go wild|cook|do your thing|do it|just do it|make magic|work your magic)\b|^(?:go|start|begin|run|edit|edit it|edit this|edit these|edit them|video|do it|short|long|quick|fast|slow|epic|chill|hype|calm|dreamy|sad|happy|dark|moody|clean|simple|minimal)[\s!.]*$/i;
+
+/** Stickers by name: an emoji, or one of the sticker shapes. */
+export const STICKER_WORDS = [
+  [/\bfire\b|\bflames?\b|\blit\b/i, 'emoji', '🔥'],
+  [/\bheart\b|\blove\b/i, 'emoji', '❤️'],
+  [/\bskull\b|\bdead\b/i, 'emoji', '💀'],
+  [/\blaugh(ing)?\b|\bcrying laughing\b|\bfunny face\b/i, 'emoji', '😂'],
+  [/\b100\b|\bhundred\b/i, 'emoji', '💯'],
+  [/\beyes\b/i, 'emoji', '👀'],
+  [/\bstar\b/i, 'emoji', '⭐'],
+  [/\bmoney\b|\bcash\b/i, 'emoji', '💸'],
+  [/\bclap\b/i, 'emoji', '👏'],
+  [/\bcheck ?mark\b|\btick\b/i, 'emoji', '✅'],
+  [/\bwarning\b/i, 'emoji', '⚠️'],
+  [/\barrow\b/i, 'shape', 'arrow'],
+  [/\bcircle\b|\bring\b/i, 'shape', 'circle'],
+  [/\bbox\b|\bsquare\b|\brectangle\b/i, 'shape', 'box'],
+  [/\bburst\b/i, 'shape', 'burst'],
+  [/\bspeech bubble\b|\bbubble\b/i, 'shape', 'bubble'],
+  [/\bcountdown\b/i, 'shape', 'countdown'],
+  [/\bscribble\b/i, 'shape', 'scribble'],
+  [/\bfocus\b|\bspotlight\b/i, 'shape', 'focus'],
+];
 
 /* ---- audio repair: the sound is bad and should not be ---- */
 /*
@@ -206,7 +314,7 @@ export const MUSIC_ASK = /\b(add|put|give me|make me|need|want|find|pick|choose|
  * filters at the mains frequency, de-clicking against a running median and
  * RMS levelling — describing it as a model would be a claim we cannot back.
  */
-export const AUDIO_FIX_WORDS = /\b(clean ?up|fix|repair|sort out|improve|rescue|salvage)\b[^.]{0,24}\b(audio|sound|recording|voice|mic|vocals)\b|\b(audio|sound|recording)\b[^.]{0,16}\b(is|sounds)\b[^.]{0,16}\b(bad|rough|terrible|awful|noisy|muddy|rubbish)\b|\b(remove|get rid of|kill|take out|reduce)\b[^.]{0,20}\b(hiss|hum|buzz|background noise|room noise|clicks?|pops?|crackle|static)\b|\bnoise reduction\b|\bde-?noise\b|\bde-?click\b|\bnormali[sz]e the (audio|sound|level)\b|\beven out the (level|volume)\b/i;
+export const AUDIO_FIX_WORDS = /\b(clean ?up|fix|repair|sort out|improve|rescue|salvage)\b[^.]{0,24}\b(audio|sound|recording|voice|mic|vocals)\b|\b(audio|sound|recording|mic|voice|vocals)\b[^.]{0,16}\b(is|sounds?|are)\b[^.]{0,16}\b(bad|rough|terrible|awful|noisy|muddy|rubbish|horrible|crap|uneven|distorted|clipping|peaking)\b|\b(remove|get rid of|kill|take out|reduce|delete|cut|lose|fix)\b[^.]{0,20}\b(hiss|hum|buzz|background noise|room noise|clicks?|pops?|crackle|static|the noise|noise)\b|\bnoise reduction\b|\bde-?noise\b|\bde-?click\b|\bnormali[sz]e (the )?(audio|sound|level|volume)?\b|\beven out the (level|levels|volume|audio|sound)\b|\blevel the audio\b/i;
 
 /** Which parts of the repair a sentence asked for; all of them by default. */
 export function repairOptions(text) {

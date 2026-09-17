@@ -62,15 +62,17 @@ export function mount(host) {
       </p>`
     : `
       <details class="note tiny" style="margin:0 0 12px">
-        <summary><b>Running on the on-device reader</b> — direct instructions only</summary>
+        <summary><b>Running on the on-device reader</b> — instructions, styles and questions</summary>
         <p style="margin:8px 0 0">
-          It follows things like <em>"mute clip 2"</em>, <em>"make the third one black
+          It follows a target and a change — <em>"mute clip 2"</em>, <em>"make the third one black
           and white"</em>, <em>"slow the last clip to half speed"</em>, <em>"delete the last
-          two"</em>, <em>"brighten clips 2 to 4"</em> — a target and a change. It also knows
-          the named styles.
+          two"</em>, <em>"brighten clips 2 to 4"</em> — and things on top of your edit:
+          <em>"add captions"</em>, <em>"make it vertical"</em>, <em>"put a dissolve on every cut"</em>,
+          <em>"make it 20 seconds"</em>. It knows the named styles, reads slang and typos, and
+          answers questions about the app.
         </p>
         <p style="margin:8px 0 0">
-          For free-form requests it needs the server switched on, which is where the
+          For anything more free-form it needs the server switched on, which is where the
           language model lives. Paste your Worker URL in
           <b>Settings → Advanced</b> and this panel changes to full understanding.
         </p>
@@ -327,12 +329,32 @@ async function runPlan(host) {
   }
 }
 
+/* **bold** and line breaks, and nothing else — the reply text is ours, but it is escaped anyway. */
+function fmtReply(text) {
+  return esc(text).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+}
+
 function paintPlan(host, plan) {
   const out = $('#ai-result', host);
   if (!out) return;
 
+  /*
+   * A reply rather than a plan: "hi", "how do I export", "is this free".
+   * Shown as an answer, with no Do it button, and it costs no AI action.
+   */
+  if (plan.answer) {
+    out.innerHTML = `
+      <div class="note info" style="margin-top:0">${fmtReply(plan.answer)}</div>
+      ${(plan.questions || []).map((q) => `<div class="note tiny">${esc(q)}</div>`).join('')}`;
+    return;
+  }
+
   if (!plan.steps.length) {
-    out.innerHTML = `<div class="note bad">${esc(plan.warnings?.[0] || "That didn't turn into anything to do.")}</div>`;
+    // A question with no steps: it needs one more thing before it can act.
+    const lines = [...(plan.questions || []), ...(plan.warnings || [])];
+    out.innerHTML = lines.length
+      ? lines.map((q, i) => `<div class="note ${i ? 'tiny' : 'info'}" style="${i ? '' : 'margin-top:0'}">${esc(q)}</div>`).join('')
+      : `<div class="note bad">That didn't turn into anything to do.</div>`;
     return;
   }
 
@@ -343,6 +365,7 @@ function paintPlan(host, plan) {
       ${plan.source === 'cloud' ? '<br><span class="tiny muted">Planned in the cloud.</span>'
         : '<br><span class="tiny muted">Planned on this device.</span>'}
     </div>
+    ${(plan.notes || []).map((n) => `<p class="tiny muted" style="margin:-6px 0 10px">${esc(n)}</p>`).join('')}
     ${(plan.questions || []).map((q) => `<div class="note tiny">
       <b>One thing —</b> ${esc(q)}<br>
       <span class="muted">The plan below works either way; say more and press Plan again to change it.</span>

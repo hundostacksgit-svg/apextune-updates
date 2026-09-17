@@ -129,6 +129,15 @@ export async function askForPlan(prompt, project, context) {
     return { ...localPlan(prompt, context), source: 'local' };
   }
 
+  /*
+   * "hi", "how do I export", "is this free": answered here, on the device,
+   * before anything is sent. The cloud planner is made to emit a plan, so a
+   * question would come back as a plan for something nobody asked for — and
+   * cost a round trip to do it.
+   */
+  const local = localPlan(prompt, context);
+  if (local.answer) return { ...local, source: 'local' };
+
   if (breakerOpen()) {
     const fallback = localPlan(prompt, context);
     fallback.warnings = [

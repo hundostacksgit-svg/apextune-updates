@@ -21,71 +21,33 @@ import { matchTemplate, buildTemplate, TEMPLATES } from '../engine/templates.js'
 import { readInstructions } from './direct.js';
 import { EFFECTS } from '../engine/effects.js';
 import { EFFECT_WORDS, SHAPE_WORDS, ANIMATOR_WORDS, EXPRESSION_WORDS,
-  MUSIC_WORDS, MUSIC_ASK, AUDIO_FIX_WORDS, repairOptions, firstMatch } from './vocabulary.js';
+  MUSIC_WORDS, MUSIC_ASK, AUDIO_FIX_WORDS, TRANSITION_WORDS, RATIO_WORDS, LOOK_WORDS, VAGUE, negatedEffects, repairOptions, firstMatch } from './vocabulary.js';
 import { parseMontage, buildMontage, trimSteps, describeSpec } from '../engine/montage.js';
+import { normalise, editWords } from './normalise.js';
+import { quickAnswer } from './answers.js';
 
 const NUM_WORDS = {
   one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
   fifteen: 15, twenty: 20, thirty: 30, forty: 40, fortyfive: 45, sixty: 60, ninety: 90,
 };
 
-/* Each entry: what to look for, and what it decides. Keeping this as a table
-   rather than a wall of ifs is what makes it reviewable — and easy to extend
-   when someone asks for a phrasing we didn't think of. */
-const LOOK_WORDS = [
-  [/teal (and|&) orange|blockbuster|cinematic colou?r/i, 'cinematic'],
-  [/black (and|&) white|b\s*&\s*w|monochrome|greyscale|grayscale|mono\b/i, 'mono'],
-  [/noir|moody black/i, 'noir'],
-  [/vintage|retro|old school|film look|faded/i, 'fade'],
-  [/vhs|camcorder|90s|nineties/i, 'vhs'],
-  [/warm|golden hour|sunset|cosy|cozy/i, 'warm'],
-  [/cold|cool tone|blue tone|icy|winter/i, 'cool'],
-  [/neon|cyberpunk|night ?life/i, 'neon'],
-  [/moonlight|night|dark and blue/i, 'moonlight'],
-  [/vivid|colou?rful|saturated|pop(?:py)? colou?r/i, 'vivid'],
-  [/punchy|punch\b|contrasty/i, 'punch'],
-  [/kodak|film stock|2383/i, 'kodak'],
-  [/pastel|soft colou?r/i, 'pastel'],
-  [/bleach|desaturat/i, 'bleach'],
-  [/sunburn|hot|desert/i, 'sunburn'],
-];
+/* The named effects, shapes, animators, expressions, transitions and canvas
+   shapes live in vocabulary.js, shared with the direct reader so a word means
+   the same thing from either door. */
 
-const TRANSITION_WORDS = [
-  [/zoom (transition|punch)|punch in|zoom cut/i, 'zoomPunch'],
-  [/whip|swipe pan|whoosh/i, 'whip'],
-  [/glitch|digital|broken/i, 'glitch'],
-  [/film burn|burn/i, 'filmBurn'],
-  [/dip to black|fade to black/i, 'dipBlack'],
-  [/dip to white|flash/i, 'dipWhite'],
-  [/slide/i, 'slideLeft'],
-  [/spin/i, 'spin'],
-  [/blur (transition|dissolve)/i, 'blurDissolve'],
-  [/iris|circle/i, 'circle'],
-  [/wipe/i, 'wipe'],
-  [/dissolve|cross ?fade|smooth transition/i, 'dissolve'],
-];
+/* "no captions", "without transitions", "don't add music", "keep the colours". */
+const NEGATED = (s, what) => new RegExp(`\\b(?:no|without|don'?t (?:add|put|want|need|use)|do not (?:add|put|use)|skip|minus|never mind the|leave out|hold the|zero)\\s+(?:the |any |a |an )?(?:${what})\\b|\\b(?:${what})\\b[^.]{0,12}\\b(?:off|out)\\b`, 'i').test(s);
 
-/* Effects people name directly. Anything not in here still reaches the effect
-   through a template, so this list is a shortcut, not the only door. */
-/* The named effects, shapes, animators and expressions live in vocabulary.js,
-   shared with the direct reader so a word means the same thing from either door. */
-
-const RATIO_WORDS = [
-  [/tiktok|reel|short|vertical|9:16|portrait|story|stories/i, '9:16'],
-  [/youtube|landscape|16:9|widescreen|horizontal/i, '16:9'],
-  [/square|1:1/i, '1:1'],
-  [/instagram (feed|post)|4:5/i, '4:5'],
-  [/cinemascope|2\.39|anamorphic|letterbox/i, '2.39:1'],
-];
 
 /* ------------------------------------------------------------------ */
 /* reading the request                                                 */
 /* ------------------------------------------------------------------ */
 
-export function understand(prompt) {
-  const s = String(prompt || '').toLowerCase();
+export function understand(prompt, cleaned = null) {
+  const s = String(cleaned ?? prompt ?? '').toLowerCase();
   const intent = {
     raw: prompt,
+    text: s,
     targetDur: null,
     ratio: null,
     pace: null,
@@ -95,7 +57,10 @@ export function understand(prompt) {
     captionStyle: 'tiktok',
     removeSilence: false,
     transition: null,
-    noTransitions: /no transition|hard cut|straight cut|cuts only/i.test(s),
+    noTransitions: NEGATED(s, 'transitions?|dissolves?') || /\bhard cuts?\b|\bstraight cuts?\b|\bcuts only\b/i.test(s),
+    noEffects: NEGATED(s, 'effects?|filters?|fx'),
+    noText: NEGATED(s, 'text|titles?|words|captions?|subtitles?') && !/\b(add|put)\b[^.]{0,20}\b(title|text)\b/i.test(s),
+    noLook: NEGATED(s, 'colou?r grad\\w*|grade|grading|look|filter|filters') || /\bkeep (the )?(original|natural|my) colou?rs?\b|\bnot black and white\b|\bno colou?r (grade|grading|correction)\b|\bdon'?t (touch|change|grade) the colou?rs?\b/i.test(s),
     fadeEnds: /fade (in and out|at the (start|beginning) and end)|fade ends/i.test(s),
     title: null,
     hook: null,
@@ -104,7 +69,8 @@ export function understand(prompt) {
     speed: null,
     reframe: false,
     logo: /add my logo|my logo|watermark my/i.test(s),
-    noMusic: /no music|without music|mute the music|silent|no sound|no audio/i.test(s),
+    noMusic: NEGATED(s, 'music|song|beat|track|sound|audio') || /\bsilent\b|\bmute the music\b|\bkeep it silent\b/i.test(s),
+    vague: VAGUE.test(s),
 
     /* Music and the state of the recording. Both are things the assistant
        could not previously be asked for at all: naming a style did nothing,
@@ -132,15 +98,25 @@ export function understand(prompt) {
   };
 
   /* ---- how long ---- */
-  const secs = s.match(/(\d+(?:\.\d+)?)\s*(?:s|sec|secs|second|seconds)\b/);
+  // Every way people write a length: "20s", "20 seconds", "2 min", "1:30",
+  // "a minute", "half a minute", "ninety seconds", "15-20 seconds" (the
+  // upper end), "under 15 seconds". The unit has to be a whole word: a bare
+  // "s" turned "the ones on TikTok" into a one-second edit.
+  const clock = s.match(/\b(\d{1,2}):(\d{2})\b/);
+  const secs = s.match(/(\d+(?:\.\d+)?)\s*(?:s|sec|secs|second|seconds)\b/g);
   const mins = s.match(/(\d+(?:\.\d+)?)\s*(?:m|min|mins|minute|minutes)\b/);
-  // The unit has to be a whole word. Matching a bare "s" turned "the ones on
-  // TikTok" into a one-second edit, which is exactly the kind of silent
-  // misread that makes an AI feel broken.
   const worded = s.match(new RegExp(`\\b(${Object.keys(NUM_WORDS).join('|')})[- ]?(?:secs?|seconds?)\\b`));
-  if (secs) intent.targetDur = Number(secs[1]);
+  const hours = s.match(/(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hour|hours)\b/);
+  if (clock && Number(clock[1]) < 60) intent.targetDur = Number(clock[1]) * 60 + Number(clock[2]);
+  else if (secs) intent.targetDur = Math.max(...secs.map((m) => Number(m.match(/[\d.]+/)[0])));
   else if (mins) intent.targetDur = Number(mins[1]) * 60;
   else if (worded) intent.targetDur = NUM_WORDS[worded[1]];
+  else if (/\bhalf a minute\b/.test(s)) intent.targetDur = 30;
+  else if (/\b(a|one) minute and a half\b|\ba minute thirty\b/.test(s)) intent.targetDur = 90;
+  else if (/\b(a|one) minute\b/.test(s)) intent.targetDur = 60;
+  else if (hours) intent.targetDur = Number(hours[1]) * 3600;
+  else if (/^\s*\d{1,3}\s*$/.test(s) && Number(s) >= 5 && Number(s) <= 600) intent.targetDur = Number(s);
+  if (intent.targetDur && intent.targetDur > 600) { intent.tooLong = intent.targetDur; intent.targetDur = 600; }
 
   /* ---- shape ---- */
   for (const [re, ratio] of RATIO_WORDS) if (re.test(s)) { intent.ratio = ratio; break; }
@@ -157,7 +133,7 @@ export function understand(prompt) {
   for (const [re, look] of LOOK_WORDS) if (re.test(s)) { intent.look = look; break; }
 
   /* ---- captions ---- */
-  if (/caption|subtitle|text on screen|words on screen|auto.?caption|\bsubs\b/i.test(s)) intent.captions = true;
+  if (/caption|subtitle|text on screen|words on screen|auto.?caption|\bsubs\b/i.test(s) && !NEGATED(s, 'captions?|subtitles?|subs|text')) intent.captions = true;
   if (/youtube caption|clean caption|broadcast/i.test(s)) intent.captionStyle = 'youtube';
   if (/karaoke|word by word|highlight/i.test(s)) intent.captionStyle = 'karaoke';
   if (/big caption|bold caption|impact/i.test(s)) intent.captionStyle = 'bold';
@@ -192,9 +168,14 @@ export function understand(prompt) {
   else if (/speed (it |them )?up|timelapse|hyperlapse/i.test(s)) intent.speed = 2;
 
   /* ---- explicitly named effects ---- */
+  // "no shake" is a shake taken away, not asked for; "keep the colours" is not a colour effect.
   for (const [re, id, params] of EFFECT_WORDS) {
-    if (re.test(s) && EFFECTS[id]) intent.effects.push({ effect: id, params });
+    if (!re.test(s) || !EFFECTS[id]) continue;
+    const word = (s.match(re) || [''])[0].trim();
+    if (word && new RegExp(`\\b(?:no|without|minus|don'?t (?:add|want|use)|remove|take off|get rid of)\\s+(?:the |any |a )?${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i').test(s)) continue;
+    intent.effects.push({ effect: id, params });
   }
+  if (intent.noEffects) intent.effects = [];
   /* ---- shapes, text animators and expressions, by name ---- */
   for (const [re, id] of SHAPE_WORDS) if (re.test(s) && !intent.shapes.includes(id)) intent.shapes.push(id);
   intent.animator = firstMatch(ANIMATOR_WORDS, s)?.[1] || null;
@@ -210,9 +191,11 @@ export function understand(prompt) {
   else if (intent.pace === 'slow') intent.energy = 'slow';
 
   /* ---- a named style ---- */
-  const matched = matchTemplate(prompt);
-  if (matched) intent.template = matched.template.id;
+  const matched = matchTemplate(s);
+  if (matched) { intent.template = matched.template.id; intent.templateScore = matched.score; }
   if (intent.syncExisting && !matched) intent.template = 'sync-only';
+  if (intent.noLook) intent.look = null;
+  if (intent.noText) { intent.captions = false; intent.title = null; intent.hook = null; }
 
   /* ---- a call to action for the ad template ---- */
   const cta = String(prompt || '').match(/(?:cta|call to action|end(?:ing|card)?)\s+(?:that\s+)?(?:says|saying|reading)\s+(.{2,60})/i);
@@ -235,19 +218,45 @@ const PACE_SECONDS = { fast: 0.9, medium: 2.2, slow: 4.5 };
  * anything is already on the timeline.
  */
 export function plan(prompt, context) {
-  const intent = understand(prompt);
+  /*
+   * Read it the way it was typed first: slang, typos, politeness and other
+   * languages become the plain English the tables know, and every change is
+   * kept as a note for the panel.
+   */
+  const cleaned = normalise(prompt);
+  const intent = understand(prompt, cleaned.text);
+  intent.notes = cleaned.notes;
   const warnings = [];
   const questions = [];
+  const asked = cleaned.notes.length ? [`Read as "${cleaned.text}" (${cleaned.notes.join(', ')}).`] : [];
 
   const videos = context.media.filter((m) => m.kind === 'video' || m.kind === 'image');
   const music = context.media.find((m) => m.kind === 'audio');
   const onTimeline = context.clipCount || 0;
+
+  /* ---------------- -1. not an edit at all ---------------- */
+  /*
+   * "hi", "how do I export", "is this free", "make me famous": a reply, and
+   * no plan. Checked before anything else, because the planner used to turn
+   * "hello" into a whole edit, which is the fastest way to look stupid.
+   */
+  const reply = quickAnswer(prompt, cleaned.text);
+  if (reply) {
+    return {
+      intent, steps: [], warnings: [], questions: reply.questions || [],
+      answer: reply.answer, summary: 'A reply, not an edit.',
+      source: { id: 'answer', name: 'Reply' },
+    };
+  }
 
   if (!videos.length && !music) {
     return {
       intent, steps: [], warnings: ['There is no footage to work with yet. Add some clips and ask again.'],
       questions: [], summary: 'Nothing to edit yet.',
     };
+  }
+  if (intent.tooLong) {
+    questions.push(`${Math.round(intent.tooLong / 60)} minutes is longer than an edit from ${videos.length} clips can run — I have capped it at ten. Say a shorter length if you want it tighter.`);
   }
 
   /* Everything a template needs to make its decisions. */
@@ -305,26 +314,63 @@ export function plan(prompt, context) {
    * "clean" — and counting it would send a one-line instruction off to build a
    * whole edit, which is the failure this rule exists to prevent.
    */
-  const asks = [intent.targetDur, intent.ratio, intent.look, intent.musicStyle,
-    intent.beatSync, intent.captions, intent.speed, intent.animator, intent.expression,
-    intent.transition, intent.title || intent.hook, intent.removeSilence, intent.fixAudio,
-    intent.effects.length ? 'effects' : null, intent.shapes.length ? 'shapes' : null].filter(Boolean).length;
-  const direct = readInstructions(prompt, { clipCount: onTimeline });
-  if (direct && onTimeline > 0 && direct.steps.length >= asks) {
+  /*
+   * The test is now on what the direct reader could NOT follow: if the
+   * clauses it left behind still carry an ask (a length, a style, a look, a
+   * beat), the sentence is a brief and belongs to the montage or style path.
+   * If everything it left is empty or filler, it has read the whole request.
+   * The old rule counted every signal in the sentence against the number of
+   * steps, and "spin the logo" — one step, but "spin" is also a transition
+   * word — failed it and came back as a velocity edit.
+   */
+  // A rebuild is a brief by definition, whatever fragments the direct reader could pick out of it.
+  const direct = onTimeline > 0 && !intent.rebuild ? readInstructions(cleaned.text, { clipCount: onTimeline, raw: String(prompt || ''), names: context.media.filter((m) => m.kind !== 'audio').map((m) => m.name) }) : null;
+  if (direct) {
+    const leftover = direct.unhandled.join('. ');
+    const left = understand(leftover, leftover);
+    const asksLeft = [left.targetDur, left.ratio, left.look, left.musicStyle, left.beatSync, left.captions, left.speed,
+      left.animator, left.expression, left.transition, left.title || left.hook, left.removeSilence, left.fixAudio,
+      left.effects.length ? 'effects' : null, left.shapes.length ? 'shapes' : null, left.template, parseMontage(leftover)].filter(Boolean).length;
+    const brief = asksLeft > 0 && !direct.steps.length ? true : asksLeft > direct.steps.length;
+    if (!brief) {
+      if (!direct.steps.length) {
+        // Every clause matched a rule that needed more: ask, do nothing.
+        return {
+          intent, steps: [], warnings: [], notes: asked, questions: [...direct.asks],
+          summary: 'One thing first.', source: { id: 'direct', name: 'Direct instruction' },
+        };
+      }
+      return {
+        intent, steps: direct.steps,
+        warnings: direct.unhandled.filter((u) => editWords(u) > 0).length
+          // Said plainly rather than swallowed. Somebody who asked for three
+          // things and got two needs to know which one was missed, or they will
+          // assume it all worked and find out at export.
+          ? [`I did not follow: "${direct.unhandled.join('", "')}". Try naming the clip and what to change, `
+             + 'like "mute clip 2" or "slow the last shot to half speed".']
+          : [],
+        notes: asked, questions: [...direct.asks],
+        summary: direct.steps.length === 1
+          ? direct.steps[0].label
+          : `${direct.steps.length} changes to specific clips.`,
+        source: { id: 'direct', name: 'Direct instruction' },
+      };
+    }
+  }
+
+  /* An edit exists, and the words are an opinion rather than a change. */
+  // A weak style match ("professional" happens to be a tag somewhere) does not outrank the words being an opinion.
+  if (onTimeline > 0 && intent.vague && (!intent.template || (intent.templateScore || 0) < 3) && !parseMontage(cleaned.text)) {
     return {
-      intent, steps: direct.steps,
-      warnings: direct.unhandled.length
-        // Said plainly rather than swallowed. Somebody who asked for three
-        // things and got two needs to know which one was missed, or they will
-        // assume it all worked and find out at export.
-        ? [`I did not follow: "${direct.unhandled.join('", "')}". Try naming the clip and what to change, `
-           + 'like "mute clip 2" or "slow the last shot to half speed".']
-        : [],
-      questions: [],
-      summary: direct.steps.length === 1
-        ? direct.steps[0].label
-        : `${direct.steps.length} changes to specific clips.`,
-      source: { id: 'direct', name: 'Direct instruction' },
+      intent,
+      steps: [
+        { op: 'setColor', args: { target: 'all', look: 'punch', strength: 0.8 }, label: 'A clean, punchy grade on every shot', detail: 'Contrast and a little saturation. Swap it for any look in the Colour panel.' },
+        { op: 'fadeEnds', args: { dur: 0.5 }, label: 'Fade in and out', detail: 'Half a second at each end, so it does not start or stop dead.' },
+      ],
+      warnings: [],
+      notes: asked, questions: ['That is a polish, not a rebuild — your cuts are untouched. Name a style ("make it cinematic"), a length ("make it 20 seconds") or a change ("add captions") for more.'],
+      summary: 'A polish on the edit you have.',
+      source: { id: 'polish', name: 'Polish' },
     };
   }
 
@@ -338,7 +384,7 @@ export function plan(prompt, context) {
    * the words ask for a rebuild; a montage on top of an edit someone made is
    * the same destruction the style rule exists to prevent.
    */
-  const montage = parseMontage(prompt);
+  const montage = parseMontage(cleaned.text);
   if (montage && (ctx.rebuild || !onTimeline)) {
     const mctx = {
       ...ctx,
@@ -352,14 +398,23 @@ export function plan(prompt, context) {
     let msteps = trimSteps(montage, buildMontage(montage, mctx));
     /* A style named in the sentence beats the montage's default, and the plan
        has to say so — a step labelled "a phonk track" that adds an R&B one is
-       a plan nobody can check. */
-    if (intent.musicStyle) {
+       a plan nobody can check. Named and absent, it is added, even when a song
+       is already in the pool: "with a drill beat" asked for a drill beat. */
+    if (intent.musicStyle && !intent.noMusic) {
       const music = msteps.find((st) => st.op === 'addMusic' || st.op === 'generateBeat');
       if (music) {
         music.op = 'addMusic';
         music.args = { ...music.args, style: intent.musicStyle, want: prompt };
         music.label = `Pick a ${intent.musicStyle} track to cut to`;
+      } else {
+        msteps.push({ op: 'addMusic', args: { style: intent.musicStyle, want: prompt, seconds: (mctx.targetDur || 30) + 2 },
+          label: `Pick a ${intent.musicStyle} track to cut to`, detail: 'You named the style, so it is used instead of the song in your media.' });
       }
+    }
+    if (intent.captions) {
+      const caps = msteps.find((st) => st.op === 'captions');
+      if (caps) { caps.args = { ...caps.args, style: intent.captionStyle }; caps.label = `Add ${intent.captionStyle} captions`; }
+      else msteps.push({ op: 'captions', args: { style: intent.captionStyle }, label: `Add ${intent.captionStyle} captions`, detail: 'Timed to where the speech actually is.' });
     }
     if (intent.fixAudio) {
       msteps.push({ op: 'repairAudio', args: repairOptions(prompt), label: 'Clean up the recorded sound',
@@ -369,13 +424,19 @@ export function plan(prompt, context) {
       const graded = msteps.find((st) => st.op === 'applyLook');
       if (graded) graded.args = { look: intent.look, strength: 1 };
     }
+    if (intent.noLook) msteps = msteps.filter((st) => st.op !== 'applyLook');
+    if (intent.noTransitions) msteps = msteps.filter((st) => st.op !== 'addTransitions');
+    if (intent.noEffects) msteps = msteps.filter((st) => st.op !== 'addEffect' && st.op !== 'impactFrames' && st.op !== 'beatZoom');
+    if (intent.noText) msteps = msteps.filter((st) => st.op !== 'addTitle' && st.op !== 'captions' && st.op !== 'numberClips');
+    if (intent.noMusic) msteps = msteps.filter((st) => st.op !== 'addMusic' && st.op !== 'generateBeat' && st.op !== 'fitMusic');
+    msteps = dropNegated(msteps, cleaned.text);
     msteps = validateSteps(msteps, mctx, warnings);
     const sections = (msteps.find((st) => st.op === 'structuredCut')?.args.sections || []);
     return {
       intent: { ...intent, montage },
       steps: msteps,
       warnings,
-      questions: intent.targetDur ? [] : [`I have made it ${mctx.targetDur || 30} seconds. Say a length if you want it longer or shorter.`],
+      notes: asked, questions: [...(intent.targetDur ? [] : [`I have made it ${mctx.targetDur || 30} seconds. Say a length if you want it longer or shorter.`])],
       template: { id: montage.id, name: montage.name, emoji: montage.emoji },
       summary: `${describeSpec(montage, mctx)} ${sections.length} sections: ${sections.map((sec) => `${sec.name} (${sec.every <= 1 ? 'a cut every beat' : `every ${sec.every} beats`})`).join(', ')}.`,
       source: { id: 'montage', name: 'Montage builder' },
@@ -383,6 +444,12 @@ export function plan(prompt, context) {
   }
 
   /* ---------------- 1. a named style ---------------- */
+  /*
+   * "Sync to my music" with nothing on the timeline is a build, not a sync;
+   * and a style asked for by a single loose tag on top of somebody's edit is
+   * left alone, because the direct reader already had its chance.
+   */
+  if (intent.template === 'sync-only' && !onTimeline) { intent.template = null; intent.syncExisting = false; intent.beatSync = true; }
   if (intent.template) {
     const built = buildTemplate(intent.template, ctx);
     if (built) {
@@ -393,7 +460,13 @@ export function plan(prompt, context) {
 
   /* ---------------- 2. no style named: compose one ---------------- */
   if (!steps.length) {
-    steps = composeGeneric(intent, ctx, context, warnings);
+    steps = onTimeline > 0 && !intent.rebuild
+      ? composeOnTop(intent, ctx, context)
+      : composeGeneric(intent, ctx, context, warnings);
+  }
+  /* Whatever built the list: an edit that exists is never replaced unless the words said so. */
+  if (onTimeline > 0 && !intent.rebuild) {
+    steps = steps.filter((st) => !['layout', 'beatCut', 'structuredCut'].includes(st.op));
   }
 
   /* ---------------- 3. things asked for on top of the style ---------------- */
@@ -408,7 +481,7 @@ export function plan(prompt, context) {
    * only in the composer, so naming a style and a template in one sentence
    * quietly dropped the style.
    */
-  if (!ctx.hasMusic && !intent.noMusic && (intent.wantsMusic || intent.musicStyle)) {
+  if (!intent.noMusic && ((!ctx.hasMusic && intent.wantsMusic) || intent.musicStyle)) {
     const already = steps.find((st) => st.op === 'addMusic' || st.op === 'generateBeat');
     if (already && intent.musicStyle) {
       already.op = 'addMusic';
@@ -454,9 +527,12 @@ export function plan(prompt, context) {
     }
   }
 
-  if (intent.noTransitions) {
-    steps = steps.filter((st) => st.op !== 'addTransitions');
-  }
+  if (intent.noTransitions) steps = steps.filter((st) => st.op !== 'addTransitions');
+  if (intent.noLook) steps = steps.filter((st) => st.op !== 'applyLook');
+  if (intent.noEffects) steps = steps.filter((st) => st.op !== 'addEffect' && st.op !== 'impactFrames' && st.op !== 'beatZoom');
+  if (intent.noText) steps = steps.filter((st) => st.op !== 'addTitle' && st.op !== 'captions' && st.op !== 'numberClips');
+  if (intent.noMusic) steps = steps.filter((st) => st.op !== 'addMusic' && st.op !== 'generateBeat' && st.op !== 'fitMusic');
+  steps = dropNegated(steps, cleaned.text);
 
   // Named effects always win: "anime edit but no shake" or "add motion blur"
   // has to survive whatever the template decided.
@@ -475,10 +551,6 @@ export function plan(prompt, context) {
   for (const preset of intent.shapes) {
     steps.push({ op: 'addShape', args: { preset, at: 0, dur: Math.min(4, intent.targetDur || 4) },
       label: `Add a ${preset.replace(/([A-Z])/g, ' $1').toLowerCase().trim()}`, detail: 'A shape layer that animates itself, on its own track.' });
-  }
-  if (intent.animator && steps.some((st) => st.op === 'addTitle')) {
-    steps.push({ op: 'textAnimator', args: { target: 'titles', preset: intent.animator },
-      label: 'Animate the title letter by letter', detail: 'A text animator with a range selector; open the title to change the timing.' });
   }
   if (intent.expression) {
     steps.push({ op: 'addExpression', args: { target: 'all', preset: intent.expression },
@@ -512,6 +584,11 @@ export function plan(prompt, context) {
       detail: 'Animated in, inside the safe area so no platform button covers it.',
     });
   }
+  // After the title, because it animates the title.
+  if (intent.animator && steps.some((st) => st.op === 'addTitle') && !steps.some((st) => st.op === 'textAnimator')) {
+    steps.push({ op: 'textAnimator', args: { target: 'titles', preset: intent.animator },
+      label: `${intent.animator.replace(/([A-Z])/g, ' $1').toLowerCase().trim()} on the title`, detail: 'A text animator with a range selector; open the title to change the timing.' });
+  }
 
   if (intent.speed && intent.speed !== 1 && !steps.some((st) => st.op === 'speedRamp' || st.op === 'setSpeed')) {
     steps.push({
@@ -535,21 +612,89 @@ export function plan(prompt, context) {
   if (intent.reframe && !intent.ratio) {
     questions.push('What shape do you want it reframed to — 9:16 for TikTok, 16:9 for YouTube, or 1:1?');
   }
-  if (!intent.targetDur && !intent.syncExisting && videos.length > 6) {
+  if (!intent.targetDur && !intent.syncExisting && videos.length > 6 && !onTimeline) {
     questions.push(`You have ${videos.length} clips and did not say how long it should be. I have gone with a natural length — tell me a number of seconds if you want it tighter.`);
+  }
+  /*
+   * Nothing specific was asked for. Build the plain edit anyway — a plan
+   * somebody can adjust beats an interrogation — but say so, so "make it
+   * good" does not read as if the words were understood.
+   */
+  const specific = [intent.targetDur, intent.ratio, intent.look, intent.musicStyle, intent.beatSync, intent.captions,
+    intent.speed, intent.animator, intent.expression, intent.transition, intent.title, intent.removeSilence, intent.fixAudio,
+    intent.effects.length, intent.shapes.length, intent.template, intent.pace, intent.wantsMusic, intent.kenBurns].filter(Boolean).length;
+  if (!specific && !onTimeline) {
+    questions.push(intent.vague
+      ? 'I have gone with a plain cut, since the words did not say what kind. Name a style ("anime edit", "cinematic trailer"), a mood ("fast and hype", "slow and dreamy") or a length and I will change it.'
+      : 'I could not find anything specific in that, so this is a plain cut of your clips. Say a style, a length, a look or a change to a clip for something more.');
   }
 
   /* ---------------- 5. one last sanity pass ---------------- */
   steps = validateSteps(steps, ctx, warnings);
 
+  if (!steps.length) {
+    return {
+      intent, steps: [], warnings, notes: asked, questions: [...questions,
+        ...(questions.length ? [] : ['I did not find a change in that. Say what to do to the edit — "add captions", "make it vertical", "mute clip 2", "make it 20 seconds".'])],
+      summary: 'Nothing to do yet.',
+    };
+  }
+
   return {
     intent,
     steps,
     warnings,
-    questions,
+    notes: asked, questions: [...questions],
     template: source ? { id: source.id, name: source.name, emoji: source.emoji } : null,
-    summary: summarise(intent, steps, videos.length, ctx.wantRatio || ctx.ratio, source),
+    summary: summarise(intent, steps, videos.length, ctx.wantRatio || ctx.ratio, source, onTimeline),
   };
+}
+
+/** "anime edit without the impact frames": the style's own steps, minus the ones the words refused. */
+function dropNegated(steps, text) {
+  const neg = negatedEffects(text);
+  if (!neg.ops.size && !neg.effects.size) return steps;
+  return steps.filter((st) => !neg.ops.has(st.op) && !(st.op === 'addEffect' && neg.effects.has(st.args?.effect)));
+}
+
+/* ------------------------------------------------------------------ */
+/* on top of an edit that exists                                       */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The additive plan: what the sentence asked for, on the cut somebody made.
+ *
+ * composeGeneric starts by laying the clips out, which is right for an empty
+ * timeline and a disaster for a full one — "add captions" replaced a whole
+ * afternoon's edit with a fresh layout and then captioned it. Here nothing
+ * builds; every step is something put on top, and the cuts stay exactly
+ * where they are.
+ */
+function composeOnTop(intent, ctx, context) {
+  const steps = [];
+  const ratio = ctx.wantRatio;
+  if (ratio && ratio !== ctx.ratio) {
+    steps.push({ op: 'setRatio', args: { ratio }, label: `Switch the canvas to ${ratio}`,
+      detail: ratio === '9:16' ? 'Full-screen on a phone, which is what TikTok, Reels and Shorts want.' : `Everything is reframed to ${ratio}; nothing is cut.` });
+  }
+  if (intent.syncExisting) {
+    const pace = ctx.pace;
+    steps.push({ op: 'syncToTrack', args: { every: pace === 'fast' || pace === 'frantic' ? 2 : pace === 'slow' ? 8 : 4, keepOrder: true, trim: true },
+      label: `Re-time your cuts onto the beat${ctx.bpm ? ` (${ctx.bpm} BPM)` : ''}`,
+      detail: 'Your clips, your order, your content — each cut is moved onto a beat. Nothing is replaced.' });
+  }
+  if (intent.transition) {
+    steps.push({ op: 'addTransitions', args: { type: intent.transition, dur: ctx.pace === 'fast' ? 0.22 : 0.45 },
+      label: `Put a ${transitionName(intent.transition)} on every cut`, detail: 'Drag either edge on the timeline to change one.' });
+  }
+  if (intent.kenBurns) {
+    steps.push({ op: 'kenBurns', args: { amount: 0.12 }, label: 'Add a slow push on the photos', detail: 'A gentle zoom, so a still is not dead on screen.' });
+  }
+  if (intent.fadeEnds) {
+    steps.push({ op: 'fadeEnds', args: { dur: 0.5 }, label: 'Fade in and out', detail: 'Half a second at each end.' });
+  }
+  void context;
+  return steps;
 }
 
 /* ------------------------------------------------------------------ */
@@ -694,7 +839,7 @@ function validateSteps(steps, ctx, warnings) {
 /* wording                                                             */
 /* ------------------------------------------------------------------ */
 
-function summarise(intent, steps, clipCount, ratio, template) {
+function summarise(intent, steps, clipCount, ratio, template, onTimeline = 0) {
   // Read the ratio back out of the plan: if a step changes it, that is the
   // shape of the finished edit, whatever the project was set to before.
   const ratioStep = steps.find((s) => s.op === 'setRatio');
@@ -704,6 +849,10 @@ function summarise(intent, steps, clipCount, ratio, template) {
     const bits = [`Your existing cuts, re-timed onto the beat`];
     if (finalRatio !== ratio) bits.push(`and reframed to ${finalRatio}`);
     return `${bits.join(' ')}. ${steps.length} step${steps.length === 1 ? '' : 's'}, nothing replaced.`;
+  }
+  if (onTimeline && !steps.some((s) => ['layout', 'beatCut', 'structuredCut'].includes(s.op))) {
+    const what = template ? `the ${template.name.toLowerCase()} style` : steps.length === 1 ? steps[0].label.toLowerCase() : `${steps.length} things`;
+    return `${what.charAt(0).toUpperCase()}${what.slice(1)} on the edit you have. Your cuts stay where they are.`;
   }
 
   const bits = [];

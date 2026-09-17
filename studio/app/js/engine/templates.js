@@ -515,7 +515,14 @@ export const TEMPLATE_BY_ID = Object.fromEntries(TEMPLATES.map((t) => [t.id, t])
  * a style nobody asked for — "mute clip 2" came back as a gaming montage on
  * the strength of the word "clip". These never score.
  */
-const GENERIC_TAGS = new Set(['clip', 'clips', 'video', 'videos', 'shot', 'shots', 'footage', 'cut', 'cuts', 'timeline']);
+/*
+ * Words that appear in almost any request and must not pick a style on their
+ * own. "edit" was the worst of them: it sat in the anime template's tags, so
+ * "a 15 second edit" came back as an anime AMV. The single adjectives (fast,
+ * hard, dark, soft) are pace and mood, which the planner reads separately.
+ */
+const GENERIC_TAGS = new Set(['clip', 'clips', 'video', 'videos', 'shot', 'shots', 'footage', 'cut', 'cuts', 'timeline',
+  'edit', 'edits', 'fast', 'hard', 'dark', 'soft', 'smooth', 'film', 'flow', 'pretty', 'calm', 'launch', 'shop', 'explain', 'lift']);
 
 /* Word-boundary tests, built once. A tag has to be a word in the sentence: on
    a plain substring, "ad" matches inside "add a wiggle to the title" and the
@@ -538,7 +545,9 @@ function saysTag(s, tag) {
  * the subject matter, and a tie should not depend on declaration order.
  */
 export function matchTemplate(text) {
-  const s = String(text || '').toLowerCase();
+  // A title in quotes is not a description: "WINTER" on an edit does not make
+  // it a snowstorm, and "JJK" does not make it anime any more than it already was.
+  const s = String(text || '').toLowerCase().replace(/["“”][^"“”]*["“”]/g, ' ');
   let best = null;
   let bestScore = 0;
   for (const template of TEMPLATES) {

@@ -808,7 +808,18 @@ RULES
 - Be decisive. Pick sensible numbers rather than asking about every one. Fast
   cuts are 2 beats, normal 4, slow 8. A TikTok is 9:16. A trailer is 15-30s.
 - If the request is vague ("make it good", "do something cool"), pick the style
-  that suits their media and say why in the summary. Do not stall.`;
+  that suits their media and say why in the summary. Do not stall.
+- If "timeline.clipCount" is above zero, an edit EXISTS. Never use layout,
+  beatCut or structuredCut on it unless they said rebuild, start over or from
+  scratch — use the targeted operations (setColor, setClipSpeed, setVolume,
+  addTitle, captions, addTransitions, setRatio, fitDuration) on top of it.
+  "add captions" on an existing edit is one captions step, nothing else.
+- If part of the request names something no operation can do (a freeze frame,
+  a reverse, a crop, a stabiliser, a logo you have not been given), do the
+  rest and name the missing part in "warnings" with the manual way to do it.
+- Negations are binding: "no captions", "without transitions", "keep the
+  original colours", "don't add music" remove that step even when the style
+  would normally include it.`
 
 async function askClaude(env, prompt, body) {
   const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });

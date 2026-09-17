@@ -204,6 +204,9 @@ export const GUIDE = [
     body: [
       ['Be specific', 'It follows a target and a change: *"mute clip 2"*, *"make the third one black and white"*, *"slow the last clip to half speed"*, *"delete the last two"*, *"brighten clips 2 to 4"*, *"make the first 5 seconds black and white"*.'],
       ['Several at once', '*"mute clip 2 and slow the last one down"* becomes two separate steps, and you see both before anything runs.'],
+      ['On top of an edit you made', '*"add captions"*, *"make it vertical"*, *"put a dissolve on every cut"*, *"make it 20 seconds"* go on the cut you have. Your cuts are never replaced unless you say *"start over"* or *"rebuild"*.'],
+      ['Typos, slang, other languages', 'It reads *"bnw"*, *"slo mo"*, *"subs"*, *"w/o music"*, one-letter typos, and the everyday editing words in Spanish, French, Portuguese and German — and tells you how it read them, so nothing is guessed silently.'],
+      ['Ask it things', '*"what can you do"*, *"how do I export"*, *"is this free"*, *"does it work offline"* get an answer, on the device, without spending an AI action. If it cannot do something (a freeze frame, a reverse, a logo it has not seen) it says so and tells you the control.'],
       ['Nothing happens without you', 'It shows the plan first. You approve it, and the whole thing undoes in one keystroke.'],
       ['Two brains', 'With a server configured it uses a full language model and you can say anything. Without one it uses the on-device reader, which handles direct instructions and named styles. The panel tells you which one is answering — if it says "on-device reader", free-form requests will not work until the Worker is switched on.'],
     ],
