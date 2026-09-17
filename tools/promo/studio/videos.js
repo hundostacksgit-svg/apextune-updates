@@ -66,6 +66,29 @@ export const REF_CUTS = [
 export const REF_END = 31.467;
 export const REF_LEN = 35.527;
 
+/*
+ * The third sent-in reference, measured the same way.
+ *
+ * 27.67s square, but the last four seconds are TikTok's own download outro
+ * (the logo and the username bar), not the edit — the edit ends at 23.667s on
+ * the final hit. The drop: the low band sits at 4-14 units to 8.22s and climbs
+ * to 73 by 8.60s; the first fast cut is at 8.5s and that is where this changes.
+ * Cuts from dissect.mjs at threshold 0.12, which on this picture found the
+ * flash cuts the default threshold folded together. The flashes themselves are
+ * the frames whose mean luma is over 150 — eight of them, measured, none on a
+ * pattern the cut list could express, so they are their own list.
+ */
+export const REF3_DROP = 8.5;
+export const REF3_CUTS = [
+  0, 1.9, 4.967, 8.5, 9.133, 9.233, 9.667, 9.767, 10.2, 10.533, 10.733, 10.8, 11.2, 11.267,
+  11.467, 11.967, 12.367, 12.733, 13.733, 13.8, 13.867, 14.033, 14.167, 14.333, 14.467, 14.7,
+  14.8, 14.867, 14.967, 15.5, 15.967, 16.433, 16.6, 16.667, 17.7, 17.767, 18.067, 18.233,
+  18.467, 18.567, 23.667,
+];
+export const REF3_FLASHES = [9.7, 10.733, 11.367, 12.733, 13.767, 15.967, 16.633, 18.5];
+export const REF3_END = 18.567;
+export const REF3_LEN = 23.667;
+
 export const DROP_TONES = {
   cool: { b: 0.72, h: -16, s: 0.82 },
   warm: { b: 1.55, h: 18, s: 1.35 },
@@ -925,6 +948,7 @@ export const VIDEOS = [
   {
     id: 'mog-02-rivals', title: 'The mog: three logos', music: 'phonk-132-24s',
     wm: 'corner', formats: ['tiktok'],
+    ref: { cuts: [...REF_CUTS, REF_DROP], len: REF_LEN, drop: REF_DROP },
     scenes: [
       /*
        * Twelve seconds on three marks. Nine shots, the same subject every time,
@@ -1034,6 +1058,101 @@ export const VIDEOS = [
         ] },
 
       { type: 'slam', dur: Number((REF_LEN - REF_END).toFixed(3)), kick: '$19.99 once. no subscription. ever.', noflash: true },
+    ],
+  },
+
+  /* ===================================================================
+   * mog-03-lyric — the third rebuild. Eight seconds of the mark with the
+   * lyric writing itself a word at a time, the drop at 8.5s, ten seconds of
+   * the app at the reference's own cut times with its own white flashes, its
+   * one letter-spaced word, then the end card where their card is.
+   *
+   * The words are the track's own lyric, placed where the reference places
+   * them. They are the sound's words, not a claim about anything.
+   * =================================================================== */
+  {
+    id: 'mog-03-lyric', title: 'The lyric edit: the mark until the drop', music: 'phonk-132-24s',
+    wm: 'corner', formats: ['tiktok'],
+    ref: { cuts: REF3_CUTS, len: REF3_LEN, drop: REF3_DROP },
+    scenes: [
+      { type: 'lyric', dur: REF3_DROP, bpm: 100, embers: 26,
+        cuts: [
+          { at: 0, dur: 1.9, push: 0.92, to: 1.1, drift: 30, dy: -80, bright: 0.9 },
+          { at: 1.9, dur: 3.067, push: 1.35, to: 1.08, drift: -40, dy: 60, tilt: -2, bright: 1 },
+          { at: 4.967, dur: 3.533, push: 0.8, to: 1.22, drift: 20, dy: -30, tilt: 1.5, bright: 0.8 },
+        ],
+        lines: [
+          /* line 1, mid-frame, on the first shot */
+          { pos: 'mid', to: 1.9, words: [
+            { t: 'ima', at: 0.0 }, { t: 'make', at: 0.2 }, { t: 'the', at: 0.4 }, { t: 'world', at: 0.45 },
+            { t: 'hate', at: 0.8 }, { t: 'me', at: 0.9 } ] },
+          /* line 2, the big "ima", the red word, on the second shot */
+          { pos: 'mid', to: 4.967, words: [
+            { t: 'ima', at: 2.4, k: 'b' }, { t: 'make', at: 2.6 }, { t: 'the', at: 2.65 }, { t: 'world', at: 2.7 },
+            { t: 'hate', at: 2.8 }, { t: 'me', at: 2.85 }, { br: true },
+            { t: 'be', at: 4.0 }, { t: 'the', at: 4.05 }, { t: 'supervillain', at: 4.2, k: 'r' } ] },
+          /* lines 3 and 4, low in the frame, on the dark third shot */
+          { pos: 'low', to: 7.2, words: [
+            { t: 'ima', at: 5.6, k: 'i' }, { t: 'make', at: 5.7, k: 'i' }, { t: 'this', at: 5.9 }, { t: 'whole', at: 6.0 },
+            { t: 'thing', at: 6.1 }, { t: 'crumble', at: 6.25 } ] },
+          { pos: 'low', to: 8.5, words: [
+            { t: 'Yeah', at: 7.0, k: 's' }, { br: true },
+            { t: 'people', at: 7.25 }, { t: 'like', at: 7.35 }, { t: 'the', at: 7.4 }, { t: 'villains', at: 7.5 } ] },
+        ] },
+
+      /* Thirty-six cuts at the reference's times, red-graded, the flashes at
+         its flash frames, the word where its word is. */
+      { type: 'drop', dur: REF3_END - REF3_DROP, impactUnder: 0, noflash: true,
+        /* Everything red: sepia collapses the app's blue and the footage's
+           orange to one hue, then the rotate takes it to red. The reference is
+           a dark red room and red sabres from first frame to last. */
+        tones: { cool: { b: 0.6, sepia: 1, h: -52, s: 2.8 }, warm: { b: 1.5, sepia: 1, h: -44, s: 3.4 } },
+        flashes: REF3_FLASHES.map((t) => Number((t - REF3_DROP).toFixed(3))),
+        word: { at: Number((14.033 - REF3_DROP).toFixed(3)), dur: 0.93, text: 'D<i>A</i>NG<i>E</i>R' },
+        cuts: REF3_CUTS.slice(3, -2).map((t, i, all) => ({
+          at: Number((t - REF3_DROP).toFixed(3)),
+          dur: Number(((i + 1 < all.length ? all[i + 1] : REF3_END) - t).toFixed(3)),
+        })),
+        frames: [
+          { mark: true },
+          { shot: 'panel-erase', cx: 0.51, cy: 0.42, w: 0.44, tone: 'warm', label: 'tap it. <em>gone.</em>', push: 1.3 },
+          { shot: 'export', cx: 0.5, cy: 0.5, w: 0.44, tone: 'cool', label: 'every platform at once', push: 1.2 },
+          { shot: 'phone', cx: 0.5, cy: 0.3, w: 0.6, tone: 'warm', label: 'on your phone', push: 1.26 },
+          { shot: 'panel-sound', cx: 0.13, cy: 0.3, w: 0.28, tone: 'cool', label: '<em>544</em> tracks', push: 1.12 },
+          { shot: 'panel-overlays', cx: 0.13, cy: 0.3, w: 0.26, tone: 'warm', label: 'particles', push: 1.17 },
+          { shot: 'panel-templates', cx: 0.13, cy: 0.33, w: 0.26, tone: 'cool', label: '<em>21</em> montages', push: 1.14 },
+          { shot: 'editor', cx: 0.5, cy: 0.72, w: 0.38, tone: 'warm', label: 'unlimited tracks', push: 1.26 },
+          { shot: 'panel-ai-plan', cx: 0.13, cy: 0.2, w: 0.3, tone: 'cool', label: 'it plans the edit', push: 1.13 },
+          { shot: 'panel-filters', cx: 0.13, cy: 0.3, w: 0.26, tone: 'warm', label: '<em>176</em> looks', push: 1.13 },
+          { shot: 'panel-audio-chain', cx: 0.13, cy: 0.42, w: 0.28, tone: 'cool', label: 'EQ. dynamics. loudness.', push: 1.15 },
+          { shot: 'panel-transitions', cx: 0.13, cy: 0.5, w: 0.3, tone: 'warm', label: 'tracked transitions', push: 1.18 },
+          { shot: 'panel-color', cx: 0.13, cy: 0.22, w: 0.26, tone: 'cool', label: 'real <em>scopes</em>', push: 1.16 },
+          { shot: 'editor', cx: 0.51, cy: 0.3, w: 0.52, tone: 'warm', label: '<em>60fps</em>, effects on', push: 1.28 },
+          { shot: 'panel-text', cx: 0.13, cy: 0.25, w: 0.28, tone: 'cool', label: '<em>49</em> text styles', push: 1.12 },
+          { shot: 'panel-erase', cx: 0.44, cy: 0.5, w: 0.3, tone: 'warm', label: 'no mask. no pen.', push: 1.32 },
+          { shot: 'editor', cx: 0.5, cy: 0.5, w: 0.9, tone: 'cool', label: 'the whole editor', push: 1.24 },
+          { shot: 'panel-overlays', cx: 0.13, cy: 0.5, w: 0.3, tone: 'warm', label: 'light leaks', push: 1.16 },
+          { shot: 'panel-styles-phonk', cx: 0.13, cy: 0.3, w: 0.26, tone: 'cool', label: 'phonk', push: 1.14 },
+          { shot: 'phone', cx: 0.5, cy: 0.62, w: 0.55, tone: 'warm', label: 'same project, both', push: 1.3 },
+          { shot: 'panel-captions', cx: 0.13, cy: 0.3, w: 0.26, tone: 'cool', label: 'captions, timed for you', push: 1.13 },
+          { shot: 'panel-effects', cx: 0.13, cy: 0.33, w: 0.26, tone: 'warm', label: '<em>340</em> effects', push: 1.14 },
+          { shot: 'panel-shapes', cx: 0.13, cy: 0.5, w: 0.3, tone: 'cool', label: 'shape layers', push: 1.15 },
+          { shot: 'panel-filters', cx: 0.13, cy: 0.55, w: 0.3, tone: 'warm', label: 'one tap, graded', push: 1.17 },
+          { shot: 'panel-audio', cx: 0.13, cy: 0.35, w: 0.28, tone: 'cool', label: 'repair bad audio', push: 1.13 },
+          { shot: 'editor', cx: 0.5, cy: 0.5, w: 0.62, tone: 'warm', label: 'ripple. roll. slip.', push: 1.25 },
+          { shot: 'panel-styles-anime', cx: 0.13, cy: 0.3, w: 0.26, tone: 'cool', label: 'anime opening', push: 1.14 },
+          { shot: 'panel-stickers', cx: 0.13, cy: 0.3, w: 0.26, tone: 'warm', label: 'stickers that follow', push: 1.15 },
+          { shot: 'start', cx: 0.5, cy: 0.4, w: 0.6, tone: 'cool', label: 'opens in a browser', push: 1.2 },
+          { shot: 'phone', cx: 0.5, cy: 0.42, w: 0.85, tone: 'warm', label: 'no watermark. <em>ever.</em>', push: 1.2 },
+          { shot: 'panel-styles-velocity', cx: 0.13, cy: 0.3, w: 0.26, tone: 'cool', label: 'velocity', push: 1.14 },
+          { shot: 'panel-erase', cx: 0.5, cy: 0.6, w: 0.5, tone: 'warm', label: 'it fills the gap', push: 1.22 },
+          { shot: 'panel-ai', cx: 0.13, cy: 0.25, w: 0.3, tone: 'cool', label: 'say what you want', push: 1.12 },
+          { shot: 'editor', cx: 0.3, cy: 0.55, w: 0.45, tone: 'warm', label: 'keyframes. curves.', push: 1.24 },
+          { shot: 'panel-sound', cx: 0.13, cy: 0.5, w: 0.3, tone: 'cool', label: 'rap. drill. rnb.', push: 1.12 },
+          { shot: 'phone-start', cx: 0.5, cy: 0.45, w: 0.8, tone: 'warm', label: 'installs from the browser', push: 1.2 },
+        ] },
+
+      { type: 'slam', dur: Number((REF3_LEN - REF3_END).toFixed(3)), kick: '$19.99 once. no subscription. ever.', noflash: true },
     ],
   },
 ];

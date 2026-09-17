@@ -442,3 +442,52 @@ img { display: block; }
   font-weight: 800; font-size: 132px; line-height: 1.06; letter-spacing: -.01em; padding: 8px 34px 16px;
   white-space: nowrap; }
 .fmt-yt .rivals .mog b { font-size: 104px; }
+
+/* ---- lyric: the mark, held, with the words landing one at a time ----
+   Off a third sent-in edit: eight seconds of a figure walking towards camera
+   in a dark red room while the lyric writes itself across the frame a word at
+   a time, then the drop. The subject here is the mark instead of the figure —
+   it breathes, its rings turn, embers drift up behind it — and every cut is a
+   different framing of it, the way the reference's are of the figure. */
+.lyric { position: absolute; inset: 0; overflow: hidden; background: #050304; }
+.lyric .room { position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 70%, rgba(150,30,20,.55) 0%, rgba(60,10,8,.35) 35%, rgba(5,3,4,0) 70%); }
+.lyric .haze { position: absolute; inset: -20%; opacity: .55; mix-blend-mode: screen;
+  background: radial-gradient(ellipse at 30% 80%, rgba(255,90,50,.25) 0%, rgba(0,0,0,0) 45%),
+              radial-gradient(ellipse at 75% 30%, rgba(255,140,80,.12) 0%, rgba(0,0,0,0) 40%); will-change: transform; }
+.lyric .stage { position: absolute; left: 0; top: 0; will-change: transform, filter; }
+.lyric .mark { display: block; width: 480px; height: 480px; will-change: transform;
+  filter: drop-shadow(0 0 60px rgba(255,80,60,.45)) drop-shadow(0 30px 80px rgba(0,0,0,.8)); }
+/* Two rings round the mark that turn at different rates: the only honest way
+   to make a flat logo look like it is doing something for eight seconds. */
+.lyric .ring { position: absolute; left: 50%; top: 50%; border-radius: 50%; border: 2px solid rgba(255,120,90,.35);
+  will-change: transform; pointer-events: none; }
+.lyric .ring.a { width: 640px; height: 640px; margin: -320px 0 0 -320px; border-style: dashed; }
+.lyric .ring.b { width: 800px; height: 800px; margin: -400px 0 0 -400px; border-color: rgba(255,120,90,.18); }
+.lyric .ember { position: absolute; width: 6px; height: 6px; border-radius: 50%; background: #ffb070;
+  box-shadow: 0 0 12px 4px rgba(255,120,60,.6); will-change: transform, opacity; }
+/* The words. White, a touch of glow, mid-frame, each one popping in on its
+   own cue. `b` is the big first word the reference uses on the second line,
+   `r` the red one, `s` the red script one. */
+/* 54px, not 64: the second line is a 128px "ima" plus five words, and at 64 the
+   last word wrapped under the big one, which the reference's does not. */
+.lyric .line { position: absolute; left: 48px; right: 48px; display: flex; flex-wrap: wrap; align-items: baseline;
+  column-gap: .26em; row-gap: 6px; font-family: var(--head); font-weight: 600; font-size: 54px; line-height: 1.05;
+  color: #fff; text-shadow: 0 0 22px rgba(255,255,255,.5), 0 2px 6px rgba(0,0,0,.95), 0 4px 30px rgba(0,0,0,.8); letter-spacing: -.01em; }
+.lyric .line.mid { top: 47%; }
+.lyric .line.low { top: 71%; }
+.lyric .w { display: inline-block; opacity: 0; will-change: transform, opacity; }
+.lyric .w.b { font-size: 128px; font-weight: 800; line-height: .85; letter-spacing: -.04em; }
+.lyric .w.r { color: #ff2a2a; text-shadow: 0 0 24px rgba(255,40,40,.7); }
+.lyric .w.i { font-style: italic; font-weight: 800; }
+.lyric .w.s { font-family: 'Sora', var(--head); font-style: italic; font-weight: 800; color: #ff2a2a; font-size: 110px; line-height: .9;
+  text-shadow: 0 0 26px rgba(255,40,40,.7); }
+.lyric .w.br { flex-basis: 100%; height: 0; }
+.fmt-yt .lyric .line { font-size: 48px; left: 120px; right: 120px; }
+.fmt-yt .lyric .mark { width: 300px; height: 300px; }
+
+/* ---- drop additions: the reference's white flashes and its one word ---- */
+.drop .word { position: absolute; left: 0; right: 0; top: 46%; text-align: center; font-family: var(--head);
+  font-weight: 500; font-size: 78px; letter-spacing: .6em; text-indent: .6em; color: rgba(140,10,10,.85);
+  text-shadow: 0 0 18px rgba(0,0,0,.9); opacity: 0; will-change: opacity, transform; mix-blend-mode: multiply; }
+.drop .word i { font-style: normal; color: rgba(20,4,4,.9); }

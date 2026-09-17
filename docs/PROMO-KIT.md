@@ -435,6 +435,53 @@ set as text and no artwork.
 
 ---
 
+## The lyric edit — the mark until the drop
+
+`out/tiktok/mog-03-lyric-silent.mp4` · 23.7s · silent · corner sticker throughout.
+
+A third sent-in edit, rebuilt the way that worked on the second: the
+reference's own cut times, nothing derived, and a check copy with its audio
+muxed on so the sync can actually be heard.
+
+**What the reference is.** 27.67s square: eight seconds of a figure walking
+towards camera in a dark red room while the lyric writes itself across the
+frame a word at a time, then ten seconds of fast cuts with eight white flash
+frames and one letter-spaced word, then the editor's card, then TikTok's own
+download outro — which is not part of the edit, so this ends where their card
+does, at 23.667s.
+
+**Measured:** the low band sits at 4–14 units to 8.22s and climbs to 73 by
+8.60s; the first fast cut is at **8.5s**, and that is where the mark arrives.
+Cuts from `dissect.mjs` at threshold 0.12, which on this picture separates the
+flash cuts the default folds together. The flashes are the eight frames whose
+mean luma is over 150; they are not on any pattern the cut list could express,
+so they are their own list.
+
+| | |
+|---|---|
+| **0 – 8.5s** | The mark on a dark red floor, breathing on the beat, two rings turning round it, embers drifting up. Three shots at the reference's three cuts. The lyric lands a word at a time — *ima make the world hate me* mid-frame, then the big **ima** and the red *supervillain*, then *ima make this whole thing crumble* and the red *Yeah / people like the villains* low in the frame, where theirs are. |
+| **8.5s** | **The drop.** Hard cut to the mark arriving. |
+| **8.5 – 18.57s** | 36 cuts of the app at the reference's times, graded red to sit under a red track, its eight white flashes at its eight flash frames, and **D A N G E R** across the picture at 14.03s for the 0.93s theirs is. |
+| **18.57 – 23.67s** | `omnidx.net` · `$19.99 once. no subscription. ever.` — where their card is. |
+
+**On the words.** They are the track's own lyric, placed where the reference
+places them, and they are the sound's words rather than a claim about
+anything. The one design word, DANGER, is kept as it is shown; swapping it for
+`O M N I D X` is a one-word change in `videos.js` if that reads better.
+
+**Caption**
+
+> everyone else is renting. omnidx.net is $19.99 once.
+
+`#editing #videoedit #editor #videoediting #omnidx`
+
+**Post it** with that sound picked from the original video: the rebuild is the
+reference's length with its cuts at the reference's times, so the sound lines
+up from the first frame with nothing to drag. `mog-03-lyric-withsound.mp4` has
+the reference's audio muxed on for checking only — the track is not ours.
+
+---
+
 ## Four sets of three
 
 Twenty-six videos in one register is one experiment run twenty-six times. The

@@ -468,7 +468,9 @@ const BUILD = {
      * It guarantees a delta on every cut no matter what is in frame, and it is
      * what a phonk edit does anyway.
      */
-    const TONES = DROP_TONES;
+    /* A scene may bring its own pair — the third mog is graded red to sit
+       under a red reference — and the verifier reads the same field. */
+    const TONES = s.tones || DROP_TONES;
     /*
      * A frame says which way it goes, because only the frame knows.
      *
@@ -510,9 +512,33 @@ const BUILD = {
       return { cell, img, gr, gc, lbl, c, f, punchy, tone: toneOf(i, f), seed: i * 37.7 };
     });
     root.appendChild(flash);
+    /*
+     * The reference's white flashes, at its own times.
+     *
+     * They are not on cuts in any pattern the cut list could express — some
+     * open a cut, one lands mid-shot — so they are a list of their own: two
+     * frames of white, then a short tail. And its one word, letter-spaced and
+     * dark, multiplied into the picture for its half second.
+     */
+    const flashes = s.flashes || [];
+    const word = s.word ? el('div', 'word', s.word.text) : null;
+    if (word) root.appendChild(word);
 
     return { el: root, update(l) {
       let lit = 0;
+      /* One full-white frame and a two-frame tail: measured on the reference,
+         a flash is one frame at 246 and one at 175. Two frames of white read
+         as a hold rather than a hit. */
+      for (const f of flashes) {
+        const d = l - f;
+        if (d >= -HALF_FRAME && d < 0.034 + 0.08) lit = Math.max(lit, d < 0.034 ? 1.8 : 1.2 * (1 - (d - 0.034) / 0.08));
+      }
+      if (word) {
+        const wp = prog(l, s.word.at, s.word.at + 0.12);
+        const on = l >= s.word.at - HALF_FRAME && l < s.word.at + s.word.dur;
+        word.style.opacity = on ? String(wp) : '0';
+        word.style.transform = `scale(${lerp(1.12, 1, outCubic(wp))})`;
+      }
       for (const k of cells) {
         const on = l >= k.c.at - HALF_FRAME && l < k.c.at + k.c.dur - HALF_FRAME;
         k.cell.style.display = on ? '' : 'none';
@@ -564,7 +590,11 @@ const BUILD = {
         };
         /* The tone rides on top of the punch grade rather than replacing it: the
            punch still opens hot and settles, it just settles somewhere else. */
-        k.img.style.filter = `saturate(${lerp(1.5, 1.12, settle) * k.tone.s}) contrast(${lerp(1.25, 1.06, settle)})`
+        /* `sepia` first, when a tone asks for it: it collapses every source
+           colour to one warm hue before the rotate, which is how a blue app and
+           an orange sunset both come out the same red. A bare hue-rotate sent
+           the sunset green. */
+        k.img.style.filter = `${k.tone.sepia ? `sepia(${k.tone.sepia}) ` : ''}saturate(${lerp(1.5, 1.12, settle) * k.tone.s}) contrast(${lerp(1.25, 1.06, settle)})`
           + ` brightness(${k.tone.b}) hue-rotate(${k.tone.h}deg) blur(${(1 - settle) * (k.punchy ? 7 : 3.2)}px)`;
         place(k.img, 0);
         if (k.gr) {
@@ -575,7 +605,96 @@ const BUILD = {
         pop(k.lbl, prog(p, 0.02, 0.3), { y: 30, from: 0.86 });
         if (k.punchy) lit = Math.max(lit, 1 - Math.min(1, p * 1.6));
       }
-      flash.style.opacity = String(lit * 0.55);
+      flash.style.opacity = String(Math.min(1, lit * 0.55));
+    } };
+  },
+
+  /*
+   * The mark, held, with the words landing one at a time.
+   *
+   * The third sent-in reference: eight seconds of a dark red room, a figure
+   * walking towards camera, and the lyric writing itself across the frame a
+   * word at a time — then the drop. The figure is replaced by the mark, which
+   * has to carry the same eight seconds on its own, so it breathes on a slow
+   * cycle, two rings turn round it at different rates, and embers drift up
+   * behind it. Every cut is a different framing of it, as the reference's are
+   * of the figure.
+   *
+   * `lines` are the words with their cue times. They are the track's own
+   * lyric, placed where the reference places them — this is a lyric edit, and
+   * the words are the sound's, not a claim about anything.
+   */
+  lyric(s) {
+    const root = el('div', 'lyric');
+    const room = el('div', 'room');
+    const haze = el('div', 'haze');
+    const stage = el('div', 'stage');
+    const mark = el('img', 'mark'); mark.src = `${A}/mark.svg`;
+    const ringA = el('div', 'ring a'), ringB = el('div', 'ring b');
+    stage.append(ringB, ringA, mark);
+    /* Deterministic embers: a fixed seed per ember, so every render of the
+       same frame is the same frame. */
+    const embers = Array.from({ length: s.embers ?? 26 }, (_, i) => {
+      const e = el('div', 'ember');
+      root.appendChild(e);
+      return { e, x: ((i * 137.5) % 100) / 100, speed: 0.55 + ((i * 7919) % 100) / 200, phase: (i * 0.37) % 1, size: 3 + (i % 4) };
+    });
+    root.append(room, haze, stage, ...embers.map((x) => x.e));
+    const lines = (s.lines || []).map((ln) => {
+      const div = el('div', `line ${ln.pos || 'mid'}`);
+      const words = ln.words.map((w) => {
+        if (w.br) { const b = el('span', 'w br'); div.appendChild(b); return { el: b, at: -1 }; }
+        const span = el('span', `w${w.k ? ' ' + w.k : ''}`, w.t);
+        div.appendChild(span);
+        return { el: span, at: w.at };
+      });
+      root.appendChild(div);
+      return { div, words, from: ln.from ?? Math.min(...ln.words.filter((w) => !w.br).map((w) => w.at)), to: ln.to ?? Infinity };
+    });
+    const cuts = s.cuts || [];
+    const beat = 60 / (s.bpm || 100);
+
+    return { el: root, update(l) {
+      let k = 0;
+      for (let i = 0; i < cuts.length; i++) if (l >= cuts[i].at - HALF_FRAME) k = i;
+      const c = cuts[k] || { at: 0, dur: 2 };
+      const p = c.dur ? Math.min(1, (l - c.at) / c.dur) : 0;
+
+      /* The framing: each shot is a push and a drift on the mark, like a slow
+         dolly on the figure. */
+      const zoom = lerp(c.push ?? 1, (c.push ?? 1) * (c.to ?? 1.08), outCubic(p));
+      const dx = lerp(0, c.drift ?? 0, p) + (c.x ?? 0);
+      const dy = c.dy ?? 0;
+      const mw = mark.offsetWidth || 480, mh = mark.offsetHeight || 480;
+      stage.style.transform = `translate(${W / 2 - mw / 2 + dx}px, ${H / 2 - mh / 2 + dy}px) scale(${zoom}) rotate(${c.tilt ?? 0}deg)`;
+      stage.style.filter = `brightness(${c.bright ?? 1})`;
+
+      /* The mark breathes on the beat and the rings turn. */
+      const at = l / beat, hit = 1 - (at - Math.floor(at));
+      mark.style.transform = `scale(${1 + 0.035 * hit * hit * hit}) translateY(${-6 * hit * hit}px)`;
+      ringA.style.transform = `rotate(${l * 14}deg)`;
+      ringB.style.transform = `rotate(${-l * 6}deg) scale(${1 + 0.02 * Math.sin(l * 1.7)})`;
+      haze.style.transform = `translate(${Math.sin(l * 0.23) * 40}px, ${Math.cos(l * 0.19) * 30}px)`;
+
+      for (const em of embers) {
+        const t = (l * em.speed * 0.12 + em.phase) % 1;
+        const x = em.x * W + Math.sin((t + em.phase) * 9) * 26;
+        const y = H * (1.05 - t * 1.1);
+        em.e.style.transform = `translate(${x}px, ${y}px) scale(${em.size / 6})`;
+        em.e.style.opacity = String(Math.sin(t * Math.PI) * 0.8);
+      }
+
+      /* The words: each pops in on its cue and the whole line leaves on its
+         own `to`. Nothing fades — a lyric that fades reads as karaoke. */
+      for (const ln of lines) {
+        const live = l >= ln.from - HALF_FRAME && l < ln.to - HALF_FRAME;
+        ln.div.style.display = live ? '' : 'none';
+        if (!live) continue;
+        for (const w of ln.words) {
+          if (w.at < 0) continue;
+          pop(w.el, prog(l, w.at, w.at + 0.16), { y: 18, from: 0.82 });
+        }
+      }
     } };
   },
 

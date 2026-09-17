@@ -24,7 +24,7 @@ const FFMPEG = process.env.FFMPEG || 'ffmpeg';
 let fail = 0;
 const ok = (n, c, d = '') => { console.log(`${c ? '  ok  ' : ' FAIL '} ${n}${d ? ' — ' + d : ''}`); if (!c) fail++; };
 
-const { VIDEOS, DROP_TONES, REF_CUTS, REF_DROP, REF_END, REF_LEN } = await import('./videos.js');
+const { VIDEOS, DROP_TONES } = await import('./videos.js');
 
 /* Every scene in every video, flattened, so a check can be written once. */
 const scenes = VIDEOS.flatMap((v) => (v.scenes || []).map((s, i) => ({ v, s, i })));
@@ -145,15 +145,17 @@ for (const { v, s: sc, i } of scenes.filter((x) => x.s.type === 'rivals')) {
     bad.map((c) => `${c.at}s -> ${c.on}`).join(', '));
 }
 
-console.log('\n== the rebuild sits on the reference\'s own cuts ==');
+console.log('\n== rebuilds sit on their reference\'s own cuts ==');
 {
   /*
-   * "It has to match the audio" made checkable.
+   * "It has to match the audio" made checkable, for any video that names the
+   * edit it was rebuilt from.
    *
-   * There is no beat grid to check against — the measured transients do not sit
-   * on one (see REF_CUTS in videos.js). What there is, is an edit that somebody
-   * cut to this track and which works. So the test is whether every cut in the
-   * rebuild falls on one of theirs, and whether the whole thing is their length.
+   * There is no beat grid to check against — the measured transients of these
+   * tracks do not sit on one. What there is, is an edit somebody cut to the
+   * track that works. So the test is whether every cut in the rebuild falls on
+   * one of theirs, whether the whole thing is their length, and whether the
+   * change of subject lands on the measured drop.
    *
    * Scene durations accumulate, so a cut's real time is where it sits in its
    * scene plus every scene before it — a wrong duration two scenes earlier
@@ -161,8 +163,8 @@ console.log('\n== the rebuild sits on the reference\'s own cuts ==');
    * that; reading the numbers does not.
    */
   const TOL = 1 / 30;
-  for (const v of VIDEOS.filter((x) => x.id === 'mog-02-rivals')) {
-    const theirs = [...REF_CUTS, REF_DROP].sort((a, b) => a - b);
+  for (const v of VIDEOS.filter((x) => x.ref)) {
+    const theirs = [...v.ref.cuts].sort((a, b) => a - b);
     const stray = [];
     let base = 0, n = 0;
     for (const sc of v.scenes) {
@@ -175,20 +177,14 @@ console.log('\n== the rebuild sits on the reference\'s own cuts ==');
       base += sc.dur || 0;
     }
     ok(`${v.id}: all ${n} cuts are on one of the reference's`, stray.length === 0, stray.slice(0, 4).join(', '));
-
-    const total = v.scenes.reduce((a, sc) => a + (sc.dur || 0), 0);
-    ok(`${v.id}: same length as the reference`, Math.abs(total - REF_LEN) < 0.005,
-      `${total.toFixed(3)}s vs ${REF_LEN}s`);
-
-    /* The two moments the whole edit is built around. */
+    ok(`${v.id}: same length as the reference`, Math.abs(base - v.ref.len) < 0.005, `${base.toFixed(3)}s vs ${v.ref.len}s`);
+    const di = v.scenes.findIndex((sc) => sc.type === 'drop');
+    const arrival = v.scenes.slice(0, di).reduce((a, sc) => a + (sc.dur || 0), 0);
+    ok(`${v.id}: the mark arrives on the drop`, di >= 0 && Math.abs(arrival - v.ref.drop) < TOL,
+      `${arrival.toFixed(3)}s vs measured drop ${v.ref.drop}s`);
     const riv = v.scenes.find((sc) => sc.type === 'rivals');
-    const arrival = v.scenes.slice(0, v.scenes.findIndex((sc) => sc.type === 'drop'))
-      .reduce((a, sc) => a + (sc.dur || 0), 0);
-    ok(`${v.id}: the mark arrives on the drop`, Math.abs(arrival - REF_DROP) < TOL,
-      `${arrival.toFixed(3)}s vs measured drop ${REF_DROP}s`);
-    ok(`${v.id}: the call-out is before the drop, not on it`,
-      riv?.mog && riv.mog.at < REF_DROP - 0.2 && riv.mog.at > REF_DROP - 1.5,
-      riv?.mog ? `call-out ${riv.mog.at}s, drop ${REF_DROP}s` : 'no call-out');
+    if (riv?.mog) ok(`${v.id}: the call-out is before the drop, not on it`,
+      riv.mog.at < v.ref.drop - 0.2 && riv.mog.at > v.ref.drop - 1.5, `call-out ${riv.mog.at}s, drop ${v.ref.drop}s`);
   }
 }
 
@@ -214,9 +210,10 @@ console.log('\n== consecutive cuts are visibly different ==');
   };
   /* The same grade comp.js applies, from the same table, so what is measured
      here is what ends up on screen. */
-  const TONES = DROP_TONES;
   const MIN_DELTA = 8;
   for (const { v, s, i } of scenes.filter((x) => x.s.type === 'drop')) {
+    /* A scene can bring its own grade; comp.js reads the same field. */
+    const TONES = s.tones || DROP_TONES;
     const frames = s.frames || [];
     const seen = (s.cuts || []).map((c, n) => {
       const f = frames[n % frames.length] || {};
