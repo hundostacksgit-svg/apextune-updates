@@ -136,11 +136,48 @@ plug in it reads as spam.
 
 For a 3-hour or 8-hour build, change the hours in the title and nothing else.
 
+## The channel's face
+
+`tools/promo/studio/channel.mjs` draws the profile picture, the banner and a
+thumbnail for every loop from the loops' own frames, so the channel looks
+like its videos:
+
+```
+node tools/promo/studio/render.mjs --fmt yt --silent --scale 2 --frame 20 --video amb-02-rain   # one still per loop (all five)
+node tools/promo/studio/channel.mjs --name "Dim Hours" --hours 1                                 # pfp-800.png, banner-2560x1440.jpg, thumb-<look>-1h.jpg
+```
+
+The mark is a moon with a veil of cloud across its lower half — it reads at
+the 98 pixels YouTube shows it at, and it is on every thumbnail's corner so
+the channel is recognisable in a row of search results. `--hours 3` or `8`
+makes the thumbnails for the longer builds.
+
+**Name: Dim Hours.** Dim is the pictures, hours is the length, and it says
+"sleep" without the word. Handle `@dimhours`; if that is taken, `@thedimhours`
+or `@dimhoursambient`. Check by opening youtube.com/@dimhours — a channel
+that already has real numbers means pick the next one.
+
+**Why not the OmniDx name?** Three reasons, and they are all about money:
+
+- YouTube recommends by channel. A channel whose viewers are asleep gets
+  its other videos put in front of sleepers. OmniDx promos on the same
+  channel would be shown to people looking for rain, and to nobody looking
+  for an editor.
+- Trust runs the other way too. Somebody landing on a software company's
+  channel and finding eight-hour rain videos reads it as a content farm,
+  which is the last thing the trust page was built to prevent.
+- A channel that earns on its own is an asset on its own. Sleep channels
+  with steady watch time get bought; a company channel does not.
+
+The one bridge worth building: a single line in the channel's About text —
+"Pictures made with OmniDx Studio, omnidx.net" — where an editor who is
+curious finds it and a sleeper never does. Nothing in a title, description or
+picture.
+
 ## Setting the channel up
 
-- **Name.** Not OmniDx and nothing like it — this channel earns on its own.
-  Short, calm, two words. Search YouTube for the name first; if a channel
-  with real numbers already has it, pick another.
+- **Name.** Dim Hours, above. Not OmniDx and nothing like it — this channel
+  earns on its own.
 - **Made for kids: No.** Set it in channel settings and on every upload.
   "Yes" turns off comments, notifications and most ad formats, and sleep
   content is general-audience, not children's.

@@ -63,6 +63,9 @@ node tools/promo/studio/ambient.mjs --only rain                                 
 node tools/promo/studio/longform.mjs --loop <loop.mp4> --bed <bed.mp3> --hours 8 --out rain-8h.mp4   # the length: stream copy, minutes not hours
 ```
 
+`channel.mjs` draws the channel's profile picture, banner and a text thumbnail
+per loop from `--frame 20` stills of the five loops.
+
 `--crf 22` matters here: the loop is repeated by stream copy, so its bitrate is
 the long file's bitrate. `ambient.mjs` normalises every bed to -16 LUFS and
 fades both ends so the repeats join silently. The `Ambient video` workflow
