@@ -1229,10 +1229,16 @@ export const VIDEOS = [
    * end card: the corner sticker is off because these are a product on
    * somebody else's channel, not a promo for ours.
    * =================================================================== */
-  ...[['aurora', 'brown'], ['rain', 'rain'], ['space', 'space'], ['embers', 'fire'], ['ocean', 'sea']].map(([look, bed], i) => ({
-    id: `amb-0${i + 1}-${look}`, title: `Ambient loop: ${look}`, music: 'phonk-132-24s', wm: 'none', formats: ['yt'],
-    /* `bed` is the ambient.mjs sound that goes under this picture in the long file. */
-    bed,
+  /*
+   * [look, bed, slug]. A look with a "+" is a fusion: the looks painted in
+   * that order, so "ocean+rain" is rain over the sea. `bed` is the
+   * ambient.mjs sound under the picture in the long file; `slug` names the
+   * id, the file and the workflow's menu entry.
+   */
+  ...[['aurora', 'brown', 'aurora'], ['rain', 'rain', 'rain'], ['space', 'space', 'space'], ['embers', 'fire', 'embers'], ['ocean', 'sea', 'ocean'],
+    ['ocean+rain', 'rainsea', 'rainsea'], ['aurora+ocean', 'auroraocean', 'auroraocean'], ['embers+rain', 'firerain', 'firerain'], ['space+ocean', 'starsea', 'starsea']].map(([look, bed, slug], i) => ({
+    id: `amb-${String(i + 1).padStart(2, '0')}-${slug}`, title: `Ambient loop: ${look.replace('+', ' over ')}`, music: 'phonk-132-24s', wm: 'none', formats: ['yt'],
+    bed, slug,
     scenes: [{ type: 'sleep', dur: 60, loop: 60, look, seed: i + 3, noflash: true }],
   })),
 ];

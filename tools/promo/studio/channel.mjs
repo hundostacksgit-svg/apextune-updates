@@ -54,6 +54,11 @@ const LOOKS = [
   { look: 'space', id: 'amb-03-space', word: 'SPACE', accent: '#c0b0ff' },
   { look: 'embers', id: 'amb-04-embers', word: 'FIRE', accent: '#ffb46e' },
   { look: 'ocean', id: 'amb-05-ocean', word: 'OCEAN', accent: '#93d3ff' },
+  /* the fusions */
+  { look: 'rainsea', id: 'amb-06-rainsea', word: 'RAIN<br>AT SEA', accent: '#a9cdff' },
+  { look: 'auroraocean', id: 'amb-07-auroraocean', word: 'LIGHTS<br>OVER THE SEA', accent: '#8af0cc' },
+  { look: 'firerain', id: 'amb-08-firerain', word: 'FIRE<br>& RAIN', accent: '#ffb46e' },
+  { look: 'starsea', id: 'amb-09-starsea', word: 'STARS<br>OVER THE SEA', accent: '#c0b0ff' },
 ];
 const still = (id) => path.join(ASSETS, 'out', 'check', `${id}-yt-20.00.png`);
 for (const l of LOOKS) {

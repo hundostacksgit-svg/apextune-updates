@@ -89,4 +89,30 @@ for (const [name, graph] of Object.entries(BEDS)) {
     made++;
   }
 }
+/*
+ * The fusions' beds are two beds mixed: rain on the sea is rain and sea,
+ * a fire in the rain is fire and rain. Mixed from the files just written (or
+ * already there), then normalised and faded like any other bed.
+ */
+const MIXES = {
+  rainsea: ['rain', 'sea', 0.9, 0.7],
+  auroraocean: ['sea', 'brown', 0.9, 0.5],
+  firerain: ['fire', 'rain', 1.0, 0.6],
+  starsea: ['space', 'sea', 0.8, 0.8],
+};
+for (const [name, [a, b, ga, gb]] of Object.entries(MIXES)) {
+  if (only.length && !only.includes(name)) continue;
+  for (const suffix of ['', '-preview']) {
+    const fa = path.join(OUT, `${a}${suffix}.mp3`), fb = path.join(OUT, `${b}${suffix}.mp3`);
+    if (!fs.existsSync(fa) || !fs.existsSync(fb)) { console.error(`${name}: needs ${a} and ${b} first`); process.exitCode = 1; continue; }
+    const len = suffix ? 20 : MIN * 60;
+    const file = path.join(OUT, `${name}${suffix}.mp3`);
+    const r = spawnSync(FFMPEG, ['-y', '-loglevel', 'error', '-i', fa, '-i', fb,
+      '-filter_complex', `[0]volume=${ga}[a];[1]volume=${gb}[b];[a][b]amix=inputs=2:normalize=0:duration=shortest,${tail(len)}`,
+      '-ac', '2', '-ar', '44100', '-c:a', 'libmp3lame', '-b:a', '128k', file], { encoding: 'utf8' });
+    if (r.status !== 0) { console.error(`${name}: ${(r.stderr || '').trim().split('\n').pop()}`); process.exitCode = 1; continue; }
+    console.log(`  ${name}${suffix}: ${(fs.statSync(file).size / 1048576).toFixed(1)} MB`);
+    made++;
+  }
+}
 console.log(`${made} beds written to ${OUT}`);

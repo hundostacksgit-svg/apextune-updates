@@ -13,10 +13,10 @@ on:
   workflow_dispatch:
     inputs:
       look:
-        description: Which picture — one loop, or all five
+        description: Which picture — one loop, or all nine (the last four are fusions of two)
         type: choice
         default: rain
-        options: [rain, aurora, space, embers, ocean, all]
+        options: [rain, aurora, space, embers, ocean, rainsea, auroraocean, firerain, starsea, all]
       hours:
         description: Length of the finished video, in hours
         type: choice
@@ -47,7 +47,7 @@ jobs:
           LOOK: ${{ inputs.look }}
         run: |
           if [ "$LOOK" = all ]; then
-            echo 'looks=["rain","aurora","space","embers","ocean"]' >> "$GITHUB_OUTPUT"
+            echo 'looks=["rain","aurora","space","embers","ocean","rainsea","auroraocean","firerain","starsea"]' >> "$GITHUB_OUTPUT"
           else
             echo "looks=[\"$LOOK\"]" >> "$GITHUB_OUTPUT"
           fi
@@ -101,7 +101,7 @@ jobs:
           set -euo pipefail
           node --input-type=module -e "
             const { VIDEOS } = await import('./tools/promo/studio/videos.js');
-            const v = VIDEOS.find((v) => v.bed && v.scenes[0].look === process.env.LOOK);
+            const v = VIDEOS.find((v) => v.bed && (v.slug === process.env.LOOK || v.scenes[0].look === process.env.LOOK));
             if (!v) { console.error('no ambient loop called ' + process.env.LOOK); process.exit(1); }
             console.log('id=' + v.id);
             console.log('bed=' + v.bed);

@@ -19,7 +19,8 @@ downloaded, nothing belongs to anybody else.
   the loop under the bed for as many hours as asked, without re-encoding
   the picture. An hour takes about as long as writing the file to disk.
 
-Five looks exist, each paired with a bed:
+Nine looks exist, each paired with a bed. The last four are fusions: two of
+the pictures painted in order, with two of the beds mixed under them.
 
 | Look | Loop id | Bed | What it is |
 |---|---|---|---|
@@ -28,6 +29,16 @@ Five looks exist, each paired with a bed:
 | space | `amb-03-space` | space | A slow star field, a deep drone with a long echo |
 | embers | `amb-04-embers` | fire | Embers rising off a fire, crackle under a rumble |
 | ocean | `amb-05-ocean` | sea | Moonlit swells, waves that come in every ten seconds |
+| rainsea | `amb-06-rainsea` | rain + sea | Rain falling on the moonlit sea |
+| auroraocean | `amb-07-auroraocean` | sea + brown | The northern lights in the sky, the sea in front of them |
+| firerain | `amb-08-firerain` | fire + rain | A fire in the rain: embers rising, rain falling through them |
+| starsea | `amb-09-starsea` | space + sea | A star field and its nebulae over the water |
+
+A fusion is a look with a `+` in it — `ocean+rain`, `aurora+ocean`,
+`embers+rain`, `space+ocean` — and any two of the five can be joined that way
+in `videos.js`: the first is the ground, each after it is painted on top, and
+the sea covers whatever is behind it. Its bed is a row in `MIXES` in
+`ambient.mjs`.
 
 ---
 
@@ -141,6 +152,42 @@ plug in it reads as spam.
   > sleeping, calming down, or a room that is too quiet. No music, no
   > talking.
 - Tags: `ocean waves, ocean sounds for sleeping, waves for sleep, sea sounds, sleep sounds, calm, relax, meditation, study, 4K, ambient, sleep`
+
+**Rain at sea — `amb-06-rainsea`**
+
+- Title: `Rain on the Ocean at Night — 1 Hour Sleep Sounds, 4K`
+- Description:
+  > Rain falling on a moonlit sea. The two sounds people fall asleep to,
+  > together: rain close by, waves further out. No music, no talking. The
+  > picture loops without a seam and the sound never stops.
+- Tags: `rain and ocean sounds, rain on the sea, rain sounds for sleeping, ocean waves, sleep sounds, sleep, insomnia, relax, study, 4K, ambient, night`
+
+**Lights over the sea — `amb-07-auroraocean`**
+
+- Title: `Northern Lights Over the Ocean — 1 Hour, 4K, Waves and Brown Noise`
+- Description:
+  > The aurora moving in the sky and the sea moving under it, with slow waves
+  > and deep brown noise underneath. For sleeping, or for having something on
+  > that asks nothing of you. No music, no talking.
+- Tags: `northern lights, aurora, ocean waves, brown noise, sleep sounds, deep sleep, relax, meditation, study, 4K, ambient, sleep`
+
+**Fire and rain — `amb-08-firerain`**
+
+- Title: `Fireplace in the Rain — 1 Hour Crackling Fire and Rain Sounds, 4K`
+- Description:
+  > A fire in the rain: embers rising, rain coming down through them, the
+  > crackle under the rainfall. The cosiest sound there is. No music, no
+  > talking.
+- Tags: `fireplace and rain, crackling fire, rain sounds, fire sounds, cozy, sleep sounds, rain and fire for sleeping, study, relax, 4K, ambient, sleep`
+
+**Stars over the sea — `amb-09-starsea`**
+
+- Title: `Starry Night Over the Sea — 1 Hour Ocean Waves and Deep Space Drone, 4K`
+- Description:
+  > A star field and its nebulae over slow water: waves at the bottom, a deep
+  > distant drone above. For sleeping, late studying, or a room that is too
+  > quiet. No music, no talking.
+- Tags: `starry night, ocean waves, space ambient, night sky, sleep sounds, deep sleep, relax, meditation, study, 4K, ambient, sleep`
 
 For a 3-hour or 8-hour build, change the hours in the title and nothing else.
 

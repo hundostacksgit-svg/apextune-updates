@@ -680,31 +680,37 @@ const BUILD = {
     /* Seeded, so the same minute is always the same minute. */
     let seed = (s.seed ?? 7) * 7919 + 1;
     const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
-    const look = s.look || 'aurora';
-    const N = s.count ?? (look === 'space' ? 1400 : look === 'rain' ? 900 : look === 'embers' ? 320 : 220);
-    const P = Array.from({ length: N }, (_, i) => ({ a: rnd(), b: rnd(), c: rnd(), d: rnd(), i }));
+    /*
+     * One look, or several drawn in order with a "+": "ocean+rain" is the
+     * sea with rain falling over it, "aurora+ocean" the curtains in the sky
+     * with the sea in front of them, "embers+rain" a fire in the rain,
+     * "space+ocean" the star field over the water. The first look's palette
+     * is the ground; each look after it is painted on top. The ocean's swells
+     * cover whatever is behind them, so a sky goes before it and weather
+     * after it.
+     */
+    const looks = String(s.look || 'aurora').split('+').map((x) => x.trim()).filter(Boolean);
+    const fused = looks.length > 1;
+    const countFor = (look) => s.count ?? (look === 'space' ? 1400 : look === 'rain' ? 900 : look === 'embers' ? 320 : 220);
+    const parts = looks.map((look, idx) => ({
+      look, over: idx > 0,
+      P: Array.from({ length: countFor(look) }, (_, i) => ({ a: rnd(), b: rnd(), c: rnd(), d: rnd(), i })),
+    }));
     /* A periodic wobble: sums of sines whose frequencies are whole numbers of
        cycles per loop, so the sum is periodic in the loop too. */
     const wob = (t, p, k = 1) => Math.sin(TAU * (t / LOOP) * k + p * TAU) * 0.6 + Math.sin(TAU * (t / LOOP) * (k * 2) + p * 9) * 0.4;
-    const pal = {
+    const PALS = {
       aurora: ['#0b1a2e', '#123d4a', '#2fbf9a', '#7ae0c8', '#8a6bff'],
       rain:   ['#0a0f18', '#141c2a', '#5a7fa8', '#9fb8d6', '#2c3a52'],
       space:  ['#02030a', '#0a0c2a', '#3a4bd6', '#9aa6ff', '#ff9fd6'],
       embers: ['#0a0503', '#2a120a', '#ff6a2a', '#ffb066', '#ffd9a3'],
       ocean:  ['#03101c', '#083352', '#1f8ab0', '#8fdcf0', '#0c4a6e'],
-    }[look];
+    };
+    const pal = PALS[looks[0]] || PALS.aurora;
 
-    return { el: root, update(l) {
-      const t = ((l % LOOP) + LOOP) % LOOP;
-      const D = dpr;
-      g.setTransform(D, 0, 0, D, 0, 0);
+    /* One look's picture, at time t, from its own particles. */
+    const paint = ({ look, P, over }, t, br) => {
       g.globalCompositeOperation = 'source-over';
-      /* Ground: a slow radial that breathes once a loop. */
-      const br = 0.5 + 0.5 * Math.sin(TAU * t / LOOP);
-      const bg = g.createRadialGradient(W * 0.5, H * (0.55 + 0.05 * br), 0, W * 0.5, H * 0.55, H * 0.8);
-      bg.addColorStop(0, pal[1]); bg.addColorStop(1, pal[0]);
-      g.fillStyle = bg; g.fillRect(0, 0, W, H);
-
       if (look === 'aurora') {
         /* Curtains: narrow vertical bands, bright at their top edge and
            fading down, drawn with additive blending so where two overlap
@@ -732,15 +738,19 @@ const BUILD = {
           g.fillStyle = `rgba(255,255,255,${0.15 + 0.5 * tw * p.b})`;
           g.fillRect(p.a * W, p.b * H * 0.7, 1.6, 1.6);
         }
-        /* dark ground under the curtains, so they end in something */
+        /* dark ground under the curtains, so they end in something — unless
+           something else (the sea) is about to be painted in front of them */
         g.globalCompositeOperation = 'source-over';
-        const gnd = g.createLinearGradient(0, H * 0.62, 0, H);
-        gnd.addColorStop(0, 'rgba(3,8,14,0)'); gnd.addColorStop(0.5, 'rgba(3,8,14,.85)'); gnd.addColorStop(1, '#02050a');
-        g.fillStyle = gnd; g.fillRect(0, H * 0.6, W, H * 0.4);
+        if (!fused) {
+          const gnd = g.createLinearGradient(0, H * 0.62, 0, H);
+          gnd.addColorStop(0, 'rgba(3,8,14,0)'); gnd.addColorStop(0.5, 'rgba(3,8,14,.85)'); gnd.addColorStop(1, '#02050a');
+          g.fillStyle = gnd; g.fillRect(0, H * 0.6, W, H * 0.4);
+        }
       } else if (look === 'rain') {
-        /* Bokeh behind glass, then streaks that fall and restart on a cycle. */
+        /* Bokeh behind glass, then streaks that fall and restart on a cycle.
+           Over another picture, only the streaks: the bokeh is a window's. */
         g.globalCompositeOperation = 'lighter';
-        for (let i = 0; i < 26; i++) {
+        for (let i = 0; i < (over ? 0 : 26); i++) {
           const p = P[i];
           const x = p.a * W + wob(t, p.c, 1) * 30, y = p.b * H + wob(t, p.d, 1) * 20;
           const r = 40 + p.c * 120;
@@ -826,6 +836,20 @@ const BUILD = {
           g.fillRect(x, y, 3, 1.2);
         }
       }
+    };
+
+    return { el: root, update(l) {
+      const t = ((l % LOOP) + LOOP) % LOOP;
+      const D = dpr;
+      g.setTransform(D, 0, 0, D, 0, 0);
+      g.globalCompositeOperation = 'source-over';
+      /* Ground: a slow radial that breathes once a loop. */
+      const br = 0.5 + 0.5 * Math.sin(TAU * t / LOOP);
+      const bg = g.createRadialGradient(W * 0.5, H * (0.55 + 0.05 * br), 0, W * 0.5, H * 0.55, H * 0.8);
+      bg.addColorStop(0, pal[1]); bg.addColorStop(1, pal[0]);
+      g.fillStyle = bg; g.fillRect(0, 0, W, H);
+
+      for (const part of parts) paint(part, t, br);
       /* Vignette, so the corners never draw the eye. */
       g.globalCompositeOperation = 'source-over';
       const vg = g.createRadialGradient(W / 2, H / 2, H * 0.3, W / 2, H / 2, H * 0.8);
