@@ -1,0 +1,203 @@
+/*
+ * Three identities, not three densities.
+ *
+ * app.css gives the three skill levels three densities of the same grey NLE —
+ * which is correct engineering and looks like every other editor on earth. This
+ * file gives each level a face of its own. It is loaded after app.css and keys
+ * everything off `html[data-level]`, the same attribute the level switch
+ * already sets, so nothing here can add, remove or move a feature: a control
+ * that exists at a level exists exactly as before, it just looks like it
+ * belongs to that level.
+ *
+ * Why each one is what it is:
+ *
+ *   Beginner — a workbench. Warm, rounded, labelled, roomy. The people at this
+ *   level are not judging colour; they are trying to find the button. Warm
+ *   charcoal rather than cold grey, one amber accent, big pill tabs with
+ *   readable names, fat rounded clips. It should feel like a tool you would
+ *   keep on a desk, not a cockpit.
+ *
+ *   Intermediate — a drafting table. Blueprint ink, hairline grid on the
+ *   working surfaces, square corners, mono labels, clips drawn as outlined
+ *   boxes. The person here is learning the real timeline and the inspector,
+ *   and a drawing-board look says "this is a plan you are constructing" in a
+ *   way the generic dark chrome does not.
+ *
+ *   Professional — an instrument. The chrome stays neutral grey, on purpose:
+ *   a colourist judging a grade next to saturated furniture is being lied to
+ *   by their own eye, which is why every finishing suite is grey. The identity
+ *   is in the detail instead — inset bevelled panels, engraved dividers, a
+ *   timecode readout with orange digits, a single orange indicator for state
+ *   and nothing else in colour. Broadcast gear, not a web app.
+ *
+ * Every colour is a token override so the light theme gets its own version of
+ * each: `html[data-level][data-theme="light"]` is more specific than the
+ * app's `:root[data-theme="light"]` and wins, which is the point.
+ */
+
+/* ======================================================================
+   BEGINNER — the workbench
+   ====================================================================== */
+html[data-level="beginner"]{
+  --bg:#171210; --bg-2:#1c1613; --surface:#231b17; --surface-2:#2b211c; --surface-3:#352922;
+  --surface-4:#40312a; --line:#3d2f27; --line-soft:#30251f;
+  --text:#f7f0e7; --text-2:#d2c4b6; --text-3:#98867a;
+  --blue:#ffb454; --blue-2:#ffcb7a; --blue-3:#ff8a5c; --accent:#ffb454; --accent-2:#ffcb7a;
+  --amber:#ffd27a; --glow:rgba(255,180,84,.32);
+  --grad:linear-gradient(125deg,#ff8a5c,#ffb454 55%,#ffe08a);
+  --r-s:12px; --r-m:16px; --r-l:22px;
+  --rail-w:86px; --top-h:56px;
+}
+html[data-level="beginner"][data-theme="light"]{
+  --bg:#f3ebe1; --bg-2:#ede3d7; --surface:#faf5ee; --surface-2:#f1e8dc; --surface-3:#e7dccd; --surface-4:#dccfbe;
+  --line:#d9ccbb; --line-soft:#e6dbcc;
+  --text:#221a15; --text-2:#5c4d41; --text-3:#8c7b6d;
+  --blue:#d97a12; --blue-2:#f0921f; --accent:#d97a12; --accent-2:#f0921f; --glow:rgba(217,122,18,.22);
+}
+html[data-level="beginner"] body{font-size:13.5px}
+/* The rail: wide tiles with names you can read, a filled pill when on. */
+html[data-level="beginner"] .rail{padding:10px 8px;gap:4px}
+html[data-level="beginner"] .rail button{padding:11px 4px;border-radius:14px;gap:5px}
+html[data-level="beginner"] .rail button span svg{width:22px;height:22px}
+html[data-level="beginner"] .rail button i{font-size:10px;letter-spacing:.04em;text-transform:none;font-weight:700}
+html[data-level="beginner"] .rail button.on{background:rgba(255,180,84,.14);color:var(--accent)}
+html[data-level="beginner"] .rail button.on::before{display:none}
+/* Top bar: the level switch as three soft pills instead of underlined tabs. */
+html[data-level="beginner"] .level-switch{gap:4px;padding:0 6px;align-items:center}
+html[data-level="beginner"] .level-switch button{border-radius:999px;padding:6px 14px;height:auto;font-weight:700}
+html[data-level="beginner"] .level-switch button.on{background:rgba(255,180,84,.14);color:var(--accent)}
+html[data-level="beginner"] .level-switch button.on::after{display:none}
+html[data-level="beginner"] .tb-btn,html[data-level="beginner"] .tl-btn{border-radius:999px}
+html[data-level="beginner"] .tb-btn.primary{box-shadow:0 6px 20px var(--glow)}
+/* The picture sits in a frame on a warm desk. */
+html[data-level="beginner"] .stage{background:radial-gradient(ellipse at 50% 40%,#241c18 0%,var(--bg-2) 70%)}
+html[data-level="beginner"] .canvas-wrap{border-radius:18px;box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.04)}
+html[data-level="beginner"] .transport{border-radius:999px;margin:0 14px 12px;padding:8px 12px;
+  border:1px solid var(--line);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+/* Panels: rounded cards, generous headings. */
+html[data-level="beginner"] .panel-h h2{font-size:17px;letter-spacing:-.01em}
+html[data-level="beginner"] .group{border-radius:16px}
+html[data-level="beginner"] .field{margin-bottom:14px}
+/* The timeline: fat rounded clips, a round-headed playhead. */
+html[data-level="beginner"] .clip{top:4px;bottom:4px;border-radius:12px;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+html[data-level="beginner"] .tl-ruler{height:30px}
+html[data-level="beginner"] .playhead{width:2px;background:var(--accent)}
+html[data-level="beginner"] .playhead::before{content:"";position:absolute;top:-2px;left:-6px;width:14px;height:14px;
+  border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(255,180,84,.25)}
+html[data-level="beginner"] .tl-head{border-radius:0 12px 12px 0}
+
+/* ======================================================================
+   INTERMEDIATE — the drafting table
+   ====================================================================== */
+html[data-level="intermediate"]{
+  --bg:#0a0f1e; --bg-2:#0c1224; --surface:#0f1830; --surface-2:#131f3c; --surface-3:#192a4e; --surface-4:#21365f;
+  --line:#26396a; --line-soft:#1b2a50;
+  --text:#e8effc; --text-2:#aab9da; --text-3:#6d82ad;
+  --blue:#5ad8ff; --blue-2:#8fe7ff; --blue-3:#9b8cff; --accent:#5ad8ff; --accent-2:#8fe7ff;
+  --amber:#ffd166; --glow:rgba(90,216,255,.32);
+  --grad:linear-gradient(125deg,#9b8cff,#5ad8ff 60%,#c7f4ff);
+  --r-s:3px; --r-m:4px; --r-l:6px;
+}
+html[data-level="intermediate"][data-theme="light"]{
+  --bg:#e9eef8; --bg-2:#e1e8f5; --surface:#f4f7fd; --surface-2:#e9eff9; --surface-3:#dce5f4; --surface-4:#cbd7ec;
+  --line:#b9c8e4; --line-soft:#d2ddef;
+  --text:#101a33; --text-2:#3d4f78; --text-3:#7286ae;
+  --blue:#0f7fb3; --blue-2:#1a94c9; --accent:#0f7fb3; --accent-2:#1a94c9; --glow:rgba(15,127,179,.2);
+}
+/* The grid: hairlines every 24px on the surfaces work happens on. */
+html[data-level="intermediate"] .stage,
+html[data-level="intermediate"] .tl-scroll{
+  background-color:var(--bg-2);
+  background-image:linear-gradient(rgba(90,216,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(90,216,255,.06) 1px,transparent 1px);
+  background-size:24px 24px}
+html[data-level="intermediate"][data-theme="light"] .stage,
+html[data-level="intermediate"][data-theme="light"] .tl-scroll{
+  background-image:linear-gradient(rgba(15,127,179,.10) 1px,transparent 1px),linear-gradient(90deg,rgba(15,127,179,.10) 1px,transparent 1px)}
+/* Labels are drafting labels: mono, small caps, spaced. */
+html[data-level="intermediate"] .rail button i,
+html[data-level="intermediate"] .panel-h h2,
+html[data-level="intermediate"] .group > summary,
+html[data-level="intermediate"] .pb-page,
+html[data-level="intermediate"] .level-switch button,
+html[data-level="intermediate"] .dock-h{font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em}
+html[data-level="intermediate"] .panel-h h2{font-size:12px;font-weight:700;color:var(--accent);
+  border-bottom:1px dashed var(--line);padding-bottom:8px;width:100%}
+html[data-level="intermediate"] .rail{border-right:1px solid var(--line)}
+html[data-level="intermediate"] .rail button{border-radius:0;border-left:2px solid transparent;padding:9px 0}
+html[data-level="intermediate"] .rail button.on{background:transparent;border-left-color:var(--accent)}
+html[data-level="intermediate"] .rail button.on::before{display:none}
+html[data-level="intermediate"] .level-switch button.on{color:var(--accent)}
+/* Clips are drawn rectangles: an outline and a wash, not a filled bar. */
+html[data-level="intermediate"] .clip{border-radius:2px;border:1px solid var(--accent);
+  background:rgba(90,216,255,.14)!important;box-shadow:none}
+html[data-level="intermediate"] .clip.audio{border-color:#9b8cff;background:rgba(155,140,255,.14)!important}
+html[data-level="intermediate"] .playhead{background:var(--accent)}
+html[data-level="intermediate"] .tl-ruler{font-family:var(--mono);letter-spacing:.04em}
+html[data-level="intermediate"] .tl-btn,html[data-level="intermediate"] .tb-btn,html[data-level="intermediate"] .pb-page{border-radius:3px}
+html[data-level="intermediate"] .canvas-wrap{box-shadow:0 0 0 1px var(--line),0 24px 60px rgba(0,0,0,.5)}
+html[data-level="intermediate"] .group{border-radius:4px;border-color:var(--line)}
+html[data-level="intermediate"] .transport{border-top:1px solid var(--line)}
+
+/* ======================================================================
+   PROFESSIONAL — the instrument
+   ====================================================================== */
+html[data-level="expert"]{
+  --bg:#191919; --bg-2:#161616; --surface:#202020; --surface-2:#262626; --surface-3:#2d2d2d; --surface-4:#353535;
+  --line:#383838; --line-soft:#2b2b2b;
+  --text:#dedede; --text-2:#a3a3a3; --text-3:#6e6e6e;
+  --blue:#ff8a3d; --blue-2:#ffa86b; --blue-3:#ffa86b; --accent:#ff8a3d; --accent-2:#ffa86b;
+  --amber:#ff8a3d; --glow:rgba(255,138,61,.28);
+  --grad:linear-gradient(125deg,#9a9a9a,#ff8a3d);
+  --r-s:2px; --r-m:3px; --r-l:4px;
+  --rail-w:56px; --top-h:40px;
+}
+html[data-level="expert"][data-theme="light"]{
+  --bg:#dcdcdc; --bg-2:#d6d6d6; --surface:#e6e6e6; --surface-2:#dedede; --surface-3:#d3d3d3; --surface-4:#c6c6c6;
+  --line:#b9b9b9; --line-soft:#cfcfcf;
+  --text:#161616; --text-2:#4a4a4a; --text-3:#7c7c7c;
+  --blue:#c85f14; --blue-2:#df7226; --accent:#c85f14; --accent-2:#df7226; --glow:rgba(200,95,20,.2);
+}
+/* Inset, bevelled surfaces: a highlight on top, a shade underneath. */
+html[data-level="expert"] .panel,
+html[data-level="expert"] .inspector,
+html[data-level="expert"] .dock,
+html[data-level="expert"] .transport,
+html[data-level="expert"] .tl-bar{
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),inset 0 -1px 0 rgba(0,0,0,.5)}
+html[data-level="expert"] .topbar{box-shadow:inset 0 -1px 0 rgba(0,0,0,.6),0 1px 0 rgba(255,255,255,.04)}
+/* Engraved labels: condensed, spaced, quiet. */
+html[data-level="expert"] .rail button i,
+html[data-level="expert"] .panel-h h2,
+html[data-level="expert"] .group > summary,
+html[data-level="expert"] .pb-page,
+html[data-level="expert"] .dock-h,
+html[data-level="expert"] .level-switch button,
+html[data-level="expert"] .tl-head{
+  font-family:"Avenir Next Condensed","Helvetica Neue Condensed","Roboto Condensed","Arial Narrow",var(--sans);
+  text-transform:uppercase;letter-spacing:.12em;font-weight:600}
+html[data-level="expert"] .panel-h h2{font-size:11px;color:var(--text-2)}
+/* One indicator colour, and only for state. */
+html[data-level="expert"] .rail button.on{background:transparent;color:var(--text)}
+html[data-level="expert"] .rail button.on::before{left:0;top:0;bottom:auto;right:0;height:2px;width:auto;background:var(--accent)}
+html[data-level="expert"] .level-switch button.on{color:var(--text)}
+html[data-level="expert"] .level-switch button.on::after{background:var(--accent)!important;height:2px}
+html[data-level="expert"] .pb-page.on{color:var(--text);box-shadow:inset 0 -2px 0 var(--accent);background:transparent}
+/* The timecode is a readout: dark inset, orange digits. */
+html[data-level="expert"] .tc{background:#0e0e0e;color:var(--accent);padding:3px 8px;border-radius:2px;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.8),0 1px 0 rgba(255,255,255,.04);font-size:12.5px;letter-spacing:.06em}
+html[data-level="expert"][data-theme="light"] .tc{background:#1a1a1a;color:#ffa86b}
+/* Buttons are keys: square, a hairline, a hint of depth. */
+html[data-level="expert"] .tl-btn,html[data-level="expert"] .tb-btn,html[data-level="expert"] .dock-btn{
+  border-radius:2px;border:1px solid var(--line);background:var(--surface-2);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 1px 0 rgba(0,0,0,.4)}
+html[data-level="expert"] .tl-btn:active,html[data-level="expert"] .tb-btn:active{box-shadow:inset 0 2px 4px rgba(0,0,0,.6)}
+html[data-level="expert"] .tb-btn.primary{background:var(--surface-3);color:var(--text);border-color:var(--accent)}
+/* Clips: flat, low-saturation, a coloured stripe on top by kind — a broadcast timeline. */
+html[data-level="expert"] .clip{border-radius:1px;top:2px;bottom:2px;background:#3a3a3a!important;
+  border-top:3px solid #7fa6ff;box-shadow:inset 0 0 0 1px rgba(0,0,0,.5)}
+html[data-level="expert"] .clip.audio{background:#333!important;border-top-color:#6fd39a}
+html[data-level="expert"] .playhead{width:1px;background:var(--accent)}
+html[data-level="expert"] .playhead::before{content:"";position:absolute;top:0;left:-5px;border:5px solid transparent;border-top:7px solid var(--accent)}
+html[data-level="expert"] .tl-ruler{background:#141414;color:var(--text-3)}
+html[data-level="expert"] .canvas-wrap{box-shadow:0 0 0 1px #000,0 0 0 2px #333}
+html[data-level="expert"] .group{border-radius:2px;background:var(--surface);box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}

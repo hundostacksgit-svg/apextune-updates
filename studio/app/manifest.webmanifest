@@ -1,0 +1,146 @@
+{
+  "id": "./",
+  "name": "OmniDx Studio",
+  "short_name": "OmniDx Studio",
+  "description": "A full multitrack video editor with a built-in AI editor. Works offline. Your footage never leaves your device.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone"
+  ],
+  "orientation": "any",
+  "background_color": "#04060d",
+  "theme_color": "#04060d",
+  "categories": [
+    "photo",
+    "video",
+    "productivity",
+    "graphics"
+  ],
+  "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "handle_links": "preferred",
+  "icons": [
+    {
+      "src": "../assets/mark.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "../assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../assets/icons/maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "../assets/icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "../assets/screens/editor-wide.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "The editor at Professional: timeline, viewer, inspector"
+    },
+    {
+      "src": "../assets/screens/editor-narrow.png",
+      "sizes": "720x1440",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "The editor on a phone"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New project",
+      "url": "./?new=1"
+    },
+    {
+      "name": "AI editor",
+      "url": "./?panel=ai"
+    }
+  ],
+  "file_handlers": [
+    {
+      "action": "./",
+      "accept": {
+        "application/json": [
+          ".omnidx.json",
+          ".omnidx"
+        ],
+        "application/zip": [
+          ".omnidxpkg"
+        ],
+        "video/*": [
+          ".mp4",
+          ".mov",
+          ".webm",
+          ".mkv",
+          ".m4v"
+        ],
+        "audio/*": [
+          ".mp3",
+          ".wav",
+          ".m4a",
+          ".aac",
+          ".ogg",
+          ".flac"
+        ],
+        "image/*": [
+          ".jpg",
+          ".jpeg",
+          ".png",
+          ".webp",
+          ".gif"
+        ]
+      }
+    }
+  ],
+  "share_target": {
+    "action": "./?share=1",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "media",
+          "accept": [
+            "video/*",
+            "image/*",
+            "audio/*"
+          ]
+        }
+      ]
+    }
+  },
+  "protocol_handlers": [
+    {
+      "protocol": "web+omnidx",
+      "url": "./?open=%s"
+    }
+  ]
+}

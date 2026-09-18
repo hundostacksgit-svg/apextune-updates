@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="OmniDx Studio">
+  <!--
+    The profile picture.
+
+    A different drawing from the site mark, for a different job. An avatar is
+    seen at 32 pixels in a feed, cropped to a circle by most platforms, next to
+    forty other avatars — so it has to be one shape and one colour move, not a
+    composition. The three nested frames that work on the website turn to mush
+    at that size.
+
+    So: the solid vertical frame and the triangle, filling the square, on a dark
+    ground. Everything important sits inside the middle 80% because every
+    platform crops a circle out of this and the corners are simply gone.
+  -->
+  <defs>
+    <linearGradient id="av-g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7a5cff"/>
+      <stop offset="0.45" stop-color="#2f7dff"/>
+      <stop offset="1" stop-color="#00d1ff"/>
+    </linearGradient>
+    <radialGradient id="av-bg" cx="0.32" cy="0.26" r="0.95">
+      <stop offset="0" stop-color="#141a2e"/>
+      <stop offset="1" stop-color="#05070c"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#av-bg)"/>
+
+  <!-- A single hint of the wider frame, at low contrast. It reads as depth at
+       full size and simply disappears at 32px, which is the right behaviour
+       for a detail rather than a feature. -->
+  <rect x="76" y="168" width="360" height="176" rx="46" fill="none"
+        stroke="url(#av-g)" stroke-width="10" opacity=".28"/>
+
+  <!-- The upright frame, solid, centred, inside the circle crop. -->
+  <rect x="150" y="76" width="212" height="360" rx="58" fill="url(#av-g)"/>
+
+  <path d="M212 196c0-14.3 15.5-23.2 27.8-15.9l76 45c12.1 7.2 12.1 24.6 0 31.8
+           l-76 45c-12.3 7.3-27.8-1.6-27.8-15.9z" fill="#05070c"/>
+  <rect x="236" y="352" width="40" height="52" rx="20" fill="#05070c" opacity=".8"/>
+</svg>
