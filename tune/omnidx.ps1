@@ -80,7 +80,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.7.1'
+$script:Version = '1.8.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -836,6 +836,50 @@ function Invoke-Restart {
   Restart-Computer -Force
 }
 
+<# The one file in C:\OmniDx a person opens first. #>
+$script:ReadMe = @'
+OmniDx Tune __VERSION__ - what is in this folder
+
+This folder is everything the tune left on this PC. Nothing runs from here
+except the two scheduled tasks named below, and nothing here talks to the
+internet.
+
+  report-<date>.html / .txt   what it found, what it changed, the numbers,
+                              the BIOS checklist and the per-game settings.
+                              Open the .html in a browser.
+  summary-<date>.json         the same numbers, for machines
+  log-<date>.txt              a transcript of the run
+  machine-<date>.json         the PC as it read it
+  processes-before/after-<date>.txt   every process, grouped, before and after
+  after-restart.txt           the process count taken at the next sign-in by a
+                              one-shot task that then deletes itself
+  keep-log.txt                one line per sign-in from the keep task, if you
+                              said yes to it: what a Windows update had turned
+                              back on, and that it was put back
+  bios-<board>.txt            the BIOS checklist on its own
+  undo\undo.ps1               puts everything back, every run, newest first.
+                              Administrator PowerShell:
+                              powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1
+  undo\changes-<date>.json    the record of one run: every value, service and
+                              task, with what it was before. Undo moves these
+                              to undo\done\ when it has used them.
+  undo\keep.ps1               what the keep task runs: compares the records
+                              with the machine and sets again what drifted.
+                              keep.ps1 -Check only looks.
+  backup\<date>\              registry exports of the areas touched, the
+                              service list, and Discord / Spotify settings
+                              files, from before the run
+
+Status, any time (changes nothing):
+  $env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex
+
+Run it again, same key, same PC, free:
+  irm omnidx.net/go.ps1 | iex
+
+The last ten runs are kept here; older logs and reports are removed on the
+next run. Undo records stay until undo uses them.
+'@
+
 # ---------------------------------------------------------------------------
 # restore point and backups
 # ---------------------------------------------------------------------------
@@ -877,6 +921,7 @@ function New-Safety {
   Did ("Registry and service list backed up to {0}" -f $bk)
   Set-Content -Path (Join-Path $script:Root 'undo\undo.ps1') -Value $script:UndoScript -Encoding UTF8
   Did "undo.ps1 written to C:\OmniDx\undo"
+  try { Set-Content -Path (Join-Path $script:Root 'README.txt') -Value ($script:ReadMe.Replace('__VERSION__', $script:Version)) -Encoding UTF8 } catch { }
 }
 
 # ---------------------------------------------------------------------------
@@ -1379,8 +1424,10 @@ function New-PowerPlan($m) {
   Did "OmniDx plan created and active: CPU 100/100, boost aggressive, no core parking, PCIe and USB power saving off, no sleep on mains."
   # Hibernation off frees the hiberfile and ends Fast Startup for good - on a desktop.
   if (-not $m.laptop) {
-    $hib = if (((& powercfg /a) -join ' ') -match 'Hibernate') { 'on' } else { 'off' }
-    if ($hib -eq 'on') { & powercfg /h off | Out-Null; Record @{ type = 'hibernate'; prev = 'on' }; Did "Hibernation off (desktop): hiberfil.sys gone, clean boots." }
+    # The registry says whether hibernation is on in any language; powercfg's text is the fallback.
+    $hibOn = $false
+    try { $hibOn = ((Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Power' -ErrorAction Stop).HibernateEnabled -eq 1) } catch { $hibOn = (((& powercfg /a) -join ' ') -match 'Hibernate') }
+    if ($hibOn) { & powercfg /h off | Out-Null; Record @{ type = 'hibernate'; prev = 'on' }; Did "Hibernation off (desktop): hiberfil.sys gone, clean boots." }
   }
 }
 
@@ -1408,7 +1455,10 @@ function Tune-Network($m) {
     $p = Join-Path $ifBase $guid
     if (Test-Path $p) { Set-Reg $p 'TcpAckFrequency' 1; Set-Reg $p 'TCPNoDelay' 1; Set-Reg $p 'TcpDelAckTicks' 0 }
     # Adapter power saving and interrupt coalescing off; the names differ by driver, so try each.
-    try { Disable-NetAdapterPowerManagement -Name $a.Name -ErrorAction Stop; Record @{ type = 'nicpower'; adapter = $a.Name } } catch { }
+    try {
+      $pm = Get-NetAdapterPowerManagement -Name $a.Name -ErrorAction Stop
+      if ("$($pm.AllowComputerToTurnOffDevice)" -eq 'Enabled' -or "$($pm.DeviceSleepOnDisconnect)" -eq 'Enabled') { Disable-NetAdapterPowerManagement -Name $a.Name -ErrorAction Stop; Record @{ type = 'nicpower'; adapter = $a.Name } }
+    } catch { }
     foreach ($prop in @(@('Energy-Efficient Ethernet', 'Disabled'), @('Energy Efficient Ethernet', 'Disabled'), @('EEE', 'Disabled'), @('Green Ethernet', 'Disabled'), @('Power Saving Mode', 'Disabled'), @('Interrupt Moderation', 'Disabled'), @('Ultra Low Power Mode', 'Disabled'), @('Advanced EEE', 'Disabled'), @('Gigabit Lite', 'Disabled'), @('System Idle Power Saver', 'Disabled'), @('Reduce Speed On Power Down', 'Disabled'))) {
       $cur = Get-NetAdapterAdvancedProperty -Name $a.Name -DisplayName $prop[0] -ErrorAction SilentlyContinue
       if ($cur -and $cur.DisplayValue -ne $prop[1]) {
@@ -1553,15 +1603,23 @@ function Set-GameProfiles {
   $layers = 'HKCU:\Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers'
   $found = @()
   $roots = Get-GameRoots
-  Say ("  Looking in {0} game folders" -f $roots.Count)
+  # One walk of the game folders, four levels deep, then every game is a lookup;
+  # walking Program Files once per game would take minutes.
+  $index = @{}
+  foreach ($root in $roots) {
+    foreach ($f in Get-ChildItem -Path $root -Filter '*.exe' -Recurse -Depth 4 -File -ErrorAction SilentlyContinue) {
+      $k = $f.Name.ToLower()
+      if (-not $index.ContainsKey($k)) { $index[$k] = New-Object System.Collections.ArrayList }
+      [void]$index[$k].Add($f.FullName)
+    }
+  }
+  Say ("  Looked in {0} game folders" -f $roots.Count)
   foreach ($g in $script:Games) {
     foreach ($exe in $g.exes) {
-      # Where the game is installed, if it is: the exe is looked up by name inside the launchers' own folders.
+      # Where the game is installed, if it is: the exe by name inside the launchers' own folders.
       $paths = @()
-      foreach ($root in $roots) {
-        $hit = Get-ChildItem -Path $root -Filter $exe -Recurse -Depth 4 -File -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($hit) { $paths += $hit.FullName }
-      }
+      $k = $exe.ToLower()
+      if ($index.ContainsKey($k)) { $paths = @($index[$k] | Select-Object -First 3) }
       # High-performance GPU, priority class high, and the DVR exclusion - by exe name, so they apply wherever it lives.
       $ifeo = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\$exe\PerfOptions"
       Set-Reg $ifeo 'CpuPriorityClass' 3
@@ -1690,6 +1748,7 @@ function Get-Probe {
     target = (Get-SafeBar $m)
     lastRun = (Get-LastRun)
     keepOn = [bool](Get-ScheduledTask -TaskName 'OmniDx keep' -ErrorAction SilentlyContinue)
+    keyBound = $(try { [string](Get-ItemProperty 'HKLM:\SOFTWARE\OmniDx\Tune' -ErrorAction Stop).Key } catch { '' })
   }
 }
 
@@ -1853,7 +1912,7 @@ function Show-Gui {
   if ($Key) { $ui.KeyBox.Text = $Key }
   $phases = @{ startup = 'ChkStartup'; services = 'ChkServices'; tasks = 'ChkTasks'; apps = 'ChkApps'; debloat = 'ChkDebloat'; telemetry = 'ChkTelemetry'; system = 'ChkSystem'; power = 'ChkPower'; network = 'ChkNetwork'; programs = 'ChkPrograms'; games = 'ChkGames'; nvidia = 'ChkNvidia'; cleanup = 'ChkCleanup' }
   $state = @{ ps = $null; out = $null; handle = $null; seen = 0; seenOut = 0; mode = ''; heads = 0; startup = @(); probe = $null }
-  $headsTotal = 19
+  $headsTotal = 18
 
   $log = { param($line) $ui.LogBox.AppendText($line + "`r`n"); $ui.LogBox.ScrollToEnd() }
 
@@ -1895,6 +1954,8 @@ function Show-Gui {
       $cb.Content = $tb; $cb.IsChecked = $true; $cb.Tag = $e.name; $cb.Width = 280
       [void]$ui.StartupPanel.Children.Add($cb); $state.startup += $cb
     }
+    if (-not $ui.KeyBox.Text -and $probe.keyBound) { $ui.KeyBox.Text = $probe.keyBound; $ui.KeyNote.Text = 'The key bound to this PC, from your last run. Same key, same PC, free.' }
+    if ($probe.lastRun) { $ui.BtnRun.Content = 'Run it again' }
     $ui.StatusText.Text = $(if ($probe.lastRun) { "Read in $([int]$script:Timer.Elapsed.TotalSeconds) s. Last run $($probe.lastRun.stamp -replace '_', ' ' -replace '-(\d\d)$', ':$1'): $($probe.lastRun.before) -> $($probe.lastRun.after) processes$(if ($probe.keepOn) { ', kept cut' })." } else { "Read in $([int]$script:Timer.Elapsed.TotalSeconds) s. Nothing has changed." })
     $ui.BtnRun.IsEnabled = $true; $ui.BtnReport.IsEnabled = $true
     $ui.Progress.IsIndeterminate = $false; $ui.Progress.Value = 0
@@ -1959,7 +2020,12 @@ function Show-Gui {
     & $start $p 'run'
   })
   $ui.BtnReport.Add_Click({ $ui.LogBox.Clear(); & $start @{ Report = $true; Yes = $true } 'report' })
-  $ui.BtnUndo.Add_Click({ $ui.LogBox.Clear(); & $start @{ Undo = $true } 'undo' })
+  $ui.BtnUndo.Add_Click({
+    # Two clicks: the first arms it, the second does it. Nothing else in the window is destructive.
+    if (-not $state.undoArmed) { $state.undoArmed = $true; $ui.BtnUndo.Content = 'Sure? Click again to undo'; return }
+    $state.undoArmed = $false; $ui.BtnUndo.Content = 'Undo every run'
+    $ui.LogBox.Clear(); & $start @{ Undo = $true } 'undo'
+  })
   $ui.BtnStatus.Add_Click({ $ui.LogBox.Clear(); & $start @{ Status = $true } 'status' })
   $ui.BtnFolder.Add_Click({ New-Item -ItemType Directory -Path $script:Root -Force | Out-Null; Start-Process explorer.exe $script:Root })
   $ui.BtnOpenReport.IsEnabled = [bool](Get-ChildItem $script:Root -Filter 'report-*.html' -ErrorAction SilentlyContinue)
@@ -2056,7 +2122,8 @@ function Write-Report($m, $before, $after, $changesFile) {
     "GPU CONTROL PANEL", @(Get-GpuNotes $m | ForEach-Object { "  - $_" }), "",
     "PER GAME", @($gameLines), "",
     "BIOS", @(Get-BiosChecklist $m | ForEach-Object { "  $_" }), "",
-    "UNDO", "  Administrator PowerShell:  powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1", "  Or Windows Recovery > System Restore > the point named 'OmniDx Tune $($script:Stamp)'.", "  Changes recorded in: $changesFile"
+    "UNDO", "  Administrator PowerShell:  powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1", "  Or Windows Recovery > System Restore > the point named 'OmniDx Tune $($script:Stamp)'.", "  Changes recorded in: $changesFile", "",
+    "STATUS, ANY TIME", "  What is still in place, what an update put back, the keep task, the after-restart count:", "  `$env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex", "  Files: README.txt next to this report says what each file here is."
   )
   $flat = @(); foreach ($l in $lines) { if ($l -is [array]) { $flat += $l } elseif ($l -ne $null) { $flat += $l } }
   Set-Content -Path $rep -Value $flat -Encoding UTF8
@@ -2119,6 +2186,7 @@ $(if ((Get-GoneProcesses).Count) { "<h2>Gone, by name</h2><p class='muted'>Runni
 <h2>Per game</h2>$games
 <h2>What was done</h2>$done
 <h2>Undo</h2><p>Administrator PowerShell: <code>powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1</code><br>Or Windows Recovery &rsaquo; System Restore &rsaquo; the point named <code>OmniDx Tune $(& $h $script:Stamp)</code>.<br>Changes recorded in <code>$(& $h $changesFile)</code>.</p>
+<h2>Status, any time</h2><p>What is still in place, what an update put back, the keep task and the after-restart count: <code>`$env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex</code><br><span class="muted">README.txt in C:\OmniDx says what each file there is.</span></p>
 <p class="muted" style="margin-top:40px">omnidx.net &middot; one payment, one PC, undo in one line.</p>
 </main></body></html>
 "@
@@ -2249,6 +2317,11 @@ function Main {
     if ($Report) { Write-Preview $m $before; return }
 
     Head "Your key"
+    # A PC that has run before already holds its key; a second run asks for nothing.
+    if (-not $Key) {
+      $bound = $null; try { $bound = (Get-ItemProperty 'HKLM:\SOFTWARE\OmniDx\Tune' -ErrorAction Stop).Key } catch { }
+      if ($bound) { $Key = $bound; Say "  Using the key already bound to this PC, from your last run." }
+    }
     if (-not $Key) { $Key = Read-Host "  Paste your key (from the page after you paid)" }
     $parsed = Read-Key $Key
     if (-not $parsed) { Say "  That is not an OmniDx key. It looks like TUNE-XXXX-XXXX-XXXX-XXXX; check it for typos, or get it again at omnidx.net/studio/activate/." 'Red'; return }

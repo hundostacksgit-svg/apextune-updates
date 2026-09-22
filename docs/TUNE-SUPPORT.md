@@ -28,6 +28,16 @@ By hand: `python3 tools/make-tune-key.py --order <ref>` gives the key the
 page would have derived; with the Worker, check `tune_keys` for the order
 first.
 
+## "I lost my key"
+
+> If the PC has run the tune before, it still has the key: the app fills it
+> in, the console flow uses it without asking, and
+> `$env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex` shows it with the
+> middle hidden. To see it in full, open Registry Editor at
+> HKEY_LOCAL_MACHINE\SOFTWARE\OmniDx\Tune. For a new PC, the key page at
+> omnidx.net/studio/activate/ makes the same key again from your Square
+> order number.
+
 ## "It says the key is on another PC"
 
 > One key is one PC, and it locked to the first machine that ran it. If that

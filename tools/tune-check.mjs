@@ -150,6 +150,27 @@ function flags(scriptText, goText) {
   ok(`go.ps1 handles modes ${[...modes].join(' ')}`);
 }
 
+/* The changelog's newest entry must be the version being shipped, and the
+   site's game count must be the script's. */
+function siteAgrees(scriptText) {
+  const v = /\$script:Version = '([^']+)'/.exec(scriptText)?.[1];
+  const log = fs.readFileSync(path.join(root, 'studio/changelog/index.html'), 'utf8');
+  const top = /class="eyebrow"[^>]*>v(\d+\.\d+\.\d+)/.exec(log)?.[1];
+  if (top === v) ok(`the changelog's newest entry is v${v}`);
+  else bad(`the changelog's newest entry is v${top} but the script is v${v}: add an entry`);
+  const gamesBlock = scriptText.slice(scriptText.indexOf('$script:Games = @('), scriptText.indexOf('function Get-GameRoots'));
+  const inScript = [...gamesBlock.matchAll(/@\{ name = '/g)].length;
+  const cfg = fs.readFileSync(path.join(root, 'studio/assets/config.js'), 'utf8');
+  const gamesJs = /games: \[([\s\S]*?)\]/.exec(cfg)?.[1] || '';
+  const onSite = [...gamesJs.matchAll(/'[^']+'/g)].length;
+  if (inScript === onSite) ok(`${inScript} game profiles in the script, ${onSite} on the site`);
+  else bad(`${inScript} game profiles in the script but ${onSite} on the site (studio/assets/config.js)`);
+  for (const page of ['studio/index.html', 'studio/pricing/index.html']) {
+    const html = fs.readFileSync(path.join(root, page), 'utf8');
+    for (const m of html.matchAll(/data-games>(\d+)</g)) if (Number(m[1]) !== inScript) bad(`${page} says ${m[1]} games; the script has ${inScript}`);
+  }
+}
+
 console.log('OmniDx Tune checks');
 const script = ascii('tune/omnidx.ps1');
 const go = ascii('go.ps1');
@@ -159,6 +180,7 @@ definedFunctions('tune/omnidx.ps1', script);
 undoCovers('tune/omnidx.ps1', script);
 windowNames('tune/omnidx.ps1', script);
 flags(script, go);
+siteAgrees(script);
 await keys();
 config(script);
 console.log(failed ? `${failed} problem(s)` : 'all good');

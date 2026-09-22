@@ -12,7 +12,7 @@ pieces fit and the short list of what still needs a human to switch on.
 | The bootstrapper | `go.ps1` (served at `omnidx.net/go.ps1`) | The one command: `irm omnidx.net/go.ps1 \| iex`. Asks for the key, gets admin rights, reads `tune/config.json`, fetches the script, runs it from memory. |
 | The script | `tune/omnidx.ps1` (served at `omnidx.net/tune/omnidx.ps1`) | The tune itself: read the PC, check the key, restore point, the cut, power plan, network, apps, game profiles, report, undo. Public on purpose. |
 | The config | `tune/config.json` | One field that matters: `api`. Empty means no licence server. `version` and `sha256` are stamped by `tools/tune-stamp.py`. |
-| On the buyer's PC | `C:\OmniDx\undo\undo.ps1`, `keep.ps1`, `changes-*.json`; `C:\OmniDx\keep-log.txt`, `after-restart.txt`, `report-*.html`, `summary-*.json` | Written by the script. Undo walks back every record; keep.ps1 is what the sign-in task runs; the log has one line per sign-in. |
+| On the buyer's PC | `C:\OmniDx\README.txt`, `undo\undo.ps1`, `undo\keep.ps1`, `undo\changes-*.json`; `keep-log.txt`, `after-restart.txt`, `report-*.html`, `summary-*.json` | Written by the script. README.txt explains the folder; undo walks back every record; keep.ps1 is what the sign-in task runs; the log has one line per sign-in. |
 | Keys in the browser | `studio/assets/tunekey.js`, `studio/activate/` | Makes and checks keys on the page after paying. |
 | Keys on the server | `server/worker.js` (`/v1/tune/*`), `server/schema.sql` (`tune_keys`, `tune_machines`) | Issues keys against Square orders, binds them to PCs, refuses the rest, moves them on request. |
 | Keys by hand | `tools/make-tune-key.py` | Make, check or reproduce a key; print the D1 insert. |
@@ -197,6 +197,13 @@ drifted, the keep task's state and last line, the after-restart count, the
 last run's numbers and the key. The app's "What is still in place" button
 runs it.
 
+### The key is remembered
+The first run binds the key under `HKLM:\SOFTWARE\OmniDx\Tune`. Every later
+run reads it from there when none is given: the console flow says "Using
+the key already bound to this PC", the app fills the key box from the
+probe's `keyBound`, and `go.ps1` no longer asks for a key up front except
+in `check` mode. `-Key` on the command line still wins, for a moved key.
+
 ### Undo across runs
 `undo.ps1` with no argument walks back every `changes-*.json` in its folder,
 newest first, then moves each to `done\` and deletes `changes-latest.json`;
@@ -216,9 +223,11 @@ record is; `Limit-History` keeps the newest ten of everything else.
   app window to a PNG, runs undo with nothing recorded, then runs the whole
   tune with a real key, checks `-Status` says everything is in place and
   the keep task is on, turns a service, a task and a policy value back on by
-  hand and requires keep.ps1 to see and put back all three, undoes the whole
-  tune (at least 70% of the changes must go back, the keep task must be
-  gone, the record must be in `done\`), checks status and a second undo
+  hand and requires keep.ps1 to see and put back all three, runs the tune a
+  second time with the same key (it must be accepted and record at most 20
+  new changes: the "run it again, free" promise), undoes both runs (at
+  least 70% of the first run's changes must go back, the keep task must be
+  gone, both records must be in `done\`), checks status and a second undo
   after that, and confirms a bad key is refused and Python-made keys are
   accepted. The screenshot and the run's numbers are committed back to the
   branch. This is the only place the script actually executes before a

@@ -23,7 +23,9 @@ $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIden
 $isCore = $PSVersionTable.PSEdition -eq 'Core'
 $key = $env:OMNIDX_KEY
 if (-not $mode) { $mode = 'app' }
-if (-not $key -and $mode -ne 'undo' -and $mode -ne 'report' -and $mode -ne 'app' -and $mode -ne 'status') {
+# Only the key check needs the key here. The tune itself reuses the key
+# already bound to this PC, and asks only on a first run.
+if (-not $key -and $mode -eq 'check') {
   Write-Host ''
   Write-Host '  OmniDx Tune' -ForegroundColor Magenta
   Write-Host '  Your key is on the page after you paid: omnidx.net/studio/activate/' -ForegroundColor DarkGray
@@ -60,7 +62,7 @@ foreach ($try in 1..2) {
   if (-not $script -or $script.Length -lt 1000 -or $script -notmatch 'function Main') { continue }
   if (-not $want) { break }
   $got = (($sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($script)) | ForEach-Object { $_.ToString('x2') }) -join '')
-  if ($got -eq $want) { break }
+  if ($got -eq $want) { Write-Host ("  Script verified: sha256 {0}... matches the hash published at omnidx.net/tune/config.json" -f $got.Substring(0, 12)) -ForegroundColor DarkGray; break }
   Write-Host ("  The script did not match its published hash (attempt {0}); fetching again." -f $try) -ForegroundColor Yellow
   $script = ''
 }

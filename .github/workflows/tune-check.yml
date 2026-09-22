@@ -113,6 +113,7 @@ jobs:
           $html = Get-ChildItem C:\OmniDx -Filter 'report-*.html' | Select-Object -First 1
           if (-not $html) { Write-Host 'no HTML report'; exit 1 }
           if (-not (Test-Path C:\OmniDx\undo\changes-latest.json)) { Write-Host 'no change record'; exit 1 }
+          if (-not (Test-Path C:\OmniDx\README.txt)) { Write-Host 'no README.txt'; exit 1 }
           $summary = Get-ChildItem C:\OmniDx -Filter 'summary-*.json' | Sort-Object LastWriteTime -Descending | Select-Object -First 1
           Copy-Item $summary.FullName C:\OmniDx\ci-summary.json
           Get-Content C:\OmniDx\ci-summary.json
@@ -160,6 +161,28 @@ jobs:
           Write-Host 'keep: three things turned back on, three put back, status clean'
           exit 0
 
+      # Run it again on the same PC with the same key: accepted, and with
+      # nearly nothing new to record, because it was already done. That is
+      # the "run it again after an update, free" promise. Undo then walks
+      # back both runs, newest first.
+      - name: A second run is accepted and records nearly nothing new
+        timeout-minutes: 15
+        run: |
+          $key = (Get-ItemProperty 'HKLM:\SOFTWARE\OmniDx\Tune').Key
+          Start-Sleep -Seconds 61
+          $out = & .\tune\omnidx.ps1 -Key $key -Yes -NoRestart -NoAfterCount *>&1 | Out-String
+          Write-Host $out
+          if ($out -notmatch '== Done') { Write-Host 'the second run did not reach Done'; exit 1 }
+          if ($out -notmatch 'Key accepted') { Write-Host 'the same key on the same PC was not accepted'; exit 1 }
+          $summary = Get-ChildItem C:\OmniDx -Filter 'summary-*.json' | Sort-Object Name -Descending | Select-Object -First 1
+          $s = Get-Content $summary.FullName | ConvertFrom-Json
+          Write-Host ("second run recorded {0} changes" -f $s.changes)
+          if ($s.changes -gt 20) { Write-Host 'a second run should find nearly everything already done'; exit 1 }
+          $records = @(Get-ChildItem C:\OmniDx\undo -Filter 'changes-20*.json')
+          if ($records.Count -ne 2) { Write-Host ("expected two records, found {0}" -f $records.Count); exit 1 }
+          Set-Content C:\OmniDx\ci-second.txt $s.changes
+          exit 0
+
       - name: Undo the whole tune
         timeout-minutes: 30
         run: |
@@ -174,12 +197,14 @@ jobs:
           $s = Get-Content C:\OmniDx\ci-summary.json | ConvertFrom-Json
           if ($undone -lt [math]::Floor($s.changes * 0.7)) { Write-Host ("undo put back {0} of {1} changes; that is a broken undo" -f $undone, $s.changes); exit 1 }
           $kept = 0; if (Test-Path C:\OmniDx\ci-kept.txt) { $kept = [int](Get-Content C:\OmniDx\ci-kept.txt) }
-          $ci = [ordered]@{ version = $s.version; when = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'); os = $s.os; cpu = $s.cpu; before = $s.before; after = $s.after; target = $s.target; changes = $s.changes; warnings = $s.warnings; seconds = $s.seconds; undone = $undone; kept = $kept; gone = @($s.gone).Count; sha = $env:GITHUB_SHA.Substring(0, 7) }
+          $second = -1; if (Test-Path C:\OmniDx\ci-second.txt) { $second = [int](Get-Content C:\OmniDx\ci-second.txt) }
+          if (([regex]::Matches($out, 'Putting back')).Count -ne 2) { Write-Host 'undo should have walked back both runs'; exit 1 }
+          $ci = [ordered]@{ version = $s.version; when = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'); os = $s.os; cpu = $s.cpu; before = $s.before; after = $s.after; target = $s.target; changes = $s.changes; warnings = $s.warnings; seconds = $s.seconds; undone = $undone; kept = $kept; second = $second; runs = 2; gone = @($s.gone).Count; sha = $env:GITHUB_SHA.Substring(0, 7) }
           $ci | ConvertTo-Json | Set-Content studio\assets\ci-run.json -Encoding UTF8
           Get-Content studio\assets\ci-run.json
           $out = & .\tune\omnidx.ps1 -Status *>&1 | Out-String
           Write-Host $out
-          if ($out -notmatch 'Runs in place: none \(1 undone\)') { Write-Host 'status after undo should say no runs, one undone'; exit 1 }
+          if ($out -notmatch 'Runs in place: none \(2 undone\)') { Write-Host 'status after undo should say no runs, two undone'; exit 1 }
           $out = & .\tune\omnidx.ps1 -Undo *>&1 | Out-String
           if ($out -notmatch 'already been put back') { Write-Host "a second undo should say there is nothing left:`n$out"; exit 1 }
           exit 0

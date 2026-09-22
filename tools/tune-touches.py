@@ -117,6 +117,8 @@ def page(text: str) -> str:
         + '</tbody></table></div></details>'
         for section, vals in reg.items())
     reg_total = sum(len(v) for v in reg.values())
+    yours = strings(re.search(r"\$yours = @\(([^\n]*)\)", text).group(1))
+    yours_items = ''.join(f'<li class="mono">{e(y)}</li>' for y in yours)
     legacy_rows = ''.join(f'<tr><td class="mono">{e(n)}</td><td>{e(what)}</td><td>capability</td></tr>' for n, what in caps) + \
         ''.join(f'<tr><td class="mono">{e(n)}</td><td>{e(what)}</td><td>optional feature</td></tr>' for n, what in feats)
 
@@ -236,6 +238,17 @@ def page(text: str) -> str:
         a value that did not exist is removed again.</p>
     </div>
     {reg_blocks}
+  </div>
+</section>
+
+<section id="keep">
+  <div class="wrap touch">
+    <div class="section-head reveal">
+      <h2>What the keep task checks</h2>
+      <p>Only if you said yes to it. Three minutes after each sign-in it compares every service, scheduled task and registry value above with the machine and sets again what a Windows update turned back on. It never adds anything, and anything under these paths is left alone on purpose: if it changed after the tune, it was you, in Settings or Task Manager, and that wins.</p>
+    </div>
+    <ul class="tick" style="max-width:70ch">{yours_items}</ul>
+    <p class="small muted" style="margin-top:14px">Its log is <span class="mono">C:\\OmniDx\\keep-log.txt</span>; <span class="mono">-NoKeep</span> never makes it; undo removes it. Read the comparison itself: <span class="mono">Get-Drift</span> in the script.</p>
   </div>
 </section>
 
