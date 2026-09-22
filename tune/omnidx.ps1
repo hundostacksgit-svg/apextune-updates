@@ -1332,7 +1332,9 @@ function Main {
 
     Head "Reading this PC"
     $m = Get-Machine
-    if ($m.os -match 'Server') { Say "  This is Windows Server. The tune is for Windows 10 and 11." 'Red'; return }
+    # Windows Server is refused: it is not what this is for. The one exception is
+    # the check that runs on a Windows Server build machine, in report mode.
+    if ($m.os -match 'Server' -and -not ($Report -and $env:OMNIDX_ALLOW_SERVER)) { Say "  This is Windows Server. The tune is for Windows 10 and 11." 'Red'; return }
     if ($m.build -lt 18362) { Say "  Windows 10 version 1903 or newer is needed. Update Windows first." 'Red'; return }
     Show-Machine $m
     Show-Advice $m

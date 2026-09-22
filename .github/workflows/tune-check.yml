@@ -32,6 +32,10 @@ jobs:
     defaults:
       run:
         shell: powershell
+    env:
+      # The runner is Windows Server, which the tune refuses; report mode is
+      # let through here so the read, the preview and the key check can run.
+      OMNIDX_ALLOW_SERVER: "1"
     steps:
       - uses: actions/checkout@v4
 
