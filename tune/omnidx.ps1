@@ -76,7 +76,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.5.0'
+$script:Version = '1.5.1'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -300,7 +300,7 @@ $script:UndoScript = @'
 param([string]$File = (Join-Path $PSScriptRoot 'changes-latest.json'))
 $ErrorActionPreference = 'Continue'
 if (-not (Test-Path $File)) { Write-Host "No changes file at $File" -ForegroundColor Red; exit 1 }
-$changes = @(Get-Content $File -Raw | ConvertFrom-Json)
+$changes = @(Get-Content $File -Raw | ConvertFrom-Json | ForEach-Object { $_ })
 [array]::Reverse($changes)
 $removedApps = @()
 $done = 0; $failed = 0
@@ -739,9 +739,12 @@ function Cut-Services($m) {
     $name = $pair[0]; $why = $pair[1]
     if ($keep.ContainsKey($name)) { if (Get-Service -Name $name -ErrorAction SilentlyContinue) { Keep $name $keep[$name] }; continue }
     $mode = if ($script:ManualOnly -contains $name) { 'Manual' } else { 'Disabled' }
-    # Per-user services carry a suffix (CDPUserSvc_1a2b3c); catch the family.
-    $matches = @(Get-Service -ErrorAction SilentlyContinue | Where-Object { $_.Name -eq $name -or $_.Name -like ($name + '_*') })
-    foreach ($svc in $matches) { Set-ServiceStart $svc.Name $mode $why }
+    # Per-user services carry a suffix (CDPUserSvc_1a2b3c). The template is
+    # the one whose start type can be set; the instances are only stopped.
+    if (Get-Service -Name $name -ErrorAction SilentlyContinue) { Set-ServiceStart $name $mode $why }
+    foreach ($inst in @(Get-Service -ErrorAction SilentlyContinue | Where-Object { $_.Name -like ($name + '_*') -and $_.Status -eq 'Running' })) {
+      try { Stop-Service -Name $inst.Name -Force -ErrorAction Stop -WarningAction SilentlyContinue } catch { }
+    }
   }
   # Windows Search: not off, manual - the search box still works, the background indexer stops.
   Say "  Kept on purpose: Defender, Windows Update, audio, networking, Bluetooth if you use it, printing if you have a printer, Windows Hello if it is set up."
@@ -1725,7 +1728,7 @@ function Get-Snapshot {
 
 function Format-Snapshot($snap) {
   if (-not $snap) { return '-' }
-  $bits = @("{0} processes" -f $snap.processes, "{0} threads" -f $snap.threads, "{0} handles" -f $snap.handles, "{0} MB in use" -f $snap.memUsedMb)
+  $bits = @(("{0} processes" -f $snap.processes), ("{0} threads" -f $snap.threads), ("{0} handles" -f $snap.handles), ("{0} MB in use" -f $snap.memUsedMb))
   if ($snap.cpuPct -ne $null) { $bits += ("idle CPU {0}%" -f $snap.cpuPct) }
   if ($snap.dpcPct -ne $null) { $bits += ("DPC {0}%" -f $snap.dpcPct) }
   return ($bits -join ', ')

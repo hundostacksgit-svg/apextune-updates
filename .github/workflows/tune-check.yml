@@ -120,6 +120,7 @@ jobs:
           if ($out -notmatch 'Done: (\d+) put back') { Write-Host 'undo did not finish'; exit 1 }
           $undone = [int]$Matches[1]
           $s = Get-Content C:\OmniDx\ci-summary.json | ConvertFrom-Json
+          if ($undone -lt [math]::Floor($s.changes * 0.7)) { Write-Host ("undo put back {0} of {1} changes; that is a broken undo" -f $undone, $s.changes); exit 1 }
           $ci = [ordered]@{ version = $s.version; when = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'); os = $s.os; cpu = $s.cpu; before = $s.before; after = $s.after; target = $s.target; changes = $s.changes; warnings = $s.warnings; seconds = $s.seconds; undone = $undone; gone = @($s.gone).Count; sha = $env:GITHUB_SHA.Substring(0, 7) }
           $ci | ConvertTo-Json | Set-Content studio\assets\ci-run.json -Encoding UTF8
           Get-Content studio\assets\ci-run.json
