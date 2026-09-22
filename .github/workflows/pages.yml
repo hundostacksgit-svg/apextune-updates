@@ -25,7 +25,7 @@ jobs:
         run: |
           set -euo pipefail
           for f in index.html .nojekyll \
-                   app/index.html app/manifest.webmanifest app/sw.js app/css/app.css app/css/looks.css \
+                   app/index.html app/manifest.webmanifest app/sw.js app/css/app.css \
                    app/js/app.js app/js/ui.js app/js/store.js app/js/report.js \
                    app/js/pro.js app/js/config.js app/js/modules/pro.js \
                    app/js/modules/car.js app/js/modules/codes.js app/js/modules/garage.js \
