@@ -76,7 +76,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.3.0'
+$script:Version = '1.4.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -556,13 +556,13 @@ function Register-AfterCount {
   try {
     $name = 'OmniDx after-restart count'
     $out = Join-Path $script:Root 'after-restart.txt'
-    $cmd = "Start-Sleep -Seconds 120; `$n = (Get-Process | Measure-Object).Count; Add-Content -Path '$out' -Value ((Get-Date -Format s) + '  processes after restart: ' + `$n); Unregister-ScheduledTask -TaskName '$name' -Confirm:`$false"
+    $cmd = "Start-Sleep -Seconds 120; `$p = @(Get-Process); `$o = Get-CimInstance Win32_OperatingSystem; `$m = [math]::Round((`$o.TotalVisibleMemorySize - `$o.FreePhysicalMemory) / 1024); `$c = ''; try { `$s = Get-Counter -Counter '\Processor(_Total)\% Processor Time', '\Processor(_Total)\% DPC Time' -SampleInterval 1 -MaxSamples 3 -ErrorAction Stop; `$c = ', idle CPU ' + [math]::Round((`$s.CounterSamples | Where-Object { `$_.Path -like '*Processor Time' } | Measure-Object CookedValue -Average).Average, 1) + '%, DPC ' + [math]::Round((`$s.CounterSamples | Where-Object { `$_.Path -like '*DPC Time' } | Measure-Object CookedValue -Average).Average, 2) + '%' } catch { }; Add-Content -Path '$out' -Value ((Get-Date -Format s) + '  after restart: ' + `$p.Count + ' processes, ' + ((`$p | ForEach-Object { `$_.Threads.Count } | Measure-Object -Sum).Sum) + ' threads, ' + ((`$p | Measure-Object HandleCount -Sum).Sum) + ' handles, ' + `$m + ' MB in use' + `$c); Unregister-ScheduledTask -TaskName '$name' -Confirm:`$false"
     $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "' + $cmd + '"')
     $trigger = New-ScheduledTaskTrigger -AtLogOn
     Unregister-ScheduledTask -TaskName $name -Confirm:$false -ErrorAction SilentlyContinue
     Register-ScheduledTask -TaskName $name -Action $action -Trigger $trigger -RunLevel Highest -Force -ErrorAction Stop | Out-Null
     Record @{ type = 'task-created'; name = $name }
-    Did "One task runs once at your next sign-in: it writes the after-restart process count to C:\OmniDx\after-restart.txt, then removes itself."
+    Did "One task runs once at your next sign-in: it writes the after-restart process count, memory, threads, handles and idle CPU to C:\OmniDx\after-restart.txt, then removes itself."
   } catch { Warn ("Could not set the after-restart count task ({0})." -f $_.Exception.Message) }
 }
 
@@ -1469,10 +1469,8 @@ $script:Xaml = @'
             <TextBlock Text="THIS PC" Style="{StaticResource Label}"/>
             <TextBlock x:Name="MachineText" TextWrapping="Wrap" Foreground="#B3A8CF" LineHeight="21" Text="Reading..."/>
             <TextBlock Text="PROCESSES RUNNING NOW" Style="{StaticResource Label}" Margin="0,16,0,2"/>
-            <StackPanel Orientation="Horizontal">
-              <TextBlock x:Name="CountText" Text="-" FontSize="46" FontWeight="Bold" Foreground="#C084FC" Margin="0,-6,0,0"/>
-              <TextBlock x:Name="TargetText" Foreground="#7D7199" VerticalAlignment="Bottom" Margin="12,0,0,12" TextWrapping="Wrap" Width="150"/>
-            </StackPanel>
+            <TextBlock x:Name="CountText" Text="-" FontSize="46" FontWeight="Bold" Foreground="#C084FC" Margin="0,-6,0,0"/>
+            <TextBlock x:Name="TargetText" Foreground="#7D7199" TextWrapping="Wrap" Margin="0,-4,0,0"/>
             <TextBlock x:Name="AdviceText" TextWrapping="Wrap" Foreground="#FFC247" LineHeight="19" Margin="0,8,0,0"/>
           </StackPanel>
         </ScrollViewer>
@@ -1486,7 +1484,7 @@ $script:Xaml = @'
               <CheckBox x:Name="ChkServices" IsChecked="True" Content="Services this PC does not need"/>
               <CheckBox x:Name="ChkTasks" IsChecked="True" Content="Telemetry tasks"/>
               <CheckBox x:Name="ChkApps" IsChecked="True" Content="Preinstalled apps and trials"/>
-              <CheckBox x:Name="ChkDebloat" IsChecked="True" Content="Debloat: legacy Windows, unused OneDrive"/>
+              <CheckBox x:Name="ChkDebloat" IsChecked="True" Content="Debloat: legacy Windows, OneDrive"/>
               <CheckBox x:Name="ChkTelemetry" IsChecked="True" Content="Telemetry, ads, background apps"/>
               <CheckBox x:Name="ChkSystem" IsChecked="True" Content="System: scheduler, input, visuals"/>
               <CheckBox x:Name="ChkPower" IsChecked="True" Content="The OmniDx power plan"/>
@@ -1515,6 +1513,7 @@ $script:Xaml = @'
           <Button x:Name="BtnRun" Style="{StaticResource Primary}" Content="Run the tune" Margin="0,16,0,8" Height="44" IsEnabled="False"/>
           <Button x:Name="BtnReport" Content="Free report  -  changes nothing" Margin="0,0,0,8" IsEnabled="False"/>
           <Button x:Name="BtnUndo" Content="Undo the last run" Margin="0,0,0,8"/>
+          <Button x:Name="BtnOpenReport" Content="Open the report" Margin="0,0,0,8" IsEnabled="False"/>
           <Button x:Name="BtnFolder" Content="Open C:\OmniDx" Margin="0,0,0,8"/>
           <Button x:Name="BtnRestart" Content="Restart now" IsEnabled="False"/>
           <TextBlock x:Name="ResultText" TextWrapping="Wrap" Foreground="#30D38A" Margin="0,14,0,0" FontWeight="SemiBold"/>
@@ -1540,7 +1539,7 @@ function Show-Gui {
 
   $w = [System.Windows.Markup.XamlReader]::Parse($script:Xaml)
   $ui = @{}
-  foreach ($n in 'VersionText', 'StatusText', 'MachineText', 'CountText', 'TargetText', 'AdviceText', 'StartupPanel', 'KeyBox', 'KeyNote', 'BtnRun', 'BtnReport', 'BtnUndo', 'BtnFolder', 'BtnRestart', 'ResultText', 'LogBox', 'Progress', 'FootText',
+  foreach ($n in 'VersionText', 'StatusText', 'MachineText', 'CountText', 'TargetText', 'AdviceText', 'StartupPanel', 'KeyBox', 'KeyNote', 'BtnRun', 'BtnReport', 'BtnUndo', 'BtnFolder', 'BtnRestart', 'BtnOpenReport', 'ResultText', 'LogBox', 'Progress', 'FootText',
                   'ChkStartup', 'ChkServices', 'ChkTasks', 'ChkApps', 'ChkDebloat', 'ChkTelemetry', 'ChkSystem', 'ChkPower', 'ChkNetwork', 'ChkPrograms', 'ChkGames', 'ChkNvidia', 'ChkCleanup', 'ChkAfterCount', 'ChkXbox', 'ChkDns', 'ChkVbs') {
     $ui[$n] = $w.FindName($n)
   }
@@ -1560,7 +1559,7 @@ function Show-Gui {
     [void]$ps.AddScript('param($text, $p) & ([scriptblock]::Create($text)) @p').AddArgument($script:SelfText).AddArgument($params)
     $inp = New-Object 'System.Management.Automation.PSDataCollection[psobject]'; $inp.Complete()
     $out = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
-    $state.ps = $ps; $state.out = $out; $state.seen = 0; $state.seenOut = 0; $state.mode = $mode; $state.heads = 0
+    $state.ps = $ps; $state.out = $out; $state.seen = 0; $state.seenOut = 0; $state.mode = $mode; $state.heads = 0; $state.started = [System.Diagnostics.Stopwatch]::StartNew()
     $state.handle = $ps.BeginInvoke($inp, $out)
     $ui.BtnRun.IsEnabled = $false; $ui.BtnReport.IsEnabled = $false; $ui.BtnUndo.IsEnabled = $false
     $ui.Progress.IsIndeterminate = ($mode -ne 'run')
@@ -1604,6 +1603,7 @@ function Show-Gui {
       $ui.ResultText.Text = $(if ($done.Success) { "Done. $($done.Groups[1].Value) -> $($done.Groups[2].Value) processes now. Restart for the real number, then do the BIOS checklist in the report." } else { 'Finished. Read the log above; the report is in C:\OmniDx.' })
       $ui.StatusText.Text = 'Done. Restart when you are ready.'
       $ui.BtnRestart.IsEnabled = $true
+      $ui.BtnOpenReport.IsEnabled = [bool](Get-ChildItem $script:Root -Filter 'report-*.html' -ErrorAction SilentlyContinue)
       $ui.CountText.Text = $(if ($done.Success) { $done.Groups[2].Value } else { $ui.CountText.Text })
     } elseif ($state.mode -eq 'undo') { $ui.StatusText.Text = 'Undo finished. Restart to finish.'; $ui.BtnRestart.IsEnabled = $true }
     else { $ui.StatusText.Text = 'Report written to C:\OmniDx. Nothing changed.' }
@@ -1629,8 +1629,11 @@ function Show-Gui {
       $state.ps.Dispose(); $state.ps = $null; return
     }
     if ($state.mode -eq 'undo' -and $state.out.Count -gt 0) { foreach ($o in $state.out) { & $log ([string]$o) }; $state.out.Clear() }
+    if ($state.mode -eq 'run') { $ui.FootText.Text = ("Running for {0}:{1:00}. Restore point first. Every change recorded." -f [int][math]::Floor($state.started.Elapsed.TotalMinutes), $state.started.Elapsed.Seconds) }
     if ($state.handle.IsCompleted) { & $finish }
   })
+  $ui.KeyBox.Add_KeyDown({ param($sender, $e) if ($e.Key -eq 'Return' -and $ui.BtnRun.IsEnabled) { $ui.BtnRun.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) } })
+  $ui.BtnOpenReport.Add_Click({ $r = Get-ChildItem $script:Root -Filter 'report-*.html' -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1; if ($r) { Start-Process $r.FullName } })
 
   $ui.BtnRun.Add_Click({
     if (-not $state.cleared) { $ui.LogBox.Clear(); $state.cleared = $true }
@@ -1650,6 +1653,7 @@ function Show-Gui {
   $ui.BtnReport.Add_Click({ $ui.LogBox.Clear(); & $start @{ Report = $true; Yes = $true } 'report' })
   $ui.BtnUndo.Add_Click({ $ui.LogBox.Clear(); & $start @{ Undo = $true } 'undo' })
   $ui.BtnFolder.Add_Click({ New-Item -ItemType Directory -Path $script:Root -Force | Out-Null; Start-Process explorer.exe $script:Root })
+  $ui.BtnOpenReport.IsEnabled = [bool](Get-ChildItem $script:Root -Filter 'report-*.html' -ErrorAction SilentlyContinue)
   $ui.BtnRestart.Add_Click({ Restart-Computer -Force })
   $w.Add_Closing({ if ($state.ps) { try { $state.ps.Stop() } catch { } } })
 
@@ -1687,6 +1691,37 @@ function Show-Gui {
 # ---------------------------------------------------------------------------
 function Get-ProcessCount { (Get-Process -ErrorAction SilentlyContinue | Measure-Object).Count }
 
+<# The numbers that say whether it worked, beyond the process count: memory
+   in use, threads and handles alive, and three seconds of idle CPU and DPC
+   time. Taken before, taken after, and taken again by the after-restart
+   task, so the report compares like with like. Counter names are localised
+   on non-English Windows; when they cannot be read they are left out. #>
+function Get-Snapshot {
+  $os = Get-CimInstance Win32_OperatingSystem -ErrorAction SilentlyContinue
+  $procs = @(Get-Process -ErrorAction SilentlyContinue)
+  $snap = @{
+    processes = $procs.Count
+    threads = ($procs | ForEach-Object { $_.Threads.Count } | Measure-Object -Sum).Sum
+    handles = ($procs | Measure-Object HandleCount -Sum).Sum
+    memUsedMb = $(if ($os) { [math]::Round(($os.TotalVisibleMemorySize - $os.FreePhysicalMemory) / 1024) } else { 0 })
+    cpuPct = $null; dpcPct = $null
+  }
+  try {
+    $c = Get-Counter -Counter '\Processor(_Total)\% Processor Time', '\Processor(_Total)\% DPC Time' -SampleInterval 1 -MaxSamples 3 -ErrorAction Stop
+    $snap.cpuPct = [math]::Round(($c.CounterSamples | Where-Object { $_.Path -like '*Processor Time' } | Measure-Object CookedValue -Average).Average, 1)
+    $snap.dpcPct = [math]::Round(($c.CounterSamples | Where-Object { $_.Path -like '*DPC Time' } | Measure-Object CookedValue -Average).Average, 2)
+  } catch { }
+  return $snap
+}
+
+function Format-Snapshot($snap) {
+  if (-not $snap) { return '-' }
+  $bits = @("{0} processes" -f $snap.processes, "{0} threads" -f $snap.threads, "{0} handles" -f $snap.handles, "{0} MB in use" -f $snap.memUsedMb)
+  if ($snap.cpuPct -ne $null) { $bits += ("idle CPU {0}%" -f $snap.cpuPct) }
+  if ($snap.dpcPct -ne $null) { $bits += ("DPC {0}%" -f $snap.dpcPct) }
+  return ($bits -join ', ')
+}
+
 function Write-Report($m, $before, $after, $changesFile) {
   $rep = Join-Path $script:Root ("report-{0}.txt" -f $script:Stamp)
   $target = Get-SafeBar $m
@@ -1701,6 +1736,8 @@ function Write-Report($m, $before, $after, $changesFile) {
     "MACHINE", @($script:Log | Where-Object { $_ -match '^  (CPU|GPU|RAM|Board|Laptop|Desktop|Keeps|UEFI|Microsoft|Windows|Driver)' }), "",
     "PROCESSES", "  before: $before", "  now:    $after  (many of these are only waiting to be stopped; the number after a restart is the one that counts)",
     "  target for this PC after a restart: about $target. Every launcher, overlay and driver utility you keep open adds to it.",
+    $(if ($script:Snapshots) { "  before: " + (Format-Snapshot $script:Snapshots.before) } else { $null }),
+    $(if ($script:Snapshots) { "  now:    " + (Format-Snapshot $script:Snapshots.after) } else { $null }),
     "  full lists: processes-before-$($script:Stamp).txt and processes-after-$($script:Stamp).txt next to this file; after-restart.txt appears after your next sign-in.", "",
     "STILL RUNNING (most instances)", @($top), "",
     "KEPT, AND WHY", @($(if ($script:Kept.Count) { $script:Kept | Sort-Object -Unique | ForEach-Object { "  $_" } } else { "  nothing needed keeping" })), "",
@@ -1711,14 +1748,72 @@ function Write-Report($m, $before, $after, $changesFile) {
     "BIOS", @(Get-BiosChecklist $m | ForEach-Object { "  $_" }), "",
     "UNDO", "  Administrator PowerShell:  powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1", "  Or Windows Recovery > System Restore > the point named 'OmniDx Tune $($script:Stamp)'.", "  Changes recorded in: $changesFile"
   )
-  $flat = @(); foreach ($l in $lines) { if ($l -is [array]) { $flat += $l } else { $flat += $l } }
+  $flat = @(); foreach ($l in $lines) { if ($l -is [array]) { $flat += $l } elseif ($l -ne $null) { $flat += $l } }
   Set-Content -Path $rep -Value $flat -Encoding UTF8
   Set-Content -Path (Join-Path $script:Root ("bios-{0}.txt" -f (($m.board -replace '[^A-Za-z0-9]+', '-').Trim('-')))) -Value (Get-BiosChecklist $m) -Encoding UTF8
+  try { Write-HtmlReport $m $before $after $target $found $changesFile } catch { Warn ("The HTML report was not written ({0}); the text one is." -f $_.Exception.Message) }
   try {
-    $summary = @{ version = $script:Version; stamp = $script:Stamp; before = $before; after = $after; target = $target; changes = $script:Changes.Count; warnings = $script:Warnings.Count; seconds = [int]$script:Timer.Elapsed.TotalSeconds; os = $m.os; cpu = $m.cpu; gpu = $m.gpu; ramGb = $m.ramGb; board = $m.board; laptop = $m.laptop; games = $found }
+    $summary = @{ version = $script:Version; stamp = $script:Stamp; before = $before; after = $after; target = $target; changes = $script:Changes.Count; warnings = $script:Warnings.Count; seconds = [int]$script:Timer.Elapsed.TotalSeconds; os = $m.os; cpu = $m.cpu; gpu = $m.gpu; ramGb = $m.ramGb; board = $m.board; laptop = $m.laptop; games = $found; snapshots = $script:Snapshots }
     $summary | ConvertTo-Json -Depth 4 | Set-Content -Path (Join-Path $script:Root ("summary-{0}.json" -f $script:Stamp)) -Encoding UTF8
   } catch { }
   return $rep
+}
+
+<# The same report as a page: dark, one column, the numbers up top, the
+   BIOS checklist where it can be read on a phone next to the BIOS screen.
+   Opens in the browser at the end. The text report stays; this is the one
+   people will actually read. #>
+function Write-HtmlReport($m, $before, $after, $target, $found, $changesFile) {
+  $h = { param($t) [System.Net.WebUtility]::HtmlEncode([string]$t) }
+  $list = { param($items) if (-not $items -or -not @($items).Count) { '<p class="muted">none</p>' } else { '<ul>' + ((@($items) | ForEach-Object { '<li>' + (& $h $_) + '</li>' }) -join '') + '</ul>' } }
+  $sn = $script:Snapshots
+  $row = { param($label, $b, $a) "<tr><td>$label</td><td>$(& $h $b)</td><td>$(& $h $a)</td></tr>" }
+  $snapRows = ''
+  if ($sn) {
+    $snapRows = (& $row 'Processes' $sn.before.processes $sn.after.processes) + (& $row 'Threads' $sn.before.threads $sn.after.threads) + (& $row 'Handles' $sn.before.handles $sn.after.handles) + (& $row 'Memory in use' ("{0} MB" -f $sn.before.memUsedMb) ("{0} MB" -f $sn.after.memUsedMb))
+    if ($sn.before.cpuPct -ne $null) { $snapRows += (& $row 'Idle CPU' ("{0}%" -f $sn.before.cpuPct) ("{0}%" -f $sn.after.cpuPct)) + (& $row 'DPC time' ("{0}%" -f $sn.before.dpcPct) ("{0}%" -f $sn.after.dpcPct)) }
+  }
+  $games = ''
+  foreach ($g in $script:Games) { if ($found -contains $g.name) { $games += "<h3>$(& $h $g.name) <span class='tag'>installed</span></h3>" + (& $list $g.notes) } }
+  $others = @($script:Games | Where-Object { $found -notcontains $_.name } | ForEach-Object { $_.name })
+  if ($others.Count) { $games += "<p class='muted'>Not found on this PC (the same profile applies if you install them): $(& $h ($others -join ', '))</p>" }
+  $done = @($script:Log | Where-Object { $_ -match '^(==|  \+)' } | ForEach-Object { if ($_ -match '^== ') { "<h4>$(& $h ($_ -replace '^== ', ''))</h4>" } else { "<div class='did'>$(& $h ($_ -replace '^  \+ ', ''))</div>" } }) -join ''
+  $html = @"
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OmniDx Tune report - $(& $h $script:Stamp)</title>
+<style>
+body{margin:0;background:#050308;color:#f1ecff;font:15px/1.6 -apple-system,'Segoe UI',Roboto,system-ui,sans-serif}
+main{max-width:860px;margin:0 auto;padding:36px 20px 80px}
+h1{font-size:30px;letter-spacing:-.02em;margin:0 0 4px}h2{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#c084fc;margin:36px 0 12px}
+h3{font-size:17px;margin:18px 0 6px}h4{font-size:13px;color:#c084fc;margin:16px 0 4px}
+.sub{color:#b3a8cf;margin:0 0 24px}.muted{color:#7d7199}.tag{font-size:11px;color:#30d38a;margin-left:8px;font-weight:600}
+.big{display:flex;gap:28px;flex-wrap:wrap;margin:18px 0}.big div{background:#0e0a17;border:1px solid #2a1f45;border-radius:14px;padding:16px 20px;min-width:150px}
+.big b{display:block;font-size:40px;font-weight:700;letter-spacing:-.03em;background:linear-gradient(115deg,#8b5cf6,#c084fc 45%,#d946ef);-webkit-background-clip:text;background-clip:text;color:transparent}
+.big span{font-size:12px;color:#7d7199}
+table{width:100%;border-collapse:collapse;background:#0e0a17;border:1px solid #2a1f45;border-radius:12px;overflow:hidden}
+td,th{padding:9px 14px;border-bottom:1px solid #1b1430;text-align:left;font-size:14px}th{color:#7d7199;font-size:11.5px;text-transform:uppercase;letter-spacing:.08em}
+ul{padding-left:20px;color:#b3a8cf}li{margin:4px 0}.did{color:#b3a8cf;font-size:13.5px;padding-left:14px}.warn li{color:#ffc247}
+code{font-family:ui-monospace,Consolas,monospace;background:#150f22;padding:2px 6px;border-radius:6px;color:#f1ecff;font-size:13px}
+.bios li{margin:8px 0;color:#f1ecff}.bios{background:#0e0a17;border:1px solid #2a1f45;border-radius:14px;padding:6px 18px}
+</style></head><body><main>
+<h1>OmniDx Tune <span class="muted" style="font-size:16px">v$(& $h $script:Version)</span></h1>
+<p class="sub">$(& $h ((Get-Date).ToString('f'))) &middot; $(& $h $m.cpu) &middot; $(& $h $m.gpu) &middot; $(& $h $m.ramGb) GB &middot; $(& $h $m.board)</p>
+<div class="big"><div><b>$before</b><span>processes before</span></div><div><b>$after</b><span>now, before a restart</span></div><div><b>~$target</b><span>target for this PC after a restart</span></div></div>
+<p class="muted">Many of the "now" processes are only waiting to be stopped. The number after a restart is the one that counts; <code>C:\OmniDx\after-restart.txt</code> gets it at your next sign-in.</p>
+$(if ($snapRows) { "<h2>Before and after</h2><table><tr><th></th><th>Before</th><th>Now</th></tr>$snapRows</table>" })
+<h2>Kept, and why</h2>$(& $list ($script:Kept | Sort-Object -Unique))
+<h2>Warnings ($($script:Warnings.Count))</h2><div class="warn">$(& $list $script:Warnings)</div>
+<h2>BIOS checklist for $(& $h $m.board)</h2><div class="bios"><ul>$((Get-BiosChecklist $m | Select-Object -Skip 3 | Where-Object { $_ } | ForEach-Object { '<li>' + (& $h $_) + '</li>' }) -join '')</ul></div>
+<h2>GPU control panel</h2>$(& $list (Get-GpuNotes $m))
+<h2>Per game</h2>$games
+<h2>What was done</h2>$done
+<h2>Undo</h2><p>Administrator PowerShell: <code>powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1</code><br>Or Windows Recovery &rsaquo; System Restore &rsaquo; the point named <code>OmniDx Tune $(& $h $script:Stamp)</code>.<br>Changes recorded in <code>$(& $h $changesFile)</code>.</p>
+<p class="muted" style="margin-top:40px">omnidx.net &middot; one payment, one PC, undo in one line.</p>
+</main></body></html>
+"@
+  $path = Join-Path $script:Root ("report-{0}.html" -f $script:Stamp)
+  Set-Content -Path $path -Value $html -Encoding UTF8
+  $script:HtmlReport = $path
 }
 
 <# The free look. Same read as the tune, then: what it would switch off on
@@ -1856,6 +1951,13 @@ function Main {
       if (-not $NoRestart -and (Ask "Restart now, then run the command again afterwards? (recommended)")) { Restart-Computer -Force; return }
     }
 
+    $playing = @()
+    foreach ($g in $script:Games) { foreach ($exe in $g.exes) { if (Get-Process -Name ([IO.Path]::GetFileNameWithoutExtension($exe)) -ErrorAction SilentlyContinue) { $playing += $g.name } } }
+    if ($playing.Count) {
+      Warn ("A game is running ({0}). Its profile cannot be applied while it is open, and stopping services under it is not kind to it." -f (($playing | Sort-Object -Unique) -join ', '))
+      if (-not (Ask "Carry on anyway?")) { Say "  Stopped. Close the game and run again."; return }
+    }
+
     Say ""
     Say "  What happens next: a restore point, a backup, then the cut. Nothing that lowers security. Undo is one file." 'White'
     Say "  It will ask which startup apps to leave on, and offer to close Discord and Spotify so they can be tuned." 'White'
@@ -1865,6 +1967,8 @@ function Main {
     $skip = @($Skip | ForEach-Object { "$_".ToLower() })
     $run = { param($name, $block) if ($skip -contains $name) { Head ("{0} (skipped)" -f $name) } else { & $block } }
     Save-ProcessList 'before'
+    $snapBefore = Get-Snapshot
+    Say ("  Before: {0}" -f (Format-Snapshot $snapBefore))
     New-Safety
     & $run 'startup'   { Cut-Startup }
     & $run 'services'  { Cut-Services $m }
@@ -1885,6 +1989,9 @@ function Main {
     $changesFile = Save-Changes
     $after = Get-ProcessCount
     Save-ProcessList 'after'
+    $snapAfter = Get-Snapshot
+    Say ("  After:  {0}" -f (Format-Snapshot $snapAfter))
+    $script:Snapshots = @{ before = $snapBefore; after = $snapAfter }
     $rep = Write-Report $m $before $after $changesFile
 
     Head "Done"
@@ -1892,7 +1999,7 @@ function Main {
     Say ("  Report, BIOS checklist and per-game settings: {0}" -f $rep) 'White'
     Say "  Undo, any time: powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1" 'White'
     Say "  Next: restart, then do the BIOS checklist - the memory profile alone is worth more than half of this." 'White'
-    try { Start-Process notepad.exe $rep } catch { }
+    try { if ($script:HtmlReport -and (Test-Path $script:HtmlReport)) { Start-Process $script:HtmlReport } else { Start-Process notepad.exe $rep } } catch { }
     if (-not $NoRestart -and (Ask "Restart now?")) { Restart-Computer -Force }
   } finally {
     try { Stop-Transcript | Out-Null } catch { }

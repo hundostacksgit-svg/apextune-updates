@@ -169,7 +169,7 @@
       <li><b>Read what it found</b><p>The left of the window: your Windows build, CPU, GPU, RAM, board, whether it is a laptop, what it will keep, the number of processes running right now and the target for your PC. Anything worth knowing, like RAM running below its rated speed, is in yellow underneath.</p></li>
       <li><b>Tick what you want</b><p>Every phase is a tick box, on by default. Every app that starts with Windows is listed; untick one to leave it on. The options that are off unless you say so, like cutting the Xbox services, are underneath.</p></li>
       <li><b>Paste your key and press Run</b><p>From <a href="../activate/">the page after you paid</a>. The key is checked, then the run starts: a restore point, then each phase, with every change printed in the log as it happens. Discord and Spotify are closed so they can be tuned.</p></li>
-      <li><b>Restart</b><p>The report opens in Notepad with the before and after, the warnings, the BIOS checklist for your board and the settings for each game it found. It is saved in <span class="mono tiny">C:\OmniDx</span>. Then press Restart; the services it told to stop are still unwinding until you do.</p></li>
+      <li><b>Restart</b><p>The report opens in your browser with the before and after (processes, threads, handles, memory, idle CPU), the warnings, the BIOS checklist for your board and the settings for each game it found. It is saved in <span class="mono tiny">C:\OmniDx</span>. Then press Restart; the services it told to stop are still unwinding until you do.</p></li>
     </ol>
   </div>
 </section>
@@ -282,7 +282,7 @@
     </div>
     <div class="grid grid-3">
       <div class="card reveal"><div class="card-icon">📄</div><h3>The report</h3>
-        <p><span class="mono tiny">C:\OmniDx\report-&lt;date&gt;.txt</span>. Your machine, the before and after, the target for your PC, what was kept and why, every change, every warning, the BIOS checklist and the settings for the games it found. Opens in Notepad at the end. Next to it: a full process list from before and after, a transcript of the run, a summary and the machine read as JSON, and <span class="mono tiny">after-restart.txt</span> after your next sign-in.</p></div>
+        <p><span class="mono tiny">C:\OmniDx\report-&lt;date&gt;.html</span>, and the same as text. Your machine, the before and after measured six ways, the target for your PC, what was kept and why, every change, every warning, the BIOS checklist and the settings for the games it found. Opens in your browser at the end. Next to it: a full process list from before and after, a transcript of the run, a summary and the machine read as JSON, and <span class="mono tiny">after-restart.txt</span> after your next sign-in.</p></div>
       <div class="card reveal d1"><div class="card-icon">↩️</div><h3>The undo</h3>
         <p><span class="mono tiny">C:\OmniDx\undo\</span>: the record of changes and the script that replays them. Keep the folder; it is the way back.</p></div>
       <div class="card reveal d2"><div class="card-icon">🗂️</div><h3>The backups</h3>

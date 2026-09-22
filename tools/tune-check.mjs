@@ -17,6 +17,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -94,6 +95,9 @@ function config(scriptText) {
   if (cfg.version === v) ok(`tune/config.json version ${v} matches the script`);
   else bad(`tune/config.json version ${cfg.version} but the script says ${v}`);
   if (typeof cfg.api !== 'string') bad('tune/config.json: api must be a string');
+  const digest = crypto.createHash('sha256').update(fs.readFileSync(path.join(root, 'tune/omnidx.ps1'))).digest('hex');
+  if (cfg.sha256 === digest) ok(`tune/config.json sha256 matches the script (${digest.slice(0, 12)})`);
+  else bad(`tune/config.json sha256 is stale: run python3 tools/tune-stamp.py`);
 }
 
 console.log('OmniDx Tune checks');

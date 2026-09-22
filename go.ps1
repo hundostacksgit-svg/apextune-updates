@@ -46,13 +46,24 @@ $web = New-Object System.Net.WebClient
 $web.Encoding = [System.Text.Encoding]::UTF8
 $web.Headers['User-Agent'] = 'OmniDxTune/go'
 $bust = [DateTime]::UtcNow.Ticks
-$api = ''
-try { $cfg = $web.DownloadString("$base/tune/config.json?v=$bust") | ConvertFrom-Json; if ($cfg.api) { $api = [string]$cfg.api } } catch { }
+$api = ''; $want = ''
+try { $cfg = $web.DownloadString("$base/tune/config.json?v=$bust") | ConvertFrom-Json; if ($cfg.api) { $api = [string]$cfg.api }; if ($cfg.sha256) { $want = ([string]$cfg.sha256).ToLower() } } catch { }
 
-# Fetched fresh every run, past any cache, so a fix reaches you on your next run.
+# Fetched fresh every run, past any cache, so a fix reaches you on your next
+# run - and checked against the hash published next to it, so a truncated
+# download, a stale cache or a tampered copy never runs.
+$sha = [System.Security.Cryptography.SHA256]::Create()
 $script = ''
-try { $script = $web.DownloadString("$base/tune/omnidx.ps1?v=$bust") } catch { }
-if (-not $script -or $script.Length -lt 1000 -or $script -notmatch 'function Main') { throw 'Could not fetch the tune from omnidx.net. Check your connection and try again.' }
+foreach ($try in 1..2) {
+  try { $script = $web.DownloadString("$base/tune/omnidx.ps1?v=$bust-$try") } catch { $script = '' }
+  if (-not $script -or $script.Length -lt 1000 -or $script -notmatch 'function Main') { continue }
+  if (-not $want) { break }
+  $got = (($sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($script)) | ForEach-Object { $_.ToString('x2') }) -join '')
+  if ($got -eq $want) { break }
+  Write-Host ("  The script did not match its published hash (attempt {0}); fetching again." -f $try) -ForegroundColor Yellow
+  $script = ''
+}
+if (-not $script) { throw 'Could not fetch a good copy of the tune from omnidx.net. Check your connection and try again in a minute.' }
 $block = [scriptblock]::Create([string]$script)
 
 # Options ride in on one more variable, so the one command never changes.

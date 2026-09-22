@@ -100,7 +100,7 @@ jobs:
           python3 -c "import json; json.load(open('studio/desktop/package.json'))"
           python3 -c "import json; json.load(open('studio/mobile/capacitor.config.json'))"
           python3 -m py_compile tools/sysreport.py tools/make-licence.py tools/set-domain.py \
-            tools/make-studio-key.py tools/make-tune-key.py tools/tune-touches.py tools/release.py \
+            tools/make-studio-key.py tools/make-tune-key.py tools/tune-touches.py tools/tune-stamp.py tools/release.py \
             desktop/omnidx.py desktop/install.py
 
           # The tune: ASCII, balanced, key maths agree, the transparency page is current.
