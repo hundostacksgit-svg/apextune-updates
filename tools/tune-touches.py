@@ -94,6 +94,8 @@ def page(text: str) -> str:
     manual = set(strings(block(text, 'ManualOnly')))
     tasks = pairs(block(text, 'TaskList'))
     apps = strings(block(text, 'JunkApps'))
+    caps = pairs(block(text, 'Capabilities'))
+    feats = pairs(block(text, 'Features'))
     reg = registry(text)
     for _, names in KEEPS:
         for svc in re.findall(r'\b([A-Za-z]+Svc|[A-Za-z]+Service|Spooler|SysMain|Themes|bthserv|WlanSvc|RmSvc|WbioSrvc|iphlpsvc|SSDPSRV|upnphost|XblAuthManager|XblGameSave)\b', names):
@@ -115,6 +117,8 @@ def page(text: str) -> str:
         + '</tbody></table></div></details>'
         for section, vals in reg.items())
     reg_total = sum(len(v) for v in reg.values())
+    legacy_rows = ''.join(f'<tr><td class="mono">{e(n)}</td><td>{e(what)}</td><td>capability</td></tr>' for n, what in caps) + \
+        ''.join(f'<tr><td class="mono">{e(n)}</td><td>{e(what)}</td><td>optional feature</td></tr>' for n, what in feats)
 
     return f'''<!doctype html>
 <html lang="en" data-theme="dark">
@@ -212,6 +216,18 @@ def page(text: str) -> str:
   </div>
 </section>
 
+<section id="legacy">
+  <div class="wrap touch">
+    <div class="section-head reveal">
+      <h2>Legacy pieces of Windows ({len(caps) + len(feats)})</h2>
+      <p>Removed when present. Fax and Scan stays when a printer is installed; Hello face stays when a Hello camera or reader is present.
+        Undo puts every one back (a capability needs Windows Update reachable to come back). OneDrive is uninstalled only when nobody is
+        signed in to it; your files stay, and undo reinstalls it.</p>
+    </div>
+    <div class="cmp-wrap"><table class="cmp" style="min-width:0"><thead><tr><th>Name</th><th>What it is</th><th>Kind</th></tr></thead><tbody>{legacy_rows}</tbody></table></div>
+  </div>
+</section>
+
 <section id="registry">
   <div class="wrap touch">
     <div class="section-head reveal">
@@ -236,6 +252,9 @@ def page(text: str) -> str:
       <li>Discord's settings.json and Spotify's prefs, backed up first, only while the apps are closed</li>
       <li>Store app pre-launch off (Disable-MMAgent); NTFS last-access stamps off</li>
       <li>One scheduled task that runs once at your next sign-in, writes the after-restart process count and removes itself; skip it with <span class="mono">-NoAfterCount</span></li>
+      <li>OneDrive uninstalled when nobody is signed in to it (files untouched; undo reinstalls); kept when you are</li>
+      <li>Edge policies: shopping assistant, recommendations, Spotlight, feedback prompts and reporting off; your tabs and settings untouched</li>
+      <li>Cleanup: temp files older than a day, the Windows Update download cache and the peer-to-peer update cache; not undoable, because none of it is anything</li>
       <li>Memory integrity off only with <span class="mono">-Aggressive</span>, and only after asking again</li>
     </ul>
     <p class="small muted" style="margin-top:20px">Not touched, ever: Defender, the firewall, SmartScreen, UAC, Secure Boot, TPM, BitLocker,

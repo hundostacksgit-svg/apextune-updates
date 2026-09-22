@@ -59,6 +59,15 @@ lists under "OEM extras".
 
 Log it: every "kept because" rule lives in `Get-KeepList` in the script.
 
+## "OneDrive is gone" / "Where did WordPad go"
+
+> The debloat removes OneDrive only when nobody is signed in to it, and your
+> files were not touched; they are still in your OneDrive folder. To have it
+> back: run undo, or install it from Microsoft (the undo does exactly that).
+> WordPad, Internet Explorer, Steps Recorder and the old Media Player are
+> pieces Microsoft has retired; undo re-enables the optional features, and
+> Settings > Apps > Optional features adds any of them back by hand.
+
 ## "Windows Update turned things back on"
 
 > That happens after a feature update. Run the same command with the same

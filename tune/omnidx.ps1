@@ -63,7 +63,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.1.0'
+$script:Version = '1.2.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -329,6 +329,9 @@ foreach ($c in $changes) {
       'fsutil' { & fsutil behavior set disablelastaccess $c.prev | Out-Null }
       'mmagent' { try { Enable-MMAgent -ApplicationPreLaunch -ErrorAction Stop } catch { } }
       'task-created' { try { Unregister-ScheduledTask -TaskName $c.name -Confirm:$false -ErrorAction Stop } catch { } }
+      'capability' { try { Add-WindowsCapability -Online -Name $c.name -ErrorAction Stop | Out-Null; Write-Host ("capability back: {0}" -f $c.name) -ForegroundColor DarkGray } catch { Write-Host ("{0} needs Windows Update reachable to come back: Settings > Apps > Optional features" -f $c.name) -ForegroundColor Yellow } }
+      'feature' { try { Enable-WindowsOptionalFeature -Online -FeatureName $c.name -NoRestart -ErrorAction Stop | Out-Null; Write-Host ("feature back: {0}" -f $c.name) -ForegroundColor DarkGray } catch { } }
+      'onedrive' { if (Test-Path $c.setup) { Start-Process $c.setup -ArgumentList '/silent' -Wait -WindowStyle Hidden -ErrorAction SilentlyContinue; Write-Host "OneDrive reinstalled" -ForegroundColor DarkGray } }
     }
     $done++
   } catch { Write-Host ("could not undo {0}: {1}" -f ($c | ConvertTo-Json -Compress), $_.Exception.Message) -ForegroundColor Yellow; $failed++ }
@@ -755,7 +758,33 @@ $script:JunkApps = @(
   'Microsoft.MicrosoftOfficeHub', 'Microsoft.Office.OneNote', 'Microsoft.PowerAutomateDesktop', 'MicrosoftCorporationII.MicrosoftFamily', 'Microsoft.Copilot', 'MicrosoftWindows.Client.WebExperience',
   'Microsoft.Windows.DevHome', 'Microsoft.Windows.Ai.Copilot.Provider', 'Microsoft.WindowsCommunicationsApps', 'Microsoft.Messaging', 'Microsoft.OneConnect',
   'Microsoft.Print3D', 'Microsoft.Wallet', 'Microsoft.WindowsAlarms', 'Microsoft.MicrosoftStickyNotes', 'Microsoft.Advertising.Xaml', 'MicrosoftCorporationII.QuickAssist',
-  '*Disney*', '*TikTok*', '*Instagram*', '*Facebook*', '*CandyCrush*', '*king.com*', '*Netflix*', '*Twitter*', '*Amazon*', '*Hulu*', '*Dolby*', '*Prime*', '*LinkedIn*', '*McAfee*', '*Norton*', '*Booking*', '*Duolingo*', '*Fitbit*', '*Flipboard*', '*HiddenCity*', '*Hearts*', '*Plex*', '*Roblox*Store*', '*Sway*', '*Wunderlist*', '*ESPN*', '*BubbleWitch*', '*MarchofEmpires*', '*RoyalRevolt*', '*Speed Test*', '*Sidia*', '*WhatsApp*Stub*'
+  'Microsoft.OutlookForWindows', 'Microsoft.Edge.GameAssist', 'Microsoft.WidgetsPlatformRuntime', 'Microsoft.MicrosoftJournal', 'Microsoft.Whiteboard',
+  'Microsoft.BingTranslator', 'Microsoft.BingFinance', 'Microsoft.BingSports', 'Microsoft.News', 'Microsoft.MicrosoftPowerBIForWindows', 'Microsoft.NetworkSpeedTest',
+  'Microsoft.Office.Sway', 'Microsoft.WindowsReadingList', 'Microsoft.3DBuilder', 'Microsoft.Microsoft3DViewer', 'Microsoft.MicrosoftJigsaw', 'Microsoft.MicrosoftMahjong',
+  '*Disney*', '*TikTok*', '*Instagram*', '*Facebook*', '*CandyCrush*', '*king.com*', '*Netflix*', '*Twitter*', '*Amazon*', '*Hulu*', '*Dolby*', '*Prime*', '*LinkedIn*', '*McAfee*', '*Norton*', '*Booking*', '*Duolingo*', '*Fitbit*', '*Flipboard*', '*HiddenCity*', '*Hearts*', '*Plex*', '*Roblox*Store*', '*Sway*', '*Wunderlist*', '*ESPN*', '*BubbleWitch*', '*MarchofEmpires*', '*RoyalRevolt*', '*Speed Test*', '*Sidia*', '*WhatsApp*Stub*',
+  '*ACGMediaPlayer*', '*ActiproSoftware*', '*AdobePhotoshopExpress*', '*Asphalt*', '*AutodeskSketchBook*', '*CaesarsSlots*', '*COOKINGFEVER*', '*CyberLink*', '*DrawboardPDF*', '*EclipseManager*', '*FarmVille*', '*Keeper*', '*PandoraMedia*', '*PhototasticCollage*', '*PicsArt*', '*PolarrPhoto*', '*Shazam*', '*SlingTV*', '*TuneInRadio*', '*Viber*', '*WinZipUniversal*', '*XING*', '*Solitaire*', '*Pinterest*', '*Messenger*', '*Spotify*Stub*', '*ExpressVPN*', '*Simplenote*', '*Hidden*Object*'
+)
+
+<# The rest of the debloat: what Windows and the PC maker put on the disk
+   that nobody asked for. Each list says what a thing is, so the report and
+   the site can say so too. Undo puts every one of these back except the
+   cleared caches, which were junk. #>
+$script:Capabilities = @(
+  @('App.StepsRecorder', 'Steps Recorder (screenshots every click, retired by Microsoft)'),
+  @('Media.WindowsMediaPlayer', 'the 2009 Windows Media Player (the Store one stays)'),
+  @('Microsoft.Windows.WordPad', 'WordPad (retired by Microsoft)'),
+  @('MathRecognizer', 'Math Input Panel'),
+  @('Browser.InternetExplorer', 'Internet Explorer 11'),
+  @('Print.Fax.Scan', 'Windows Fax and Scan (kept when a printer is installed)'),
+  @('Hello.Face', 'Windows Hello face recognition (kept when a Hello camera or reader is present)')
+)
+$script:Features = @(
+  @('MicrosoftWindowsPowerShellV2Root', 'the PowerShell 2.0 engine: old, bypasses modern security logging, nothing needs it'),
+  @('MicrosoftWindowsPowerShellV2', 'the PowerShell 2.0 engine'),
+  @('Printing-XPSServices-Features', 'XPS printing and viewer'),
+  @('WorkFolders-Client', 'Work Folders (corporate sync)'),
+  @('WindowsMediaPlayer', 'the 2009 Windows Media Player'),
+  @('Internet-Explorer-Optional-amd64', 'Internet Explorer 11')
 )
 
 function Cut-Apps($m) {
@@ -778,7 +807,104 @@ function Cut-Apps($m) {
       try { Remove-AppxProvisionedPackage -Online -PackageName $prov.PackageName -ErrorAction Stop | Out-Null } catch { }
     }
   }
-  Say ("  {0} apps removed. Spotify, the Store, the Xbox apps{1}, Photos, Calculator, Media Player and Notepad stay." -f $n, $(if ($CutXbox) { ' (no - you said -CutXbox)' } else { '' }))
+  Say ("  {0} apps removed. Spotify, the Store, the Xbox apps{1}, Photos, Calculator, Media Player, Snipping Tool, Terminal and Notepad stay." -f $n, $(if ($CutXbox) { ' (no - you said -CutXbox)' } else { '' }))
+}
+
+# ---------------------------------------------------------------------------
+# debloat: gone, and kept gone
+# ---------------------------------------------------------------------------
+function Get-DebloatPlan($m) {
+  # What is actually on this PC from the two lists above, with the keep rules applied.
+  $caps = @(); $feats = @()
+  try {
+    $installed = @(Get-WindowsCapability -Online -ErrorAction Stop | Where-Object { $_.State -eq 'Installed' })
+    foreach ($c in $script:Capabilities) {
+      if ($c[0] -eq 'Print.Fax.Scan' -and $m.printers) { continue }
+      if ($c[0] -eq 'Hello.Face' -and $m.biometric) { continue }
+      foreach ($hit in ($installed | Where-Object { $_.Name -like ($c[0] + '*') })) { $caps += @{ name = $hit.Name; what = $c[1] } }
+    }
+  } catch { }
+  try {
+    $on = @(Get-WindowsOptionalFeature -Online -ErrorAction Stop | Where-Object { $_.State -eq 'Enabled' })
+    foreach ($f in $script:Features) {
+      foreach ($hit in ($on | Where-Object { $_.FeatureName -eq $f[0] })) { $feats += @{ name = $hit.FeatureName; what = $f[1] } }
+    }
+  } catch { }
+  $hk = $script:HKCU
+  $oneSignedIn = (Test-Path "$hk\Software\Microsoft\OneDrive\Accounts\Personal") -or (Test-Path "$hk\Software\Microsoft\OneDrive\Accounts\Business1")
+  $oneSetup = @("$env:SystemRoot\System32\OneDriveSetup.exe", "$env:SystemRoot\SysWOW64\OneDriveSetup.exe", (Join-Path $script:LocalAppData 'Microsoft\OneDrive\OneDriveSetup.exe')) | Where-Object { Test-Path $_ } | Select-Object -First 1
+  $oneInstalled = [bool]($oneSetup -and ((Get-Process OneDrive -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $script:LocalAppData 'Microsoft\OneDrive\OneDrive.exe')) -or (Test-Path "$env:ProgramFiles\Microsoft OneDrive\OneDrive.exe")))
+  @{ caps = $caps; feats = $feats; oneSignedIn = $oneSignedIn; oneInstalled = $oneInstalled; oneSetup = $oneSetup }
+}
+
+function Debloat($m) {
+  Head "Debloat"
+  $plan = Get-DebloatPlan $m
+  # OneDrive: gone if nobody is signed in to it. Signed in means in use; it then only loses its auto-start.
+  if ($plan.oneInstalled) {
+    if ($plan.oneSignedIn) { Keep 'OneDrive' 'you are signed in to it; it just no longer starts with Windows'; Did "OneDrive kept: signed in" }
+    else {
+      try {
+        Get-Process OneDrive -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+        Start-Process $plan.oneSetup -ArgumentList '/uninstall' -Wait -WindowStyle Hidden -ErrorAction Stop
+        Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\OneDrive' 'DisableFileSyncNGSC' 1
+        Record @{ type = 'onedrive'; setup = $plan.oneSetup }
+        Did "OneDrive uninstalled (nobody was signed in to it). Your files stay where they are; undo reinstalls it."
+      } catch { Warn ("OneDrive would not uninstall ({0})." -f $_.Exception.Message) }
+    }
+  }
+  # Legacy pieces of Windows nobody has opened in years. Each one is re-enabled by undo.
+  foreach ($c in $plan.caps) {
+    try { Remove-WindowsCapability -Online -Name $c.name -ErrorAction Stop | Out-Null; Record @{ type = 'capability'; name = $c.name }; Did ("removed {0}" -f $c.what) } catch { Warn ("Could not remove {0} ({1})." -f $c.what, $_.Exception.Message) }
+  }
+  foreach ($f in $plan.feats) {
+    try { Disable-WindowsOptionalFeature -Online -FeatureName $f.name -NoRestart -ErrorAction Stop | Out-Null; Record @{ type = 'feature'; name = $f.name }; Did ("off: {0}" -f $f.what) } catch { Warn ("Could not switch off {0} ({1})." -f $f.what, $_.Exception.Message) }
+  }
+  # Edge's add-ons: shopping, recommendations, Spotlight, feedback and reporting. Your tabs and settings are untouched.
+  $edge = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge'
+  Set-Reg $edge 'EdgeShoppingAssistantEnabled' 0
+  Set-Reg $edge 'ShowRecommendationsEnabled' 0
+  Set-Reg $edge 'SpotlightExperiencesAndRecommendationsEnabled' 0
+  Set-Reg $edge 'PersonalizationReportingEnabled' 0
+  Set-Reg $edge 'DiagnosticData' 0
+  Set-Reg $edge 'UserFeedbackAllowed' 0
+  Set-Reg $edge 'HideFirstRunExperience' 1
+  Set-Reg $edge 'EdgeEnhanceImagesEnabled' 0
+  Did "Edge: shopping assistant, recommendations, Spotlight, feedback prompts and reporting off"
+  # Kept gone: the switches that stop Windows quietly putting apps and suggestions back.
+  $cc = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent'
+  Set-Reg $cc 'DisableWindowsConsumerFeatures' 1
+  Set-Reg $cc 'DisableCloudOptimizedContent' 1
+  Set-Reg $cc 'DisableConsumerAccountStateContent' 1
+  Set-Reg $cc 'DisableSoftLanding' 1
+  Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer' 'DisableSearchBoxSuggestions' 1
+  Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search' 'AllowCloudSearch' 0
+  Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\SystemSettings\AccountNotifications' 'EnableAccountNotifications' 0
+  Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\UserProfileEngagement' 'ScoobeSystemSettingEnabled' 0
+  Did "Kept gone: consumer features, suggested apps, account nags and the 'finish setting up' screen are off by policy"
+  Say "  Feature updates can re-provision a few Microsoft apps (Outlook, Teams, Copilot). Run the command again after one; same key, same PC, free."
+}
+
+<# Caches and temp files that Windows never clears itself. Not undoable,
+   because none of it is anything: downloaded update installers already
+   applied, peer-to-peer update chunks, temp files older than a day. #>
+function Clear-Junk {
+  Head "Cleanup"
+  $drive = $env:SystemDrive.Substring(0, 1)
+  $free0 = 0; try { $free0 = (Get-PSDrive -Name $drive -ErrorAction Stop).Free } catch { }
+  foreach ($dir in @($env:TEMP, "$env:SystemRoot\Temp", (Join-Path $script:LocalAppData 'Temp'))) {
+    if (-not $dir -or -not (Test-Path $dir)) { continue }
+    Get-ChildItem $dir -Force -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-1) } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+  }
+  try {
+    Stop-Service wuauserv -Force -ErrorAction SilentlyContinue; Stop-Service bits -Force -ErrorAction SilentlyContinue
+    Get-ChildItem "$env:SystemRoot\SoftwareDistribution\Download" -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+  } finally { Start-Service bits -ErrorAction SilentlyContinue; Start-Service wuauserv -ErrorAction SilentlyContinue }
+  try { Delete-DeliveryOptimizationCache -Force -ErrorAction Stop | Out-Null } catch { }
+  $free1 = 0; try { $free1 = (Get-PSDrive -Name $drive -ErrorAction Stop).Free } catch { }
+  $mb = [math]::Max(0, [math]::Round(($free1 - $free0) / 1MB))
+  Did ("Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about {0} MB back." -f $mb)
+  Say "  Windows.old (a previous Windows, up to 20 GB) is left alone; Settings > System > Storage > Cleanup recommendations removes it when you are sure."
 }
 
 # ---------------------------------------------------------------------------
@@ -1282,6 +1408,9 @@ function Write-Preview($m, $before) {
   $tasks = @(); foreach ($t in $script:TaskList) { $task = Get-ScheduledTask -TaskPath $t[0] -TaskName $t[1] -ErrorAction SilentlyContinue; if ($task -and $task.State -ne 'Disabled') { $tasks += $t[1] } }
   $apps = @(); foreach ($pat in $script:JunkApps) { foreach ($pkg in Get-AppxPackage -Name $pat -AllUsers -ErrorAction SilentlyContinue) { if (-not ($pkg.NonRemovable -or $pkg.IsFramework)) { $apps += $pkg.Name } } }
   $apps = @($apps | Sort-Object -Unique)
+  $plan = Get-DebloatPlan $m
+  $extras = @($plan.caps | ForEach-Object { $_.what }) + @($plan.feats | ForEach-Object { $_.what })
+  if ($plan.oneInstalled -and -not $plan.oneSignedIn) { $extras += 'OneDrive (nobody is signed in to it)' }
   $target = Get-SafeBar $m
   Say ("  Startup entries it would switch off: {0}" -f $startup.Count) 'White'
   foreach ($e in $startup) { Say ("    - {0}" -f $e.label) }
@@ -1290,6 +1419,8 @@ function Write-Preview($m, $before) {
   foreach ($k in $svcKeep) { Say ("    - {0}" -f $k) }
   Say ("  Scheduled tasks it would switch off: {0}" -f $tasks.Count) 'White'
   Say ("  Preinstalled apps it would remove: {0}" -f $apps.Count) 'White'
+  Say ("  Legacy Windows pieces it would remove: {0}" -f $extras.Count) 'White'
+  foreach ($x in $extras) { Say ("    - {0}" -f $x) }
   Say ("  Plus: the OmniDx power plan, network latency settings, Discord / Spotify / browser, game profiles, the BIOS checklist for {0}." -f $m.board) 'White'
   Say ("  Processes now: {0}. Target after the tune and a restart: about {1}." -f $before, $target) 'Green'
   $rep = Join-Path $script:Root ("report-preview-{0}.txt" -f $script:Stamp)
@@ -1302,6 +1433,7 @@ function Write-Preview($m, $before) {
     "  services stopped or set to manual: $($svcOff.Count)", @($svcOff | ForEach-Object { "    - $_" }),
     "  scheduled tasks off: $($tasks.Count)", @($tasks | ForEach-Object { "    - $_" }),
     "  preinstalled apps removed: $($apps.Count)", @($apps | ForEach-Object { "    - $_" }),
+    "  legacy Windows pieces removed: $($extras.Count)", @($extras | ForEach-Object { "    - $_" }),
     "  plus the OmniDx power plan, network, Discord / Spotify / browsers, game profiles, memory integrity only if asked", "",
     "KEPT FOR THIS PC, AND WHY", @($(if ($svcKeep.Count) { $svcKeep | ForEach-Object { "  $_" } } else { "  nothing needed keeping" })), "",
     "WARNINGS ($($script:Warnings.Count))", @($(if ($script:Warnings.Count) { $script:Warnings | ForEach-Object { "  ! $_" } } else { "  none" })), "",
@@ -1377,6 +1509,7 @@ function Main {
     Say ""
     Say "  What happens next: a restore point, a backup, then the cut. Nothing that lowers security. Undo is one file." 'White'
     Say "  It will ask which startup apps to leave on, and offer to close Discord and Spotify so they can be tuned." 'White'
+    Say "  The debloat removes the preinstalled apps, the PC maker's trials, OneDrive if nobody is signed in to it, and the legacy pieces of Windows; then it clears the update caches. Three to five minutes in all." 'White'
     if (-not (Ask "Go?")) { Say "  Stopped. Nothing changed."; return }
 
     Save-ProcessList 'before'
@@ -1385,6 +1518,7 @@ function Main {
     Cut-Services $m
     Cut-Tasks
     Cut-Apps $m
+    Debloat $m
     Cut-Telemetry $m
     Tune-System $m
     New-PowerPlan $m
@@ -1393,6 +1527,7 @@ function Main {
     Set-GameProfiles
     Tune-Gpu $m
     Set-Vbs $m
+    Clear-Junk
     Register-AfterCount
 
     $changesFile = Save-Changes

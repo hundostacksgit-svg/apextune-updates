@@ -70,7 +70,8 @@ MENU = [
     {
         'label': 'What it does',
         'items': [
-            ('🧹', 'What gets cut', 'Startup apps, services, tasks, junk apps, telemetry', '{s}#cut'),
+            ('🧹', 'What gets cut', 'Startup apps, services, tasks, bloat, telemetry', '{s}#cut'),
+            ('🗑️', 'Debloat, for good', 'Preinstalled apps, OEM trials, OneDrive if unused, legacy Windows', '{s}#debloat'),
             ('🔍', 'Reads your PC first', 'Laptop or desktop, printers, Bluetooth, Wi-Fi, Xbox — the safe bar is yours', '{s}#tailored'),
             ('⚡', 'The OmniDx power plan', 'Built for frames: no core parking, no bus sleep', '{s}#power'),
             ('🎮', 'Game profiles', 'Fortnite, VALORANT, CS2, Marvel Rivals and twelve more', '{s}#games'),
@@ -215,6 +216,7 @@ def build_footer(s: str) -> str:
       <div>
         <h4>What it does</h4>
         <a href="{s}#cut">What gets cut</a>
+        <a href="{s}#debloat">Debloat, for good</a>
         <a href="{s}#tailored">Reads your PC first</a>
         <a href="{s}#power">The power plan</a>
         <a href="{s}#games">Game profiles</a>
@@ -241,7 +243,7 @@ def build_footer(s: str) -> str:
       </div>
     </div>
     <div class="foot-note">
-      <span>© 2026 OmniDx. One payment. Yours. Script <span data-script-version>v1.1.0</span>.</span>
+      <span>© 2026 OmniDx. One payment. Yours. Script <span data-script-version>v1.2.0</span>.</span>
       <span>Nothing leaves your PC except the key check.</span>
     </div>
   </div>
