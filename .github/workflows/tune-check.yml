@@ -90,26 +90,39 @@ jobs:
           path: C:\OmniDx\app.png
           if-no-files-found: error
 
-      # The screenshot goes into the repository as the site's picture of the
-      # app. A push made with the workflow token starts no other workflow, so
-      # the picture reaches the site with the next ordinary push.
-      - name: Commit the screenshot to the branch
-        if: github.event_name == 'push'
-        run: |
-          Copy-Item C:\OmniDx\app.png studio\assets\app.png -Force
-          git config user.name 'omnidx-ci'
-          git config user.email 'ci@omnidx.net'
-          git add studio/assets/app.png
-          git diff --cached --quiet
-          if ($LASTEXITCODE -eq 0) { Write-Host 'screenshot unchanged'; exit 0 }
-          git commit -q -m 'App window: screenshot drawn by the Windows check'
-          git pull --rebase -q origin $env:GITHUB_REF_NAME
-          git push -q origin HEAD:$env:GITHUB_REF_NAME
-          exit 0
-
       - name: Undo with nothing recorded says so
         run: |
           & .\tune\omnidx.ps1 -Undo
+          exit 0
+
+      # The real thing, on a machine nobody needs afterwards: a valid key,
+      # every phase, no prompts, no restart. Then undo. Then the numbers go to
+      # the site, so every visitor sees the last run on a fresh Windows.
+      - name: Run the whole tune with a real key
+        run: |
+          $key = (& python tools\make-tune-key.py | Select-Object -First 1).Trim()
+          $out = & .\tune\omnidx.ps1 -Key $key -Yes -NoRestart -NoAfterCount *>&1 | Out-String
+          Write-Host $out
+          if ($out -notmatch '== Done') { Write-Host 'the tune did not reach Done'; exit 1 }
+          if ($out -notmatch 'Processes: (\d+) -> (\d+)') { Write-Host 'no before/after line'; exit 1 }
+          $html = Get-ChildItem C:\OmniDx -Filter 'report-*.html' | Select-Object -First 1
+          if (-not $html) { Write-Host 'no HTML report'; exit 1 }
+          if (-not (Test-Path C:\OmniDx\undo\changes-latest.json)) { Write-Host 'no change record'; exit 1 }
+          $summary = Get-ChildItem C:\OmniDx -Filter 'summary-*.json' | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          Copy-Item $summary.FullName C:\OmniDx\ci-summary.json
+          Get-Content C:\OmniDx\ci-summary.json
+          exit 0
+
+      - name: Undo the whole tune
+        run: |
+          $out = & .\tune\omnidx.ps1 -Undo *>&1 | Out-String
+          Write-Host $out
+          if ($out -notmatch 'Done: (\d+) put back') { Write-Host 'undo did not finish'; exit 1 }
+          $undone = [int]$Matches[1]
+          $s = Get-Content C:\OmniDx\ci-summary.json | ConvertFrom-Json
+          $ci = [ordered]@{ version = $s.version; when = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'); os = $s.os; cpu = $s.cpu; before = $s.before; after = $s.after; target = $s.target; changes = $s.changes; warnings = $s.warnings; seconds = $s.seconds; undone = $undone; gone = @($s.gone).Count; sha = $env:GITHUB_SHA.Substring(0, 7) }
+          $ci | ConvertTo-Json | Set-Content studio\assets\ci-run.json -Encoding UTF8
+          Get-Content studio\assets\ci-run.json
           exit 0
 
       - name: The key check refuses a bad key
@@ -139,4 +152,21 @@ jobs:
           $out = & .\tune\omnidx.ps1 -Key $order -CheckKey *>&1 | Out-String
           if ($out -notmatch 'Valid:') { Write-Host "refused the order-derived key: $order`n$out"; exit 1 }
           Write-Host "order-derived key $order accepted"
+          exit 0
+
+      # The screenshot goes into the repository as the site's picture of the
+      # app. A push made with the workflow token starts no other workflow, so
+      # the picture reaches the site with the next ordinary push.
+      - name: Commit the screenshot and the run's numbers to the branch
+        if: github.event_name == 'push'
+        run: |
+          Copy-Item C:\OmniDx\app.png studio\assets\app.png -Force
+          git config user.name 'omnidx-ci'
+          git config user.email 'ci@omnidx.net'
+          git add studio/assets/app.png studio/assets/ci-run.json
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) { Write-Host 'nothing changed'; exit 0 }
+          git commit -q -m 'Windows check: the app window and the numbers from running the tune'
+          git pull --rebase -q origin $env:GITHUB_REF_NAME
+          git push -q origin HEAD:$env:GITHUB_REF_NAME
           exit 0

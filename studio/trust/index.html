@@ -136,7 +136,7 @@
       <h2>Three things to check before you pay a cent</h2>
       <p>None of these need a key, an account or a card.</p>
     </div>
-    <div class="grid grid-3">
+    <div class="grid grid-2">
       <div class="card reveal">
         <div class="card-icon">📜</div>
         <h3>Read the script</h3>
@@ -147,6 +147,12 @@
         <h3>Run the report mode</h3>
         <p>Free, no key. It reads your PC the way the tune does and counts your processes, then stops without changing anything. Watch what it says it found; if it has your machine right, it will cut around it right.</p>
         <div class="cmd" style="margin-top:12px"><code data-text="$env:OMNIDX_MODE='report'; irm omnidx.net/go.ps1 | iex">$env:OMNIDX_MODE='report'; irm omnidx.net/go.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
+      </div>
+      <div class="card reveal d2">
+        <div class="card-icon">🧪</div>
+        <h3>It is run before it is published</h3>
+        <p>Every change to the script is parsed by PowerShell on a Windows build machine, run in report mode, then run for real with a key, then undone, before the site publishes it. The last run:</p>
+        <p class="small" data-ci-run hidden style="margin-top:10px"></p>
       </div>
       <div class="card reveal d2">
         <div class="card-icon">🔎</div>

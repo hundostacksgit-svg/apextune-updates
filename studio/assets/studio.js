@@ -746,6 +746,22 @@ function initTune() {
     }).catch(() => {});
   }
 
+  // The last run of the whole tune on a fresh Windows build machine, written
+  // by the check that runs on every change. Shown where a page asks for it;
+  // hidden when the file is not there yet.
+  const proof = $$('[data-ci-run]');
+  if (proof.length) {
+    fetch(new URL('ci-run.json', import.meta.url).href, { cache: 'no-store' }).then((r) => r.json()).then((c) => {
+      if (!c || !c.before) return;
+      const when = c.when ? new Date(c.when).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '';
+      proof.forEach((el) => {
+        el.hidden = false;
+        el.innerHTML = `<b>${esc(c.before)} → ${esc(c.after)}</b> processes before a restart, <b>${esc(c.changes)}</b> changes recorded, <b>${esc(c.undone)}</b> put back by undo, in ${esc(c.seconds)} s`
+          + ` — the whole tune, run and undone on a fresh Windows build machine${when ? ` on ${esc(when)}` : ''} (script v${esc(c.version)}). Not a gaming PC: a bare server image, so its numbers are lower than yours will be.`;
+      });
+    }).catch(() => {});
+  }
+
   // The front page's console; the module is only fetched where it is used.
   if ($('#console')) import('./tune.js').then((m) => m.initConsole($('#console'))).catch(() => {});
 }

@@ -76,7 +76,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.4.0'
+$script:Version = '1.5.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -540,11 +540,20 @@ function Resolve-User {
   } catch { }
 }
 
+$script:ProcNames = @{}
 function Save-ProcessList([string]$tag) {
   try {
-    $rows = Get-Process -ErrorAction SilentlyContinue | Group-Object ProcessName | Sort-Object -Property @{ Expression = 'Count'; Descending = $true }, @{ Expression = 'Name'; Descending = $false } | ForEach-Object { "{0,-40} x{1,-3} {2,8:N0} MB" -f $_.Name, $_.Count, (($_.Group | Measure-Object WorkingSet64 -Sum).Sum / 1MB) }
+    $procs = @(Get-Process -ErrorAction SilentlyContinue)
+    $script:ProcNames[$tag] = @($procs | ForEach-Object { $_.ProcessName } | Sort-Object -Unique)
+    $rows = $procs | Group-Object ProcessName | Sort-Object -Property @{ Expression = 'Count'; Descending = $true }, @{ Expression = 'Name'; Descending = $false } | ForEach-Object { "{0,-40} x{1,-3} {2,8:N0} MB" -f $_.Name, $_.Count, (($_.Group | Measure-Object WorkingSet64 -Sum).Sum / 1MB) }
     Set-Content -Path (Join-Path $script:Root ("processes-{0}-{1}.txt" -f $tag, $script:Stamp)) -Value $rows -Encoding UTF8
   } catch { }
+}
+
+<# Process names that were running before and are not now: the cut, by name. #>
+function Get-GoneProcesses {
+  if (-not $script:ProcNames.before -or -not $script:ProcNames.after) { return @() }
+  return @($script:ProcNames.before | Where-Object { $script:ProcNames.after -notcontains $_ })
 }
 
 <# The number that counts is the one after a restart, and nobody is at the
@@ -1738,6 +1747,7 @@ function Write-Report($m, $before, $after, $changesFile) {
     "  target for this PC after a restart: about $target. Every launcher, overlay and driver utility you keep open adds to it.",
     $(if ($script:Snapshots) { "  before: " + (Format-Snapshot $script:Snapshots.before) } else { $null }),
     $(if ($script:Snapshots) { "  now:    " + (Format-Snapshot $script:Snapshots.after) } else { $null }),
+    $(if ((Get-GoneProcesses).Count) { "  gone by name: " + ((Get-GoneProcesses) -join ', ') } else { $null }),
     "  full lists: processes-before-$($script:Stamp).txt and processes-after-$($script:Stamp).txt next to this file; after-restart.txt appears after your next sign-in.", "",
     "STILL RUNNING (most instances)", @($top), "",
     "KEPT, AND WHY", @($(if ($script:Kept.Count) { $script:Kept | Sort-Object -Unique | ForEach-Object { "  $_" } } else { "  nothing needed keeping" })), "",
@@ -1753,7 +1763,7 @@ function Write-Report($m, $before, $after, $changesFile) {
   Set-Content -Path (Join-Path $script:Root ("bios-{0}.txt" -f (($m.board -replace '[^A-Za-z0-9]+', '-').Trim('-')))) -Value (Get-BiosChecklist $m) -Encoding UTF8
   try { Write-HtmlReport $m $before $after $target $found $changesFile } catch { Warn ("The HTML report was not written ({0}); the text one is." -f $_.Exception.Message) }
   try {
-    $summary = @{ version = $script:Version; stamp = $script:Stamp; before = $before; after = $after; target = $target; changes = $script:Changes.Count; warnings = $script:Warnings.Count; seconds = [int]$script:Timer.Elapsed.TotalSeconds; os = $m.os; cpu = $m.cpu; gpu = $m.gpu; ramGb = $m.ramGb; board = $m.board; laptop = $m.laptop; games = $found; snapshots = $script:Snapshots }
+    $summary = @{ version = $script:Version; stamp = $script:Stamp; before = $before; after = $after; target = $target; changes = $script:Changes.Count; warnings = $script:Warnings.Count; seconds = [int]$script:Timer.Elapsed.TotalSeconds; os = $m.os; cpu = $m.cpu; gpu = $m.gpu; ramGb = $m.ramGb; board = $m.board; laptop = $m.laptop; games = $found; snapshots = $script:Snapshots; gone = @(Get-GoneProcesses) }
     $summary | ConvertTo-Json -Depth 4 | Set-Content -Path (Join-Path $script:Root ("summary-{0}.json" -f $script:Stamp)) -Encoding UTF8
   } catch { }
   return $rep
@@ -1801,6 +1811,7 @@ code{font-family:ui-monospace,Consolas,monospace;background:#150f22;padding:2px 
 <div class="big"><div><b>$before</b><span>processes before</span></div><div><b>$after</b><span>now, before a restart</span></div><div><b>~$target</b><span>target for this PC after a restart</span></div></div>
 <p class="muted">Many of the "now" processes are only waiting to be stopped. The number after a restart is the one that counts; <code>C:\OmniDx\after-restart.txt</code> gets it at your next sign-in.</p>
 $(if ($snapRows) { "<h2>Before and after</h2><table><tr><th></th><th>Before</th><th>Now</th></tr>$snapRows</table>" })
+$(if ((Get-GoneProcesses).Count) { "<h2>Gone, by name</h2><p class='muted'>Running before, not running now: " + (& $h ((Get-GoneProcesses) -join ', ')) + "</p>" })
 <h2>Kept, and why</h2>$(& $list ($script:Kept | Sort-Object -Unique))
 <h2>Warnings ($($script:Warnings.Count))</h2><div class="warn">$(& $list $script:Warnings)</div>
 <h2>BIOS checklist for $(& $h $m.board)</h2><div class="bios"><ul>$((Get-BiosChecklist $m | Select-Object -Skip 3 | Where-Object { $_ } | ForEach-Object { '<li>' + (& $h $_) + '</li>' }) -join '')</ul></div>
@@ -1991,6 +2002,8 @@ function Main {
     Save-ProcessList 'after'
     $snapAfter = Get-Snapshot
     Say ("  After:  {0}" -f (Format-Snapshot $snapAfter))
+    $gone = Get-GoneProcesses
+    if ($gone.Count) { Say ("  Gone:   {0}" -f ($gone -join ', ')) }
     $script:Snapshots = @{ before = $snapBefore; after = $snapAfter }
     $rep = Write-Report $m $before $after $changesFile
 
