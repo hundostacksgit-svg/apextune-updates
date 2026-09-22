@@ -1,8 +1,9 @@
 /*
- * Render the OmniDx Studio link-preview card.
+ * Render the omnidx.net link-preview card.
  *
  *   python3 -m http.server 8099 &        # from the repository root
- *   node tools/promo/render-studio-og.mjs
+ *   node tools/promo/render-studio-og.mjs          # OmniDx Tune (the live site)
+ *   node tools/promo/render-studio-og.mjs --studio # the video editor's old card
  *
  * Writes studio/assets/og-card.png at 1200x630, which is what every scraper
  * crops to. Commit the PNG — it is served, not built.
@@ -21,7 +22,8 @@ const browser = await chromium.launch({
   args: ['--no-sandbox', '--force-device-scale-factor=1', '--hide-scrollbars'],
 });
 const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, deviceScaleFactor: 1 });
-await page.goto(`http://127.0.0.1:${port}/tools/promo/studio-og.html`, { waitUntil: 'networkidle' });
+const card = process.argv.includes('--studio') ? 'studio-og.html' : 'tune-og.html';
+await page.goto(`http://127.0.0.1:${port}/tools/promo/${card}`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(400);
 await page.screenshot({ path: out });
 await browser.close();

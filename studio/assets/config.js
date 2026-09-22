@@ -276,3 +276,50 @@ export const SITE = {
   domain: 'omnidx.net',
   version: '1.0.0',
 };
+
+/* ------------------------------------------------------------------ *
+ * OmniDx Tune — the one-command PC tune sold on omnidx.net.
+ *
+ * Two products, both paid once. They ride on the Square links above: the
+ * $19.99 link (made as "Creator") sells a one-PC Tune key and the $69.99 link
+ * (made as "Team") sells a five-PC Squad key, so nothing in the Square
+ * dashboard has to change. The $39.99 link is unused; delete it there.
+ *
+ * `redirect` is the `?e=` each Square link already comes back with; the
+ * activation page maps it to the product. The key maths lives in tunekey.js
+ * and is mirrored in server/worker.js, tune/omnidx.ps1 and
+ * tools/make-tune-key.py.
+ * ------------------------------------------------------------------ */
+export const TUNE = {
+  name: 'OmniDx Tune',
+  command: 'irm omnidx.net/go.ps1 | iex',
+  /* Where the script and its config are served from. The site can be opened
+     from any host for testing, but the script always fetches from the domain. */
+  scriptUrl: 'https://omnidx.net/tune/omnidx.ps1',
+  configUrl: new URL('../../tune/config.json', import.meta.url).href,
+  products: {
+    tune:  { id: 'tune',  tag: 'TUNE',  name: 'Tune',  once: 19.99, seats: 1, checkout: PAY.checkout.creator, redirect: 'creator',
+             blurb: 'One PC. The whole tune, the power plan, every game profile, the BIOS checklist, undo.' },
+    squad: { id: 'squad', tag: 'SQUAD', name: 'Squad', once: 69.99, seats: 5, checkout: PAY.checkout.team, redirect: 'team',
+             compareTo: 99.95, compareLabel: '5 separate keys',
+             blurb: 'The same tune on five PCs — yours, the second rig, the laptop, two friends. One key.' },
+  },
+  /* `?e=` on the redirect → product. The old edition names keep working so no
+     Square link needs editing; `studio` lands on Tune because that link should
+     no longer exist and a $39.99 payment must still get what it paid for. */
+  fromRedirect: { creator: 'tune', tune: 'tune', studio: 'tune', team: 'squad', squad: 'squad' },
+  refundDays: 14,
+  games: ['Fortnite', 'VALORANT', 'Counter-Strike 2', 'Marvel Rivals', 'Apex Legends', 'Call of Duty', 'Overwatch 2',
+    'Rainbow Six Siege', 'Rocket League', 'Minecraft', 'Roblox', 'League of Legends', 'GTA V', 'Rust', 'Escape from Tarkov', 'PUBG'],
+};
+
+/** The Square link for a Tune product. */
+export function tuneBuyUrl(product) {
+  return TUNE.products[product]?.checkout || PAY.cashAppUrl;
+}
+
+/** "$19.99" */
+export function tunePrice(product) {
+  const p = TUNE.products[product];
+  return p ? `$${p.once.toFixed(2)}` : '';
+}

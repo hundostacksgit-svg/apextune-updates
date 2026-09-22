@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Stamp the shared chrome — the top menu box, the mobile drawer and the footer —
-into every OmniDx Studio page.
+into every OmniDx page.
 
 Four static pages each need the same navigation, and the only thing that
 differs between them is how many `../` sit in front of a link. Hand-editing
@@ -28,9 +28,11 @@ SITE = ROOT / 'studio'
 
 # page -> prefix back to studio/
 #
-# omnidx.net is OmniDx Studio's domain and nothing else's. The other app in
-# this repository is not part of this site, is not linked from it, and is not
-# published under this domain — so there is no second prefix to track.
+# omnidx.net sells OmniDx Tune. The site still lives under studio/ because
+# that is where every link, redirect and Square return URL already points;
+# moving the folder would break all of them for nothing. The video editor
+# (OmniDx Studio) stays reachable at studio/app/ and is linked from the
+# footer only.
 PAGES = {
     'index.html': '',
     'pricing/index.html': '../',
@@ -41,10 +43,10 @@ PAGES = {
 
 LOGO_SVG = (
     '<svg viewBox="0 0 64 64" aria-hidden="true" style="width:18px;height:18px">'
-    '<rect x="13" y="18" width="26" height="6" rx="3" fill="#fff" opacity=".92"/>'
-    '<rect x="13" y="29" width="18" height="6" rx="3" fill="#fff" opacity=".68"/>'
-    '<rect x="13" y="40" width="30" height="6" rx="3" fill="#fff" opacity=".45"/>'
-    '<path d="M43 24.5 L54 32 L43 39.5 Z" fill="#fff"/></svg>'
+    '<rect x="12" y="17" width="30" height="6" rx="3" fill="#fff" opacity=".92"/>'
+    '<rect x="12" y="29" width="20" height="6" rx="3" fill="#fff" opacity=".68"/>'
+    '<rect x="12" y="41" width="11" height="6" rx="3" fill="#fff" opacity=".45"/>'
+    '<path d="M47 14 L37 34 L45 34 L41 50 L53 28 L45 28 Z" fill="#fff"/></svg>'
 )
 
 # Kept for anything that genuinely needs to point at the source. Nothing the
@@ -64,38 +66,38 @@ DOCS = f'https://github.com/hundostacksgit-svg/apextune-updates/blob/{BRANCH}/do
 # ---------------------------------------------------------------------------
 MENU = [
     {
-        'label': 'Products',
+        'label': 'What it does',
         'items': [
-            ('🎬', 'The editor', 'Multitrack timeline, colour, effects, export', '{s}#features'),
-            ('✨', 'AI editing', 'Say what you want. It builds the cut.', '{s}#ai'),
-            ('⚡', 'Edit styles', '176 styles and 21 full montages — anime, phonk, velocity', '{s}#styles'),
-            ('🎚️', 'Pro tools', 'ProRes, audio repair, proxies, colour wheels', '{s}#pro'),
-            ('ƒ', 'Motion design', 'Expressions, shapes, text animators, particles', '{s}#motion'),
-            ('🎓', 'Skill levels', 'Beginner, Intermediate, Professional', '{s}#levels'),
-            ('🔊', 'Audio filters', 'Underwater, telephone, cathedral, robot', '{s}#pro'),
+            ('🧹', 'What gets cut', 'Startup apps, services, tasks, junk apps, telemetry', '{s}#cut'),
+            ('🔍', 'Reads your PC first', 'Laptop or desktop, printers, Bluetooth, Wi-Fi, Xbox — the safe bar is yours', '{s}#tailored'),
+            ('⚡', 'The OmniDx power plan', 'Built for frames: no core parking, no bus sleep', '{s}#power'),
+            ('🎮', 'Game profiles', 'Fortnite, VALORANT, CS2, Marvel Rivals and twelve more', '{s}#games'),
+            ('📶', 'Network', 'Nagle off, adapter power saving off, latency first', '{s}#network'),
+            ('🎧', 'Discord, Spotify, browser', 'Hardware acceleration on, background running off', '{s}#apps'),
+            ('🧬', 'BIOS checklist', 'Written for your exact board and CPU', '{s}#bios'),
+            ('🛟', 'Fail-safes', 'Restore point, undo in one file, security untouched', '{s}#safe'),
         ],
     },
     {
-        'label': 'Download',
+        'label': 'Run it',
         'items': [
-            ('🍎', 'macOS', 'Apple silicon and Intel', '{s}download/#desktop'),
-            ('🪟', 'Windows', 'Windows 10 and 11', '{s}download/#desktop'),
-            ('📱', 'iPhone &amp; iPad', 'Installs from Safari, no App Store', '{s}download/#mobile'),
-            ('🤖', 'Android', 'Android 10 and up', '{s}download/#mobile'),
-            ('🌐', 'Open in the browser', 'No install. The whole editor.', '{s}app/'),
-            ('📦', 'All downloads', 'Every platform on one page', '{s}download/'),
+            ('⌨️', 'The command', 'One line in PowerShell. Nothing installed.', '{s}download/'),
+            ('📋', 'Free report mode', 'See what it would find, no key, changes nothing', '{s}download/#report'),
+            ('↩️', 'Undo', 'Put everything back, one line', '{s}download/#undo'),
+            ('🎛️', 'Options', 'Aggressive, cut Xbox, keep a startup app, DNS', '{s}download/#options'),
+            ('🔑', 'Your key', 'Get it again after paying', '{s}activate/'),
+            ('📜', 'Read the script', 'Every line, public, before you run it', 'https://omnidx.net/tune/omnidx.ps1'),
         ],
     },
     {'label': 'Pricing', 'href': '{s}pricing/'},
     {
         'label': 'Help',
         'items': [
-            ('🚀', 'Getting started', 'The walkthrough, five minutes', '{s}app/'),
-            ('✅', "What's built", 'Line by line, honestly', '{s}pricing/#compare'),
-            ('💬', 'FAQ', 'Payments, devices, refunds', '{s}pricing/#faq'),
-            ('🔓', 'Paid but locked?', 'Unlock your copy, no key needed', '{s}activate/'),
-            ('📥', 'Install the app', 'Every platform, one press', '{s}download/'),
-            ('🛡️', 'Is this a scam?', 'The straight answer, and how to check', '{s}trust/'),
+            ('💬', 'FAQ', 'Anti-cheat, laptops, refunds, new PC', '{s}pricing/#faq'),
+            ('🛡️', 'Is this safe? Is it a scam?', 'The straight answer, and how to check', '{s}trust/'),
+            ('🚫', "What it won't touch", 'Defender, firewall, Secure Boot, your drivers', '{s}trust/#cant'),
+            ('🔓', 'Paid but no key?', 'Your receipt number gets it', '{s}activate/'),
+            ('🎬', 'OmniDx Studio', 'The video editor, still here', '{s}app/'),
         ],
     },
 ]
@@ -135,7 +137,7 @@ def build_nav(s: str) -> str:
         )
     return f'''<nav class="nav">
   <div class="wrap">
-    <a class="logo" href="{s or './'}"><span class="mark">{LOGO_SVG}</span>OmniDx <small>Studio</small></a>
+    <a class="logo" href="{s or './'}"><span class="mark">{LOGO_SVG}</span>OmniDx <small>Tune</small></a>
 
     <!-- The menu box. One row on a desktop, and the same links live in the
          drawer below for phones — never two different menus to keep in step. -->
@@ -148,8 +150,8 @@ def build_nav(s: str) -> str:
         <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>
         <svg class="moon" viewBox="0 0 24 24"><path d="M20 14.5A8.2 8.2 0 0 1 9.5 4a8.3 8.3 0 1 0 10.5 10.5z"/></svg>
       </button>
-      <a class="nav-login" href="{s}account/">Log in</a>
-      <a class="btn btn-primary nav-cta" href="{s}app/">Open editor</a>
+      <a class="nav-key" href="{s}activate/">Your key</a>
+      <a class="btn btn-primary nav-cta" href="{s}pricing/">Get it — <span data-price="tune">$19.99</span></a>
       <button class="burger" type="button" data-drawer aria-expanded="false"
               aria-controls="drawer" aria-label="Menu">
         <span></span><span></span><span></span>
@@ -171,8 +173,8 @@ def build_nav(s: str) -> str:
 def build_drawer(s: str) -> str:
     out = [
         '    <div class="drawer-top">',
-        f'      <a class="btn btn-primary btn-lg" href="{s}app/">Open the editor</a>',
-        f'      <a class="btn btn-lg" href="{s}account/">Log in</a>',
+        f'      <a class="btn btn-primary btn-lg" href="{s}pricing/">Get it — <span data-price="tune">$19.99</span></a>',
+        f'      <a class="btn btn-lg" href="{s}download/">Run it</a>',
         '    </div>',
     ]
     for group in MENU:
@@ -200,42 +202,41 @@ def build_footer(s: str) -> str:
   <div class="wrap">
     <div class="foot">
       <div>
-        <a class="logo" href="{s or './'}"><span class="mark">{LOGO_SVG}</span>OmniDx <small>Studio</small></a>
-        <p class="small" style="margin-top:14px;max-width:34ch">The editor that stops fighting you.
-          Free to use, yours to own, and it never holds your work hostage.</p>
-        <p class="tiny muted" style="margin-top:10px">One payment. No subscription, ever.</p>
-        <div id="rate-us" class="rate-host" aria-label="Rate OmniDx Studio"></div>
+        <a class="logo" href="{s or './'}"><span class="mark">{LOGO_SVG}</span>OmniDx <small>Tune</small></a>
+        <p class="small" style="margin-top:14px;max-width:34ch">One command. Windows cut down to what your
+          games need, a power plan built for frames, and a BIOS checklist for your exact board.</p>
+        <p class="tiny muted" style="margin-top:10px">One payment. No subscription, ever. Nothing installed.</p>
+        <div id="rate-us" class="rate-host" aria-label="Rate OmniDx Tune"></div>
       </div>
       <div>
-        <h4>Product</h4>
-        <a href="{s}#features">Features</a>
-        <a href="{s}#ai">AI editing</a>
-        <a href="{s}#pro">Pro tools</a>
-        <a href="{s}#motion">Motion design</a>
-        <a href="{s}#styles">Edit styles</a>
-        <a href="{s}#fixes">What we fixed</a>
+        <h4>What it does</h4>
+        <a href="{s}#cut">What gets cut</a>
+        <a href="{s}#tailored">Reads your PC first</a>
+        <a href="{s}#power">The power plan</a>
+        <a href="{s}#games">Game profiles</a>
+        <a href="{s}#bios">BIOS checklist</a>
+        <a href="{s}#safe">Fail-safes</a>
       </div>
       <div>
         <h4>Get it</h4>
-        <a href="{s}app/">Open in browser</a>
-        <a href="{s}download/#desktop">Mac &amp; Windows</a>
-        <a href="{s}download/#mobile">iOS &amp; Android</a>
         <a href="{s}pricing/">Pricing</a>
-        <a href="{s}account/">Your account</a>
+        <a href="{s}download/">Run it</a>
+        <a href="{s}activate/">Your key</a>
+        <a href="{s}download/#undo">Undo</a>
+        <a href="https://omnidx.net/tune/omnidx.ps1">Read the script</a>
       </div>
       <div>
         <h4>More</h4>
-        <a href="{s}trust/">Is this a scam?</a>
+        <a href="{s}trust/">Is this safe? Is it a scam?</a>
         <a href="{s}pricing/#faq">FAQ</a>
-        <a href="{s}activate/">Unlock my copy</a>
-        <a href="{s}pricing/#compare">What's built</a>
-        <a href="{s}trust/#cant">What it can't do</a>
-        <span class="foot-support" data-support="OmniDx Studio — help" hidden></span>
+        <a href="{s}trust/#cant">What it won't touch</a>
+        <a href="{s}app/">OmniDx Studio — the video editor</a>
+        <span class="foot-support" data-support="OmniDx Tune — help" hidden></span>
       </div>
     </div>
     <div class="foot-note">
-      <span>© 2026 OmniDx. Built to be owned, not rented.</span>
-      <span>Your footage stays on your machine unless you ask it not to.</span>
+      <span>© 2026 OmniDx. One payment. Yours.</span>
+      <span>Nothing leaves your PC except the key check.</span>
     </div>
   </div>
 </footer>'''

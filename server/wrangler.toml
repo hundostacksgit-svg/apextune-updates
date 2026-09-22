@@ -38,3 +38,6 @@ SALT_PEPPER = "change-me-to-a-long-random-string"
 #   npx wrangler secret put RESEND_API_KEY      (optional — emails the key)
 #   npx wrangler secret put STT_URL             (optional — transcription)
 #   npx wrangler secret put STT_KEY
+#   npx wrangler secret put SQUARE_ACCESS_TOKEN (optional — lets /v1/tune/issue
+#                                               confirm each order with Square
+#                                               before handing out a Tune key)

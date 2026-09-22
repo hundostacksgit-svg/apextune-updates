@@ -147,6 +147,80 @@ function parseKey(code) {
 }
 
 /* ------------------------------------------------------------------ */
+/* OmniDx Tune keys                                                    */
+/* ------------------------------------------------------------------ */
+/*
+ * TUNE-XXXX-XXXX-XXXX-CCCC binds to one PC, SQUAD-XXXX-XXXX-XXXX-CCCC to
+ * five. Same alphabet as the Studio keys, a different salt, and the same four
+ * lines of checksum arithmetic — mirrored exactly in tune/omnidx.ps1,
+ * studio/assets/tunekey.js and tools/make-tune-key.py, so a key made in any
+ * of them validates in the others.
+ */
+const TUNE_SALT = 'omnidx-tune-2026';
+const TUNE_PRODUCTS = {
+  tune: { tag: 'TUNE', seats: 1, cents: 1999 },
+  squad: { tag: 'SQUAD', seats: 5, cents: 6999 },
+};
+const TUNE_BY_TAG = { TUNE: 'tune', SQUAD: 'squad' };
+
+function tuneChecksum(tag, payload) {
+  let h = fnv1a(`${TUNE_SALT}:${tag}:${payload}`);
+  let out = '';
+  for (let i = 0; i < 4; i++) { out += ALPHABET[h % ALPHABET.length]; h = Math.floor(h / ALPHABET.length) + (h % 7); }
+  return out;
+}
+
+function makeTuneKey(product) {
+  const p = TUNE_PRODUCTS[product];
+  if (!p) throw new Error(`No key format for "${product}"`);
+  let payload = '';
+  for (const b of crypto.getRandomValues(new Uint8Array(12))) payload += ALPHABET[b % ALPHABET.length];
+  return `${p.tag}${payload}${tuneChecksum(p.tag, payload)}`;
+}
+
+function parseTuneKey(code) {
+  const c = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const m = /^(TUNE|SQUAD)([A-Z0-9]{12})([A-Z0-9]{4})$/.exec(c);
+  if (!m) return null;
+  const [, tag, payload, sum] = m;
+  if ([...payload].some((ch) => !ALPHABET.includes(ch))) return null;
+  if (tuneChecksum(tag, payload) !== sum) return null;
+  return { product: TUNE_BY_TAG[tag], key: c, seats: TUNE_PRODUCTS[TUNE_BY_TAG[tag]].seats };
+}
+
+/** TUNE-ABCD-EFGH-JKLM-NPQR — the way a person reads it. */
+function prettyTuneKey(key) {
+  const tag = key.startsWith('SQUAD') ? 'SQUAD' : 'TUNE';
+  const rest = key.slice(tag.length);
+  return `${tag}-${rest.slice(0, 4)}-${rest.slice(4, 8)}-${rest.slice(8, 12)}-${rest.slice(12, 16)}`;
+}
+
+/**
+ * Ask Square whether an order or payment really completed, and for how much.
+ * Only runs when SQUARE_ACCESS_TOKEN is set; without it the redirect is
+ * trusted, which is exactly as strong as the Studio activation page was.
+ * Returns { ok, cents } or null when Square cannot be asked.
+ */
+async function squareOrder(env, ref) {
+  if (!env.SQUARE_ACCESS_TOKEN || !ref) return null;
+  const base = env.SQUARE_API_BASE || 'https://connect.squareup.com';
+  const headers = { authorization: `Bearer ${env.SQUARE_ACCESS_TOKEN}`, 'Square-Version': '2025-01-23' };
+  const tryGet = async (path, pick) => {
+    const r = await fetch(`${base}${path}`, { headers });
+    if (!r.ok) return null;
+    return pick(await r.json());
+  };
+  const order = await tryGet(`/v2/orders/${encodeURIComponent(ref)}`, (d) => d.order && ({
+    ok: d.order.state === 'COMPLETED', cents: Number(d.order.total_money?.amount || 0),
+  }));
+  if (order) return order;
+  const payment = await tryGet(`/v2/payments/${encodeURIComponent(ref)}`, (d) => d.payment && ({
+    ok: d.payment.status === 'COMPLETED', cents: Number(d.payment.amount_money?.amount || 0),
+  }));
+  return payment || { ok: false, cents: 0 };
+}
+
+/* ------------------------------------------------------------------ */
 /* sessions                                                            */
 /* ------------------------------------------------------------------ */
 
@@ -212,6 +286,7 @@ const routes = {
     transcription: Boolean(env.STT_URL && env.STT_KEY),
     payments: Boolean(env.STRIPE_WEBHOOK_SECRET),
     mail: Boolean(env.RESEND_API_KEY),
+    square: Boolean(env.SQUARE_ACCESS_TOKEN),
   }, { env, request: _req }),
 
   /* ---------------- auth ---------------- */
@@ -618,6 +693,107 @@ const routes = {
   },
 
   /* ---------------- payments ---------------- */
+
+  /* ---------------- OmniDx Tune ---------------- */
+
+  /**
+   * Hand a buyer their key.
+   *
+   * Square sends the buyer back to the activation page with its order id on
+   * the URL; the page posts it here. One key per order: the second visit with
+   * the same id gets the same key back, so a refresh, a lost tab or a second
+   * browser can never mint a second licence.
+   *
+   * With SQUARE_ACCESS_TOKEN set the order is looked up and the product is
+   * decided by what was actually paid — a $19.99 order asking for a five-PC
+   * key gets a one-PC key. Without the token the redirect is trusted, and the
+   * row says so (verified = 0) so it can be audited later.
+   */
+  'POST /v1/tune/issue': async (request, env, body) => {
+    const wanted = String(body.product || 'tune').toLowerCase();
+    if (!TUNE_PRODUCTS[wanted]) return fail('Unknown product.', 400, env, request);
+    const order = String(body.order || '').trim().slice(0, 120);
+    if (order.length < 6) return fail('The order reference from your Square receipt is needed to issue a key.', 400, env, request);
+    const email = validEmail(body.email) ? String(body.email).trim().toLowerCase() : null;
+
+    const existing = await env.DB.prepare('SELECT * FROM tune_keys WHERE order_ref = ?').bind(order).first();
+    if (existing) {
+      if (existing.revoked_at) return fail('That order was refunded, so its key no longer works.', 410, env, request);
+      return json({ key: prettyTuneKey(existing.key), product: existing.product, seats: existing.seats, verified: Boolean(existing.verified) }, { env, request });
+    }
+
+    let product = wanted;
+    let verified = 0;
+    let cents = null;
+    const sq = await squareOrder(env, order);
+    if (sq) {
+      if (!sq.ok) return fail('Square does not show a completed payment for that order reference. Check the receipt email; the id is near the top.', 402, env, request);
+      cents = sq.cents;
+      product = cents >= TUNE_PRODUCTS.squad.cents - 100 ? 'squad' : 'tune';
+      if (cents < TUNE_PRODUCTS.tune.cents - 100) return fail('That payment is below the price of a key.', 402, env, request);
+      verified = 1;
+    }
+
+    const key = makeTuneKey(product);
+    await env.DB.prepare(
+      `INSERT INTO tune_keys (key, product, seats, email, order_ref, provider, amount_cents, verified, created_at)
+       VALUES (?,?,?,?,?,?,?,?,?)`,
+    ).bind(key, product, TUNE_PRODUCTS[product].seats, email, order, 'square', cents, verified, Date.now()).run();
+
+    return json({ key: prettyTuneKey(key), product, seats: TUNE_PRODUCTS[product].seats, verified: Boolean(verified) }, { env, request });
+  },
+
+  /**
+   * The script calls this before it changes anything. A key binds to the
+   * first PC that claims it (five for Squad) and is refused everywhere else.
+   * The same PC claiming again is fine — that is how re-running after a
+   * Windows update works — and it is how a refund actually stops a key.
+   */
+  'POST /v1/tune/claim': async (request, env, body) => {
+    const parsed = parseTuneKey(body.key);
+    if (!parsed) return fail('That key is not valid. Check it for typos.', 400, env, request);
+    const hwid = String(body.hwid || '').trim().toLowerCase();
+    if (!/^[0-9a-f]{16,64}$/.test(hwid)) return fail('No machine id was sent.', 400, env, request);
+
+    const row = await env.DB.prepare('SELECT * FROM tune_keys WHERE key = ?').bind(parsed.key).first();
+    if (!row) return fail('That key was not issued by us.', 404, env, request);
+    if (row.revoked_at) return fail('That key has been refunded or revoked.', 410, env, request);
+
+    const label = body.machine
+      ? String([body.machine.name, body.machine.cpu, body.machine.gpu].filter(Boolean).join(' · ')).slice(0, 160)
+      : null;
+    const now = Date.now();
+    const mine = await env.DB.prepare('SELECT hwid FROM tune_machines WHERE key = ? AND hwid = ?').bind(parsed.key, hwid).first();
+    if (!mine) {
+      const { count } = await env.DB.prepare('SELECT COUNT(*) AS count FROM tune_machines WHERE key = ?').bind(parsed.key).first();
+      if (count >= row.seats) {
+        return fail(
+          row.seats === 1
+            ? 'This key is already locked to another PC. One key, one PC — email support if you replaced your machine.'
+            : `This key is already on ${row.seats} PCs, which is all a Squad key covers.`,
+          409, env, request,
+        );
+      }
+      await env.DB.prepare('INSERT INTO tune_machines (key, hwid, label, first_seen, last_seen) VALUES (?,?,?,?,?)')
+        .bind(parsed.key, hwid, label, now, now).run();
+    } else {
+      await env.DB.prepare('UPDATE tune_machines SET last_seen = ?, label = COALESCE(?, label) WHERE key = ? AND hwid = ?')
+        .bind(now, label, parsed.key, hwid).run();
+    }
+    const { count: used } = await env.DB.prepare('SELECT COUNT(*) AS count FROM tune_machines WHERE key = ?').bind(parsed.key).first();
+    return json({ ok: true, product: row.product, seats: row.seats, used }, { env, request });
+  },
+
+  /** Is this key real, and how many PCs is it on. Changes nothing. */
+  'POST /v1/tune/check': async (request, env, body) => {
+    const parsed = parseTuneKey(body.key);
+    if (!parsed) return json({ ok: false, reason: 'That key is not valid.' }, { env, request });
+    const row = await env.DB.prepare('SELECT * FROM tune_keys WHERE key = ?').bind(parsed.key).first();
+    if (!row) return json({ ok: false, reason: 'That key was not issued by us.' }, { env, request });
+    if (row.revoked_at) return json({ ok: false, reason: 'That key has been refunded or revoked.' }, { env, request });
+    const { count: used } = await env.DB.prepare('SELECT COUNT(*) AS count FROM tune_machines WHERE key = ?').bind(parsed.key).first();
+    return json({ ok: true, product: row.product, seats: row.seats, used }, { env, request });
+  },
 
   'POST /v1/webhooks/stripe': async (request, env) => {
     if (!env.STRIPE_WEBHOOK_SECRET) return fail('Payments are not configured.', 503, env, request);

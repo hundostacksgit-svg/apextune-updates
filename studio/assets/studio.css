@@ -1,35 +1,41 @@
 /*
- * OmniDx Studio — marketing site.
+ * OmniDx — marketing site.
  *
- * Two themes from one set of tokens. Dark is the default because that is what
- * an editor looks like; light exists because people read landing pages in
- * daylight. `data-theme` on <html> wins over the system preference so the
- * toggle works in both directions, and studio.js sets it before first paint.
+ * Black and purple. Dark is the default and the design; light exists for the
+ * toggle, tinted the same way, because some people read in daylight.
+ * `data-theme` on <html> wins over the system preference so the toggle works
+ * in both directions, and studio.js sets it before first paint.
+ *
+ * The token names kept their old names (--blue, --blue-2, --blue-3) so every
+ * component below and every page that references them still works; only the
+ * values changed. --blue is the main violet, --blue-2 the light accent used
+ * for links and eyebrows, --blue-3 the deep end of the gradient.
  */
 
 :root{
   /* ---- brand ---- */
-  --blue:#2f7dff;
-  --blue-2:#00d1ff;
-  --blue-3:#7a5cff;
-  --grad:linear-gradient(125deg,var(--blue-3) 0%,var(--blue) 42%,var(--blue-2) 100%);
-  --glow:rgba(47,125,255,.42);
+  --blue:#8b5cf6;
+  --blue-2:#c084fc;
+  --blue-3:#6d28d9;
+  --pink:#d946ef;
+  --grad:linear-gradient(125deg,var(--blue-3) 0%,var(--blue) 45%,var(--pink) 100%);
+  --glow:rgba(139,92,246,.45);
 
   /* ---- dark surface stack (default) ---- */
-  --bg:#04060d;
-  --bg-2:#080b14;
-  --surface:#0d1220;
-  --surface-2:#131a2b;
-  --surface-3:#1a2338;
-  --line:#1e2740;
-  --line-soft:#161d30;
-  --text:#e9eefc;
-  --text-2:#9aa6c4;
-  --text-3:#66718d;
+  --bg:#050308;
+  --bg-2:#08050e;
+  --surface:#0e0a17;
+  --surface-2:#150f22;
+  --surface-3:#1d1530;
+  --line:#2a1f45;
+  --line-soft:#1b1430;
+  --text:#f1ecff;
+  --text-2:#b3a8cf;
+  --text-3:#7d7199;
   --ok:#30d38a;
   --warn:#ffc247;
   --bad:#ff5d6c;
-  --shadow:0 24px 70px rgba(0,0,0,.55);
+  --shadow:0 24px 70px rgba(0,0,0,.6);
 
   --max:1140px;
   --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
@@ -38,18 +44,19 @@
 }
 
 :root[data-theme="light"]{
-  --bg:#f4f7fe;
-  --bg-2:#eaf0fb;
+  --bg:#f7f4fe;
+  --bg-2:#efe9fb;
   --surface:#ffffff;
-  --surface-2:#f2f6fd;
-  --surface-3:#e6edfa;
-  --line:#d3ddf0;
-  --line-soft:#e3ebf8;
-  --text:#0a1226;
-  --text-2:#4a5675;
-  --text-3:#7c88a5;
-  --glow:rgba(47,125,255,.26);
-  --shadow:0 20px 54px rgba(20,40,90,.14);
+  --surface-2:#f4f0fc;
+  --surface-3:#ebe4f8;
+  --line:#dcd3ef;
+  --line-soft:#e8e1f6;
+  --text:#14092b;
+  --text-2:#524871;
+  --text-3:#83789f;
+  --blue-2:#7c3aed;
+  --glow:rgba(139,92,246,.26);
+  --shadow:0 20px 54px rgba(60,30,120,.14);
   color-scheme:light;
 }
 
@@ -154,10 +161,10 @@ button{font:inherit;color:inherit}
 
 /* right-hand cluster */
 .nav-right{display:flex;align-items:center;gap:9px;flex:none;margin-left:auto}
-.nav-login{color:var(--text-2);font-size:14.5px;font-weight:600;padding:9px 13px;
+.nav-login,.nav-key{color:var(--text-2);font-size:14.5px;font-weight:600;padding:9px 13px;
   border-radius:10px;transition:color .15s,background .15s}
-.nav-login:hover{color:var(--text);background:var(--surface-2)}
-.nav-login.here{color:var(--text);background:var(--surface-2)}
+.nav-login:hover,.nav-key:hover{color:var(--text);background:var(--surface-2)}
+.nav-login.here,.nav-key.here{color:var(--text);background:var(--surface-2)}
 
 /* how far down the page you are, drawn on the bottom edge of the bar */
 .nav-progress{position:absolute;left:0;bottom:-1px;height:2px;width:0;
@@ -227,7 +234,7 @@ body.drawer-open{overflow:hidden}
 @media(max-width:1000px){
   .menubox{display:none}
   .burger{display:grid}
-  .nav-login{display:none}
+  .nav-login,.nav-key{display:none}
 }
 @media(max-width:560px){
   .nav .wrap{gap:10px;height:62px}
@@ -241,9 +248,11 @@ body.drawer-open{overflow:hidden}
   .rail .lbl{display:none}
   .rail .dot{width:7px;height:7px}
 }
-@media(max-width:400px){
-  .nav-cta{display:none}
+@media(max-width:460px){
+  .nav-right .nav-cta{display:none}
 }
+.nav .wrap{min-width:0}
+.nav-right{min-width:0}
 
 
 /* theme toggle */
@@ -347,7 +356,7 @@ section{padding:92px 0;position:relative;scroll-margin-top:74px}
 .mock-item .sw{width:22px;height:15px;border-radius:4px;background:var(--grad);flex:none;opacity:.8}
 .mock-stage{display:flex;flex-direction:column;gap:11px;padding:15px}
 .mock-canvas{flex:1;min-height:150px;border-radius:11px;position:relative;overflow:hidden;
-  background:linear-gradient(150deg,#0b1830,#123057 55%,#07101f);
+  background:linear-gradient(150deg,#150b2e,#2b1660 55%,#0a0716);
   display:grid;place-items:center}
 .mock-canvas .cap{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
   font-weight:800;font-size:clamp(15px,2.4vw,22px);letter-spacing:-.02em;color:#fff;
@@ -407,9 +416,9 @@ section{padding:92px 0;position:relative;scroll-margin-top:74px}
 /* The professional level's card is the level itself, previewed: neutral
    surfaces, tabular figures, a hairline instead of a glow. Someone who does
    this for a living should recognise it before reading a word. */
-.level-pro{background:color-mix(in srgb,var(--surface) 70%,#0a0d14);
-  border-color:color-mix(in srgb,var(--line) 70%,#39435c)}
-:root[data-theme="light"] .level-pro{background:color-mix(in srgb,var(--surface) 82%,#dfe5f0)}
+.level-pro{background:color-mix(in srgb,var(--surface) 70%,#0a0714);
+  border-color:color-mix(in srgb,var(--line) 70%,#4a3a6e)}
+:root[data-theme="light"] .level-pro{background:color-mix(in srgb,var(--surface) 82%,#e6dff3)}
 .level-pro .num{color:var(--text-2)}
 .level-pro li{font-size:14px;margin-bottom:7px;font-variant-numeric:tabular-nums}
 .level-pro li::before{border-color:var(--text-2)}
@@ -505,7 +514,7 @@ section{padding:92px 0;position:relative;scroll-margin-top:74px}
   font-size:14px;color:var(--text-2);margin:16px 0}
 .note.ok{border-color:rgba(48,211,138,.4);background:rgba(48,211,138,.09);color:var(--text)}
 .note.bad{border-color:rgba(255,93,108,.4);background:rgba(255,93,108,.09);color:var(--text)}
-.note.info{border-color:rgba(47,125,255,.4);background:rgba(47,125,255,.09);color:var(--text)}
+.note.info{border-color:rgba(139,92,246,.4);background:rgba(139,92,246,.09);color:var(--text)}
 .strength{height:5px;border-radius:99px;background:var(--surface-3);overflow:hidden;margin-top:8px}
 .strength i{display:block;height:100%;width:0;border-radius:99px;transition:width .3s,background .3s}
 .tabs{display:flex;gap:4px;padding:4px;border-radius:12px;background:var(--surface-2);
@@ -609,3 +618,96 @@ footer{border-top:1px solid var(--line-soft);padding:52px 0 60px;background:var(
 .rate-block .input{font-size:13px;padding:9px 11px;min-height:0}
 .rate-block .btn-row{gap:10px;align-items:center;flex-wrap:wrap}
 @media(prefers-reduced-motion:reduce){.rate-star:hover{transform:none}}
+
+
+/* ================= OmniDx Tune ================= */
+/* The command. One line, one button, big enough to be the thing on the page. */
+.cmd{display:flex;align-items:center;gap:12px;padding:14px 14px 14px 20px;border-radius:14px;min-width:0;max-width:100%;
+  border:1px solid var(--line);background:var(--surface);font-family:var(--mono);font-size:16px;
+  color:var(--text);box-shadow:0 0 0 1px color-mix(in srgb,var(--blue) 30%,transparent),0 18px 50px -24px var(--glow);
+  overflow:hidden}
+.cmd code{flex:1;min-width:0;overflow-x:auto;white-space:nowrap;padding:4px 0;scrollbar-width:thin}
+.cmd .ps{color:var(--blue-2);margin-right:8px;user-select:none}
+.cmd-lg{font-size:clamp(16px,2.3vw,21px);padding:18px 16px 18px 24px;border-radius:18px}
+.cmd .btn{flex:none}
+.cmd.ok{border-color:color-mix(in srgb,var(--ok) 60%,transparent)}
+.cmd-note{margin:10px 0 0;font-size:13px;color:var(--text-3)}
+
+/* The key, on the page after you pay. */
+.keybox{font-family:var(--mono);font-size:clamp(20px,3.6vw,30px);font-weight:700;letter-spacing:.06em;
+  padding:20px 18px;border-radius:16px;border:1px dashed color-mix(in srgb,var(--blue) 60%,transparent);
+  background:color-mix(in srgb,var(--blue) 8%,var(--surface));text-align:center;
+  color:var(--text);word-break:break-all;user-select:all}
+.keybox small{display:block;font-family:var(--sans);font-size:12.5px;font-weight:600;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--blue-2);margin-bottom:10px}
+
+/* Numbered steps: what to do, in order. */
+.steps-list{list-style:none;padding:0;margin:0;counter-reset:step;display:grid;gap:12px}
+.steps-list li{display:grid;grid-template-columns:40px minmax(0,1fr);column-gap:14px;row-gap:0;align-items:start;padding:16px 18px;
+  border-radius:14px;border:1px solid var(--line);background:var(--surface)}
+.steps-list li > *{grid-column:2;min-width:0}
+.steps-list li::before{counter-increment:step;content:counter(step);grid-column:1;grid-row:1 / span 9;width:36px;height:36px;border-radius:11px;
+  display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:15px;color:#fff;
+  background:var(--grad);box-shadow:0 8px 22px -8px var(--glow)}
+.steps-list li > b{display:block;font-size:15.5px;margin-bottom:3px;color:var(--text)}
+.steps-list p b{color:var(--text)}
+.steps-list p{margin:0;font-size:14px}
+.steps-list .cmd{margin-top:10px;font-size:13.5px;padding:10px 10px 10px 14px}
+
+/* The hero console: the tune running, as it runs. */
+.console{margin-top:52px;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:var(--surface);
+  box-shadow:var(--shadow),0 0 0 1px color-mix(in srgb,var(--blue) 18%,transparent)}
+.console-bar{display:flex;align-items:center;gap:8px;padding:11px 15px;background:var(--surface-2);
+  border-bottom:1px solid var(--line)}
+.console-bar i{width:11px;height:11px;border-radius:50%;background:var(--line);display:block}
+.console-bar i:first-child{background:#ff5f57}.console-bar i:nth-child(2){background:#ffbd2e}
+.console-bar i:nth-child(3){background:#28c840}
+.console-bar .t{margin-left:10px;font-size:12.5px;color:var(--text-3);font-family:var(--mono)}
+.console-bar .badge{margin-left:auto;font-size:11px;font-weight:750;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--blue-2);padding:4px 9px;border-radius:99px;border:1px solid var(--line);background:var(--surface)}
+.console-body{display:grid;grid-template-columns:1.5fr 1fr;min-height:340px}
+@media(max-width:760px){.console-body{grid-template-columns:1fr}.console-side{border-left:0;border-top:1px solid var(--line)}}
+.console-log{padding:18px 20px;font-family:var(--mono);font-size:13.2px;line-height:1.62;color:var(--text-2);
+  white-space:pre-wrap;overflow:hidden;min-height:300px;max-height:420px;position:relative}
+.console-log .h{color:var(--blue-2);font-weight:700}
+.console-log .ok{color:var(--ok)}
+.console-log .dim{color:var(--text-3)}
+.console-log .w{color:var(--text)}
+.console-log .caret{display:inline-block;width:8px;height:15px;background:var(--blue-2);vertical-align:-2px;
+  animation:blink 1s steps(2) infinite;margin-left:2px}
+@keyframes blink{50%{opacity:0}}
+.console-side{border-left:1px solid var(--line);padding:18px 20px;display:flex;flex-direction:column;gap:16px;
+  background:color-mix(in srgb,var(--surface-2) 60%,var(--surface))}
+.console-side .lbl{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--text-3);font-weight:750}
+.pc-line{display:flex;justify-content:space-between;gap:12px;font-size:13px;padding:7px 0;border-bottom:1px solid var(--line-soft)}
+.pc-line span{color:var(--text-3)}
+.pc-line b{font-weight:600;color:var(--text);text-align:right}
+.count{display:flex;align-items:baseline;gap:10px;margin-top:4px}
+.count b{font-family:var(--mono);font-size:clamp(40px,6vw,58px);font-weight:700;letter-spacing:-.04em;line-height:1;
+  background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;font-variant-numeric:tabular-nums}
+.count span{font-size:13px;color:var(--text-3)}
+.count s{font-family:var(--mono);color:var(--text-3);font-size:22px;text-decoration-color:var(--bad)}
+.meter{height:10px;border-radius:99px;background:var(--surface-3);overflow:hidden;border:1px solid var(--line-soft)}
+.meter i{display:block;height:100%;width:100%;border-radius:99px;background:var(--grad);transition:width .6s cubic-bezier(.2,.7,.3,1)}
+.meter-lbl{display:flex;justify-content:space-between;font-size:11.5px;color:var(--text-3);margin-top:6px}
+
+/* Two-column "what it does" lists with ticks. */
+.tick{list-style:none;padding:0;margin:14px 0 0}
+.tick li{padding-left:26px;position:relative;margin-bottom:9px;font-size:14.5px;color:var(--text-2)}
+.tick li::before{content:"";position:absolute;left:0;top:8px;width:13px;height:8px;
+  border-left:2.2px solid var(--blue-2);border-bottom:2.2px solid var(--blue-2);transform:rotate(-45deg)}
+.tick li.no{color:var(--text-3)}
+.tick li.no::before{content:"—";border:0;transform:none;top:0;width:auto;height:auto;color:var(--bad)}
+
+/* game chips */
+.games{display:flex;flex-wrap:wrap;gap:9px;margin-top:20px}
+.games span{padding:8px 14px;border-radius:99px;border:1px solid var(--line);background:var(--surface);
+  font-size:13.5px;font-weight:600;color:var(--text-2)}
+
+/* the one-price card on the landing page */
+.price-card{max-width:520px;margin:0 auto;padding:36px 32px;border-radius:24px;border:1px solid var(--blue);
+  background:var(--surface);box-shadow:0 0 0 1px var(--blue),0 30px 70px -26px var(--glow);text-align:center}
+.price-card .amount{font-family:var(--mono);font-size:clamp(44px,7vw,64px);font-weight:700;letter-spacing:-.04em;margin:8px 0 2px}
+.price-card .amount small{font-family:var(--sans);font-size:15px;color:var(--text-3);font-weight:500;letter-spacing:0}
+.price-card .btn{width:100%;margin-top:18px}
+.price-card .alt{margin:14px 0 0;font-size:13px;color:var(--text-3)}

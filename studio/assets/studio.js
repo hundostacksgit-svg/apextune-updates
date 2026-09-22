@@ -5,7 +5,7 @@
  * follows.
  */
 
-import { EDITIONS, priceOf, buyUrl, PAY, DEVICE_LIMIT, SEATS, DOWNLOADS, downloadUrl } from './config.js';
+import { EDITIONS, priceOf, buyUrl, PAY, DEVICE_LIMIT, SEATS, DOWNLOADS, downloadUrl, TUNE, tuneBuyUrl, tunePrice } from './config.js';
 import * as auth from './auth.js';
 import { mountRating } from './rate.js';
 
@@ -20,11 +20,11 @@ export const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) =>
 const THEME_KEY = 'omnidx.theme';
 
 export function applyTheme(t) {
-  const theme = t || localStorage.getItem(THEME_KEY)
-    || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  // Black is the design, not a preference: dark unless this person chose light.
+  const theme = t || localStorage.getItem(THEME_KEY) || 'dark';
   document.documentElement.setAttribute('data-theme', theme);
   document.querySelector('meta[name="theme-color"]')
-    ?.setAttribute('content', theme === 'light' ? '#f4f7fe' : '#04060d');
+    ?.setAttribute('content', theme === 'light' ? '#f7f4fe' : '#050308');
   try { localStorage.setItem(THEME_KEY, theme); } catch { /* private mode */ }
   return theme;
 }
@@ -702,6 +702,45 @@ function initDownloads() {
 }
 
 /* ------------------------------------------------------------------ */
+/* OmniDx Tune: prices, buy links, copy buttons, the hero console      */
+/* ------------------------------------------------------------------ */
+/*
+ * Every price and every buy button on the site reads config.js, so the
+ * Square link and the figure can never disagree with the activation page.
+ * `data-buy="tune"` on a link fills its href; `data-price="tune"` fills its
+ * text; `data-copy` on a button copies the text of the code element next to
+ * it (or of the element its value points at).
+ */
+function initTune() {
+  $$('[data-buy]').forEach((a) => {
+    const url = tuneBuyUrl(a.dataset.buy);
+    if (url) { a.href = url; a.rel = 'noopener'; }
+  });
+  $$('[data-price]').forEach((el) => { el.textContent = tunePrice(el.dataset.price); });
+  $$('[data-cmd]').forEach((el) => { el.textContent = TUNE.command; });
+
+  $$('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
+    const target = b.dataset.copy ? $(b.dataset.copy) : b.parentElement.querySelector('code');
+    const text = (target?.dataset.text || target?.textContent || '').trim();
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      const was = b.textContent;
+      b.textContent = 'Copied';
+      b.closest('.cmd')?.classList.add('ok');
+      setTimeout(() => { b.textContent = was; b.closest('.cmd')?.classList.remove('ok'); }, 1600);
+    } catch {
+      // No clipboard permission: select it so a keyboard copy works.
+      const r = document.createRange(); r.selectNodeContents(target); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      toast('Press Ctrl+C to copy');
+    }
+  }));
+
+  // The front page's console; the module is only fetched where it is used.
+  if ($('#console')) import('./tune.js').then((m) => m.initConsole($('#console'))).catch(() => {});
+}
+
+/* ------------------------------------------------------------------ */
 /* the nav's account link                                              */
 /* ------------------------------------------------------------------ */
 
@@ -1227,6 +1266,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCompare();
   initAiDemo();
   initDownloads();
+  initTune();
   initNavAccount();
   initAccount();
   mountRating($('#rate-us'));
@@ -1235,7 +1275,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Mark the current page in the nav without hard-coding it per page.
   const here = location.pathname.replace(/index\.html$/, '');
-  $$('.menubox a, .nav-login, .mb-pop a').forEach((a) => {
+  $$('.menubox a, .nav-login, .nav-key, .mb-pop a').forEach((a) => {
     const href = a.getAttribute('href') || '';
     if (href.startsWith('http') || href.startsWith('#')) return;
     const target = new URL(href, location.href).pathname.replace(/index\.html$/, '');

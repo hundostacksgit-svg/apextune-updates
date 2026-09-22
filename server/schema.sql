@@ -129,3 +129,37 @@ CREATE TABLE IF NOT EXISTS vaults (
   blob        TEXT NOT NULL,
   updated_at  INTEGER NOT NULL
 );
+
+-- ---------------------------------------------------------------------------
+-- OmniDx Tune.
+--
+-- A key is TUNE-XXXX-XXXX-XXXX-CCCC (one PC) or SQUAD-XXXX-XXXX-XXXX-CCCC
+-- (five). The checksum block catches typos on the buyer's machine; this table
+-- is what makes a key real. One key per Square order, so reloading the
+-- activation page hands back the same key rather than minting another.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS tune_keys (
+  key           TEXT PRIMARY KEY,        -- compact, no dashes: TUNEXXXXXXXXXXXXCCCC
+  product       TEXT NOT NULL,           -- 'tune' | 'squad'
+  seats         INTEGER NOT NULL,        -- PCs this key may bind to
+  email         TEXT,
+  order_ref     TEXT UNIQUE,             -- Square order / payment id from the redirect
+  provider      TEXT,                    -- 'square' | 'manual'
+  amount_cents  INTEGER,
+  verified      INTEGER NOT NULL DEFAULT 0, -- 1 when the order was confirmed with Square's API
+  created_at    INTEGER NOT NULL,
+  revoked_at    INTEGER                  -- set on refund; the row is never deleted
+);
+CREATE INDEX IF NOT EXISTS tune_keys_email ON tune_keys(email);
+
+-- Which PCs a key is bound to. The hwid is a hash the script makes from the
+-- board serial, the system UUID and the CPU id; it identifies a PC without
+-- describing it. `label` is only so the owner can tell their machines apart.
+CREATE TABLE IF NOT EXISTS tune_machines (
+  key         TEXT NOT NULL REFERENCES tune_keys(key) ON DELETE CASCADE,
+  hwid        TEXT NOT NULL,
+  label       TEXT,
+  first_seen  INTEGER NOT NULL,
+  last_seen   INTEGER NOT NULL,
+  PRIMARY KEY (key, hwid)
+);

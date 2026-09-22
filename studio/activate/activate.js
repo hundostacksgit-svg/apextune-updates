@@ -1,65 +1,105 @@
 /*
  * The page Square sends people to after they pay.
  *
- * This is the whole "how do I get what I bought" story now. There is no key to
- * wait for, no email to watch, nobody to chase. Payment lands here, the app
- * unlocks, and the next tap is the editor.
+ * Payment lands here, a key appears, and the next thing the buyer does is
+ * paste one line into PowerShell on the PC they want tuned. No email to wait
+ * for, nobody to chase.
  *
- * The edition comes from the URL, because that is the only thing we control
- * about a Square redirect: each payment link is configured to come back to
- * this page with its own `?e=` on the end. Square appends its own order and
- * transaction ids to whatever we set, so those arrive for free and get
- * recorded on the receipt.
+ * Which product was bought comes from the URL: each Square link is set to come
+ * back here with its own `?e=` on the end (the old edition names still work,
+ * so nothing in the Square dashboard had to change). Square appends its own
+ * order id to whatever we set, and that id is what the key is issued against —
+ * one key per order, so a refresh never mints a second one.
  *
- * Honest about what this proves: it believes the redirect. That is discussed
- * where the granting happens, in auth.js — short version, every entitlement
- * check in this app already runs on the buyer's machine, so this adds no
- * weakness that was not already there, and it fixes a failure that was losing
- * every paying customer.
+ * With the Worker deployed (tune/config.json has an `api`), the key is minted
+ * and recorded on the server, which can also confirm the order with Square.
+ * Without it, the key is derived here from the order reference and the
+ * script locks it to the first PC that runs it. Honest about what that
+ * proves: it believes the redirect. Deploying the Worker is what turns the
+ * lock into a real one, and docs/TUNE.md says how.
  */
 
-import { EDITIONS, PAY, RANK } from '../assets/config.js';
-import { grantEdition, redeemPurchase, session } from '../assets/auth.js';
+import { TUNE, PAY } from '../assets/config.js';
+import { keyForOrder, parseKey, pretty } from '../assets/tunekey.js';
 
+const STORE = 'omnidx.tune.key';
 const $ = (s, r = document) => r.querySelector(s);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-/*
- * Which edition was bought.
- *
- * `?e=` is what we set on the payment link. Everything else is a fallback for
- * a link that was set up before this page existed, or edited by hand in the
- * Square dashboard and missing its query string — in which case the amount
- * paid still tells us, and guessing right beats showing an error to somebody
- * holding a receipt.
- */
-function editionFromUrl(params) {
-  const named = String(params.get('e') || params.get('edition') || '').toLowerCase();
-  if (RANK[named] !== undefined && named !== 'free') return named;
+/* ---------------- what the URL says ---------------- */
 
+function productFromUrl(params) {
+  const named = String(params.get('e') || params.get('edition') || params.get('p') || '').toLowerCase();
+  if (TUNE.fromRedirect[named]) return TUNE.fromRedirect[named];
+
+  // A link edited by hand in the Square dashboard and missing its query
+  // string: the amount paid still says what was bought.
   const paid = Number(params.get('amount') || params.get('total') || 0);
   if (paid > 0) {
-    // Square sends minor units on some links and whole currency on others.
     const dollars = paid > 500 ? paid / 100 : paid;
-    let best = null;
-    for (const [id, ed] of Object.entries(EDITIONS)) {
-      if (!ed.once) continue;
-      if (dollars + 0.01 >= ed.once && (!best || ed.once > EDITIONS[best].once)) best = id;
-    }
-    if (best) return best;
+    return dollars + 0.01 >= TUNE.products.squad.once ? 'squad' : 'tune';
   }
   return null;
 }
 
 /** Square's own identifiers, under whichever name this link happens to use. */
 function orderFromUrl(params) {
-  for (const k of ['orderId', 'order_id', 'transactionId', 'transaction_id', 'order', 'checkoutId']) {
+  for (const k of ['orderId', 'order_id', 'transactionId', 'transaction_id', 'order', 'checkoutId', 'paymentId']) {
     const v = params.get(k);
     if (v) return v;
   }
   return '';
 }
+
+/* ---------------- the licence server, if there is one ---------------- */
+
+let apiBase = null;
+async function api() {
+  if (apiBase !== null) return apiBase;
+  try {
+    const r = await fetch(TUNE.configUrl, { cache: 'no-store' });
+    const cfg = await r.json();
+    apiBase = String(cfg.api || '').replace(/\/+$/, '');
+  } catch { apiBase = ''; }
+  return apiBase;
+}
+
+class Refused extends Error { constructor(message, status) { super(message); this.status = status; } }
+
+/**
+ * Get the key for an order. Server first; if there is no server or it cannot
+ * be reached, derive it here. A server that positively refuses (no completed
+ * payment, refunded) is not worked around.
+ */
+async function issue(product, order) {
+  const base = await api();
+  if (base) {
+    try {
+      const r = await fetch(`${base}/v1/tune/issue`, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ product, order }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (r.ok && data.key) return { ...data, order, source: 'server' };
+      if (r.status === 402 || r.status === 410 || r.status === 400) throw new Refused(data.error || 'The licence server refused this order.', r.status);
+    } catch (err) {
+      if (err instanceof Refused) throw err;
+      // Down, slow or blocked: fall through. The key still has to appear.
+    }
+  }
+  const key = await keyForOrder(product, order);
+  return { key: pretty(key), product, seats: TUNE.products[product].seats, verified: false, order, source: 'local' };
+}
+
+function remember(info) {
+  try { localStorage.setItem(STORE, JSON.stringify({ ...info, at: Date.now() })); } catch { /* private mode */ }
+}
+function remembered() {
+  try { const v = JSON.parse(localStorage.getItem(STORE) || 'null'); return v && parseKey(v.key) ? v : null; } catch { return null; }
+}
+
+/* ---------------- rendering ---------------- */
 
 function supportBlock(subject) {
   const addr = (PAY.supportEmail || '').trim();
@@ -69,100 +109,91 @@ function supportBlock(subject) {
     — include your Square receipt and it gets sorted.</p>`;
 }
 
-function renderUnlocked(edition, order, verified) {
-  const ed = EDITIONS[edition] || { name: edition };
+function copyButton(text, label = 'Copy') {
+  return `<button class="btn btn-sm" type="button" data-copy-text="${esc(text)}">${esc(label)}</button>`;
+}
+
+function renderKey(info, { again = false } = {}) {
+  const p = TUNE.products[info.product] || TUNE.products.tune;
+  const oneLiner = `$env:OMNIDX_KEY='${info.key}'; ${TUNE.command}`;
   $('#card').innerHTML = `
     <div class="act-tick" aria-hidden="true">✓</div>
-    <h1>You're unlocked</h1>
-    <p class="act-sub">${esc(ed.name)} is active on this device. Nothing else to do.</p>
+    <h1>${again ? 'Your key, again' : 'Here is your key'}</h1>
+    <p class="act-sub">${esc(p.name)} — ${p.seats === 1 ? 'one PC' : `${p.seats} PCs`}. Paid once. Nothing renews.</p>
 
-    <div class="act-row"><span>Edition</span><b>${esc(ed.name)}</b></div>
-    ${ed.once ? `<div class="act-row"><span>Paid</span><b>$${ed.once.toFixed(2)} once</b></div>` : ''}
-    ${order ? `<div class="act-row"><span>Square order</span><b style="font-family:ui-monospace,monospace;font-size:12px">${esc(order)}</b></div>` : ''}
+    <div class="keybox"><small>Your key</small>${esc(info.key)}</div>
+    <div class="act-copy">${copyButton(info.key, 'Copy the key')}</div>
+
+    <div class="act-h">On the PC you want tuned</div>
+    <ol class="steps-list">
+      <li><b>Close Discord and Spotify</b><p>They are only tuned while they are closed. Everything else can stay open.</p></li>
+      <li><b>Open PowerShell</b><p>Press the Windows key, type <b>powershell</b>, press Enter. It does not need to be run as administrator — it asks for that itself.</p></li>
+      <li><b>Paste this and press Enter</b>
+        <div class="cmd"><code data-text="${esc(oneLiner)}"><span class="ps">&gt;</span>${esc(oneLiner)}</code>${copyButton(oneLiner)}</div>
+        <p class="cmd-note">Your key is in the line, so nothing has to be typed. Nothing is installed: the tune runs from memory and leaves its report, its undo and its backups in <span class="mono">C:\\OmniDx</span>.</p></li>
+      <li><b>Say yes to the restore point, then watch it go</b><p>It reads your PC, shows what it found, and asks once before it changes anything. About two minutes.</p></li>
+      <li><b>Restart, then do the BIOS checklist</b><p>The report it opens at the end has the checklist for your exact board — the memory profile alone is worth more than half of the tune.</p></li>
+    </ol>
+
+    <div class="act-h">Receipt</div>
+    <div class="act-row"><span>Product</span><b>${esc(p.name)} — ${p.seats === 1 ? '1 PC' : `${p.seats} PCs`}</b></div>
+    <div class="act-row"><span>Paid</span><b>$${p.once.toFixed(2)} once</b></div>
+    ${info.order ? `<div class="act-row"><span>Square order</span><b class="mono" style="font-size:12px">${esc(info.order)}</b></div>` : ''}
+    <div class="act-row"><span>Payment</span><b>${info.verified ? 'Confirmed with Square' : 'From Square\u2019s redirect'}</b></div>
     <div class="act-row"><span>Renews</span><b>Never — there is no subscription</b></div>
 
     <div class="act-actions">
-      <a class="btn btn-lg" href="../app/">Open the editor</a>
-      <a class="btn btn-ghost" href="../account/">Use it on another device</a>
+      <a class="btn btn-ghost" href="../download/">Everything the command does, screen by screen</a>
     </div>
 
     <p class="act-note">
-      This device is unlocked now.
-      ${verified ? 'Your purchase is registered to your account, so it follows you.'
-        : 'To put it on your other devices, make an account on the account page and this licence moves with it.'}
-      Then save a <a href="../account/#recovery">recovery kit</a> — it brings the account and this purchase back on any device, even if this one is lost.
-      Keep your Square receipt too: its order number unlocks the purchase here again, always.
+      <b>Keep this key.</b> It is saved in this browser and this page will show it again, but take a screenshot too.
+      It locks to the first PC that runs it${p.seats > 1 ? ` (the first ${p.seats})` : ''}; running it again on the same PC after a Windows update is free and expected.
+      Replaced your PC? Email with the receipt and it moves.
     </p>
-    ${supportBlock(`OmniDx Studio — ${ed.name} activation`)}`;
+    ${supportBlock(`OmniDx Tune — key ${info.key}`)}`;
 }
 
 /*
  * Arriving with no order reference.
  *
- * This page used to unlock on nothing but a query string, which meant
- * /activate/?e=studio was a free copy for anybody who found it. That was a
- * hole I opened, and it is closed here: without an order from Square's
- * redirect, the receipt number has to be typed in.
- *
- * What that buys, honestly:
- *
- *   • It stops the URL being shareable on its own. Passing this around now
- *     means passing your receipt around with it.
- *   • It leaves a trail. The order is recorded, and an order showing up
- *     somewhere it should not is visible in the Square dashboard and can be
- *     refunded or chased.
- *
- * What it does not buy is real enforcement, and pretending otherwise would be
- * worse than saying it: every entitlement check in this app runs on the
- * buyer's own machine and can be switched off with dev tools. The one thing
- * that genuinely cannot be freeloaded is the AI, because that runs on the
- * server and the server checks — which is also the only feature that costs
- * money per use. Deploying the Worker is what turns the rest of this from
- * friction into enforcement.
+ * Without an order from Square's redirect the receipt number has to be typed
+ * in — so the URL on its own is not a free key, and every key issued has a
+ * receipt behind it that can be checked in the Square dashboard.
  */
-function renderUnknown() {
+function renderUnknown(message = '') {
   $('#card').innerHTML = `
-    <h1>Unlock your copy</h1>
-    <p class="act-sub">Paying normally does this for you. If it did not,
-      your Square receipt number will sort it.</p>
+    <h1>Get your key</h1>
+    <p class="act-sub">Paying normally brings you here with it. If it did not, your Square receipt number will.</p>
 
-    <div class="field" style="margin-top:20px;text-align:left">
+    ${message ? `<div class="note bad" style="margin:0 0 18px">${esc(message)}</div>` : ''}
+
+    <div class="field" style="text-align:left">
       <label for="act-order" class="small"><b>Order or receipt number</b></label>
-      <input class="input" id="act-order" placeholder="From your Square receipt email"
-        autocomplete="off" spellcheck="false">
-      <p class="tiny muted" style="margin:7px 0 0">
-        It is on the confirmation email from Square, near the top.
-      </p>
+      <input class="input" id="act-order" placeholder="From your Square receipt email" autocomplete="off" spellcheck="false">
+      <p class="tiny muted" style="margin:7px 0 0">It is on the confirmation email from Square, near the top.</p>
     </div>
 
     <div class="field" style="margin-top:16px;text-align:left">
       <label class="small"><b>What did you buy?</b></label>
       <div class="act-actions" style="margin-top:8px">
-        ${Object.entries(EDITIONS).filter(([, e]) => e.once).map(([id, e]) =>
-          `<button class="btn btn-ghost" data-pick="${esc(id)}">
-            ${esc(e.name)} — $${e.once.toFixed(2)}</button>`).join('')}
+        ${Object.values(TUNE.products).map((p) =>
+          `<button class="btn btn-ghost" type="button" data-pick="${esc(p.id)}">
+            ${esc(p.name)} — $${p.once.toFixed(2)} · ${p.seats === 1 ? 'one PC' : `${p.seats} PCs`}</button>`).join('')}
       </div>
     </div>
 
     <p class="act-note" id="act-err" hidden style="color:var(--bad)"></p>
-    <p class="act-note">Picking the wrong one is not a problem — come back and
-      choose again, it never takes anything away.</p>
-    ${supportBlock('OmniDx Studio — cannot unlock, have receipt')}`;
+    <p class="act-note">Not bought yet? <a href="../pricing/">It is $${TUNE.products.tune.once.toFixed(2)}, once.</a></p>
+    ${supportBlock('OmniDx Tune — paid, no key')}`;
 
   $('#card').addEventListener('click', (e) => {
     const pick = e.target.closest('[data-pick]');
     if (!pick) return;
     const order = String($('#act-order')?.value || '').trim();
     const err = $('#act-err');
-    // Deliberately loose: Square's references vary in shape and change over
-    // time, and a validator that rejects a real receipt is far worse than one
-    // that accepts a fake. This is a speed bump with a paper trail, not a lock.
     if (order.length < 6) {
-      if (err) {
-        err.hidden = false;
-        err.textContent = 'Put in the order number from your Square receipt first — '
-          + 'it is what ties this unlock to your payment.';
-      }
+      if (err) { err.hidden = false; err.textContent = 'Put in the order number from your Square receipt first — it is what the key is issued against.'; }
       $('#act-order')?.focus();
       return;
     }
@@ -170,27 +201,37 @@ function renderUnknown() {
   });
 }
 
-async function go(edition, order) {
-  // Unlock first, then tell the server. The grant is local and instant; a
-  // server that is slow, down, or not deployed must never be the reason
-  // somebody who paid is still looking at a spinner.
-  let verified = false;
+async function go(product, order) {
+  $('#card').innerHTML = '<div class="act-spin" aria-hidden="true"></div><h1>Getting your key</h1><p class="act-sub">One moment.</p>';
   try {
-    grantEdition(edition, { order });
-    const out = await redeemPurchase({ edition, order });
-    verified = Boolean(out?.verified);
+    const info = await issue(product, order);
+    remember(info);
+    renderKey(info);
   } catch (err) {
-    // Even a failed grant leaves them better off seeing the receipt and a way
-    // to reach a human than a stack trace.
     console.error('activation', err);
+    renderUnknown(err instanceof Refused ? err.message : 'Could not issue a key just now. Try again, or email with your receipt.');
   }
-  renderUnlocked(edition, order, verified);
 }
 
-const params = new URLSearchParams(location.search);
-const edition = editionFromUrl(params);
-const order = orderFromUrl(params);
+/* copy buttons, for both screens */
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-copy-text]');
+  if (!b) return;
+  try {
+    await navigator.clipboard.writeText(b.dataset.copyText);
+    const was = b.textContent; b.textContent = 'Copied'; b.closest('.cmd')?.classList.add('ok');
+    setTimeout(() => { b.textContent = was; b.closest('.cmd')?.classList.remove('ok'); }, 1600);
+  } catch { b.textContent = 'Select and press Ctrl+C'; }
+});
 
-if (edition) go(edition, order);
-else if (session() && RANK[session().edition] > 0) renderUnlocked(session().edition, '', false);
+/* ---------------- start ---------------- */
+
+const params = new URLSearchParams(location.search);
+const product = productFromUrl(params);
+const order = orderFromUrl(params);
+const saved = remembered();
+
+if (product && order) go(product, order);
+else if (saved) renderKey(saved, { again: true });
+else if (product) renderUnknown();
 else renderUnknown();

@@ -29,7 +29,7 @@ export function mountRating(host) {
   let chosen = prior?.stars || 0;
   host.innerHTML = `
     <div class="rate-block">
-      <h4>${prior ? 'Thanks for rating' : 'Rate OmniDx Studio'}</h4>
+      <h4>${prior ? 'Thanks for rating' : 'Rate OmniDx Tune'}</h4>
       <p class="tiny muted rate-avg" style="margin:0 0 8px" hidden></p>
       <div class="rate-stars" role="radiogroup" aria-label="Rating">
         ${Array.from({ length: 5 }, (_, i) => `<button class="rate-star${i < chosen ? ' on' : ''}" data-star="${i + 1}" aria-label="${i + 1} star${i ? 's' : ''}" title="${esc(WORDS[i + 1])}">★</button>`).join('')}

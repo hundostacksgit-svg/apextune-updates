@@ -3,35 +3,28 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Download — OmniDx Studio</title>
-<meta name="description" content="Get OmniDx Studio for macOS, Windows, Linux, iPhone and Android — or open the full editor in your browser with nothing to install.">
-<meta name="theme-color" content="#04060d">
+<title>Run it — OmniDx Tune</title>
+<meta name="description" content="One line in PowerShell runs OmniDx Tune. What it asks, what it shows, the free report mode, the undo, and the options.">
+<meta name="theme-color" content="#050308">
 <link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
-<!-- Link previews. Every URL here must be absolute: the scrapers behind iMessage,
-     WhatsApp, Discord, Facebook and X do not resolve relative paths, and a
-     relative og:image is a card with no picture on it. Run
-     `python3 tools/set-domain.py --site-url <url>` to rewrite them all after a
-     rename or a domain change. -->
 <link rel="canonical" href="https://omnidx.net/studio/download/">
 <meta property="og:url" content="https://omnidx.net/studio/download/">
 <meta property="og:image" content="https://omnidx.net/studio/assets/og-card.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="OmniDx Studio: a video editor timeline with clips cut to the beat of a music track.">
+<meta property="og:image:alt" content="OmniDx Tune: a PowerShell window running the tune, the process count falling from 214 to 86.">
 <meta name="twitter:image" content="https://omnidx.net/studio/assets/og-card.png">
-<meta name="twitter:title" content="Download — OmniDx Studio">
-<meta name="twitter:description" content="Get OmniDx Studio for macOS, Windows, Linux, iPhone and Android — or open the full editor in your browser with nothing to install.">
-<meta property="og:site_name" content="OmniDx Studio">
-<meta property="og:title" content="Download — OmniDx Studio">
-<meta property="og:description" content="Get OmniDx Studio for macOS, Windows, Linux, iPhone and Android — or open the full editor in your browser with nothing to install.">
+<meta name="twitter:title" content="Run it — OmniDx Tune">
+<meta name="twitter:description" content="One line in PowerShell. What it asks, what it shows, the free report mode, the undo, and the options.">
+<meta property="og:site_name" content="OmniDx Tune">
+<meta property="og:title" content="Run it — OmniDx Tune">
+<meta property="og:description" content="One line in PowerShell. What it asks, what it shows, the free report mode, the undo, and the options.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="../assets/studio.css">
 <script>
-/* Set the theme before first paint so a light-mode visitor never sees a black
-   flash. Everything else waits for the module. */
-(function(){try{var t=localStorage.getItem('omnidx.theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+(function(){try{var t=localStorage.getItem('omnidx.theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
 </script>
 </head>
 <body>
@@ -39,23 +32,23 @@
 <!-- chrome:nav -->
 <nav class="nav">
   <div class="wrap">
-    <a class="logo" href="../"><span class="mark"><svg viewBox="0 0 64 64" aria-hidden="true" style="width:18px;height:18px"><rect x="13" y="18" width="26" height="6" rx="3" fill="#fff" opacity=".92"/><rect x="13" y="29" width="18" height="6" rx="3" fill="#fff" opacity=".68"/><rect x="13" y="40" width="30" height="6" rx="3" fill="#fff" opacity=".45"/><path d="M43 24.5 L54 32 L43 39.5 Z" fill="#fff"/></svg></span>OmniDx <small>Studio</small></a>
+    <a class="logo" href="../"><span class="mark"><svg viewBox="0 0 64 64" aria-hidden="true" style="width:18px;height:18px"><rect x="12" y="17" width="30" height="6" rx="3" fill="#fff" opacity=".92"/><rect x="12" y="29" width="20" height="6" rx="3" fill="#fff" opacity=".68"/><rect x="12" y="41" width="11" height="6" rx="3" fill="#fff" opacity=".45"/><path d="M47 14 L37 34 L45 34 L41 50 L53 28 L45 28 Z" fill="#fff"/></svg></span>OmniDx <small>Tune</small></a>
 
     <!-- The menu box. One row on a desktop, and the same links live in the
          drawer below for phones — never two different menus to keep in step. -->
     <div class="menubox" data-menubox>
       <div class="mb" data-mb>
-        <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp0">Products<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-        <div class="mb-pop" id="mbp0" role="menu"><a class="mb-link" href="../#features" role="menuitem"><span class="mb-ico" aria-hidden="true">🎬</span><span class="mb-txt"><b>The editor</b><span>Multitrack timeline, colour, effects, export</span></span></a><a class="mb-link" href="../#ai" role="menuitem"><span class="mb-ico" aria-hidden="true">✨</span><span class="mb-txt"><b>AI editing</b><span>Say what you want. It builds the cut.</span></span></a><a class="mb-link" href="../#styles" role="menuitem"><span class="mb-ico" aria-hidden="true">⚡</span><span class="mb-txt"><b>Edit styles</b><span>176 styles and 21 full montages — anime, phonk, velocity</span></span></a><a class="mb-link" href="../#pro" role="menuitem"><span class="mb-ico" aria-hidden="true">🎚️</span><span class="mb-txt"><b>Pro tools</b><span>ProRes, audio repair, proxies, colour wheels</span></span></a><a class="mb-link" href="../#motion" role="menuitem"><span class="mb-ico" aria-hidden="true">ƒ</span><span class="mb-txt"><b>Motion design</b><span>Expressions, shapes, text animators, particles</span></span></a><a class="mb-link" href="../#levels" role="menuitem"><span class="mb-ico" aria-hidden="true">🎓</span><span class="mb-txt"><b>Skill levels</b><span>Beginner, Intermediate, Professional</span></span></a><a class="mb-link" href="../#pro" role="menuitem"><span class="mb-ico" aria-hidden="true">🔊</span><span class="mb-txt"><b>Audio filters</b><span>Underwater, telephone, cathedral, robot</span></span></a></div>
+        <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp0">What it does<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="mb-pop" id="mbp0" role="menu"><a class="mb-link" href="../#cut" role="menuitem"><span class="mb-ico" aria-hidden="true">🧹</span><span class="mb-txt"><b>What gets cut</b><span>Startup apps, services, tasks, junk apps, telemetry</span></span></a><a class="mb-link" href="../#tailored" role="menuitem"><span class="mb-ico" aria-hidden="true">🔍</span><span class="mb-txt"><b>Reads your PC first</b><span>Laptop or desktop, printers, Bluetooth, Wi-Fi, Xbox — the safe bar is yours</span></span></a><a class="mb-link" href="../#power" role="menuitem"><span class="mb-ico" aria-hidden="true">⚡</span><span class="mb-txt"><b>The OmniDx power plan</b><span>Built for frames: no core parking, no bus sleep</span></span></a><a class="mb-link" href="../#games" role="menuitem"><span class="mb-ico" aria-hidden="true">🎮</span><span class="mb-txt"><b>Game profiles</b><span>Fortnite, VALORANT, CS2, Marvel Rivals and twelve more</span></span></a><a class="mb-link" href="../#network" role="menuitem"><span class="mb-ico" aria-hidden="true">📶</span><span class="mb-txt"><b>Network</b><span>Nagle off, adapter power saving off, latency first</span></span></a><a class="mb-link" href="../#apps" role="menuitem"><span class="mb-ico" aria-hidden="true">🎧</span><span class="mb-txt"><b>Discord, Spotify, browser</b><span>Hardware acceleration on, background running off</span></span></a><a class="mb-link" href="../#bios" role="menuitem"><span class="mb-ico" aria-hidden="true">🧬</span><span class="mb-txt"><b>BIOS checklist</b><span>Written for your exact board and CPU</span></span></a><a class="mb-link" href="../#safe" role="menuitem"><span class="mb-ico" aria-hidden="true">🛟</span><span class="mb-txt"><b>Fail-safes</b><span>Restore point, undo in one file, security untouched</span></span></a></div>
       </div>
       <div class="mb" data-mb>
-        <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp1">Download<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-        <div class="mb-pop" id="mbp1" role="menu"><a class="mb-link" href="../download/#desktop" role="menuitem"><span class="mb-ico" aria-hidden="true">🍎</span><span class="mb-txt"><b>macOS</b><span>Apple silicon and Intel</span></span></a><a class="mb-link" href="../download/#desktop" role="menuitem"><span class="mb-ico" aria-hidden="true">🪟</span><span class="mb-txt"><b>Windows</b><span>Windows 10 and 11</span></span></a><a class="mb-link" href="../download/#mobile" role="menuitem"><span class="mb-ico" aria-hidden="true">📱</span><span class="mb-txt"><b>iPhone &amp; iPad</b><span>Installs from Safari, no App Store</span></span></a><a class="mb-link" href="../download/#mobile" role="menuitem"><span class="mb-ico" aria-hidden="true">🤖</span><span class="mb-txt"><b>Android</b><span>Android 10 and up</span></span></a><a class="mb-link" href="../app/" role="menuitem"><span class="mb-ico" aria-hidden="true">🌐</span><span class="mb-txt"><b>Open in the browser</b><span>No install. The whole editor.</span></span></a><a class="mb-link" href="../download/" role="menuitem"><span class="mb-ico" aria-hidden="true">📦</span><span class="mb-txt"><b>All downloads</b><span>Every platform on one page</span></span></a></div>
+        <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp1">Run it<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="mb-pop" id="mbp1" role="menu"><a class="mb-link" href="../download/" role="menuitem"><span class="mb-ico" aria-hidden="true">⌨️</span><span class="mb-txt"><b>The command</b><span>One line in PowerShell. Nothing installed.</span></span></a><a class="mb-link" href="../download/#report" role="menuitem"><span class="mb-ico" aria-hidden="true">📋</span><span class="mb-txt"><b>Free report mode</b><span>See what it would find, no key, changes nothing</span></span></a><a class="mb-link" href="../download/#undo" role="menuitem"><span class="mb-ico" aria-hidden="true">↩️</span><span class="mb-txt"><b>Undo</b><span>Put everything back, one line</span></span></a><a class="mb-link" href="../download/#options" role="menuitem"><span class="mb-ico" aria-hidden="true">🎛️</span><span class="mb-txt"><b>Options</b><span>Aggressive, cut Xbox, keep a startup app, DNS</span></span></a><a class="mb-link" href="../activate/" role="menuitem"><span class="mb-ico" aria-hidden="true">🔑</span><span class="mb-txt"><b>Your key</b><span>Get it again after paying</span></span></a><a class="mb-link" href="https://omnidx.net/tune/omnidx.ps1" role="menuitem"><span class="mb-ico" aria-hidden="true">📜</span><span class="mb-txt"><b>Read the script</b><span>Every line, public, before you run it</span></span></a></div>
       </div>
       <a class="mb-btn" href="../pricing/">Pricing</a>
       <div class="mb" data-mb>
         <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp3">Help<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-        <div class="mb-pop" id="mbp3" role="menu"><a class="mb-link" href="../app/" role="menuitem"><span class="mb-ico" aria-hidden="true">🚀</span><span class="mb-txt"><b>Getting started</b><span>The walkthrough, five minutes</span></span></a><a class="mb-link" href="../pricing/#compare" role="menuitem"><span class="mb-ico" aria-hidden="true">✅</span><span class="mb-txt"><b>What's built</b><span>Line by line, honestly</span></span></a><a class="mb-link" href="../pricing/#faq" role="menuitem"><span class="mb-ico" aria-hidden="true">💬</span><span class="mb-txt"><b>FAQ</b><span>Payments, devices, refunds</span></span></a><a class="mb-link" href="../activate/" role="menuitem"><span class="mb-ico" aria-hidden="true">🔓</span><span class="mb-txt"><b>Paid but locked?</b><span>Unlock your copy, no key needed</span></span></a><a class="mb-link" href="../download/" role="menuitem"><span class="mb-ico" aria-hidden="true">📥</span><span class="mb-txt"><b>Install the app</b><span>Every platform, one press</span></span></a><a class="mb-link" href="../trust/" role="menuitem"><span class="mb-ico" aria-hidden="true">🛡️</span><span class="mb-txt"><b>Is this a scam?</b><span>The straight answer, and how to check</span></span></a></div>
+        <div class="mb-pop" id="mbp3" role="menu"><a class="mb-link" href="../pricing/#faq" role="menuitem"><span class="mb-ico" aria-hidden="true">💬</span><span class="mb-txt"><b>FAQ</b><span>Anti-cheat, laptops, refunds, new PC</span></span></a><a class="mb-link" href="../trust/" role="menuitem"><span class="mb-ico" aria-hidden="true">🛡️</span><span class="mb-txt"><b>Is this safe? Is it a scam?</b><span>The straight answer, and how to check</span></span></a><a class="mb-link" href="../trust/#cant" role="menuitem"><span class="mb-ico" aria-hidden="true">🚫</span><span class="mb-txt"><b>What it won't touch</b><span>Defender, firewall, Secure Boot, your drivers</span></span></a><a class="mb-link" href="../activate/" role="menuitem"><span class="mb-ico" aria-hidden="true">🔓</span><span class="mb-txt"><b>Paid but no key?</b><span>Your receipt number gets it</span></span></a><a class="mb-link" href="../app/" role="menuitem"><span class="mb-ico" aria-hidden="true">🎬</span><span class="mb-txt"><b>OmniDx Studio</b><span>The video editor, still here</span></span></a></div>
       </div>
     </div>
 
@@ -64,8 +57,8 @@
         <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>
         <svg class="moon" viewBox="0 0 24 24"><path d="M20 14.5A8.2 8.2 0 0 1 9.5 4a8.3 8.3 0 1 0 10.5 10.5z"/></svg>
       </button>
-      <a class="nav-login" href="../account/">Log in</a>
-      <a class="btn btn-primary nav-cta" href="../app/">Open editor</a>
+      <a class="nav-key" href="../activate/">Your key</a>
+      <a class="btn btn-primary nav-cta" href="../pricing/">Get it — <span data-price="tune">$19.99</span></a>
       <button class="burger" type="button" data-drawer aria-expanded="false"
               aria-controls="drawer" aria-label="Menu">
         <span></span><span></span><span></span>
@@ -80,42 +73,42 @@
 <div class="drawer" id="drawer" hidden>
   <div class="drawer-inner">
     <div class="drawer-top">
-      <a class="btn btn-primary btn-lg" href="../app/">Open the editor</a>
-      <a class="btn btn-lg" href="../account/">Log in</a>
+      <a class="btn btn-primary btn-lg" href="../pricing/">Get it — <span data-price="tune">$19.99</span></a>
+      <a class="btn btn-lg" href="../download/">Run it</a>
     </div>
     <div class="drawer-group">
-      <div class="drawer-h">Products</div>
+      <div class="drawer-h">What it does</div>
       <div class="drawer-links">
-        <a href="../#features"><span aria-hidden="true">🎬</span>The editor<em>Multitrack timeline, colour, effects, export</em></a>
-        <a href="../#ai"><span aria-hidden="true">✨</span>AI editing<em>Say what you want. It builds the cut.</em></a>
-        <a href="../#styles"><span aria-hidden="true">⚡</span>Edit styles<em>176 styles and 21 full montages — anime, phonk, velocity</em></a>
-        <a href="../#pro"><span aria-hidden="true">🎚️</span>Pro tools<em>ProRes, audio repair, proxies, colour wheels</em></a>
-        <a href="../#motion"><span aria-hidden="true">ƒ</span>Motion design<em>Expressions, shapes, text animators, particles</em></a>
-        <a href="../#levels"><span aria-hidden="true">🎓</span>Skill levels<em>Beginner, Intermediate, Professional</em></a>
-        <a href="../#pro"><span aria-hidden="true">🔊</span>Audio filters<em>Underwater, telephone, cathedral, robot</em></a>
+        <a href="../#cut"><span aria-hidden="true">🧹</span>What gets cut<em>Startup apps, services, tasks, junk apps, telemetry</em></a>
+        <a href="../#tailored"><span aria-hidden="true">🔍</span>Reads your PC first<em>Laptop or desktop, printers, Bluetooth, Wi-Fi, Xbox — the safe bar is yours</em></a>
+        <a href="../#power"><span aria-hidden="true">⚡</span>The OmniDx power plan<em>Built for frames: no core parking, no bus sleep</em></a>
+        <a href="../#games"><span aria-hidden="true">🎮</span>Game profiles<em>Fortnite, VALORANT, CS2, Marvel Rivals and twelve more</em></a>
+        <a href="../#network"><span aria-hidden="true">📶</span>Network<em>Nagle off, adapter power saving off, latency first</em></a>
+        <a href="../#apps"><span aria-hidden="true">🎧</span>Discord, Spotify, browser<em>Hardware acceleration on, background running off</em></a>
+        <a href="../#bios"><span aria-hidden="true">🧬</span>BIOS checklist<em>Written for your exact board and CPU</em></a>
+        <a href="../#safe"><span aria-hidden="true">🛟</span>Fail-safes<em>Restore point, undo in one file, security untouched</em></a>
       </div>
     </div>
     <div class="drawer-group">
-      <div class="drawer-h">Download</div>
+      <div class="drawer-h">Run it</div>
       <div class="drawer-links">
-        <a href="../download/#desktop"><span aria-hidden="true">🍎</span>macOS<em>Apple silicon and Intel</em></a>
-        <a href="../download/#desktop"><span aria-hidden="true">🪟</span>Windows<em>Windows 10 and 11</em></a>
-        <a href="../download/#mobile"><span aria-hidden="true">📱</span>iPhone &amp; iPad<em>Installs from Safari, no App Store</em></a>
-        <a href="../download/#mobile"><span aria-hidden="true">🤖</span>Android<em>Android 10 and up</em></a>
-        <a href="../app/"><span aria-hidden="true">🌐</span>Open in the browser<em>No install. The whole editor.</em></a>
-        <a href="../download/"><span aria-hidden="true">📦</span>All downloads<em>Every platform on one page</em></a>
+        <a href="../download/"><span aria-hidden="true">⌨️</span>The command<em>One line in PowerShell. Nothing installed.</em></a>
+        <a href="../download/#report"><span aria-hidden="true">📋</span>Free report mode<em>See what it would find, no key, changes nothing</em></a>
+        <a href="../download/#undo"><span aria-hidden="true">↩️</span>Undo<em>Put everything back, one line</em></a>
+        <a href="../download/#options"><span aria-hidden="true">🎛️</span>Options<em>Aggressive, cut Xbox, keep a startup app, DNS</em></a>
+        <a href="../activate/"><span aria-hidden="true">🔑</span>Your key<em>Get it again after paying</em></a>
+        <a href="https://omnidx.net/tune/omnidx.ps1"><span aria-hidden="true">📜</span>Read the script<em>Every line, public, before you run it</em></a>
       </div>
     </div>
     <a class="drawer-solo" href="../pricing/">Pricing</a>
     <div class="drawer-group">
       <div class="drawer-h">Help</div>
       <div class="drawer-links">
-        <a href="../app/"><span aria-hidden="true">🚀</span>Getting started<em>The walkthrough, five minutes</em></a>
-        <a href="../pricing/#compare"><span aria-hidden="true">✅</span>What's built<em>Line by line, honestly</em></a>
-        <a href="../pricing/#faq"><span aria-hidden="true">💬</span>FAQ<em>Payments, devices, refunds</em></a>
-        <a href="../activate/"><span aria-hidden="true">🔓</span>Paid but locked?<em>Unlock your copy, no key needed</em></a>
-        <a href="../download/"><span aria-hidden="true">📥</span>Install the app<em>Every platform, one press</em></a>
-        <a href="../trust/"><span aria-hidden="true">🛡️</span>Is this a scam?<em>The straight answer, and how to check</em></a>
+        <a href="../pricing/#faq"><span aria-hidden="true">💬</span>FAQ<em>Anti-cheat, laptops, refunds, new PC</em></a>
+        <a href="../trust/"><span aria-hidden="true">🛡️</span>Is this safe? Is it a scam?<em>The straight answer, and how to check</em></a>
+        <a href="../trust/#cant"><span aria-hidden="true">🚫</span>What it won't touch<em>Defender, firewall, Secure Boot, your drivers</em></a>
+        <a href="../activate/"><span aria-hidden="true">🔓</span>Paid but no key?<em>Your receipt number gets it</em></a>
+        <a href="../app/"><span aria-hidden="true">🎬</span>OmniDx Studio<em>The video editor, still here</em></a>
       </div>
     </div>
   </div>
@@ -123,130 +116,159 @@
 <!-- /chrome:nav -->
 <header class="hero" style="padding:64px 0 34px">
   <div class="wrap center">
-    <div class="eyebrow"><span class="pulse"></span>Download</div>
-    <h1 style="font-size:clamp(34px,5.6vw,58px)">Get OmniDx Studio</h1>
+    <div class="eyebrow"><span class="pulse"></span>Run it</div>
+    <h1 style="font-size:clamp(34px,5.6vw,58px)">One line. Nothing to download.</h1>
     <p class="lede">
-      One editor, four platforms, one licence. Or skip all of it and
-      <a href="../app/">open it in this tab right now</a> — the browser version is not a
-      cut-down demo, it's the same app.
+      There is no installer, because there is nothing to install. Open PowerShell, paste this,
+      press Enter. It asks for administrator rights itself, then for your key.
     </p>
+    <div class="cmd cmd-lg" style="max-width:640px;margin:30px auto 0;text-align:left">
+      <code data-cmd>irm omnidx.net/go.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button>
+    </div>
+    <p class="cmd-note">Windows 10 (1903+) and Windows 11. Works in the PowerShell every one of them ships with.</p>
   </div>
 </header>
 
-<section style="padding-top:20px">
+<!-- ==================== steps ==================== -->
+<section id="steps" style="padding-top:26px">
   <div class="wrap">
-    <!-- Filled in by studio.js: the visitor's own platform is moved to the
-         front and given a button that does the thing, rather than a link to a
-         page of files somewhere else. -->
-    <div class="dls" id="downloads"></div>
-
-    <div class="note info" style="margin-top:26px">
-      <b>Installing from this page gives you the whole editor</b> — a real app icon, its own
-      window with no browser chrome, and it keeps working with no connection. No store account,
-      no 400&nbsp;MB download, and no waiting on anyone's review process.
-      <button class="btn btn-sm" data-install hidden style="margin-top:12px">Install OmniDx Studio</button>
+    <div class="section-head reveal">
+      <h2>What happens, screen by screen</h2>
+      <p>About two minutes. It talks the whole way through and asks before it changes anything.</p>
     </div>
+    <ol class="steps-list reveal" style="max-width:820px">
+      <li><b>Close Discord and Spotify</b><p>They are only tuned while they are closed, because both rewrite their own settings on exit. Everything else can stay open.</p></li>
+      <li><b>Open PowerShell</b><p>Press the Windows key, type <b>powershell</b>, press Enter. A plain window is fine — it asks Windows for administrator rights itself and opens a second window with them.</p></li>
+      <li><b>Paste the command, press Enter</b><p>It fetches the script from omnidx.net and runs it from memory. If Windows asks "Do you want to allow this app to make changes?", that is the administrator prompt: yes.</p></li>
+      <li><b>Paste your key</b><p>From <a href="../activate/">the page after you paid</a>. Or put it in the line so nothing has to be typed: <span class="mono tiny">$env:OMNIDX_KEY='TUNE-…'; irm omnidx.net/go.ps1 | iex</span></p></li>
+      <li><b>Read what it found</b><p>Your Windows build, CPU, GPU, RAM, board, whether it is a laptop, what it will keep and why, and the number of processes running right now. If anything is wrong, close the window — nothing has changed.</p></li>
+      <li><b>Say yes</b><p>It makes a System Restore point, then works through startup apps, services, tasks, apps, telemetry, the system, the power plan, the network, your apps and your games, printing each change as it goes.</p></li>
+      <li><b>Restart</b><p>The report opens in Notepad with the before and after, the warnings, the BIOS checklist for your board and the settings for each game it found. It is saved in <span class="mono tiny">C:\OmniDx</span>. Then restart; the services it told to stop are still unwinding until you do.</p></li>
+    </ol>
+  </div>
+</section>
 
-    <!-- What each way of running it gives. Every row is true today; the desktop
-         column is what the Electron build adds once its installer is published. -->
-    <div class="cmp-wrap" style="margin-top:26px">
-      <table class="cmp" id="what-you-get" aria-label="What you get on each platform">
-        <thead><tr><th>What you get</th><th>In a browser tab</th><th>Installed from here</th><th>Desktop build</th></tr></thead>
-        <tbody>
-          <tr><td>The whole editor — timeline, colour, effects, AI, export</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td></tr>
-          <tr><td>Works with no connection</td><td class="y">Yes</td><td class="y">Yes</td><td class="y">Yes</td></tr>
-          <tr><td>Its own window and icon — Dock, Start menu, home screen</td><td class="n">—</td><td class="y">Yes</td><td class="y">Yes</td></tr>
-          <tr><td>Opens <span class="mono">.omnidx</span> projects and footage from the file manager</td><td class="n">—</td><td class="y">Yes</td><td class="y">Yes</td></tr>
-          <tr><td>Appears in the phone's <b>Share</b> sheet — send a clip straight in</td><td class="n">—</td><td class="y">Android</td><td class="n">—</td></tr>
-          <tr><td>ProRes and DNxHR export</td><td class="n">—</td><td class="n">—</td><td class="y">Yes</td></tr>
-          <tr><td>Hardware decode for 4K scrubbing</td><td class="p">Browser's</td><td class="p">Browser's</td><td class="y">Yes</td></tr>
-          <tr><td>Updates</td><td class="y">On the next open</td><td class="y">On the next open</td><td class="y">Weekly, in the background</td></tr>
-          <tr><td>Size</td><td class="y">Nothing to download</td><td class="y">Under 4 MB</td><td class="p">About 100 MB</td></tr>
-        </tbody>
-      </table>
+<!-- ==================== report mode ==================== -->
+<section id="report">
+  <div class="wrap">
+    <div class="grid grid-2" style="align-items:center">
+      <div class="reveal">
+        <div class="eyebrow">Free, no key</div>
+        <h2>Report mode: see what it would find.</h2>
+        <p>
+          Reads your PC exactly the way the tune does — the hardware, the laptop check, the
+          printers, Bluetooth, Wi-Fi, Xbox use, UEFI, Secure Boot, TPM, memory integrity — and
+          counts your processes. Then it stops. Nothing is changed, and no key is asked for.
+        </p>
+        <p>If the number it shows you looks fine to you, keep your money.</p>
+      </div>
+      <div class="card reveal d1">
+        <div class="cmd"><code data-text="$env:OMNIDX_MODE='report'; irm omnidx.net/go.ps1 | iex">$env:OMNIDX_MODE='report'; irm omnidx.net/go.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
+        <p class="cmd-note">Same script, same read, and it returns before the key step.</p>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ==================== mobile ==================== -->
-<section id="mobile">
+<!-- ==================== undo ==================== -->
+<section id="undo">
+  <div class="wrap">
+    <div class="grid grid-2" style="align-items:center">
+      <div class="card reveal">
+        <div class="cmd"><code data-text="$env:OMNIDX_MODE='undo'; irm omnidx.net/go.ps1 | iex">$env:OMNIDX_MODE='undo'; irm omnidx.net/go.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
+        <p class="cmd-note">Or, with no internet at all, in an administrator PowerShell:</p>
+        <div class="cmd" style="margin-top:8px"><code data-text="powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1">powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
+      </div>
+      <div class="reveal d1">
+        <div class="eyebrow">Put it all back</div>
+        <h2>Undo is one line, and it lives on your PC.</h2>
+        <p>
+          Every change is written to <span class="mono tiny">C:\OmniDx\undo\changes-latest.json</span>
+          as it is made, with the value it had before. Undo replays that list backwards: services
+          back to their start type, tasks back on, registry values restored, the power plan you
+          had before made active again, Discord and Spotify's files put back from their backups.
+        </p>
+        <p>No key is needed for undo. Neither is this site — the undo script is a plain file on your machine.
+          And the System Restore point from before the run is still there if you would rather use that.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== options ==================== -->
+<section id="options">
   <div class="wrap">
     <div class="section-head reveal">
-      <div class="eyebrow">iOS &amp; Android</div>
-      <h2>On your phone in about fifteen seconds</h2>
-      <p>OmniDx Studio installs straight from the web. No app store account, no update queue.</p>
+      <div class="eyebrow">Options</div>
+      <h2>The defaults are right for almost everyone.</h2>
+      <p>Each of these is off unless you ask. They ride on one more line before the command, so the command itself never changes.</p>
     </div>
     <div class="grid grid-2">
       <div class="card reveal">
-        <div class="card-icon">📱</div>
-        <h3>iPhone &amp; iPad</h3>
-        <ol class="small" style="padding-left:20px;color:var(--text-2)">
-          <li>Open <a href="../app/">omnidx.net/studio/app/</a> in Safari.</li>
-          <li>Tap the <b>Share</b> button at the bottom.</li>
-          <li>Scroll down and tap <b>Add to Home Screen</b>.</li>
-          <li>Tap <b>Add</b>. The icon appears with your other apps.</li>
-        </ol>
-        <p class="tiny muted">Safari is required for this step — it's an Apple rule, not ours. Once it's installed you can open it from the icon like anything else.</p>
+        <div class="card-icon">🎮</div>
+        <h3>Cut the Xbox services too</h3>
+        <p>Kept by default when Game Pass or Minecraft is found, because they need them. If you use neither:</p>
+        <div class="cmd" style="margin-top:12px"><code data-text="$env:OMNIDX_FLAGS='-CutXbox'; irm omnidx.net/go.ps1 | iex">$env:OMNIDX_FLAGS='-CutXbox'; irm omnidx.net/go.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
       </div>
       <div class="card reveal d1">
-        <div class="card-icon">🤖</div>
-        <h3>Android</h3>
-        <ol class="small" style="padding-left:20px;color:var(--text-2)">
-          <li>Open <a href="../app/">omnidx.net/studio/app/</a> in Chrome.</li>
-          <li>Tap <b>Install app</b> in the banner, or the <b>⋮</b> menu → <b>Install app</b>.</li>
-          <li>Confirm. It lands in your app drawer.</li>
-        </ol>
-        <p class="tiny muted">A signed <code>.apk</code> and a Play Store listing are built from the same code — see the packaging notes below.</p>
+        <div class="card-icon">🧷</div>
+        <h3>Keep a startup app</h3>
+        <p>Everything is disabled at startup unless you name it, by the name Task Manager shows:</p>
+        <div class="cmd" style="margin-top:12px"><code data-text="$env:OMNIDX_KEEP='Wallpaper Engine,RTSS'; irm omnidx.net/go.ps1 | iex">$env:OMNIDX_KEEP='Wallpaper Engine,RTSS'; irm omnidx.net/go.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
       </div>
+      <div class="card reveal">
+        <div class="card-icon">⚠️</div>
+        <h3>Aggressive: memory integrity off</h3>
+        <p>VBS / HVCI costs a few percent of performance while it is on and is a real security feature. Off is a trade, so it is opt-in and asked about again before it happens.</p>
+        <div class="cmd" style="margin-top:12px"><code data-text="$env:OMNIDX_FLAGS='-Aggressive'; irm omnidx.net/go.ps1 | iex">$env:OMNIDX_FLAGS='-Aggressive'; irm omnidx.net/go.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
+      </div>
+      <div class="card reveal d1">
+        <div class="card-icon">🌐</div>
+        <h3>DNS to 1.1.1.1</h3>
+        <p>Your router's DNS is usually fine, so this is off. Flags can be combined with a space.</p>
+        <div class="cmd" style="margin-top:12px"><code data-text="$env:OMNIDX_FLAGS='-Dns -CutXbox'; irm omnidx.net/go.ps1 | iex">$env:OMNIDX_FLAGS='-Dns -CutXbox'; irm omnidx.net/go.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
+      </div>
+    </div>
+    <div class="note" style="margin-top:22px">
+      <b>By hand, without the bootstrapper.</b> The script itself takes the same options as normal
+      PowerShell parameters — <span class="mono tiny">-Key</span>, <span class="mono tiny">-Aggressive</span>,
+      <span class="mono tiny">-CutXbox</span>, <span class="mono tiny">-Keep</span>, <span class="mono tiny">-Dns</span>,
+      <span class="mono tiny">-NoRestorePoint</span>, <span class="mono tiny">-Undo</span>, <span class="mono tiny">-Report</span>,
+      <span class="mono tiny">-Yes</span> — and is at <a href="https://omnidx.net/tune/omnidx.ps1">omnidx.net/tune/omnidx.ps1</a> to read or save.
     </div>
   </div>
 </section>
 
-<!-- ==================== desktop ==================== -->
-<section id="desktop">
+<!-- ==================== after ==================== -->
+<section id="after">
   <div class="wrap">
     <div class="section-head reveal">
-      <div class="eyebrow">macOS, Windows &amp; Linux</div>
-      <h2>The desktop build</h2>
-      <p>
-        A native window around the same editor, with the things a browser can't give you:
-        real file dialogs, drag-and-drop from Finder or Explorer, hardware video decoding, and
-        no tab to accidentally close.
-      </p>
+      <div class="eyebrow">Afterwards</div>
+      <h2>What is left on your PC</h2>
     </div>
-
-    <div class="note" style="margin-bottom:22px">
-      <b>Where the installers come from.</b> The desktop app is an Electron window around this
-      same editor: <code>.dmg</code> for macOS, <code>.exe</code> for Windows, and
-      <code>.AppImage</code>/<code>.deb</code>/<code>.rpm</code> for Linux, and it updates itself
-      once a week in the background. When a build is published it downloads straight from this
-      page — one press, no detour.
+    <div class="grid grid-3">
+      <div class="card reveal"><div class="card-icon">📄</div><h3>The report</h3>
+        <p><span class="mono tiny">C:\OmniDx\report-&lt;date&gt;.txt</span>. Your machine, the before and after, every change, every warning, the BIOS checklist and the per-game settings. Opens in Notepad at the end.</p></div>
+      <div class="card reveal d1"><div class="card-icon">↩️</div><h3>The undo</h3>
+        <p><span class="mono tiny">C:\OmniDx\undo\</span>: the record of changes and the script that replays them. Keep the folder; it is the way back.</p></div>
+      <div class="card reveal d2"><div class="card-icon">🗂️</div><h3>The backups</h3>
+        <p><span class="mono tiny">C:\OmniDx\backup\&lt;date&gt;\</span>: Spotify's settings file, the service list and a registry export of the areas it touches, from before the run.</p></div>
     </div>
-
-    <div class="note" style="margin-top:0">
-      <b>Meanwhile, the installed web app is the same editor.</b> Same timeline, same colour
-      tools, same export, same offline working — the desktop build adds native file handling,
-      ProRes and DNxHR, and nothing else. Install it from the card for your device above.
-    </div>
-
-    <div class="grid grid-3" style="margin-top:22px">
-      <div class="card reveal"><div class="card-icon">📂</div><h3>Native file handling</h3>
-        <p>Double-click a <code>.omnidx</code> project to open it. Drag footage in from your desktop. Export straight to a folder you choose.</p></div>
-      <div class="card reveal d1"><div class="card-icon">⚙️</div><h3>Hardware decode</h3>
-        <p>H.264, HEVC and ProRes decode on the GPU, so 4K scrubs smoothly on machines a browser would choke on.</p></div>
-      <div class="card reveal d2"><div class="card-icon">🔄</div><h3>Updates that don't nag</h3>
-        <p>It checks once a week, downloads in the background and applies the update the next time you quit. It never interrupts a render, and it never asks.</p></div>
-    </div>
+    <p class="small muted reveal" style="margin-top:22px">
+      Nothing is running afterwards. The script is not installed, does not start with Windows and does not check for updates.
+      The <span class="mono tiny">OmniDx</span> power plan is the only thing of it you will see, in the power settings, and undo removes that too.
+    </p>
   </div>
 </section>
 
 <section>
   <div class="wrap">
     <div class="band reveal">
-      <h2>Or just start now.</h2>
-      <p class="lede" style="margin-left:auto;margin-right:auto">Nothing to install, nothing to sign up for.</p>
+      <h2>Need a key?</h2>
+      <p class="lede" style="margin-left:auto;margin-right:auto"><span data-price="tune">$19.99</span>, once. Square sends you back with it on the screen.</p>
       <div class="btn-row" style="justify-content:center;margin-top:28px">
-        <a class="btn btn-primary btn-lg" href="../app/">Open the editor</a>
+        <a class="btn btn-primary btn-lg" href="../pricing/">Get OmniDx Tune</a>
+        <a class="btn btn-lg btn-ghost" href="../activate/">Paid already? Your key</a>
       </div>
     </div>
   </div>
@@ -257,42 +279,41 @@
   <div class="wrap">
     <div class="foot">
       <div>
-        <a class="logo" href="../"><span class="mark"><svg viewBox="0 0 64 64" aria-hidden="true" style="width:18px;height:18px"><rect x="13" y="18" width="26" height="6" rx="3" fill="#fff" opacity=".92"/><rect x="13" y="29" width="18" height="6" rx="3" fill="#fff" opacity=".68"/><rect x="13" y="40" width="30" height="6" rx="3" fill="#fff" opacity=".45"/><path d="M43 24.5 L54 32 L43 39.5 Z" fill="#fff"/></svg></span>OmniDx <small>Studio</small></a>
-        <p class="small" style="margin-top:14px;max-width:34ch">The editor that stops fighting you.
-          Free to use, yours to own, and it never holds your work hostage.</p>
-        <p class="tiny muted" style="margin-top:10px">One payment. No subscription, ever.</p>
-        <div id="rate-us" class="rate-host" aria-label="Rate OmniDx Studio"></div>
+        <a class="logo" href="../"><span class="mark"><svg viewBox="0 0 64 64" aria-hidden="true" style="width:18px;height:18px"><rect x="12" y="17" width="30" height="6" rx="3" fill="#fff" opacity=".92"/><rect x="12" y="29" width="20" height="6" rx="3" fill="#fff" opacity=".68"/><rect x="12" y="41" width="11" height="6" rx="3" fill="#fff" opacity=".45"/><path d="M47 14 L37 34 L45 34 L41 50 L53 28 L45 28 Z" fill="#fff"/></svg></span>OmniDx <small>Tune</small></a>
+        <p class="small" style="margin-top:14px;max-width:34ch">One command. Windows cut down to what your
+          games need, a power plan built for frames, and a BIOS checklist for your exact board.</p>
+        <p class="tiny muted" style="margin-top:10px">One payment. No subscription, ever. Nothing installed.</p>
+        <div id="rate-us" class="rate-host" aria-label="Rate OmniDx Tune"></div>
       </div>
       <div>
-        <h4>Product</h4>
-        <a href="../#features">Features</a>
-        <a href="../#ai">AI editing</a>
-        <a href="../#pro">Pro tools</a>
-        <a href="../#motion">Motion design</a>
-        <a href="../#styles">Edit styles</a>
-        <a href="../#fixes">What we fixed</a>
+        <h4>What it does</h4>
+        <a href="../#cut">What gets cut</a>
+        <a href="../#tailored">Reads your PC first</a>
+        <a href="../#power">The power plan</a>
+        <a href="../#games">Game profiles</a>
+        <a href="../#bios">BIOS checklist</a>
+        <a href="../#safe">Fail-safes</a>
       </div>
       <div>
         <h4>Get it</h4>
-        <a href="../app/">Open in browser</a>
-        <a href="../download/#desktop">Mac &amp; Windows</a>
-        <a href="../download/#mobile">iOS &amp; Android</a>
         <a href="../pricing/">Pricing</a>
-        <a href="../account/">Your account</a>
+        <a href="../download/">Run it</a>
+        <a href="../activate/">Your key</a>
+        <a href="../download/#undo">Undo</a>
+        <a href="https://omnidx.net/tune/omnidx.ps1">Read the script</a>
       </div>
       <div>
         <h4>More</h4>
-        <a href="../trust/">Is this a scam?</a>
+        <a href="../trust/">Is this safe? Is it a scam?</a>
         <a href="../pricing/#faq">FAQ</a>
-        <a href="../activate/">Unlock my copy</a>
-        <a href="../pricing/#compare">What's built</a>
-        <a href="../trust/#cant">What it can't do</a>
-        <span class="foot-support" data-support="OmniDx Studio — help" hidden></span>
+        <a href="../trust/#cant">What it won't touch</a>
+        <a href="../app/">OmniDx Studio — the video editor</a>
+        <span class="foot-support" data-support="OmniDx Tune — help" hidden></span>
       </div>
     </div>
     <div class="foot-note">
-      <span>© 2026 OmniDx. Built to be owned, not rented.</span>
-      <span>Your footage stays on your machine unless you ask it not to.</span>
+      <span>© 2026 OmniDx. One payment. Yours.</span>
+      <span>Nothing leaves your PC except the key check.</span>
     </div>
   </div>
 </footer>
