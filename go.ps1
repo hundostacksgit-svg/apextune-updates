@@ -8,6 +8,7 @@
 #
 #   $env:OMNIDX_MODE='report'; irm omnidx.net/go.ps1 | iex     free look, changes nothing
 #   $env:OMNIDX_MODE='undo';   irm omnidx.net/go.ps1 | iex     put everything back
+#   $env:OMNIDX_MODE='check';  irm omnidx.net/go.ps1 | iex     check a key's format, nothing else
 #   $env:OMNIDX_FLAGS='-Aggressive -CutXbox -Dns'               options (see omnidx.net/studio/download/#options)
 #   $env:OMNIDX_KEEP='Wallpaper Engine,RTSS'                    startup entries to leave on
 $ErrorActionPreference = 'Stop'
@@ -61,5 +62,6 @@ if ($env:OMNIDX_KEEP) { $opts['Keep'] = @($env:OMNIDX_KEEP -split ',' | ForEach-
 switch ($mode) {
   'undo'   { & $block -Undo }
   'report' { & $block -Report }
+  'check'  { & $block -Key $key -CheckKey }
   default  { & $block -Key $key -Api $api @opts }
 }

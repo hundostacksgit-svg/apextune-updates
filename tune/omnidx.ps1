@@ -53,6 +53,8 @@ param(
   [switch]$Undo,
   # Read the machine and count the processes. Change nothing.
   [switch]$Report,
+  # Check a key's format and checksum, then stop. Nothing is read or bound.
+  [switch]$CheckKey,
   # Do not leave the one-shot task that writes the after-restart process count.
   [switch]$NoAfterCount,
   # Answer every question yes.
@@ -100,21 +102,25 @@ function Ask([string]$q) {
 $script:Alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
 $script:KeySalt = 'omnidx-tune-2026'
 
+<# 32-bit FNV-1a, the same four lines as tunekey.js, worker.js and
+   make-tune-key.py. PowerShell turns an overflowing product into a double
+   and loses the low bits, so the multiply is done exactly with BigInteger
+   and cut back to 32 bits. #>
 function Get-Fnv1a([string]$s) {
-  [uint64]$h = 2166136261
+  [long]$h = 2166136261
   foreach ($ch in $s.ToCharArray()) {
-    $h = $h -bxor [uint64][int]$ch
-    $h = ($h * 16777619) -band 0xFFFFFFFF
+    $h = $h -bxor [long][int]$ch
+    $h = [long](([bigint]$h * [bigint]16777619) % [bigint]4294967296)
   }
-  return [uint64]$h
+  return $h
 }
 
 function Get-KeyChecksum([string]$tag, [string]$payload) {
-  [uint64]$h = Get-Fnv1a ("{0}:{1}:{2}" -f $script:KeySalt, $tag, $payload)
+  [long]$h = Get-Fnv1a ("{0}:{1}:{2}" -f $script:KeySalt, $tag, $payload)
   $out = ''
   for ($i = 0; $i -lt 4; $i++) {
     $out += $script:Alphabet[[int]($h % 32)]
-    $h = [uint64][math]::Floor($h / 32) + ($h % 7)
+    $h = [long][math]::Floor($h / 32) + [long]($h % 7)
   }
   return $out
 }
@@ -1328,6 +1334,13 @@ function Main {
   try { Start-Transcript -Path (Join-Path $script:Root ("log-{0}.txt" -f $script:Stamp)) -Append -ErrorAction Stop | Out-Null } catch { }
   try {
     if ($Undo) { Invoke-Undo; return }
+    if ($CheckKey) {
+      if (-not $Key) { $Key = Read-Host "  Paste the key to check" }
+      $parsed = Read-Key $Key
+      if ($parsed) { Say ("  Valid: {0} ({1} PC{2}). The server decides whether it was issued and where it is bound." -f $parsed.key, $parsed.seats, $(if ($parsed.seats -ne 1) { 's' } else { '' })) 'Green' }
+      else { Say "  That is not an OmniDx key. It looks like TUNE-XXXX-XXXX-XXXX-XXXX; check it for typos." 'Red' }
+      return
+    }
     Resolve-User
 
     Head "Reading this PC"
