@@ -66,6 +66,7 @@ jobs:
           $b = & ([scriptblock]::Create((Get-Content .\tune\omnidx.ps1 -Raw))) -SelfTest *>&1 | Out-String
           Write-Host $a; Write-Host $b
           foreach ($o in $a, $b) { if ($o -notmatch 'self text: (\d+) chars' -or [int]$Matches[1] -lt 10000) { Write-Host 'the script cannot see itself'; exit 1 } }
+          foreach ($o in $a, $b) { if ($o -notmatch "runspace probe: \d+ output objects, (\d+) info lines, cpu '.+', (\d+) processes, 0 errors" -or [int]$Matches[1] -lt 3 -or [int]$Matches[2] -lt 10) { Write-Host 'the background runspace did not deliver the probe and its log'; exit 1 } }
           exit 0
 
       - name: Probe mode prints one JSON object for the app

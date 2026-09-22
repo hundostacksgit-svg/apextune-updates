@@ -123,7 +123,7 @@
     <h1 style="font-size:clamp(34px,5.6vw,58px)">One line. Nothing to download.</h1>
     <p class="lede">
       There is no installer, because there is nothing to install. Open PowerShell, paste this,
-      press Enter. It asks for administrator rights itself, then for your key.
+      press Enter. It asks for administrator rights itself and opens the app.
     </p>
     <div class="cmd cmd-lg" style="max-width:640px;margin:30px auto 0;text-align:left">
       <code data-cmd>irm omnidx.net/go.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button>
@@ -132,8 +132,31 @@
   </div>
 </header>
 
+<!-- ==================== the app ==================== -->
+<section id="app" style="padding-top:26px">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow"><span class="pulse"></span>What opens</div>
+      <h2>The app. Still one file, still nothing installed.</h2>
+      <p>
+        The command opens a window: your PC as it read it, the process count and the target for
+        your machine, a tick box for every phase and every app that starts with Windows, the
+        options, your key, and a live log while it runs. Undo, the free report, the folder and
+        restart are buttons. It is the same script, drawn as a window; the console flow is still
+        there for anyone who wants it.
+      </p>
+    </div>
+    <div class="reveal" style="border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:var(--shadow),0 0 0 1px color-mix(in srgb,var(--blue) 18%,transparent);background:var(--surface)">
+      <img src="../assets/app.png" alt="The OmniDx Tune window: the PC it read on the left, the tune's phases and startup apps with tick boxes in the middle, the key and the Run, Free report, Undo, Open folder and Restart buttons on the right, and a live log below." width="1120" height="760" loading="lazy" style="display:block;width:100%;height:auto">
+    </div>
+    <p class="tiny muted" style="margin-top:10px">This picture is drawn by the script itself on a build machine every time it changes, so it is never out of date. The machine in it is that build machine.</p>
+    <div class="cmd" style="max-width:640px;margin:22px 0 0"><code data-text="$env:OMNIDX_MODE='console'; irm omnidx.net/go.ps1 | iex">$env:OMNIDX_MODE='console'; irm omnidx.net/go.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
+    <p class="cmd-note">Prefer the console? This runs the same tune as a conversation in the PowerShell window instead.</p>
+  </div>
+</section>
+
 <!-- ==================== steps ==================== -->
-<section id="steps" style="padding-top:26px">
+<section id="steps">
   <div class="wrap">
     <div class="section-head reveal">
       <h2>What happens, screen by screen</h2>
@@ -142,11 +165,11 @@
     <ol class="steps-list reveal" style="max-width:820px">
       <li><b>Close Discord and Spotify</b><p>They are only tuned while they are closed, because both rewrite their own settings on exit. Everything else can stay open.</p></li>
       <li><b>Open PowerShell</b><p>Press the Windows key, type <b>powershell</b>, press Enter. A plain window is fine — it asks Windows for administrator rights itself and opens a second window with them.</p></li>
-      <li><b>Paste the command, press Enter</b><p>It fetches the script from omnidx.net and runs it from memory. If Windows asks "Do you want to allow this app to make changes?", that is the administrator prompt: yes.</p></li>
-      <li><b>Paste your key</b><p>From <a href="../activate/">the page after you paid</a>. Or put it in the line so nothing has to be typed: <span class="mono tiny">$env:OMNIDX_KEY='TUNE-…'; irm omnidx.net/go.ps1 | iex</span></p></li>
-      <li><b>Read what it found</b><p>Your Windows build, CPU, GPU, RAM, board, whether it is a laptop, what it will keep and why, and the number of processes running right now. If anything is wrong, close the window — nothing has changed.</p></li>
-      <li><b>Say yes</b><p>It makes a System Restore point, then works through startup apps, services, tasks, apps, the debloat, telemetry, the system, the power plan, the network, your apps, your games and the cleanup, printing each change as it goes. It shows the list of what starts with Windows and asks which to leave on, and offers to close Discord and Spotify so they can be tuned.</p></li>
-      <li><b>Restart</b><p>The report opens in Notepad with the before and after, the warnings, the BIOS checklist for your board and the settings for each game it found. It is saved in <span class="mono tiny">C:\OmniDx</span>. Then restart; the services it told to stop are still unwinding until you do.</p></li>
+      <li><b>Paste the command, press Enter</b><p>It fetches the script from omnidx.net, runs it from memory and opens the app. If Windows asks "Do you want to allow this app to make changes?", that is the administrator prompt: yes.</p></li>
+      <li><b>Read what it found</b><p>The left of the window: your Windows build, CPU, GPU, RAM, board, whether it is a laptop, what it will keep, the number of processes running right now and the target for your PC. Anything worth knowing, like RAM running below its rated speed, is in yellow underneath.</p></li>
+      <li><b>Tick what you want</b><p>Every phase is a tick box, on by default. Every app that starts with Windows is listed; untick one to leave it on. The options that are off unless you say so, like cutting the Xbox services, are underneath.</p></li>
+      <li><b>Paste your key and press Run</b><p>From <a href="../activate/">the page after you paid</a>. The key is checked, then the run starts: a restore point, then each phase, with every change printed in the log as it happens. Discord and Spotify are closed so they can be tuned.</p></li>
+      <li><b>Restart</b><p>The report opens in Notepad with the before and after, the warnings, the BIOS checklist for your board and the settings for each game it found. It is saved in <span class="mono tiny">C:\OmniDx</span>. Then press Restart; the services it told to stop are still unwinding until you do.</p></li>
     </ol>
   </div>
 </section>

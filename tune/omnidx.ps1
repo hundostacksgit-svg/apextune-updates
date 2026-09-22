@@ -1428,7 +1428,20 @@ $script:Xaml = @'
     <Style TargetType="CheckBox"><Setter Property="Foreground" Value="#B3A8CF"/><Setter Property="Margin" Value="0,3,10,3"/><Setter Property="VerticalContentAlignment" Value="Center"/></Style>
     <Style TargetType="TextBox"><Setter Property="Background" Value="#150F22"/><Setter Property="Foreground" Value="#F1ECFF"/><Setter Property="BorderBrush" Value="#2A1F45"/><Setter Property="Padding" Value="8,7"/><Setter Property="CaretBrush" Value="#C084FC"/><Setter Property="SelectionBrush" Value="#8B5CF6"/></Style>
     <Style TargetType="ProgressBar"><Setter Property="Foreground" Value="#8B5CF6"/><Setter Property="Background" Value="#1D1530"/><Setter Property="BorderBrush" Value="#2A1F45"/><Setter Property="Height" Value="8"/></Style>
-    <Style TargetType="ScrollBar"><Setter Property="Background" Value="#0E0A17"/></Style>
+    <Style TargetType="ScrollBar">
+      <Setter Property="Width" Value="8"/><Setter Property="Background" Value="Transparent"/>
+      <Setter Property="Template"><Setter.Value>
+        <ControlTemplate TargetType="ScrollBar">
+          <Grid Background="Transparent">
+            <Track x:Name="PART_Track" IsDirectionReversed="True">
+              <Track.Thumb><Thumb><Thumb.Template><ControlTemplate TargetType="Thumb"><Border Background="#2A1F45" CornerRadius="4" Margin="1,0"/></ControlTemplate></Thumb.Template></Thumb></Track.Thumb>
+              <Track.DecreaseRepeatButton><RepeatButton Command="ScrollBar.LineUpCommand" Opacity="0" Focusable="False"/></Track.DecreaseRepeatButton>
+              <Track.IncreaseRepeatButton><RepeatButton Command="ScrollBar.LineDownCommand" Opacity="0" Focusable="False"/></Track.IncreaseRepeatButton>
+            </Track>
+          </Grid>
+        </ControlTemplate>
+      </Setter.Value></Setter>
+    </Style>
   </Window.Resources>
   <Grid Margin="18">
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="190"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
@@ -1449,7 +1462,7 @@ $script:Xaml = @'
       <TextBlock x:Name="StatusText" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#B3A8CF" Text="Reading this PC..."/>
     </DockPanel>
     <Grid Grid.Row="1">
-      <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/><ColumnDefinition Width="290"/></Grid.ColumnDefinitions>
+      <Grid.ColumnDefinitions><ColumnDefinition Width="280"/><ColumnDefinition Width="*"/><ColumnDefinition Width="270"/></Grid.ColumnDefinitions>
       <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,12,0">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
           <StackPanel>
@@ -1473,7 +1486,7 @@ $script:Xaml = @'
               <CheckBox x:Name="ChkServices" IsChecked="True" Content="Services this PC does not need"/>
               <CheckBox x:Name="ChkTasks" IsChecked="True" Content="Telemetry tasks"/>
               <CheckBox x:Name="ChkApps" IsChecked="True" Content="Preinstalled apps and trials"/>
-              <CheckBox x:Name="ChkDebloat" IsChecked="True" Content="Debloat: legacy Windows, OneDrive if unused"/>
+              <CheckBox x:Name="ChkDebloat" IsChecked="True" Content="Debloat: legacy Windows, unused OneDrive"/>
               <CheckBox x:Name="ChkTelemetry" IsChecked="True" Content="Telemetry, ads, background apps"/>
               <CheckBox x:Name="ChkSystem" IsChecked="True" Content="System: scheduler, input, visuals"/>
               <CheckBox x:Name="ChkPower" IsChecked="True" Content="The OmniDx power plan"/>
@@ -1481,15 +1494,15 @@ $script:Xaml = @'
               <CheckBox x:Name="ChkPrograms" IsChecked="True" Content="Discord, Spotify, browsers"/>
               <CheckBox x:Name="ChkGames" IsChecked="True" Content="Game profiles"/>
               <CheckBox x:Name="ChkNvidia" IsChecked="True" Content="NVIDIA telemetry off"/>
-              <CheckBox x:Name="ChkCleanup" IsChecked="True" Content="Clear update caches and temp files"/>
+              <CheckBox x:Name="ChkCleanup" IsChecked="True" Content="Clear update caches, temp files"/>
               <CheckBox x:Name="ChkAfterCount" IsChecked="True" Content="Write the after-restart count"/>
             </UniformGrid>
             <TextBlock Text="STARTS WITH WINDOWS  -  ticked means it gets switched off" Style="{StaticResource Label}" Margin="0,14,0,6"/>
             <WrapPanel x:Name="StartupPanel"><TextBlock Text="Reading..." Foreground="#7D7199"/></WrapPanel>
             <TextBlock Text="OFF UNLESS YOU SAY SO" Style="{StaticResource Label}" Margin="0,14,0,6"/>
-            <CheckBox x:Name="ChkXbox" Content="Cut the Xbox services too (Game Pass and Minecraft need them)"/>
+            <CheckBox x:Name="ChkXbox"><TextBlock TextWrapping="Wrap" Foreground="#B3A8CF" Text="Cut the Xbox services too (Game Pass and Minecraft need them)"/></CheckBox>
             <CheckBox x:Name="ChkDns" Content="Point DNS at 1.1.1.1"/>
-            <CheckBox x:Name="ChkVbs" Content="Memory integrity off: a few percent more frames, one layer of kernel protection less"/>
+            <CheckBox x:Name="ChkVbs"><TextBlock TextWrapping="Wrap" Foreground="#B3A8CF" Text="Memory integrity off: a few percent more frames, one layer of kernel protection less"/></CheckBox>
             <TextBlock Foreground="#7D7199" TextWrapping="Wrap" Margin="0,12,0,0" Text="Discord and Spotify are closed during the run so they can be tuned. A restore point comes first, every change is recorded, and undo is one button."/>
           </StackPanel>
         </ScrollViewer>
@@ -1561,7 +1574,7 @@ function Show-Gui {
       "GPU  $($probe.gpu)$(if ($probe.driverVer) { "  (driver $($probe.driverVer))" })",
       "RAM  $($probe.ramGb) GB$(if ($probe.sticks) { ", $($probe.sticks) stick$(if ($probe.sticks -ne 1) { 's' })" })$(if ($probe.ramNow) { ", $($probe.ramNow) MT/s" })",
       "Board  $($probe.board)",
-      "$(if ($probe.laptop) { 'Laptop' } else { 'Desktop' })$(if ($probe.nvme) { ', NVMe' } elseif ($probe.allSsd) { ', SSD' } else { ', has a hard disk' })$(if ($probe.refresh) { ", $($probe.refresh) Hz" })",
+      "$(if ($probe.laptop) { 'Laptop' } else { 'Desktop' })$(if ($probe.nvme) { ', NVMe' } elseif ($probe.allSsd) { ', SSD' } else { ', has a hard disk' })$(if ($probe.refresh -ge 24) { ", $($probe.refresh) Hz" })",
       "Secure Boot $(if ($probe.secureBoot) { 'on' } else { 'off' }), TPM $(if ($probe.tpm) { 'yes' } else { 'no' }), memory integrity $(if ($probe.vbs) { 'on' } else { 'off' })",
       "Keeps: $(if ($probe.keeps.Count) { $probe.keeps -join ', ' } else { 'nothing extra' })"
     ) -join "`n"
@@ -1573,7 +1586,8 @@ function Show-Gui {
     if (-not $probe.startup.Count) { $t = New-Object System.Windows.Controls.TextBlock; $t.Text = 'Nothing starts with Windows that is not already off.'; $t.Foreground = '#7D7199'; [void]$ui.StartupPanel.Children.Add($t) }
     foreach ($e in $probe.startup) {
       $cb = New-Object System.Windows.Controls.CheckBox
-      $cb.Content = $e.label; $cb.IsChecked = $true; $cb.Tag = $e.name; $cb.Width = 300
+      $tb = New-Object System.Windows.Controls.TextBlock; $tb.Text = $e.label; $tb.TextWrapping = 'Wrap'; $tb.Foreground = '#B3A8CF'; $tb.MaxWidth = 250
+      $cb.Content = $tb; $cb.IsChecked = $true; $cb.Tag = $e.name; $cb.Width = 280
       [void]$ui.StartupPanel.Children.Add($cb); $state.startup += $cb
     }
     $ui.StatusText.Text = "Read in $([int]$script:Timer.Elapsed.TotalSeconds) s. Nothing has changed."
@@ -1619,6 +1633,7 @@ function Show-Gui {
   })
 
   $ui.BtnRun.Add_Click({
+    if (-not $state.cleared) { $ui.LogBox.Clear(); $state.cleared = $true }
     $key = ($ui.KeyBox.Text -replace '\s', '').ToUpper()
     if (-not (Read-Key $key)) { $ui.KeyNote.Text = 'That is not an OmniDx key. It looks like TUNE-XXXX-XXXX-XXXX-XXXX.'; $ui.KeyNote.Foreground = '#FF5D6C'; return }
     $ui.KeyNote.Foreground = '#7D7199'; $ui.KeyNote.Text = 'Checking the key, then running. The log below is live.'
@@ -1641,6 +1656,7 @@ function Show-Gui {
   if ($Screenshot) {
     # Headless: read the PC in this process, fill the window, draw it to a PNG without showing it.
     try { & $fill (Get-Probe | ConvertTo-Json -Depth 5 -Compress | ConvertFrom-Json) } catch { & $log "  ! $($_.Exception.Message)" }
+    $ui.LogBox.Clear()
     & $log '== Reading this PC'; & $log "  $($state.probe.os)"; & $log "  Processes running now: $($state.probe.before)"; & $log '== Your key'; & $log '  Key accepted. Locked to this PC.'
     $ui.KeyBox.Text = 'TUNE-9WQ2-4C9E-GK3R-D94C'; $ui.StatusText.Text = 'Ready.'
     $root = $w.Content
@@ -1659,6 +1675,7 @@ function Show-Gui {
   }
 
   $timer.Start()
+  $ui.LogBox.Clear(); & $log 'Reading this PC. Nothing has changed.'
   & $start @{ Probe = $true } 'probe'
   [void]$w.ShowDialog()
   $timer.Stop()
@@ -1771,7 +1788,19 @@ function Main {
   Write-Host '  200 processes. Under 100. One run.' -ForegroundColor DarkGray
   Write-Host ''
 
-  if ($SelfTest) { Say ("  self text: {0} chars, {1} functions" -f $script:SelfText.Length, ([regex]::Matches($script:SelfText, '(?m)^function ')).Count); return }
+  if ($SelfTest) {
+    Say ("  self text: {0} chars, {1} functions" -f $script:SelfText.Length, ([regex]::Matches($script:SelfText, '(?m)^function ')).Count)
+    # What the window does on load, without a window: a second instance runs -Probe.
+    $ps = [PowerShell]::Create()
+    [void]$ps.AddScript('param($text, $p) & ([scriptblock]::Create($text)) @p').AddArgument($script:SelfText).AddArgument(@{ Probe = $true })
+    $out = $ps.Invoke()
+    $info = @($ps.Streams.Information | ForEach-Object { $m = $_.MessageData; if ($m -and $m.PSObject.Properties['Message']) { [string]$m.Message } else { [string]$m } })
+    $probe = $null; try { $probe = ConvertFrom-Json ([string]$out[-1]) } catch { }
+    Say ("  runspace probe: {0} output objects, {1} info lines, cpu '{2}', {3} processes, {4} errors" -f $out.Count, $info.Count, $probe.cpu, $probe.before, $ps.Streams.Error.Count) $(if ($probe.cpu) { 'Green' } else { 'Red' })
+    foreach ($e in $ps.Streams.Error) { Say ("  ! {0}" -f $e) 'Red' }
+    $ps.Dispose()
+    return
+  }
   if ($PSVersionTable.PSEdition -eq 'Core') { Say "  Run this in Windows PowerShell (the blue one, version 5.1), not PowerShell 7: the restore point and Store app commands only exist there. The one command on omnidx.net picks the right one for you." 'Red'; return }
   $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
   if (-not $isAdmin) { Say "  Run this in an administrator PowerShell (right-click PowerShell > Run as administrator), or use the one-liner on omnidx.net which does it for you." 'Red'; return }
@@ -1782,7 +1811,11 @@ function Main {
   try {
     if ($Undo) { Invoke-Undo; return }
     if ($Probe) { Write-Output (Get-Probe | ConvertTo-Json -Depth 5 -Compress); return }
-    if ($Gui) { if (Show-Gui) { return } else { Say "  Carrying on in the console." } }
+    if ($Gui) {
+      $shown = $false
+      try { $shown = Show-Gui } catch { Warn ("The window could not open ({0})." -f $_.Exception.Message) }
+      if ($shown) { return } else { Say "  Carrying on in the console." }
+    }
     if ($CheckKey) {
       if (-not $Key) { $Key = Read-Host "  Paste the key to check" }
       $parsed = Read-Key $Key

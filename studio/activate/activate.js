@@ -152,8 +152,8 @@ function renderKey(info, { again = false } = {}) {
       <li><b>Open PowerShell</b><p>Press the Windows key, type <b>powershell</b>, press Enter. It does not need to be run as administrator — it asks for that itself.</p></li>
       <li><b>Paste this and press Enter</b>
         <div class="cmd"><code data-text="${esc(oneLiner)}"><span class="ps">&gt;</span>${esc(oneLiner)}</code>${copyButton(oneLiner)}</div>
-        <p class="cmd-note">Your key is in the line, so nothing has to be typed. Nothing is installed: the tune runs from memory and leaves its report, its undo and its backups in <span class="mono">C:\\OmniDx</span>.</p></li>
-      <li><b>Say yes to the restore point, then watch it go</b><p>It reads your PC, shows what it found, and asks once before it changes anything. Three to five minutes; the debloat is most of it.</p></li>
+        <p class="cmd-note">Your key is in the line, so nothing has to be typed. It opens the app with the key filled in. Nothing is installed: the tune runs from memory and leaves its report, its undo and its backups in <span class="mono">C:\\OmniDx</span>.</p></li>
+      <li><b>Tick what you want, press Run</b><p>The window shows your PC, every phase and every startup app as a tick box. Press Run: a restore point first, then the cut, with a live log. Three to five minutes; the debloat is most of it.</p></li>
       <li><b>Restart, then do the BIOS checklist</b><p>The report it opens at the end has the checklist for your exact board — the memory profile alone is worth more than half of the tune.</p></li>
     </ol>
 

@@ -23,6 +23,22 @@ pieces fit and the short list of what still needs a human to switch on.
 The video editor (OmniDx Studio) still lives at `studio/app/` and is linked from
 the footer. Nothing about it was removed; the site around it changed.
 
+## The app
+
+The one command opens a window (`-Gui`; `OMNIDX_MODE='console'` for the old
+flow). It is WPF drawn from XAML held inside `tune/omnidx.ps1`, so there is
+still one file and nothing installed. On load the window starts a second
+PowerShell instance running the same script with `-Probe`, which prints the
+machine, the advice, the startup entries, the count and the target as one
+JSON line; the window fills itself from that. Run starts another instance
+with `-Key -Yes -NoRestart -Skip <unticked phases> -Keep <unticked startup
+entries>` plus the option switches; its Write-Host lines arrive on the
+information stream and a timer moves them into the log. `-Screenshot
+<png>` draws the window without showing it; the Windows check does that on
+every push and commits the result to `studio/assets/app.png`, which the site
+shows. `-SelfTest` proves the script can see its own text and that a
+background instance delivers the probe and its log.
+
 ## Money → key → PC, step by step
 
 1. The buyer presses **Get it**. The button's link comes from `TUNE.products.tune.checkout`,

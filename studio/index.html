@@ -582,10 +582,25 @@
       <li><b>Get your key</b><p>Square sends you straight back here and your key is on the screen. Saved in your browser too.</p></li>
       <li><b>Paste one line into PowerShell</b>
         <div class="cmd"><code data-cmd>irm omnidx.net/go.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
-        <p class="cmd-note">It asks for administrator rights itself, then for your key. Nothing is downloaded to disk.</p></li>
-      <li><b>Read what it found, say yes</b><p>It shows your PC and your process count, makes the restore point, and asks once before it cuts.</p></li>
+        <p class="cmd-note">It asks for administrator rights itself and opens the app. Nothing is downloaded to disk.</p></li>
+      <li><b>Read what it found, tick what you want, press Run</b><p>The window shows your PC and your process count, every phase and every startup app as a tick box, and your key. It makes the restore point, then cuts, with every change in a live log.</p></li>
       <li><b>Restart. Do the BIOS checklist.</b><p>The report opens at the end with the exact before and after, the checklist for your board, and the settings for each of your games. Three to five minutes in all; the debloat is most of it.</p></li>
     </ol>
+  </div>
+</section>
+
+<!-- ==================== the app ==================== -->
+<section id="app" data-rail="The app">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">What the command opens</div>
+      <h2>A window. Still one file, still nothing installed.</h2>
+      <p>The script draws its own app: your PC on the left, the tune in the middle with a tick box for every phase and every startup app, your key and the buttons on the right, the live log underneath. Undo, the free report and restart are one press each.</p>
+    </div>
+    <div class="reveal" style="border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:var(--shadow),0 0 0 1px color-mix(in srgb,var(--blue) 18%,transparent);background:var(--surface)">
+      <img src="assets/app.png" alt="The OmniDx Tune window: the PC it read on the left, the tune's phases and startup apps with tick boxes in the middle, the key and the Run, Free report, Undo, Open folder and Restart buttons on the right, and a live log below." width="1120" height="760" loading="lazy" style="display:block;width:100%;height:auto">
+    </div>
+    <p class="tiny muted" style="margin-top:10px">Drawn by the script itself on a build machine every time it changes, so the picture is never out of date. The machine in it is that build machine, not a gaming PC.</p>
   </div>
 </section>
 
