@@ -30,7 +30,11 @@ jobs:
         run: node tools/tune-check.mjs
 
   windows:
+    # A push to a checked branch already ran this; the pull request for the
+    # same commit would only run it twice.
+    if: github.event_name != 'pull_request'
     runs-on: windows-latest
+    timeout-minutes: 75
     defaults:
       run:
         shell: powershell
@@ -99,6 +103,7 @@ jobs:
       # every phase, no prompts, no restart. Then undo. Then the numbers go to
       # the site, so every visitor sees the last run on a fresh Windows.
       - name: Run the whole tune with a real key
+        timeout-minutes: 20
         run: |
           $key = (& python tools\make-tune-key.py | Select-Object -First 1).Trim()
           $out = & .\tune\omnidx.ps1 -Key $key -Yes -NoRestart -NoAfterCount *>&1 | Out-String
@@ -113,17 +118,68 @@ jobs:
           Get-Content C:\OmniDx\ci-summary.json
           exit 0
 
+      # Everything the run recorded must still be in place, and the keep task
+      # must be registered (the run answered yes to it).
+      - name: Status says everything is still in place
+        run: |
+          $out = & .\tune\omnidx.ps1 -Status *>&1 | Out-String
+          Write-Host $out
+          if ($out -notmatch 'Settings checked: (\d+)\. All still in place') { Write-Host 'status did not say everything is in place'; exit 1 }
+          if ([int]$Matches[1] -lt 50) { Write-Host ("status checked only {0} settings" -f $Matches[1]); exit 1 }
+          if ($out -notmatch 'Keep task: on') { Write-Host 'the keep task was not registered'; exit 1 }
+          exit 0
+
+      # What a Windows update does, done by hand: a service back to automatic,
+      # a task enabled, a value reset. keep.ps1 -Check must see all three;
+      # keep.ps1 must put them back; status must then be clean again.
+      - name: The keep task puts back what an update turns on
+        timeout-minutes: 10
+        run: |
+          $changes = @(Get-Content C:\OmniDx\undo\changes-latest.json -Raw | ConvertFrom-Json | ForEach-Object { $_ })
+          $svc = @($changes | Where-Object { $_.type -eq 'service' -and $_.now -ne 'Automatic' } | Select-Object -First 1)[0]
+          $task = @($changes | Where-Object { $_.type -eq 'task' } | Select-Object -First 1)[0]
+          $reg = @($changes | Where-Object { $_.type -eq 'reg' -and -not $_.removed -and $_.path -like 'HKLM:*Policies*DataCollection*' -and $_.kind -eq 'DWord' } | Select-Object -First 1)[0]
+          if (-not $svc -or -not $task -or -not $reg) { Write-Host 'the record has no service, task or policy value to test with'; exit 1 }
+          & sc.exe config $svc.name start= auto | Out-Null
+          Enable-ScheduledTask -TaskPath $task.path -TaskName $task.name | Out-Null
+          Set-ItemProperty -Path $reg.path -Name $reg.name -Value ([int]$reg.value + 1)
+          Write-Host ("undid by hand: service {0}, task {1}, value {2}\{3}" -f $svc.name, $task.name, $reg.path, $reg.name)
+          $out = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\OmniDx\undo\keep.ps1 -Check *>&1 | Out-String
+          Write-Host $out
+          if ($out -notmatch 'checked \d+, (\d+) had drifted \(check only\)') { Write-Host 'keep -Check did not report'; exit 1 }
+          if ([int]$Matches[1] -lt 3) { Write-Host ("keep -Check saw {0} drifted, expected 3" -f $Matches[1]); exit 1 }
+          $out = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\OmniDx\undo\keep.ps1 *>&1 | Out-String
+          Write-Host $out
+          if ($out -notmatch '(\d+) had drifted, (\d+) put back') { Write-Host 'keep did not put anything back'; exit 1 }
+          if ([int]$Matches[2] -lt 3) { Write-Host ("keep put back {0}, expected 3" -f $Matches[2]); exit 1 }
+          if (-not (Test-Path C:\OmniDx\keep-log.txt)) { Write-Host 'no keep log'; exit 1 }
+          Get-Content C:\OmniDx\keep-log.txt
+          $out = & .\tune\omnidx.ps1 -Status *>&1 | Out-String
+          if ($out -notmatch 'All still in place') { Write-Host "status is not clean after keep:`n$out"; exit 1 }
+          Write-Host 'keep: three things turned back on, three put back, status clean'
+          exit 0
+
       - name: Undo the whole tune
+        timeout-minutes: 30
         run: |
           $out = & .\tune\omnidx.ps1 -Undo *>&1 | Out-String
           Write-Host $out
           if ($out -notmatch 'Done: (\d+) put back') { Write-Host 'undo did not finish'; exit 1 }
+          if ($out -notmatch 'keep task removed') { Write-Host 'undo did not remove the keep task'; exit 1 }
+          if (Test-Path C:\OmniDx\undo\changes-latest.json) { Write-Host 'undo left changes-latest.json behind'; exit 1 }
+          if (-not (Get-ChildItem C:\OmniDx\undo\done -Filter 'changes-*.json')) { Write-Host 'undo did not move the record to done'; exit 1 }
+          if (Get-ScheduledTask -TaskName 'OmniDx keep' -ErrorAction SilentlyContinue) { Write-Host 'the keep task is still registered after undo'; exit 1 }
           $undone = [int]$Matches[1]
           $s = Get-Content C:\OmniDx\ci-summary.json | ConvertFrom-Json
           if ($undone -lt [math]::Floor($s.changes * 0.7)) { Write-Host ("undo put back {0} of {1} changes; that is a broken undo" -f $undone, $s.changes); exit 1 }
           $ci = [ordered]@{ version = $s.version; when = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'); os = $s.os; cpu = $s.cpu; before = $s.before; after = $s.after; target = $s.target; changes = $s.changes; warnings = $s.warnings; seconds = $s.seconds; undone = $undone; gone = @($s.gone).Count; sha = $env:GITHUB_SHA.Substring(0, 7) }
           $ci | ConvertTo-Json | Set-Content studio\assets\ci-run.json -Encoding UTF8
           Get-Content studio\assets\ci-run.json
+          $out = & .\tune\omnidx.ps1 -Status *>&1 | Out-String
+          Write-Host $out
+          if ($out -notmatch 'Runs in place: none \(1 undone\)') { Write-Host 'status after undo should say no runs, one undone'; exit 1 }
+          $out = & .\tune\omnidx.ps1 -Undo *>&1 | Out-String
+          if ($out -notmatch 'already been put back') { Write-Host "a second undo should say there is nothing left:`n$out"; exit 1 }
           exit 0
 
       - name: The key check refuses a bad key

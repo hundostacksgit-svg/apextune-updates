@@ -10,8 +10,9 @@
 #   $env:OMNIDX_MODE='report'; irm omnidx.net/go.ps1 | iex     free look, changes nothing
 #   $env:OMNIDX_MODE='undo';   irm omnidx.net/go.ps1 | iex     put everything back
 #   $env:OMNIDX_MODE='check';  irm omnidx.net/go.ps1 | iex     check a key's format, nothing else
+#   $env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex     what is still in place, what an update put back
 #   $env:OMNIDX_MODE='console'; irm omnidx.net/go.ps1 | iex    the console flow instead of the window
-#   $env:OMNIDX_FLAGS='-Aggressive -CutXbox -Dns'               options (see omnidx.net/studio/download/#options)
+#   $env:OMNIDX_FLAGS='-Aggressive -CutXbox -Dns -NoKeep'       options (see omnidx.net/studio/download/#options)
 #   $env:OMNIDX_KEEP='Wallpaper Engine,RTSS'                    startup entries to leave on
 $ErrorActionPreference = 'Stop'
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12 } catch { }
@@ -22,7 +23,7 @@ $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIden
 $isCore = $PSVersionTable.PSEdition -eq 'Core'
 $key = $env:OMNIDX_KEY
 if (-not $mode) { $mode = 'app' }
-if (-not $key -and $mode -ne 'undo' -and $mode -ne 'report' -and $mode -ne 'app') {
+if (-not $key -and $mode -ne 'undo' -and $mode -ne 'report' -and $mode -ne 'app' -and $mode -ne 'status') {
   Write-Host ''
   Write-Host '  OmniDx Tune' -ForegroundColor Magenta
   Write-Host '  Your key is on the page after you paid: omnidx.net/studio/activate/' -ForegroundColor DarkGray
@@ -70,12 +71,13 @@ $block = [scriptblock]::Create([string]$script)
 $opts = @{}
 foreach ($f in ("$env:OMNIDX_FLAGS" -split '[\s,]+' | Where-Object { $_ })) {
   $name = $f.TrimStart('-')
-  if ($name -match '^(Aggressive|CutXbox|Dns|NoRestorePoint|NoAfterCount|Yes)$') { $opts[$name] = $true }
+  if ($name -match '^(Aggressive|CutXbox|Dns|NoRestorePoint|NoAfterCount|NoKeep|Yes)$') { $opts[$name] = $true }
 }
 if ($env:OMNIDX_KEEP) { $opts['Keep'] = @($env:OMNIDX_KEEP -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
 switch ($mode) {
   'undo'   { & $block -Undo }
   'report' { & $block -Report }
+  'status' { & $block -Status }
   'check'  { & $block -Key $key -CheckKey }
   'app'    { & $block -Key $key -Api $api -Gui @opts }
   default  { & $block -Key $key -Api $api @opts }

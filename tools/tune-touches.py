@@ -252,6 +252,7 @@ def page(text: str) -> str:
       <li>Discord's settings.json and Spotify's prefs, backed up first, only while the apps are closed</li>
       <li>Store app pre-launch off (Disable-MMAgent); NTFS last-access stamps off</li>
       <li>One scheduled task that runs once at your next sign-in, writes the after-restart process count and removes itself; skip it with <span class="mono">-NoAfterCount</span></li>
+      <li>One scheduled task, "OmniDx keep", if you say yes to it: three minutes after each sign-in it compares the services, tasks and values above with the machine and puts back what a Windows update turned on. It never touches startup apps or personal preferences, logs to <span class="mono">C:\OmniDx\keep-log.txt</span>, and undo removes it; <span class="mono">-NoKeep</span> never makes it</li>
       <li>OneDrive uninstalled when nobody is signed in to it (files untouched; undo reinstalls); kept when you are</li>
       <li>Edge policies: shopping assistant, recommendations, Spotlight, feedback prompts and reporting off; your tabs and settings untouched</li>
       <li>Cleanup: temp files older than a day, the Windows Update download cache and the peer-to-peer update cache; not undoable, because none of it is anything</li>

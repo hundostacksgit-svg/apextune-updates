@@ -55,12 +55,16 @@ param(
   [switch]$Report,
   # Check a key's format and checksum, then stop. Nothing is read or bound.
   [switch]$CheckKey,
+  # Say what is still in place from earlier runs, what Windows has put back and when the keep task last ran. Changes nothing.
+  [switch]$Status,
+  # Do not leave the small sign-in task that puts the tune back after a Windows update turns pieces of it on again.
+  [switch]$NoKeep,
   # Do not leave the one-shot task that writes the after-restart process count.
   [switch]$NoAfterCount,
   # Answer every question yes.
   [switch]$Yes,
   # Phases to leave out, by name: startup services tasks apps debloat telemetry
-  # system power network programs games nvidia cleanup. The app uses this.
+  # system power network programs games nvidia cleanup keep. The app uses this.
   [string[]]$Skip = @(),
   # Never restart or offer to. The app has its own button for that.
   [switch]$NoRestart,
@@ -76,7 +80,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.5.1'
+$script:Version = '1.6.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -238,7 +242,7 @@ function Set-Reg([string]$path, [string]$name, $value, [string]$kind = 'DWord') 
   } elseif ($had -and "$prev" -eq "$value") { return }
   try {
     New-ItemProperty -Path $path -Name $name -Value $value -PropertyType $kind -Force -ErrorAction Stop | Out-Null
-    Record @{ type = 'reg'; path = $path; name = $name; had = $had; prev = $prev; kind = $kind; keyExisted = $existed }
+    Record @{ type = 'reg'; path = $path; name = $name; had = $had; prev = $prev; kind = $kind; keyExisted = $existed; value = $value }
   } catch {
     Warn ("Could not set {0}\{1}: {2}" -f $path, $name, $_.Exception.Message)
   }
@@ -295,16 +299,37 @@ $script:UndoScript = @'
     power plan that was active before and removes the OmniDx plan. Re-enables
     hibernation if it was on. Store apps that were removed are listed at the
     end with where to get them back.
+    With no argument it walks back every run recorded here, newest first, so
+    a PC tuned twice ends up as it was before the first run; each record is
+    then moved to done\ so a later run starts clean. -File puts back one
+    record only. The keep task, if there is one, is removed either way.
     Run in an administrator PowerShell:  powershell -ExecutionPolicy Bypass -File undo.ps1
 #>
-param([string]$File = (Join-Path $PSScriptRoot 'changes-latest.json'))
+param([string]$File)
 $ErrorActionPreference = 'Continue'
-if (-not (Test-Path $File)) { Write-Host "No changes file at $File" -ForegroundColor Red; exit 1 }
-$changes = @(Get-Content $File -Raw | ConvertFrom-Json | ForEach-Object { $_ })
-[array]::Reverse($changes)
+$dir = $PSScriptRoot
+if ($File) { $files = @($File) }
+else { $files = @(Get-ChildItem $dir -Filter 'changes-*.json' -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'changes-latest.json' } | Sort-Object Name -Descending | ForEach-Object { $_.FullName }) }
+if (-not $files.Count) { Write-Host "No run recorded in $dir" -ForegroundColor Red; exit 1 }
+foreach ($f in $files) { if (-not (Test-Path $f)) { Write-Host "No changes file at $f" -ForegroundColor Red; exit 1 } }
 $removedApps = @()
 $done = 0; $failed = 0
-Write-Host ("Putting back {0} changes from {1}" -f $changes.Count, $File)
+# DISM work (a capability or an optional feature going back) can take minutes
+# each, and with Windows Update unreachable it can sit for an hour. Each gets
+# a few minutes in a background job; past that it is reported, and
+# Settings > Apps > Optional features finishes it later.
+function Invoke-Timed([scriptblock]$work, [object[]]$argList, [int]$seconds) {
+  $job = Start-Job -ScriptBlock $work -ArgumentList $argList
+  if (-not (Wait-Job $job -Timeout $seconds)) { Stop-Job $job -ErrorAction SilentlyContinue; Remove-Job $job -Force -ErrorAction SilentlyContinue; return 'timeout' }
+  $state = $job.State; $errs = @($job.ChildJobs | ForEach-Object { $_.Error }).Count
+  Receive-Job $job -ErrorAction SilentlyContinue | Out-Null; Remove-Job $job -Force -ErrorAction SilentlyContinue
+  if ($state -eq 'Completed' -and $errs -eq 0) { return 'ok' } else { return 'failed' }
+}
+try { Unregister-ScheduledTask -TaskName 'OmniDx keep' -Confirm:$false -ErrorAction Stop; Write-Host "keep task removed" -ForegroundColor DarkGray } catch { }
+foreach ($rec in $files) {
+$changes = @(Get-Content $rec -Raw | ConvertFrom-Json | ForEach-Object { $_ })
+[array]::Reverse($changes)
+Write-Host ("Putting back {0} changes from {1}" -f $changes.Count, $rec)
 foreach ($c in $changes) {
   try {
     switch ($c.type) {
@@ -348,13 +373,36 @@ foreach ($c in $changes) {
       'fsutil' { & fsutil behavior set disablelastaccess $c.prev | Out-Null }
       'mmagent' { try { Enable-MMAgent -ApplicationPreLaunch -ErrorAction Stop } catch { } }
       'task-created' { try { Unregister-ScheduledTask -TaskName $c.name -Confirm:$false -ErrorAction Stop } catch { } }
-      'capability' { try { Add-WindowsCapability -Online -Name $c.name -ErrorAction Stop | Out-Null; Write-Host ("capability back: {0}" -f $c.name) -ForegroundColor DarkGray } catch { Write-Host ("{0} needs Windows Update reachable to come back: Settings > Apps > Optional features" -f $c.name) -ForegroundColor Yellow } }
-      'feature' { try { Enable-WindowsOptionalFeature -Online -FeatureName $c.name -NoRestart -ErrorAction Stop | Out-Null; Write-Host ("feature back: {0}" -f $c.name) -ForegroundColor DarkGray } catch { } }
-      'onedrive' { if (Test-Path $c.setup) { Start-Process $c.setup -ArgumentList '/silent' -Wait -WindowStyle Hidden -ErrorAction SilentlyContinue; Write-Host "OneDrive reinstalled" -ForegroundColor DarkGray } }
+      'capability' {
+        Write-Host ("capability {0} going back (this one can take a few minutes)..." -f $c.name) -ForegroundColor DarkGray
+        $r = Invoke-Timed { param($n) Add-WindowsCapability -Online -Name $n -ErrorAction Stop | Out-Null } @($c.name) 300
+        if ($r -eq 'ok') { Write-Host ("capability back: {0}" -f $c.name) -ForegroundColor DarkGray }
+        else { Write-Host ("{0} did not come back here ({1}); it needs Windows Update reachable: Settings > Apps > Optional features adds it" -f $c.name, $r) -ForegroundColor Yellow }
+      }
+      'feature' {
+        Write-Host ("feature {0} going back..." -f $c.name) -ForegroundColor DarkGray
+        $r = Invoke-Timed { param($n) Enable-WindowsOptionalFeature -Online -FeatureName $n -NoRestart -ErrorAction Stop | Out-Null } @($c.name) 300
+        if ($r -eq 'ok') { Write-Host ("feature back: {0}" -f $c.name) -ForegroundColor DarkGray }
+        else { Write-Host ("{0} did not come back here ({1}); Settings > Apps > Optional features > More Windows features adds it" -f $c.name, $r) -ForegroundColor Yellow }
+      }
+      'onedrive' {
+        if (Test-Path $c.setup) {
+          $p = Start-Process $c.setup -ArgumentList '/silent' -WindowStyle Hidden -PassThru -ErrorAction SilentlyContinue
+          if ($p) { if ($p.WaitForExit(180000)) { Write-Host "OneDrive reinstalled" -ForegroundColor DarkGray } else { Write-Host "OneDrive's installer is still running in the background; it finishes on its own" -ForegroundColor Yellow } }
+        }
+      }
     }
     $done++
   } catch { Write-Host ("could not undo {0}: {1}" -f ($c | ConvertTo-Json -Compress), $_.Exception.Message) -ForegroundColor Yellow; $failed++ }
 }
+if (-not $File) {
+  try {
+    $doneDir = Join-Path $dir 'done'; New-Item -ItemType Directory -Path $doneDir -Force | Out-Null
+    Move-Item $rec (Join-Path $doneDir ([IO.Path]::GetFileName($rec))) -Force
+  } catch { }
+}
+}
+if (-not $File) { Remove-Item (Join-Path $dir 'changes-latest.json') -Force -ErrorAction SilentlyContinue }
 if ($removedApps.Count) {
   Write-Host ""
   Write-Host "These Store apps were removed. Reinstall any you want from the Microsoft Store (search the name):" -ForegroundColor Yellow
@@ -573,6 +621,216 @@ function Register-AfterCount {
     Record @{ type = 'task-created'; name = $name }
     Did "One task runs once at your next sign-in: it writes the after-restart process count, memory, threads, handles and idle CPU to C:\OmniDx\after-restart.txt, then removes itself."
   } catch { Warn ("Could not set the after-restart count task ({0})." -f $_.Exception.Message) }
+}
+
+# ---------------------------------------------------------------------------
+# keeping it cut
+# ---------------------------------------------------------------------------
+<# Windows updates turn pieces of the tune back on: a feature update resets
+   service start types, re-enables tasks and puts a few values back. This is
+   the comparison, shared by -Status (read only) and by keep.ps1 (which fixes
+   what drifted at sign-in): every registry value, service start type and
+   scheduled task the recorded runs changed, against the machine now. Where
+   two runs touched the same thing the newer one wins.
+
+   Deliberately not checked: startup apps and personal preferences (mouse
+   acceleration, the taskbar, Game Bar, visual effects, GPU preferences). If
+   those change after the tune it was you, in Settings or Task Manager, and
+   that must win. Records made by versions before 1.6 carry no target value
+   and are skipped. #>
+function Get-Drift {
+  param([string[]]$Files, [switch]$Fix)
+  $yours = @('\Control Panel\', '\StartupApproved\', '\CurrentVersion\Run', '\Explorer\Advanced', '\GameBar', 'GameConfigStore', '\GameDVR', '\Accessibility\', '\UserGpuPreferences', '\VisualEffects', '\Explorer\Serialize', '\Personalization')
+  $entries = @()
+  foreach ($f in @($Files | Sort-Object)) { try { $entries += @(Get-Content $f -Raw | ConvertFrom-Json | ForEach-Object { $_ }) } catch { } }
+  [array]::Reverse($entries)
+  $seen = @{}; $checked = 0; $fixed = 0; $failed = 0
+  $drift = New-Object System.Collections.ArrayList
+  foreach ($c in $entries) {
+    $id = ''
+    if ($c.type -eq 'reg') { $id = 'reg|' + $c.path + '|' + $c.name }
+    elseif ($c.type -eq 'service') { $id = 'svc|' + $c.name }
+    elseif ($c.type -eq 'task') { $id = 'task|' + $c.path + $c.name }
+    if (-not $id -or $seen.ContainsKey($id)) { continue }
+    $seen[$id] = $true
+    try {
+      if ($c.type -eq 'reg') {
+        if (-not $c.PSObject.Properties['value']) { continue }
+        $skip = $false; foreach ($y in $yours) { if ($c.path -like ('*' + $y + '*')) { $skip = $true } }
+        if ($skip) { continue }
+        $checked++
+        $cur = $null; $has = $false
+        try { $cur = (Get-ItemProperty -Path $c.path -Name $c.name -ErrorAction Stop).($c.name); $has = $true } catch { }
+        if ($c.removed) {
+          if (-not $has) { continue }
+          [void]$drift.Add(("{0}\{1} is back" -f $c.path, $c.name))
+          if ($Fix) { Remove-ItemProperty -Path $c.path -Name $c.name -Force -ErrorAction Stop; $fixed++ }
+          continue
+        }
+        $want = $c.value
+        # A DWord reads back as a signed 32-bit value: 0xFFFFFFFF comes out as -1.
+        $norm = { param($v, $kind) if ($kind -eq 'DWord') { try { return [string]([uint32]([int64]$v -band 0xFFFFFFFF)) } catch { return "$v" } } else { return (@($v) -join ',') } }
+        $same = $false
+        if ($has) { $same = ((& $norm $cur $c.kind) -eq (& $norm $want $c.kind)) }
+        if ($same) { continue }
+        [void]$drift.Add(("{0}\{1} = {2} (wanted {3})" -f $c.path, $c.name, $(if ($has) { (& $norm $cur $c.kind) } else { 'missing' }), (& $norm $want $c.kind)))
+        if ($Fix) {
+          if ($c.kind -eq 'Binary') { $want = [byte[]]@($want | ForEach-Object { [byte]$_ }) }
+          if (-not (Test-Path $c.path)) { New-Item -Path $c.path -Force | Out-Null }
+          New-ItemProperty -Path $c.path -Name $c.name -Value $want -PropertyType $c.kind -Force -ErrorAction Stop | Out-Null
+          $fixed++
+        }
+      } elseif ($c.type -eq 'service') {
+        $svc = Get-Service -Name $c.name -ErrorAction SilentlyContinue
+        if (-not $svc) { continue }
+        $checked++
+        $mode = (Get-CimInstance Win32_Service -Filter ("Name='{0}'" -f $c.name) -ErrorAction SilentlyContinue).StartMode
+        if ($mode -eq 'Auto') { $mode = 'Automatic' }
+        if ($mode -eq $c.now) { continue }
+        [void]$drift.Add(("service {0} is {1} (wanted {2})" -f $c.name, "$mode".ToLower(), "$($c.now)".ToLower()))
+        if ($Fix) {
+          $s = switch ("$($c.now)") { 'Disabled' { 'disabled' } 'Manual' { 'demand' } default { 'auto' } }
+          & sc.exe config $c.name start= $s | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw "sc.exe returned $LASTEXITCODE" }
+          if ($c.now -ne 'Automatic' -and $svc.Status -eq 'Running') { try { Stop-Service -Name $c.name -Force -ErrorAction Stop -WarningAction SilentlyContinue } catch { } }
+          $fixed++
+        }
+      } elseif ($c.type -eq 'task') {
+        $t = Get-ScheduledTask -TaskPath $c.path -TaskName $c.name -ErrorAction SilentlyContinue
+        if (-not $t) { continue }
+        $checked++
+        if ($t.State -eq 'Disabled') { continue }
+        [void]$drift.Add(("task {0} is on again" -f $c.name))
+        if ($Fix) { Disable-ScheduledTask -TaskPath $c.path -TaskName $c.name -ErrorAction Stop | Out-Null; $fixed++ }
+      }
+    } catch { $failed++ }
+  }
+  return @{ checked = $checked; drift = @($drift); fixed = $fixed; failed = $failed }
+}
+
+<# keep.ps1: written next to undo.ps1 with Get-Drift's text pasted in, so
+   it runs on its own. The sign-in task runs it hidden; by hand, -Check says
+   what it would do without doing it. #>
+$script:KeepScript = @'
+<#  OmniDx Tune - keep.
+    Windows updates turn pieces of the tune back on: a service set to start
+    again, a task re-enabled, a value reset. This runs three minutes after
+    sign-in, compares every recorded change with the machine and puts back
+    what drifted. It touches only what the tune recorded in changes-*.json
+    next to it, never adds anything, leaves startup apps and personal
+    preferences alone, and does nothing at all once undo.ps1 has run.
+    By hand, to see what it would do:  powershell -ExecutionPolicy Bypass -File keep.ps1 -Check
+    Undo removes the task; -NoKeep on the tune never creates it. Log: C:\OmniDx\keep-log.txt
+#>
+param([switch]$Check)
+$ErrorActionPreference = 'Continue'
+$dir = $PSScriptRoot
+$files = @(Get-ChildItem $dir -Filter 'changes-*.json' -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'changes-latest.json' } | ForEach-Object { $_.FullName })
+$logFile = Join-Path (Split-Path $dir) 'keep-log.txt'
+if (-not $files.Count) { Write-Host "Nothing recorded here; nothing to keep."; exit 0 }
+__DRIFT__
+$r = Get-Drift -Files $files -Fix:(-not $Check)
+$line = "{0}  checked {1}, {2} had drifted{3}{4}" -f (Get-Date -Format s), $r.checked, $r.drift.Count, $(if ($Check) { ' (check only)' } elseif ($r.fixed) { ", $($r.fixed) put back" } else { '' }), $(if ($r.failed) { ", $($r.failed) could not be" } else { '' })
+Write-Host $line -ForegroundColor $(if ($r.drift.Count) { 'Yellow' } else { 'Green' })
+foreach ($d in $r.drift) { Write-Host ("  " + $d) -ForegroundColor DarkGray }
+try {
+  $old = @(); if (Test-Path $logFile) { $old = @(Get-Content $logFile -ErrorAction SilentlyContinue | Select-Object -Last 199) }
+  Set-Content -Path $logFile -Value ($old + @($line) + @($r.drift | ForEach-Object { "  " + $_ })) -Encoding UTF8
+} catch { }
+'@
+
+<# The keep task itself. Asked about; -NoKeep or -Skip keep leaves it out. It
+   runs as this account at this account's sign-in, three minutes after, with
+   a ten-minute limit, and is recorded so undo removes it. When the
+   administrator rights came from a different account than the one signed
+   in, the task would fire at the wrong sign-in, so it is not made. #>
+function Register-Keep {
+  if ($NoKeep) { return }
+  Head "Keeping it cut"
+  if ($script:UserName -ne $env:USERNAME) { Say "  Not kept: administrator rights came from a different account than the one signed in. Run the command again after a big update instead."; return }
+  Say "  Windows updates turn some of this back on. A small task can check three minutes after each sign-in and put the tune back. It only touches what this run recorded, leaves your own settings alone, and undo removes it." 'White'
+  if (-not (Ask "Keep it cut after updates?")) { Say "  Not kept. Run the command again after a big update instead: same key, same PC, free."; return }
+  try {
+    $keep = Join-Path $script:Root 'undo\keep.ps1'
+    Set-Content -Path $keep -Value ($script:KeepScript.Replace('__DRIFT__', ("function Get-Drift {" + ${function:Get-Drift}.ToString() + "}"))) -Encoding UTF8
+    $name = 'OmniDx keep'
+    $who = "$env:USERDOMAIN\$env:USERNAME"
+    $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "' + $keep + '"')
+    $trigger = New-ScheduledTaskTrigger -AtLogOn -User $who
+    $trigger.Delay = 'PT3M'
+    $principal = New-ScheduledTaskPrincipal -UserId $who -LogonType Interactive -RunLevel Highest
+    $settings = New-ScheduledTaskSettingsSet -ExecutionTimeLimit (New-TimeSpan -Minutes 10) -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
+    Unregister-ScheduledTask -TaskName $name -Confirm:$false -ErrorAction SilentlyContinue
+    Register-ScheduledTask -TaskName $name -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force -ErrorAction Stop | Out-Null
+    Record @{ type = 'task-created'; name = $name }
+    Did "Task 'OmniDx keep' runs three minutes after sign-in and puts back whatever an update turned on. Log: C:\OmniDx\keep-log.txt. Undo removes it."
+  } catch { Warn ("Could not set the keep task ({0}). Run the command again after a big update instead." -f $_.Exception.Message) }
+}
+
+<# Ten runs of everything stay in C:\OmniDx; older logs, reports and
+   snapshots go. Undo records stay until undo moves them, and a run's
+   backup folder stays as long as its record does. #>
+function Limit-History {
+  $keep = 10
+  foreach ($pat in 'log-*.txt', 'machine-*.json', 'processes-before-*.txt', 'processes-after-*.txt', 'report-20*.txt', 'report-20*.html', 'report-preview-*.txt', 'summary-*.json') {
+    try { Get-ChildItem $script:Root -Filter $pat -File -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -Skip $keep | Remove-Item -Force -ErrorAction SilentlyContinue } catch { }
+  }
+  try {
+    $live = @(Get-ChildItem (Join-Path $script:Root 'undo') -Filter 'changes-*.json' -ErrorAction SilentlyContinue | ForEach-Object { $_.BaseName -replace '^changes-', '' })
+    Get-ChildItem (Join-Path $script:Root 'backup') -Directory -ErrorAction SilentlyContinue | Where-Object { $live -notcontains $_.Name } | Sort-Object Name -Descending | Select-Object -Skip $keep | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+  } catch { }
+}
+
+<# -Status: the runs recorded here, whether their settings are still in
+   place, what Windows put back, the keep task and its last line, the
+   after-restart count, and the key. Reads only. #>
+function Show-Status {
+  Head "Status"
+  $dir = Join-Path $script:Root 'undo'
+  $files = @(Get-ChildItem $dir -Filter 'changes-*.json' -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'changes-latest.json' } | Sort-Object Name)
+  $undone = @(Get-ChildItem (Join-Path $dir 'done') -Filter 'changes-*.json' -ErrorAction SilentlyContinue)
+  $lic = Get-ItemProperty 'HKLM:\SOFTWARE\OmniDx\Tune' -ErrorAction SilentlyContinue
+  if ($lic -and $lic.Key) { Say ("  Key: {0}-****-****-{1}, bound to this PC {2}" -f $lic.Key.Split('-')[0], $lic.Key.Split('-')[-1], "$($lic.Bound)".Substring(0, [math]::Min(10, "$($lic.Bound)".Length))) } else { Say "  Key: none bound on this PC yet." }
+  if (-not $files.Count) {
+    Say ("  Runs in place: none{0}." -f $(if ($undone.Count) { " ({0} undone)" -f $undone.Count } else { '' }))
+    if (Get-ScheduledTask -TaskName 'OmniDx keep' -ErrorAction SilentlyContinue) { Say "  Keep task: still registered with nothing to keep; undo removes it." 'Yellow' } else { Say "  Keep task: none." }
+    Say ("  Processes running now: {0}" -f (Get-ProcessCount)) 'White'
+    return
+  }
+  foreach ($f in $files) {
+    $n = 0; try { $n = @(Get-Content $f.FullName -Raw | ConvertFrom-Json | ForEach-Object { $_ }).Count } catch { }
+    Say ("  Run {0}: {1} changes recorded" -f ($f.BaseName -replace '^changes-', ''), $n)
+  }
+  $r = Get-Drift -Files @($files | ForEach-Object { $_.FullName })
+  if ($r.drift.Count) {
+    Say ("  Settings checked: {0}. Windows has put back {1}:" -f $r.checked, $r.drift.Count) 'Yellow'
+    $r.drift | Select-Object -First 20 | ForEach-Object { Say ("    - " + $_) }
+    if ($r.drift.Count -gt 20) { Say ("    ... and {0} more" -f ($r.drift.Count - 20)) }
+    Say "  The keep task puts these back at your next sign-in; or run the command again now (same key, same PC, free)." 'White'
+  } else { Say ("  Settings checked: {0}. All still in place." -f $r.checked) 'Green' }
+  Say "  (Startup apps and personal preferences are not checked: if those changed, it was you, and that wins.)"
+  $task = Get-ScheduledTask -TaskName 'OmniDx keep' -ErrorAction SilentlyContinue
+  $keepLog = Join-Path $script:Root 'keep-log.txt'
+  $last = $null; if (Test-Path $keepLog) { $last = @(Get-Content $keepLog -ErrorAction SilentlyContinue | Where-Object { $_ -match '^\d{4}-' }) | Select-Object -Last 1 }
+  if ($task) { Say ("  Keep task: on ({0}). {1}" -f $task.State, $(if ($last) { "Last: $last" } else { 'Has not run yet; it runs three minutes after sign-in.' })) }
+  else { Say "  Keep task: not set. Run the tune again and answer yes to keep it cut, or leave it; the tune holds until a big update either way." }
+  $ar = Join-Path $script:Root 'after-restart.txt'
+  if (Test-Path $ar) { $l = @(Get-Content $ar -ErrorAction SilentlyContinue) | Select-Object -Last 1; if ($l) { Say ("  After restart: {0}" -f $l) 'White' } }
+  $sum = Get-ChildItem $script:Root -Filter 'summary-*.json' -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
+  if ($sum) { try { $s = Get-Content $sum.FullName -Raw | ConvertFrom-Json; Say ("  Last run: {0} -> {1} processes, target about {2} after a restart" -f $s.before, $s.after, $s.target) } catch { } }
+  Say ("  Processes running now: {0}" -f (Get-ProcessCount)) 'White'
+}
+
+<# Ten seconds to change your mind. #>
+function Invoke-Restart {
+  Say "  Restarting in 10 seconds. Press any key to stay." 'White'
+  for ($i = 10; $i -gt 0; $i--) {
+    try { if ([Console]::KeyAvailable) { [void][Console]::ReadKey($true); Write-Host ''; Say "  Staying. Restart when you are ready."; return } } catch { }
+    Write-Host ("  {0}" -f $i) -ForegroundColor DarkGray -NoNewline
+    Start-Sleep -Seconds 1
+  }
+  Write-Host ''
+  Restart-Computer -Force
 }
 
 # ---------------------------------------------------------------------------
@@ -1405,7 +1663,16 @@ function Get-Probe {
     startup = @($entries | ForEach-Object { @{ name = $_.name; label = $_.label } })
     before = (Get-ProcessCount)
     target = (Get-SafeBar $m)
+    lastRun = (Get-LastRun)
+    keepOn = [bool](Get-ScheduledTask -TaskName 'OmniDx keep' -ErrorAction SilentlyContinue)
   }
+}
+
+<# The newest summary in C:\OmniDx, for the window's status line. #>
+function Get-LastRun {
+  $sum = Get-ChildItem $script:Root -Filter 'summary-*.json' -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
+  if (-not $sum) { return $null }
+  try { $s = Get-Content $sum.FullName -Raw | ConvertFrom-Json; return @{ stamp = $s.stamp; before = $s.before; after = $s.after; changes = $s.changes; version = $s.version } } catch { return $null }
 }
 
 <# The window. WPF, drawn from XAML held here, so the app is the same one file
@@ -1506,6 +1773,7 @@ $script:Xaml = @'
               <CheckBox x:Name="ChkNvidia" IsChecked="True" Content="NVIDIA telemetry off"/>
               <CheckBox x:Name="ChkCleanup" IsChecked="True" Content="Clear update caches, temp files"/>
               <CheckBox x:Name="ChkAfterCount" IsChecked="True" Content="Write the after-restart count"/>
+              <CheckBox x:Name="ChkKeep" IsChecked="True" Content="Keep it cut after Windows updates"/>
             </UniformGrid>
             <TextBlock Text="STARTS WITH WINDOWS  -  ticked means it gets switched off" Style="{StaticResource Label}" Margin="0,14,0,6"/>
             <WrapPanel x:Name="StartupPanel"><TextBlock Text="Reading..." Foreground="#7D7199"/></WrapPanel>
@@ -1513,7 +1781,7 @@ $script:Xaml = @'
             <CheckBox x:Name="ChkXbox"><TextBlock TextWrapping="Wrap" Foreground="#B3A8CF" Text="Cut the Xbox services too (Game Pass and Minecraft need them)"/></CheckBox>
             <CheckBox x:Name="ChkDns" Content="Point DNS at 1.1.1.1"/>
             <CheckBox x:Name="ChkVbs"><TextBlock TextWrapping="Wrap" Foreground="#B3A8CF" Text="Memory integrity off: a few percent more frames, one layer of kernel protection less"/></CheckBox>
-            <TextBlock Foreground="#7D7199" TextWrapping="Wrap" Margin="0,12,0,0" Text="Discord and Spotify are closed during the run so they can be tuned. A restore point comes first, every change is recorded, and undo is one button."/>
+            <TextBlock Foreground="#7D7199" TextWrapping="Wrap" Margin="0,12,0,0" Text="Discord and Spotify are closed during the run so they can be tuned. A restore point comes first, every change is recorded, and undo is one button. Kept cut means a small task at sign-in puts back whatever a Windows update turned on; it never touches your own settings, and undo removes it."/>
           </StackPanel>
         </ScrollViewer>
       </Border>
@@ -1524,7 +1792,8 @@ $script:Xaml = @'
           <TextBlock x:Name="KeyNote" Foreground="#7D7199" TextWrapping="Wrap" Margin="0,6,0,0" Text="From the page after you paid. It locks to this PC."/>
           <Button x:Name="BtnRun" Style="{StaticResource Primary}" Content="Run the tune" Margin="0,16,0,8" Height="44" IsEnabled="False"/>
           <Button x:Name="BtnReport" Content="Free report  -  changes nothing" Margin="0,0,0,8" IsEnabled="False"/>
-          <Button x:Name="BtnUndo" Content="Undo the last run" Margin="0,0,0,8"/>
+          <Button x:Name="BtnUndo" Content="Undo every run" Margin="0,0,0,8"/>
+          <Button x:Name="BtnStatus" Content="What is still in place" Margin="0,0,0,8"/>
           <Button x:Name="BtnOpenReport" Content="Open the report" Margin="0,0,0,8" IsEnabled="False"/>
           <Button x:Name="BtnFolder" Content="Open C:\OmniDx" Margin="0,0,0,8"/>
           <Button x:Name="BtnRestart" Content="Restart now" IsEnabled="False"/>
@@ -1551,15 +1820,15 @@ function Show-Gui {
 
   $w = [System.Windows.Markup.XamlReader]::Parse($script:Xaml)
   $ui = @{}
-  foreach ($n in 'VersionText', 'StatusText', 'MachineText', 'CountText', 'TargetText', 'AdviceText', 'StartupPanel', 'KeyBox', 'KeyNote', 'BtnRun', 'BtnReport', 'BtnUndo', 'BtnFolder', 'BtnRestart', 'BtnOpenReport', 'ResultText', 'LogBox', 'Progress', 'FootText',
-                  'ChkStartup', 'ChkServices', 'ChkTasks', 'ChkApps', 'ChkDebloat', 'ChkTelemetry', 'ChkSystem', 'ChkPower', 'ChkNetwork', 'ChkPrograms', 'ChkGames', 'ChkNvidia', 'ChkCleanup', 'ChkAfterCount', 'ChkXbox', 'ChkDns', 'ChkVbs') {
+  foreach ($n in 'VersionText', 'StatusText', 'MachineText', 'CountText', 'TargetText', 'AdviceText', 'StartupPanel', 'KeyBox', 'KeyNote', 'BtnRun', 'BtnReport', 'BtnUndo', 'BtnStatus', 'BtnFolder', 'BtnRestart', 'BtnOpenReport', 'ResultText', 'LogBox', 'Progress', 'FootText',
+                  'ChkStartup', 'ChkServices', 'ChkTasks', 'ChkApps', 'ChkDebloat', 'ChkTelemetry', 'ChkSystem', 'ChkPower', 'ChkNetwork', 'ChkPrograms', 'ChkGames', 'ChkNvidia', 'ChkCleanup', 'ChkAfterCount', 'ChkKeep', 'ChkXbox', 'ChkDns', 'ChkVbs') {
     $ui[$n] = $w.FindName($n)
   }
   $ui.VersionText.Text = "v$($script:Version)"
   if ($Key) { $ui.KeyBox.Text = $Key }
   $phases = @{ startup = 'ChkStartup'; services = 'ChkServices'; tasks = 'ChkTasks'; apps = 'ChkApps'; debloat = 'ChkDebloat'; telemetry = 'ChkTelemetry'; system = 'ChkSystem'; power = 'ChkPower'; network = 'ChkNetwork'; programs = 'ChkPrograms'; games = 'ChkGames'; nvidia = 'ChkNvidia'; cleanup = 'ChkCleanup' }
   $state = @{ ps = $null; out = $null; handle = $null; seen = 0; seenOut = 0; mode = ''; heads = 0; startup = @(); probe = $null }
-  $headsTotal = 18
+  $headsTotal = 19
 
   $log = { param($line) $ui.LogBox.AppendText($line + "`r`n"); $ui.LogBox.ScrollToEnd() }
 
@@ -1573,7 +1842,7 @@ function Show-Gui {
     $out = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
     $state.ps = $ps; $state.out = $out; $state.seen = 0; $state.seenOut = 0; $state.mode = $mode; $state.heads = 0; $state.started = [System.Diagnostics.Stopwatch]::StartNew()
     $state.handle = $ps.BeginInvoke($inp, $out)
-    $ui.BtnRun.IsEnabled = $false; $ui.BtnReport.IsEnabled = $false; $ui.BtnUndo.IsEnabled = $false
+    $ui.BtnRun.IsEnabled = $false; $ui.BtnReport.IsEnabled = $false; $ui.BtnUndo.IsEnabled = $false; $ui.BtnStatus.IsEnabled = $false
     $ui.Progress.IsIndeterminate = ($mode -ne 'run')
   }
 
@@ -1601,14 +1870,14 @@ function Show-Gui {
       $cb.Content = $tb; $cb.IsChecked = $true; $cb.Tag = $e.name; $cb.Width = 280
       [void]$ui.StartupPanel.Children.Add($cb); $state.startup += $cb
     }
-    $ui.StatusText.Text = "Read in $([int]$script:Timer.Elapsed.TotalSeconds) s. Nothing has changed."
+    $ui.StatusText.Text = $(if ($probe.lastRun) { "Read in $([int]$script:Timer.Elapsed.TotalSeconds) s. Last run $($probe.lastRun.stamp -replace '_', ' ' -replace '-(\d\d)$', ':$1'): $($probe.lastRun.before) -> $($probe.lastRun.after) processes$(if ($probe.keepOn) { ', kept cut' })." } else { "Read in $([int]$script:Timer.Elapsed.TotalSeconds) s. Nothing has changed." })
     $ui.BtnRun.IsEnabled = $true; $ui.BtnReport.IsEnabled = $true
     $ui.Progress.IsIndeterminate = $false; $ui.Progress.Value = 0
   }
 
   $finish = {
     $ui.Progress.IsIndeterminate = $false
-    $ui.BtnRun.IsEnabled = $true; $ui.BtnReport.IsEnabled = $true; $ui.BtnUndo.IsEnabled = $true
+    $ui.BtnRun.IsEnabled = $true; $ui.BtnReport.IsEnabled = $true; $ui.BtnUndo.IsEnabled = $true; $ui.BtnStatus.IsEnabled = $true
     if ($state.mode -eq 'run') {
       $ui.Progress.Value = 100
       $done = [regex]::Match($ui.LogBox.Text, 'Processes: (\d+) -> (\d+)')
@@ -1618,6 +1887,7 @@ function Show-Gui {
       $ui.BtnOpenReport.IsEnabled = [bool](Get-ChildItem $script:Root -Filter 'report-*.html' -ErrorAction SilentlyContinue)
       $ui.CountText.Text = $(if ($done.Success) { $done.Groups[2].Value } else { $ui.CountText.Text })
     } elseif ($state.mode -eq 'undo') { $ui.StatusText.Text = 'Undo finished. Restart to finish.'; $ui.BtnRestart.IsEnabled = $true }
+    elseif ($state.mode -eq 'status') { $ui.StatusText.Text = 'Status read. Nothing changed.' }
     else { $ui.StatusText.Text = 'Report written to C:\OmniDx. Nothing changed.' }
     $state.ps.Dispose(); $state.ps = $null
   }
@@ -1659,11 +1929,13 @@ function Show-Gui {
     if ($ui.ChkDns.IsChecked) { $p.Dns = $true }
     if ($ui.ChkVbs.IsChecked) { $p.Aggressive = $true }
     if (-not $ui.ChkAfterCount.IsChecked) { $p.NoAfterCount = $true }
+    if (-not $ui.ChkKeep.IsChecked) { $p.NoKeep = $true }
     $ui.LogBox.Clear(); $ui.ResultText.Text = ''; $ui.Progress.Value = 2
     & $start $p 'run'
   })
   $ui.BtnReport.Add_Click({ $ui.LogBox.Clear(); & $start @{ Report = $true; Yes = $true } 'report' })
   $ui.BtnUndo.Add_Click({ $ui.LogBox.Clear(); & $start @{ Undo = $true } 'undo' })
+  $ui.BtnStatus.Add_Click({ $ui.LogBox.Clear(); & $start @{ Status = $true } 'status' })
   $ui.BtnFolder.Add_Click({ New-Item -ItemType Directory -Path $script:Root -Force | Out-Null; Start-Process explorer.exe $script:Root })
   $ui.BtnOpenReport.IsEnabled = [bool](Get-ChildItem $script:Root -Filter 'report-*.html' -ErrorAction SilentlyContinue)
   $ui.BtnRestart.Add_Click({ Restart-Computer -Force })
@@ -1888,6 +2160,7 @@ function Write-Preview($m, $before) {
 function Invoke-Undo {
   $u = Join-Path $script:Root 'undo\undo.ps1'
   if (-not (Test-Path $u)) { Say "Nothing to undo: no run recorded in C:\OmniDx\undo." 'Yellow'; return }
+  if (-not (Get-ChildItem (Join-Path $script:Root 'undo') -Filter 'changes-20*.json' -ErrorAction SilentlyContinue)) { Say "Nothing to undo: every recorded run has already been put back." 'Yellow'; return }
   & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $u
 }
 
@@ -1917,8 +2190,10 @@ function Main {
 
   New-Item -ItemType Directory -Path $script:Root -Force | Out-Null
   try { Start-Transcript -Path (Join-Path $script:Root ("log-{0}.txt" -f $script:Stamp)) -Append -ErrorAction Stop | Out-Null } catch { }
+  Limit-History
   try {
     if ($Undo) { Invoke-Undo; return }
+    if ($Status) { Show-Status; return }
     if ($Probe) { Write-Output (Get-Probe | ConvertTo-Json -Depth 5 -Compress); return }
     if ($Gui) {
       $shown = $false
@@ -1999,6 +2274,7 @@ function Main {
     Set-Vbs $m
     & $run 'cleanup'   { Clear-Junk }
     Register-AfterCount
+    & $run 'keep'      { Register-Keep }
 
     $changesFile = Save-Changes
     $after = Get-ProcessCount
@@ -2014,9 +2290,10 @@ function Main {
     Say ("  Processes: {0} -> {1} now, in {2} seconds. Restart for the real number: the services that were told to stop are still unwinding." -f $before, $after, [int]$script:Timer.Elapsed.TotalSeconds) 'Green'
     Say ("  Report, BIOS checklist and per-game settings: {0}" -f $rep) 'White'
     Say "  Undo, any time: powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1" 'White'
+    Say "  What is still in place, any time: `$env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex" 'White'
     Say "  Next: restart, then do the BIOS checklist - the memory profile alone is worth more than half of this." 'White'
     try { if ($script:HtmlReport -and (Test-Path $script:HtmlReport)) { Start-Process $script:HtmlReport } else { Start-Process notepad.exe $rep } } catch { }
-    if (-not $NoRestart -and (Ask "Restart now?")) { Restart-Computer -Force }
+    if (-not $NoRestart -and (Ask "Restart now?")) { Invoke-Restart }
   } finally {
     try { Stop-Transcript | Out-Null } catch { }
   }

@@ -216,8 +216,11 @@
           back to their start type, tasks back on, registry values restored, the power plan you
           had before made active again, Discord and Spotify's files put back from their backups.
         </p>
-        <p>No key is needed for undo. Neither is this site — the undo script is a plain file on your machine.
+        <p>Tuned twice? Undo walks back every recorded run, newest first, so the PC ends up as it was
+          before the first one, and removes the keep task. No key is needed for undo. Neither is this site — the undo script is a plain file on your machine.
           And the System Restore point from before the run is still there if you would rather use that.</p>
+        <p>Want to know what is still in place, what an update put back and when the keep task last ran? Same key, no charge, changes nothing:</p>
+        <div class="cmd" style="margin-top:8px"><code data-text="$env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex">$env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
       </div>
     </div>
   </div>
@@ -257,6 +260,12 @@
         <div class="cmd" style="margin-top:12px"><code data-text="$env:OMNIDX_FLAGS='-NoAfterCount'; irm omnidx.net/go.ps1 | iex">$env:OMNIDX_FLAGS='-NoAfterCount'; irm omnidx.net/go.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
       </div>
       <div class="card reveal d1">
+        <div class="card-icon">🔁</div>
+        <h3>Not kept after updates</h3>
+        <p>By default the tune asks to leave a small task that runs three minutes after sign-in and puts back what a Windows update turned on. It only touches what was recorded, never your own settings, and undo removes it. To never make it:</p>
+        <div class="cmd" style="margin-top:12px"><code data-text="$env:OMNIDX_FLAGS='-NoKeep'; irm omnidx.net/go.ps1 | iex">$env:OMNIDX_FLAGS='-NoKeep'; irm omnidx.net/go.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
+      </div>
+      <div class="card reveal d1">
         <div class="card-icon">🌐</div>
         <h3>DNS to 1.1.1.1</h3>
         <p>Your router's DNS is usually fine, so this is off. Flags can be combined with a space.</p>
@@ -267,7 +276,7 @@
       <b>By hand, without the bootstrapper.</b> The script itself takes the same options as normal
       PowerShell parameters — <span class="mono tiny">-Key</span>, <span class="mono tiny">-Aggressive</span>,
       <span class="mono tiny">-CutXbox</span>, <span class="mono tiny">-Keep</span>, <span class="mono tiny">-Dns</span>,
-      <span class="mono tiny">-NoRestorePoint</span>, <span class="mono tiny">-NoAfterCount</span>, <span class="mono tiny">-Undo</span>, <span class="mono tiny">-Report</span>, <span class="mono tiny">-CheckKey</span>,
+      <span class="mono tiny">-NoRestorePoint</span>, <span class="mono tiny">-NoAfterCount</span>, <span class="mono tiny">-NoKeep</span>, <span class="mono tiny">-Undo</span>, <span class="mono tiny">-Status</span>, <span class="mono tiny">-Report</span>, <span class="mono tiny">-CheckKey</span>,
       <span class="mono tiny">-Yes</span> — and is at <a href="https://omnidx.net/tune/omnidx.ps1">omnidx.net/tune/omnidx.ps1</a> to read or save.
     </div>
   </div>

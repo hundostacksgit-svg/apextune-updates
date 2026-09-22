@@ -11,7 +11,8 @@ pieces fit and the short list of what still needs a human to switch on.
 | The site | `studio/` (served at `omnidx.net/studio/`, and `omnidx.net` redirects there) | Landing, pricing, run-it, trust and key pages. Black and purple. |
 | The bootstrapper | `go.ps1` (served at `omnidx.net/go.ps1`) | The one command: `irm omnidx.net/go.ps1 \| iex`. Asks for the key, gets admin rights, reads `tune/config.json`, fetches the script, runs it from memory. |
 | The script | `tune/omnidx.ps1` (served at `omnidx.net/tune/omnidx.ps1`) | The tune itself: read the PC, check the key, restore point, the cut, power plan, network, apps, game profiles, report, undo. Public on purpose. |
-| The config | `tune/config.json` | One field that matters: `api`. Empty means no licence server. |
+| The config | `tune/config.json` | One field that matters: `api`. Empty means no licence server. `version` and `sha256` are stamped by `tools/tune-stamp.py`. |
+| On the buyer's PC | `C:\OmniDx\undo\undo.ps1`, `keep.ps1`, `changes-*.json`; `C:\OmniDx\keep-log.txt`, `after-restart.txt`, `report-*.html`, `summary-*.json` | Written by the script. Undo walks back every record; keep.ps1 is what the sign-in task runs; the log has one line per sign-in. |
 | Keys in the browser | `studio/assets/tunekey.js`, `studio/activate/` | Makes and checks keys on the page after paying. |
 | Keys on the server | `server/worker.js` (`/v1/tune/*`), `server/schema.sql` (`tune_keys`, `tune_machines`) | Issues keys against Square orders, binds them to PCs, refuses the rest, moves them on request. |
 | Keys by hand | `tools/make-tune-key.py` | Make, check or reproduce a key; print the D1 insert. |
@@ -165,6 +166,44 @@ and unregisters itself. It is recorded as a change, so undo removes it, and
 `-NoAfterCount` skips it. The site says so on the run-it, pricing and trust
 pages; keep it that way.
 
+### Keeping it cut (the sign-in task)
+Windows updates turn pieces of the tune back on: a feature update resets
+service start types, re-enables scheduled tasks and puts a few values back.
+At the end of a run the script asks "Keep it cut after updates?" (`-Yes`
+answers yes, `-NoKeep` or `-Skip keep` never asks). Yes registers one task,
+"OmniDx keep", that runs `C:\OmniDx\undo\keep.ps1` hidden three minutes
+after that account's sign-in, with a ten-minute limit. keep.ps1 loads every
+`changes-*.json` next to it, compares each recorded registry value (the
+`value` field, recorded since 1.6), service start type (`now`) and disabled
+task with the machine, and sets again whatever drifted. It writes one line
+per run to `C:\OmniDx\keep-log.txt`.
+
+What it deliberately leaves alone: startup apps and personal preferences
+(`Control Panel`, `StartupApproved`, `Run`, `Explorer\Advanced`, Game Bar,
+GameDVR, GPU preferences, visual effects, accessibility). If those change
+after the tune it was the buyer, and that wins. The list is `$yours` in
+`Get-Drift`; keep.ps1 is written with that function's text pasted in, so
+there is one copy of the logic.
+
+The task is recorded as a change, so undo removes it, and undo also removes
+it by name. Once undo has moved the records to `undo\done\`, keep.ps1
+finds nothing and does nothing. When the administrator password came from
+a different account than the one signed in, the task is not made (it would
+fire at the wrong sign-in) and the script says so.
+
+`-Status` (`$env:OMNIDX_MODE='status'`) is the read-only side of the same
+comparison: the runs recorded, how many settings were checked, what has
+drifted, the keep task's state and last line, the after-restart count, the
+last run's numbers and the key. The app's "What is still in place" button
+runs it.
+
+### Undo across runs
+`undo.ps1` with no argument walks back every `changes-*.json` in its folder,
+newest first, then moves each to `done\` and deletes `changes-latest.json`;
+a second undo says everything has already been put back. `-File` puts back
+one record only. A run's `backup\<stamp>` folder is kept as long as its
+record is; `Limit-History` keeps the newest ten of everything else.
+
 ### Checks that run on every push
 - `tools/tune-check.mjs`: both scripts are ASCII, brackets balance outside
   strings and comments, every function Main calls exists, the key checksum
@@ -173,9 +212,16 @@ pages; keep it that way.
 - `tools/tune-touches.py --check`: the "Everything it touches" page is
   generated from the script's lists and fails the build when stale.
 - `.github/workflows/tune-check.yml`: on a Windows runner, parses both
-  scripts with PowerShell's parser, runs the tune in report mode (changes
-  nothing), runs undo with nothing recorded, and confirms a bad key is
-  refused. This is the only place the script actually executes before a
+  scripts with PowerShell's parser, runs the tune in report mode, draws the
+  app window to a PNG, runs undo with nothing recorded, then runs the whole
+  tune with a real key, checks `-Status` says everything is in place and
+  the keep task is on, turns a service, a task and a policy value back on by
+  hand and requires keep.ps1 to see and put back all three, undoes the whole
+  tune (at least 70% of the changes must go back, the keep task must be
+  gone, the record must be in `done\`), checks status and a second undo
+  after that, and confirms a bad key is refused and Python-made keys are
+  accepted. The screenshot and the run's numbers are committed back to the
+  branch. This is the only place the script actually executes before a
   buyer runs it; watch it after every script change.
 
 ### A key by hand (Cash App, a friend, a giveaway)

@@ -70,8 +70,12 @@ Log it: every "kept because" rule lives in `Get-KeepList` in the script.
 
 ## "Windows Update turned things back on"
 
-> That happens after a feature update. Run the same command with the same
-> key; the same PC can run it as often as it likes.
+> That happens after a feature update. If you said yes to "keep it cut" at
+> the end of the run, the sign-in task has already put it back; run
+> `$env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex` to see what it
+> found (C:\OmniDx\keep-log.txt has one line per sign-in). If you said no,
+> run the same command with the same key; the same PC can run it as often
+> as it likes.
 
 ## "Does it work with VALORANT / Fortnite / CS2"
 
