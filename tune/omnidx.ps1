@@ -80,7 +80,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.6.0'
+$script:Version = '1.7.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -370,7 +370,7 @@ foreach ($c in $changes) {
       'task' { try { Enable-ScheduledTask -TaskPath $c.path -TaskName $c.name -ErrorAction Stop | Out-Null } catch { } }
       'file' { if (Test-Path $c.backup) { Copy-Item $c.backup $c.path -Force; Write-Host ("file restored {0}" -f $c.path) -ForegroundColor DarkGray } }
       'appx' { $removedApps += $c.name }
-      'fsutil' { & fsutil behavior set disablelastaccess $c.prev | Out-Null }
+      'fsutil' { $setting = $(if ($c.setting) { $c.setting } else { 'disablelastaccess' }); & fsutil behavior set $setting $c.prev | Out-Null; Write-Host ("fsutil {0} -> {1}" -f $setting, $c.prev) -ForegroundColor DarkGray }
       'mmagent' { try { Enable-MMAgent -ApplicationPreLaunch -ErrorAction Stop } catch { } }
       'task-created' { try { Unregister-ScheduledTask -TaskName $c.name -Confirm:$false -ErrorAction Stop } catch { } }
       'capability' {
@@ -1314,11 +1314,18 @@ function Tune-System($m) {
   Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize' 'StartupDelayInMSec' 0
   # Store apps pre-launching in the background (Edge, mostly).
   try { if ((Get-MMAgent -ErrorAction Stop).ApplicationPreLaunch) { Disable-MMAgent -ApplicationPreLaunch -ErrorAction Stop; Record @{ type = 'mmagent'; feature = 'ApplicationPreLaunch' }; Did "App pre-launch off" } } catch { }
-  # NTFS: stop writing "last accessed" on every file read.
-  try {
-    $q = (& fsutil behavior query disablelastaccess 2>$null) -join ' '
-    if ($q -match '= (\d)') { $prev = $Matches[1]; if ($prev -ne '1') { & fsutil behavior set disablelastaccess 1 | Out-Null; Record @{ type = 'fsutil'; prev = $prev } } }
-  } catch { }
+  # NTFS: stop writing "last accessed" on every file read; let the file system
+  # cache more with 16 GB or more; make sure TRIM is on for the SSDs (a
+  # cloned or old install sometimes has it off, and the SSD slows over months).
+  $fs = { param($setting, $want, $why)
+    try {
+      $q = (& fsutil behavior query $setting 2>$null) -join ' '
+      if ($q -match '= (\d)') { $prev = $Matches[1]; if ($prev -ne $want) { & fsutil behavior set $setting $want | Out-Null; Record @{ type = 'fsutil'; setting = $setting; prev = $prev }; Did $why } }
+    } catch { }
+  }
+  & $fs 'disablelastaccess' '1' 'NTFS last-access stamps off'
+  if ($m.ramGb -ge 16) { & $fs 'memoryusage' '2' 'NTFS allowed more memory for its cache' }
+  if ($m.allSsd -or $m.nvme) { & $fs 'DisableDeleteNotify' '0' 'TRIM was off for the SSDs; on' }
   Say "  Scheduler set for the game in front, throttling off, visuals lean, mouse acceleration off, HAGS on."
 }
 
@@ -1493,7 +1500,22 @@ $script:Games = @(
   @{ name = 'GTA V / Online'; exes = @('GTA5.exe', 'GTA5_Enhanced.exe'); notes = @('FXAA on, MSAA off, VSync off, population density 60%, shadow quality normal, reflection quality normal, grass normal, extended distance scaling off.') },
   @{ name = 'Rust'; exes = @('RustClient.exe'); notes = @('Launch options: -high -maxMem=16384 -malloc=system -force-feature-level-11-0', 'Anti-aliasing FXAA, water quality 0, shadow quality 0, draw distance 1500, grass displacement off.') },
   @{ name = 'Escape from Tarkov'; exes = @('EscapeFromTarkov.exe'); notes = @('Texture quality high (VRAM permitting), shadows low, object LOD 2, overall visibility 400, HBAO off, SSR off, anisotropic per texture.') },
-  @{ name = 'PUBG'; exes = @('TslGame.exe'); notes = @('Render scale 100, anti-aliasing low, post-processing very low, shadows very low, textures medium, effects very low, foliage very low, view distance medium.') }
+  @{ name = 'PUBG'; exes = @('TslGame.exe'); notes = @('Render scale 100, anti-aliasing low, post-processing very low, shadows very low, textures medium, effects very low, foliage very low, view distance medium.') },
+  @{ name = 'The Finals'; exes = @('Discovery-Win64-Shipping.exe', 'Discovery.exe'); notes = @('Destruction is CPU work, so the GPU settings are cheap: texture quality high is free, global illumination low is where the frames are.', 'DLSS / FSR on Quality at 1440p and above; Reflex on + boost; V-Sync and motion blur off.') },
+  @{ name = 'Dota 2'; exes = @('dota2.exe'); notes = @('Launch options in Steam: -high -novid', 'Video > use advanced settings: everything low except texture quality, shadow quality off, V-Sync off, max frames 240 or your refresh rate.') },
+  @{ name = 'Battlefield 6'; exes = @('BF6.exe', 'bf6.exe'); notes = @('Mesh quality low is the competitive setting (fewer objects drawn); texture quality high is free; effects, lighting and undergrowth low.', 'Future frame rendering on unless input feels heavy; Reflex / Anti-Lag on; DLSS / FSR Quality at 1440p and above.') },
+  @{ name = 'Deadlock'; exes = @('project8.exe'); notes = @('Launch options in Steam: -high -novid', 'Shadow quality low, texture quality high, effect detail low; the frame limiter is fps_max in the console.') },
+  @{ name = 'Delta Force'; exes = @('DeltaForceClient-Win64-Shipping.exe'); notes = @('DirectX 12 mode, global illumination off, shadows low, anti-aliasing DLSS / FSR Quality, frame limit at your refresh rate.') },
+  @{ name = 'ARC Raiders'; exes = @('PioneerGame-Win64-Shipping.exe', 'PioneerGame.exe'); notes = @('Frame generation off for aim; DLSS / FSR Quality; global illumination and shadows low, the rest medium; motion blur off.') },
+  @{ name = 'Helldivers 2'; exes = @('helldivers2.exe'); notes = @('Async compute on, render scale native or Quality upscale, anti-aliasing TAA, shadow quality low, particle quality medium, volumetric fog low.') },
+  @{ name = 'Warframe'; exes = @('Warframe.x64.exe'); notes = @('DirectX 12 and the enhanced graphics engine on a recent GPU; dynamic resolution off, motion blur off, V-Sync off, max framerate at your refresh rate.') },
+  @{ name = 'Destiny 2'; exes = @('destiny2.exe'); notes = @('Framerate cap at your refresh rate (uncapped spikes the CPU); shadow quality low, depth of field and motion blur off, texture quality high, field of view 105.') },
+  @{ name = 'Halo Infinite'; exes = @('HaloInfinite.exe'); notes = @('Quality preset low, texture filtering high, async compute on, maximum frame rate at your refresh, minimum frame rate off.') },
+  @{ name = 'Dead by Daylight'; exes = @('DeadByDaylight-Win64-Shipping.exe'); notes = @('Quality low, resolution 100%, anti-aliasing off, frame limit 120: the engine ties some timings to the cap.') },
+  @{ name = 'Hunt: Showdown 1896'; exes = @('HuntGame.exe'); notes = @('Graphics quality low, texture quality high, shadows medium (you need to see into them), anti-aliasing DLSS / FSR Quality, motion blur off.') },
+  @{ name = 'War Thunder'; exes = @('aces.exe'); notes = @('Movie preset off; grass, clouds and water low; anti-aliasing off or TAA at high refresh; V-Sync off.') },
+  @{ name = 'World of Warcraft'; exes = @('Wow.exe', 'WowClassic.exe'); notes = @('Graphics quality 5-7, shadow quality low, view distance 7, particle density low, DirectX 12, target FPS at your refresh rate.') },
+  @{ name = 'Squad'; exes = @('SquadGame.exe'); notes = @('Shadows low, ambient occlusion off, texture quality high, foliage medium (low removes cover for you only), anti-aliasing FXAA.') }
 )
 
 <# Where games live on this PC: every Steam library the client knows about,

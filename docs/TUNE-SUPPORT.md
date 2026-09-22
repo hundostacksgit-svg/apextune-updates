@@ -7,8 +7,12 @@ Where things are on the buyer's PC: `C:\OmniDx\` holds `report-<date>.txt`
 (everything found and done), `report-preview-<date>.txt` (free mode),
 `log-<date>.txt` (a transcript of the run), `machine-<date>.json`,
 `summary-<date>.json`, `processes-before/after-<date>.txt`,
-`after-restart.txt`, `undo\undo.ps1` and `undo\changes-latest.json`,
-`backup\<date>\` (registry exports, service list, app settings files).
+`after-restart.txt`, `keep-log.txt` (one line per sign-in from the keep
+task), `undo\undo.ps1`, `undo\keep.ps1`, `undo\changes-<date>.json` (one
+per run; undo moves them to `undo\done\`), `backup\<date>\` (registry
+exports, service list, app settings files). `$env:OMNIDX_MODE='status'`
+prints the lot in one screen: runs in place, what drifted, the keep task,
+the after-restart count, the key.
 Ask for `summary-<date>.json` and `log-<date>.txt` first; they answer most
 questions.
 

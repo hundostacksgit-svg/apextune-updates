@@ -30,6 +30,8 @@ at their process count.
 - Restore point first, every run. Security never lowered.
 - The whole script is public. Read every line before you pay.
 - Free report mode: see what it would do on your PC, changes nothing.
+- Windows updates turn things back on. A small task at sign-in turns them off
+  again. Undo removes it.
 - It writes a BIOS checklist for your exact board. The RAM speed line alone
   is worth the price on most PCs.
 

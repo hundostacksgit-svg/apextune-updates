@@ -152,6 +152,7 @@ jobs:
           Write-Host $out
           if ($out -notmatch '(\d+) had drifted, (\d+) put back') { Write-Host 'keep did not put anything back'; exit 1 }
           if ([int]$Matches[2] -lt 3) { Write-Host ("keep put back {0}, expected 3" -f $Matches[2]); exit 1 }
+          Set-Content C:\OmniDx\ci-kept.txt $Matches[2]
           if (-not (Test-Path C:\OmniDx\keep-log.txt)) { Write-Host 'no keep log'; exit 1 }
           Get-Content C:\OmniDx\keep-log.txt
           $out = & .\tune\omnidx.ps1 -Status *>&1 | Out-String
@@ -172,7 +173,8 @@ jobs:
           $undone = [int]$Matches[1]
           $s = Get-Content C:\OmniDx\ci-summary.json | ConvertFrom-Json
           if ($undone -lt [math]::Floor($s.changes * 0.7)) { Write-Host ("undo put back {0} of {1} changes; that is a broken undo" -f $undone, $s.changes); exit 1 }
-          $ci = [ordered]@{ version = $s.version; when = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'); os = $s.os; cpu = $s.cpu; before = $s.before; after = $s.after; target = $s.target; changes = $s.changes; warnings = $s.warnings; seconds = $s.seconds; undone = $undone; gone = @($s.gone).Count; sha = $env:GITHUB_SHA.Substring(0, 7) }
+          $kept = 0; if (Test-Path C:\OmniDx\ci-kept.txt) { $kept = [int](Get-Content C:\OmniDx\ci-kept.txt) }
+          $ci = [ordered]@{ version = $s.version; when = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'); os = $s.os; cpu = $s.cpu; before = $s.before; after = $s.after; target = $s.target; changes = $s.changes; warnings = $s.warnings; seconds = $s.seconds; undone = $undone; kept = $kept; gone = @($s.gone).Count; sha = $env:GITHUB_SHA.Substring(0, 7) }
           $ci | ConvertTo-Json | Set-Content studio\assets\ci-run.json -Encoding UTF8
           Get-Content studio\assets\ci-run.json
           $out = & .\tune\omnidx.ps1 -Status *>&1 | Out-String

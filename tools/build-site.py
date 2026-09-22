@@ -74,7 +74,7 @@ MENU = [
             ('🗑️', 'Debloat, for good', 'Preinstalled apps, OEM trials, OneDrive if unused, legacy Windows', '{s}#debloat'),
             ('🔍', 'Reads your PC first', 'Laptop or desktop, printers, Bluetooth, Wi-Fi, Xbox — the safe bar is yours', '{s}#tailored'),
             ('⚡', 'The OmniDx power plan', 'Built for frames: no core parking, no bus sleep', '{s}#power'),
-            ('🎮', 'Game profiles', 'Fortnite, VALORANT, CS2, Marvel Rivals and twelve more', '{s}#games'),
+            ('🎮', 'Game profiles', 'Fortnite, VALORANT, CS2, Marvel Rivals and twenty-seven more', '{s}#games'),
             ('📶', 'Network', 'Nagle off, adapter power saving off, latency first', '{s}#network'),
             ('🎧', 'Discord, Spotify, browser', 'Hardware acceleration on, background running off', '{s}#apps'),
             ('🧬', 'BIOS checklist', 'Written for your exact board and CPU', '{s}#bios'),

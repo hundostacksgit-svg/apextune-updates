@@ -310,7 +310,9 @@ export const TUNE = {
   fromRedirect: { creator: 'tune', tune: 'tune', studio: 'tune', team: 'squad', squad: 'squad' },
   refundDays: 14,
   games: ['Fortnite', 'VALORANT', 'Counter-Strike 2', 'Marvel Rivals', 'Apex Legends', 'Call of Duty', 'Overwatch 2',
-    'Rainbow Six Siege', 'Rocket League', 'Minecraft', 'Roblox', 'League of Legends', 'GTA V', 'Rust', 'Escape from Tarkov', 'PUBG'],
+    'Rainbow Six Siege', 'Rocket League', 'Minecraft', 'Roblox', 'League of Legends', 'GTA V', 'Rust', 'Escape from Tarkov', 'PUBG',
+    'The Finals', 'Dota 2', 'Battlefield 6', 'Deadlock', 'Delta Force', 'ARC Raiders', 'Helldivers 2', 'Warframe', 'Destiny 2', 'Halo Infinite',
+    'Dead by Daylight', 'Hunt: Showdown 1896', 'War Thunder', 'World of Warcraft', 'Squad'],
 };
 
 /** The Square link for a Tune product. */

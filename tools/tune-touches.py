@@ -250,7 +250,7 @@ def page(text: str) -> str:
       <li>Hibernation off on desktops (hiberfil.sys freed); left alone on laptops</li>
       <li>TCP settings by netsh and adapter properties by their driver names; every one recorded with its previous value</li>
       <li>Discord's settings.json and Spotify's prefs, backed up first, only while the apps are closed</li>
-      <li>Store app pre-launch off (Disable-MMAgent); NTFS last-access stamps off</li>
+      <li>Store app pre-launch off (Disable-MMAgent); NTFS last-access stamps off; NTFS allowed more cache memory with 16 GB or more; TRIM switched on for SSDs if it was off. Each recorded with its previous value</li>
       <li>One scheduled task that runs once at your next sign-in, writes the after-restart process count and removes itself; skip it with <span class="mono">-NoAfterCount</span></li>
       <li>One scheduled task, "OmniDx keep", if you say yes to it: three minutes after each sign-in it compares the services, tasks and values above with the machine and puts back what a Windows update turned on. It never touches startup apps or personal preferences, logs to <span class="mono">C:\OmniDx\keep-log.txt</span>, and undo removes it; <span class="mono">-NoKeep</span> never makes it</li>
       <li>OneDrive uninstalled when nobody is signed in to it (files untouched; undo reinstalls); kept when you are</li>

@@ -12,7 +12,10 @@
  * parentheses balance outside strings, comments and here-strings; every
  * function the main flow calls is defined; the key checksum agrees between
  * the browser module and the Python tool; tune/config.json parses and its
- * version matches the script's.
+ * version matches the script's; every kind of change the script records has
+ * a handler in the undo script; every control the window code touches is in
+ * the XAML and in the FindName list; every flag the bootstrapper passes is a
+ * switch the script declares.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -100,12 +103,62 @@ function config(scriptText) {
   else bad(`tune/config.json sha256 is stale: run python3 tools/tune-stamp.py`);
 }
 
+/* A change the script records with no undo handler would be a change nobody
+   can put back. The undo script is the here-string $script:UndoScript; the
+   record types come from every Record @{ type = '...' } outside it. */
+function undoCovers(file, text) {
+  const start = text.indexOf("$script:UndoScript = @'");
+  const end = text.indexOf("\n'@", start);
+  const undo = text.slice(start, end);
+  const outside = text.slice(0, start) + text.slice(end);
+  const types = new Set([...outside.matchAll(/Record @\{ type = '([a-z-]+)'/g)].map((m) => m[1]));
+  const missing = [...types].filter((t) => !new RegExp(`^\\s+'${t}' \\{`, 'm').test(undo));
+  if (missing.length) bad(`${file}: undo.ps1 has no handler for recorded type(s) ${missing.join(', ')}`);
+  else ok(`${file}: undo.ps1 handles every recorded change type (${[...types].sort().join(' ')})`);
+}
+
+/* The window: every x:Name in the XAML is looked up, and every $ui.Name the
+   code uses exists in the XAML. A typo here only shows when a real person
+   clicks. */
+function windowNames(file, text) {
+  const start = text.indexOf("$script:Xaml = @'");
+  const end = text.indexOf("\n'@", start);
+  const xaml = text.slice(start, end);
+  // Lower-case names are template parts (the button's border), not controls.
+  const named = new Set([...xaml.matchAll(/x:Name="([A-Z][A-Za-z]+)"/g)].map((m) => m[1]));
+  const gui = text.slice(text.indexOf('function Show-Gui'), text.indexOf('function Get-ProcessCount'));
+  const lookedUp = new Set([...gui.matchAll(/'([A-Z][A-Za-z]+)'/g)].map((m) => m[1]).filter((n) => named.has(n)));
+  const used = new Set([...gui.matchAll(/\$ui\.([A-Za-z]+)/g)].map((m) => m[1]));
+  const notLookedUp = [...named].filter((n) => !lookedUp.has(n));
+  const notInXaml = [...used].filter((n) => !named.has(n));
+  if (notLookedUp.length) bad(`${file}: XAML names never looked up: ${notLookedUp.join(', ')}`);
+  if (notInXaml.length) bad(`${file}: window code uses controls the XAML does not have: ${notInXaml.join(', ')}`);
+  if (!notLookedUp.length && !notInXaml.length) ok(`${file}: the window's ${named.size} named controls are all looked up and all exist`);
+}
+
+/* go.ps1 passes flags through by name; each must be a switch the script has. */
+function flags(scriptText, goText) {
+  const m = /\^\(([A-Za-z|]+)\)\$/.exec(goText);
+  const names = m ? m[1].split('|') : [];
+  const switches = new Set([...scriptText.matchAll(/\[switch\]\$([A-Za-z]+)/g)].map((x) => x[1]));
+  const missing = names.filter((n) => !switches.has(n));
+  if (!names.length) bad('go.ps1: could not find the flag list');
+  else if (missing.length) bad(`go.ps1 passes flags the script does not declare: ${missing.join(', ')}`);
+  else ok(`go.ps1's ${names.length} flags are all switches the script declares`);
+  const modes = new Set([...goText.matchAll(/^\s+'([a-z]+)'\s+\{ & \$block/gm)].map((x) => x[1]));
+  for (const mode of ['undo', 'report', 'status', 'check', 'app']) if (!modes.has(mode)) bad(`go.ps1: mode '${mode}' is not handled`);
+  ok(`go.ps1 handles modes ${[...modes].join(' ')}`);
+}
+
 console.log('OmniDx Tune checks');
 const script = ascii('tune/omnidx.ps1');
 const go = ascii('go.ps1');
 balance('tune/omnidx.ps1', script);
 balance('go.ps1', go);
 definedFunctions('tune/omnidx.ps1', script);
+undoCovers('tune/omnidx.ps1', script);
+windowNames('tune/omnidx.ps1', script);
+flags(script, go);
 await keys();
 config(script);
 console.log(failed ? `${failed} problem(s)` : 'all good');
