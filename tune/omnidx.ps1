@@ -80,7 +80,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.7.0'
+$script:Version = '1.7.1'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -668,8 +668,9 @@ function Get-Drift {
           continue
         }
         $want = $c.value
-        # A DWord reads back as a signed 32-bit value: 0xFFFFFFFF comes out as -1.
-        $norm = { param($v, $kind) if ($kind -eq 'DWord') { try { return [string]([uint32]([int64]$v -band 0xFFFFFFFF)) } catch { return "$v" } } else { return (@($v) -join ',') } }
+        # A DWord reads back as a signed 32-bit value (0xFFFFFFFF is -1), and PowerShell
+        # types the literal 0xFFFFFFFF itself as -1; both sides go through the same mask.
+        $norm = { param($v, $kind) if ($kind -eq 'DWord') { try { return [string]([int64]$v -band [int64]4294967295) } catch { return "$v" } } else { return (@($v) -join ',') } }
         $same = $false
         if ($has) { $same = ((& $norm $cur $c.kind) -eq (& $norm $want $c.kind)) }
         if ($same) { continue }
@@ -684,8 +685,10 @@ function Get-Drift {
         $svc = Get-Service -Name $c.name -ErrorAction SilentlyContinue
         if (-not $svc) { continue }
         $checked++
+        # WMI lists per-user service instances (WpnUserService_1a2b), not the template the tune configured; Get-Service knows the template.
         $mode = (Get-CimInstance Win32_Service -Filter ("Name='{0}'" -f $c.name) -ErrorAction SilentlyContinue).StartMode
-        if ($mode -eq 'Auto') { $mode = 'Automatic' }
+        if (-not $mode) { $mode = $svc.StartType.ToString() }
+        if ($mode -eq 'Auto' -or $mode -eq 'AutomaticDelayedStart') { $mode = 'Automatic' }
         if ($mode -eq $c.now) { continue }
         [void]$drift.Add(("service {0} is {1} (wanted {2})" -f $c.name, "$mode".ToLower(), "$($c.now)".ToLower()))
         if ($Fix) {
