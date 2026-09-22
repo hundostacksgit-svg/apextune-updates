@@ -434,7 +434,7 @@ function Show-Machine($m) {
 function Show-Advice($m) {
   if ($m.ramSlow) { Warn ("RAM is running at {0} MT/s but is rated for {1}: the memory profile (XMP / EXPO) is off in the BIOS. That is item 1 on your checklist and the biggest free gain on this PC." -f $m.ramNow, $m.ramRated) }
   if ($m.sticks -eq 1) { Warn "One stick of RAM: single channel. A matching second stick is the biggest upgrade this PC can get." }
-  if ($m.maxRefresh -and $m.refresh -and ($m.maxRefresh -gt ($m.refresh + 1))) { Warn ("Your display can do {0} Hz but Windows is set to {1} Hz. Settings > System > Display > Advanced display." -f $m.maxRefresh, $m.refresh) }
+  if ($m.maxRefresh -and $m.refresh -and $m.refresh -ge 24 -and ($m.maxRefresh -gt ($m.refresh + 1))) { Warn ("Your display can do {0} Hz but Windows is set to {1} Hz. Settings > System > Display > Advanced display." -f $m.maxRefresh, $m.refresh) }
   if ($m.driverDate -and ($m.driverDate -lt (Get-Date).AddMonths(-12))) { Warn ("The GPU driver dates from {0}. A current driver is worth more than most tweaks." -f $m.driverDate.ToString('MMM yyyy')) }
   if ($m.noPageFile) { Warn "No page file. Some games crash without one: System > Advanced > Performance > Virtual memory > System managed." }
   if ($m.sysHdd) { Warn "Windows is on a hard disk. An SSD is the biggest upgrade this PC can get; no tweak comes close." }
@@ -1334,7 +1334,7 @@ function Main {
     $m = Get-Machine
     # Windows Server is refused: it is not what this is for. The one exception is
     # the check that runs on a Windows Server build machine, in report mode.
-    if ($m.os -match 'Server' -and -not ($Report -and $env:OMNIDX_ALLOW_SERVER)) { Say "  This is Windows Server. The tune is for Windows 10 and 11." 'Red'; return }
+    if ($m.os -match 'Server' -and -not $env:OMNIDX_ALLOW_SERVER) { Say "  This is Windows Server. The tune is for Windows 10 and 11." 'Red'; return }
     if ($m.build -lt 18362) { Say "  Windows 10 version 1903 or newer is needed. Update Windows first." 'Red'; return }
     Show-Machine $m
     Show-Advice $m
