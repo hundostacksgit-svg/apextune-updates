@@ -514,7 +514,7 @@ function Resolve-User {
 
 function Save-ProcessList([string]$tag) {
   try {
-    $rows = Get-Process -ErrorAction SilentlyContinue | Group-Object ProcessName | Sort-Object Count -Descending, Name | ForEach-Object { "{0,-40} x{1,-3} {2,8:N0} MB" -f $_.Name, $_.Count, (($_.Group | Measure-Object WorkingSet64 -Sum).Sum / 1MB) }
+    $rows = Get-Process -ErrorAction SilentlyContinue | Group-Object ProcessName | Sort-Object -Property @{ Expression = 'Count'; Descending = $true }, @{ Expression = 'Name'; Descending = $false } | ForEach-Object { "{0,-40} x{1,-3} {2,8:N0} MB" -f $_.Name, $_.Count, (($_.Group | Measure-Object WorkingSet64 -Sum).Sum / 1MB) }
     Set-Content -Path (Join-Path $script:Root ("processes-{0}-{1}.txt" -f $tag, $script:Stamp)) -Value $rows -Encoding UTF8
   } catch { }
 }
