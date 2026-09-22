@@ -58,12 +58,25 @@ param(
   # Do not leave the one-shot task that writes the after-restart process count.
   [switch]$NoAfterCount,
   # Answer every question yes.
-  [switch]$Yes
+  [switch]$Yes,
+  # Phases to leave out, by name: startup services tasks apps debloat telemetry
+  # system power network programs games nvidia cleanup. The app uses this.
+  [string[]]$Skip = @(),
+  # Never restart or offer to. The app has its own button for that.
+  [switch]$NoRestart,
+  # Open the window instead of the console flow.
+  [switch]$Gui,
+  # With -Gui: render the window to this PNG without showing it, then stop.
+  [string]$Screenshot,
+  # Read the PC and print one JSON line for the app: machine, startup entries, counts.
+  [switch]$Probe,
+  # Print how much of itself the script can see (the app needs its own text).
+  [switch]$SelfTest
 )
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.2.0'
+$script:Version = '1.3.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -72,6 +85,12 @@ $script:Warnings = New-Object System.Collections.ArrayList
 $script:Kept = New-Object System.Collections.ArrayList
 $script:GamesFound = New-Object System.Collections.ArrayList
 $script:Timer = [System.Diagnostics.Stopwatch]::StartNew()
+# The window runs the work in a second PowerShell instance, which needs this
+# script's text. From a file that is the file; from memory (the one command)
+# it is the scriptblock the bootstrapper made.
+$script:SelfText = ''
+try { $script:SelfText = [string]$MyInvocation.MyCommand.ScriptBlock } catch { }
+if ((-not $script:SelfText -or $script:SelfText.Length -lt 1000) -and $PSCommandPath -and (Test-Path $PSCommandPath)) { $script:SelfText = Get-Content $PSCommandPath -Raw }
 # The signed-in person's hive and folders. Normally the same as the account
 # running this; when a standard user gave an administrator's password at the
 # UAC prompt, HKCU would be the administrator's hive and every per-user tweak
@@ -1352,6 +1371,301 @@ function Get-GpuNotes($m) {
 }
 
 # ---------------------------------------------------------------------------
+# the app: a window around the same script
+# ---------------------------------------------------------------------------
+<# Everything the window shows before it runs anything, as one object: the
+   machine, the advice, the startup entries, the process count, the target.
+   -Probe prints it as JSON, which is how the window asks for it from a
+   second PowerShell instance without blocking. #>
+function Get-Probe {
+  $m = Get-Machine
+  $script:Warnings.Clear()
+  Show-Advice $m
+  $entries = @(Get-StartupEntries | Where-Object { $_.on })
+  @{
+    version = $script:Version
+    os = $m.os; cpu = $m.cpu; gpu = $m.gpu; ramGb = $m.ramGb; board = $m.board; bios = $m.bios
+    laptop = $m.laptop; nvme = $m.nvme; allSsd = $m.allSsd; refresh = $m.refresh; driverVer = $m.driverVer
+    win = $m.win; build = $m.build; gpuVendor = $m.gpuVendor; sticks = $m.sticks; ramNow = $m.ramNow; ramRated = $m.ramRated
+    uefi = $m.uefi; secureBoot = $m.secureBoot; tpm = $m.tpm; vbs = $m.vbs; server = [bool]($m.os -match 'Server')
+    keeps = @(@($(if ($m.printers) { 'printer' }), $(if ($m.btDevices) { 'Bluetooth' }), $(if ($m.wifi) { 'Wi-Fi' }), $(if ($m.touch) { 'touch' }), $(if ($m.biometric) { 'Windows Hello' }), $(if ($m.vpn) { 'VPN' }), $(if ($m.xboxUsed) { 'Xbox / Game Pass' }), $(if ($m.xboxPad) { 'Xbox controller' })) | Where-Object { $_ })
+    warnings = @($script:Warnings)
+    startup = @($entries | ForEach-Object { @{ name = $_.name; label = $_.label } })
+    before = (Get-ProcessCount)
+    target = (Get-SafeBar $m)
+  }
+}
+
+<# The window. WPF, drawn from XAML held here, so the app is the same one file
+   as the command. The work itself runs in a second PowerShell instance with
+   this script's text, so the window never freezes; its Write-Host lines
+   arrive on the information stream and land in the log as they happen. #>
+$script:Xaml = @'
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  Title="OmniDx Tune" Width="1120" Height="760" MinWidth="960" MinHeight="640" Background="#050308" WindowStartupLocation="CenterScreen"
+  FontFamily="Segoe UI" FontSize="13" Foreground="#F1ECFF" UseLayoutRounding="True" SnapsToDevicePixels="True">
+  <Window.Resources>
+    <LinearGradientBrush x:Key="Grad" StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#6D28D9" Offset="0"/><GradientStop Color="#8B5CF6" Offset="0.45"/><GradientStop Color="#D946EF" Offset="1"/></LinearGradientBrush>
+    <Style x:Key="Card" TargetType="Border"><Setter Property="Background" Value="#0E0A17"/><Setter Property="BorderBrush" Value="#2A1F45"/><Setter Property="BorderThickness" Value="1"/><Setter Property="CornerRadius" Value="14"/><Setter Property="Padding" Value="16"/></Style>
+    <Style x:Key="Label" TargetType="TextBlock"><Setter Property="FontSize" Value="10.5"/><Setter Property="FontWeight" Value="Bold"/><Setter Property="Foreground" Value="#7D7199"/><Setter Property="Margin" Value="0,0,0,8"/></Style>
+    <Style TargetType="TextBlock"><Setter Property="Foreground" Value="#F1ECFF"/></Style>
+    <Style TargetType="Button">
+      <Setter Property="Background" Value="#1D1530"/><Setter Property="Foreground" Value="#F1ECFF"/><Setter Property="BorderBrush" Value="#2A1F45"/>
+      <Setter Property="Padding" Value="14,9"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Cursor" Value="Hand"/><Setter Property="HorizontalAlignment" Value="Stretch"/>
+      <Setter Property="Template"><Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Border x:Name="bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="10" Padding="{TemplateBinding Padding}">
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="bd" Property="BorderBrush" Value="#8B5CF6"/></Trigger>
+            <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.4"/></Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value></Setter>
+    </Style>
+    <Style x:Key="Primary" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Setter Property="Background" Value="{StaticResource Grad}"/><Setter Property="BorderBrush" Value="Transparent"/><Setter Property="Foreground" Value="White"/><Setter Property="FontSize" Value="14"/></Style>
+    <Style TargetType="CheckBox"><Setter Property="Foreground" Value="#B3A8CF"/><Setter Property="Margin" Value="0,3,10,3"/><Setter Property="VerticalContentAlignment" Value="Center"/></Style>
+    <Style TargetType="TextBox"><Setter Property="Background" Value="#150F22"/><Setter Property="Foreground" Value="#F1ECFF"/><Setter Property="BorderBrush" Value="#2A1F45"/><Setter Property="Padding" Value="8,7"/><Setter Property="CaretBrush" Value="#C084FC"/><Setter Property="SelectionBrush" Value="#8B5CF6"/></Style>
+    <Style TargetType="ProgressBar"><Setter Property="Foreground" Value="#8B5CF6"/><Setter Property="Background" Value="#1D1530"/><Setter Property="BorderBrush" Value="#2A1F45"/><Setter Property="Height" Value="8"/></Style>
+    <Style TargetType="ScrollBar"><Setter Property="Background" Value="#0E0A17"/></Style>
+  </Window.Resources>
+  <Grid Margin="18">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="190"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <DockPanel Grid.Row="0" Margin="2,0,2,14">
+      <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+        <Border Width="34" Height="34" CornerRadius="9" Background="{StaticResource Grad}">
+          <Canvas Width="34" Height="34">
+            <Rectangle Canvas.Left="7" Canvas.Top="9" Width="15" Height="3" RadiusX="1.5" RadiusY="1.5" Fill="White" Opacity="0.95"/>
+            <Rectangle Canvas.Left="7" Canvas.Top="15.5" Width="10" Height="3" RadiusX="1.5" RadiusY="1.5" Fill="White" Opacity="0.7"/>
+            <Rectangle Canvas.Left="7" Canvas.Top="22" Width="6" Height="3" RadiusX="1.5" RadiusY="1.5" Fill="White" Opacity="0.45"/>
+            <Path Data="M25,6 L19.5,17 L23.5,17 L21.5,28 L28.5,15 L24.5,15 Z" Fill="White"/>
+          </Canvas>
+        </Border>
+        <TextBlock Text="OmniDx" FontSize="21" FontWeight="Bold" Margin="11,0,5,0" VerticalAlignment="Center"/>
+        <TextBlock Text="TUNE" FontSize="11" FontWeight="Bold" Foreground="#7D7199" VerticalAlignment="Center" Margin="0,2,0,0"/>
+        <TextBlock x:Name="VersionText" FontSize="11" Foreground="#7D7199" VerticalAlignment="Center" Margin="10,2,0,0"/>
+      </StackPanel>
+      <TextBlock x:Name="StatusText" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#B3A8CF" Text="Reading this PC..."/>
+    </DockPanel>
+    <Grid Grid.Row="1">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="*"/><ColumnDefinition Width="290"/></Grid.ColumnDefinitions>
+      <Border Grid.Column="0" Style="{StaticResource Card}" Margin="0,0,12,0">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <StackPanel>
+            <TextBlock Text="THIS PC" Style="{StaticResource Label}"/>
+            <TextBlock x:Name="MachineText" TextWrapping="Wrap" Foreground="#B3A8CF" LineHeight="21" Text="Reading..."/>
+            <TextBlock Text="PROCESSES RUNNING NOW" Style="{StaticResource Label}" Margin="0,16,0,2"/>
+            <StackPanel Orientation="Horizontal">
+              <TextBlock x:Name="CountText" Text="-" FontSize="46" FontWeight="Bold" Foreground="#C084FC" Margin="0,-6,0,0"/>
+              <TextBlock x:Name="TargetText" Foreground="#7D7199" VerticalAlignment="Bottom" Margin="12,0,0,12" TextWrapping="Wrap" Width="150"/>
+            </StackPanel>
+            <TextBlock x:Name="AdviceText" TextWrapping="Wrap" Foreground="#FFC247" LineHeight="19" Margin="0,8,0,0"/>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+      <Border Grid.Column="1" Style="{StaticResource Card}" Margin="0,0,12,0">
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+          <StackPanel>
+            <TextBlock Text="THE TUNE" Style="{StaticResource Label}"/>
+            <UniformGrid Columns="2">
+              <CheckBox x:Name="ChkStartup" IsChecked="True" Content="Startup apps off"/>
+              <CheckBox x:Name="ChkServices" IsChecked="True" Content="Services this PC does not need"/>
+              <CheckBox x:Name="ChkTasks" IsChecked="True" Content="Telemetry tasks"/>
+              <CheckBox x:Name="ChkApps" IsChecked="True" Content="Preinstalled apps and trials"/>
+              <CheckBox x:Name="ChkDebloat" IsChecked="True" Content="Debloat: legacy Windows, OneDrive if unused"/>
+              <CheckBox x:Name="ChkTelemetry" IsChecked="True" Content="Telemetry, ads, background apps"/>
+              <CheckBox x:Name="ChkSystem" IsChecked="True" Content="System: scheduler, input, visuals"/>
+              <CheckBox x:Name="ChkPower" IsChecked="True" Content="The OmniDx power plan"/>
+              <CheckBox x:Name="ChkNetwork" IsChecked="True" Content="Network latency"/>
+              <CheckBox x:Name="ChkPrograms" IsChecked="True" Content="Discord, Spotify, browsers"/>
+              <CheckBox x:Name="ChkGames" IsChecked="True" Content="Game profiles"/>
+              <CheckBox x:Name="ChkNvidia" IsChecked="True" Content="NVIDIA telemetry off"/>
+              <CheckBox x:Name="ChkCleanup" IsChecked="True" Content="Clear update caches and temp files"/>
+              <CheckBox x:Name="ChkAfterCount" IsChecked="True" Content="Write the after-restart count"/>
+            </UniformGrid>
+            <TextBlock Text="STARTS WITH WINDOWS  -  ticked means it gets switched off" Style="{StaticResource Label}" Margin="0,14,0,6"/>
+            <WrapPanel x:Name="StartupPanel"><TextBlock Text="Reading..." Foreground="#7D7199"/></WrapPanel>
+            <TextBlock Text="OFF UNLESS YOU SAY SO" Style="{StaticResource Label}" Margin="0,14,0,6"/>
+            <CheckBox x:Name="ChkXbox" Content="Cut the Xbox services too (Game Pass and Minecraft need them)"/>
+            <CheckBox x:Name="ChkDns" Content="Point DNS at 1.1.1.1"/>
+            <CheckBox x:Name="ChkVbs" Content="Memory integrity off: a few percent more frames, one layer of kernel protection less"/>
+            <TextBlock Foreground="#7D7199" TextWrapping="Wrap" Margin="0,12,0,0" Text="Discord and Spotify are closed during the run so they can be tuned. A restore point comes first, every change is recorded, and undo is one button."/>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+      <Border Grid.Column="2" Style="{StaticResource Card}">
+        <StackPanel>
+          <TextBlock Text="YOUR KEY" Style="{StaticResource Label}"/>
+          <TextBox x:Name="KeyBox" FontFamily="Consolas" FontSize="14" CharacterCasing="Upper"/>
+          <TextBlock x:Name="KeyNote" Foreground="#7D7199" TextWrapping="Wrap" Margin="0,6,0,0" Text="From the page after you paid. It locks to this PC."/>
+          <Button x:Name="BtnRun" Style="{StaticResource Primary}" Content="Run the tune" Margin="0,16,0,8" Height="44" IsEnabled="False"/>
+          <Button x:Name="BtnReport" Content="Free report  -  changes nothing" Margin="0,0,0,8" IsEnabled="False"/>
+          <Button x:Name="BtnUndo" Content="Undo the last run" Margin="0,0,0,8"/>
+          <Button x:Name="BtnFolder" Content="Open C:\OmniDx" Margin="0,0,0,8"/>
+          <Button x:Name="BtnRestart" Content="Restart now" IsEnabled="False"/>
+          <TextBlock x:Name="ResultText" TextWrapping="Wrap" Foreground="#30D38A" Margin="0,14,0,0" FontWeight="SemiBold"/>
+        </StackPanel>
+      </Border>
+    </Grid>
+    <Border Grid.Row="2" Style="{StaticResource Card}" Margin="0,12,0,0" Padding="8">
+      <TextBox x:Name="LogBox" FontFamily="Consolas" FontSize="12" Foreground="#B3A8CF" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" BorderThickness="0" Background="Transparent" Text="OmniDx Tune. Nothing has changed yet."/>
+    </Border>
+    <Grid Grid.Row="3" Margin="2,10,2,0">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+      <ProgressBar x:Name="Progress" Maximum="100" VerticalAlignment="Center" Margin="0,0,16,0"/>
+      <TextBlock Grid.Column="1" x:Name="FootText" Foreground="#7D7199" FontSize="11.5" Text="Restore point first. Every change recorded. Undo is one button. Security never lowered."/>
+    </Grid>
+  </Grid>
+</Window>
+'@
+
+function Show-Gui {
+  try { Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase -ErrorAction Stop } catch { Say "  The app needs the Windows desktop libraries (WPF), which this PC does not have." 'Yellow'; return $false }
+  if ([Threading.Thread]::CurrentThread.GetApartmentState() -ne 'STA') { Say "  The app needs an STA thread. Start it from powershell.exe (the one command does), or use the console flow." 'Yellow'; return $false }
+  if (-not $script:SelfText -or $script:SelfText.Length -lt 1000) { Say "  The app cannot see its own script text here, so it cannot run the work in the background." 'Yellow'; return $false }
+
+  $w = [System.Windows.Markup.XamlReader]::Parse($script:Xaml)
+  $ui = @{}
+  foreach ($n in 'VersionText', 'StatusText', 'MachineText', 'CountText', 'TargetText', 'AdviceText', 'StartupPanel', 'KeyBox', 'KeyNote', 'BtnRun', 'BtnReport', 'BtnUndo', 'BtnFolder', 'BtnRestart', 'ResultText', 'LogBox', 'Progress', 'FootText',
+                  'ChkStartup', 'ChkServices', 'ChkTasks', 'ChkApps', 'ChkDebloat', 'ChkTelemetry', 'ChkSystem', 'ChkPower', 'ChkNetwork', 'ChkPrograms', 'ChkGames', 'ChkNvidia', 'ChkCleanup', 'ChkAfterCount', 'ChkXbox', 'ChkDns', 'ChkVbs') {
+    $ui[$n] = $w.FindName($n)
+  }
+  $ui.VersionText.Text = "v$($script:Version)"
+  if ($Key) { $ui.KeyBox.Text = $Key }
+  $phases = @{ startup = 'ChkStartup'; services = 'ChkServices'; tasks = 'ChkTasks'; apps = 'ChkApps'; debloat = 'ChkDebloat'; telemetry = 'ChkTelemetry'; system = 'ChkSystem'; power = 'ChkPower'; network = 'ChkNetwork'; programs = 'ChkPrograms'; games = 'ChkGames'; nvidia = 'ChkNvidia'; cleanup = 'ChkCleanup' }
+  $state = @{ ps = $null; out = $null; handle = $null; seen = 0; seenOut = 0; mode = ''; heads = 0; startup = @(); probe = $null }
+  $headsTotal = 18
+
+  $log = { param($line) $ui.LogBox.AppendText($line + "`r`n"); $ui.LogBox.ScrollToEnd() }
+
+  # A second PowerShell instance running this same script with the given
+  # parameters. Its Write-Host lines are read off the information stream by
+  # the timer below, so the window keeps painting while the work runs.
+  $start = { param([hashtable]$params, [string]$mode)
+    $ps = [PowerShell]::Create()
+    [void]$ps.AddScript('param($text, $p) & ([scriptblock]::Create($text)) @p').AddArgument($script:SelfText).AddArgument($params)
+    $inp = New-Object 'System.Management.Automation.PSDataCollection[psobject]'; $inp.Complete()
+    $out = New-Object 'System.Management.Automation.PSDataCollection[psobject]'
+    $state.ps = $ps; $state.out = $out; $state.seen = 0; $state.seenOut = 0; $state.mode = $mode; $state.heads = 0
+    $state.handle = $ps.BeginInvoke($inp, $out)
+    $ui.BtnRun.IsEnabled = $false; $ui.BtnReport.IsEnabled = $false; $ui.BtnUndo.IsEnabled = $false
+    $ui.Progress.IsIndeterminate = ($mode -ne 'run')
+  }
+
+  $fill = { param($probe)
+    $state.probe = $probe
+    $ui.MachineText.Text = @(
+      $probe.os,
+      "CPU  $($probe.cpu)",
+      "GPU  $($probe.gpu)$(if ($probe.driverVer) { "  (driver $($probe.driverVer))" })",
+      "RAM  $($probe.ramGb) GB$(if ($probe.sticks) { ", $($probe.sticks) stick$(if ($probe.sticks -ne 1) { 's' })" })$(if ($probe.ramNow) { ", $($probe.ramNow) MT/s" })",
+      "Board  $($probe.board)",
+      "$(if ($probe.laptop) { 'Laptop' } else { 'Desktop' })$(if ($probe.nvme) { ', NVMe' } elseif ($probe.allSsd) { ', SSD' } else { ', has a hard disk' })$(if ($probe.refresh) { ", $($probe.refresh) Hz" })",
+      "Secure Boot $(if ($probe.secureBoot) { 'on' } else { 'off' }), TPM $(if ($probe.tpm) { 'yes' } else { 'no' }), memory integrity $(if ($probe.vbs) { 'on' } else { 'off' })",
+      "Keeps: $(if ($probe.keeps.Count) { $probe.keeps -join ', ' } else { 'nothing extra' })"
+    ) -join "`n"
+    $ui.CountText.Text = "$($probe.before)"
+    $ui.TargetText.Text = "target after the tune and a restart: about $($probe.target)"
+    $ui.AdviceText.Text = $(if ($probe.warnings.Count) { ($probe.warnings | ForEach-Object { "! $_" }) -join "`n" } else { '' })
+    $ui.StartupPanel.Children.Clear()
+    $state.startup = @()
+    if (-not $probe.startup.Count) { $t = New-Object System.Windows.Controls.TextBlock; $t.Text = 'Nothing starts with Windows that is not already off.'; $t.Foreground = '#7D7199'; [void]$ui.StartupPanel.Children.Add($t) }
+    foreach ($e in $probe.startup) {
+      $cb = New-Object System.Windows.Controls.CheckBox
+      $cb.Content = $e.label; $cb.IsChecked = $true; $cb.Tag = $e.name; $cb.Width = 300
+      [void]$ui.StartupPanel.Children.Add($cb); $state.startup += $cb
+    }
+    $ui.StatusText.Text = "Read in $([int]$script:Timer.Elapsed.TotalSeconds) s. Nothing has changed."
+    $ui.BtnRun.IsEnabled = $true; $ui.BtnReport.IsEnabled = $true
+    $ui.Progress.IsIndeterminate = $false; $ui.Progress.Value = 0
+  }
+
+  $finish = {
+    $ui.Progress.IsIndeterminate = $false
+    $ui.BtnRun.IsEnabled = $true; $ui.BtnReport.IsEnabled = $true; $ui.BtnUndo.IsEnabled = $true
+    if ($state.mode -eq 'run') {
+      $ui.Progress.Value = 100
+      $done = [regex]::Match($ui.LogBox.Text, 'Processes: (\d+) -> (\d+)')
+      $ui.ResultText.Text = $(if ($done.Success) { "Done. $($done.Groups[1].Value) -> $($done.Groups[2].Value) processes now. Restart for the real number, then do the BIOS checklist in the report." } else { 'Finished. Read the log above; the report is in C:\OmniDx.' })
+      $ui.StatusText.Text = 'Done. Restart when you are ready.'
+      $ui.BtnRestart.IsEnabled = $true
+      $ui.CountText.Text = $(if ($done.Success) { $done.Groups[2].Value } else { $ui.CountText.Text })
+    } elseif ($state.mode -eq 'undo') { $ui.StatusText.Text = 'Undo finished. Restart to finish.'; $ui.BtnRestart.IsEnabled = $true }
+    else { $ui.StatusText.Text = 'Report written to C:\OmniDx. Nothing changed.' }
+    $state.ps.Dispose(); $state.ps = $null
+  }
+
+  $timer = New-Object System.Windows.Threading.DispatcherTimer
+  $timer.Interval = [TimeSpan]::FromMilliseconds(120)
+  $timer.Add_Tick({
+    if (-not $state.ps) { return }
+    $info = $state.ps.Streams.Information
+    while ($state.seen -lt $info.Count) {
+      $rec = $info[$state.seen]; $state.seen++
+      $msg = $rec.MessageData; $text = if ($msg -and $msg.PSObject.Properties['Message']) { [string]$msg.Message } else { [string]$msg }
+      if ($text -eq $null) { continue }
+      & $log $text.TrimEnd()
+      if ($text -match '^== ' -and $state.mode -eq 'run') { $state.heads++; $ui.Progress.Value = [math]::Min(96, [int](100 * $state.heads / $headsTotal)); $ui.StatusText.Text = $text.Trim(' =') }
+    }
+    $err = $state.ps.Streams.Error
+    while ($state.seenOut -lt $err.Count) { & $log ("  ! " + [string]$err[$state.seenOut]); $state.seenOut++ }
+    if ($state.mode -eq 'probe' -and $state.out.Count -gt 0) {
+      try { & $fill (ConvertFrom-Json ([string]$state.out[0])) } catch { & $log "  ! Could not read the PC: $($_.Exception.Message)" }
+      $state.ps.Dispose(); $state.ps = $null; return
+    }
+    if ($state.mode -eq 'undo' -and $state.out.Count -gt 0) { foreach ($o in $state.out) { & $log ([string]$o) }; $state.out.Clear() }
+    if ($state.handle.IsCompleted) { & $finish }
+  })
+
+  $ui.BtnRun.Add_Click({
+    $key = ($ui.KeyBox.Text -replace '\s', '').ToUpper()
+    if (-not (Read-Key $key)) { $ui.KeyNote.Text = 'That is not an OmniDx key. It looks like TUNE-XXXX-XXXX-XXXX-XXXX.'; $ui.KeyNote.Foreground = '#FF5D6C'; return }
+    $ui.KeyNote.Foreground = '#7D7199'; $ui.KeyNote.Text = 'Checking the key, then running. The log below is live.'
+    $skip = @(); foreach ($k in $phases.Keys) { if (-not $ui[$phases[$k]].IsChecked) { $skip += $k } }
+    $keep = @($state.startup | Where-Object { -not $_.IsChecked } | ForEach-Object { [string]$_.Tag })
+    $p = @{ Key = $key; Api = $Api; Yes = $true; NoRestart = $true; Skip = $skip; Keep = $keep }
+    if ($ui.ChkXbox.IsChecked) { $p.CutXbox = $true }
+    if ($ui.ChkDns.IsChecked) { $p.Dns = $true }
+    if ($ui.ChkVbs.IsChecked) { $p.Aggressive = $true }
+    if (-not $ui.ChkAfterCount.IsChecked) { $p.NoAfterCount = $true }
+    $ui.LogBox.Clear(); $ui.ResultText.Text = ''; $ui.Progress.Value = 2
+    & $start $p 'run'
+  })
+  $ui.BtnReport.Add_Click({ $ui.LogBox.Clear(); & $start @{ Report = $true; Yes = $true } 'report' })
+  $ui.BtnUndo.Add_Click({ $ui.LogBox.Clear(); & $start @{ Undo = $true } 'undo' })
+  $ui.BtnFolder.Add_Click({ New-Item -ItemType Directory -Path $script:Root -Force | Out-Null; Start-Process explorer.exe $script:Root })
+  $ui.BtnRestart.Add_Click({ Restart-Computer -Force })
+  $w.Add_Closing({ if ($state.ps) { try { $state.ps.Stop() } catch { } } })
+
+  if ($Screenshot) {
+    # Headless: read the PC in this process, fill the window, draw it to a PNG without showing it.
+    try { & $fill (Get-Probe | ConvertTo-Json -Depth 5 -Compress | ConvertFrom-Json) } catch { & $log "  ! $($_.Exception.Message)" }
+    & $log '== Reading this PC'; & $log "  $($state.probe.os)"; & $log "  Processes running now: $($state.probe.before)"; & $log '== Your key'; & $log '  Key accepted. Locked to this PC.'
+    $ui.KeyBox.Text = 'TUNE-9WQ2-4C9E-GK3R-D94C'; $ui.StatusText.Text = 'Ready.'
+    $root = $w.Content
+    $size = New-Object System.Windows.Size(1120, 760)
+    $root.Measure($size); $root.Arrange((New-Object System.Windows.Rect(0, 0, 1120, 760))); $root.UpdateLayout()
+    $bmp = New-Object System.Windows.Media.Imaging.RenderTargetBitmap(1120, 760, 96, 96, [System.Windows.Media.PixelFormats]::Pbgra32)
+    $dv = New-Object System.Windows.Media.DrawingVisual
+    $dc = $dv.RenderOpen(); $dc.DrawRectangle($w.Background, $null, (New-Object System.Windows.Rect(0, 0, 1120, 760))); $dc.Close()
+    $bmp.Render($dv); $bmp.Render($root)
+    $enc = New-Object System.Windows.Media.Imaging.PngBitmapEncoder
+    $enc.Frames.Add([System.Windows.Media.Imaging.BitmapFrame]::Create($bmp))
+    $dir = Split-Path $Screenshot; if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+    $fs = [IO.File]::Create($Screenshot); $enc.Save($fs); $fs.Close()
+    Say ("  Window drawn to {0}" -f $Screenshot) 'Green'
+    return $true
+  }
+
+  $timer.Start()
+  & $start @{ Probe = $true } 'probe'
+  [void]$w.ShowDialog()
+  $timer.Stop()
+  return $true
+}
+
+# ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
 function Get-ProcessCount { (Get-Process -ErrorAction SilentlyContinue | Measure-Object).Count }
@@ -1457,6 +1771,7 @@ function Main {
   Write-Host '  200 processes. Under 100. One run.' -ForegroundColor DarkGray
   Write-Host ''
 
+  if ($SelfTest) { Say ("  self text: {0} chars, {1} functions" -f $script:SelfText.Length, ([regex]::Matches($script:SelfText, '(?m)^function ')).Count); return }
   if ($PSVersionTable.PSEdition -eq 'Core') { Say "  Run this in Windows PowerShell (the blue one, version 5.1), not PowerShell 7: the restore point and Store app commands only exist there. The one command on omnidx.net picks the right one for you." 'Red'; return }
   $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
   if (-not $isAdmin) { Say "  Run this in an administrator PowerShell (right-click PowerShell > Run as administrator), or use the one-liner on omnidx.net which does it for you." 'Red'; return }
@@ -1466,6 +1781,8 @@ function Main {
   try { Start-Transcript -Path (Join-Path $script:Root ("log-{0}.txt" -f $script:Stamp)) -Append -ErrorAction Stop | Out-Null } catch { }
   try {
     if ($Undo) { Invoke-Undo; return }
+    if ($Probe) { Write-Output (Get-Probe | ConvertTo-Json -Depth 5 -Compress); return }
+    if ($Gui) { if (Show-Gui) { return } else { Say "  Carrying on in the console." } }
     if ($CheckKey) {
       if (-not $Key) { $Key = Read-Host "  Paste the key to check" }
       $parsed = Read-Key $Key
@@ -1503,7 +1820,7 @@ function Main {
     }
     if (Test-PendingReboot) {
       Warn "Windows has an update waiting for a restart. Changing services under a pending update is asking for trouble."
-      if (Ask "Restart now, then run the command again afterwards? (recommended)") { Restart-Computer -Force; return }
+      if (-not $NoRestart -and (Ask "Restart now, then run the command again afterwards? (recommended)")) { Restart-Computer -Force; return }
     }
 
     Say ""
@@ -1512,22 +1829,24 @@ function Main {
     Say "  The debloat removes the preinstalled apps, the PC maker's trials, OneDrive if nobody is signed in to it, and the legacy pieces of Windows; then it clears the update caches. Three to five minutes in all." 'White'
     if (-not (Ask "Go?")) { Say "  Stopped. Nothing changed."; return }
 
+    $skip = @($Skip | ForEach-Object { "$_".ToLower() })
+    $run = { param($name, $block) if ($skip -contains $name) { Head ("{0} (skipped)" -f $name) } else { & $block } }
     Save-ProcessList 'before'
     New-Safety
-    Cut-Startup
-    Cut-Services $m
-    Cut-Tasks
-    Cut-Apps $m
-    Debloat $m
-    Cut-Telemetry $m
-    Tune-System $m
-    New-PowerPlan $m
-    Tune-Network $m
-    Tune-Apps $m
-    Set-GameProfiles
-    Tune-Gpu $m
+    & $run 'startup'   { Cut-Startup }
+    & $run 'services'  { Cut-Services $m }
+    & $run 'tasks'     { Cut-Tasks }
+    & $run 'apps'      { Cut-Apps $m }
+    & $run 'debloat'   { Debloat $m }
+    & $run 'telemetry' { Cut-Telemetry $m }
+    & $run 'system'    { Tune-System $m }
+    & $run 'power'     { New-PowerPlan $m }
+    & $run 'network'   { Tune-Network $m }
+    & $run 'programs'  { Tune-Apps $m }
+    & $run 'games'     { Set-GameProfiles }
+    & $run 'nvidia'    { Tune-Gpu $m }
     Set-Vbs $m
-    Clear-Junk
+    & $run 'cleanup'   { Clear-Junk }
     Register-AfterCount
 
     $changesFile = Save-Changes
@@ -1541,7 +1860,7 @@ function Main {
     Say "  Undo, any time: powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1" 'White'
     Say "  Next: restart, then do the BIOS checklist - the memory profile alone is worth more than half of this." 'White'
     try { Start-Process notepad.exe $rep } catch { }
-    if (Ask "Restart now?") { Restart-Computer -Force }
+    if (-not $NoRestart -and (Ask "Restart now?")) { Restart-Computer -Force }
   } finally {
     try { Stop-Transcript | Out-Null } catch { }
   }

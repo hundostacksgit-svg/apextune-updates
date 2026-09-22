@@ -58,6 +58,35 @@ jobs:
           Get-Content $preview.FullName
           exit 0
 
+      - name: The script can see its own text, from a file and from memory
+        run: |
+          $a = & .\tune\omnidx.ps1 -SelfTest *>&1 | Out-String
+          $b = & ([scriptblock]::Create((Get-Content .\tune\omnidx.ps1 -Raw))) -SelfTest *>&1 | Out-String
+          Write-Host $a; Write-Host $b
+          foreach ($o in $a, $b) { if ($o -notmatch 'self text: (\d+) chars' -or [int]$Matches[1] -lt 10000) { Write-Host 'the script cannot see itself'; exit 1 } }
+          exit 0
+
+      - name: Probe mode prints one JSON object for the app
+        run: |
+          $j = & .\tune\omnidx.ps1 -Probe | Select-Object -Last 1
+          $o = $j | ConvertFrom-Json
+          Write-Host ("probe: {0} processes, target {1}, {2} startup entries, {3} warnings" -f $o.before, $o.target, @($o.startup).Count, @($o.warnings).Count)
+          if (-not $o.cpu -or -not $o.before) { Write-Host 'probe is missing fields'; exit 1 }
+          exit 0
+
+      - name: Draw the app window to a PNG without showing it
+        run: |
+          & .\tune\omnidx.ps1 -Gui -Screenshot C:\OmniDx\app.png
+          if (-not (Test-Path C:\OmniDx\app.png)) { Write-Host 'no screenshot was drawn'; exit 1 }
+          Write-Host ("app.png: {0} bytes" -f (Get-Item C:\OmniDx\app.png).Length)
+          exit 0
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-window
+          path: C:\OmniDx\app.png
+          if-no-files-found: error
+
       - name: Undo with nothing recorded says so
         run: |
           & .\tune\omnidx.ps1 -Undo

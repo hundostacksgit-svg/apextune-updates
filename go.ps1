@@ -9,6 +9,7 @@
 #   $env:OMNIDX_MODE='report'; irm omnidx.net/go.ps1 | iex     free look, changes nothing
 #   $env:OMNIDX_MODE='undo';   irm omnidx.net/go.ps1 | iex     put everything back
 #   $env:OMNIDX_MODE='check';  irm omnidx.net/go.ps1 | iex     check a key's format, nothing else
+#   $env:OMNIDX_MODE='app';    irm omnidx.net/go.ps1 | iex     the window instead of the console
 #   $env:OMNIDX_FLAGS='-Aggressive -CutXbox -Dns'               options (see omnidx.net/studio/download/#options)
 #   $env:OMNIDX_KEEP='Wallpaper Engine,RTSS'                    startup entries to leave on
 $ErrorActionPreference = 'Stop'
@@ -19,7 +20,7 @@ $mode = "$env:OMNIDX_MODE".ToLower()
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 $isCore = $PSVersionTable.PSEdition -eq 'Core'
 $key = $env:OMNIDX_KEY
-if (-not $key -and $mode -ne 'undo' -and $mode -ne 'report') {
+if (-not $key -and $mode -ne 'undo' -and $mode -ne 'report' -and $mode -ne 'app') {
   Write-Host ''
   Write-Host '  OmniDx Tune' -ForegroundColor Magenta
   Write-Host '  Your key is on the page after you paid: omnidx.net/studio/activate/' -ForegroundColor DarkGray
@@ -63,5 +64,6 @@ switch ($mode) {
   'undo'   { & $block -Undo }
   'report' { & $block -Report }
   'check'  { & $block -Key $key -CheckKey }
+  'app'    { & $block -Key $key -Api $api -Gui @opts }
   default  { & $block -Key $key -Api $api @opts }
 }
