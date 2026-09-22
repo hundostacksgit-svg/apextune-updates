@@ -56,6 +56,7 @@ jobs:
           $preview = Get-ChildItem C:\OmniDx -Filter 'report-preview-*.txt' | Select-Object -First 1
           if (-not $preview) { Write-Host 'no preview report was written'; exit 1 }
           Get-Content $preview.FullName
+          exit 0
 
       - name: Undo with nothing recorded says so
         run: |
@@ -67,6 +68,7 @@ jobs:
           $out = & .\tune\omnidx.ps1 -Key 'TUNE-AAAA-BBBB-CCCC-DDDD' -CheckKey *>&1 | Out-String
           Write-Host $out
           if ($out -notmatch 'not an OmniDx key') { Write-Host 'a bad key was not refused'; exit 1 }
+          exit 0
 
       # The four implementations of the checksum must agree. The Python tool
       # (already checked against the browser module) makes keys; the script
@@ -88,3 +90,4 @@ jobs:
           $out = & .\tune\omnidx.ps1 -Key $order -CheckKey *>&1 | Out-String
           if ($out -notmatch 'Valid:') { Write-Host "refused the order-derived key: $order`n$out"; exit 1 }
           Write-Host "order-derived key $order accepted"
+          exit 0
