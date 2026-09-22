@@ -39,6 +39,16 @@
   .act-copy{display:flex;justify-content:center}
   @keyframes act-turn{to{transform:rotate(360deg)}}
   @media (prefers-reduced-motion: reduce){.act-spin{animation-duration:2.4s}}
+  @media print{
+    .aurora,.act-top .btn,.act-copy,.act-actions,.act-move,.act-note:last-child,button{display:none!important}
+    body{background:#fff;color:#000}
+    .act-card{border:0;padding:0;background:#fff}
+    .keybox{border:2px solid #000;color:#000;background:#fff}
+    .cmd{border:1px solid #000;color:#000;background:#fff;box-shadow:none}
+    .steps-list li{border-color:#000;background:#fff}
+    .steps-list li::before{background:#000;color:#fff;box-shadow:none}
+    .act-row{border-color:#000}
+  }
 </style>
 </head>
 <body>

@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Everything it touches — OmniDx Tune</title>
+<meta name="description" content="Every service, scheduled task, preinstalled app and registry value OmniDx Tune changes, with the reason next to each, and what it keeps on your PC and why. Generated from the script itself.">
+<meta name="theme-color" content="#050308">
+<link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<link rel="canonical" href="https://omnidx.net/studio/what-it-touches/">
+<meta property="og:url" content="https://omnidx.net/studio/what-it-touches/">
+<meta property="og:image" content="https://omnidx.net/studio/assets/og-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="OmniDx Tune: a PowerShell window running the tune, the process count falling from 214 to 86.">
+<meta name="twitter:image" content="https://omnidx.net/studio/assets/og-card.png">
+<meta name="twitter:title" content="Everything it touches — OmniDx Tune">
+<meta name="twitter:description" content="Every service, task, app and registry value the tune changes, with the reason, and what it keeps and why.">
+<meta property="og:site_name" content="OmniDx Tune">
+<meta property="og:title" content="Everything it touches — OmniDx Tune">
+<meta property="og:description" content="Every service, task, app and registry value the tune changes, with the reason, and what it keeps and why.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../assets/studio.css">
+<script>
+(function(){try{var t=localStorage.getItem('omnidx.theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+</script>
+<style>
+  .touch details{border:1px solid var(--line);border-radius:13px;background:var(--surface);padding:0 18px;margin-bottom:10px}
+  .touch summary{cursor:pointer;padding:14px 0;font-weight:640;font-size:15px;list-style:none}
+  .touch summary::-webkit-details-marker{display:none}
+  .touch details[open]{border-color:var(--blue)}
+  .touch table{margin-bottom:14px}
+  .touch ul.apps{columns:2;column-gap:28px;padding-left:18px;font-size:13px;color:var(--text-2)}
+  @media(max-width:600px){.touch ul.apps{columns:1}}
+</style>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"><div class="grid"></div></div>
+<!-- chrome:nav -->
+<nav class="nav">
+  <div class="wrap">
+    <a class="logo" href="../"><span class="mark"><svg viewBox="0 0 64 64" aria-hidden="true" style="width:18px;height:18px"><rect x="12" y="17" width="30" height="6" rx="3" fill="#fff" opacity=".92"/><rect x="12" y="29" width="20" height="6" rx="3" fill="#fff" opacity=".68"/><rect x="12" y="41" width="11" height="6" rx="3" fill="#fff" opacity=".45"/><path d="M47 14 L37 34 L45 34 L41 50 L53 28 L45 28 Z" fill="#fff"/></svg></span>OmniDx <small>Tune</small></a>
+
+    <!-- The menu box. One row on a desktop, and the same links live in the
+         drawer below for phones — never two different menus to keep in step. -->
+    <div class="menubox" data-menubox>
+      <div class="mb" data-mb>
+        <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp0">What it does<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="mb-pop" id="mbp0" role="menu"><a class="mb-link" href="../#cut" role="menuitem"><span class="mb-ico" aria-hidden="true">🧹</span><span class="mb-txt"><b>What gets cut</b><span>Startup apps, services, tasks, junk apps, telemetry</span></span></a><a class="mb-link" href="../#tailored" role="menuitem"><span class="mb-ico" aria-hidden="true">🔍</span><span class="mb-txt"><b>Reads your PC first</b><span>Laptop or desktop, printers, Bluetooth, Wi-Fi, Xbox — the safe bar is yours</span></span></a><a class="mb-link" href="../#power" role="menuitem"><span class="mb-ico" aria-hidden="true">⚡</span><span class="mb-txt"><b>The OmniDx power plan</b><span>Built for frames: no core parking, no bus sleep</span></span></a><a class="mb-link" href="../#games" role="menuitem"><span class="mb-ico" aria-hidden="true">🎮</span><span class="mb-txt"><b>Game profiles</b><span>Fortnite, VALORANT, CS2, Marvel Rivals and twelve more</span></span></a><a class="mb-link" href="../#network" role="menuitem"><span class="mb-ico" aria-hidden="true">📶</span><span class="mb-txt"><b>Network</b><span>Nagle off, adapter power saving off, latency first</span></span></a><a class="mb-link" href="../#apps" role="menuitem"><span class="mb-ico" aria-hidden="true">🎧</span><span class="mb-txt"><b>Discord, Spotify, browser</b><span>Hardware acceleration on, background running off</span></span></a><a class="mb-link" href="../#bios" role="menuitem"><span class="mb-ico" aria-hidden="true">🧬</span><span class="mb-txt"><b>BIOS checklist</b><span>Written for your exact board and CPU</span></span></a><a class="mb-link" href="../#safe" role="menuitem"><span class="mb-ico" aria-hidden="true">🛟</span><span class="mb-txt"><b>Fail-safes</b><span>Restore point, undo in one file, security untouched</span></span></a><a class="mb-link" href="../what-it-touches/" role="menuitem"><span class="mb-ico" aria-hidden="true">📋</span><span class="mb-txt"><b>Everything it touches</b><span>Every service, task, app and value, with the reason</span></span></a></div>
+      </div>
+      <div class="mb" data-mb>
+        <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp1">Run it<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="mb-pop" id="mbp1" role="menu"><a class="mb-link" href="../download/" role="menuitem"><span class="mb-ico" aria-hidden="true">⌨️</span><span class="mb-txt"><b>The command</b><span>One line in PowerShell. Nothing installed.</span></span></a><a class="mb-link" href="../download/#report" role="menuitem"><span class="mb-ico" aria-hidden="true">📋</span><span class="mb-txt"><b>Free report mode</b><span>See what it would find, no key, changes nothing</span></span></a><a class="mb-link" href="../download/#undo" role="menuitem"><span class="mb-ico" aria-hidden="true">↩️</span><span class="mb-txt"><b>Undo</b><span>Put everything back, one line</span></span></a><a class="mb-link" href="../download/#options" role="menuitem"><span class="mb-ico" aria-hidden="true">🎛️</span><span class="mb-txt"><b>Options</b><span>Aggressive, cut Xbox, keep a startup app, DNS</span></span></a><a class="mb-link" href="../activate/" role="menuitem"><span class="mb-ico" aria-hidden="true">🔑</span><span class="mb-txt"><b>Your key</b><span>Get it again after paying</span></span></a><a class="mb-link" href="https://omnidx.net/tune/omnidx.ps1" role="menuitem"><span class="mb-ico" aria-hidden="true">📜</span><span class="mb-txt"><b>Read the script</b><span>Every line, public, before you run it</span></span></a></div>
+      </div>
+      <a class="mb-btn" href="../pricing/">Pricing</a>
+      <div class="mb" data-mb>
+        <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp3">Help<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="mb-pop" id="mbp3" role="menu"><a class="mb-link" href="../pricing/#faq" role="menuitem"><span class="mb-ico" aria-hidden="true">💬</span><span class="mb-txt"><b>FAQ</b><span>Anti-cheat, laptops, refunds, new PC</span></span></a><a class="mb-link" href="../trust/" role="menuitem"><span class="mb-ico" aria-hidden="true">🛡️</span><span class="mb-txt"><b>Is this safe? Is it a scam?</b><span>The straight answer, and how to check</span></span></a><a class="mb-link" href="../trust/#cant" role="menuitem"><span class="mb-ico" aria-hidden="true">🚫</span><span class="mb-txt"><b>What it won't touch</b><span>Defender, firewall, Secure Boot, your drivers</span></span></a><a class="mb-link" href="../activate/" role="menuitem"><span class="mb-ico" aria-hidden="true">🔓</span><span class="mb-txt"><b>Paid but no key?</b><span>Your receipt number gets it</span></span></a><a class="mb-link" href="../changelog/" role="menuitem"><span class="mb-ico" aria-hidden="true">🗒️</span><span class="mb-txt"><b>Changelog</b><span>What changed in each version</span></span></a><a class="mb-link" href="../app/" role="menuitem"><span class="mb-ico" aria-hidden="true">🎬</span><span class="mb-txt"><b>OmniDx Studio</b><span>The video editor, still here</span></span></a></div>
+      </div>
+    </div>
+
+    <div class="nav-right">
+      <button class="tbtn" data-theme-toggle aria-label="Switch between dark and light">
+        <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>
+        <svg class="moon" viewBox="0 0 24 24"><path d="M20 14.5A8.2 8.2 0 0 1 9.5 4a8.3 8.3 0 1 0 10.5 10.5z"/></svg>
+      </button>
+      <a class="nav-key" href="../activate/">Your key</a>
+      <a class="btn btn-primary nav-cta" href="../pricing/">Get it — <span data-price="tune">$19.99</span></a>
+      <button class="burger" type="button" data-drawer aria-expanded="false"
+              aria-controls="drawer" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <span class="nav-progress" data-progress aria-hidden="true"></span>
+</nav>
+
+<!-- Phone menu. Hidden until the button is pressed, and it holds exactly the
+     same links as the box above so nothing is only reachable on a desktop. -->
+<div class="drawer" id="drawer" hidden>
+  <div class="drawer-inner">
+    <div class="drawer-top">
+      <a class="btn btn-primary btn-lg" href="../pricing/">Get it — <span data-price="tune">$19.99</span></a>
+      <a class="btn btn-lg" href="../download/">Run it</a>
+    </div>
+    <div class="drawer-group">
+      <div class="drawer-h">What it does</div>
+      <div class="drawer-links">
+        <a href="../#cut"><span aria-hidden="true">🧹</span>What gets cut<em>Startup apps, services, tasks, junk apps, telemetry</em></a>
+        <a href="../#tailored"><span aria-hidden="true">🔍</span>Reads your PC first<em>Laptop or desktop, printers, Bluetooth, Wi-Fi, Xbox — the safe bar is yours</em></a>
+        <a href="../#power"><span aria-hidden="true">⚡</span>The OmniDx power plan<em>Built for frames: no core parking, no bus sleep</em></a>
+        <a href="../#games"><span aria-hidden="true">🎮</span>Game profiles<em>Fortnite, VALORANT, CS2, Marvel Rivals and twelve more</em></a>
+        <a href="../#network"><span aria-hidden="true">📶</span>Network<em>Nagle off, adapter power saving off, latency first</em></a>
+        <a href="../#apps"><span aria-hidden="true">🎧</span>Discord, Spotify, browser<em>Hardware acceleration on, background running off</em></a>
+        <a href="../#bios"><span aria-hidden="true">🧬</span>BIOS checklist<em>Written for your exact board and CPU</em></a>
+        <a href="../#safe"><span aria-hidden="true">🛟</span>Fail-safes<em>Restore point, undo in one file, security untouched</em></a>
+        <a href="../what-it-touches/"><span aria-hidden="true">📋</span>Everything it touches<em>Every service, task, app and value, with the reason</em></a>
+      </div>
+    </div>
+    <div class="drawer-group">
+      <div class="drawer-h">Run it</div>
+      <div class="drawer-links">
+        <a href="../download/"><span aria-hidden="true">⌨️</span>The command<em>One line in PowerShell. Nothing installed.</em></a>
+        <a href="../download/#report"><span aria-hidden="true">📋</span>Free report mode<em>See what it would find, no key, changes nothing</em></a>
+        <a href="../download/#undo"><span aria-hidden="true">↩️</span>Undo<em>Put everything back, one line</em></a>
+        <a href="../download/#options"><span aria-hidden="true">🎛️</span>Options<em>Aggressive, cut Xbox, keep a startup app, DNS</em></a>
+        <a href="../activate/"><span aria-hidden="true">🔑</span>Your key<em>Get it again after paying</em></a>
+        <a href="https://omnidx.net/tune/omnidx.ps1"><span aria-hidden="true">📜</span>Read the script<em>Every line, public, before you run it</em></a>
+      </div>
+    </div>
+    <a class="drawer-solo" href="../pricing/">Pricing</a>
+    <div class="drawer-group">
+      <div class="drawer-h">Help</div>
+      <div class="drawer-links">
+        <a href="../pricing/#faq"><span aria-hidden="true">💬</span>FAQ<em>Anti-cheat, laptops, refunds, new PC</em></a>
+        <a href="../trust/"><span aria-hidden="true">🛡️</span>Is this safe? Is it a scam?<em>The straight answer, and how to check</em></a>
+        <a href="../trust/#cant"><span aria-hidden="true">🚫</span>What it won't touch<em>Defender, firewall, Secure Boot, your drivers</em></a>
+        <a href="../activate/"><span aria-hidden="true">🔓</span>Paid but no key?<em>Your receipt number gets it</em></a>
+        <a href="../changelog/"><span aria-hidden="true">🗒️</span>Changelog<em>What changed in each version</em></a>
+        <a href="../app/"><span aria-hidden="true">🎬</span>OmniDx Studio<em>The video editor, still here</em></a>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /chrome:nav -->
+<header class="hero" style="padding:64px 0 30px">
+  <div class="wrap center">
+    <div class="eyebrow"><span class="pulse"></span>Generated from the script · v1.1.0</div>
+    <h1 style="font-size:clamp(34px,5.6vw,58px)">Everything it touches.</h1>
+    <p class="lede">
+      This page is written by a tool that reads <a href="https://omnidx.net/tune/omnidx.ps1">the script</a> and
+      lists what it does, so the page cannot say one thing while the script does another. Every row is
+      recorded when it is changed and put back by undo.
+    </p>
+  </div>
+</header>
+
+<section id="keeps" style="padding-top:26px">
+  <div class="wrap touch">
+    <div class="section-head reveal">
+      <h2>What it keeps, and why</h2>
+      <p>Decided on your PC from what it finds, before anything changes. The free report lists these for your machine.</p>
+    </div>
+    <div class="cmp-wrap"><table class="cmp" style="min-width:0"><thead><tr><th>When</th><th>Kept</th></tr></thead><tbody><tr><td>A printer is installed</td><td>Spooler (print spooler)</td></tr><tr><td>Bluetooth is in use</td><td>bthserv, BTAGService, BthAvctpSvc</td></tr><tr><td>A Wi-Fi adapter is present</td><td>WlanSvc, RmSvc</td></tr><tr><td>Touch screen, or a laptop</td><td>TabletInputService (touch keyboard)</td></tr><tr><td>A Windows Hello reader is present</td><td>WbioSrvc (biometrics)</td></tr><tr><td>Laptop</td><td>SensorService, SensrSvc, SensorDataService, WwanSvc; battery-side power settings; hibernation</td></tr><tr><td>A VPN adapter is present</td><td>iphlpsvc, SSDPSRV, upnphost</td></tr><tr><td>A hard disk is present</td><td>SysMain (prefetch)</td></tr><tr><td>Game Pass, the Xbox app or Minecraft is installed</td><td>XblAuthManager, XblGameSave, XboxNetApiSvc, XboxGipSvc (unless -CutXbox)</td></tr><tr><td>An Xbox controller is connected</td><td>XboxGipSvc (unless -CutXbox)</td></tr><tr><td>Always</td><td>Themes; Microsoft Defender, the firewall, SmartScreen, UAC, Windows Update, audio, networking, every anti-cheat, every driver</td></tr></tbody></table></div>
+  </div>
+</section>
+
+<section id="services">
+  <div class="wrap touch">
+    <div class="section-head reveal">
+      <h2>Services (74)</h2>
+      <p>Stopped and set to manual or disabled, never deleted. Anything in the table above stays when your PC needs it.
+        Services can start any one of them again.</p>
+    </div>
+    <div class="cmp-wrap"><table class="cmp" style="min-width:0"><thead><tr><th>Service</th><th>What it is</th><th>Set to</th></tr></thead><tbody><tr><td class="mono">DiagTrack</td><td>telemetry</td><td class="y">disabled</td></tr><tr><td class="mono">dmwappushservice</td><td>telemetry push</td><td class="y">disabled</td></tr><tr><td class="mono">diagnosticshub.standardcollector.service</td><td>diagnostics hub</td><td class="y">disabled</td></tr><tr><td class="mono">WerSvc</td><td>error reporting</td><td class="y">disabled</td></tr><tr><td class="mono">wercplsupport</td><td>error reporting</td><td class="y">disabled</td></tr><tr><td class="mono">PcaSvc</td><td>compatibility assistant</td><td class="y">disabled</td></tr><tr><td class="mono">MapsBroker</td><td>offline maps</td><td class="y">disabled</td></tr><tr><td class="mono">lfsvc</td><td>geolocation</td><td class="y">disabled</td></tr><tr><td class="mono">RetailDemo</td><td>retail demo</td><td class="y">disabled</td></tr><tr><td class="mono">RemoteRegistry</td><td>remote registry</td><td class="y">disabled</td></tr><tr><td class="mono">Fax</td><td>fax</td><td class="y">disabled</td></tr><tr><td class="mono">WMPNetworkSvc</td><td>media sharing</td><td class="y">disabled</td></tr><tr><td class="mono">TrkWks</td><td>link tracking</td><td class="y">disabled</td></tr><tr><td class="mono">WalletService</td><td>wallet</td><td class="y">disabled</td></tr><tr><td class="mono">wisvc</td><td>insider program</td><td class="y">disabled</td></tr><tr><td class="mono">DoSvc</td><td>delivery optimisation p2p</td><td class="p">manual</td></tr><tr><td class="mono">SEMgrSvc</td><td>payments and NFC</td><td class="y">disabled</td></tr><tr><td class="mono">MessagingService</td><td>SMS</td><td class="y">disabled</td></tr><tr><td class="mono">PhoneSvc</td><td>Phone Link</td><td class="y">disabled</td></tr><tr><td class="mono">TapiSrv</td><td>telephony</td><td class="y">disabled</td></tr><tr><td class="mono">WpcMonSvc</td><td>parental controls</td><td class="y">disabled</td></tr><tr><td class="mono">SharedAccess</td><td>internet connection sharing</td><td class="y">disabled</td></tr><tr><td class="mono">CscService</td><td>offline files</td><td class="y">disabled</td></tr><tr><td class="mono">icssvc</td><td>mobile hotspot</td><td class="y">disabled</td></tr><tr><td class="mono">edgeupdate</td><td>Edge updater (runs on demand)</td><td class="p">manual</td></tr><tr><td class="mono">edgeupdatem</td><td>Edge updater</td><td class="p">manual</td></tr><tr><td class="mono">WbioSrvc</td><td>biometrics</td><td class="y">disabled</td></tr><tr><td class="mono">SysMain</td><td>superfetch</td><td class="p">manual</td></tr><tr><td class="mono">WSearch</td><td>search indexing</td><td class="p">manual</td></tr><tr><td class="mono">Spooler</td><td>print spooler</td><td class="y">disabled</td></tr><tr><td class="mono">bthserv</td><td>bluetooth</td><td class="y">disabled</td></tr><tr><td class="mono">BTAGService</td><td>bluetooth audio</td><td class="p">manual</td></tr><tr><td class="mono">BthAvctpSvc</td><td>bluetooth audio</td><td class="p">manual</td></tr><tr><td class="mono">WlanSvc</td><td>wi-fi</td><td class="y">disabled</td></tr><tr><td class="mono">TabletInputService</td><td>touch keyboard</td><td class="p">manual</td></tr><tr><td class="mono">SensorService</td><td>sensors</td><td class="p">manual</td></tr><tr><td class="mono">SensrSvc</td><td>sensors</td><td class="p">manual</td></tr><tr><td class="mono">SensorDataService</td><td>sensors</td><td class="p">manual</td></tr><tr><td class="mono">AJRouter</td><td>AllJoyn</td><td class="y">disabled</td></tr><tr><td class="mono">NcbService</td><td>network connection broker</td><td class="p">manual</td></tr><tr><td class="mono">CDPSvc</td><td>connected devices</td><td class="p">manual</td></tr><tr><td class="mono">CDPUserSvc</td><td>connected devices</td><td class="p">manual</td></tr><tr><td class="mono">OneSyncSvc</td><td>mail/contacts sync</td><td class="p">manual</td></tr><tr><td class="mono">PimIndexMaintenanceSvc</td><td>contacts index</td><td class="p">manual</td></tr><tr><td class="mono">UnistoreSvc</td><td>user data storage</td><td class="p">manual</td></tr><tr><td class="mono">UserDataSvc</td><td>user data</td><td class="p">manual</td></tr><tr><td class="mono">XblAuthManager</td><td>xbox sign-in</td><td class="p">manual</td></tr><tr><td class="mono">XblGameSave</td><td>xbox game save</td><td class="p">manual</td></tr><tr><td class="mono">XboxNetApiSvc</td><td>xbox networking</td><td class="p">manual</td></tr><tr><td class="mono">XboxGipSvc</td><td>xbox accessories</td><td class="p">manual</td></tr><tr><td class="mono">RmSvc</td><td>radio management</td><td class="p">manual</td></tr><tr><td class="mono">WwanSvc</td><td>mobile broadband</td><td class="y">disabled</td></tr><tr><td class="mono">SSDPSRV</td><td>ssdp discovery</td><td class="p">manual</td></tr><tr><td class="mono">upnphost</td><td>upnp</td><td class="p">manual</td></tr><tr><td class="mono">FrameServer</td><td>camera frame server</td><td class="p">manual</td></tr><tr><td class="mono">perceptionsimulation</td><td>mixed reality</td><td class="y">disabled</td></tr><tr><td class="mono">spectrum</td><td>mixed reality</td><td class="y">disabled</td></tr><tr><td class="mono">DPS</td><td>diagnostic policy</td><td class="p">manual</td></tr><tr><td class="mono">WdiServiceHost</td><td>diagnostics</td><td class="p">manual</td></tr><tr><td class="mono">WdiSystemHost</td><td>diagnostics</td><td class="p">manual</td></tr><tr><td class="mono">stisvc</td><td>scanner (WIA)</td><td class="p">manual</td></tr><tr><td class="mono">SCardSvr</td><td>smart card</td><td class="y">disabled</td></tr><tr><td class="mono">ScDeviceEnum</td><td>smart card</td><td class="y">disabled</td></tr><tr><td class="mono">CertPropSvc</td><td>smart card</td><td class="y">disabled</td></tr><tr><td class="mono">WebClient</td><td>webdav</td><td class="p">manual</td></tr><tr><td class="mono">lmhosts</td><td>netbios</td><td class="p">manual</td></tr><tr><td class="mono">iphlpsvc</td><td>ipv6 tunnels</td><td class="p">manual</td></tr><tr><td class="mono">TermService</td><td>remote desktop</td><td class="p">manual</td></tr><tr><td class="mono">SessionEnv</td><td>remote desktop</td><td class="p">manual</td></tr><tr><td class="mono">UmRdpService</td><td>remote desktop</td><td class="p">manual</td></tr><tr><td class="mono">Themes</td><td>themes</td><td class="y">disabled</td></tr><tr><td class="mono">cbdhsvc</td><td>clipboard history</td><td class="p">manual</td></tr><tr><td class="mono">WpnService</td><td>push notifications</td><td class="p">manual</td></tr><tr><td class="mono">WpnUserService</td><td>push notifications</td><td class="p">manual</td></tr></tbody></table></div>
+  </div>
+</section>
+
+<section id="tasks">
+  <div class="wrap touch">
+    <div class="section-head reveal">
+      <h2>Scheduled tasks (32)</h2>
+      <p>Disabled, not deleted. Plus NVIDIA's crash-report and updater tasks when an NVIDIA card is found. Task Scheduler can enable any of them again.</p>
+    </div>
+    <div class="cmp-wrap"><table class="cmp" style="min-width:0"><tbody><tr><td class="mono">\Microsoft\Windows\Application Experience\Microsoft Compatibility Appraiser</td></tr><tr><td class="mono">\Microsoft\Windows\Application Experience\ProgramDataUpdater</td></tr><tr><td class="mono">\Microsoft\Windows\Application Experience\StartupAppTask</td></tr><tr><td class="mono">\Microsoft\Windows\Application Experience\PcaPatchDbTask</td></tr><tr><td class="mono">\Microsoft\Windows\Customer Experience Improvement Program\Consolidator</td></tr><tr><td class="mono">\Microsoft\Windows\Customer Experience Improvement Program\UsbCeip</td></tr><tr><td class="mono">\Microsoft\Windows\Customer Experience Improvement Program\KernelCeipTask</td></tr><tr><td class="mono">\Microsoft\Windows\DiskDiagnostic\Microsoft-Windows-DiskDiagnosticDataCollector</td></tr><tr><td class="mono">\Microsoft\Windows\Feedback\Siuf\DmClient</td></tr><tr><td class="mono">\Microsoft\Windows\Feedback\Siuf\DmClientOnScenarioDownload</td></tr><tr><td class="mono">\Microsoft\Windows\Windows Error Reporting\QueueReporting</td></tr><tr><td class="mono">\Microsoft\Windows\Maps\MapsUpdateTask</td></tr><tr><td class="mono">\Microsoft\Windows\Maps\MapsToastTask</td></tr><tr><td class="mono">\Microsoft\Windows\Autochk\Proxy</td></tr><tr><td class="mono">\Microsoft\Windows\CloudExperienceHost\CreateObjectTask</td></tr><tr><td class="mono">\Microsoft\Windows\Shell\FamilySafetyMonitor</td></tr><tr><td class="mono">\Microsoft\Windows\Shell\FamilySafetyRefreshTask</td></tr><tr><td class="mono">\Microsoft\Windows\Device Information\Device</td></tr><tr><td class="mono">\Microsoft\Windows\Device Information\Device User</td></tr><tr><td class="mono">\Microsoft\Windows\PushToInstall\LoginCheck</td></tr><tr><td class="mono">\Microsoft\Windows\Power Efficiency Diagnostics\AnalyzeSystem</td></tr><tr><td class="mono">\Microsoft\XblGameSave\XblGameSaveTask</td></tr><tr><td class="mono">\Microsoft\Windows\Speech\SpeechModelDownloadTask</td></tr><tr><td class="mono">\Microsoft\Windows\Retail Demo\CleanupOfflineContent</td></tr><tr><td class="mono">\Microsoft\Windows\NetTrace\GatherNetworkInfo</td></tr><tr><td class="mono">\Microsoft\Windows\Application Experience\MareBackup</td></tr><tr><td class="mono">\Microsoft\Windows\Location\Notifications</td></tr><tr><td class="mono">\Microsoft\Windows\Location\WindowsActionDialog</td></tr><tr><td class="mono">\Microsoft\Office\OfficeTelemetryAgentLogOn</td></tr><tr><td class="mono">\Microsoft\Office\OfficeTelemetryAgentFallBack</td></tr><tr><td class="mono">\Microsoft\Windows\Diagnosis\Scheduled</td></tr><tr><td class="mono">\Microsoft\Windows\WwanSvc\OobeDiscovery</td></tr></tbody></table></div>
+  </div>
+</section>
+
+<section id="apps">
+  <div class="wrap touch">
+    <div class="section-head reveal">
+      <h2>Preinstalled apps (68 patterns)</h2>
+      <p>Removed for your account when present. Each comes back from the Microsoft Store. Patterns with a star match the
+        third-party apps some PCs ship with. The Xbox apps go only with <span class="mono">-CutXbox</span>.</p>
+    </div>
+    <ul class="apps"><li class="mono">Microsoft.YourPhone</li><li class="mono">MicrosoftWindows.CrossDevice</li><li class="mono">Microsoft.549981C3F5F10</li><li class="mono">Microsoft.WindowsFeedbackHub</li><li class="mono">Microsoft.GetHelp</li><li class="mono">Microsoft.Getstarted</li><li class="mono">Microsoft.WindowsMaps</li><li class="mono">Microsoft.MicrosoftSolitaireCollection</li><li class="mono">Microsoft.MixedReality.Portal</li><li class="mono">Microsoft.Microsoft3DViewer</li><li class="mono">Microsoft.People</li><li class="mono">Microsoft.SkypeApp</li><li class="mono">MicrosoftTeams</li><li class="mono">MSTeams</li><li class="mono">Clipchamp.Clipchamp</li><li class="mono">Microsoft.BingNews</li><li class="mono">Microsoft.BingWeather</li><li class="mono">Microsoft.BingSearch</li><li class="mono">Microsoft.Todos</li><li class="mono">Microsoft.MicrosoftOfficeHub</li><li class="mono">Microsoft.Office.OneNote</li><li class="mono">Microsoft.PowerAutomateDesktop</li><li class="mono">MicrosoftCorporationII.MicrosoftFamily</li><li class="mono">Microsoft.Copilot</li><li class="mono">MicrosoftWindows.Client.WebExperience</li><li class="mono">Microsoft.Windows.DevHome</li><li class="mono">Microsoft.Windows.Ai.Copilot.Provider</li><li class="mono">Microsoft.WindowsCommunicationsApps</li><li class="mono">Microsoft.Messaging</li><li class="mono">Microsoft.OneConnect</li><li class="mono">Microsoft.Print3D</li><li class="mono">Microsoft.Wallet</li><li class="mono">Microsoft.WindowsAlarms</li><li class="mono">Microsoft.MicrosoftStickyNotes</li><li class="mono">Microsoft.Advertising.Xaml</li><li class="mono">MicrosoftCorporationII.QuickAssist</li><li class="mono">*Disney*</li><li class="mono">*TikTok*</li><li class="mono">*Instagram*</li><li class="mono">*Facebook*</li><li class="mono">*CandyCrush*</li><li class="mono">*king.com*</li><li class="mono">*Netflix*</li><li class="mono">*Twitter*</li><li class="mono">*Amazon*</li><li class="mono">*Hulu*</li><li class="mono">*Dolby*</li><li class="mono">*Prime*</li><li class="mono">*LinkedIn*</li><li class="mono">*McAfee*</li><li class="mono">*Norton*</li><li class="mono">*Booking*</li><li class="mono">*Duolingo*</li><li class="mono">*Fitbit*</li><li class="mono">*Flipboard*</li><li class="mono">*HiddenCity*</li><li class="mono">*Hearts*</li><li class="mono">*Plex*</li><li class="mono">*Roblox*Store*</li><li class="mono">*Sway*</li><li class="mono">*Wunderlist*</li><li class="mono">*ESPN*</li><li class="mono">*BubbleWitch*</li><li class="mono">*MarchofEmpires*</li><li class="mono">*RoyalRevolt*</li><li class="mono">*Speed Test*</li><li class="mono">*Sidia*</li><li class="mono">*WhatsApp*Stub*</li></ul>
+  </div>
+</section>
+
+<section id="registry">
+  <div class="wrap touch">
+    <div class="section-head reveal">
+      <h2>Registry values (96)</h2>
+      <p>Every value written, by section. The value it had before is recorded and undo writes it back;
+        a value that did not exist is removed again.</p>
+    </div>
+    <details><summary>Safety first <span class="muted tiny">(1 values)</span></summary><div style="overflow-x:auto"><table class="cmp" style="min-width:0"><tbody><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore</td><td class="mono">SystemRestorePointCreationFrequency</td></tr></tbody></table></div></details><details><summary>Telemetry, background activity, the shell <span class="muted tiny">(46 values)</span></summary><div style="overflow-x:auto"><table class="cmp" style="min-width:0"><tbody><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection</td><td class="mono">AllowTelemetry</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection</td><td class="mono">AllowTelemetry</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo</td><td class="mono">Enabled</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\CurrentVersion\Privacy</td><td class="mono">TailoredExperiencesWithDiagnosticDataEnabled</td></tr><tr><td class="mono" style="width:auto">$cdm</td><td class="mono">$v</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Windows\System</td><td class="mono">EnableActivityFeed</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Windows\System</td><td class="mono">PublishUserActivities</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Windows\System</td><td class="mono">UploadUserActivities</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Siuf\Rules</td><td class="mono">NumberOfSIUFInPeriod</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization</td><td class="mono">DODownloadMode</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent</td><td class="mono">DisableWindowsConsumerFeatures</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent</td><td class="mono">DisableSoftLanding</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy</td><td class="mono">LetAppsRunInBackground</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications</td><td class="mono">GlobalUserDisabled</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Dsh</td><td class="mono">AllowNewsAndInterests</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Feeds</td><td class="mono">EnableFeeds</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced</td><td class="mono">TaskbarDa</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced</td><td class="mono">TaskbarMn</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced</td><td class="mono">ShowCopilotButton</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Policies\Microsoft\Windows\WindowsCopilot</td><td class="mono">TurnOffWindowsCopilot</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot</td><td class="mono">TurnOffWindowsCopilot</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search</td><td class="mono">AllowCortana</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search</td><td class="mono">DisableWebSearch</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search</td><td class="mono">ConnectedSearchUseWeb</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\CurrentVersion\Search</td><td class="mono">BingSearchEnabled</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\CurrentVersion\SearchSettings</td><td class="mono">IsDynamicSearchBoxEnabled</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced</td><td class="mono">Start_TrackProgs</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced</td><td class="mono">Start_IrisRecommendations</td></tr><tr><td class="mono" style="width:auto">HKCU:\System\GameConfigStore</td><td class="mono">GameDVR_Enabled</td></tr><tr><td class="mono" style="width:auto">HKCU:\System\GameConfigStore</td><td class="mono">GameDVR_FSEBehaviorMode</td></tr><tr><td class="mono" style="width:auto">HKCU:\System\GameConfigStore</td><td class="mono">GameDVR_HonorUserFSEBehaviorMode</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\CurrentVersion\GameDVR</td><td class="mono">AppCaptureEnabled</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR</td><td class="mono">AllowGameDVR</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\GameBar</td><td class="mono">AutoGameModeEnabled</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\GameBar</td><td class="mono">AllowAutoGameMode</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\GameBar</td><td class="mono">UseNexusForGameBarEnabled</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Edge</td><td class="mono">StartupBoostEnabled</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Edge</td><td class="mono">BackgroundModeEnabled</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Edge</td><td class="mono">HardwareAccelerationModeEnabled</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Edge</td><td class="mono">HubsSidebarEnabled</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Policies\Microsoft\Windows\WindowsAI</td><td class="mono">DisableAIDataAnalysis</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI</td><td class="mono">DisableAIDataAnalysis</td></tr><tr><td class="mono" style="width:auto">$cdm</td><td class="mono">RotatingLockScreenOverlayEnabled</td></tr><tr><td class="mono" style="width:auto">$cdm</td><td class="mono">SubscribedContent-338387Enabled</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting</td><td class="mono">Disabled</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32</td><td class="mono">(default)</td></tr></tbody></table></div></details><details><summary>System tuning <span class="muted tiny">(34 values)</span></summary><div style="overflow-x:auto"><table class="cmp" style="min-width:0"><tbody><tr><td class="mono" style="width:auto">$sp</td><td class="mono">NetworkThrottlingIndex</td></tr><tr><td class="mono" style="width:auto">$sp</td><td class="mono">SystemResponsiveness</td></tr><tr><td class="mono" style="width:auto">$games</td><td class="mono">GPU Priority</td></tr><tr><td class="mono" style="width:auto">$games</td><td class="mono">Priority</td></tr><tr><td class="mono" style="width:auto">$games</td><td class="mono">Scheduling Category</td></tr><tr><td class="mono" style="width:auto">$games</td><td class="mono">SFIO Priority</td></tr><tr><td class="mono" style="width:auto">$games</td><td class="mono">Background Only</td></tr><tr><td class="mono" style="width:auto">HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl</td><td class="mono">Win32PrioritySeparation</td></tr><tr><td class="mono" style="width:auto">HKLM:\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling</td><td class="mono">PowerThrottlingOff</td></tr><tr><td class="mono" style="width:auto">HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\kernel</td><td class="mono">GlobalTimerResolutionRequests</td></tr><tr><td class="mono" style="width:auto">HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management</td><td class="mono">DisablePagingExecutive</td></tr><tr><td class="mono" style="width:auto">HKLM:\SYSTEM\CurrentControlSet\Control\GraphicsDrivers</td><td class="mono">HwSchMode</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\DirectX\UserGpuPreferences</td><td class="mono">DirectXUserGlobalSettings</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects</td><td class="mono">VisualFXSetting</td></tr><tr><td class="mono" style="width:auto">HKCU:\Control Panel\Desktop</td><td class="mono">UserPreferencesMask</td></tr><tr><td class="mono" style="width:auto">HKCU:\Control Panel\Desktop</td><td class="mono">MenuShowDelay</td></tr><tr><td class="mono" style="width:auto">HKCU:\Control Panel\Desktop</td><td class="mono">FontSmoothing</td></tr><tr><td class="mono" style="width:auto">HKCU:\Control Panel\Desktop\WindowMetrics</td><td class="mono">MinAnimate</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced</td><td class="mono">TaskbarAnimations</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced</td><td class="mono">ListviewAlphaSelect</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced</td><td class="mono">ListviewShadow</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced</td><td class="mono">IconsOnly</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\DWM</td><td class="mono">EnableAeroPeek</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize</td><td class="mono">EnableTransparency</td></tr><tr><td class="mono" style="width:auto">HKCU:\Control Panel\Mouse</td><td class="mono">MouseSpeed</td></tr><tr><td class="mono" style="width:auto">HKCU:\Control Panel\Mouse</td><td class="mono">MouseThreshold1</td></tr><tr><td class="mono" style="width:auto">HKCU:\Control Panel\Mouse</td><td class="mono">MouseThreshold2</td></tr><tr><td class="mono" style="width:auto">HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Power</td><td class="mono">HiberbootEnabled</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced</td><td class="mono">ShowSyncProviderNotifications</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced</td><td class="mono">HideFileExt</td></tr><tr><td class="mono" style="width:auto">HKCU:\Control Panel\Accessibility\StickyKeys</td><td class="mono">Flags</td></tr><tr><td class="mono" style="width:auto">HKCU:\Control Panel\Accessibility\ToggleKeys</td><td class="mono">Flags</td></tr><tr><td class="mono" style="width:auto">HKCU:\Control Panel\Accessibility\Keyboard Response</td><td class="mono">Flags</td></tr><tr><td class="mono" style="width:auto">HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize</td><td class="mono">StartupDelayInMSec</td></tr></tbody></table></div></details><details><summary>Network <span class="muted tiny">(6 values)</span></summary><div style="overflow-x:auto"><table class="cmp" style="min-width:0"><tbody><tr><td class="mono" style="width:auto">$p</td><td class="mono">TcpAckFrequency</td></tr><tr><td class="mono" style="width:auto">$p</td><td class="mono">TCPNoDelay</td></tr><tr><td class="mono" style="width:auto">$p</td><td class="mono">TcpDelAckTicks</td></tr><tr><td class="mono" style="width:auto">HKLM:\SOFTWARE\Policies\Microsoft\Windows\Psched</td><td class="mono">NonBestEffortLimit</td></tr><tr><td class="mono" style="width:auto">HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters</td><td class="mono">DefaultTTL</td></tr><tr><td class="mono" style="width:auto">HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters</td><td class="mono">IRPStackSize</td></tr></tbody></table></div></details><details><summary>Discord, Spotify, browsers <span class="muted tiny">(2 values)</span></summary><div style="overflow-x:auto"><table class="cmp" style="min-width:0"><tbody><tr><td class="mono" style="width:auto">$pol</td><td class="mono">BackgroundModeEnabled</td></tr><tr><td class="mono" style="width:auto">$pol</td><td class="mono">HardwareAccelerationModeEnabled</td></tr></tbody></table></div></details><details><summary>Game profiles <span class="muted tiny">(5 values)</span></summary><div style="overflow-x:auto"><table class="cmp" style="min-width:0"><tbody><tr><td class="mono" style="width:auto">$ifeo</td><td class="mono">CpuPriorityClass</td></tr><tr><td class="mono" style="width:auto">$ifeo</td><td class="mono">IoPriority</td></tr><tr><td class="mono" style="width:auto">$ifeo</td><td class="mono">PagePriority</td></tr><tr><td class="mono" style="width:auto">$gp</td><td class="mono">$p</td></tr><tr><td class="mono" style="width:auto">$layers</td><td class="mono">$p</td></tr></tbody></table></div></details><details><summary>Memory integrity (opt-in) <span class="muted tiny">(2 values)</span></summary><div style="overflow-x:auto"><table class="cmp" style="min-width:0"><tbody><tr><td class="mono" style="width:auto">HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity</td><td class="mono">Enabled</td></tr><tr><td class="mono" style="width:auto">HKLM:\SYSTEM\CurrentControlSet\Control\DeviceGuard</td><td class="mono">EnableVirtualizationBasedSecurity</td></tr></tbody></table></div></details>
+  </div>
+</section>
+
+<section id="also">
+  <div class="wrap touch">
+    <div class="section-head reveal">
+      <h2>And, outside the registry</h2>
+    </div>
+    <ul class="tick" style="max-width:70ch">
+      <li>A System Restore point, and a registry export of the areas above plus the service list, before anything else</li>
+      <li>A power plan named OmniDx, made from Ultimate Performance; undo makes your previous plan active again and deletes it</li>
+      <li>Hibernation off on desktops (hiberfil.sys freed); left alone on laptops</li>
+      <li>TCP settings by netsh and adapter properties by their driver names; every one recorded with its previous value</li>
+      <li>Discord's settings.json and Spotify's prefs, backed up first, only while the apps are closed</li>
+      <li>Store app pre-launch off (Disable-MMAgent); NTFS last-access stamps off</li>
+      <li>One scheduled task that runs once at your next sign-in, writes the after-restart process count and removes itself; skip it with <span class="mono">-NoAfterCount</span></li>
+      <li>Memory integrity off only with <span class="mono">-Aggressive</span>, and only after asking again</li>
+    </ul>
+    <p class="small muted" style="margin-top:20px">Not touched, ever: Defender, the firewall, SmartScreen, UAC, Secure Boot, TPM, BitLocker,
+      Windows Update, any anti-cheat, any driver, your files and browser data. <a href="../trust/#cant">The full list.</a></p>
+  </div>
+</section>
+
+<!-- chrome:footer -->
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a class="logo" href="../"><span class="mark"><svg viewBox="0 0 64 64" aria-hidden="true" style="width:18px;height:18px"><rect x="12" y="17" width="30" height="6" rx="3" fill="#fff" opacity=".92"/><rect x="12" y="29" width="20" height="6" rx="3" fill="#fff" opacity=".68"/><rect x="12" y="41" width="11" height="6" rx="3" fill="#fff" opacity=".45"/><path d="M47 14 L37 34 L45 34 L41 50 L53 28 L45 28 Z" fill="#fff"/></svg></span>OmniDx <small>Tune</small></a>
+        <p class="small" style="margin-top:14px;max-width:34ch">One command. Windows cut down to what your
+          games need, a power plan built for frames, and a BIOS checklist for your exact board.</p>
+        <p class="tiny muted" style="margin-top:10px">One payment. No subscription, ever. Nothing installed.</p>
+        <div id="rate-us" class="rate-host" aria-label="Rate OmniDx Tune"></div>
+      </div>
+      <div>
+        <h4>What it does</h4>
+        <a href="../#cut">What gets cut</a>
+        <a href="../#tailored">Reads your PC first</a>
+        <a href="../#power">The power plan</a>
+        <a href="../#games">Game profiles</a>
+        <a href="../#bios">BIOS checklist</a>
+        <a href="../#safe">Fail-safes</a>
+        <a href="../what-it-touches/">Everything it touches</a>
+      </div>
+      <div>
+        <h4>Get it</h4>
+        <a href="../pricing/">Pricing</a>
+        <a href="../download/">Run it</a>
+        <a href="../activate/">Your key</a>
+        <a href="../download/#undo">Undo</a>
+        <a href="https://omnidx.net/tune/omnidx.ps1">Read the script</a>
+      </div>
+      <div>
+        <h4>More</h4>
+        <a href="../trust/">Is this safe? Is it a scam?</a>
+        <a href="../pricing/#faq">FAQ</a>
+        <a href="../trust/#cant">What it won't touch</a>
+        <a href="../changelog/">Changelog</a>
+        <a href="../app/">OmniDx Studio — the video editor</a>
+        <span class="foot-support" data-support="OmniDx Tune — help" hidden></span>
+      </div>
+    </div>
+    <div class="foot-note">
+      <span>© 2026 OmniDx. One payment. Yours. Script <span data-script-version>v1.1.0</span>.</span>
+      <span>Nothing leaves your PC except the key check.</span>
+    </div>
+  </div>
+</footer>
+<!-- /chrome:footer -->
+<script type="module" src="../assets/studio.js"></script>
+</body>
+</html>

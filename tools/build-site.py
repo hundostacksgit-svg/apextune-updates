@@ -39,6 +39,8 @@ PAGES = {
     'download/index.html': '../',
     'account/index.html': '../',
     'trust/index.html': '../',
+    'what-it-touches/index.html': '../',
+    'changelog/index.html': '../',
 }
 
 LOGO_SVG = (
@@ -76,6 +78,7 @@ MENU = [
             ('🎧', 'Discord, Spotify, browser', 'Hardware acceleration on, background running off', '{s}#apps'),
             ('🧬', 'BIOS checklist', 'Written for your exact board and CPU', '{s}#bios'),
             ('🛟', 'Fail-safes', 'Restore point, undo in one file, security untouched', '{s}#safe'),
+            ('📋', 'Everything it touches', 'Every service, task, app and value, with the reason', '{s}what-it-touches/'),
         ],
     },
     {
@@ -97,6 +100,7 @@ MENU = [
             ('🛡️', 'Is this safe? Is it a scam?', 'The straight answer, and how to check', '{s}trust/'),
             ('🚫', "What it won't touch", 'Defender, firewall, Secure Boot, your drivers', '{s}trust/#cant'),
             ('🔓', 'Paid but no key?', 'Your receipt number gets it', '{s}activate/'),
+            ('🗒️', 'Changelog', 'What changed in each version', '{s}changelog/'),
             ('🎬', 'OmniDx Studio', 'The video editor, still here', '{s}app/'),
         ],
     },
@@ -216,6 +220,7 @@ def build_footer(s: str) -> str:
         <a href="{s}#games">Game profiles</a>
         <a href="{s}#bios">BIOS checklist</a>
         <a href="{s}#safe">Fail-safes</a>
+        <a href="{s}what-it-touches/">Everything it touches</a>
       </div>
       <div>
         <h4>Get it</h4>
@@ -230,12 +235,13 @@ def build_footer(s: str) -> str:
         <a href="{s}trust/">Is this safe? Is it a scam?</a>
         <a href="{s}pricing/#faq">FAQ</a>
         <a href="{s}trust/#cant">What it won't touch</a>
+        <a href="{s}changelog/">Changelog</a>
         <a href="{s}app/">OmniDx Studio — the video editor</a>
         <span class="foot-support" data-support="OmniDx Tune — help" hidden></span>
       </div>
     </div>
     <div class="foot-note">
-      <span>© 2026 OmniDx. One payment. Yours.</span>
+      <span>© 2026 OmniDx. One payment. Yours. Script <span data-script-version>v1.1.0</span>.</span>
       <span>Nothing leaves your PC except the key check.</span>
     </div>
   </div>

@@ -3,23 +3,23 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Is this safe? Is it a scam? — OmniDx Tune</title>
-<meta name="description" content="A straight answer, three things you can check yourself before paying a cent, everything OmniDx Tune will not touch, and what happens if this site disappears.">
+<title>Changelog — OmniDx Tune</title>
+<meta name="description" content="What changed in each version of OmniDx Tune. The one command always fetches the newest script, so every entry here reaches you on your next run.">
 <meta name="theme-color" content="#050308">
 <link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
-<link rel="canonical" href="https://omnidx.net/studio/trust/">
-<meta property="og:url" content="https://omnidx.net/studio/trust/">
+<link rel="canonical" href="https://omnidx.net/studio/changelog/">
+<meta property="og:url" content="https://omnidx.net/studio/changelog/">
 <meta property="og:image" content="https://omnidx.net/studio/assets/og-card.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="OmniDx Tune: a PowerShell window running the tune, the process count falling from 214 to 86.">
 <meta name="twitter:image" content="https://omnidx.net/studio/assets/og-card.png">
-<meta name="twitter:title" content="Is this safe? Is it a scam? — OmniDx Tune">
-<meta name="twitter:description" content="A straight answer, three things you can check yourself before paying, and everything it will not touch.">
+<meta name="twitter:title" content="Changelog — OmniDx Tune">
+<meta name="twitter:description" content="What changed in each version. The one command always fetches the newest script.">
 <meta property="og:site_name" content="OmniDx Tune">
-<meta property="og:title" content="Is this safe? Is it a scam? — OmniDx Tune">
-<meta property="og:description" content="A straight answer, three things you can check yourself before paying, and everything it will not touch.">
+<meta property="og:title" content="Changelog — OmniDx Tune">
+<meta property="og:description" content="What changed in each version. The one command always fetches the newest script.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="../assets/studio.css">
@@ -118,188 +118,43 @@
 <!-- /chrome:nav -->
 <header class="hero" style="padding:64px 0 30px">
   <div class="wrap center">
-    <div class="eyebrow"><span class="pulse"></span>The page a sceptic lands on</div>
-    <h1 style="font-size:clamp(34px,5.6vw,58px)">"A script from a website that wants admin rights?"</h1>
-    <p class="lede">
-      Fair. That sentence describes most of what should never be run on a PC. So here is what
-      this one is, how to check it yourself before paying, and the full list of what it will not
-      touch.
-    </p>
+    <div class="eyebrow"><span class="pulse"></span>Changelog</div>
+    <h1 style="font-size:clamp(34px,5.6vw,58px)">What changed.</h1>
+    <p class="lede">The one command fetches the newest script every run, so every entry here reaches you the next time you run it, on the same key, for nothing.</p>
   </div>
 </header>
 
-<!-- ==================== check ==================== -->
-<section id="check" data-rail="Check it">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <h2>Three things to check before you pay a cent</h2>
-      <p>None of these need a key, an account or a card.</p>
+<section style="padding-top:26px">
+  <div class="wrap" style="max-width:820px">
+    <div class="card reveal">
+      <div class="eyebrow" style="margin-bottom:12px">v1.1.0 · September 2026</div>
+      <h3>Reads more, asks better, proves the number</h3>
+      <ul class="tick">
+        <li>Shows what starts with Windows and lets you pick what stays on, by number, before switching the rest off</li>
+        <li>Offers to close Discord and Spotify so they can be tuned in the same run</li>
+        <li>Finds games through Steam's library list, Epic's manifests and the Riot and Xbox folders instead of crawling Program Files</li>
+        <li>Checks your RAM speed against its rated speed and says outright when XMP / EXPO is off; warns on single-channel memory, an old GPU driver, a display set below its refresh rate, no page file, Windows on a hard disk, less than 16 GB, an old Windows 10 build, running on battery, another optimizer installed</li>
+        <li>Keeps the Xbox accessory service when a controller is connected; notes OEM extras and third-party antivirus without touching them</li>
+        <li>Prints a target process count for your PC, and writes the after-restart count to a file by a one-shot task that removes itself</li>
+        <li>Tunes the signed-in account when a standard user gave an administrator's password at the prompt</li>
+        <li>Free report mode now lists exactly what would be switched off and kept on your PC, and saves it</li>
+        <li>New cuts: Recall, lock-screen ads, Windows Error Reporting, Store app pre-launch, Sticky Keys popups, the ten-second startup delay, receive segment coalescing, the Widgets host, NVIDIA telemetry and its crash-report tasks, eight more telemetry tasks, per-game I/O and page priority</li>
+        <li>Refuses Windows Server and PowerShell 7 with a plain explanation; warns on a work domain, a pending restart, a virtual machine and low disk space</li>
+        <li>Report lists what was kept and why, the games it found, a summary file and full before-and-after process lists; a transcript of the run is saved</li>
+        <li>The command fetches past caches, hands PowerShell 7 over to Windows PowerShell itself, and takes options from one more line</li>
+        <li>Keys can move to a new PC by yourself, once every 30 days, from the key page (with the licence server)</li>
+      </ul>
     </div>
-    <div class="grid grid-3">
-      <div class="card reveal">
-        <div class="card-icon">📜</div>
-        <h3>Read the script</h3>
-        <p>The whole thing is one readable PowerShell file at <a href="https://omnidx.net/tune/omnidx.ps1">omnidx.net/tune/omnidx.ps1</a>, and the one-line bootstrapper at <a href="https://omnidx.net/go.ps1">omnidx.net/go.ps1</a>. Every service, task, app and registry key it touches is listed in it with the reason. There is no compiled part, no second download, nothing obfuscated. The key is what makes it run; the code was never the secret.</p>
-      </div>
-      <div class="card reveal d1">
-        <div class="card-icon">📋</div>
-        <h3>Run the report mode</h3>
-        <p>Free, no key. It reads your PC the way the tune does and counts your processes, then stops without changing anything. Watch what it says it found; if it has your machine right, it will cut around it right.</p>
-        <div class="cmd" style="margin-top:12px"><code data-text="$env:OMNIDX_MODE='report'; irm omnidx.net/go.ps1 | iex">$env:OMNIDX_MODE='report'; irm omnidx.net/go.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
-      </div>
-      <div class="card reveal d2">
-        <div class="card-icon">🔎</div>
-        <h3>Watch what it sends</h3>
-        <p>Open Resource Monitor's network tab while it runs. You will see two requests to omnidx.net (the config and the script) and, if a licence server is configured, one to it with your key and the PC fingerprint. That is all. The report stays in <span class="mono tiny">C:\OmniDx</span>. And <a href="../what-it-touches/">every service, task, app and value it touches is listed</a>, generated from the script itself.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ==================== answer ==================== -->
-<section id="answer" data-rail="Straight answer">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <h2>The straight answer</h2>
-    </div>
-    <div class="grid grid-2">
-      <div class="card reveal">
-        <h3>What it is</h3>
-        <p>A PowerShell script that does, in one run and with a record, what a careful person would do by hand over an afternoon with Task Manager, Services, Settings and powercfg: turn off what runs for Microsoft rather than for you, set a power plan that keeps the CPU awake, tune the network adapter for latency, and set three per-game flags Windows never sets on its own. Then it writes you a BIOS checklist, because the biggest gain on most PCs is below Windows and no script can flip it for you.</p>
-      </div>
-      <div class="card reveal d1">
-        <h3>What it is not</h3>
-        <p>It is not a driver, a kernel module, an overlay, a "booster" that stays resident, or a thing that injects into games. It does not overclock anything, does not touch voltages, does not flash your BIOS, and does not turn off anything that protects you. It is also not magic: if your GPU is the bottleneck, fewer processes will not change your frame rate, though your frame times will get flatter.</p>
-      </div>
-      <div class="card reveal">
-        <h3>Why it needs administrator rights</h3>
-        <p>Because stopping a service, disabling a scheduled task, changing a power plan and writing to HKLM all need them. There is no way to do this job without them, which is exactly why you should read the file before you let it. It asks Windows for the rights itself, through the normal prompt, so you see the request.</p>
-      </div>
-      <div class="card reveal d1">
-        <h3>Why it costs money</h3>
-        <p>Because it took a long time to get right — which services a laptop needs, which anti-cheat breaks if you touch what, what the 2013 tweaks do to a 2025 PC — and because a key is what lets one person's purchase be one person's. The price is one you can pay without asking anyone, once.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ==================== can't ==================== -->
-<section id="cant" data-rail="What it won't touch">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <h2>What it will not touch, and what it cannot do</h2>
-      <p>A tool that only lists what it does is hiding the other list. Here is the other list.</p>
-    </div>
-    <div class="grid grid-2">
-      <div class="card reveal">
-        <div class="card-icon">🛡️</div>
-        <h3>Never touched</h3>
-        <ul class="tick">
-          <li class="no">Microsoft Defender, the firewall, SmartScreen, UAC</li>
-          <li class="no">Secure Boot, TPM, BitLocker</li>
-          <li class="no">Windows Update — patches are not a tweak</li>
-          <li class="no">Vanguard, Easy Anti-Cheat, BattlEye, Ricochet — or any game's files</li>
-          <li class="no">Your drivers: nothing installed, updated or removed</li>
-          <li class="no">Your files, browser history, tabs, extensions, passwords</li>
-          <li class="no">Voltages, clocks, fan curves, the BIOS itself — the checklist is paper</li>
-          <li class="no">Memory integrity, unless you pass <span class="mono tiny">-Aggressive</span> and then say yes again</li>
-        </ul>
-      </div>
-      <div class="card reveal d1">
-        <div class="card-icon">🚫</div>
-        <h3>Cannot do</h3>
-        <ul class="tick">
-          <li class="no">Make a GPU-bound game faster — that is your graphics card's job</li>
-          <li class="no">Fix thermal throttling — that is your cooler's</li>
-          <li class="no">Change BIOS settings for you — nothing running under Windows can, and anything that claims to should worry you</li>
-          <li class="no">Promise a specific process count — it prints yours, before and after, and the safe bar is different on every PC</li>
-          <li class="no">Run on Windows 7, 8, a Mac, or Linux</li>
-          <li class="no">Stop Windows Update from putting a startup app back — run it again; the key is yours</li>
-        </ul>
-      </div>
-    </div>
-    <div class="note" style="margin-top:22px">
-      <b>One honest limit on the lock.</b> The key is bound to the first PC that runs it, and the
-      script is public — which means someone determined could edit the check out of their own copy.
-      The lock is there to keep one purchase one purchase, not to fight that person; the script they
-      would be editing is the product, and they are welcome to read it either way.
-    </div>
-  </div>
-</section>
-
-<!-- ==================== data ==================== -->
-<section id="data" data-rail="What leaves your PC">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <h2>What leaves your PC</h2>
-    </div>
-    <div class="grid grid-3">
-      <div class="card reveal"><div class="card-icon">🔑</div><h3>The key check</h3>
-        <p>Your key, a fingerprint of the machine — a hash of the board serial, the system id and the CPU id, which identifies the PC without describing it — and the CPU and GPU names so your own machines can be told apart. Only when a licence server is configured; otherwise the key is checked and bound on the PC itself.</p></div>
-      <div class="card reveal d1"><div class="card-icon">🚫</div><h3>Not the report</h3>
-        <p>What it found, what it changed, the process counts and the BIOS checklist are written to <span class="mono tiny">C:\OmniDx</span> and nowhere else. Nothing about your PC is uploaded.</p></div>
-      <div class="card reveal d2"><div class="card-icon">📵</div><h3>Nothing, afterwards</h3>
-        <p>Nothing stays running, so nothing can phone home later. The only process of ours you will ever see is the PowerShell window while it runs. One exception, disclosed: a scheduled task that runs once at your next sign-in, counts processes, writes the number to <span class="mono tiny">C:\OmniDx\after-restart.txt</span> and deletes itself. It sends nothing anywhere, and <span class="mono tiny">-NoAfterCount</span> skips it.</p></div>
-    </div>
-  </div>
-</section>
-
-<!-- ==================== if I disappear ==================== -->
-<section id="ifigone" data-rail="If I disappear">
-  <div class="wrap">
-    <div class="grid grid-2" style="align-items:center">
-      <div class="reveal">
-        <h2>If this site disappears tomorrow</h2>
-        <p>
-          Your PC stays tuned, because the changes are ordinary Windows settings and not a program
-          that needs us. The undo is a file on your disk that needs no key and no internet. The
-          report and the BIOS checklist are text. A key already bound to your PC keeps working when
-          the licence server cannot be reached, by design.
-        </p>
-        <p>
-          The only thing you would lose is the ability to fetch a newer version with the one-line
-          command — and you can save the script itself today from
-          <a href="https://omnidx.net/tune/omnidx.ps1">omnidx.net/tune/omnidx.ps1</a> and run it with
-          <span class="mono tiny">-Key</span> whenever you like.
-        </p>
-      </div>
-      <div class="card reveal d1">
-        <h3>What stays on your PC</h3>
-        <ul class="tick">
-          <li><span class="mono tiny">C:\OmniDx\report-&lt;date&gt;.txt</span> — everything it found and did</li>
-          <li><span class="mono tiny">C:\OmniDx\undo\undo.ps1</span> — the way back, no key, no internet</li>
-          <li><span class="mono tiny">C:\OmniDx\backup\</span> — the app settings and a registry export from before</li>
-          <li>The System Restore point from before the run</li>
-          <li>The OmniDx power plan, in your power settings</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ==================== who ==================== -->
-<section id="who" data-rail="Who made it">
-  <div class="wrap">
-    <div class="band reveal">
-      <h2>Who is behind this</h2>
-      <p class="lede" style="margin-left:auto;margin-right:auto;max-width:62ch">
-        One person, building this on their own. Not a company, not a team, and I am not going to
-        pretend otherwise with a fake "About us" page and stock photographs of an office. That is
-        the honest weakness of buying from me: there is no support department behind this, and if
-        I am asleep your email waits until morning.
-      </p>
-      <p class="lede" style="margin-left:auto;margin-right:auto;max-width:62ch">
-        It is also the honest strength. Nobody above me needs a growth number next quarter, which
-        is why there is no subscription, no account, nothing installed and nothing left running —
-        those things exist to hit targets I do not have.
-      </p>
-      <p class="small" style="margin-top:20px">
-        Reach a human: <span data-support="OmniDx Tune — question from the trust page" hidden></span>
-      </p>
-      <div class="btn-row" style="justify-content:center;margin-top:24px">
-        <a class="btn btn-primary btn-lg" href="../download/#report">Run the free report, decide later</a>
-        <a class="btn btn-lg btn-ghost" href="../pricing/">See exactly what paying gets</a>
-      </div>
+    <div class="card reveal d1" style="margin-top:16px">
+      <div class="eyebrow" style="margin-bottom:12px">v1.0.0 · September 2026</div>
+      <h3>The first one</h3>
+      <ul class="tick">
+        <li>Reads the PC and decides the safe bar from what it finds</li>
+        <li>Startup apps, services, scheduled tasks, preinstalled apps, telemetry and background activity cut; system, network, Discord, Spotify and browsers tuned</li>
+        <li>The OmniDx power plan, sixteen game profiles, a BIOS checklist for the board, GPU control-panel notes</li>
+        <li>Restore point, a record of every change, undo in one file</li>
+        <li>Keys locked to the PC: TUNE for one, SQUAD for five</li>
+      </ul>
     </div>
   </div>
 </section>

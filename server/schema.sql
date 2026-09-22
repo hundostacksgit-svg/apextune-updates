@@ -148,7 +148,8 @@ CREATE TABLE IF NOT EXISTS tune_keys (
   amount_cents  INTEGER,
   verified      INTEGER NOT NULL DEFAULT 0, -- 1 when the order was confirmed with Square's API
   created_at    INTEGER NOT NULL,
-  revoked_at    INTEGER                  -- set on refund; the row is never deleted
+  revoked_at    INTEGER,                 -- set on refund; the row is never deleted
+  moved_at      INTEGER                  -- last self-service move to a new PC
 );
 CREATE INDEX IF NOT EXISTS tune_keys_email ON tune_keys(email);
 
@@ -159,7 +160,13 @@ CREATE TABLE IF NOT EXISTS tune_machines (
   key         TEXT NOT NULL REFERENCES tune_keys(key) ON DELETE CASCADE,
   hwid        TEXT NOT NULL,
   label       TEXT,
+  version     TEXT,                    -- script version at the last run
+  os          TEXT,                    -- Windows build at the last run
   first_seen  INTEGER NOT NULL,
   last_seen   INTEGER NOT NULL,
   PRIMARY KEY (key, hwid)
 );
+-- Columns added after the first deploy. Each fails harmlessly when it exists.
+ALTER TABLE tune_keys ADD COLUMN moved_at INTEGER;
+ALTER TABLE tune_machines ADD COLUMN version TEXT;
+ALTER TABLE tune_machines ADD COLUMN os TEXT;

@@ -26,6 +26,20 @@
 <script>
 (function(){try{var t=localStorage.getItem('omnidx.theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
 </script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"OmniDx Tune","applicationCategory":"UtilitiesApplication","operatingSystem":"Windows 10, Windows 11",
+ "description":"One command cuts Windows down to what your games need, builds a power plan for frames, tunes the network, Discord, Spotify and the browser, writes per-game profiles and a BIOS checklist for your board. Paid once, locked to one PC, undo in one line.",
+ "url":"https://omnidx.net/studio/","offers":[{"@type":"Offer","name":"Tune","price":"19.99","priceCurrency":"USD","url":"https://omnidx.net/studio/pricing/","description":"One PC"},{"@type":"Offer","name":"Squad","price":"69.99","priceCurrency":"USD","url":"https://omnidx.net/studio/pricing/","description":"Five PCs on one key"}]}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+ {"@type":"Question","name":"Will it get me more FPS?","acceptedAnswer":{"@type":"Answer","text":"Usually some, and more consistent frame times almost always. How much depends on your GPU and the game; if the graphics card is the bottleneck no Windows tweak changes that. The BIOS checklist is where the big free gain is on most PCs."}},
+ {"@type":"Question","name":"Is it safe with anti-cheat?","acceptedAnswer":{"@type":"Answer","text":"Yes. Vanguard, Easy Anti-Cheat, BattlEye and Ricochet are never stopped, disabled or delayed, and nothing injects into a game or touches game files."}},
+ {"@type":"Question","name":"Does it lower my security?","acceptedAnswer":{"@type":"Answer","text":"No. Defender, the firewall, UAC, SmartScreen, Secure Boot and Windows Update are not touched. Memory integrity off is opt-in only and asked about again before it happens."}},
+ {"@type":"Question","name":"What if something breaks?","acceptedAnswer":{"@type":"Answer","text":"Run undo: every change is put back from the record it kept, or use the System Restore point made before the run."}},
+ {"@type":"Question","name":"Is there a subscription?","acceptedAnswer":{"@type":"Answer","text":"No. $19.99 once for one PC, $69.99 once for five. Every future version of the script is included."}}
+]}
+</script>
 </head>
 <body>
 <div class="aurora" aria-hidden="true"><div class="grid"></div></div>
@@ -39,7 +53,7 @@
     <div class="menubox" data-menubox>
       <div class="mb" data-mb>
         <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp0">What it does<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-        <div class="mb-pop" id="mbp0" role="menu"><a class="mb-link" href="../#cut" role="menuitem"><span class="mb-ico" aria-hidden="true">🧹</span><span class="mb-txt"><b>What gets cut</b><span>Startup apps, services, tasks, junk apps, telemetry</span></span></a><a class="mb-link" href="../#tailored" role="menuitem"><span class="mb-ico" aria-hidden="true">🔍</span><span class="mb-txt"><b>Reads your PC first</b><span>Laptop or desktop, printers, Bluetooth, Wi-Fi, Xbox — the safe bar is yours</span></span></a><a class="mb-link" href="../#power" role="menuitem"><span class="mb-ico" aria-hidden="true">⚡</span><span class="mb-txt"><b>The OmniDx power plan</b><span>Built for frames: no core parking, no bus sleep</span></span></a><a class="mb-link" href="../#games" role="menuitem"><span class="mb-ico" aria-hidden="true">🎮</span><span class="mb-txt"><b>Game profiles</b><span>Fortnite, VALORANT, CS2, Marvel Rivals and twelve more</span></span></a><a class="mb-link" href="../#network" role="menuitem"><span class="mb-ico" aria-hidden="true">📶</span><span class="mb-txt"><b>Network</b><span>Nagle off, adapter power saving off, latency first</span></span></a><a class="mb-link" href="../#apps" role="menuitem"><span class="mb-ico" aria-hidden="true">🎧</span><span class="mb-txt"><b>Discord, Spotify, browser</b><span>Hardware acceleration on, background running off</span></span></a><a class="mb-link" href="../#bios" role="menuitem"><span class="mb-ico" aria-hidden="true">🧬</span><span class="mb-txt"><b>BIOS checklist</b><span>Written for your exact board and CPU</span></span></a><a class="mb-link" href="../#safe" role="menuitem"><span class="mb-ico" aria-hidden="true">🛟</span><span class="mb-txt"><b>Fail-safes</b><span>Restore point, undo in one file, security untouched</span></span></a></div>
+        <div class="mb-pop" id="mbp0" role="menu"><a class="mb-link" href="../#cut" role="menuitem"><span class="mb-ico" aria-hidden="true">🧹</span><span class="mb-txt"><b>What gets cut</b><span>Startup apps, services, tasks, junk apps, telemetry</span></span></a><a class="mb-link" href="../#tailored" role="menuitem"><span class="mb-ico" aria-hidden="true">🔍</span><span class="mb-txt"><b>Reads your PC first</b><span>Laptop or desktop, printers, Bluetooth, Wi-Fi, Xbox — the safe bar is yours</span></span></a><a class="mb-link" href="../#power" role="menuitem"><span class="mb-ico" aria-hidden="true">⚡</span><span class="mb-txt"><b>The OmniDx power plan</b><span>Built for frames: no core parking, no bus sleep</span></span></a><a class="mb-link" href="../#games" role="menuitem"><span class="mb-ico" aria-hidden="true">🎮</span><span class="mb-txt"><b>Game profiles</b><span>Fortnite, VALORANT, CS2, Marvel Rivals and twelve more</span></span></a><a class="mb-link" href="../#network" role="menuitem"><span class="mb-ico" aria-hidden="true">📶</span><span class="mb-txt"><b>Network</b><span>Nagle off, adapter power saving off, latency first</span></span></a><a class="mb-link" href="../#apps" role="menuitem"><span class="mb-ico" aria-hidden="true">🎧</span><span class="mb-txt"><b>Discord, Spotify, browser</b><span>Hardware acceleration on, background running off</span></span></a><a class="mb-link" href="../#bios" role="menuitem"><span class="mb-ico" aria-hidden="true">🧬</span><span class="mb-txt"><b>BIOS checklist</b><span>Written for your exact board and CPU</span></span></a><a class="mb-link" href="../#safe" role="menuitem"><span class="mb-ico" aria-hidden="true">🛟</span><span class="mb-txt"><b>Fail-safes</b><span>Restore point, undo in one file, security untouched</span></span></a><a class="mb-link" href="../what-it-touches/" role="menuitem"><span class="mb-ico" aria-hidden="true">📋</span><span class="mb-txt"><b>Everything it touches</b><span>Every service, task, app and value, with the reason</span></span></a></div>
       </div>
       <div class="mb" data-mb>
         <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp1">Run it<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
@@ -48,7 +62,7 @@
       <a class="mb-btn" href="../pricing/">Pricing</a>
       <div class="mb" data-mb>
         <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp3">Help<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
-        <div class="mb-pop" id="mbp3" role="menu"><a class="mb-link" href="../pricing/#faq" role="menuitem"><span class="mb-ico" aria-hidden="true">💬</span><span class="mb-txt"><b>FAQ</b><span>Anti-cheat, laptops, refunds, new PC</span></span></a><a class="mb-link" href="../trust/" role="menuitem"><span class="mb-ico" aria-hidden="true">🛡️</span><span class="mb-txt"><b>Is this safe? Is it a scam?</b><span>The straight answer, and how to check</span></span></a><a class="mb-link" href="../trust/#cant" role="menuitem"><span class="mb-ico" aria-hidden="true">🚫</span><span class="mb-txt"><b>What it won't touch</b><span>Defender, firewall, Secure Boot, your drivers</span></span></a><a class="mb-link" href="../activate/" role="menuitem"><span class="mb-ico" aria-hidden="true">🔓</span><span class="mb-txt"><b>Paid but no key?</b><span>Your receipt number gets it</span></span></a><a class="mb-link" href="../app/" role="menuitem"><span class="mb-ico" aria-hidden="true">🎬</span><span class="mb-txt"><b>OmniDx Studio</b><span>The video editor, still here</span></span></a></div>
+        <div class="mb-pop" id="mbp3" role="menu"><a class="mb-link" href="../pricing/#faq" role="menuitem"><span class="mb-ico" aria-hidden="true">💬</span><span class="mb-txt"><b>FAQ</b><span>Anti-cheat, laptops, refunds, new PC</span></span></a><a class="mb-link" href="../trust/" role="menuitem"><span class="mb-ico" aria-hidden="true">🛡️</span><span class="mb-txt"><b>Is this safe? Is it a scam?</b><span>The straight answer, and how to check</span></span></a><a class="mb-link" href="../trust/#cant" role="menuitem"><span class="mb-ico" aria-hidden="true">🚫</span><span class="mb-txt"><b>What it won't touch</b><span>Defender, firewall, Secure Boot, your drivers</span></span></a><a class="mb-link" href="../activate/" role="menuitem"><span class="mb-ico" aria-hidden="true">🔓</span><span class="mb-txt"><b>Paid but no key?</b><span>Your receipt number gets it</span></span></a><a class="mb-link" href="../changelog/" role="menuitem"><span class="mb-ico" aria-hidden="true">🗒️</span><span class="mb-txt"><b>Changelog</b><span>What changed in each version</span></span></a><a class="mb-link" href="../app/" role="menuitem"><span class="mb-ico" aria-hidden="true">🎬</span><span class="mb-txt"><b>OmniDx Studio</b><span>The video editor, still here</span></span></a></div>
       </div>
     </div>
 
@@ -87,6 +101,7 @@
         <a href="../#apps"><span aria-hidden="true">🎧</span>Discord, Spotify, browser<em>Hardware acceleration on, background running off</em></a>
         <a href="../#bios"><span aria-hidden="true">🧬</span>BIOS checklist<em>Written for your exact board and CPU</em></a>
         <a href="../#safe"><span aria-hidden="true">🛟</span>Fail-safes<em>Restore point, undo in one file, security untouched</em></a>
+        <a href="../what-it-touches/"><span aria-hidden="true">📋</span>Everything it touches<em>Every service, task, app and value, with the reason</em></a>
       </div>
     </div>
     <div class="drawer-group">
@@ -108,6 +123,7 @@
         <a href="../trust/"><span aria-hidden="true">🛡️</span>Is this safe? Is it a scam?<em>The straight answer, and how to check</em></a>
         <a href="../trust/#cant"><span aria-hidden="true">🚫</span>What it won't touch<em>Defender, firewall, Secure Boot, your drivers</em></a>
         <a href="../activate/"><span aria-hidden="true">🔓</span>Paid but no key?<em>Your receipt number gets it</em></a>
+        <a href="../changelog/"><span aria-hidden="true">🗒️</span>Changelog<em>What changed in each version</em></a>
         <a href="../app/"><span aria-hidden="true">🎬</span>OmniDx Studio<em>The video editor, still here</em></a>
       </div>
     </div>
@@ -213,6 +229,7 @@
           <tr><td>Discord, Spotify, Chrome, Brave, Edge tuned</td><td>Hardware acceleration on, background running off</td><td class="y">Files backed up first</td></tr>
           <tr><td>Per-game: priority high, GPU high performance, fullscreen optimisations off</td><td>Exclusive fullscreen and the lowest input latency</td><td class="y">Yes</td></tr>
           <tr><td>BIOS checklist for your board, CPU and boot mode</td><td>Memory profile, Resizable BAR, Secure Boot, TPM, what not to touch</td><td class="y">Text — you make the changes</td></tr>
+          <tr><td>One task, run once at the next sign-in, writes the after-restart process count and removes itself</td><td>The honest after number, without you at the keyboard</td><td class="y">Yes, or <span class="mono">-NoAfterCount</span></td></tr>
           <tr><td>Memory integrity (VBS) off</td><td>Only with <span class="mono">-Aggressive</span>, and asked again</td><td class="y">Yes</td></tr>
           <tr><td>Defender, firewall, UAC, SmartScreen, Secure Boot, Windows Update</td><td>Not touched</td><td class="n">—</td></tr>
         </tbody>
@@ -299,6 +316,14 @@
       <details><summary>How do I get the key after paying?</summary>
         <p>Square sends you straight back to <a href="../activate/">the key page</a> with it on screen. If you closed the tab, open that page again — it remembers — or type in the order number from your Square receipt and pick what you bought.</p>
         <p class="small" data-support="OmniDx Tune — paid but no key" hidden style="margin:8px 0 0"></p></details>
+      <details><summary>Can I buy one for a friend?</summary>
+        <p>Yes. The key appears on the screen after paying; send it to them and it locks to the first PC that runs it, theirs. For a group, Squad is five PCs on one key for less than four separate ones.</p></details>
+      <details><summary>What is after-restart.txt?</summary>
+        <p>The number that counts is the process count after a restart, and nobody is at the keyboard to read it then. So the tune leaves one scheduled task that runs once at your next sign-in, waits two minutes, writes the count to <span class="mono">C:\OmniDx\after-restart.txt</span> and deletes itself. It is the only thing the tune ever schedules, it is in the undo list, and <span class="mono">-NoAfterCount</span> skips it.</p></details>
+      <details><summary>A work laptop? A virtual machine? A shared family PC?</summary>
+        <p>A PC joined to a work or school domain gets a warning and a question first: group policy can put settings back, and IT may have opinions. A virtual machine runs but the numbers mean little there. On a family PC where a standard account gave an administrator's password at the prompt, the tune notices and applies the per-user settings to the account that is signed in, not the administrator's.</p></details>
+      <details><summary>Do you email the key?</summary>
+        <p>No, because Square does not pass your email address on the way back, and a key on the screen beats a key in a spam folder. The key page has buttons to email it to yourself, save it as a file or print it, and it stays in that browser.</p></details>
       <details><summary>Will the price go up?</summary>
         <p>Maybe, for new buyers. Never for you — you paid once, and every future version of the script is included.</p></details>
     </div>
@@ -337,6 +362,7 @@
         <a href="../#games">Game profiles</a>
         <a href="../#bios">BIOS checklist</a>
         <a href="../#safe">Fail-safes</a>
+        <a href="../what-it-touches/">Everything it touches</a>
       </div>
       <div>
         <h4>Get it</h4>
@@ -351,12 +377,13 @@
         <a href="../trust/">Is this safe? Is it a scam?</a>
         <a href="../pricing/#faq">FAQ</a>
         <a href="../trust/#cant">What it won't touch</a>
+        <a href="../changelog/">Changelog</a>
         <a href="../app/">OmniDx Studio — the video editor</a>
         <span class="foot-support" data-support="OmniDx Tune — help" hidden></span>
       </div>
     </div>
     <div class="foot-note">
-      <span>© 2026 OmniDx. One payment. Yours.</span>
+      <span>© 2026 OmniDx. One payment. Yours. Script <span data-script-version>v1.1.0</span>.</span>
       <span>Nothing leaves your PC except the key check.</span>
     </div>
   </div>

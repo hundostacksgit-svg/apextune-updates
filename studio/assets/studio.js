@@ -736,6 +736,16 @@ function initTune() {
     }
   }));
 
+  $$('[data-games]').forEach((el) => { el.textContent = String(TUNE.games.length); });
+  // The script's version, from the same file the command reads, so the footer
+  // never claims a version the wire does not serve.
+  const vers = $$('[data-script-version]');
+  if (vers.length) {
+    fetch(TUNE.configUrl, { cache: 'no-store' }).then((r) => r.json()).then((cfg) => {
+      if (cfg.version) vers.forEach((el) => { el.textContent = `v${cfg.version}`; });
+    }).catch(() => {});
+  }
+
   // The front page's console; the module is only fetched where it is used.
   if ($('#console')) import('./tune.js').then((m) => m.initConsole($('#console'))).catch(() => {});
 }

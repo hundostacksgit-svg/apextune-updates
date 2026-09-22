@@ -13,8 +13,11 @@ pieces fit and the short list of what still needs a human to switch on.
 | The script | `tune/omnidx.ps1` (served at `omnidx.net/tune/omnidx.ps1`) | The tune itself: read the PC, check the key, restore point, the cut, power plan, network, apps, game profiles, report, undo. Public on purpose. |
 | The config | `tune/config.json` | One field that matters: `api`. Empty means no licence server. |
 | Keys in the browser | `studio/assets/tunekey.js`, `studio/activate/` | Makes and checks keys on the page after paying. |
-| Keys on the server | `server/worker.js` (`/v1/tune/*`), `server/schema.sql` (`tune_keys`, `tune_machines`) | Issues keys against Square orders, binds them to PCs, refuses the rest. |
+| Keys on the server | `server/worker.js` (`/v1/tune/*`), `server/schema.sql` (`tune_keys`, `tune_machines`) | Issues keys against Square orders, binds them to PCs, refuses the rest, moves them on request. |
 | Keys by hand | `tools/make-tune-key.py` | Make, check or reproduce a key; print the D1 insert. |
+| Support | `docs/TUNE-SUPPORT.md` | The replies, and where every file lives on the buyer's PC. |
+| Promotion | `docs/TUNE-PROMOTION.md` | Bios, hooks, rules, where to post. |
+| Transparency | `tools/tune-touches.py` → `studio/what-it-touches/` | The page listing every service, task, app and value, generated from the script. |
 | Prices and links | `studio/assets/config.js` → `TUNE` | The only place a price or a Square link lives. |
 
 The video editor (OmniDx Studio) still lives at `studio/app/` and is linked from
@@ -54,6 +57,45 @@ the footer. Nothing about it was removed; the site around it changed.
      `HKLM:\SOFTWARE\OmniDx\Tune`; a different key on the same PC is refused.
 6. The tune runs. Undo, report and backups land in `C:\OmniDx`.
 
+## Square: exactly what to do
+
+Everything below is in the Square dashboard (squareup.com > Online > Payment
+links, or Items & orders > Payment links depending on the layout).
+
+1. **Delete the $39.99 link** (`https://square.link/u/sxi62gva`). Nothing
+   sells at that price now; a visitor who somehow pays it would get a
+   one-PC key and a confusing receipt.
+2. **Rename the $19.99 link** (`https://square.link/u/xm9VtiGc`) to
+   "OmniDx Tune — one PC". Description: "One command tunes your Windows PC
+   for games. Paid once. Your key appears on the page after you pay; it
+   locks to the first PC that runs it. Undo in one line."
+3. **Rename the $69.99 link** (`https://square.link/u/i8zrHwkn`) to
+   "OmniDx Tune Squad — five PCs". Description: "The same tune on five PCs,
+   one key."
+4. **Check each link's redirect URL** ("After payment, send the customer
+   to"): `https://omnidx.net/studio/activate/?e=creator` on the $19.99 link
+   and `https://omnidx.net/studio/activate/?e=team` on the $69.99 one. They
+   were set up that way; if either is blank, set it. Square appends its own
+   order id to that URL and the key page issues the key against it.
+5. **Do one real test purchase** of the $19.99 link with your own card, note
+   the exact URL you land on (it should contain an order or transaction id),
+   confirm the key appears, then refund yourself in Square. If the URL
+   arrives with no id, the key page asks for the receipt number instead and
+   still works; tell me and I will match whatever Square actually sends.
+6. **Receipts**: leave Square's email receipts on. They are the buyer's proof
+   and the order number on them is what support asks for.
+7. **Payment methods**: make sure Apple Pay, Google Pay, Cash App Pay and
+   Afterpay/Klarna are switched on for online payments (Account & Settings >
+   Payments). The pricing page lists them.
+8. **Optional, for the Worker**: Developer dashboard (developer.squareup.com)
+   > your application > Production > Access token. Give it `ORDERS_READ` and
+   `PAYMENTS_READ`, then `npx wrangler secret put SQUARE_ACCESS_TOKEN` in
+   `server/`. From then on every key is issued only against a completed
+   Square order, and the amount paid decides Tune or Squad.
+
+Prices live in one place, `studio/assets/config.js` (`TUNE.products`). To
+change a price: change it in Square, change it there, commit.
+
 ## What to switch on
 
 ### Nothing, to sell today
@@ -88,12 +130,37 @@ The next run on that PC is refused. Without the Worker there is nothing to
 revoke; the key keeps working on the PC it is bound to.
 
 ### Moving a key to a new PC
+Buyers do it themselves from the key page ("New PC? Move this key") with
+their Square order number, once every 30 days: `POST /v1/tune/release`
+unbinds every PC from the key and the next PC that runs it becomes its PC.
+More often than that, or by hand:
 ```
 npx wrangler d1 execute omnidx-studio --remote --command "DELETE FROM tune_machines WHERE key = '<compact key, no dashes>';"
 ```
 
-Then the next PC that runs it becomes its PC. Without the Worker, the new PC
-simply binds locally; the old PC also keeps working, which is the honest limit.
+Without the Worker, the new PC simply binds locally; the old PC also keeps
+working, which is the honest limit.
+
+### The after-restart count
+The number that matters is the one after a restart. The script leaves one
+scheduled task ("OmniDx after-restart count") that runs once at the next
+sign-in, waits two minutes, writes the count to `C:\OmniDx\after-restart.txt`
+and unregisters itself. It is recorded as a change, so undo removes it, and
+`-NoAfterCount` skips it. The site says so on the run-it, pricing and trust
+pages; keep it that way.
+
+### Checks that run on every push
+- `tools/tune-check.mjs`: both scripts are ASCII, brackets balance outside
+  strings and comments, every function Main calls exists, the key checksum
+  agrees between the browser module and the Python tool, config.json's
+  version matches the script.
+- `tools/tune-touches.py --check`: the "Everything it touches" page is
+  generated from the script's lists and fails the build when stale.
+- `.github/workflows/tune-check.yml`: on a Windows runner, parses both
+  scripts with PowerShell's parser, runs the tune in report mode (changes
+  nothing), runs undo with nothing recorded, and confirms a bad key is
+  refused. This is the only place the script actually executes before a
+  buyer runs it; watch it after every script change.
 
 ### A key by hand (Cash App, a friend, a giveaway)
 ```

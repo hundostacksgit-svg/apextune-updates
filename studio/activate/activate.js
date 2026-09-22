@@ -113,16 +113,38 @@ function copyButton(text, label = 'Copy') {
   return `<button class="btn btn-sm" type="button" data-copy-text="${esc(text)}">${esc(label)}</button>`;
 }
 
+function keyFile(info, oneLiner) {
+  const p = TUNE.products[info.product] || TUNE.products.tune;
+  return [
+    'OmniDx Tune - your key', '',
+    `Key:      ${info.key}`,
+    `Product:  ${p.name} (${p.seats === 1 ? 'one PC' : `${p.seats} PCs`})`,
+    info.order ? `Order:    ${info.order}` : null, '',
+    'On the PC you want tuned, open PowerShell and paste:', `  ${oneLiner}`, '',
+    'Undo:   $env:OMNIDX_MODE=\'undo\'; ' + TUNE.command,
+    'Help:   https://omnidx.net/studio/download/', '',
+    'The key locks to the first PC that runs it. Keep this file.',
+  ].filter((l) => l !== null).join('\r\n');
+}
+
 function renderKey(info, { again = false } = {}) {
   const p = TUNE.products[info.product] || TUNE.products.tune;
   const oneLiner = `$env:OMNIDX_KEY='${info.key}'; ${TUNE.command}`;
+  const file = keyFile(info, oneLiner);
+  const mail = `mailto:?subject=${encodeURIComponent('My OmniDx Tune key')}&body=${encodeURIComponent(file.replace(/\r\n/g, '\n'))}`;
+  const save = 'data:text/plain;charset=utf-8,' + encodeURIComponent(file);
   $('#card').innerHTML = `
     <div class="act-tick" aria-hidden="true">✓</div>
     <h1>${again ? 'Your key, again' : 'Here is your key'}</h1>
     <p class="act-sub">${esc(p.name)} — ${p.seats === 1 ? 'one PC' : `${p.seats} PCs`}. Paid once. Nothing renews.</p>
 
     <div class="keybox"><small>Your key</small>${esc(info.key)}</div>
-    <div class="act-copy">${copyButton(info.key, 'Copy the key')}</div>
+    <div class="act-copy" style="gap:8px;flex-wrap:wrap">${copyButton(info.key, 'Copy the key')}
+      <a class="btn btn-sm btn-ghost" href="${mail}">Email it to myself</a>
+      <a class="btn btn-sm btn-ghost" href="${save}" download="omnidx-tune-key.txt">Save as a file</a>
+      <button class="btn btn-sm btn-ghost" type="button" onclick="print()">Print</button></div>
+    <p class="tiny muted" style="text-align:center;margin:8px 0 0">Letters only look like this: no I, O, 0 or 1 in a key, and capitals do not matter.</p>
+    <p class="tiny muted" id="act-seats" style="text-align:center;margin:6px 0 0" hidden></p>
 
     <div class="act-h">On the PC you want tuned</div>
     <ol class="steps-list">
@@ -145,6 +167,17 @@ function renderKey(info, { again = false } = {}) {
     <div class="act-actions">
       <a class="btn btn-ghost" href="../download/">Everything the command does, screen by screen</a>
     </div>
+
+    <details class="act-move" style="margin-top:22px">
+      <summary class="small" style="cursor:pointer;color:var(--text-2)"><b>New PC? Move this key</b> — once every 30 days, by yourself</summary>
+      <div class="field" style="margin-top:12px;text-align:left">
+        <label for="act-move-order" class="small"><b>Order or receipt number</b></label>
+        <input class="input" id="act-move-order" placeholder="From your Square receipt" autocomplete="off" spellcheck="false" value="${esc(info.order || '')}">
+        <p class="tiny muted" style="margin:7px 0 0">The key is unbound from the PC it is on and locks to the next PC that runs it. The old PC keeps its settings and its undo.</p>
+      </div>
+      <button class="btn btn-sm" type="button" id="act-move">Move the key</button>
+      <p class="tiny" id="act-move-out" style="margin:10px 0 0" hidden></p>
+    </details>
 
     <p class="act-note">
       <b>Keep this key.</b> It is saved in this browser and this page will show it again, but take a screenshot too.
@@ -201,12 +234,40 @@ function renderUnknown(message = '') {
   });
 }
 
+/* With the licence server: how many PCs the key is on, and the move button. */
+async function wireExtras(info) {
+  const base = await api();
+  const seats = $('#act-seats');
+  if (base) {
+    try {
+      const r = await fetch(`${base}/v1/tune/check`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: info.key }) });
+      const d = await r.json();
+      if (d.ok && seats) { seats.hidden = false; seats.textContent = `On ${d.used} of ${d.seats} PC${d.seats === 1 ? '' : 's'}.`; }
+    } catch { /* the server is optional */ }
+  }
+  $('#act-move')?.addEventListener('click', async () => {
+    const out = $('#act-move-out');
+    const order = String($('#act-move-order')?.value || '').trim();
+    out.hidden = false;
+    if (!base) { out.textContent = 'Moving a key by yourself needs the licence server, which is not switched on yet. Email support with your receipt and it moves the same day.'; return; }
+    if (order.length < 6) { out.textContent = 'Put in the order number from your Square receipt first.'; return; }
+    out.textContent = 'Moving…';
+    try {
+      const r = await fetch(`${base}/v1/tune/release`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: info.key, order }) });
+      const d = await r.json().catch(() => ({}));
+      out.textContent = r.ok ? `Done. The key is free again; run the command on the new PC and it locks there.` : (d.error || 'The server refused.');
+      if (r.ok && seats) { seats.textContent = `On 0 of ${d.seats} PC${d.seats === 1 ? '' : 's'}.`; }
+    } catch { out.textContent = 'Could not reach the licence server. Try again in a minute, or email support.'; }
+  });
+}
+
 async function go(product, order) {
   $('#card').innerHTML = '<div class="act-spin" aria-hidden="true"></div><h1>Getting your key</h1><p class="act-sub">One moment.</p>';
   try {
     const info = await issue(product, order);
     remember(info);
     renderKey(info);
+    wireExtras(info);
   } catch (err) {
     console.error('activation', err);
     renderUnknown(err instanceof Refused ? err.message : 'Could not issue a key just now. Try again, or email with your receipt.');
@@ -232,6 +293,6 @@ const order = orderFromUrl(params);
 const saved = remembered();
 
 if (product && order) go(product, order);
-else if (saved) renderKey(saved, { again: true });
+else if (saved) { renderKey(saved, { again: true }); wireExtras(saved); }
 else if (product) renderUnknown();
 else renderUnknown();

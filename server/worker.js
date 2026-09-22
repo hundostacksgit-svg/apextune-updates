@@ -714,6 +714,7 @@ const routes = {
     if (!TUNE_PRODUCTS[wanted]) return fail('Unknown product.', 400, env, request);
     const order = String(body.order || '').trim().slice(0, 120);
     if (order.length < 6) return fail('The order reference from your Square receipt is needed to issue a key.', 400, env, request);
+    if (!/^[A-Za-z0-9_\-:.]+$/.test(order)) return fail('That does not look like a Square order reference.', 400, env, request);
     const email = validEmail(body.email) ? String(body.email).trim().toLowerCase() : null;
 
     const existing = await env.DB.prepare('SELECT * FROM tune_keys WHERE order_ref = ?').bind(order).first();
@@ -762,6 +763,8 @@ const routes = {
     const label = body.machine
       ? String([body.machine.name, body.machine.cpu, body.machine.gpu].filter(Boolean).join(' · ')).slice(0, 160)
       : null;
+    const version = body.machine?.version ? String(body.machine.version).slice(0, 20) : null;
+    const os = body.machine?.os ? String(body.machine.os).slice(0, 120) : null;
     const now = Date.now();
     const mine = await env.DB.prepare('SELECT hwid FROM tune_machines WHERE key = ? AND hwid = ?').bind(parsed.key, hwid).first();
     if (!mine) {
@@ -774,14 +777,44 @@ const routes = {
           409, env, request,
         );
       }
-      await env.DB.prepare('INSERT INTO tune_machines (key, hwid, label, first_seen, last_seen) VALUES (?,?,?,?,?)')
-        .bind(parsed.key, hwid, label, now, now).run();
+      await env.DB.prepare('INSERT INTO tune_machines (key, hwid, label, version, os, first_seen, last_seen) VALUES (?,?,?,?,?,?,?)')
+        .bind(parsed.key, hwid, label, version, os, now, now).run();
     } else {
-      await env.DB.prepare('UPDATE tune_machines SET last_seen = ?, label = COALESCE(?, label) WHERE key = ? AND hwid = ?')
-        .bind(now, label, parsed.key, hwid).run();
+      await env.DB.prepare('UPDATE tune_machines SET last_seen = ?, label = COALESCE(?, label), version = COALESCE(?, version), os = COALESCE(?, os) WHERE key = ? AND hwid = ?')
+        .bind(now, label, version, os, parsed.key, hwid).run();
     }
     const { count: used } = await env.DB.prepare('SELECT COUNT(*) AS count FROM tune_machines WHERE key = ?').bind(parsed.key).first();
     return json({ ok: true, product: row.product, seats: row.seats, used }, { env, request });
+  },
+
+  /**
+   * Move a key to a new PC, self-service.
+   *
+   * Proof of ownership is the Square order reference the key was issued
+   * against — the thing only the buyer's receipt has. Once every 30 days, so
+   * a key cannot be passed around by "moving" it every evening; more often
+   * than that is a support email.
+   */
+  'POST /v1/tune/release': async (request, env, body) => {
+    const parsed = parseTuneKey(body.key);
+    if (!parsed) return fail('That key is not valid. Check it for typos.', 400, env, request);
+    const order = String(body.order || '').trim().slice(0, 120);
+    if (order.length < 6) return fail('The order reference from your Square receipt is needed.', 400, env, request);
+    const row = await env.DB.prepare('SELECT * FROM tune_keys WHERE key = ?').bind(parsed.key).first();
+    if (!row) return fail('That key was not issued by us.', 404, env, request);
+    if (row.revoked_at) return fail('That key has been refunded or revoked.', 410, env, request);
+    if (!row.order_ref || !sameSecret(row.order_ref.toLowerCase(), order.toLowerCase())) {
+      return fail('That order reference does not match this key.', 403, env, request);
+    }
+    const days = 30;
+    if (row.moved_at && Date.now() - row.moved_at < days * 86400_000) {
+      const next = new Date(row.moved_at + days * 86400_000).toISOString().slice(0, 10);
+      return fail(`This key was moved recently. It can move again on ${next}, or email support with your receipt.`, 429, env, request);
+    }
+    const { count } = await env.DB.prepare('SELECT COUNT(*) AS count FROM tune_machines WHERE key = ?').bind(parsed.key).first();
+    await env.DB.prepare('DELETE FROM tune_machines WHERE key = ?').bind(parsed.key).run();
+    await env.DB.prepare('UPDATE tune_keys SET moved_at = ? WHERE key = ?').bind(Date.now(), parsed.key).run();
+    return json({ ok: true, released: count, seats: row.seats }, { env, request });
   },
 
   /** Is this key real, and how many PCs is it on. Changes nothing. */

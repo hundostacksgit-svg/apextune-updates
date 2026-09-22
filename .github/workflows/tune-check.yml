@@ -1,0 +1,65 @@
+name: Check the tune
+
+# The tune is a PowerShell script nobody here can run without Windows. This
+# does two things on a real Windows runner every time it changes: parses both
+# scripts with PowerShell's own parser (a syntax error would otherwise ship),
+# and runs the tune in report mode, which reads the machine and changes
+# nothing. The bootstrapper's option parsing is exercised the same way.
+on:
+  push:
+    branches: [main, master, "claude/omnidx-editing-platform-9phdcc"]
+    paths: ["tune/**", "go.ps1", "tools/tune-check.mjs", ".github/workflows/tune-check.yml"]
+  pull_request:
+    paths: ["tune/**", "go.ps1"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: ASCII, brackets, key maths, config
+        run: node tools/tune-check.mjs
+
+  windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse both scripts with PowerShell's parser
+        run: |
+          foreach ($f in 'tune\omnidx.ps1', 'go.ps1') {
+            $tokens = $null; $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f), [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count) { $errors | ForEach-Object { Write-Host ("{0}: {1} at line {2}" -f $f, $_.Message, $_.Extent.StartLineNumber) }; exit 1 }
+            Write-Host "$f parses ($($tokens.Count) tokens)"
+          }
+
+      - name: Run the tune in report mode (changes nothing)
+        run: |
+          & .\tune\omnidx.ps1 -Report
+          if (-not (Test-Path 'C:\OmniDx')) { Write-Host 'no C:\OmniDx folder was made'; exit 1 }
+          Get-ChildItem C:\OmniDx | ForEach-Object { Write-Host $_.Name }
+          $preview = Get-ChildItem C:\OmniDx -Filter 'report-preview-*.txt' | Select-Object -First 1
+          if (-not $preview) { Write-Host 'no preview report was written'; exit 1 }
+          Get-Content $preview.FullName
+
+      - name: Undo with nothing recorded says so
+        run: |
+          & .\tune\omnidx.ps1 -Undo
+          exit 0
+
+      - name: The key check refuses a bad key
+        run: |
+          $out = & .\tune\omnidx.ps1 -Key 'TUNE-AAAA-BBBB-CCCC-DDDD' -Yes 2>&1 | Out-String
+          Write-Host $out
+          if ($out -notmatch 'not an OmniDx key') { Write-Host 'a bad key was not refused'; exit 1 }

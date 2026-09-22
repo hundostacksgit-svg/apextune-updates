@@ -37,6 +37,8 @@ jobs:
           for f in studio/index.html studio/pricing/index.html studio/download/index.html studio/trust/index.html studio/alternative/index.html \
                    studio/account/index.html studio/activate/index.html studio/activate/activate.js \
                    go.ps1 tune/omnidx.ps1 tune/config.json studio/assets/tune.js studio/assets/tunekey.js \
+                   studio/what-it-touches/index.html studio/changelog/index.html robots.txt sitemap.xml 404.html \
+                   tools/tune-check.mjs tools/tune-touches.py docs/TUNE.md \
                    studio/assets/studio.css studio/assets/studio.js studio/assets/showcase.css studio/assets/showcase.js \
                    studio/assets/config.js studio/assets/auth.js studio/assets/rate.js studio/assets/mark.svg \
                    studio/assets/og-card.png \
@@ -98,8 +100,12 @@ jobs:
           python3 -c "import json; json.load(open('studio/desktop/package.json'))"
           python3 -c "import json; json.load(open('studio/mobile/capacitor.config.json'))"
           python3 -m py_compile tools/sysreport.py tools/make-licence.py tools/set-domain.py \
-            tools/make-studio-key.py tools/make-tune-key.py tools/release.py \
+            tools/make-studio-key.py tools/make-tune-key.py tools/tune-touches.py tools/release.py \
             desktop/omnidx.py desktop/install.py
+
+          # The tune: ASCII, balanced, key maths agree, the transparency page is current.
+          node tools/tune-check.mjs
+          python3 tools/tune-touches.py --check
 
           # The root must send visitors to Studio, or omnidx.net is a dead page.
           grep -q 'url=studio/' index.html || { echo "root index.html no longer redirects to studio/"; exit 1; }
