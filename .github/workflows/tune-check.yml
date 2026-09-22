@@ -64,7 +64,7 @@ jobs:
 
       - name: The key check refuses a bad key
         run: |
-          $out = & .\tune\omnidx.ps1 -Key 'TUNE-AAAA-BBBB-CCCC-DDDD' -CheckKey 2>&1 | Out-String
+          $out = & .\tune\omnidx.ps1 -Key 'TUNE-AAAA-BBBB-CCCC-DDDD' -CheckKey *>&1 | Out-String
           Write-Host $out
           if ($out -notmatch 'not an OmniDx key') { Write-Host 'a bad key was not refused'; exit 1 }
 
@@ -76,15 +76,15 @@ jobs:
           foreach ($product in 'tune', 'squad') {
             foreach ($i in 1..3) {
               $key = (& python tools\make-tune-key.py --product $product | Select-Object -First 1).Trim()
-              $out = & .\tune\omnidx.ps1 -Key $key -CheckKey 2>&1 | Out-String
+              $out = & .\tune\omnidx.ps1 -Key $key -CheckKey *>&1 | Out-String
               if ($out -notmatch 'Valid:') { Write-Host "refused a good key: $key`n$out"; exit 1 }
               $bad = $key.Substring(0, $key.Length - 1) + $(if ($key[-1] -eq 'A') { 'B' } else { 'A' })
-              $out = & .\tune\omnidx.ps1 -Key $bad -CheckKey 2>&1 | Out-String
+              $out = & .\tune\omnidx.ps1 -Key $bad -CheckKey *>&1 | Out-String
               if ($out -notmatch 'not an OmniDx key') { Write-Host "accepted a corrupted key: $bad`n$out"; exit 1 }
               Write-Host "$key accepted; $bad refused"
             }
           }
           $order = (& python tools\make-tune-key.py --order TESTORDER123456 | Select-Object -First 1).Trim()
-          $out = & .\tune\omnidx.ps1 -Key $order -CheckKey 2>&1 | Out-String
+          $out = & .\tune\omnidx.ps1 -Key $order -CheckKey *>&1 | Out-String
           if ($out -notmatch 'Valid:') { Write-Host "refused the order-derived key: $order`n$out"; exit 1 }
           Write-Host "order-derived key $order accepted"
