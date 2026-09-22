@@ -14,7 +14,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  # The Windows job commits the window's screenshot back to the branch, so
+  # the site always shows the app exactly as the current script draws it.
+  contents: write
 
 jobs:
   static:
@@ -86,6 +88,23 @@ jobs:
           name: app-window
           path: C:\OmniDx\app.png
           if-no-files-found: error
+
+      # The screenshot goes into the repository as the site's picture of the
+      # app. A push made with the workflow token starts no other workflow, so
+      # the picture reaches the site with the next ordinary push.
+      - name: Commit the screenshot to the branch
+        if: github.event_name == 'push'
+        run: |
+          Copy-Item C:\OmniDx\app.png studio\assets\app.png -Force
+          git config user.name 'omnidx-ci'
+          git config user.email 'ci@omnidx.net'
+          git add studio/assets/app.png
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) { Write-Host 'screenshot unchanged'; exit 0 }
+          git commit -q -m 'App window: screenshot drawn by the Windows check'
+          git pull --rebase -q origin $env:GITHUB_REF_NAME
+          git push -q origin HEAD:$env:GITHUB_REF_NAME
+          exit 0
 
       - name: Undo with nothing recorded says so
         run: |
