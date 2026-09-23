@@ -940,6 +940,22 @@ const routes = {
       }
       return json({ ok: true, orders: [...byOrder.values()], totals }, { env, request });
     }
+    // Every order whose keys never went out (mail was off or refused at the time): send them now, once each.
+    if (action === 'resend-unsent') {
+      if (!env.RESEND_API_KEY) return fail('Mail is off: RESEND_API_KEY is not set on the Worker.', 503, env, request);
+      const unsent = (await env.DB.prepare('SELECT * FROM tune_keys WHERE emailed_at IS NULL AND revoked_at IS NULL AND email IS NOT NULL ORDER BY created_at').all()).results || [];
+      const groups = new Map();
+      for (const r of unsent) { const o = String(r.order_ref || '').replace(/#\d+$/, ''); if (!groups.has(o)) groups.set(o, []); groups.get(o).push(r); }
+      const sent = []; const failed = [];
+      for (const [o, rows] of groups) {
+        const f = tuneFields(rows);
+        if (!f) continue;
+        const ok = await emailTuneKeys(env, rows[0].email, f.product, f.keys, o, null, rows[0].receipt ? receiptOf(rows[0].receipt) : null);
+        if (ok) { await env.DB.prepare("UPDATE tune_keys SET emailed_at = ? WHERE order_ref = ? OR order_ref LIKE ?").bind(Date.now(), o, `${o}#%`).run(); sent.push({ order: o, email: maskEmail(rows[0].email) }); }
+        else failed.push({ order: o, email: maskEmail(rows[0].email) });
+      }
+      return json({ ok: true, sent, failed, orders: groups.size }, { env, request });
+    }
     // Does mail work: one short email to the support address or one typed in, with Resend's exact refusal when it does not.
     if (action === 'mail-test') {
       if (!env.RESEND_API_KEY) return fail('Mail is off: RESEND_API_KEY is not set on the Worker.', 503, env, request);

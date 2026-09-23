@@ -143,6 +143,7 @@ try {
     await page.route('**/fakeapi/v1/tune/admin', (r) => {
       const b = r.request().postDataJSON();
       if (b.token !== 'owner-x') return r.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ error: 'Wrong token.' }) });
+      if (b.action === 'resend-unsent') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, orders: 2, sent: [{ order: 'ORDER-B', email: 'x***@example.test' }], failed: [{ order: 'ORDER-C', email: 'y***@example.test' }] }) });
       if (b.action === 'mail-test') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, sentTo: b.email || 'owner@example.test', from: 'OmniDx Tune <keys@omnidx.net>' }) });
       if (b.action === 'recent') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, totals: { orders: 2, paidCents: 3999, refundedOrders: 1, refundedCents: 1999, keys: 4 }, orders: [
         { order: 'ORDER-A', receipt: 'AB12', product: 'squad', email: 'a@example.test', paidCents: 3999, createdAt: Date.now(), emailedAt: Date.now(), keys: 3, off: 0 },
@@ -156,7 +157,9 @@ try {
     expect(await page.evaluate(() => document.querySelectorAll('#own-out .own-key').length === 2 && /not emailed/.test(document.querySelector('#own-out').textContent) && /2 orders · \$39\.99 kept · 1 refunded \(\$19\.99\)/.test(document.querySelector('#own-out').textContent)), 'recent orders shows the totals since the first sale, lists two orders and flags the one not emailed');
     await page.fill('#own-ref', 'ORDER-A'); await page.click('[data-act="lookup"]'); await page.waitForTimeout(400);
     expect(await page.evaluate(() => /#AB12/.test(document.querySelector('#own-out').textContent) && document.querySelectorAll('#own-out .own-key').length === 1), 'a lookup shows the order, its receipt number and its key');
-    await page.fill('#own-ref', ''); await page.click('[data-act="mail-test"]'); await page.waitForTimeout(400);
+    await page.fill('#own-ref', ''); await page.click('[data-act="resend-unsent"]'); await page.waitForTimeout(400);
+    expect(await page.evaluate(() => /1 of 2 unsent orders sent; 1 refused/.test(document.querySelector('#own-out').textContent) && /ORDER-C/.test(document.querySelector('#own-out').textContent)), 'sending every unsent order reports what went and what Resend refused');
+    await page.click('[data-act="mail-test"]'); await page.waitForTimeout(400);
     expect(await page.evaluate(() => /went to owner@example\.test from OmniDx Tune/.test(document.querySelector('#own-out').textContent)), 'a test email needs no order and says where it went');
     await page.fill('#own-ref', 'ORDER-A'); await page.fill('#own-token', 'wrong'); await page.click('[data-act="lookup"]'); await page.waitForTimeout(400);
     expect(await page.evaluate(() => /Wrong token/.test(document.querySelector('#own-out').textContent)), 'a wrong token shows the refusal in the server\'s words');

@@ -205,7 +205,7 @@ dashboard; none of it needs a terminal.
 | Owner page: "Licence server: not answering"; buy buttons closed; key page says the key desk is not open | The Worker is down or was never deployed | Actions > Deploy the Worker > Run workflow. The scheduled run every six hours redeploys on its own when the health check fails. |
 | Owner page: "Square: off"; buy buttons closed | `SQUARE_ACCESS_TOKEN` is missing, revoked or expired | Square developer dashboard > Production > new access token; update the repository secret; run the deploy. |
 | Keys are on the page but no email arrives; owner page says "Mail: on" | Resend refused the send: domain no longer verified, or the address bounced. "Send a test email" on the owner page shows Resend's exact reason | resend.com > Emails shows each attempt and why; Domains shows whether omnidx.net is still verified (the DNS records). "Send the keys again" on the owner page once it is fixed. |
-| Owner page says "Mail: off" | `RESEND_API_KEY` is not set on the Worker | Set the repository secret; run the deploy. Keys still show on the page meanwhile. |
+| Owner page says "Mail: off" | `RESEND_API_KEY` is not set on the Worker | Set the repository secret; run the deploy; then "Send every unsent order" on the owner page. Keys still show on the page meanwhile. |
 | Square dashboard: webhook deliveries failing with 400 | The signature key on the Worker is not the subscription's, or the subscription's URL is not exactly the Worker's `SQUARE_WEBHOOK_URL` | Re-copy the Signature key into `SQUARE_WEBHOOK_SIGNATURE_KEY`, check the URL ends in `/v1/webhooks/square` on the workers.dev address, run the deploy. Keys were still issued from the key page meanwhile; "Recent orders" shows any that were not emailed. |
 | Square dashboard: webhook deliveries failing with 503 | `SQUARE_WEBHOOK_URL` is empty on the Worker | Run the deploy; it fills it in. |
 | A buyer says "the key says switched off" and there was no refund | Someone switched it off from the owner page, or a partial refund | Owner page: look it up, "Switch it back on". |
@@ -260,7 +260,10 @@ on or off, emailed or not, under one line of totals since the first sale:
 orders, money kept, orders refunded), and **Send a test email** (needs no order: one
 short email to the support address or the one typed in, with Resend's own
 refusal on screen when the domain is not verified or the from address is
-wrong, so mail is proved before the first sale). All of it is
+wrong, so mail is proved before the first sale), and **Send every unsent
+order** (for the day mail was off or refused while orders came in: each
+order marked "not emailed" goes to its checkout address once, and the
+ones Resend still refuses are listed). All of it is
 `POST /v1/tune/admin` on the Worker, refused without the token (403) and
 shut when no token is set (503); the offline test covers each action.
 

@@ -50,6 +50,7 @@ function statement(sql, args) {
     db.tune_keys.filter((r) => r.order_ref === args[1] || like(r.order_ref, args[2])).forEach((r) => { r.email = args[0]; }); return [];
   }
   if (s.startsWith('UPDATE tune_keys SET moved_at = ? WHERE key = ?')) { db.tune_keys.filter((r) => r.key === args[1]).forEach((r) => { r.moved_at = args[0]; }); return []; }
+  if (s.startsWith('SELECT * FROM tune_keys WHERE emailed_at IS NULL AND revoked_at IS NULL AND email IS NOT NULL ORDER BY created_at')) return db.tune_keys.filter((r) => !r.emailed_at && !r.revoked_at && r.email).sort((a, b) => a.created_at - b.created_at);
   if (s.startsWith('SELECT product, amount_cents, order_ref, revoked_at FROM tune_keys')) return db.tune_keys.map((r) => ({ product: r.product, amount_cents: r.amount_cents, order_ref: r.order_ref, revoked_at: r.revoked_at }));
   if (s.startsWith('SELECT * FROM tune_keys ORDER BY created_at DESC LIMIT 60')) return [...db.tune_keys].sort((a, b) => b.created_at - a.created_at).slice(0, 60);
   if (s.startsWith('UPDATE tune_keys SET revoked_at = ? WHERE key = ? AND revoked_at IS NULL')) { db.tune_keys.filter((r) => r.key === args[1] && !r.revoked_at).forEach((r) => { r.revoked_at = args[0]; }); return []; }
@@ -327,6 +328,19 @@ expect(r.status === 200, 'the owner on another connection is served: right token
 r = await call('/v1/tune/claim', { key: 'TUNE-AAAA-AAAA-AAAA-AAAA', hwid: hw(1) }, from('203.0.113.10'));
 for (let i = 0; i < 40; i++) last = await call('/v1/tune/claim', { key: 'TUNE-AAAA-AAAA-AAAA-AAAA', hwid: hw(1) }, from('203.0.113.10'));
 expect(last.status === 429, 'forty-one made-up keys from one connection and the door shuts there too');
+
+/* 10b. The orders whose keys never went out, sent in one press. */
+{
+  const n = mails.length;
+  r = await admin({ action: 'resend-unsent' });
+  expect(r.status === 200 && r.data.orders === 0 && r.data.sent.length === 0 && mails.length === n, 'with every order emailed there is nothing to send');
+  db.tune_keys.filter((k) => k.order_ref.startsWith('ORDER-DUAL-1')).forEach((k) => { k.emailed_at = null; });
+  db.tune_keys.filter((k) => k.order_ref === 'ORDER-TUNE-1').forEach((k) => { k.emailed_at = null; k.email = 'refuse@example.test'; });
+  r = await admin({ action: 'resend-unsent' });
+  const dual = db.tune_keys.filter((k) => k.order_ref.startsWith('ORDER-DUAL-1'));
+  expect(r.status === 200 && r.data.orders === 2 && r.data.sent.length === 1 && r.data.sent[0].order === 'ORDER-DUAL-1' && r.data.failed.length === 1 && r.data.failed[0].order === 'ORDER-TUNE-1' && mails.length === n + 1 && (mails[n].text.match(/TUNE-/g) || []).length >= dual.filter((k) => !k.revoked_at).length && dual.every((k) => k.emailed_at), 'two orders unsent: one goes out with its live keys and is recorded, the one Resend refuses is listed as failed');
+  db.tune_keys.filter((k) => k.order_ref === 'ORDER-TUNE-1').forEach((k) => { k.emailed_at = Date.now(); k.email = 'solo@example.test'; });
+}
 
 /* 11. Does mail work, from the owner page. */
 let n = mails.length;

@@ -38,6 +38,11 @@ function render(d, note) {
   out.hidden = false;
   if (d.error) { out.innerHTML = `<div class="note bad">${esc(d.error)}</div>`; return; }
   if (d.sentTo && !d.keys) { out.innerHTML = `<div class="note ok">${esc(note || `Sent to ${d.sentTo}.`)}</div>`; return; }
+  if (Array.isArray(d.sent) && Array.isArray(d.failed)) {
+    const line = (x) => `<div class="own-key"><span class="mono" style="font-size:12px">${esc(x.order)}</span><span>${esc(x.email)}</span></div>`;
+    out.innerHTML = `<div class="note ${d.failed.length ? 'bad' : 'ok'}">${d.orders ? `${esc(d.sent.length)} of ${esc(d.orders)} unsent order${d.orders === 1 ? '' : 's'} sent${d.failed.length ? `; ${esc(d.failed.length)} refused by Resend (press "Send a test email" for its reason)` : ''}.` : 'Every order has had its keys emailed; nothing to send.'}</div>${d.sent.map(line).join('')}${d.failed.length ? `<p class="small muted" style="margin:10px 0 4px">Not sent</p>${d.failed.map(line).join('')}` : ''}`;
+    return;
+  }
   if (d.orders) {
     const t = d.totals;
     const money = (c) => `$${((c || 0) / 100).toFixed(2)}`;
@@ -68,7 +73,7 @@ document.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click
   const out = $('#own-out');
   try { localStorage.setItem(STORE, token); } catch { /* private mode */ }
   if (!token) { render({ error: 'The owner token is needed.' }); return; }
-  if (!ref && !['recent', 'mail-test'].includes(b.dataset.act)) { render({ error: 'An order reference or a key is needed.' }); return; }
+  if (!ref && !['recent', 'mail-test', 'resend-unsent'].includes(b.dataset.act)) { render({ error: 'An order reference or a key is needed.' }); return; }
   const base = await api();
   if (!base) { render({ error: 'The licence server is not switched on yet (tune/config.json has no api).' }); return; }
   out.hidden = false; out.innerHTML = '<p class="small muted">Asking the server…</p>';
