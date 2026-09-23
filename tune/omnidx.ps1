@@ -82,7 +82,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.19.0'
+$script:Version = '1.20.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -2292,8 +2292,12 @@ $procTables
    per-game settings are in the paid report. #>
 function Write-Preview($m, $before) {
   Head "What the tune would do here"
+  # Where the free look spends its time, for the transcript and the check.
+  $sw = [System.Diagnostics.Stopwatch]::StartNew(); $tm = [ordered]@{}
+  $lap = { param($name) $tm[$name] = [math]::Round($sw.Elapsed.TotalSeconds, 1); $sw.Restart() }
   $keep = Get-KeepList $m
   $startup = @(Get-StartupEntries | Where-Object { $_.on -and -not (Test-Keep $_.name) })
+  & $lap 'startup'
   $svcOff = @(); $svcKeep = @()
   foreach ($pair in $script:ServiceOff) {
     $name = $pair[0]
@@ -2301,10 +2305,14 @@ function Write-Preview($m, $before) {
     if (-not $svc.Count) { continue }
     if ($keep.ContainsKey($name)) { $svcKeep += ("{0} ({1})" -f $name, $keep[$name]) } else { $svcOff += ("{0} ({1})" -f $name, $pair[1]) }
   }
+  & $lap 'services'
   $tasks = @(); foreach ($t in $script:TaskList) { $task = Get-ScheduledTask -TaskPath $t[0] -TaskName $t[1] -ErrorAction SilentlyContinue; if ($task -and $task.State -ne 'Disabled') { $tasks += $t[1] } }
+  & $lap 'tasks'
   $apps = @(); foreach ($pat in $script:JunkApps) { foreach ($pkg in Get-AppxPackage -Name $pat -AllUsers -ErrorAction SilentlyContinue) { if (-not ($pkg.NonRemovable -or $pkg.IsFramework)) { $apps += $pkg.Name } } }
   $apps = @($apps | Sort-Object -Unique)
+  & $lap 'apps'
   $plan = Get-DebloatPlan $m
+  & $lap 'pieces'
   $extras = @($plan.caps | ForEach-Object { $_.what }) + @($plan.feats | ForEach-Object { $_.what })
   if ($plan.oneInstalled -and -not $plan.oneSignedIn) { $extras += 'OneDrive (nobody is signed in to it)' }
   $target = Get-SafeBar $m
@@ -2319,6 +2327,7 @@ function Write-Preview($m, $before) {
   foreach ($x in $extras) { Say ("    - {0}" -f $x) }
   Say ("  Plus: the OmniDx power plan, network latency settings, Discord / Spotify / browser, game profiles, the BIOS checklist for {0}." -f $m.board) 'White'
   Say ("  Processes now: {0}. Target after the tune and a restart: about {1}." -f $before, $target) 'Green'
+  Say ("  Looked in {0} s: startup {1}, services {2}, tasks {3}, apps {4}, Windows pieces {5}" -f [math]::Round(($tm.Values | Measure-Object -Sum).Sum, 1), $tm.startup, $tm.services, $tm.tasks, $tm.apps, $tm.pieces)
   $rep = Join-Path $script:Root ("report-preview-{0}.txt" -f $script:Stamp)
   $lines = @(
     "OmniDx Tune $($script:Version) - free report (nothing was changed), $((Get-Date).ToString('f'))", "",
