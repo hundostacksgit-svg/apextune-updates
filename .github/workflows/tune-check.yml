@@ -222,6 +222,14 @@ jobs:
           $now = Get-Content C:\OmniDx\ci-summary.json | ConvertFrom-Json
           $last = $null; try { $last = Get-Content studio\assets\ci-run.json -Raw | ConvertFrom-Json } catch { }
           if ($last -and $last.changes -and ($now.changes -lt ($last.changes - 6))) { Write-Host ("this run recorded {0} changes, the last published run {1}: something is no longer being done; compare the logs" -f $now.changes, $last.changes); exit 1 }
+          # Red text a buyer would see: PowerShell's own error records from a cmdlet or a native command
+          # that the tune did not catch. Counted and listed in the run's Summary tab, never hidden; a rise is a regression.
+          $lines = @($out -split "`r?`n")
+          $noise = @(for ($i = 0; $i -lt $lines.Count; $i++) { if ($lines[$i] -match 'NativeCommandError|CategoryInfo|FullyQualifiedErrorId') { $j = $i; while ($j -gt 0 -and $lines[$j - 1] -match '^\s*$') { $j-- }; $lines[[math]::Max(0, $j - 3)..$i] -join ' | ' } })
+          $red = @($lines | Where-Object { $_ -match 'FullyQualifiedErrorId' }).Count
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ("## Red error text in the full run: {0}" -f $red)
+          if ($red) { Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ('```'); Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ($noise | Select-Object -First 40); Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ('```') }
+          Write-Host ("red error records in the full run: {0}" -f $red)
           # The run, word for word, for the site: the phase headers, what was done, the numbers.
           $log = @($out -split "`r?`n" | Where-Object { $_ -match '^(== |  \+ |  ! |  Processes|  Before:|  After:|  Gone:|  Target|  Looked|  [0-9]+ )' -and $_ -notmatch 'Under 100' } | Select-Object -First 200)
           Set-Content studio\assets\ci-log.txt -Value $log -Encoding UTF8
