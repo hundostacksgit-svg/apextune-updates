@@ -230,6 +230,7 @@ jobs:
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ("## Red error text in the full run: {0}" -f $red)
           if ($red) { Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ('```'); Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ($noise | Select-Object -First 40); Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ('```') }
           Write-Host ("red error records in the full run: {0}" -f $red)
+          Set-Content -Path C:\OmniDx\ci-red.txt -Value (@("$red") + @($noise | Select-Object -First 20))
           # The run, word for word, for the site: the phase headers, what was done, the numbers.
           $log = @($out -split "`r?`n" | Where-Object { $_ -match '^(== |  \+ |  ! |  Processes|  Before:|  After:|  Gone:|  Target|  Looked|  [0-9]+ )' -and $_ -notmatch 'Under 100' } | Select-Object -First 200)
           Set-Content studio\assets\ci-log.txt -Value $log -Encoding UTF8
@@ -398,6 +399,8 @@ jobs:
           # Two runs are left after the undo-last step above; the third is already in done.
           if (([regex]::Matches($out, 'Putting back \d+ changes')).Count -ne 2) { Write-Host 'undo should have walked back the two remaining runs'; exit 1 }
           $ci = [ordered]@{ version = $s.version; when = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'); os = $s.os; cpu = $s.cpu; before = $s.before; after = $s.after; target = $s.target; changes = $s.changes; warnings = $s.warnings; seconds = $s.seconds; undone = $undone; kept = $kept; second = $second; extreme = $extreme; runs = 3; gone = @($s.gone).Count; phases = $s.phases; sha = $env:GITHUB_SHA.Substring(0, 7) }
+          # The red error text a buyer would see in the full run, counted with context, into the record the site and the repository keep.
+          if (Test-Path C:\OmniDx\ci-red.txt) { $rl = @(Get-Content C:\OmniDx\ci-red.txt); $ci.red = [int]$rl[0]; $ci.redLines = @($rl | Select-Object -Skip 1) }
           $ci | ConvertTo-Json | Set-Content studio\assets\ci-run.json -Encoding UTF8
           Get-Content studio\assets\ci-run.json
           $out = & .\tune\omnidx.ps1 -Status *>&1 | Out-String -Width 4000
