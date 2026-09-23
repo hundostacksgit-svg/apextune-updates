@@ -80,7 +80,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.12.0'
+$script:Version = '1.13.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -658,7 +658,7 @@ function Register-AfterCount {
    and are skipped. #>
 function Get-Drift {
   param([string[]]$Files, [switch]$Fix)
-  $yours = @('\Control Panel\', '\StartupApproved\', '\CurrentVersion\Run', '\Explorer\Advanced', '\GameBar', 'GameConfigStore', '\GameDVR', '\Accessibility\', '\UserGpuPreferences', '\VisualEffects', '\Explorer\Serialize', '\Personalization')
+  $yours = @('\Control Panel\', '\StartupApproved\', '\CurrentVersion\Run', '\Explorer\Advanced', '\GameBar', 'GameConfigStore', '\GameDVR', '\Accessibility\', '\UserGpuPreferences', '\VisualEffects', '\Explorer\Serialize', '\Personalization', '\Classes\CLSID\')
   $entries = @()
   foreach ($f in @($Files | Sort-Object)) { try { $entries += @(Get-Content $f -Raw | ConvertFrom-Json | ForEach-Object { $_ }) } catch { } }
   [array]::Reverse($entries)
@@ -751,7 +751,7 @@ $logFile = Join-Path (Split-Path $dir) 'keep-log.txt'
 if (-not $files.Count) { Write-Host "Nothing recorded here; nothing to keep."; exit 0 }
 __DRIFT__
 $r = Get-Drift -Files $files -Fix:(-not $Check)
-$line = "{0}  checked {1}, {2} had drifted{3}{4}" -f (Get-Date -Format s), $r.checked, $r.drift.Count, $(if ($Check) { ' (check only)' } elseif ($r.fixed) { ", $($r.fixed) put back" } else { '' }), $(if ($r.failed) { ", $($r.failed) could not be" } else { '' })
+$line = "{0}  checked {1}, {2} had drifted{3}{4}; {5} processes running" -f (Get-Date -Format s), $r.checked, $r.drift.Count, $(if ($Check) { ' (check only)' } elseif ($r.fixed) { ", $($r.fixed) put back" } else { '' }), $(if ($r.failed) { ", $($r.failed) could not be" } else { '' }), @(Get-Process -ErrorAction SilentlyContinue).Count
 Write-Host $line -ForegroundColor $(if ($r.drift.Count) { 'Yellow' } else { 'Green' })
 foreach ($d in $r.drift) { Write-Host ("  " + $d) -ForegroundColor DarkGray }
 try {

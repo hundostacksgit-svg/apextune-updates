@@ -22,6 +22,11 @@ $mode = "$env:OMNIDX_MODE".ToLower()
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 $isCore = $PSVersionTable.PSEdition -eq 'Core'
 $key = $env:OMNIDX_KEY
+if (-not $key -and $env:OMNIDX_KEYFILE -and (Test-Path $env:OMNIDX_KEYFILE)) {
+  # Handed over by the window that asked for administrator rights; read once, then gone.
+  try { $key = (Get-Content $env:OMNIDX_KEYFILE -Raw).Trim() } catch { }
+  Remove-Item $env:OMNIDX_KEYFILE -Force -ErrorAction SilentlyContinue
+}
 if (-not $mode) { $mode = 'app' }
 # Only the key check needs the key here. The tune itself reuses the key
 # already bound to this PC, and asks only on a first run.
@@ -38,7 +43,11 @@ if (-not $key -and $mode -eq 'check') {
 # not elevated or PowerShell 7 hands over to a fresh elevated 5.1 window.
 if (-not $isAdmin -or $isCore) {
   Write-Host $(if ($isCore) { '  Switching to Windows PowerShell 5.1 with administrator rights...' } else { '  Asking for administrator rights...' }) -ForegroundColor DarkGray
-  $cmd = "`$env:OMNIDX_KEY='$key'; `$env:OMNIDX_MODE='$mode'; `$env:OMNIDX_FLAGS='$($env:OMNIDX_FLAGS)'; `$env:OMNIDX_KEEP='$($env:OMNIDX_KEEP)'; irm $base/go.ps1 | iex"
+  # The key never goes on a command line (Windows keeps those in logs). It crosses to the
+  # elevated window in a file in this account's own temp folder, which that window deletes.
+  $keyFile = ''
+  if ($key) { $keyFile = Join-Path $env:TEMP ("omnidx-key-{0}.txt" -f [guid]::NewGuid().ToString('N').Substring(0, 8)); Set-Content -Path $keyFile -Value $key -Encoding ASCII }
+  $cmd = "`$env:OMNIDX_KEYFILE='$keyFile'; `$env:OMNIDX_MODE='$mode'; `$env:OMNIDX_FLAGS='$($env:OMNIDX_FLAGS)'; `$env:OMNIDX_KEEP='$($env:OMNIDX_KEEP)'; irm $base/go.ps1 | iex"
   $verb = if ($isAdmin) { 'Open' } else { 'RunAs' }
   Start-Process powershell.exe -Verb $verb -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-NoExit', '-Command', $cmd)
   return
