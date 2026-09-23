@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.35.0'
+$script:Version = '1.36.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -2192,6 +2192,25 @@ function Get-GpuNotes($m) {
 <# The launchers and helper apps on this PC, and the one or two settings in
    each that matter: the things the script cannot set for you because each
    keeps its own settings store, so they go in the report instead. #>
+<# Marks other "optimizer" scripts leave behind: the ones that cost security or
+   updates rather than frames. The tune changes none of them; it names them
+   with the way back, so nobody blames the tune for a hole another tool made,
+   and nobody keeps a hole they never knew about. #>
+function Get-LeftoverNotes($m) {
+  $notes = @()
+  $v = { param($path, $name) try { return (Get-ItemProperty -Path $path -Name $name -ErrorAction Stop).$name } catch { return $null } }
+  if ((& $v 'HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender' 'DisableAntiSpyware') -eq 1) { $notes += 'Defender is switched off by a policy value another tool set (HKLM\SOFTWARE\Policies\Microsoft\Windows Defender, DisableAntiSpyware = 1). The tune never touches Defender. The way back: delete that value, restart, then Windows Security > Virus and threat protection.' }
+  if ((& $v 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU' 'NoAutoUpdate') -eq 1) { $notes += 'Automatic Windows updates are off by policy (WindowsUpdate\AU, NoAutoUpdate = 1): security fixes are not arriving. Delete that value to let them.' }
+  $wu = Get-Service -Name wuauserv -ErrorAction SilentlyContinue
+  if ($wu -and "$($wu.StartType)" -eq 'Disabled') { $notes += 'The Windows Update service (wuauserv) is disabled, and not by the tune: Settings > Windows Update cannot work until it is Manual again (services.msc, or in an admin prompt: sc config wuauserv start= demand).' }
+  $fso = & $v 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management' 'FeatureSettingsOverride'
+  if ($fso -ne $null -and (([int64]$fso) -band 3) -ne 0) { $notes += 'The CPU security mitigations (Spectre, Meltdown) are switched off by another tool (Memory Management, FeatureSettingsOverride). A few percent in some benchmarks; a real hole in a browser. The tune leaves it as found. The way back: delete FeatureSettingsOverride and FeatureSettingsOverrideMask there and restart.' }
+  if ((& $v 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' 'EnableSmartScreen') -eq 0) { $notes += 'SmartScreen is off by policy (Windows\System, EnableSmartScreen = 0), so a downloaded installer is not checked. Delete the value to get it back.' }
+  if ((& $v 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' 'EnableLUA') -eq 0) { $notes += 'User Account Control is off (EnableLUA = 0): every program runs with full rights, and Store apps stop opening. Set it to 1 and restart; the tune runs fine with it on.' }
+  if (-not $notes.Count) { $notes += 'Nothing found: no other tool has left Defender, Windows Update, SmartScreen, User Account Control or the CPU mitigations switched off on this PC.' }
+  return $notes
+}
+
 function Get-LauncherNotes($m) {
   $notes = @()
   $pf = "$env:ProgramFiles"; $pf86 = "${env:ProgramFiles(x86)}"
@@ -2646,6 +2665,7 @@ function Write-Report($m, $before, $after, $changesFile) {
     "WARNINGS ($($script:Warnings.Count))", @($(if ($script:Warnings.Count) { $script:Warnings | ForEach-Object { "  ! $_" } } else { "  none" })), "",
     "GPU CONTROL PANEL", @(Get-GpuNotes $m | ForEach-Object { "  - $_" }), "",
     "LAUNCHERS, OVERLAYS AND HELPER APPS", @(Get-LauncherNotes $m | ForEach-Object { "  - $_" }), "",
+    "LEFT BY OTHER TOOLS (the tune changes none of these)", @(Get-LeftoverNotes $m | ForEach-Object { "  - $_" }), "",
     "PER GAME", @($gameLines), "",
     "BIOS", @(Get-BiosChecklist $m | ForEach-Object { "  $_" }), "",
     "UNDO", "  Administrator PowerShell:  powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1", "  Or Windows Recovery > System Restore > the point named 'OmniDx Tune $($script:Stamp)'.", "  Changes recorded in: $changesFile", "",
@@ -2721,6 +2741,7 @@ $procTables
 <h2>BIOS checklist for $(& $h $m.board)</h2><div class="bios"><ul>$((Get-BiosChecklist $m | Select-Object -Skip 3 | Where-Object { $_ } | ForEach-Object { '<li>' + (& $h $_) + '</li>' }) -join '')</ul></div>
 <h2>GPU control panel</h2>$(& $list (Get-GpuNotes $m))
 <h2>Launchers, overlays and helper apps</h2>$(& $list (Get-LauncherNotes $m))
+<h2>Left by other tools</h2><p class="muted">The tune changes none of these; it names them, with the way back.</p>$(& $list (Get-LeftoverNotes $m))
 <h2>Per game</h2>$games
 <h2>What was done</h2>$done
 <h2>Undo</h2><p>Administrator PowerShell: <code>powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1</code><br>Or Windows Recovery &rsaquo; System Restore &rsaquo; the point named <code>OmniDx Tune $(& $h $script:Stamp)</code>.<br>Changes recorded in <code>$(& $h $changesFile)</code>.</p>
@@ -2791,6 +2812,7 @@ function Write-Preview($m, $before) {
     "  plus the OmniDx power plan, network, Discord / Spotify / browsers, game profiles, memory integrity only if asked", "",
     "KEPT FOR THIS PC, AND WHY", @($(if ($svcKeep.Count) { $svcKeep | ForEach-Object { "  $_" } } else { "  nothing needed keeping" })), "",
     "WARNINGS ($($script:Warnings.Count))", @($(if ($script:Warnings.Count) { $script:Warnings | ForEach-Object { "  ! $_" } } else { "  none" })), "",
+    "LEFT BY OTHER TOOLS (the tune changes none of these)", @(Get-LeftoverNotes $m | ForEach-Object { "  - $_" }), "",
     "THE PAID REPORT ADDS", "  the BIOS checklist for $($m.board) ($($m.bios)), the GPU control-panel settings, and the competitive settings for each game found.",
     "  And after a paid run: the keep task puts back what a Windows update turns on, and status mode says what is still in place, any time.",
     "  Extreme (caution), for after the standard tune: every extra service, Game Bar entirely, the shell drawn plain, notifications off, the overlay plane and memory compression off, and an advanced BIOS list. More frames, fewer conveniences; undo puts it all back.",

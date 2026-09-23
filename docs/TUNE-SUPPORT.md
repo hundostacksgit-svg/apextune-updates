@@ -215,6 +215,16 @@ one, or for a key issued by hand, the command is in docs/TUNE.md > Refunds.
 > omnidx.net/tune/omnidx.ps1, and omnidx.net/studio/what-it-touches/ lists
 > every service, task, app and value it touches.
 
+## "The report says Defender / updates / UAC is off, and I never did that"
+
+> The "Left by other tools" section names things another optimiser or
+> debloat script switched off before the tune ran: Defender by policy,
+> automatic updates, the Windows Update service, SmartScreen, User Account
+> Control, or the CPU security mitigations. The tune changes none of them,
+> on purpose, and the way back is on the same line. Do those first; a PC
+> with Defender or updates off is not one to game on, whatever the frame
+> counter says.
+
 ## "Is this a virus / it wants admin"
 
 > It needs administrator rights because stopping a service and changing a
