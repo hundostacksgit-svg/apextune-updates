@@ -38,10 +38,35 @@ jobs:
           npm install --no-audit --no-fund --prefix server
           node tools/worker-test.mjs
 
+  # Forty minutes of Windows for a change to the licence server or the site
+  # proves nothing the static job did not; the Windows job runs when the
+  # script, the bootstrapper, the stand-in licence server or this workflow
+  # changed, and always on the button.
+  changes:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      windows: ${{ steps.pick.outputs.windows }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: pick
+        run: |
+          if [ "${{ github.event_name }}" != "push" ]; then echo "windows=true" >> "$GITHUB_OUTPUT"; echo "not a push: the Windows job runs"; exit 0; fi
+          changed="$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo tune/omnidx.ps1)"
+          echo "$changed"
+          if echo "$changed" | grep -Eq '^(tune/|go\.ps1$|tools/ci-licence\.ps1$|tools/make-tune-key\.py$|\.github/workflows/tune-check\.yml$)'; then
+            echo "windows=true" >> "$GITHUB_OUTPUT"; echo "the tune changed: the Windows job runs"
+          else
+            echo "windows=false" >> "$GITHUB_OUTPUT"; echo "nothing the Windows job tests changed: skipped"
+          fi
+
   windows:
     # A push to a checked branch already ran this; the pull request for the
     # same commit would only run it twice.
-    if: github.event_name != 'pull_request'
+    needs: changes
+    if: github.event_name != 'pull_request' && needs.changes.outputs.windows == 'true'
     runs-on: windows-latest
     timeout-minutes: 75
     defaults:
