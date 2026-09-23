@@ -1730,7 +1730,9 @@ function New-PowerPlan($m) {
     & powercfg /changename $guid 'OmniDx' 'Built by OmniDx Tune for performance. Undo restores the plan that was active before.' | Out-Null
   }
   $sub = @{ proc = '54533251-82be-4824-96c1-47b60b740d00'; pci = '501a4d13-42af-4429-9fd1-a8218c268e20'; usb = '2a737441-1930-4402-8d77-b2bebba308a3'; disk = '0012ee47-9041-4b5d-9b77-535fba8b1442'; sleep = '238c9fa8-0aad-41ed-83f4-97be242c8f20'; video = '7516b95f-f776-4464-8c53-06167f40cc99'; buttons = '4f971e89-eebd-4455-a8de-9e59040e7347'; gfx = '5fb4938d-1ee8-4b0f-9a3c-5036b0ab995c'; wifi = '19cbb8fa-5279-450e-9fac-8a3d5fedd0c1' }
-  $set = { param($s, $v, $val) & powercfg /setacvalueindex $guid $s $v $val | Out-Null }
+  # A setting this PC's power driver does not have makes powercfg print an error; that is counted, not shown in red.
+  $script:PowerSkipped = 0
+  $set = { param($s, $v, $val) $null = & powercfg /setacvalueindex $guid $s $v $val 2>&1; if ($LASTEXITCODE -ne 0) { $script:PowerSkipped++ } }
   # Processor: 100% minimum and maximum, aggressive boost, no core parking, no idle demotion games.
   & $set $sub.proc '893dee8e-2bef-41e0-89c6-b55d0929964c' 100      # min state
   & $set $sub.proc 'bc5038f7-23e0-4960-96da-33abaf5935ec' 100      # max state
@@ -1757,6 +1759,7 @@ function New-PowerPlan($m) {
     & powercfg /setdcvalueindex $guid $sub.proc 'bc5038f7-23e0-4960-96da-33abaf5935ec' 100 | Out-Null
     & powercfg /setdcvalueindex $guid $sub.sleep '29f6c1db-86da-48c5-9fdb-f2b67b1f44da' 1800 | Out-Null
   }
+  if ($script:PowerSkipped) { Did ("{0} plan setting(s) this PC does not have were skipped." -f $script:PowerSkipped) }
   if ($created -or ($prevActive -ne $guid)) {
     & powercfg /setactive $guid | Out-Null
     Record @{ type = 'power'; prev = $prevActive; created = $created }
