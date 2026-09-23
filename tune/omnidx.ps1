@@ -80,7 +80,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.10.0'
+$script:Version = '1.11.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -2163,6 +2163,13 @@ function Write-HtmlReport($m, $before, $after, $target, $found, $changesFile) {
   $others = @($script:Games | Where-Object { $found -notcontains $_.name } | ForEach-Object { $_.name })
   if ($others.Count) { $games += "<p class='muted'>Not found on this PC (the same profile applies if you install them): $(& $h ($others -join ', '))</p>" }
   $done = @($script:Log | Where-Object { $_ -match '^(==|  \+)' } | ForEach-Object { if ($_ -match '^== ') { "<h4>$(& $h ($_ -replace '^== ', ''))</h4>" } else { "<div class='did'>$(& $h ($_ -replace '^  \+ ', ''))</div>" } }) -join ''
+  # The full process lists, folded away: name, how many, memory; taken before and after.
+  $procTables = ''
+  foreach ($tag in 'before', 'after') {
+    $f = Join-Path $script:Root ("processes-{0}-{1}.txt" -f $tag, $script:Stamp)
+    if (Test-Path $f) { $procTables += "<details><summary>Every process, $tag ($(@(Get-Content $f).Count) names)</summary><pre>$(& $h ((Get-Content $f) -join "`n"))</pre></details>" }
+  }
+  $keptCut = [bool](Get-ScheduledTask -TaskName 'OmniDx keep' -ErrorAction SilentlyContinue)
   $html = @"
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>OmniDx Tune report - $(& $h $script:Stamp)</title>
@@ -2179,14 +2186,17 @@ table{width:100%;border-collapse:collapse;background:#0e0a17;border:1px solid #2
 td,th{padding:9px 14px;border-bottom:1px solid #1b1430;text-align:left;font-size:14px}th{color:#7d7199;font-size:11.5px;text-transform:uppercase;letter-spacing:.08em}
 ul{padding-left:20px;color:#b3a8cf}li{margin:4px 0}.did{color:#b3a8cf;font-size:13.5px;padding-left:14px}.warn li{color:#ffc247}
 code{font-family:ui-monospace,Consolas,monospace;background:#150f22;padding:2px 6px;border-radius:6px;color:#f1ecff;font-size:13px}
+details{margin:10px 0;background:#0e0a17;border:1px solid #2a1f45;border-radius:12px;padding:10px 16px}summary{cursor:pointer;color:#c084fc;font-weight:600}
+details pre{font:12.5px/1.5 ui-monospace,Consolas,monospace;color:#b3a8cf;overflow:auto;max-height:420px;margin:10px 0 4px}
 .bios li{margin:8px 0;color:#f1ecff}.bios{background:#0e0a17;border:1px solid #2a1f45;border-radius:14px;padding:6px 18px}
 </style></head><body><main>
 <h1>OmniDx Tune <span class="muted" style="font-size:16px">v$(& $h $script:Version)</span></h1>
 <p class="sub">$(& $h ((Get-Date).ToString('f'))) &middot; $(& $h $m.cpu) &middot; $(& $h $m.gpu) &middot; $(& $h $m.ramGb) GB &middot; $(& $h $m.board)</p>
 <div class="big"><div><b>$before</b><span>processes before</span></div><div><b>$after</b><span>now, before a restart</span></div><div><b>~$target</b><span>target for this PC after a restart</span></div></div>
-<p class="muted">Many of the "now" processes are only waiting to be stopped. The number after a restart is the one that counts; <code>C:\OmniDx\after-restart.txt</code> gets it at your next sign-in.</p>
+<p class="muted">Many of the "now" processes are only waiting to be stopped. The number after a restart is the one that counts; <code>C:\OmniDx\after-restart.txt</code> gets it at your next sign-in.$(if ($keptCut) { ' Kept cut: a task at each sign-in puts back what a Windows update turns on; undo removes it.' } else { ' Not kept cut: run the command again after a big Windows update, same key, free.' })</p>
 $(if ($snapRows) { "<h2>Before and after</h2><table><tr><th></th><th>Before</th><th>Now</th></tr>$snapRows</table>" })
 $(if ((Get-GoneProcesses).Count) { "<h2>Gone, by name</h2><p class='muted'>Running before, not running now: " + (& $h ((Get-GoneProcesses) -join ', ')) + "</p>" })
+$procTables
 <h2>Kept, and why</h2>$(& $list ($script:Kept | Sort-Object -Unique))
 <h2>Warnings ($($script:Warnings.Count))</h2><div class="warn">$(& $list $script:Warnings)</div>
 <h2>BIOS checklist for $(& $h $m.board)</h2><div class="bios"><ul>$((Get-BiosChecklist $m | Select-Object -Skip 3 | Where-Object { $_ } | ForEach-Object { '<li>' + (& $h $_) + '</li>' }) -join '')</ul></div>
