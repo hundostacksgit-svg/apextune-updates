@@ -211,6 +211,14 @@ update), it shows one Windows toast notification through PowerShell's own
 app id; fewer are fixed quietly. keep-log.txt lines end with the process
 count at that sign-in.
 
+`-SupportBundle` (`$env:OMNIDX_MODE='support'`) stages copies of the run
+logs, machine and summary JSON, text reports, keep-log, after-restart and
+README in `%TEMP%`, masks anything shaped like a key in the text files,
+adds the `changes-*.json` records, zips it all to the desktop as
+`omnidx-support-<stamp>.zip` and opens Explorer on it. No elevation. The
+Windows check runs it after the tune and fails if the bound key appears in
+any file of the zip.
+
 The key never travels on a command line: when `go.ps1` has to open an
 elevated window it writes the key to a file in the caller's own `%TEMP%`
 and passes only that path (`OMNIDX_KEYFILE`); the elevated instance reads
