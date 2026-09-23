@@ -91,6 +91,24 @@ Log it: every "kept because" rule lives in `Get-KeepList` in the script.
 > run the same command with the same key; the same PC can run it as often
 > as it likes.
 
+## "I got a notification from OmniDx Tune"
+
+> That is the keep task, once, after a Windows feature update: it found
+> five or more of the tune's settings turned back on and put them back.
+> Nothing was sent anywhere; the list is in C:\OmniDx\keep-log.txt, and
+> `$env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex` shows the
+> whole picture. Small drifts are fixed without a notification.
+
+## "Status says something has drifted / lists processes I don't know"
+
+> The drifted lines are settings a Windows update turned back on; the
+> keep task fixes them three minutes after your next sign-in, or run the
+> command again now. The "running now, not running after the tune" line is
+> different: it is whatever you opened since (a launcher, an overlay, a
+> browser) and is not a setting. Close what you do not need before a game;
+> if a launcher put itself back into startup, Task Manager > Startup, or
+> run the command again and untick it.
+
 ## "Does it work with VALORANT / Fortnite / CS2"
 
 > Yes. It never touches Vanguard, Easy Anti-Cheat, BattlEye or Ricochet, and
