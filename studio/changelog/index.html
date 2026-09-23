@@ -128,9 +128,10 @@
 <section style="padding-top:26px">
   <div class="wrap" style="max-width:820px">
     <div class="card reveal">
-      <div class="eyebrow" style="margin-bottom:12px">v1.26.0 · September 2026</div>
+      <div class="eyebrow" style="margin-bottom:12px">v1.26.1 · September 2026</div>
       <h3>One session for the legacy pieces</h3>
       <ul class="tick">
+        <li>1.25 read the service list once and, because the plain listing leaves out the per-user templates (clipboard history, push notifications, the sync services), skipped seven of them. Caught by comparing two build-machine logs; a missing name is now looked up directly, and the check fails when a run records noticeably fewer changes than the last published one</li>
         <li>The legacy pieces of Windows are removed in one DISM session instead of one each; the debloat was the slowest phase at 68 seconds on the build machine, most of it session set-up. If the batch does not complete, each piece is taken one at a time as before</li>
       </ul>
     </div>

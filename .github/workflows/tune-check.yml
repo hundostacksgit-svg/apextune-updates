@@ -112,12 +112,18 @@ jobs:
           Write-Host $out
           if ($out -notmatch '== Done') { Write-Host 'the tune did not reach Done'; exit 1 }
           if ($out -notmatch 'Processes: (\d+) -> (\d+)') { Write-Host 'no before/after line'; exit 1 }
+          # A per-user template service (not in the plain service listing) must still be configured: a 1.25 refactor silently skipped seven of them.
+          if ($out -notmatch 'WpnUserService -> manual') { Write-Host 'the per-user template services were not configured'; exit 1 }
           $html = Get-ChildItem C:\OmniDx -Filter 'report-*.html' | Select-Object -First 1
           if (-not $html) { Write-Host 'no HTML report'; exit 1 }
           if (-not (Test-Path C:\OmniDx\undo\changes-latest.json)) { Write-Host 'no change record'; exit 1 }
           if (-not (Test-Path C:\OmniDx\README.txt)) { Write-Host 'no README.txt'; exit 1 }
           $summary = Get-ChildItem C:\OmniDx -Filter 'summary-*.json' | Sort-Object LastWriteTime -Descending | Select-Object -First 1
           Copy-Item $summary.FullName C:\OmniDx\ci-summary.json
+          # Fewer changes than the last published run by more than a handful means something stopped being done, not that the PC got cleaner.
+          $now = Get-Content C:\OmniDx\ci-summary.json | ConvertFrom-Json
+          $last = $null; try { $last = Get-Content studio\assets\ci-run.json -Raw | ConvertFrom-Json } catch { }
+          if ($last -and $last.changes -and ($now.changes -lt ($last.changes - 6))) { Write-Host ("this run recorded {0} changes, the last published run {1}: something is no longer being done; compare the logs" -f $now.changes, $last.changes); exit 1 }
           # The run, word for word, for the site: the phase headers, what was done, the numbers.
           $log = @($out -split "`r?`n" | Where-Object { $_ -match '^(== |  \+ |  ! |  Processes|  Before:|  After:|  Gone:|  Target|  Looked|  [0-9]+ )' -and $_ -notmatch 'Under 100' } | Select-Object -First 200)
           Set-Content studio\assets\ci-log.txt -Value $log -Encoding UTF8

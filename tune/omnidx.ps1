@@ -82,7 +82,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.26.0'
+$script:Version = '1.26.1'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -1139,17 +1139,21 @@ function Cut-Services($m) {
   Head "Services"
   $keep = Get-KeepList $m
   Keep 'Defender, the firewall, Windows Update, audio, networking' 'always'
-  # The service list and every start mode, read once.
+  # The service list and every start mode, read once. The full listing does not
+  # include the per-user templates (CDPUserSvc, WpnUserService...), only their
+  # instances, so a name missing from it is looked up directly before it is
+  # taken as absent.
   $all = @(Get-Service -ErrorAction SilentlyContinue)
   $byName = @{}; foreach ($svc in $all) { $byName[$svc.Name] = $svc }
+  $exists = { param($n) if ($byName.ContainsKey($n)) { return $true }; return [bool](Get-Service -Name $n -ErrorAction SilentlyContinue) }
   $script:SvcModes = @{}; foreach ($w in @(Get-CimInstance Win32_Service -ErrorAction SilentlyContinue)) { $script:SvcModes[$w.Name] = $w.StartMode }
   foreach ($pair in $script:ServiceOff) {
     $name = $pair[0]; $why = $pair[1]
-    if ($keep.ContainsKey($name)) { if ($byName.ContainsKey($name)) { Keep $name $keep[$name] }; continue }
+    if ($keep.ContainsKey($name)) { if (& $exists $name) { Keep $name $keep[$name] }; continue }
     $mode = if ($script:ManualOnly -contains $name) { 'Manual' } else { 'Disabled' }
     # Per-user services carry a suffix (CDPUserSvc_1a2b3c). The template is
     # the one whose start type can be set; the instances are only stopped.
-    if ($byName.ContainsKey($name)) { Set-ServiceStart $name $mode $why }
+    if (& $exists $name) { Set-ServiceStart $name $mode $why }
     foreach ($inst in @($all | Where-Object { $_.Name -like ($name + '_*') -and $_.Status -eq 'Running' })) {
       try { Stop-Service -Name $inst.Name -Force -ErrorAction Stop -WarningAction SilentlyContinue } catch { }
     }
