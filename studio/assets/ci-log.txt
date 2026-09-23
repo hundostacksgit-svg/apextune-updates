@@ -1,13 +1,13 @@
 ﻿== Reading this PC
   ! The GPU driver dates from Jun 2006. A current driver is worth more than most tweaks.
   ! This looks like a virtual machine. The tune will run, but the numbers mean little here.
-  Processes running now: 147
+  Processes running now: 143
   Target for this PC after the tune and a restart: about 70
 == Your key
-  Before: 147 processes, 1536 threads, 50667 handles, 2961 MB in use, idle CPU 1.2%, DPC 0.13%
+  Before: 143 processes, 1428 threads, 49368 handles, 2887 MB in use, idle CPU 0.7%, DPC 0%
 == Safety first
   ! Could not make a restore point (This functionality is not supported on this operating system.). The undo script still records everything.
-  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_23-32
+  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_23-42
   + undo.ps1 written to C:\OmniDx\undo
 == Startup apps
   2 things start with Windows:
@@ -94,7 +94,6 @@
   + OmniDx plan created and active: CPU 100/100, boost aggressive, no core parking, no throttle states on a desktop, PCIe, USB and Wi-Fi power saving off, no sleep on mains.
 == Network
   + TCP: autotuning normal, ECN and timestamps off, receive-side scaling on, segment coalescing off, CTCP.
-  + Ethernet 4: Interrupt Moderation off
   + Ethernet 4: Nagle off, power saving off
   + Ethernet 3: Nagle off, power saving off
 == Discord, Spotify, browsers
@@ -104,10 +103,10 @@
   Looked in 16 game folders
   + No listed game found on the usual drives; the CPU-priority profiles are in place for when one is installed.
 == Cleanup
-  + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 305 MB back.
+  + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 373 MB back.
 == Keeping it cut
   + Task 'OmniDx keep' runs three minutes after sign-in, puts back whatever an update turned on, and notes that start's boot time. Log: C:\OmniDx\keep-log.txt. Undo removes it.
-  After:  144 processes, 1475 threads, 49762 handles, 3021 MB in use, idle CPU 0.3%, DPC 0%
-  Gone:   smartscreen, spoolsv
+  After:  144 processes, 1442 threads, 49747 handles, 3151 MB in use, idle CPU 19%, DPC 0%
+  Gone:   spoolsv
 == Done
-  Processes: 147 -> 144 now, in 108 seconds. Restart for the real number: the services that were told to stop are still unwinding.
+  Processes: 143 -> 144 now, in 106 seconds. Restart for the real number: the services that were told to stop are still unwinding.
