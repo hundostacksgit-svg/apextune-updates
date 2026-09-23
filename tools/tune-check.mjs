@@ -130,6 +130,16 @@ function sitemapAgrees() {
   else ok('robots.txt keeps the key page, the account page and the owner page out of search');
 }
 
+/* The changelog's newest card is the version the script says it is: a version bump without
+   its card, or a card written for a version that never shipped, fails here rather than on the site. */
+function changelogAgrees(scriptText) {
+  const version = (/\$script:Version = '([^']+)'/.exec(scriptText) || [])[1];
+  const page = fs.readFileSync(path.join(root, 'studio/changelog/index.html'), 'utf8');
+  const newest = (/<div class="eyebrow"[^>]*>v(\d+\.\d+\.\d+)/.exec(page) || [])[1];
+  if (version && newest === version) ok(`the changelog's newest card is v${version}, the script's version`);
+  else bad(`the changelog's newest card is v${newest || '?'} but the script is v${version || '?'}`);
+}
+
 function workflowWidth() {
   const wf = fs.readFileSync(path.join(root, '.github/workflows/tune-check.yml'), 'utf8');
   const bare = wf.split('\n').filter((l) => /\| Out-String\s*$/.test(l));
@@ -231,5 +241,6 @@ config(script);
 verified();
 workflowWidth();
 sitemapAgrees();
+changelogAgrees(script);
 console.log(failed ? `${failed} problem(s)` : 'all good');
 process.exit(failed ? 1 : 0);

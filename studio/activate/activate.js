@@ -151,7 +151,7 @@ function renderKey(info, { again = false } = {}) {
       <a class="btn btn-sm btn-ghost" href="${save}" download="omnidx-tune-key.txt">Save as a file</a>
       <button class="btn btn-sm btn-ghost" type="button" onclick="print()">Print</button></div>
     <p class="tiny" id="act-mail" style="text-align:center;margin:8px 0 0;color:var(--ok,#35d07f)">${info.emailed ? 'Also sent to the email you gave at checkout. ' : ''}<button class="btn btn-sm btn-ghost" type="button" id="act-resend">${info.emailed ? 'Not there? Send it again' : (many ? 'Send them to my checkout email' : 'Send it to my checkout email')}</button></p>
-    <p class="tiny" id="act-mail-out" style="text-align:center;margin:6px 0 0" hidden></p>
+    <p class="tiny" id="act-mail-out" style="text-align:center;margin:6px 0 0" aria-live="polite" hidden></p>
     <p class="tiny muted" style="text-align:center;margin:8px 0 0">Letters only look like this: no I, O, 0 or 1 in a key, and capitals do not matter.</p>
     <p class="tiny muted" id="act-seats" style="text-align:center;margin:6px 0 0" hidden></p>
 
@@ -193,7 +193,7 @@ function renderKey(info, { again = false } = {}) {
         <p class="tiny muted" style="margin:7px 0 0">The key is unbound from the PC it is on and locks to the next PC that runs it. The old PC keeps its settings and its undo.</p>
       </div>
       <button class="btn btn-sm" type="button" id="act-move">Move the key</button>
-      <p class="tiny" id="act-move-out" style="margin:10px 0 0" hidden></p>
+      <p class="tiny" id="act-move-out" style="margin:10px 0 0" aria-live="polite" hidden></p>
     </details>
 
     <p class="act-note">
