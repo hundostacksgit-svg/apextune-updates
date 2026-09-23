@@ -273,6 +273,15 @@ record is; `Limit-History` keeps the newest ten of everything else.
   edit those three by hand. This is the only place the script actually executes before a
   buyer runs it; watch it after every script change.
 
+Two guards in the full-tune step exist because of regressions the logs
+caught: the output must show a per-user template service being configured
+(`WpnUserService -> manual`), and the run must not record more than six
+fewer changes than the last published `ci-run.json`. A legitimate drop
+(say, an image that ships without a service) means adjusting the guard,
+never removing it. Diffing `studio/assets/ci-log.txt` between two CI
+commits (`git show <prev>:studio/assets/ci-log.txt`) is the quickest way
+to see what a change stopped doing.
+
 ### A key by hand (Cash App, a friend, a giveaway)
 ```
 python3 tools/make-tune-key.py --sql
