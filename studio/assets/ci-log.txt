@@ -1,13 +1,13 @@
 ﻿== Reading this PC
   ! The GPU driver dates from Jun 2006. A current driver is worth more than most tweaks.
   ! This looks like a virtual machine. The tune will run, but the numbers mean little here.
-  Processes running now: 143
+  Processes running now: 145
   Target for this PC after the tune and a restart: about 70
 == Your key
-  Before: 143 processes, 1411 threads, 48443 handles, 2900 MB in use, idle CPU 0.8%, DPC 0.13%
+  Before: 145 processes, 1381 threads, 49644 handles, 3009 MB in use, idle CPU 0.6%, DPC 0.13%
 == Safety first
   ! Could not make a restore point (This functionality is not supported on this operating system.). The undo script still records everything.
-  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_22-04
+  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_22-14
   + undo.ps1 written to C:\OmniDx\undo
 == Startup apps
   2 things start with Windows:
@@ -85,7 +85,6 @@
   + Edge: shopping assistant, recommendations, Spotlight, feedback prompts and reporting off
   + Kept gone: consumer features, suggested apps, account nags and the 'finish setting up' screen are off by policy
 == Telemetry, background activity, the shell
-  ! Could not set HKLM:\SOFTWARE\Microsoft\WindowsRuntime\ActivatableClassId\Windows.Gaming.GameBar.PresenceServer.Internal.PresenceWriter\ActivationType: Cannot find path 'HKLM:\SOFTWARE\Microsoft\WindowsRuntime\ActivatableClassId\Windows.Gaming.GameBar.PresenceServer.Internal.PresenceWriter' because it does not exist.
 == System tuning
   + NTFS last-access stamps off
   + NTFS allowed more memory for its cache
@@ -95,9 +94,9 @@
   + OmniDx plan created and active: CPU 100/100, boost aggressive, no core parking, no throttle states on a desktop, PCIe, USB and Wi-Fi power saving off, no sleep on mains.
 == Network
   + TCP: autotuning normal, ECN and timestamps off, receive-side scaling on, segment coalescing off, CTCP.
-  + Ethernet 3: Nagle off, power saving off
   + Ethernet 4: Interrupt Moderation off
   + Ethernet 4: Nagle off, power saving off
+  + Ethernet 3: Nagle off, power saving off
 == Discord, Spotify, browsers
   + Chrome: no background mode, hardware acceleration on
   + Edge: no startup boost, no background mode, hardware acceleration on
@@ -105,10 +104,10 @@
   Looked in 16 game folders
   + No listed game found on the usual drives; the CPU-priority profiles are in place for when one is installed.
 == Cleanup
-  + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 307 MB back.
+  + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 314 MB back.
 == Keeping it cut
   + Task 'OmniDx keep' runs three minutes after sign-in, puts back whatever an update turned on, and notes that start's boot time. Log: C:\OmniDx\keep-log.txt. Undo removes it.
-  After:  143 processes, 1440 threads, 49002 handles, 2989 MB in use, idle CPU 17.7%, DPC 0%
-  Gone:   spoolsv
+  After:  141 processes, 1384 threads, 48930 handles, 3139 MB in use, idle CPU 17.7%, DPC 0%
+  Gone:   smartscreen, spoolsv
 == Done
-  Processes: 143 -> 143 now, in 211 seconds. Restart for the real number: the services that were told to stop are still unwinding.
+  Processes: 145 -> 141 now, in 207 seconds. Restart for the real number: the services that were told to stop are still unwinding.

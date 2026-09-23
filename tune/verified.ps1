@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.37.0'
+$script:Version = '1.38.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -261,7 +261,10 @@ function Resolve-Hive([string]$p) {
 function Set-Reg([string]$path, [string]$name, $value, [string]$kind = 'DWord') {
   $path = Resolve-Hive $path
   $existed = Test-Path $path
-  if (-not $existed) { New-Item -Path $path -Force | Out-Null }
+  if (-not $existed) {
+    try { New-Item -Path $path -Force -ErrorAction Stop | Out-Null }
+    catch { Warn ("Could not create {0} (Windows protects it): {1} left as it is." -f $path, $name); return }
+  }
   $prev = $null; $had = $false
   try {
     $item = Get-ItemProperty -Path $path -Name $name -ErrorAction Stop
@@ -1579,7 +1582,9 @@ function Cut-Telemetry($m) {
   Set-Reg 'HKCU:\Software\Microsoft\GameBar' 'UseNexusForGameBarEnabled' 0
   Set-Reg 'HKCU:\Software\Microsoft\GameBar' 'ShowStartupPanel' 0
   # The presence writer is the one Game Bar process that runs whether or not the bar is open.
-  Set-Reg 'HKLM:\SOFTWARE\Microsoft\WindowsRuntime\ActivatableClassId\Windows.Gaming.GameBar.PresenceServer.Internal.PresenceWriter' 'ActivationType' 0
+  # Game Bar's presence writer, where Game Bar is installed at all; a PC without it has nothing to switch off.
+  $pw = 'HKLM:\SOFTWARE\Microsoft\WindowsRuntime\ActivatableClassId\Windows.Gaming.GameBar.PresenceServer.Internal.PresenceWriter'
+  if (Test-Path $pw) { Set-Reg $pw 'ActivationType' 0 }
   # Edge: no pre-launch, no background tabs after close.
   Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Edge' 'StartupBoostEnabled' 0
   Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Edge' 'BackgroundModeEnabled' 0
