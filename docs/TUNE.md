@@ -316,6 +316,12 @@ is deployed.
 - **A game profile**: add it to `$script:Games` in the script and its name
   to `TUNE.games` in `studio/assets/config.js`; the check requires the two
   counts to agree, and `data-games` on the pages shows the count.
+- **A legacy piece of Windows**: `$script:Capabilities` / `$script:Features`
+  name it for the report and the transparency page; `$script:CapabilityIds`
+  holds the exact DISM package ids the script asks for (listing every
+  capability took ninety seconds on the build machine, asking for seven by
+  name takes a few). Hello.Face carries a build number, so every one that
+  has shipped is listed; when Microsoft ships a new one, add it there.
 - **A new kind of recorded change**: add the `Record @{ type = '...' }`, a
   handler in the undo here-string (`$script:UndoScript`), and, if the keep
   task should re-apply it, a branch in `Get-Drift`. The check refuses a
