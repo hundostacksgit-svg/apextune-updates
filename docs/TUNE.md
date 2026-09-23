@@ -138,6 +138,50 @@ change a price: change it in Square, change it there, commit.
 
 ## What to switch on
 
+### Going live from a phone: the checklist
+Every step below is a browser tab; none needs a terminal.
+
+1. **Cloudflare** (dash.cloudflare.com, the free plan is enough): Workers &
+   Pages page, copy the **Account ID** from the right-hand column. Storage &
+   Databases > D1 > Create database, named exactly `omnidx-studio`, copy its
+   **Database ID**. Profile icon > My Profile > API Tokens > Create Token >
+   the "Edit Cloudflare Workers" template, add the permission **D1: Edit**,
+   Create, copy the token.
+2. **Square developer dashboard** (developer.squareup.com > your application
+   > Production): copy the **Access token**.
+3. **Resend** (resend.com, free): Domains > Add domain `omnidx.net`; add the
+   three DNS records it shows in the panel where the four A records for
+   omnidx.net were added (docs/CUSTOM-DOMAIN.md); wait for Verified. API
+   Keys > Create, copy it.
+4. **GitHub** (the repository > Settings > Secrets and variables > Actions >
+   New repository secret), names exactly: `CLOUDFLARE_API_TOKEN`,
+   `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_D1_ID`, `SQUARE_ACCESS_TOKEN`,
+   `RESEND_API_KEY`, and `TUNE_ADMIN_TOKEN` (any thirty-plus characters you
+   make up; it unlocks the owner page).
+5. **Deploy**: Actions > "Deploy the Worker" > Run workflow on the branch.
+   The log's "The Worker answers at https://…workers.dev" line is the
+   server's address; the workflow has already written it into
+   `tune/config.json` and published the site.
+6. **Square webhook** (developer.squareup.com > your application > Webhooks
+   > Add subscription): URL = that address + `/v1/webhooks/square`; events
+   `payment.created`, `payment.updated`, `refund.created`, `refund.updated`.
+   Save, open it, copy the **Signature key** into the repository secret
+   `SQUARE_WEBHOOK_SIGNATURE_KEY`, then run "Deploy the Worker" once more.
+7. **Square payment links** (squareup.com > Online > Payment links): rename
+   the $39.99 link "OmniDx Tune Squad — three keys" and the $19.99 link
+   "OmniDx Tune — one PC"; delete the $69.99 link; check the redirects end in
+   `?e=creator` ($19.99) and `?e=studio` ($39.99).
+8. **Check the wiring**: open omnidx.net/studio/admin/ on the phone; the
+   status line should read Licence server on, Square on, Webhook on, Mail
+   on, Owner token on. Anything off names the step to redo.
+9. **Test**: buy the $19.99 link with your own card and email. The key is on
+   the page you land on and in your inbox within a minute. Refund yourself
+   in Square; the key stops working and a second email says so.
+
+Until step 3 is verified, buyers get the key on screen but not by email.
+Until step 5 is done nobody can buy: the buy buttons say the key desk is
+not open, and the key page says the same.
+
 ### The Worker is required to sell
 Since 1.29 nothing hands out a key but the Worker, and the Worker hands one
 out only after Square confirms the order was paid. Without it the key page
