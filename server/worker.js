@@ -845,8 +845,8 @@ const routes = {
     if (parsed) {
       const row = await env.DB.prepare('SELECT * FROM tune_keys WHERE key = ?').bind(parsed.key).first();
       if (row) rows = row.order_ref ? await tuneKeysFor(env, String(row.order_ref).replace(/#\d+$/, '')) : [row];
-    } else if (/^[A-Za-z0-9_\-:.#]{6,}$/.test(ref)) {
-      rows = await tuneKeysFor(env, ref.replace(/#\d+$/, ''));
+    } else if (/^[A-Za-z0-9_\-:.#]{4,}$/.test(ref)) {
+      rows = await tuneKeysFor(env, ref.replace(/^#/, '').replace(/#\d+$/, ''));
     }
     if (!rows.length) return fail('No keys for that order or key.', 404, env, request);
     if (ordersIn(rows).length > 1) return fail(AMBIGUOUS, 409, env, request);
