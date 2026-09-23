@@ -360,6 +360,13 @@ one record only. A run's `backup\<stamp>` folder is kept as long as its
 record is; `Limit-History` keeps the newest ten of everything else.
 
 ### Checks that run on every push
+The Windows check serves the tune files from the build machine (LF bytes,
+as the site serves them) and runs `go.ps1` against them with
+`OMNIDX_BASE=http://127.0.0.1:8090` (the only override `go.ps1` accepts:
+127.0.0.1 or localhost): it must report the verified copy's hash matching
+and run the report; with both served copies altered by one line it must
+say "Could not fetch a good copy" and run nothing.
+
 `node tools/worker-test.mjs` runs the licence server in Node against a
 stand-in database and network: a Squad webhook mints three keys and sends one
 email, a repeat mints and sends nothing, the key page gets the same keys, a

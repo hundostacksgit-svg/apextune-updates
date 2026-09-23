@@ -73,6 +73,40 @@ jobs:
           Get-Content $preview.FullName
           exit 0
 
+      # The bootstrapper, end to end: a copy of the site's tune files is served
+      # from the build machine (LF bytes, as the site serves them), go.ps1 must
+      # fetch the verified copy, match its hash and run the report through it;
+      # then, with both served copies altered, it must refuse to run anything.
+      - name: go.ps1 fetches the verified copy, checks its hash, and refuses a tampered one
+        timeout-minutes: 10
+        run: |
+          $site = Join-Path $env:RUNNER_TEMP 'site'
+          New-Item -ItemType Directory -Path (Join-Path $site 'tune') -Force | Out-Null
+          foreach ($f in 'tune\verified.ps1', 'tune\verified.json', 'tune\omnidx.ps1', 'tune\config.json', 'go.ps1') {
+            if (Test-Path $f) { [IO.File]::WriteAllText((Join-Path $site $f), ([IO.File]::ReadAllText((Resolve-Path $f).Path) -replace "`r`n", "`n"), [Text.Encoding]::ASCII) }
+          }
+          $srv = Start-Process python -ArgumentList '-m', 'http.server', '8090', '--bind', '127.0.0.1' -WorkingDirectory $site -PassThru -WindowStyle Hidden
+          Start-Sleep -Seconds 4
+          try {
+            $env:OMNIDX_BASE = 'http://127.0.0.1:8090'; $env:OMNIDX_MODE = 'report'
+            $out = & .\go.ps1 *>&1 | Out-String -Width 4000
+            Write-Host $out
+            if ($out -notmatch 'Script verified: sha256') { Write-Host 'go.ps1 did not verify the script it fetched'; exit 1 }
+            if ((Test-Path tune\verified.json) -and ($out -notmatch 'matches the copy the Windows check tested')) { Write-Host 'go.ps1 did not use the verified copy'; exit 1 }
+            if ($out -notmatch 'Target') { Write-Host 'the report did not run through go.ps1'; exit 1 }
+            # Now both served copies are altered by one line; neither hash can match, and nothing may run.
+            foreach ($f in 'tune\verified.ps1', 'tune\omnidx.ps1') { $p = Join-Path $site $f; if (Test-Path $p) { [IO.File]::AppendAllText($p, "# tampered`n") } }
+            $refused = ''
+            try { $out2 = & .\go.ps1 *>&1 | Out-String -Width 4000; $refused = $out2 } catch { $refused = "$out2`n$_" }
+            Write-Host $refused
+            if ($refused -notmatch 'Could not fetch a good copy') { Write-Host 'a tampered copy was not refused'; exit 1 }
+            if ($refused -match 'Target') { Write-Host 'the tampered copy ran'; exit 1 }
+          } finally {
+            Stop-Process -Id $srv.Id -Force -ErrorAction SilentlyContinue
+            Remove-Item Env:OMNIDX_BASE, Env:OMNIDX_MODE -ErrorAction SilentlyContinue
+          }
+          exit 0
+
       - name: The script can see its own text, from a file and from memory
         run: |
           $a = & .\tune\omnidx.ps1 -SelfTest *>&1 | Out-String

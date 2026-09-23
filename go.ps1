@@ -19,7 +19,11 @@
 #   $env:OMNIDX_KEEP='Wallpaper Engine,RTSS'                    startup entries to leave on
 $ErrorActionPreference = 'Stop'
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12 } catch { }
+# Everything is fetched from omnidx.net. The one exception is the Windows
+# check, which points this at a copy of the site on the build machine itself
+# (127.0.0.1 only) to prove the fetch and the hash check end to end.
 $base = 'https://omnidx.net'
+if ("$env:OMNIDX_BASE" -match '^http://(127\.0\.0\.1|localhost)(:\d+)?$') { $base = "$env:OMNIDX_BASE" }
 $mode = "$env:OMNIDX_MODE".ToLower()
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
