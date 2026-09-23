@@ -224,6 +224,24 @@ and passes only that path (`OMNIDX_KEYFILE`); the elevated instance reads
 and deletes it. Command lines end up in Windows logs and in the run's
 transcript, which is why.
 
+### Extreme
+`-Extreme` (`$env:OMNIDX_MODE='extreme'` opens the app with the box ticked)
+runs the standard tune and then `Set-Extreme`: the `$script:ExtremeServices`
+list (manual, or disabled for the names in `$script:ExtremeOff`; the keep
+rules still apply, so a printer keeps its print workflow and a touch screen
+its pen service), the shell drawn plain (transparency, animations, shadows,
+badges, toasts, the search box), exclusive fullscreen honoured globally,
+`OverlayTestMode 5` (multi-plane overlay off), memory compression off with
+16 GB or more, `bcdedit /set disabledynamictick yes` on desktops (undo
+deletes the value), and the Xbox pieces treated as `-CutXbox` unless Game
+Pass, the Xbox app, Minecraft or a controller is found (`Test-CutXbox`).
+The BIOS checklist gains nine "EXTREME" items. It asks first (`-Yes`
+answers yes). The keep task leaves the shell choices alone (`$yours` has
+the paths). The key page shows the Extreme command under the standard one,
+marked caution, after a purchase. The Windows check runs it as a third pass
+and undoes all three runs. To drop Extreme but keep the tune: undo, then run
+the standard command again.
+
 ### Decisions made by hand stand
 `Get-CutStartup` reads the live `changes-*.json` records for StartupApproved
 values and Store-app startup states an earlier run switched off. An entry

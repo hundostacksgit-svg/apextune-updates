@@ -126,6 +126,14 @@ Log it: every "kept because" rule lives in `Get-KeepList` in the script.
 > at the console picker or tick it in the app. The keep task never touches
 > startup apps at all.
 
+## "Extreme took my notifications / search box / animations"
+
+> That is what Extreme is: the caution on the key page lists every one of
+> them. To have the tune without them, run undo (`$env:OMNIDX_MODE='undo'`),
+> then the standard command again; same key, same PC, free. Or put back the
+> one thing you miss in Settings: Extreme never touches the keep task's
+> list, so it stays put.
+
 ## "Does it work with VALORANT / Fortnite / CS2"
 
 > Yes. It never touches Vanguard, Easy Anti-Cheat, BattlEye or Ricochet, and
