@@ -90,10 +90,12 @@ lists under "OEM extras".
 > Status shows it in Windows' own figures: `$env:OMNIDX_MODE='status'; irm
 > omnidx.net/go.ps1 | iex` prints the last measured start next to the one
 > from before the tune, and after-restart.txt carries the first start after
-> it. Windows writes that figure a few minutes after the desktop appears,
-> so it is a full start, not a resume: Fast Startup is off after the tune,
-> which is also why the first start afterwards can look no quicker. The
-> second and later ones are the honest comparison.
+> it. If you kept the keep task, status also lists every start since the
+> tune, oldest first, from its log. Windows writes that figure a few
+> minutes after the desktop appears, so it is a full start, not a resume:
+> Fast Startup is off after the tune, which is also why the first start
+> afterwards can look no quicker. The second and later ones are the honest
+> comparison.
 
 ## "Something broke" (printer, Bluetooth, Wi-Fi, Xbox controller, a game)
 
