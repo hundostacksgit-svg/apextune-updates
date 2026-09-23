@@ -121,6 +121,13 @@ get more FPS" threads with the twenty-second check, not the link.
   It is an afternoon and a record; that is what $19.99 buys.
 - "Does it break VALORANT" → never touches Vanguard; needs Secure Boot and
   TPM on Windows 11, which the report checks.
+- "Where's your privacy policy / refund policy" → omnidx.net/studio/terms/,
+  one page in plain words: what leaves the PC and where it is kept,
+  fourteen days no questions, what a key is. Link it, do not paraphrase it.
+- "Prove it did anything" → the report's before and after, the after-restart
+  line, and the boot time in Windows' own figures (status shows the last
+  start next to the one from before the tune). Numbers from a real PC are
+  fine to show as long as they are labelled as that PC's.
 
 ## What to record for the first videos
 
