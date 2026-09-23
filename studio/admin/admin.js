@@ -21,6 +21,18 @@ async function api() {
 
 const when = (ms) => (ms ? new Date(ms).toLocaleString() : 'never');
 
+/* What is wired up, from the server's own health line: the quickest check of the setup steps. */
+(async () => {
+  const el = $('#own-health');
+  const base = await api();
+  if (!base) { el.innerHTML = '<span class="off">Licence server: not switched on</span> (tune/config.json has no api; the deploy writes it).'; return; }
+  try {
+    const h = await (await fetch(`${base}/v1/health`, { cache: 'no-store' })).json();
+    const bit = (on, name) => `<span class="${on ? 'on' : 'off'}">${esc(name)}: ${on ? 'on' : 'off'}</span>`;
+    el.innerHTML = [bit(true, 'Licence server'), bit(h.square, 'Square'), bit(h.squareWebhook, 'Webhook'), bit(h.mail, 'Mail'), bit(h.owner, 'Owner token')].join(' · ');
+  } catch { el.innerHTML = `<span class="off">Licence server: not answering</span> at ${esc(base)}.`; }
+})();
+
 function render(d, note) {
   const out = $('#own-out');
   out.hidden = false;
