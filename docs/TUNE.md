@@ -218,6 +218,7 @@ dashboard; none of it needs a terminal.
 | A buyer paid twice | Two orders, two sets of keys | Refund the second in Square; its keys switch off on their own. |
 | A buyer says "too many tries" | Twenty key-page tries from one connection in ten minutes: a retry loop, or a shared connection | Nothing to reset; it passes in ten minutes. Send the keys from the owner page meanwhile. |
 | The owner page says "too many tries" | Ten wrong tokens from your connection | Wait ten minutes; check the token you pasted against the repository secret. |
+| No Monday email came | Mail is off, `SUPPORT_EMAIL` is not the address you check, or the cron trigger is not on the Worker (an old deploy) | Owner page: "Email me the week" says which; run the deploy so `wrangler.toml`'s `[triggers]` is on the Worker. |
 | The owner token leaked | Anyone with it can revoke or resend | Make a new one, update `TUNE_ADMIN_TOKEN`, run the deploy; the old one stops at once. |
 | The site shows an old script version in the footer | The newest push has not passed the Windows check yet | Actions > Check the tune: read the failed step. Buyers keep getting the last verified copy, which is the point. |
 
