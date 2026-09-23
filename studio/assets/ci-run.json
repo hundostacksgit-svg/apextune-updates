@@ -1,18 +1,18 @@
 ﻿{
-    "version":  "1.10.0",
-    "when":  "2026-09-23T00:33:44Z",
+    "version":  "1.17.0",
+    "when":  "2026-09-23T01:03:57Z",
     "os":  "Microsoft Windows Server 2025 Datacenter 10.0.26100 (build 26100)",
-    "cpu":  "AMD EPYC 7763 64-Core Processor",
-    "before":  137,
-    "after":  136,
+    "cpu":  "AMD EPYC 9V74 80-Core Processor",
+    "before":  149,
+    "after":  141,
     "target":  70,
     "changes":  289,
-    "warnings":  4,
-    "seconds":  209,
+    "warnings":  3,
+    "seconds":  200,
     "undone":  293,
     "kept":  3,
     "second":  4,
     "runs":  2,
-    "gone":  2,
-    "sha":  "3bce90b"
+    "gone":  3,
+    "sha":  "5d06073"
 }
