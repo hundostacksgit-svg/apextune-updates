@@ -316,8 +316,10 @@ scheduled task ("OmniDx after-restart count") that runs once at the next
 sign-in, waits two minutes, writes the count to `C:\OmniDx\after-restart.txt`
 and unregisters itself. It is recorded as a change, so undo removes it, and
 `-NoAfterCount` skips it. The same line carries the boot time of that start
-when Windows has logged it by then (event 100 of its boot-performance log,
-written a few minutes after the desktop appears; `Get-BootSeconds`). The
+(event 100 of its boot-performance log, written a few minutes after the
+desktop appears; `Get-BootSeconds`); the task waits up to three minutes
+more for it after the count. The keep task notes the same figure on each
+of its log lines, and status lists those starts, oldest first. The
 report and `summary-<date>.json` (`bootBefore`) hold the figure from before
 the tune, and status prints the last measured start next to it. It is
 Windows' own number, never a stopwatch of ours. The site says so on the run-it, pricing and trust
