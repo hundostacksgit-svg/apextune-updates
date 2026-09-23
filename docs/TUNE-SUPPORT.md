@@ -74,6 +74,16 @@ Common leftovers: NVIDIA container (kept on purpose), anti-cheat services,
 launchers set to start again by their own updater, OEM utilities the report
 lists under "OEM extras".
 
+## "Does it boot faster?"
+
+> Status shows it in Windows' own figures: `$env:OMNIDX_MODE='status'; irm
+> omnidx.net/go.ps1 | iex` prints the last measured start next to the one
+> from before the tune, and after-restart.txt carries the first start after
+> it. Windows writes that figure a few minutes after the desktop appears,
+> so it is a full start, not a resume: Fast Startup is off after the tune,
+> which is also why the first start afterwards can look no quicker. The
+> second and later ones are the honest comparison.
+
 ## "Something broke" (printer, Bluetooth, Wi-Fi, Xbox controller, a game)
 
 > Undo puts everything back: open PowerShell and paste

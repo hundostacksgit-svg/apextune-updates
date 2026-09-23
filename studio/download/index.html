@@ -264,7 +264,7 @@
       <div class="card reveal">
         <div class="card-icon">🔢</div>
         <h3>No after-restart count</h3>
-        <p>By default one task runs once at your next sign-in, writes the process count to <span class="mono tiny">C:\OmniDx\after-restart.txt</span> and removes itself. Skip it:</p>
+        <p>By default one task runs once at your next sign-in, writes the process count and the boot time of that start to <span class="mono tiny">C:\OmniDx\after-restart.txt</span> and removes itself. Skip it:</p>
         <div class="cmd" style="margin-top:12px"><code data-text="$env:OMNIDX_FLAGS='-NoAfterCount'; irm omnidx.net/go.ps1 | iex">$env:OMNIDX_FLAGS='-NoAfterCount'; irm omnidx.net/go.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
       </div>
       <div class="card reveal" style="border-color:var(--warn,#ffc247)">
