@@ -170,6 +170,16 @@ expect(r.status === 404, 'a receipt number not on file says so without asking Sq
 r = await call('/v1/tune/release', { key: dualKeys[1], order: 'ZQ7K' });
 expect(r.status === 200 && r.data.ok, 'and the receipt number moves a key');
 
+/* 4d. The webhook and the key page in the same instant: one order, one set of keys, both answered. */
+payments['PAY-RACE-1'] = { cents: 3999, email: 'race@example.test', orderId: 'ORDER-RACE-1', receipt: 'RC01' };
+const [ra, rb] = await Promise.all([
+  call('/v1/tune/issue', { product: 'squad', order: 'PAY-RACE-1' }),
+  webhook({ id: 'PAY-RACE-1', order_id: 'ORDER-RACE-1', status: 'COMPLETED', amount_money: { amount: 3999 }, buyer_email_address: 'race@example.test', receipt_number: 'RC01' }),
+]);
+expect(ra.status === 200 && rb.status === 200 && db.tune_keys.filter((k) => k.order_ref.startsWith('ORDER-RACE-1')).length === 3, `both callers are answered and the order has exactly three keys (${ra.status}, ${rb.status})`);
+r = await call('/v1/tune/issue', { product: 'squad', order: 'ORDER-RACE-1' });
+expect(r.status === 200 && JSON.stringify(r.data.keys) === JSON.stringify(ra.data.keys), 'and the key page gets the same three keys the webhook stored');
+
 /* 4c. Two orders with the same short receipt number: the number alone answers nothing. */
 r = await webhook({ id: 'PAY-TWIN-1', order_id: 'ORDER-TWIN-1', status: 'COMPLETED', amount_money: { amount: 1999 }, buyer_email_address: 'a@example.test', receipt_number: 'TW1N' });
 r = await webhook({ id: 'PAY-TWIN-2', order_id: 'ORDER-TWIN-2', status: 'COMPLETED', amount_money: { amount: 1999 }, buyer_email_address: 'b@example.test', receipt_number: 'TW1N' });

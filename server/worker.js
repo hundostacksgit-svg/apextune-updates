@@ -271,10 +271,18 @@ async function issueTuneKeys(env, { order, product, cents, email, receipt }) {
   for (let i = 1; i <= p.keys; i++) {
     const key = makeTuneKey(product);
     const ref = i === 1 ? order : `${order}#${i}`;
-    await env.DB.prepare(
-      `INSERT INTO tune_keys (key, product, seats, email, order_ref, receipt, provider, amount_cents, verified, created_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?)`,
-    ).bind(key, product, p.seats, email || null, ref, receipt ? receiptOf(receipt) : null, 'square', cents, 1, Date.now()).run();
+    try {
+      await env.DB.prepare(
+        `INSERT INTO tune_keys (key, product, seats, email, order_ref, receipt, provider, amount_cents, verified, created_at)
+         VALUES (?,?,?,?,?,?,?,?,?,?)`,
+      ).bind(key, product, p.seats, email || null, ref, receipt ? receiptOf(receipt) : null, 'square', cents, 1, Date.now()).run();
+    } catch (err) {
+      // The webhook and the key page arriving in the same instant: whoever
+      // was second hits the unique order reference, and the order's keys
+      // are simply the ones already there.
+      if (/UNIQUE|constraint/i.test(String(err?.message || err))) return (await tuneKeysFor(env, order)).map((r) => r.key);
+      throw err;
+    }
     keys.push(key);
   }
   return keys;
