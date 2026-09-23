@@ -1647,7 +1647,7 @@ function New-PowerPlan($m) {
   if ($dup -notmatch '([0-9a-f\-]{36})') { Warn "Could not create the power plan."; return }
   $guid = $Matches[1]
   & powercfg /changename $guid 'OmniDx' 'Built by OmniDx Tune for performance. Undo restores the plan that was active before.' | Out-Null
-  $sub = @{ proc = '54533251-82be-4824-96c1-47b60b740d00'; pci = '501a4d13-42af-4429-9fd1-a8218c268e20'; usb = '2a737441-1930-4402-8d77-b2bebba308a3'; disk = '0012ee47-9041-4b5d-9b77-535fba8b1442'; sleep = '238c9fa8-0aad-41ed-83f4-97be242c8f20'; video = '7516b95f-f776-4464-8c53-06167f40cc99'; buttons = '4f971e89-eebd-4455-a8de-9e59040e7347'; gfx = '5fb4938d-1ee8-4b0f-9a3c-5036b0ab995c' }
+  $sub = @{ proc = '54533251-82be-4824-96c1-47b60b740d00'; pci = '501a4d13-42af-4429-9fd1-a8218c268e20'; usb = '2a737441-1930-4402-8d77-b2bebba308a3'; disk = '0012ee47-9041-4b5d-9b77-535fba8b1442'; sleep = '238c9fa8-0aad-41ed-83f4-97be242c8f20'; video = '7516b95f-f776-4464-8c53-06167f40cc99'; buttons = '4f971e89-eebd-4455-a8de-9e59040e7347'; gfx = '5fb4938d-1ee8-4b0f-9a3c-5036b0ab995c'; wifi = '19cbb8fa-5279-450e-9fac-8a3d5fedd0c1' }
   $set = { param($s, $v, $val) & powercfg /setacvalueindex $guid $s $v $val | Out-Null }
   # Processor: 100% minimum and maximum, aggressive boost, no core parking, no idle demotion games.
   & $set $sub.proc '893dee8e-2bef-41e0-89c6-b55d0929964c' 100      # min state
@@ -1657,6 +1657,8 @@ function New-PowerPlan($m) {
   & $set $sub.proc 'ea062031-0e34-4ff1-9b6d-eb1059334028' 100      # core parking max cores
   & $set $sub.proc '94d3a615-a899-4ac5-ae2b-e4d8f634367f' 1        # system cooling: active
   & $set $sub.proc '45bcc044-d885-43e2-8605-ee0ec6e96b59' 100      # boost policy
+  if (-not $m.laptop) { & $set $sub.proc '3b04d4fd-1cc7-4f23-ab1c-d1337819c4bb' 0 }  # throttle states: off (desktop; hardware thermal protection is separate)
+  & $set $sub.wifi '12bbebe6-58d6-4636-95bb-3217ef867c1a' 0        # wireless adapter power saving: maximum performance (the cause of most Wi-Fi ping spikes)
   # Buses and disks never sleep on mains.
   & $set $sub.pci 'ee12f906-d277-404b-b6da-e5fa1a576df5' 0         # PCIe link state: off
   & $set $sub.usb '48e6b7a6-50f5-4782-a5d4-53bb50f7e6c9' 0         # USB selective suspend: off
@@ -1675,7 +1677,7 @@ function New-PowerPlan($m) {
   }
   & powercfg /setactive $guid | Out-Null
   Record @{ type = 'power'; prev = $prevActive; created = $guid }
-  Did "OmniDx plan created and active: CPU 100/100, boost aggressive, no core parking, PCIe and USB power saving off, no sleep on mains."
+  Did "OmniDx plan created and active: CPU 100/100, boost aggressive, no core parking, no throttle states on a desktop, PCIe, USB and Wi-Fi power saving off, no sleep on mains."
   # Hibernation off frees the hiberfile and ends Fast Startup for good - on a desktop.
   if (-not $m.laptop) {
     # The registry says whether hibernation is on in any language; powercfg's text is the fallback.
@@ -1713,7 +1715,7 @@ function Tune-Network($m) {
       $pm = Get-NetAdapterPowerManagement -Name $a.Name -ErrorAction Stop
       if ("$($pm.AllowComputerToTurnOffDevice)" -eq 'Enabled' -or "$($pm.DeviceSleepOnDisconnect)" -eq 'Enabled') { Disable-NetAdapterPowerManagement -Name $a.Name -ErrorAction Stop; Record @{ type = 'nicpower'; adapter = $a.Name } }
     } catch { }
-    foreach ($prop in @(@('Energy-Efficient Ethernet', 'Disabled'), @('Energy Efficient Ethernet', 'Disabled'), @('EEE', 'Disabled'), @('Green Ethernet', 'Disabled'), @('Power Saving Mode', 'Disabled'), @('Interrupt Moderation', 'Disabled'), @('Ultra Low Power Mode', 'Disabled'), @('Advanced EEE', 'Disabled'), @('Gigabit Lite', 'Disabled'), @('System Idle Power Saver', 'Disabled'), @('Reduce Speed On Power Down', 'Disabled'))) {
+    foreach ($prop in @(@('Energy-Efficient Ethernet', 'Disabled'), @('Energy Efficient Ethernet', 'Disabled'), @('EEE', 'Disabled'), @('Green Ethernet', 'Disabled'), @('Power Saving Mode', 'Disabled'), @('Interrupt Moderation', 'Disabled'), @('Ultra Low Power Mode', 'Disabled'), @('Advanced EEE', 'Disabled'), @('Gigabit Lite', 'Disabled'), @('System Idle Power Saver', 'Disabled'), @('Reduce Speed On Power Down', 'Disabled'), @('Flow Control', 'Disabled'))) {
       $cur = Get-NetAdapterAdvancedProperty -Name $a.Name -DisplayName $prop[0] -ErrorAction SilentlyContinue
       if ($cur -and $cur.DisplayValue -ne $prop[1]) {
         try { Set-NetAdapterAdvancedProperty -Name $a.Name -DisplayName $prop[0] -DisplayValue $prop[1] -NoRestart -ErrorAction Stop; Record @{ type = 'nic'; adapter = $a.Name; property = $prop[0]; prev = $cur.DisplayValue }; Did ("{0}: {1} off" -f $a.Name, $prop[0]) } catch { }
@@ -1804,7 +1806,7 @@ $script:Games = @(
   @{ name = 'Minecraft'; exes = @('Minecraft.Windows.exe', 'MinecraftLauncher.exe', 'Minecraft.exe'); notes = @('Java edition: use Sodium (or OptiFine) and give Java 4 GB in the launcher, not more; render distance 12.', 'Bedrock: V-Sync off, render distance 12 chunks, fancy leaves off.') },
   @{ name = 'Roblox'; exes = @('RobloxPlayerBeta.exe'); notes = @('Graphics mode Manual, quality level 3-5, and turn "Reduce Motion" on in settings for the steadiest frames.') },
   @{ name = 'League of Legends'; exes = @('League of Legends.exe'); notes = @('Character quality medium, environment low, effects low, shadows off, anti-aliasing off, frame rate cap uncapped or 240.') },
-  @{ name = 'GTA V / Online'; exes = @('GTA5.exe', 'GTA5_Enhanced.exe'); notes = @('FXAA on, MSAA off, VSync off, population density 60%, shadow quality normal, reflection quality normal, grass normal, extended distance scaling off.') },
+  @{ name = 'GTA V / Online'; exes = @('GTA5.exe', 'GTA5_Enhanced.exe', 'FiveM.exe', 'FiveM_GTAProcess.exe'); notes = @('FXAA on, MSAA off, VSync off, population density 60%, shadow quality normal, reflection quality normal, grass normal, extended distance scaling off.') },
   @{ name = 'Rust'; exes = @('RustClient.exe'); notes = @('Launch options: -high -maxMem=16384 -malloc=system -force-feature-level-11-0', 'Anti-aliasing FXAA, water quality 0, shadow quality 0, draw distance 1500, grass displacement off.') },
   @{ name = 'Escape from Tarkov'; exes = @('EscapeFromTarkov.exe'); notes = @('Texture quality high (VRAM permitting), shadows low, object LOD 2, overall visibility 400, HBAO off, SSR off, anisotropic per texture.') },
   @{ name = 'PUBG'; exes = @('TslGame.exe'); notes = @('Render scale 100, anti-aliasing low, post-processing very low, shadows very low, textures medium, effects very low, foliage very low, view distance medium.') },
@@ -1822,7 +1824,26 @@ $script:Games = @(
   @{ name = 'Hunt: Showdown 1896'; exes = @('HuntGame.exe'); notes = @('Graphics quality low, texture quality high, shadows medium (you need to see into them), anti-aliasing DLSS / FSR Quality, motion blur off.') },
   @{ name = 'War Thunder'; exes = @('aces.exe'); notes = @('Movie preset off; grass, clouds and water low; anti-aliasing off or TAA at high refresh; V-Sync off.') },
   @{ name = 'World of Warcraft'; exes = @('Wow.exe', 'WowClassic.exe'); notes = @('Graphics quality 5-7, shadow quality low, view distance 7, particle density low, DirectX 12, target FPS at your refresh rate.') },
-  @{ name = 'Squad'; exes = @('SquadGame.exe'); notes = @('Shadows low, ambient occlusion off, texture quality high, foliage medium (low removes cover for you only), anti-aliasing FXAA.') }
+  @{ name = 'Squad'; exes = @('SquadGame.exe'); notes = @('Shadows low, ambient occlusion off, texture quality high, foliage medium (low removes cover for you only), anti-aliasing FXAA.') },
+  @{ name = 'Battlefield 2042'; exes = @('BF2042.exe'); notes = @('Mesh quality low (fewer objects drawn), undergrowth low, effects and lighting low, texture quality high; future frame rendering on; DLSS / FSR Quality at 1440p and above.') },
+  @{ name = 'EA Sports FC 26'; exes = @('FC26.exe', 'FC25.exe'); notes = @('Rendering quality medium, MSAA 2x, strand-based hair off, dynamic resolution off, in-game frame limiter off and the cap set at your refresh rate in the driver; DirectX 12.') },
+  @{ name = 'NBA 2K26'; exes = @('NBA2K26.exe', 'NBA2K25.exe'); notes = @('Anti-aliasing off or 2x, shadow quality low, crowd detail low, floor reflections off, depth of field off; the frame cap at your refresh rate.') },
+  @{ name = 'Palworld'; exes = @('Palworld-Win64-Shipping.exe'); notes = @('DLSS / FSR Quality, view distance medium, grass medium, shadows low, ray tracing off, max FPS at your refresh rate; the world is CPU work, the rest is cheap.') },
+  @{ name = 'Path of Exile 2'; exes = @('PathOfExileSteam.exe', 'PathOfExile.exe'); notes = @('DirectX 12 or Vulkan (try both), dynamic culling on, dynamic resolution off, shadows and global illumination low, textures high, frame cap at your refresh rate; the engine multithreading setting on.') },
+  @{ name = 'Diablo IV'; exes = @('Diablo IV.exe'); notes = @('Texture quality high (12 GB of VRAM or more), shadows low, SSAO off, fog quality low, reflections off, DLSS / FSR Quality, Reflex on.') },
+  @{ name = 'Monster Hunter Wilds'; exes = @('MonsterHunterWilds.exe'); notes = @('DirectX 12, DLSS / FSR Quality, frame generation off unless you are already above 60, shadows medium, ambient occlusion low, ray tracing off, texture quality high with 12 GB of VRAM or more.') },
+  @{ name = 'Elden Ring / Nightreign'; exes = @('eldenring.exe', 'nightreign.exe'); notes = @('The engine caps at 60; borderless, auto-detect off, shadows medium, SSAO low, ray tracing off, motion blur off. Steady 60 beats anything else here.') },
+  @{ name = 'Cyberpunk 2077'; exes = @('Cyberpunk2077.exe'); notes = @('DLSS / FSR Quality, ray tracing off below an RTX 4070 class card, crowd density medium, screen space reflections low, volumetric fog medium, Reflex on + boost.') },
+  @{ name = "Baldur's Gate 3"; exes = @('bg3.exe', 'bg3_dx11.exe'); notes = @('Vulkan on NVIDIA, DirectX 11 on AMD (try both), DLSS / FSR Quality, shadows medium, ambient occlusion off, model detail high, animation level of detail off.') },
+  @{ name = 'Star Citizen'; exes = @('StarCitizen.exe'); notes = @('Vulkan renderer, upscaling on, clouds low, volumetric fog low, scattered object distance low; the game is CPU and memory bound: 32 GB and an NVMe drive matter more than any setting.') },
+  @{ name = 'DayZ'; exes = @('DayZ_x64.exe', 'DayZ_BE.exe'); notes = @('Object detail low, terrain detail high (spotting), shadows low, ambient occlusion off, post-processing off, clouds low, anti-aliasing FXAA or off.') },
+  @{ name = 'Arma Reforger'; exes = @('ArmaReforgerSteam.exe', 'ArmaReforger.exe'); notes = @('Overall quality medium, object draw distance medium, shadows low, anti-aliasing FXAA, VRAM limit 90%, frame cap at your refresh rate.') },
+  @{ name = 'Hell Let Loose'; exes = @('HLL-Win64-Shipping.exe'); notes = @('Shadows low, foliage low (less grass drawn at range, for you only), post-processing low, anti-aliasing TAA, textures high, view distance high.') },
+  @{ name = 'Genshin Impact'; exes = @('GenshinImpact.exe'); notes = @('Render resolution 1.0, frame rate 120 where offered, shadows medium, volumetric fog off, motion blur off, anti-aliasing SMAA.') },
+  @{ name = 'Ready or Not'; exes = @('ReadyOrNot-Win64-Shipping.exe'); notes = @('Shadows low, anti-aliasing TAA, texture quality high, ambient occlusion low, DLSS / FSR Quality, motion blur off.') },
+  @{ name = 'Final Fantasy XIV'; exes = @('ffxiv_dx11.exe'); notes = @('DirectX 11, DLSS Quality, shadows: self and party only, ambient occlusion off, real-time reflections off, frame rate cap at your refresh rate.') },
+  @{ name = 'STALKER 2'; exes = @('Stalker2-Win64-Shipping.exe'); notes = @('Global illumination (Lumen) low is the whole cost, shadows medium, DLSS / FSR Quality, frame generation off, texture quality high, hair quality low.') },
+  @{ name = 'Sea of Thieves'; exes = @('SoTGame.exe'); notes = @('Water detail low, sail quality low, shadow quality low, model detail medium, particle detail low, anti-aliasing TAA, frame cap at your refresh rate.') }
 )
 
 <# Where games live on this PC: every Steam library the client knows about,
