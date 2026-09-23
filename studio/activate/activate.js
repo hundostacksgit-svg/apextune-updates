@@ -233,8 +233,8 @@ function renderUnknown(message = '') {
       <label class="small"><b>What did you buy?</b></label>
       <div class="act-actions" style="margin-top:8px">
         ${Object.values(TUNE.products).map((p) =>
-          `<button class="btn btn-ghost" type="button" data-pick="${esc(p.id)}">
-            ${esc(p.name)} — $${p.once.toFixed(2)} · ${p.keys > 1 ? `${p.keys} keys, one PC each` : 'one PC'}</button>`).join('')}
+          `<button class="btn btn-ghost" type="button" data-pick="${esc(p.id)}" style="white-space:normal;line-height:1.3">
+            ${esc(p.name)} — $${p.once.toFixed(2)} · ${p.keys > 1 ? `${p.keys} keys` : 'one PC'}</button>`).join('')}
       </div>
     </div>
 
