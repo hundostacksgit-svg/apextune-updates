@@ -201,10 +201,11 @@ jobs:
           $out = & .\tune\omnidx.ps1 -Undo *>&1 | Out-String
           Write-Host $out
           if ($out -notmatch 'Done: (\d+) put back') { Write-Host 'undo did not finish'; exit 1 }
+          # Read the group now: any later -match or -notmatch, even one that only tests, overwrites $Matches.
+          $undone = [int]$Matches[1]
           if (Test-Path C:\OmniDx\undo\changes-latest.json) { Write-Host 'undo left changes-latest.json behind'; exit 1 }
           if (-not (Get-ChildItem C:\OmniDx\undo\done -Filter 'changes-*.json')) { Write-Host 'undo did not move the record to done'; exit 1 }
           if (Get-ScheduledTask -TaskName 'OmniDx keep' -ErrorAction SilentlyContinue) { Write-Host 'the keep task is still registered after undo'; exit 1 }
-          $undone = [int]$Matches[1]
           $s = Get-Content C:\OmniDx\ci-summary.json | ConvertFrom-Json
           if ($undone -lt [math]::Floor($s.changes * 0.7)) { Write-Host ("undo put back {0} of {1} changes; that is a broken undo" -f $undone, $s.changes); exit 1 }
           $kept = 0; if (Test-Path C:\OmniDx\ci-kept.txt) { $kept = [int](Get-Content C:\OmniDx\ci-kept.txt) }
