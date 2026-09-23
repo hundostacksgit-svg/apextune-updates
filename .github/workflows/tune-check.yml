@@ -107,7 +107,8 @@ jobs:
         timeout-minutes: 20
         run: |
           $key = (& python tools\make-tune-key.py | Select-Object -First 1).Trim()
-          $out = & .\tune\omnidx.ps1 -Key $key -Yes -NoRestart -NoAfterCount *>&1 | Out-String
+          # -Width: Out-String wraps at the console width otherwise, and the site shows these lines whole.
+          $out = & .\tune\omnidx.ps1 -Key $key -Yes -NoRestart -NoAfterCount *>&1 | Out-String -Width 4000
           Write-Host $out
           if ($out -notmatch '== Done') { Write-Host 'the tune did not reach Done'; exit 1 }
           if ($out -notmatch 'Processes: (\d+) -> (\d+)') { Write-Host 'no before/after line'; exit 1 }

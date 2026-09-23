@@ -80,7 +80,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.17.0'
+$script:Version = '1.18.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -1595,7 +1595,7 @@ $script:Games = @(
   @{ name = 'Overwatch 2'; exes = @('Overwatch.exe'); notes = @('Render scale 100%, texture quality high (free), everything else low, Reflex enabled + boost, reduce buffering on if you play below 144 fps.') },
   @{ name = 'Rainbow Six Siege'; exes = @('RainbowSix.exe', 'RainbowSix_DX11.exe', 'RainbowSix_Vulkan.exe'); notes = @('Vulkan if your GPU supports it well; texture filtering anisotropic 16x is free; shadows low, ambient occlusion off, lens effects off.') },
   @{ name = 'Rocket League'; exes = @('RocketLeague.exe'); notes = @('Render quality high performance, render detail custom: world detail low, particle detail low, light shafts off, dynamic shadows off; FPS max 250.') },
-  @{ name = 'Minecraft'; exes = @('javaw.exe', 'Minecraft.Windows.exe'); notes = @('Java edition: use Sodium (or OptiFine) and give Java 4 GB in the launcher, not more; render distance 12.', 'Bedrock: V-Sync off, render distance 12 chunks, fancy leaves off.') },
+  @{ name = 'Minecraft'; exes = @('Minecraft.Windows.exe', 'MinecraftLauncher.exe', 'Minecraft.exe'); notes = @('Java edition: use Sodium (or OptiFine) and give Java 4 GB in the launcher, not more; render distance 12.', 'Bedrock: V-Sync off, render distance 12 chunks, fancy leaves off.') },
   @{ name = 'Roblox'; exes = @('RobloxPlayerBeta.exe'); notes = @('Graphics mode Manual, quality level 3-5, and turn "Reduce Motion" on in settings for the steadiest frames.') },
   @{ name = 'League of Legends'; exes = @('League of Legends.exe'); notes = @('Character quality medium, environment low, effects low, shadows off, anti-aliasing off, frame rate cap uncapped or 240.') },
   @{ name = 'GTA V / Online'; exes = @('GTA5.exe', 'GTA5_Enhanced.exe'); notes = @('FXAA on, MSAA off, VSync off, population density 60%, shadow quality normal, reflection quality normal, grass normal, extended distance scaling off.') },
