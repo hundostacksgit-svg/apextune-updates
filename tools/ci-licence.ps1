@@ -25,6 +25,8 @@ while ($listener.IsListening) {
     '/v1/health$' { $answer = '{"ok":true,"mock":true}'; $status = 200 }
     '/v1/tune/claim$' {
       $key = ''; try { $key = [string](ConvertFrom-Json $body).key } catch { }
+      # The script sends the key as it was typed; the real server normalises too.
+      $key = ($key -replace '[^A-Za-z0-9]', '').ToUpper()
       if ($key -match '^(TUNE|SQUAD)[A-Z2-9]{16}$') { $claims[$key] = $true; $answer = '{"ok":true,"used":1,"seats":1}'; $status = 200 }
       else { $answer = '{"ok":false,"error":"That key was not issued by us."}'; $status = 404 }
     }
