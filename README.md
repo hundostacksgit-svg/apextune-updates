@@ -1,7 +1,34 @@
 # OmniDx
 
-Two apps, one idea: software that tells you the truth, runs on your own machine,
-and doesn't rent itself to you.
+Three things, one idea: software that tells you the truth, runs on your own
+machine, and doesn't rent itself to you.
+
+## OmniDx Tune — the one sold at omnidx.net
+
+One line in PowerShell tunes a Windows PC for games: startup apps, services,
+scheduled tasks, preinstalled apps and telemetry cut, a power plan, the
+network set for latency, Discord and the browsers tuned, a profile for
+forty-nine games, a BIOS checklist for the exact board, a report, and undo
+in one line. $19.99 once for one PC; Squad is $39.99 for three keys. Keys are
+issued by the licence server after Square confirms the payment and emailed
+to the buyer; each locks to the first PC that runs it.
+
+```
+irm omnidx.net/go.ps1 | iex
+```
+
+- `tune/omnidx.ps1` is the script; `go.ps1` fetches the copy the Windows
+  check verified and runs it. `tune/verified.json` says which copy that is.
+- `server/worker.js` is the licence server (Cloudflare Worker + D1): issues,
+  emails, locks, moves and revokes keys; Square's webhook drives it.
+- `.github/workflows/tune-check.yml` runs the whole tune, the keep task and
+  undo on a Windows machine on every push; `worker.yml` deploys the server
+  from repository secrets, so the whole setup is done from a browser.
+- `docs/TUNE.md` is the manual (what it does, the money path, the exact
+  Square steps, refunds, moving a key, the checks); `docs/TUNE-SUPPORT.md`
+  has the replies to every question buyers ask.
+
+---
 
 | | What it is | Try it |
 |---|---|---|
