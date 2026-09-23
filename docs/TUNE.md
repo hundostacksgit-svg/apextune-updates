@@ -201,8 +201,21 @@ fire at the wrong sign-in) and the script says so.
 `-Status` (`$env:OMNIDX_MODE='status'`) is the read-only side of the same
 comparison: the runs recorded, how many settings were checked, what has
 drifted, the keep task's state and last line, the after-restart count, the
-last run's numbers and the key. The app's "What is still in place" button
-runs it.
+last run's numbers, the key, and the processes running now that were not
+running right after the tune. It needs no administrator rights and runs
+from PowerShell 7 too (`go.ps1` does not elevate for `status` or `check`).
+The app's "What is still in place" button runs it.
+
+When the keep task puts back five or more settings in one go (a feature
+update), it shows one Windows toast notification through PowerShell's own
+app id; fewer are fixed quietly. keep-log.txt lines end with the process
+count at that sign-in.
+
+The key never travels on a command line: when `go.ps1` has to open an
+elevated window it writes the key to a file in the caller's own `%TEMP%`
+and passes only that path (`OMNIDX_KEYFILE`); the elevated instance reads
+and deletes it. Command lines end up in Windows logs and in the run's
+transcript, which is why.
 
 ### The key is remembered
 The first run binds the key under `HKLM:\SOFTWARE\OmniDx\Tune`. Every later
