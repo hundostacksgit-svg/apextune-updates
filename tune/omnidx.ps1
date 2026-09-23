@@ -82,7 +82,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.21.0'
+$script:Version = '1.22.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -1171,11 +1171,20 @@ $script:TaskList = @(
   @('\Microsoft\Windows\Diagnosis\', 'Scheduled'), @('\Microsoft\Windows\WwanSvc\', 'OobeDiscovery')
 )
 
+<# Every scheduled task once, then lookups: asking for them one by one took
+   thirteen seconds on the build machine. #>
+function Get-TaskIndex {
+  $idx = @{}
+  foreach ($t in Get-ScheduledTask -ErrorAction SilentlyContinue) { $idx[($t.TaskPath + $t.TaskName).ToLower()] = $t }
+  return $idx
+}
+
 function Cut-Tasks {
   Head "Scheduled tasks"
   $n = 0
+  $idx = Get-TaskIndex
   foreach ($t in $script:TaskList) {
-    $task = Get-ScheduledTask -TaskPath $t[0] -TaskName $t[1] -ErrorAction SilentlyContinue
+    $task = $idx[($t[0] + $t[1]).ToLower()]
     if ($task -and $task.State -ne 'Disabled') {
       try { Disable-ScheduledTask -TaskPath $t[0] -TaskName $t[1] -ErrorAction Stop | Out-Null; Record @{ type = 'task'; path = $t[0]; name = $t[1] }; $n++; Did $t[1] } catch { }
     }
@@ -1210,6 +1219,19 @@ $script:Capabilities = @(
   @('Print.Fax.Scan', 'Windows Fax and Scan (kept when a printer is installed)'),
   @('Hello.Face', 'Windows Hello face recognition (kept when a Hello camera or reader is present)')
 )
+# The exact package ids behind the list above. Asking DISM for a name it knows
+# takes a second or two; asking it to list every capability on the PC took a
+# minute and a half on the build machine. Hello.Face carries a build number, so
+# the ones that have shipped are all tried.
+$script:CapabilityIds = @{
+  'App.StepsRecorder' = @('App.StepsRecorder~~~~0.0.1.0')
+  'Media.WindowsMediaPlayer' = @('Media.WindowsMediaPlayer~~~~0.0.12.0')
+  'Microsoft.Windows.WordPad' = @('Microsoft.Windows.WordPad~~~~0.0.1.0')
+  'MathRecognizer' = @('MathRecognizer~~~~0.0.1.0')
+  'Browser.InternetExplorer' = @('Browser.InternetExplorer~~~~0.0.11.0')
+  'Print.Fax.Scan' = @('Print.Fax.Scan~~~~0.0.1.0')
+  'Hello.Face' = @('Hello.Face.20134~~~~0.0.1.0', 'Hello.Face.18967~~~~0.0.1.0', 'Hello.Face.17658~~~~0.0.1.0')
+}
 $script:Features = @(
   @('MicrosoftWindowsPowerShellV2Root', 'the PowerShell 2.0 engine: old, bypasses modern security logging, nothing needs it'),
   @('MicrosoftWindowsPowerShellV2', 'the PowerShell 2.0 engine'),
@@ -1248,20 +1270,18 @@ function Cut-Apps($m) {
 function Get-DebloatPlan($m) {
   # What is actually on this PC from the two lists above, with the keep rules applied.
   $caps = @(); $feats = @()
-  try {
-    $installed = @(Get-WindowsCapability -Online -ErrorAction Stop | Where-Object { $_.State -eq 'Installed' })
-    foreach ($c in $script:Capabilities) {
-      if ($c[0] -eq 'Print.Fax.Scan' -and $m.printers) { continue }
-      if ($c[0] -eq 'Hello.Face' -and $m.biometric) { continue }
-      foreach ($hit in ($installed | Where-Object { $_.Name -like ($c[0] + '*') })) { $caps += @{ name = $hit.Name; what = $c[1] } }
+  $dismLog = Join-Path $env:TEMP 'omnidx-dism.log'
+  foreach ($c in $script:Capabilities) {
+    if ($c[0] -eq 'Print.Fax.Scan' -and $m.printers) { continue }
+    if ($c[0] -eq 'Hello.Face' -and $m.biometric) { continue }
+    foreach ($id in $script:CapabilityIds[$c[0]]) {
+      try { $hit = Get-WindowsCapability -Online -Name $id -LogPath $dismLog -ErrorAction Stop; if ($hit -and $hit.State -eq 'Installed') { $caps += @{ name = $hit.Name; what = $c[1] }; break } } catch { }
     }
-  } catch { }
-  try {
-    $on = @(Get-WindowsOptionalFeature -Online -ErrorAction Stop | Where-Object { $_.State -eq 'Enabled' })
-    foreach ($f in $script:Features) {
-      foreach ($hit in ($on | Where-Object { $_.FeatureName -eq $f[0] })) { $feats += @{ name = $hit.FeatureName; what = $f[1] } }
-    }
-  } catch { }
+  }
+  foreach ($f in $script:Features) {
+    # A name this build does not have is an error here, and simply not on the list.
+    try { $hit = Get-WindowsOptionalFeature -Online -FeatureName $f[0] -LogPath $dismLog -ErrorAction Stop; if ($hit -and $hit.State -eq 'Enabled') { $feats += @{ name = $hit.FeatureName; what = $f[1] } } } catch { }
+  }
   $hk = $script:HKCU
   $oneSignedIn = (Test-Path "$hk\Software\Microsoft\OneDrive\Accounts\Personal") -or (Test-Path "$hk\Software\Microsoft\OneDrive\Accounts\Business1")
   $oneSetup = @("$env:SystemRoot\System32\OneDriveSetup.exe", "$env:SystemRoot\SysWOW64\OneDriveSetup.exe", (Join-Path $script:LocalAppData 'Microsoft\OneDrive\OneDriveSetup.exe')) | Where-Object { Test-Path $_ } | Select-Object -First 1
@@ -2327,7 +2347,8 @@ function Write-Preview($m, $before) {
     if ($keep.ContainsKey($name)) { $svcKeep += ("{0} ({1})" -f $name, $keep[$name]) } else { $svcOff += ("{0} ({1})" -f $name, $pair[1]) }
   }
   & $lap 'services'
-  $tasks = @(); foreach ($t in $script:TaskList) { $task = Get-ScheduledTask -TaskPath $t[0] -TaskName $t[1] -ErrorAction SilentlyContinue; if ($task -and $task.State -ne 'Disabled') { $tasks += $t[1] } }
+  $idx = Get-TaskIndex
+  $tasks = @(); foreach ($t in $script:TaskList) { $task = $idx[($t[0] + $t[1]).ToLower()]; if ($task -and $task.State -ne 'Disabled') { $tasks += $t[1] } }
   & $lap 'tasks'
   $apps = @(); foreach ($pat in $script:JunkApps) { foreach ($pkg in Get-AppxPackage -Name $pat -AllUsers -ErrorAction SilentlyContinue) { if (-not ($pkg.NonRemovable -or $pkg.IsFramework)) { $apps += $pkg.Name } } }
   $apps = @($apps | Sort-Object -Unique)
