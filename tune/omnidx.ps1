@@ -80,7 +80,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.13.0'
+$script:Version = '1.14.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -758,6 +758,16 @@ try {
   $old = @(); if (Test-Path $logFile) { $old = @(Get-Content $logFile -ErrorAction SilentlyContinue | Select-Object -Last 199) }
   Set-Content -Path $logFile -Value ($old + @($line) + @($r.drift | ForEach-Object { "  " + $_ })) -Encoding UTF8
 } catch { }
+# A feature update resets things by the dozen. That is worth one notification; a stray value is not.
+if (-not $Check -and $r.fixed -ge 5) {
+  try {
+    [void][Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime]
+    [void][Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime]
+    $xml = New-Object Windows.Data.Xml.Dom.XmlDocument
+    $xml.LoadXml("<toast><visual><binding template='ToastGeneric'><text>OmniDx Tune</text><text>A Windows update turned $($r.fixed) settings back on. They are back off. The list is in C:\OmniDx\keep-log.txt.</text></binding></visual></toast>")
+    [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\WindowsPowerShell\v1.0\powershell.exe').Show((New-Object Windows.UI.Notifications.ToastNotification $xml))
+  } catch { }
+}
 '@
 
 <# The keep task itself. Asked about; -NoKeep or -Skip keep leaves it out. It
