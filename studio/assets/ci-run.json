@@ -1,14 +1,14 @@
 ﻿{
     "version":  "1.32.0",
-    "when":  "2026-09-23T19:00:28Z",
+    "when":  "2026-09-23T19:06:50Z",
     "os":  "Microsoft Windows Server 2025 Datacenter 10.0.26100 (build 26100)",
     "cpu":  "AMD EPYC 7763 64-Core Processor",
-    "before":  149,
+    "before":  152,
     "after":  146,
     "target":  70,
     "changes":  396,
     "warnings":  4,
-    "seconds":  92,
+    "seconds":  103,
     "undone":  392,
     "kept":  3,
     "second":  1,
@@ -17,19 +17,19 @@
     "gone":  2,
     "phases":  {
                    "startup":  0.2,
-                   "services":  8.9,
-                   "tasks":  1.6,
-                   "apps":  4.6,
-                   "debloat":  41.5,
-                   "telemetry":  1.4,
-                   "system":  1.4,
-                   "power":  1,
-                   "network":  2.4,
+                   "services":  9.9,
+                   "tasks":  1.9,
+                   "apps":  6.8,
+                   "debloat":  45.7,
+                   "telemetry":  1.7,
+                   "system":  1.8,
+                   "power":  1.2,
+                   "network":  2.8,
                    "programs":  0,
-                   "games":  8.2,
+                   "games":  8.7,
                    "nvidia":  0,
                    "extreme":  0,
-                   "cleanup":  3
+                   "cleanup":  3.3
                },
-    "sha":  "86f2a7a"
+    "sha":  "3b02400"
 }
