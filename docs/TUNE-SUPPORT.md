@@ -111,6 +111,14 @@ Log it: every "kept because" rule lives in `Get-KeepList` in the script.
 > if a launcher put itself back into startup, Task Manager > Startup, or
 > run the command again and untick it.
 
+## "I turned a startup app back on and the tune switched it off again"
+
+> Not any more: since 1.21 a startup app you turned back on in Task
+> Manager after a run stays on when you run again. The console lists it as
+> "stays on"; the app shows it unticked. If you do want it cut, type "all"
+> at the console picker or tick it in the app. The keep task never touches
+> startup apps at all.
+
 ## "Does it work with VALORANT / Fortnite / CS2"
 
 > Yes. It never touches Vanguard, Easy Anti-Cheat, BattlEye or Ricochet, and
