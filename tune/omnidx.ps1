@@ -82,7 +82,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.20.0'
+$script:Version = '1.21.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -1011,8 +1011,25 @@ function Test-Keep([string]$name) {
 <# Everything that starts with Windows for the signed-in person: the Run keys,
    the Startup folders and the Store apps that register themselves separately.
    Each entry knows the switch that turns it off. #>
+<# The startup entries an earlier run (still in place, not undone) switched
+   off: if one of them is on again, a person turned it back on in Task
+   Manager, and a later run must not cut it again without being told to. #>
+function Get-CutStartup {
+  $cut = @{}
+  foreach ($f in Get-ChildItem (Join-Path $script:Root 'undo') -Filter 'changes-20*.json' -ErrorAction SilentlyContinue) {
+    try {
+      foreach ($c in @(Get-Content $f.FullName -Raw | ConvertFrom-Json | ForEach-Object { $_ })) {
+        if ($c.type -eq 'reg' -and $c.path -like '*StartupApproved*') { $cut[("{0}|{1}" -f $c.path, $c.name).ToLower()] = $true }
+        elseif ($c.type -eq 'reg' -and $c.path -like '*AppModel\SystemAppData*' -and $c.name -eq 'State') { $cut[("{0}|State" -f $c.path).ToLower()] = $true }
+      }
+    } catch { }
+  }
+  return $cut
+}
+
 function Get-StartupEntries {
   $hk = $script:HKCU
+  $cut = Get-CutStartup
   $entries = @()
   $pairs = @(
     @{ run = "$hk\Software\Microsoft\Windows\CurrentVersion\Run"; ok = "$hk\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run" },
@@ -1026,7 +1043,7 @@ function Get-StartupEntries {
       if (-not $name) { continue }
       $state = $null; try { $state = (Get-ItemProperty -Path $p.ok -Name $name -ErrorAction Stop).$name } catch { }
       $on = -not ($state -and $state[0] -eq 3)
-      $entries += @{ name = $name; label = $name; ok = $p.ok; value = $name; on = $on; kind = 'run' }
+      $entries += @{ name = $name; label = $name; ok = $p.ok; value = $name; on = $on; kind = 'run'; wasCut = [bool]$cut[("{0}|{1}" -f $p.ok, $name).ToLower()] }
     }
   }
   $folders = @(
@@ -1039,7 +1056,7 @@ function Get-StartupEntries {
       $base = [IO.Path]::GetFileNameWithoutExtension($file.Name)
       $state = $null; try { $state = (Get-ItemProperty -Path $f.ok -Name $file.Name -ErrorAction Stop).($file.Name) } catch { }
       $on = -not ($state -and $state[0] -eq 3)
-      $entries += @{ name = $base; label = ("{0} (Startup folder)" -f $base); ok = $f.ok; value = $file.Name; on = $on; kind = 'folder' }
+      $entries += @{ name = $base; label = ("{0} (Startup folder)" -f $base); ok = $f.ok; value = $file.Name; on = $on; kind = 'folder'; wasCut = [bool]$cut[("{0}|{1}" -f $f.ok, $file.Name).ToLower()] }
     }
   }
   $appBase = "$hk\Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\SystemAppData"
@@ -1049,7 +1066,7 @@ function Get-StartupEntries {
         $state = (Get-ItemProperty $task.PSPath -Name State -ErrorAction SilentlyContinue).State
         if ($state -eq 2) {
           $label = ($pkg.PSChildName -split '_')[0]
-          $entries += @{ name = $label; label = ("{0} (Store app)" -f $label); ok = $task.PSPath; value = 'State'; on = $true; kind = 'store' }
+          $entries += @{ name = $label; label = ("{0} (Store app)" -f $label); ok = $task.PSPath; value = 'State'; on = $true; kind = 'store'; wasCut = [bool]$cut[("{0}|State" -f $task.PSPath).ToLower()] }
         }
       }
     }
@@ -1063,9 +1080,13 @@ function Cut-Startup {
   $live = @(Get-StartupEntries | Where-Object { $_.on -and -not (Test-Keep $_.name) })
   if (-not $live.Count) { Say "  Nothing starts with Windows that is not already off."; return }
   Say ("  {0} things start with Windows:" -f $live.Count)
-  for ($i = 0; $i -lt $live.Count; $i++) { Say ("   {0,2}. {1}" -f ($i + 1), $live[$i].label) 'White' }
+  $back = @($live | Where-Object { $_.wasCut })
+  for ($i = 0; $i -lt $live.Count; $i++) { Say ("   {0,2}. {1}{2}" -f ($i + 1), $live[$i].label, $(if ($live[$i].wasCut) { '  (you turned it back on after the last run: stays on)' } else { '' })) 'White' }
+  # Turned back on by hand since an earlier run: that was a decision, and it stands unless this run is told otherwise.
+  foreach ($e in $back) { $script:StartupKeep += $e.name; Keep $e.name 'you turned it back on after the last run' }
   if (-not $Yes) {
-    $pick = Read-Host "  Numbers to leave ON (e.g. 2,5), or Enter to switch all of them off"
+    $pick = Read-Host $(if ($back.Count) { "  Numbers to leave ON (e.g. 2,5), Enter to switch the rest off, or 'all' to cut the ones you turned back on too" } else { "  Numbers to leave ON (e.g. 2,5), or Enter to switch all of them off" })
+    if ($pick -match '^\s*all\s*$') { $script:StartupKeep = @($script:StartupKeep | Where-Object { $n = $_; -not ($back | Where-Object { $_.name -eq $n }) }) }
     foreach ($n in ($pick -split '[,\s]+' | Where-Object { $_ -match '^\d+$' })) {
       $idx = [int]$n - 1
       if ($idx -ge 0 -and $idx -lt $live.Count) { $script:StartupKeep += $live[$idx].name }
@@ -1820,7 +1841,7 @@ function Get-Probe {
     uefi = $m.uefi; secureBoot = $m.secureBoot; tpm = $m.tpm; vbs = $m.vbs; server = [bool]($m.os -match 'Server')
     keeps = @(@($(if ($m.printers) { 'printer' }), $(if ($m.btDevices) { 'Bluetooth' }), $(if ($m.wifi) { 'Wi-Fi' }), $(if ($m.touch) { 'touch' }), $(if ($m.biometric) { 'Windows Hello' }), $(if ($m.vpn) { 'VPN' }), $(if ($m.xboxUsed) { 'Xbox / Game Pass' }), $(if ($m.xboxPad) { 'Xbox controller' })) | Where-Object { $_ })
     warnings = @($script:Warnings)
-    startup = @($entries | ForEach-Object { @{ name = $_.name; label = $_.label } })
+    startup = @($entries | ForEach-Object { @{ name = $_.name; label = $_.label; wasCut = [bool]$_.wasCut } })
     before = (Get-ProcessCount)
     target = (Get-SafeBar $m)
     lastRun = (Get-LastRun)
@@ -2028,8 +2049,8 @@ function Show-Gui {
     if (-not $probe.startup.Count) { $t = New-Object System.Windows.Controls.TextBlock; $t.Text = 'Nothing starts with Windows that is not already off.'; $t.Foreground = '#7D7199'; [void]$ui.StartupPanel.Children.Add($t) }
     foreach ($e in $probe.startup) {
       $cb = New-Object System.Windows.Controls.CheckBox
-      $tb = New-Object System.Windows.Controls.TextBlock; $tb.Text = $e.label; $tb.TextWrapping = 'Wrap'; $tb.Foreground = '#B3A8CF'; $tb.MaxWidth = 250
-      $cb.Content = $tb; $cb.IsChecked = $true; $cb.Tag = $e.name; $cb.Width = 280
+      $tb = New-Object System.Windows.Controls.TextBlock; $tb.Text = $(if ($e.wasCut) { "$($e.label)  (you turned it back on: left on)" } else { $e.label }); $tb.TextWrapping = 'Wrap'; $tb.Foreground = '#B3A8CF'; $tb.MaxWidth = 250
+      $cb.Content = $tb; $cb.IsChecked = (-not $e.wasCut); $cb.Tag = $e.name; $cb.Width = 280
       [void]$ui.StartupPanel.Children.Add($cb); $state.startup += $cb
     }
     if (-not $ui.KeyBox.Text -and $probe.keyBound) { $ui.KeyBox.Text = $probe.keyBound; $ui.KeyNote.Text = 'The key bound to this PC, from your last run. Same key, same PC, free.' }
