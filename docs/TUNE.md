@@ -229,8 +229,11 @@ record is; `Limit-History` keeps the newest ten of everything else.
   least 70% of the first run's changes must go back, the keep task must be
   gone, both records must be in `done\`), checks status and a second undo
   after that, and confirms a bad key is refused and Python-made keys are
-  accepted. The screenshot and the run's numbers are committed back to the
-  branch. This is the only place the script actually executes before a
+  accepted. The screenshot (`studio/assets/app.png`), the run's numbers
+  (`studio/assets/ci-run.json`, read by the proof line on the front and
+  trust pages) and the run's log (`studio/assets/ci-log.txt`, shown on the
+  run-it page) are committed back to the branch by the check itself; never
+  edit those three by hand. This is the only place the script actually executes before a
   buyer runs it; watch it after every script change.
 
 ### A key by hand (Cash App, a friend, a giveaway)

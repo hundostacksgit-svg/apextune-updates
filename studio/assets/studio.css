@@ -630,6 +630,8 @@ footer{border-top:1px solid var(--line-soft);padding:52px 0 60px;background:var(
 .cmd .ps{color:var(--blue-2);margin-right:8px;user-select:none}
 .cmd-lg{font-size:clamp(16px,2.3vw,21px);padding:18px 16px 18px 24px;border-radius:18px}
 .cmd .btn{flex:none}
+.ci-log{margin:0;max-height:420px;overflow:auto;padding:14px 16px;border-radius:12px;background:#07050d;border:1px solid var(--line);
+  font:12.5px/1.55 ui-monospace,Consolas,monospace;color:var(--text-2);white-space:pre;scrollbar-width:thin}
 .cmd.ok{border-color:color-mix(in srgb,var(--ok) 60%,transparent)}
 .cmd-note{margin:10px 0 0;font-size:13px;color:var(--text-3)}
 

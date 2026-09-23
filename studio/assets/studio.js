@@ -765,6 +765,15 @@ function initTune() {
     }).catch(() => {});
   }
 
+  // The last build-machine run, word for word, where a page asks for it.
+  const logs = $$('[data-ci-log]');
+  if (logs.length) {
+    fetch(new URL('ci-log.txt', import.meta.url).href, { cache: 'no-store' }).then((r) => (r.ok ? r.text() : '')).then((t) => {
+      if (!t || !/^== /m.test(t)) return;
+      logs.forEach((el) => { el.textContent = t.trim(); el.hidden = false; const wrap = el.closest('[data-ci-log-wrap]'); if (wrap) wrap.hidden = false; });
+    }).catch(() => {});
+  }
+
   // The front page's console; the module is only fetched where it is used.
   if ($('#console')) import('./tune.js').then((m) => m.initConsole($('#console'))).catch(() => {});
 }

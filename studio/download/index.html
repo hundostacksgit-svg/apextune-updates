@@ -171,6 +171,11 @@
       <li><b>Paste your key and press Run</b><p>From <a href="../activate/">the page after you paid</a>, the first time only: the PC remembers it, so every later run finds it filled in. The key is checked, then the run starts: a restore point, then each phase, with every change printed in the log as it happens. Discord and Spotify are closed so they can be tuned.</p></li>
       <li><b>Restart</b><p>The report opens in your browser with the before and after (processes, threads, handles, memory, idle CPU), the warnings, the BIOS checklist for your board and the settings for each game it found. It is saved in <span class="mono tiny">C:\OmniDx</span>. Then press Restart; the services it told to stop are still unwinding until you do.</p></li>
     </ol>
+    <div class="card reveal" data-ci-log-wrap hidden style="max-width:820px;margin:26px auto 0">
+      <div class="eyebrow" style="margin-bottom:8px">The last run, word for word</div>
+      <p class="small muted" style="margin:0 0 12px">Every push runs the whole tune on a fresh Windows build machine before the site publishes. This is that run's log: the phase headers, what was done, the numbers. A bare server image, not a gaming PC, so the counts are lower than yours will be.</p>
+      <pre class="ci-log" data-ci-log hidden></pre>
+    </div>
   </div>
 </section>
 
