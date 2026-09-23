@@ -74,6 +74,16 @@ Common leftovers: NVIDIA container (kept on purpose), anti-cheat services,
 launchers set to start again by their own updater, OEM utilities the report
 lists under "OEM extras".
 
+## "Undo is stuck on 'going back in one go'"
+
+> It is not stuck: that stretch is Windows re-adding the pieces the debloat
+> removed (WordPad, the legacy media player, the optional features), and it
+> downloads them from Windows Update, which can take a quarter of an hour on
+> a slow line. Leave the window open. If it says they did not come back in
+> ten minutes, Windows Update was out of reach; Settings > Apps > Optional
+> features adds them later, and everything else in the undo has already
+> been put back.
+
 ## "Does it boot faster?"
 
 > Status shows it in Windows' own figures: `$env:OMNIDX_MODE='status'; irm
