@@ -319,7 +319,10 @@ function Save-Changes {
   $dir = Join-Path $script:Root 'undo'
   New-Item -ItemType Directory -Path $dir -Force | Out-Null
   $file = Join-Path $dir ("changes-{0}.json" -f $script:Stamp)
-  $script:Changes | ConvertTo-Json -Depth 6 | Set-Content -Path $file -Encoding UTF8
+  # Always an array, and always a file: a run that found everything already done records
+  # nothing, and an empty pipeline into ConvertTo-Json would write no file at all.
+  $json = if ($script:Changes.Count) { ConvertTo-Json -InputObject @($script:Changes) -Depth 6 } else { '[]' }
+  Set-Content -Path $file -Value $json -Encoding UTF8
   Copy-Item $file (Join-Path $dir 'changes-latest.json') -Force
   return $file
 }
