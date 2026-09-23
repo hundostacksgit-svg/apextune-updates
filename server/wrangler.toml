@@ -11,6 +11,10 @@ binding = "DB"
 database_name = "omnidx-studio"
 database_id = "PASTE_YOUR_DATABASE_ID_HERE"
 
+# Monday, 13:00 UTC: the week's orders, money and refunds, emailed to SUPPORT_EMAIL.
+[triggers]
+crons = ["0 13 * * 1"]
+
 [vars]
 # Comma-separated list of sites allowed to call this API. Set it before you go
 # live — with it empty the Worker echoes whatever origin asks, which is handy

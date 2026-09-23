@@ -958,6 +958,12 @@ const routes = {
       }
       return json({ ok: true, sent, failed, orders: groups.size }, { env, request });
     }
+    // The week and the totals, as the Monday email, now.
+    if (action === 'summary') {
+      const r = await emailTuneSummary(env, 'on request');
+      if (!r.ok) return fail(r.detail ? `Resend refused the send: ${r.detail}` : r.reason, r.detail ? 502 : 503, env, request);
+      return json({ ok: true, ...r }, { env, request });
+    }
     // Does mail work: one short email to the support address or one typed in, with Resend's exact refusal when it does not.
     if (action === 'mail-test') {
       if (!env.RESEND_API_KEY) return fail('Mail is off: RESEND_API_KEY is not set on the Worker.', 503, env, request);
@@ -1594,6 +1600,53 @@ async function sendMail(env, { to, subject, text }) {
   }
 }
 
+/**
+ * The figures behind the owner page and the Monday email: orders counted once,
+ * the last seven days and everything since the first sale, keys issued, PCs
+ * bound, orders whose keys never went out. Counts and money, nothing about a buyer.
+ */
+async function tuneFigures(env) {
+  const rows = (await env.DB.prepare('SELECT product, amount_cents, order_ref, revoked_at, created_at, emailed_at, email FROM tune_keys').all()).results || [];
+  const pcsRow = await env.DB.prepare('SELECT COUNT(*) AS count FROM tune_machines').first();
+  const since = Date.now() - 7 * 86400_000;
+  const perOrder = new Map();
+  for (const r of rows) {
+    const o = String(r.order_ref || '').replace(/#\d+$/, '');
+    if (!perOrder.has(o)) perOrder.set(o, { cents: r.amount_cents || 0, product: r.product, keys: 0, off: 0, createdAt: r.created_at || 0, unsent: false });
+    const g = perOrder.get(o); g.keys++; if (r.revoked_at) g.off++; if (!r.emailed_at && r.email && !r.revoked_at) g.unsent = true;
+  }
+  const tally = (orders) => {
+    const t = { orders: 0, paidCents: 0, refundedOrders: 0, refundedCents: 0, tune: 0, squad: 0, unsent: 0 };
+    for (const g of orders) {
+      t.orders++;
+      if (g.keys && g.off === g.keys) { t.refundedOrders++; t.refundedCents += g.cents; } else { t.paidCents += g.cents; if (g.product === 'squad') t.squad++; else t.tune++; }
+      if (g.unsent) t.unsent++;
+    }
+    return t;
+  };
+  const all = [...perOrder.values()];
+  return { all: tally(all), week: tally(all.filter((g) => g.createdAt >= since)), keys: rows.length, pcs: Number((pcsRow && pcsRow.count) || 0) };
+}
+const dollars = (c) => `$${((c || 0) / 100).toFixed(2)}`;
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+/** The week as one email to the owner: sent by the Monday cron and by the owner page on demand. */
+async function emailTuneSummary(env, when = 'the week') {
+  if (!env.RESEND_API_KEY || !validEmail(env.SUPPORT_EMAIL)) return { ok: false, reason: 'Mail is off, or SUPPORT_EMAIL is not set.' };
+  const f = await tuneFigures(env);
+  const line = (t) => `${plural(t.orders, 'order')} (${t.tune} Tune, ${t.squad} Squad), ${dollars(t.paidCents)} kept, ${t.refundedOrders} refunded (${dollars(t.refundedCents)})${t.unsent ? `, ${t.unsent} not emailed` : ''}`;
+  const text = [
+    `OmniDx Tune, ${when}.`, '',
+    `Last seven days: ${line(f.week)}.`,
+    `Since the first sale: ${line(f.all)}; ${plural(f.keys, 'key')} issued, on ${plural(f.pcs, 'PC')}.`, '',
+    f.all.unsent ? 'Some keys never went out by email: "Send every unsent order" on the owner page sends them.' : 'Every order has had its keys emailed.',
+    'Owner page: https://omnidx.net/studio/admin/',
+  ].join('\n');
+  const to = String(env.SUPPORT_EMAIL).trim().toLowerCase();
+  const sent = await sendMail(env, { to, subject: `OmniDx Tune: ${plural(f.week.orders, 'order')} this week`, text });
+  return { ok: sent.ok, sentTo: to, detail: sent.detail, ...f };
+}
+
 async function emailTuneKeys(env, email, product, keys, order, receiptUrl, receiptNumber = null) {
   const three = keys.length > 1;
   const lines = [
@@ -1686,6 +1739,11 @@ days, just reply to this email.`,
 /* ------------------------------------------------------------------ */
 
 export default {
+  // Monday mornings (wrangler.toml, [triggers]): the week's figures to the owner.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(emailTuneSummary(env, 'the week').catch((err) => console.error('summary', err)));
+  },
+
   async fetch(request, env) {
     const url = new URL(request.url);
 

@@ -76,6 +76,8 @@ function statement(sql, args) {
   if (s.startsWith('INSERT OR REPLACE INTO tune_hits (bucket, n, until) VALUES (?, ?, ?)')) {
     db.tune_hits = db.tune_hits.filter((h) => h.bucket !== args[0]); db.tune_hits.push({ bucket: args[0], n: args[1], until: args[2] }); return [];
   }
+  if (s === 'SELECT product, amount_cents, order_ref, revoked_at, created_at, emailed_at, email FROM tune_keys') return db.tune_keys.map((r) => ({ product: r.product, amount_cents: r.amount_cents, order_ref: r.order_ref, revoked_at: r.revoked_at, created_at: r.created_at, emailed_at: r.emailed_at, email: r.email }));
+  if (s === 'SELECT COUNT(*) AS count FROM tune_machines') return [{ count: db.tune_machines.length }];
   throw new Error('the stand-in database does not model: ' + s);
 }
 // D1 lets a statement run bound or not; the stand-in does the same.
@@ -354,6 +356,22 @@ delete env.RESEND_API_KEY;
 r = await admin({ action: 'mail-test' });
 expect(r.status === 503 && /Mail is off/.test(r.data.error), 'with no mail key the answer says so');
 env.RESEND_API_KEY = 'rs-test';
+
+/* 12. The week, as one email: Monday's cron, and the owner page on demand. */
+{
+  const n = mails.length;
+  const jobs = [];
+  await worker.scheduled({ cron: '0 13 * * 1', scheduledTime: Date.now() }, env, { waitUntil: (p) => jobs.push(p) });
+  await Promise.all(jobs);
+  const orders = new Set(db.tune_keys.map((k) => String(k.order_ref).replace(/#\d+$/, ''))).size;
+  expect(mails.length === n + 1 && mails[n].to[0] === 'owner@example.test' && /Last seven days: \d+ orders? \(/.test(mails[n].text) && new RegExp(`Since the first sale: ${orders} orders`).test(mails[n].text) && new RegExp(`on ${db.tune_machines.length} PCs?`).test(mails[n].text), 'Monday\'s cron emails the owner the week and the totals since the first sale');
+  r = await admin({ action: 'summary' });
+  expect(r.status === 200 && r.data.sentTo === 'owner@example.test' && r.data.all.orders === orders && r.data.week.orders === orders && r.data.pcs === db.tune_machines.length && mails.length === n + 2, 'the owner page sends the same email on demand and answers with the figures');
+  const saved = env.SUPPORT_EMAIL; delete env.SUPPORT_EMAIL;
+  r = await admin({ action: 'summary' });
+  expect(r.status === 503 && /SUPPORT_EMAIL/.test(r.data.error), 'without a support address the answer says so');
+  env.SUPPORT_EMAIL = saved;
+}
 
 r = await call('/v1/tune/admin', { token: 'owner-token-test', action: 'lookup', ref: 'ORDER-TUNE-1' });
 delete env.TUNE_ADMIN_TOKEN;
