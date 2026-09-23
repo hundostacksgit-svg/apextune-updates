@@ -253,7 +253,8 @@ or the first of the order; does not spend the buyer's own monthly move),
 **Switch the order off**, **Switch it back on**, **Switch off this key
 only** (a partial refund of a Squad: type the key), and **Recent orders**
 (the last sixty keys grouped by order: product, amount, when, the email,
-on or off, emailed or not), and **Send a test email** (needs no order: one
+on or off, emailed or not, under one line of totals since the first sale:
+orders, money kept, orders refunded), and **Send a test email** (needs no order: one
 short email to the support address or the one typed in, with Resend's own
 refusal on screen when the domain is not verified or the from address is
 wrong, so mail is proved before the first sale). All of it is

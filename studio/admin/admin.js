@@ -39,7 +39,10 @@ function render(d, note) {
   if (d.error) { out.innerHTML = `<div class="note bad">${esc(d.error)}</div>`; return; }
   if (d.sentTo && !d.keys) { out.innerHTML = `<div class="note ok">${esc(note || `Sent to ${d.sentTo}.`)}</div>`; return; }
   if (d.orders) {
-    out.innerHTML = `<p class="small muted" style="margin:0 0 6px">The last ${d.orders.length} orders, newest first. Paste an order or a key above to act on one.</p>` + (d.orders.length ? d.orders.map((o) => `
+    const t = d.totals;
+    const money = (c) => `$${((c || 0) / 100).toFixed(2)}`;
+    out.innerHTML = (t ? `<div class="own-row"><span>Since the first sale</span><b>${esc(t.orders)} order${t.orders === 1 ? '' : 's'} · ${esc(money(t.paidCents))} kept${t.refundedOrders ? ` · ${esc(t.refundedOrders)} refunded (${esc(money(t.refundedCents))})` : ''}</b></div>` : '')
+      + `<p class="small muted" style="margin:8px 0 6px">The last ${d.orders.length} orders, newest first. Paste an order or a key above to act on one.</p>` + (d.orders.length ? d.orders.map((o) => `
       <div class="own-key"><span><b>${esc(o.product === 'squad' ? 'Squad' : 'Tune')}</b> · ${o.paidCents ? `$${(o.paidCents / 100).toFixed(2)}` : '?'} · ${esc(when(o.createdAt))}<br><span class="muted tiny">${esc(o.email || 'no email')} · order ${esc(o.order)}${o.receipt ? ` · receipt #${esc(o.receipt)}` : ''}</span></span>
         <span>${o.off ? `<b class="off">${esc(o.off)} of ${esc(o.keys)} off</b>` : `<b class="on">${esc(o.keys)} on</b>`}${o.emailedAt ? '' : ' · <span class="off">not emailed</span>'}</span></div>`).join('') : '<p class="muted">Nothing sold yet.</p>');
     return;

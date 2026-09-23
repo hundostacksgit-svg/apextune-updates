@@ -50,6 +50,7 @@ function statement(sql, args) {
     db.tune_keys.filter((r) => r.order_ref === args[1] || like(r.order_ref, args[2])).forEach((r) => { r.email = args[0]; }); return [];
   }
   if (s.startsWith('UPDATE tune_keys SET moved_at = ? WHERE key = ?')) { db.tune_keys.filter((r) => r.key === args[1]).forEach((r) => { r.moved_at = args[0]; }); return []; }
+  if (s.startsWith('SELECT product, amount_cents, order_ref, revoked_at FROM tune_keys')) return db.tune_keys.map((r) => ({ product: r.product, amount_cents: r.amount_cents, order_ref: r.order_ref, revoked_at: r.revoked_at }));
   if (s.startsWith('SELECT * FROM tune_keys ORDER BY created_at DESC LIMIT 60')) return [...db.tune_keys].sort((a, b) => b.created_at - a.created_at).slice(0, 60);
   if (s.startsWith('UPDATE tune_keys SET revoked_at = ? WHERE key = ? AND revoked_at IS NULL')) { db.tune_keys.filter((r) => r.key === args[1] && !r.revoked_at).forEach((r) => { r.revoked_at = args[0]; }); return []; }
   if (s.startsWith('UPDATE tune_keys SET moved_at = NULL WHERE key = ?')) { db.tune_keys.filter((r) => r.key === args[0]).forEach((r) => { r.moved_at = null; }); return []; }
@@ -274,6 +275,14 @@ r = await admin({ action: 'lookup', ref: 'ORDER-NOPE-9' });
 expect(r.status === 404, 'an unknown order says so');
 r = await admin({ action: 'recent' });
 expect(r.status === 200 && r.data.orders.some((o) => o.order === 'ORDER-DUAL-1' && o.keys === 3) && r.data.orders.some((o) => o.order === 'ORDER-TUNE-1' && o.keys === 1), 'recent orders lists what sold, grouped by order');
+{
+  const plain = (o) => String(o).replace(/#\d+$/, '');
+  const orders = [...new Set(db.tune_keys.map((k) => plain(k.order_ref)))];
+  const off = orders.filter((o) => db.tune_keys.filter((k) => plain(k.order_ref) === o).every((k) => k.revoked_at));
+  const cents = (list) => list.reduce((sum, o) => sum + (db.tune_keys.find((k) => plain(k.order_ref) === o).amount_cents || 0), 0);
+  const t = r.data.totals;
+  expect(t && t.orders === orders.length && t.refundedOrders === off.length && t.paidCents === cents(orders.filter((o) => !off.includes(o))) && t.refundedCents === cents(off) && t.keys === db.tune_keys.length, `the totals count each order once: ${orders.length} orders, ${off.length} refunded, $${(t.paidCents / 100).toFixed(2)} kept`);
+}
 r = await admin({ action: 'restore', ref: 'ORDER-DUAL-1' });
 r = await admin({ action: 'revoke-key', ref: dualKeys[1] });
 expect(r.status === 200 && r.data.revokedKey === dualKeys[1] && r.data.keys.filter((k) => k.revoked).length === 1, 'one key of a Squad order is switched off, the other two stay on');

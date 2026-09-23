@@ -895,7 +895,20 @@ const routes = {
         if (!byOrder.has(o)) byOrder.set(o, { order: o, receipt: r.receipt || null, product: r.product, email: r.email || null, paidCents: r.amount_cents || null, createdAt: r.created_at, emailedAt: r.emailed_at || null, keys: 0, off: 0 });
         const g = byOrder.get(o); g.keys++; if (r.revoked_at) g.off++;
       }
-      return json({ ok: true, orders: [...byOrder.values()] }, { env, request });
+      // The totals, once per order: what sold, what was refunded, since the first sale.
+      const every = (await env.DB.prepare('SELECT product, amount_cents, order_ref, revoked_at FROM tune_keys').all()).results || [];
+      const perOrder = new Map();
+      for (const r of every) {
+        const o = String(r.order_ref || '').replace(/#\d+$/, '');
+        if (!perOrder.has(o)) perOrder.set(o, { cents: r.amount_cents || 0, keys: 0, off: 0 });
+        const g = perOrder.get(o); g.keys++; if (r.revoked_at) g.off++;
+      }
+      const totals = { orders: 0, paidCents: 0, refundedOrders: 0, refundedCents: 0, keys: every.length };
+      for (const g of perOrder.values()) {
+        totals.orders++;
+        if (g.keys && g.off === g.keys) { totals.refundedOrders++; totals.refundedCents += g.cents; } else totals.paidCents += g.cents;
+      }
+      return json({ ok: true, orders: [...byOrder.values()], totals }, { env, request });
     }
     // Does mail work: one short email to the support address or one typed in, with Resend's exact refusal when it does not.
     if (action === 'mail-test') {

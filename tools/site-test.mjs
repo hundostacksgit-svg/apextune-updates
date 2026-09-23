@@ -142,7 +142,7 @@ try {
       const b = r.request().postDataJSON();
       if (b.token !== 'owner-x') return r.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ error: 'Wrong token.' }) });
       if (b.action === 'mail-test') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, sentTo: b.email || 'owner@example.test', from: 'OmniDx Tune <keys@omnidx.net>' }) });
-      if (b.action === 'recent') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, orders: [
+      if (b.action === 'recent') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, totals: { orders: 2, paidCents: 3999, refundedOrders: 1, refundedCents: 1999, keys: 4 }, orders: [
         { order: 'ORDER-A', receipt: 'AB12', product: 'squad', email: 'a@example.test', paidCents: 3999, createdAt: Date.now(), emailedAt: Date.now(), keys: 3, off: 0 },
         { order: 'ORDER-B', receipt: null, product: 'tune', email: null, paidCents: 1999, createdAt: Date.now(), emailedAt: null, keys: 1, off: 1 },
       ] }) });
@@ -151,7 +151,7 @@ try {
     await page.reload({ waitUntil: 'networkidle' }); await page.waitForTimeout(400);
     expect(await page.evaluate(() => /Owner token: on/.test(document.querySelector('#own-health')?.textContent || '')), 'with a server answering, the status line reads on for every part');
     await page.fill('#own-token', 'owner-x'); await page.click('[data-act="recent"]'); await page.waitForTimeout(400);
-    expect(await page.evaluate(() => document.querySelectorAll('#own-out .own-key').length === 2 && /not emailed/.test(document.querySelector('#own-out').textContent)), 'recent orders lists two orders and flags the one not emailed');
+    expect(await page.evaluate(() => document.querySelectorAll('#own-out .own-key').length === 2 && /not emailed/.test(document.querySelector('#own-out').textContent) && /2 orders · \$39\.99 kept · 1 refunded \(\$19\.99\)/.test(document.querySelector('#own-out').textContent)), 'recent orders shows the totals since the first sale, lists two orders and flags the one not emailed');
     await page.fill('#own-ref', 'ORDER-A'); await page.click('[data-act="lookup"]'); await page.waitForTimeout(400);
     expect(await page.evaluate(() => /#AB12/.test(document.querySelector('#own-out').textContent) && document.querySelectorAll('#own-out .own-key').length === 1), 'a lookup shows the order, its receipt number and its key');
     await page.fill('#own-ref', ''); await page.click('[data-act="mail-test"]'); await page.waitForTimeout(400);
