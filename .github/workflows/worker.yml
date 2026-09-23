@@ -16,6 +16,7 @@ name: Deploy the Worker
 #   SQUARE_ACCESS_TOKEN            confirms Square orders; keys are not issued without it
 #   SQUARE_WEBHOOK_SIGNATURE_KEY   from the webhook subscription in Square's developer dashboard
 #   RESEND_API_KEY                 sends the keys to the buyer's checkout email
+#   TUNE_ADMIN_TOKEN               any long random string; unlocks omnidx.net/studio/admin/ for support from a phone
 # After a deploy the Worker's URL is written into tune/config.json (the
 # site and go.ps1 read `api` from there) and into the Worker's own
 # SQUARE_WEBHOOK_URL, and Pages is asked to publish; so the whole setup is
@@ -53,6 +54,7 @@ jobs:
       SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
       SQUARE_WEBHOOK_SIGNATURE_KEY: ${{ secrets.SQUARE_WEBHOOK_SIGNATURE_KEY }}
       RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      TUNE_ADMIN_TOKEN: ${{ secrets.TUNE_ADMIN_TOKEN }}
       GITHUB_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
@@ -149,7 +151,7 @@ jobs:
       - name: Push the Worker's secrets
         if: steps.ready.outputs.ready == 'true' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
         run: |
-          for name in SQUARE_ACCESS_TOKEN SQUARE_WEBHOOK_SIGNATURE_KEY RESEND_API_KEY; do
+          for name in SQUARE_ACCESS_TOKEN SQUARE_WEBHOOK_SIGNATURE_KEY RESEND_API_KEY TUNE_ADMIN_TOKEN; do
             val="${!name}"
             if [ -n "$val" ]; then
               printf '%s' "$val" | npx wrangler secret put "$name" >/dev/null && echo "$name: set"

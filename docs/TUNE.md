@@ -157,6 +157,7 @@ button) does the rest, so the whole setup is done from a browser:
 | `SQUARE_ACCESS_TOKEN` | Square developer dashboard > Production access token | confirms orders |
 | `SQUARE_WEBHOOK_SIGNATURE_KEY` | Square developer dashboard > Webhooks > the subscription | proves a webhook call is Square's |
 | `RESEND_API_KEY` | resend.com > API Keys, after verifying omnidx.net (three DNS records it shows you) | sends the keys by email |
+| `TUNE_ADMIN_TOKEN` | any long random string you make up (thirty characters or more) | unlocks the owner page, `omnidx.net/studio/admin/` |
 
 After a deploy the workflow finds the Worker's URL, writes it into
 `tune/config.json` as `api` (committed with the CI identity, Pages asked to
@@ -166,6 +167,18 @@ and `mail` as true or false, which is the quickest way to see what is left.
 The email comes from `TUNE_MAIL_FROM` (`wrangler.toml`, `keys@omnidx.net`)
 with `SUPPORT_EMAIL` as the reply-to; Resend refuses to send from a domain
 it has not verified, so the DNS records come first.
+
+### Support from a phone
+`omnidx.net/studio/admin/` (not linked anywhere, `noindex`) is the owner's
+page: paste the `TUNE_ADMIN_TOKEN` once (remembered in that browser), then
+by Square order reference or by key: **Look up** (the keys, on or off, how
+many PCs each is on, the email on file, when the keys were emailed), **Send
+the keys again** (to the address on file, or a new one typed in, which then
+becomes the address on file), **Free this key from its PC** (the typed key,
+or the first of the order; does not spend the buyer's own monthly move),
+**Switch the order off** and **Switch it back on**. All of it is
+`POST /v1/tune/admin` on the Worker, refused without the token (403) and
+shut when no token is set (503); the offline test covers each action.
 
 ### Refunds
 Refund in Square as normal; that is the whole job. Square sends

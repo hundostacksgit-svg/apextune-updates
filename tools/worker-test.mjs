@@ -46,6 +46,13 @@ function statement(sql, args) {
     db.tune_keys.filter((r) => r.order_ref === args[1] || like(r.order_ref, args[2])).forEach((r) => { r.email = args[0]; }); return [];
   }
   if (s.startsWith('UPDATE tune_keys SET moved_at = ? WHERE key = ?')) { db.tune_keys.filter((r) => r.key === args[1]).forEach((r) => { r.moved_at = args[0]; }); return []; }
+  if (s.startsWith('UPDATE tune_keys SET moved_at = NULL WHERE key = ?')) { db.tune_keys.filter((r) => r.key === args[0]).forEach((r) => { r.moved_at = null; }); return []; }
+  if (s.startsWith('UPDATE tune_keys SET email = ?, emailed_at = ? WHERE order_ref = ? OR order_ref LIKE ?')) {
+    db.tune_keys.filter((r) => r.order_ref === args[2] || like(r.order_ref, args[3])).forEach((r) => { r.email = args[0]; r.emailed_at = args[1]; }); return [];
+  }
+  if (s.startsWith('UPDATE tune_keys SET revoked_at = NULL WHERE order_ref = ? OR order_ref LIKE ?')) {
+    db.tune_keys.filter((r) => r.order_ref === args[0] || like(r.order_ref, args[1])).forEach((r) => { r.revoked_at = null; }); return [];
+  }
   if (s.startsWith('UPDATE tune_keys SET revoked_at = ? WHERE (order_ref = ? OR order_ref LIKE ?) AND revoked_at IS NULL')) {
     db.tune_keys.filter((r) => (r.order_ref === args[1] || like(r.order_ref, args[2])) && !r.revoked_at).forEach((r) => { r.revoked_at = args[0]; }); return [];
   }
@@ -86,7 +93,7 @@ globalThis.fetch = async (url, init = {}) => {
 };
 
 const env = {
-  DB, SQUARE_ACCESS_TOKEN: 'sq-test', SQUARE_WEBHOOK_SIGNATURE_KEY: 'sig-test-key',
+  DB, SQUARE_ACCESS_TOKEN: 'sq-test', SQUARE_WEBHOOK_SIGNATURE_KEY: 'sig-test-key', TUNE_ADMIN_TOKEN: 'owner-token-test',
   SQUARE_WEBHOOK_URL: 'https://api.example.test/v1/webhooks/square', RESEND_API_KEY: 'rs-test', ALLOWED_ORIGINS: '',
 };
 const enc = new TextEncoder();
@@ -184,6 +191,34 @@ r = await call('/v1/tune/check', { key: (await call('/v1/tune/issue', { product:
 expect(r.status === 200 && r.data.ok === true, 'and that key still works');
 r = await refund({ id: 'rf3', order_id: 'ORDER-TUNE-1', status: 'PENDING', amount_money: { amount: 1999 } });
 expect(r.status === 200 && r.data.ignored, 'a refund still pending changes nothing yet');
+
+/* 9. The owner, from a phone. */
+const admin = (body) => call('/v1/tune/admin', { token: 'owner-token-test', ...body });
+r = await call('/v1/tune/admin', { token: 'nope', action: 'lookup', ref: 'ORDER-TUNE-1' });
+expect(r.status === 403, 'the owner page needs the right token');
+r = await admin({ action: 'lookup', ref: 'ORDER-SQUAD-1' });
+expect(r.status === 200 && r.data.keys.length === 3 && r.data.keys.every((k) => k.revoked) && r.data.email === 'buyer@example.test', 'lookup by order shows the three keys, revoked, and the email on file');
+r = await admin({ action: 'lookup', ref: squadKeys[2] });
+expect(r.status === 200 && r.data.order === 'ORDER-SQUAD-1' && r.data.keys.length === 3, 'lookup by one key finds the whole order');
+r = await admin({ action: 'restore', ref: 'ORDER-SQUAD-1' });
+expect(r.status === 200 && r.data.keys.every((k) => !k.revoked), 'switching the order back on');
+r = await call('/v1/tune/claim', { key: squadKeys[0], hwid: hw(1) });
+expect(r.status === 200 && r.data.ok, 'and the key works again on its PC');
+const before = mails.length;
+r = await admin({ action: 'resend', ref: 'ORDER-SQUAD-1', email: 'new@example.test' });
+expect(r.status === 200 && r.data.ok && r.data.sentTo === 'new@example.test' && mails.length === before + 1 && mails[before].to[0] === 'new@example.test' && r.data.email === 'new@example.test', 'sending the keys again to a new address updates the address on file');
+r = await admin({ action: 'release', ref: squadKeys[0] });
+expect(r.status === 200 && r.data.released === squadKeys[0] && r.data.keys[0].pcs === 0, 'the owner frees one key from its PC');
+r = await call('/v1/tune/release', { key: squadKeys[0], order: 'ORDER-SQUAD-1' });
+expect(r.status === 200, 'and that did not spend the buyer\'s own monthly move');
+r = await admin({ action: 'revoke', ref: 'ORDER-SQUAD-1' });
+expect(r.status === 200 && r.data.keys.every((k) => k.revoked), 'the owner switches the order off');
+r = await admin({ action: 'lookup', ref: 'ORDER-NOPE-9' });
+expect(r.status === 404, 'an unknown order says so');
+r = await call('/v1/tune/admin', { token: 'owner-token-test', action: 'lookup', ref: 'ORDER-TUNE-1' });
+delete env.TUNE_ADMIN_TOKEN;
+r = await call('/v1/tune/admin', { token: 'owner-token-test', action: 'lookup', ref: 'ORDER-TUNE-1' });
+expect(r.status === 503, 'with no token set on the server the owner page is shut');
 
 console.log(failed ? `${failed} problem(s)` : 'all good');
 process.exit(failed ? 1 : 0);

@@ -176,6 +176,11 @@ one, or for a key issued by hand, the command is in docs/TUNE.md > Refunds.
 > three PCs, Squad is three keys for $39.99: one email, three keys, each
 > locks to its own PC.
 
+Every reply below that needs a look at an order is done from
+omnidx.net/studio/admin/ with the owner token (docs/TUNE.md > Support from a
+phone): look the order up, send the keys again, free a key, switch an order
+off or on. No terminal needed.
+
 ## "I paid but no email came"
 
 > The keys go to the email address typed at Square's checkout the moment the

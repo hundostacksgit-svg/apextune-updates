@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Owner — OmniDx Tune</title>
+<meta name="description" content="The owner's support page for OmniDx Tune keys.">
+<meta name="theme-color" content="#050308">
+<link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
+<meta name="robots" content="noindex,nofollow">
+<link rel="stylesheet" href="../assets/studio.css">
+<script>
+(function(){try{var t=localStorage.getItem('omnidx.theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+</script>
+<style>
+  .own-wrap{max-width:640px;margin:0 auto;padding:32px 18px 80px}
+  .own-card{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-l,20px);padding:26px 22px;margin-top:16px}
+  .own-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .own-key{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--line);font-size:14px;flex-wrap:wrap}
+  .own-key .mono{font-size:13px;letter-spacing:.04em}
+  .own-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
+  .own-out{margin-top:18px}
+  .off{color:var(--bad,#ff5d6c)}.on{color:var(--ok,#35d07f)}
+</style>
+</head>
+<body>
+<main class="own-wrap">
+  <a class="logo" href="../" style="font-size:17px">OmniDx <span class="muted">Tune</span></a>
+  <h1 style="margin:18px 0 6px;font-size:28px">Owner</h1>
+  <p class="small muted" style="margin:0">Support from a phone: look an order up by its Square reference or by a key, send the keys again, switch an order off or back on, free a key from its PC. Nothing here works without the owner token.</p>
+
+  <div class="own-card">
+    <div class="field">
+      <label for="own-token">Owner token</label>
+      <input class="input" id="own-token" type="password" autocomplete="off" spellcheck="false" placeholder="The TUNE_ADMIN_TOKEN secret">
+      <p class="tiny muted" style="margin:6px 0 0">Remembered in this browser only.</p>
+    </div>
+    <div class="field">
+      <label for="own-ref">Order reference, or a key</label>
+      <input class="input" id="own-ref" autocomplete="off" spellcheck="false" placeholder="From the Square receipt, or TUNE-XXXX-XXXX-XXXX-XXXX">
+    </div>
+    <div class="field">
+      <label for="own-email">Email, only when sending the keys somewhere new</label>
+      <input class="input" id="own-email" type="email" autocomplete="off" spellcheck="false" placeholder="Leave empty to use the address on the order">
+    </div>
+    <div class="own-actions">
+      <button class="btn btn-primary btn-sm" type="button" data-act="lookup">Look up</button>
+      <button class="btn btn-sm" type="button" data-act="resend">Send the keys again</button>
+      <button class="btn btn-sm btn-ghost" type="button" data-act="release">Free this key from its PC</button>
+      <button class="btn btn-sm btn-ghost" type="button" data-act="revoke">Switch the order off</button>
+      <button class="btn btn-sm btn-ghost" type="button" data-act="restore">Switch it back on</button>
+    </div>
+    <div class="own-out" id="own-out" hidden></div>
+  </div>
+  <p class="tiny muted" style="margin-top:18px">A refund in Square switches an order off by itself; "Switch the order off" is for the rest. "Free this key" takes the key you typed (or the first of the order) off its PC without spending the buyer's own monthly move.</p>
+</main>
+<script type="module" src="./admin.js"></script>
+</body>
+</html>

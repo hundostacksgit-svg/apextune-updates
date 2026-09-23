@@ -35,7 +35,7 @@ jobs:
             [ -f "$f" ] || { echo "missing required file: $f"; exit 1; }
           done
           for f in studio/index.html studio/pricing/index.html studio/download/index.html studio/trust/index.html studio/alternative/index.html \
-                   studio/account/index.html studio/activate/index.html studio/activate/activate.js \
+                   studio/account/index.html studio/activate/index.html studio/activate/activate.js studio/admin/index.html studio/admin/admin.js \
                    go.ps1 tune/omnidx.ps1 tune/config.json studio/assets/tune.js studio/assets/tunekey.js \
                    studio/what-it-touches/index.html studio/changelog/index.html robots.txt sitemap.xml 404.html studio/assets/app.png \
                    tools/tune-check.mjs tools/tune-touches.py docs/TUNE.md \

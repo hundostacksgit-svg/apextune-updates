@@ -348,6 +348,7 @@ const routes = {
     mail: Boolean(env.RESEND_API_KEY),
     square: Boolean(env.SQUARE_ACCESS_TOKEN),
     squareWebhook: Boolean(env.SQUARE_WEBHOOK_SIGNATURE_KEY && env.SQUARE_WEBHOOK_URL),
+    owner: Boolean(env.TUNE_ADMIN_TOKEN),
   }, { env, request: _req }),
 
   /* ---------------- auth ---------------- */
@@ -796,6 +797,73 @@ const routes = {
       if (sent) { await env.DB.prepare("UPDATE tune_keys SET emailed_at = ? WHERE order_ref = ? OR order_ref LIKE ?").bind(Date.now(), order, `${order}#%`).run(); rows.forEach((r) => { r.emailed_at = Date.now(); }); }
     }
     return tuneAnswer(rows, env, request);
+  },
+
+  /**
+   * Support from a phone. The owner's token (TUNE_ADMIN_TOKEN, a repository
+   * secret) unlocks, by order reference or by key: look the order up, send
+   * the keys again (to the address on file or one given here), switch the
+   * order's keys off or back on, and free one key from its PC. Every answer
+   * is the order as the buyer would see it.
+   */
+  'POST /v1/tune/admin': async (request, env, body) => {
+    if (!env.TUNE_ADMIN_TOKEN) return fail('The owner token is not set on the server.', 503, env, request);
+    const token = String(body.token || '');
+    if (!token || !sameSecret(token, env.TUNE_ADMIN_TOKEN)) return fail('Wrong token.', 403, env, request);
+    const action = String(body.action || 'lookup');
+    const ref = String(body.ref || '').trim().slice(0, 120);
+    if (!ref) return fail('An order reference or a key is needed.', 400, env, request);
+    // By key or by order; a key finds its order, and the whole order is answered.
+    let rows = [];
+    const parsed = parseTuneKey(ref);
+    if (parsed) {
+      const row = await env.DB.prepare('SELECT * FROM tune_keys WHERE key = ?').bind(parsed.key).first();
+      if (row) rows = row.order_ref ? await tuneKeysFor(env, String(row.order_ref).replace(/#\d+$/, '')) : [row];
+    } else if (/^[A-Za-z0-9_\-:.#]{6,}$/.test(ref)) {
+      rows = await tuneKeysFor(env, ref.replace(/#\d+$/, ''));
+    }
+    if (!rows.length) return fail('No keys for that order or key.', 404, env, request);
+    const order = String(rows[0].order_ref || '').replace(/#\d+$/, '');
+    const describe = async () => {
+      const keys = [];
+      for (const r of rows) {
+        const { count } = await env.DB.prepare('SELECT COUNT(*) AS count FROM tune_machines WHERE key = ?').bind(r.key).first();
+        keys.push({ key: prettyTuneKey(r.key), product: r.product, pcs: count, revoked: Boolean(r.revoked_at), movedAt: r.moved_at || null });
+      }
+      return { order, email: rows[0].email || null, paidCents: rows[0].amount_cents || null, createdAt: rows[0].created_at, emailedAt: rows[0].emailed_at || null, keys };
+    };
+    if (action === 'lookup') return json({ ok: true, ...(await describe()) }, { env, request });
+    if (action === 'resend') {
+      const to = validEmail(body.email) ? String(body.email).trim().toLowerCase() : rows[0].email;
+      if (!to) return fail('No email on that order; give one.', 400, env, request);
+      if (!env.RESEND_API_KEY) return fail('No mailer is configured on the server.', 503, env, request);
+      const live = rows.filter((r) => !r.revoked_at);
+      if (!live.length) return fail('Every key of that order is switched off.', 410, env, request);
+      const sent = await emailTuneKeys(env, to, live[0].product, live.map((r) => prettyTuneKey(r.key)), order, null);
+      if (sent) {
+        await env.DB.prepare("UPDATE tune_keys SET email = ?, emailed_at = ? WHERE order_ref = ? OR order_ref LIKE ?").bind(to, Date.now(), order, `${order}#%`).run();
+        rows = await tuneKeysFor(env, order);
+      }
+      return json({ ok: sent, sentTo: sent ? to : null, ...(await describe()) }, { env, request });
+    }
+    if (action === 'revoke') {
+      await env.DB.prepare("UPDATE tune_keys SET revoked_at = ? WHERE (order_ref = ? OR order_ref LIKE ?) AND revoked_at IS NULL").bind(Date.now(), order, `${order}#%`).run();
+      rows = await tuneKeysFor(env, order);
+      return json({ ok: true, ...(await describe()) }, { env, request });
+    }
+    if (action === 'restore') {
+      await env.DB.prepare("UPDATE tune_keys SET revoked_at = NULL WHERE order_ref = ? OR order_ref LIKE ?").bind(order, `${order}#%`).run();
+      rows = await tuneKeysFor(env, order);
+      return json({ ok: true, ...(await describe()) }, { env, request });
+    }
+    if (action === 'release') {
+      const which = parsed ? parsed.key : rows[0].key;
+      await env.DB.prepare('DELETE FROM tune_machines WHERE key = ?').bind(which).run();
+      await env.DB.prepare('UPDATE tune_keys SET moved_at = NULL WHERE key = ?').bind(which).run();
+      rows = await tuneKeysFor(env, order);
+      return json({ ok: true, released: prettyTuneKey(which), ...(await describe()) }, { env, request });
+    }
+    return fail('Unknown action.', 400, env, request);
   },
 
   /**
