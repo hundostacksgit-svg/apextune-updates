@@ -8,7 +8,7 @@ name: Check the tune
 on:
   push:
     branches: [main, master, "claude/omnidx-editing-platform-9phdcc"]
-    paths: ["tune/**", "go.ps1", "tools/tune-check.mjs", ".github/workflows/tune-check.yml"]
+    paths: ["tune/**", "go.ps1", "tools/**", ".github/workflows/tune-check.yml"]
   pull_request:
     paths: ["tune/**", "go.ps1"]
   workflow_dispatch:

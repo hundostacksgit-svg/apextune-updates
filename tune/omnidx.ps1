@@ -87,7 +87,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.30.0'
+$script:Version = '1.31.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -95,6 +95,7 @@ $script:Log = New-Object System.Collections.ArrayList
 $script:Warnings = New-Object System.Collections.ArrayList
 $script:Kept = New-Object System.Collections.ArrayList
 $script:GamesFound = New-Object System.Collections.ArrayList
+$script:ExtremeDeclined = $false
 $script:Timer = [System.Diagnostics.Stopwatch]::StartNew()
 # The window runs the work in a second PowerShell instance, which needs this
 # script's text. From a file that is the file; from memory (the one command)
@@ -407,6 +408,7 @@ foreach ($c in $changes) {
       'mmagent' { try { if ($c.feature -eq 'MemoryCompression') { Enable-MMAgent -MemoryCompression -ErrorAction Stop } else { Enable-MMAgent -ApplicationPreLaunch -ErrorAction Stop } } catch { } }
       'bcdedit' { & bcdedit /deletevalue $c.name 2>$null | Out-Null; Write-Host ("boot setting {0} back to default" -f $c.name) -ForegroundColor DarkGray }
       'task-created' { try { Unregister-ScheduledTask -TaskName $c.name -Confirm:$false -ErrorAction Stop } catch { } }
+      'mppref' { $p = @{}; $p[$c.name] = $c.prev; try { Set-MpPreference @p -ErrorAction Stop; Write-Host ("Defender {0} -> {1}" -f $c.name, $c.prev) -ForegroundColor DarkGray } catch { } }
       'capability' { if (-not $capsBack.Contains($c.name)) { [void]$capsBack.Add($c.name) }; $deferred = $true }
       'feature' { if (-not $featsBack.Contains($c.name)) { [void]$featsBack.Add($c.name) }; $deferred = $true }
       'onedrive' {
@@ -581,8 +583,10 @@ function Get-SafeBar($m) {
   if ($m.biometric) { $t += 2 }
   if ($m.vpn) { $t += 4 }
   if ($m.vbs) { $t += 2 }
-  if ($m.xboxUsed -and -not $CutXbox) { $t += 5 }
+  if ($m.xboxUsed -and -not (Test-CutXbox $m)) { $t += 5 }
   if ($m.otherAv.Count) { $t += 6 }
+  # Extreme groups the service hosts and cuts the extra services: about two dozen processes fewer.
+  if ($Extreme -and -not $script:ExtremeDeclined) { $t -= 24 }
   return $t
 }
 
@@ -1172,9 +1176,10 @@ $script:ExtremeServices = @(
   @('DevicesFlowUserSvc', 'connect-to-device flow'), @('DeviceAssociationBrokerSvc', 'device pairing broker'), @('DevQueryBroker', 'device query broker'),
   @('PenService', 'pen input (kept with touch)'), @('SysMain', 'superfetch, off on an SSD'), @('WSearch', 'search indexing, off'),
   @('WpnService', 'notifications, off'), @('WpnUserService', 'notifications, off'), @('cbdhsvc', 'clipboard history, off'),
-  @('CDPSvc', 'nearby sharing, off'), @('CDPUserSvc', 'nearby sharing, off'), @('TabletInputService', 'touch keyboard (kept with touch)')
+  @('CDPSvc', 'nearby sharing, off'), @('CDPUserSvc', 'nearby sharing, off'), @('TabletInputService', 'touch keyboard (kept with touch)'),
+  @('SgrmBroker', 'System Guard attestation broker, off (24H2 no longer ships it)')
 )
-$script:ExtremeOff = @('SysMain', 'WSearch', 'WpnService', 'WpnUserService', 'cbdhsvc', 'CDPSvc', 'CDPUserSvc', 'BcastDVRUserService', 'AarSvc')
+$script:ExtremeOff = @('SysMain', 'WSearch', 'WpnService', 'WpnUserService', 'cbdhsvc', 'CDPSvc', 'CDPUserSvc', 'BcastDVRUserService', 'AarSvc', 'SgrmBroker')
 # The ones this machine actually uses go to manual instead of off, or stay.
 $script:ManualOnly = @('SysMain', 'WSearch', 'edgeupdate', 'edgeupdatem', 'DPS', 'WdiServiceHost', 'WdiSystemHost', 'iphlpsvc', 'SSDPSRV', 'upnphost',
   'NcbService', 'CDPSvc', 'CDPUserSvc', 'OneSyncSvc', 'PimIndexMaintenanceSvc', 'UnistoreSvc', 'UserDataSvc', 'XblAuthManager', 'XblGameSave',
@@ -1226,7 +1231,25 @@ $script:TaskList = @(
   @('\Microsoft\Windows\NetTrace\', 'GatherNetworkInfo'), @('\Microsoft\Windows\Application Experience\', 'MareBackup'),
   @('\Microsoft\Windows\Location\', 'Notifications'), @('\Microsoft\Windows\Location\', 'WindowsActionDialog'),
   @('\Microsoft\Office\', 'OfficeTelemetryAgentLogOn'), @('\Microsoft\Office\', 'OfficeTelemetryAgentFallBack'),
-  @('\Microsoft\Windows\Diagnosis\', 'Scheduled'), @('\Microsoft\Windows\WwanSvc\', 'OobeDiscovery')
+  @('\Microsoft\Windows\Diagnosis\', 'Scheduled'), @('\Microsoft\Windows\WwanSvc\', 'OobeDiscovery'),
+  # Background work a gaming PC never asked for: the compatibility appraisers, memory and disk-usage
+  # diagnostics, data-usage bookkeeping, the flighting reporters, SQM, offline files, storage tiers,
+  # remote assistance, print provisioning, media-library sharing, the indexer's maintenance, roaming
+  # profile uploads, the shared-PC cleanup, the Store's remote install and the end-of-support nag.
+  @('\Microsoft\Windows\Application Experience\', 'PcaWallpaperAppDetect'), @('\Microsoft\Windows\Application Experience\', 'Microsoft Compatibility Appraiser Exp'),
+  @('\Microsoft\Windows\Diagnosis\', 'RecommendedTroubleshootingScanner'), @('\Microsoft\Windows\DiskFootprint\', 'Diagnostics'),
+  @('\Microsoft\Windows\DUSM\', 'dusmtask'), @('\Microsoft\Windows\Flighting\FeatureConfig\', 'UsageDataFlushing'),
+  @('\Microsoft\Windows\Flighting\FeatureConfig\', 'UsageDataReporting'), @('\Microsoft\Windows\HelloFace\', 'FODCleanupTask'),
+  @('\Microsoft\Windows\MemoryDiagnostic\', 'ProcessMemoryDiagnosticEvents'), @('\Microsoft\Windows\MemoryDiagnostic\', 'RunFullMemoryDiagnostic'),
+  @('\Microsoft\Windows\Offline Files\', 'Background Synchronization'), @('\Microsoft\Windows\Offline Files\', 'Logon Synchronization'),
+  @('\Microsoft\Windows\PI\', 'Sqm-Tasks'), @('\Microsoft\Windows\Printing\', 'EduPrintProv'),
+  @('\Microsoft\Windows\PushToInstall\', 'Registration'), @('\Microsoft\Windows\RemoteAssistance\', 'RemoteAssistanceTask'),
+  @('\Microsoft\Windows\SharedPC\', 'Account Cleanup'), @('\Microsoft\Windows\Shell\', 'IndexerAutomaticMaintenance'),
+  @('\Microsoft\Windows\Storage Tiers Management\', 'Storage Tiers Management Initialization'), @('\Microsoft\Windows\UPnP\', 'UPnPHostConfig'),
+  @('\Microsoft\Windows\User Profile Service\', 'HiveUploadTask'), @('\Microsoft\Windows\WDI\', 'ResolutionHost'),
+  @('\Microsoft\Windows\Windows Media Sharing\', 'UpdateLibrary'), @('\Microsoft\Windows\Work Folders\', 'Work Folders Logon Synchronization'),
+  @('\Microsoft\Windows\Work Folders\', 'Work Folders Maintenance Work'), @('\Microsoft\Windows\Setup\', 'EOSNotify'),
+  @('\Microsoft\Windows\Setup\', 'EOSNotify2')
 )
 
 <# Every scheduled task once, then lookups: asking for them one by one took
@@ -1247,7 +1270,7 @@ function Cut-Tasks {
       try { Disable-ScheduledTask -TaskPath $t[0] -TaskName $t[1] -ErrorAction Stop | Out-Null; Record @{ type = 'task'; path = $t[0]; name = $t[1] }; $n++; Did $t[1] } catch { }
     }
   }
-  Say ("  {0} telemetry and feedback tasks disabled." -f $n)
+  Say ("  {0} telemetry, feedback and background tasks disabled." -f $n)
 }
 
 $script:JunkApps = @(
@@ -1496,6 +1519,19 @@ function Cut-Telemetry($m) {
   # Recall (24H2 and later): nothing screenshots your desktop every few seconds.
   Set-Reg 'HKCU:\Software\Policies\Microsoft\Windows\WindowsAI' 'DisableAIDataAnalysis' 1
   Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI' 'DisableAIDataAnalysis' 1
+  # Typing and inking history stays on the PC (the personal dictionary stops learning; voice typing is untouched),
+  # handwriting errors are not reported, the compatibility inventory is off, the Store cannot push installs from
+  # the web, the clipboard is not synced through the cloud, and nobody can offer to take the screen over through
+  # Remote Assistance (Quick Assist is separate and comes back from the Store). On 11, the account nags on Start go.
+  Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\InputPersonalization' 'RestrictImplicitInkCollection' 1
+  Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\InputPersonalization' 'RestrictImplicitTextCollection' 1
+  Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\TabletPC' 'PreventHandwritingDataSharing' 1
+  Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppCompat' 'DisableInventory' 1
+  Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppCompat' 'AITEnable' 0
+  Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\PushToInstall' 'DisablePushToInstall' 1
+  Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' 'AllowCrossDeviceClipboard' 0
+  Set-Reg 'HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance' 'fAllowToGetHelp' 0
+  if ($m.win -eq 11) { Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'Start_AccountNotifications' 0 }
   # Lock screen tips and Spotlight ads; Windows Error Reporting off (its service already is).
   Set-Reg $cdm 'RotatingLockScreenOverlayEnabled' 0
   Set-Reg $cdm 'SubscribedContent-338387Enabled' 0
@@ -1557,6 +1593,8 @@ function Tune-System($m) {
   Set-Reg 'HKCU:\Control Panel\Accessibility\StickyKeys' 'Flags' '506' 'String'
   Set-Reg 'HKCU:\Control Panel\Accessibility\ToggleKeys' 'Flags' '58' 'String'
   Set-Reg 'HKCU:\Control Panel\Accessibility\Keyboard Response' 'Flags' '122' 'String'
+  # Windows 11 22H2 and later: "End task" on the taskbar's right-click menu, for the game that stops answering.
+  if ($m.build -ge 22621) { Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced\TaskbarDeveloperSettings' 'TaskbarEndTask' 1 }
   # The ten-second delay Windows puts in front of startup apps: gone, so anything you kept starts at once.
   Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize' 'StartupDelayInMSec' 0
   # Store apps pre-launching in the background (Edge, mostly).
@@ -1573,7 +1611,24 @@ function Tune-System($m) {
   & $fs 'disablelastaccess' '1' 'NTFS last-access stamps off'
   if ($m.ramGb -ge 16) { & $fs 'memoryusage' '2' 'NTFS allowed more memory for its cache' }
   if ($m.allSsd -or $m.nvme) { & $fs 'DisableDeleteNotify' '0' 'TRIM was off for the SSDs; on' }
-  Say "  Scheduler set for the game in front, throttling off, visuals lean, mouse acceleration off, HAGS on."
+  Limit-Defender $m
+  Say "  Scheduler set for the game in front, throttling off, visuals lean, mouse acceleration off, HAGS on, Defender's scans capped."
+}
+
+<# Defender stays, and its scheduled scans stop taking half the CPU: the cap
+   is for scans only, never real-time protection, and only while Defender is
+   the antivirus in charge. Undo puts the old figure back. #>
+function Limit-Defender($m) {
+  if ($m.otherAv.Count) { return }
+  try {
+    $pref = Get-MpPreference -ErrorAction Stop
+    $was = [int]$pref.ScanAvgCPULoadFactor
+    if ($was -ne 25) {
+      Set-MpPreference -ScanAvgCPULoadFactor 25 -ErrorAction Stop
+      Record @{ type = 'mppref'; name = 'ScanAvgCPULoadFactor'; prev = $was }
+      Did ("Defender's scheduled scans capped at 25% of the CPU (was {0}%); real-time protection untouched" -f $(if ($was) { $was } else { 'no cap' }))
+    }
+  } catch { }
 }
 
 # ---------------------------------------------------------------------------
@@ -1868,8 +1923,8 @@ function Tune-Gpu($m) {
 function Set-Extreme($m) {
   if (-not $Extreme) { return }
   Head "Extreme"
-  Say "  Fewer conveniences for a few more frames: notifications, animations, transparency, the search box, clipboard history, nearby sharing, Windows Search, superfetch on an SSD, the Xbox pieces unless they are in use, and the extra services go. Undo puts every one back." 'White'
-  if (-not (Ask "Go extreme?")) { Say "  Skipped. The standard tune stands."; return }
+  Say "  Fewer conveniences for a few more frames: notifications, animations, transparency, the search box, clipboard history, nearby sharing, Windows Search, superfetch on an SSD, the Xbox pieces unless they are in use, and the extra services go; the service hosts are grouped the old way, which is twenty to forty processes fewer after a restart. Undo puts every one back." 'White'
+  if (-not (Ask "Go extreme?")) { Say "  Skipped. The standard tune stands."; $script:ExtremeDeclined = $true; return }
   $keep = Get-KeepList $m
   $all = @(Get-Service -ErrorAction SilentlyContinue)
   $byName = @{}; foreach ($svc in $all) { $byName[$svc.Name] = $svc }
@@ -1914,6 +1969,20 @@ function Set-Extreme($m) {
       if ($LASTEXITCODE -eq 0) { Record @{ type = 'bcdedit'; name = 'disabledynamictick' }; Did "Dynamic tick off (desktop)" }
     }
   }
+  # Service hosts grouped. On a PC with more than 3.5 GB of RAM Windows gives every service its own
+  # svchost.exe (the sixty svchost lines in Task Manager); a threshold above the installed RAM puts them
+  # back into shared hosts, the way Windows ran for twenty years and still runs on small PCs. Twenty to
+  # forty processes fewer after a restart. The cost: a service that crashes takes its group down with it,
+  # which is rare, and a restart fixes it.
+  $kb = [int64]($m.ramGb + 1) * 1048576
+  if ($kb -gt 2147483647) { $kb = 2147483647 }
+  Set-Reg 'HKLM:\SYSTEM\CurrentControlSet\Control' 'SvcHostSplitThresholdInKB' ([int]$kb)
+  Did "Service hosts grouped after a restart: the svchost.exe count drops by twenty to forty"
+  # Shutdown waits two seconds for a slow service or app, not five and twenty.
+  Set-Reg 'HKLM:\SYSTEM\CurrentControlSet\Control' 'WaitToKillServiceTimeout' '2000' 'String'
+  Set-Reg 'HKCU:\Control Panel\Desktop' 'HungAppTimeout' '2000' 'String'
+  Set-Reg 'HKCU:\Control Panel\Desktop' 'WaitToKillAppTimeout' '2000' 'String'
+  Did "Shutdown and restart wait two seconds for a slow service or app instead of five and twenty"
   Say "  Extreme applied. Undo puts all of it back; the keep task leaves the shell choices alone."
 }
 

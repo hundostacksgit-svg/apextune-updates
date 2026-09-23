@@ -233,8 +233,13 @@ its pen service), the shell drawn plain (transparency, animations, shadows,
 badges, toasts, the search box), exclusive fullscreen honoured globally,
 `OverlayTestMode 5` (multi-plane overlay off), memory compression off with
 16 GB or more, `bcdedit /set disabledynamictick yes` on desktops (undo
-deletes the value), and the Xbox pieces treated as `-CutXbox` unless Game
-Pass, the Xbox app, Minecraft or a controller is found (`Test-CutXbox`).
+deletes the value), `SvcHostSplitThresholdInKB` set above the installed RAM
+(the service hosts share processes again, as on a PC with under 3.5 GB;
+twenty to forty processes fewer after a restart; the keep task holds it, and
+`Get-SafeBar` takes 24 off the target while `-Extreme` stands), the shutdown
+timeouts at two seconds, `SgrmBroker` off where it exists, and the Xbox
+pieces treated as `-CutXbox` unless Game Pass, the Xbox app, Minecraft or a
+controller is found (`Test-CutXbox`).
 The BIOS checklist gains nine "EXTREME" items. It asks first (`-Yes`
 answers yes). The keep task leaves the shell choices alone (`$yours` has
 the paths). The key page shows the Extreme command under the standard one,

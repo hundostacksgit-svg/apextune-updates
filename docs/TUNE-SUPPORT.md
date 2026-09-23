@@ -126,6 +126,15 @@ Log it: every "kept because" rule lives in `Get-KeepList` in the script.
 > at the console picker or tick it in the app. The keep task never touches
 > startup apps at all.
 
+## "After Extreme, Task Manager shows one svchost with lots of services" / "something crashed and took Bluetooth with it"
+
+> That is the service-host grouping Extreme does on purpose: Windows had been
+> giving every service its own process, and the grouping is twenty to forty
+> processes fewer after a restart. The one cost is that when a service
+> crashes it takes the others in its host with it, which a restart fixes. If
+> that happens more than once, undo, run the standard command again, and
+> Windows goes back to one process per service.
+
 ## "Extreme took my notifications / search box / animations"
 
 > That is what Extreme is: the caution on the key page lists every one of
