@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.33.0'
+$script:Version = '1.34.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -368,6 +368,7 @@ function Invoke-Timed([scriptblock]$work, [object[]]$argList, [int]$seconds) {
 # would only time out again, so it says where to add them later instead.
 function Restore-Dism([string]$verb, [string]$flag, [string[]]$names, [string]$what) {
   if (-not $names -or -not $names.Count) { return 0 }
+  if ($env:OMNIDX_SKIP_DISM -eq '1') { Write-Host ("{0} {1}(s) left for Settings > Apps > Optional features, as asked (OMNIDX_SKIP_DISM): {2}" -f $names.Count, $what, ($names -join ', ')) -ForegroundColor Yellow; return 0 }
   Write-Host ("{0} {1}(s) going back in one go (this can take a few minutes)..." -f $names.Count, $what) -ForegroundColor DarkGray
   $dargs = @('/online', $verb) + @($names | ForEach-Object { "$flag`:$_" }) + @('/NoRestart', '/Quiet')
   $r = Invoke-Timed { param($a) & dism.exe @a *>&1 | Out-Null; if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 3010) { throw "dism exit $LASTEXITCODE" } } @(, $dargs) 600
@@ -375,11 +376,18 @@ function Restore-Dism([string]$verb, [string]$flag, [string[]]$names, [string]$w
   if ($r -eq 'timeout') { Write-Host ("They did not come back in ten minutes; Windows Update is probably out of reach. Settings > Apps > Optional features adds them later: {0}" -f ($names -join ', ')) -ForegroundColor Yellow; return 0 }
   Write-Host "DISM would not take them together; one at a time..." -ForegroundColor Yellow
   $ok = 0
-  foreach ($n in $names) {
+  for ($i = 0; $i -lt $names.Count; $i++) {
+    $n = $names[$i]
     $one = @('/online', $verb, "$flag`:$n", '/NoRestart', '/Quiet')
     $r = Invoke-Timed { param($a) & dism.exe @a *>&1 | Out-Null; if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 3010) { throw "dism exit $LASTEXITCODE" } } @(, $one) 300
-    if ($r -eq 'ok') { Write-Host ("{0} back: {1}" -f $what, $n) -ForegroundColor DarkGray; $ok++ }
-    else { Write-Host ("{0} did not come back here ({1}); Settings > Apps > Optional features adds it" -f $n, $r) -ForegroundColor Yellow }
+    if ($r -eq 'ok') { Write-Host ("{0} back: {1}" -f $what, $n) -ForegroundColor DarkGray; $ok++; continue }
+    if ($r -eq 'timeout') {
+      # One timeout means Windows Update is out of reach; the rest would only wait five minutes each for the same answer.
+      $rest = @($names | Select-Object -Skip $i)
+      Write-Host ("{0} did not come back in five minutes; Windows Update is probably out of reach. Settings > Apps > Optional features adds these later: {1}" -f $n, ($rest -join ', ')) -ForegroundColor Yellow
+      break
+    }
+    Write-Host ("{0} did not come back here ({1}); Settings > Apps > Optional features adds it" -f $n, $r) -ForegroundColor Yellow
   }
   return $ok
 }
@@ -699,13 +707,13 @@ function Register-AfterCount {
   try {
     $name = 'OmniDx after-restart count'
     $out = Join-Path $script:Root 'after-restart.txt'
-    $cmd = "Start-Sleep -Seconds 120; `$p = @(Get-Process); `$o = Get-CimInstance Win32_OperatingSystem; `$m = [math]::Round((`$o.TotalVisibleMemorySize - `$o.FreePhysicalMemory) / 1024); `$c = ''; try { `$s = Get-Counter -Counter '\Processor(_Total)\% Processor Time', '\Processor(_Total)\% DPC Time' -SampleInterval 1 -MaxSamples 3 -ErrorAction Stop; `$c = ', idle CPU ' + [math]::Round((`$s.CounterSamples | Where-Object { `$_.Path -like '*Processor Time' } | Measure-Object CookedValue -Average).Average, 1) + '%, DPC ' + [math]::Round((`$s.CounterSamples | Where-Object { `$_.Path -like '*DPC Time' } | Measure-Object CookedValue -Average).Average, 2) + '%' } catch { }; Add-Content -Path '$out' -Value ((Get-Date -Format s) + '  after restart: ' + `$p.Count + ' processes, ' + ((`$p | ForEach-Object { `$_.Threads.Count } | Measure-Object -Sum).Sum) + ' threads, ' + ((`$p | Measure-Object HandleCount -Sum).Sum) + ' handles, ' + `$m + ' MB in use' + `$c); Unregister-ScheduledTask -TaskName '$name' -Confirm:`$false"
+    $cmd = "Start-Sleep -Seconds 120; `$p = @(Get-Process); `$o = Get-CimInstance Win32_OperatingSystem; `$m = [math]::Round((`$o.TotalVisibleMemorySize - `$o.FreePhysicalMemory) / 1024); `$c = ''; try { `$s = Get-Counter -Counter '\Processor(_Total)\% Processor Time', '\Processor(_Total)\% DPC Time' -SampleInterval 1 -MaxSamples 3 -ErrorAction Stop; `$c = ', idle CPU ' + [math]::Round((`$s.CounterSamples | Where-Object { `$_.Path -like '*Processor Time' } | Measure-Object CookedValue -Average).Average, 1) + '%, DPC ' + [math]::Round((`$s.CounterSamples | Where-Object { `$_.Path -like '*DPC Time' } | Measure-Object CookedValue -Average).Average, 2) + '%' } catch { }; `$b = ''; try { `$e = Get-WinEvent -FilterHashtable @{ LogName = 'Microsoft-Windows-Diagnostics-Performance/Operational'; Id = 100 } -MaxEvents 1 -ErrorAction Stop; if (`$e.TimeCreated -gt `$o.LastBootUpTime) { `$t = (([xml]`$e.ToXml()).Event.EventData.Data | Where-Object { `$_.Name -eq 'BootTime' } | Select-Object -First 1).'#text'; if (`$t) { `$b = ', boot ' + [math]::Round([double]`$t / 1000, 1) + ' s' } } } catch { }; Add-Content -Path '$out' -Value ((Get-Date -Format s) + '  after restart: ' + `$p.Count + ' processes, ' + ((`$p | ForEach-Object { `$_.Threads.Count } | Measure-Object -Sum).Sum) + ' threads, ' + ((`$p | Measure-Object HandleCount -Sum).Sum) + ' handles, ' + `$m + ' MB in use' + `$c + `$b); Unregister-ScheduledTask -TaskName '$name' -Confirm:`$false"
     $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "' + $cmd + '"')
     $trigger = New-ScheduledTaskTrigger -AtLogOn
     Unregister-ScheduledTask -TaskName $name -Confirm:$false -ErrorAction SilentlyContinue
     Register-ScheduledTask -TaskName $name -Action $action -Trigger $trigger -RunLevel Highest -Force -ErrorAction Stop | Out-Null
     Record @{ type = 'task-created'; name = $name }
-    Did "One task runs once at your next sign-in: it writes the after-restart process count, memory, threads, handles and idle CPU to C:\OmniDx\after-restart.txt, then removes itself."
+    Did "One task runs once at your next sign-in: it writes the after-restart process count, memory, threads, handles, idle CPU and the boot time of that start to C:\OmniDx\after-restart.txt, then removes itself."
   } catch { Warn ("Could not set the after-restart count task ({0})." -f $_.Exception.Message) }
 }
 
@@ -930,6 +938,11 @@ function Show-Status {
   if (Test-Path $ar) { $l = @(Get-Content $ar -ErrorAction SilentlyContinue) | Select-Object -Last 1; if ($l) { Say ("  After restart: {0}" -f $l) 'White' } }
   $sum = Get-ChildItem $script:Root -Filter 'summary-*.json' -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
   if ($sum) { try { $s = Get-Content $sum.FullName -Raw | ConvertFrom-Json; Say ("  Last run: {0} -> {1} processes, target about {2} after a restart" -f $s.before, $s.after, $s.target) } catch { } }
+  $bootNow = Get-BootSeconds
+  if ($bootNow -ne $null) {
+    $was = $null; if ($sum) { try { $was = (Get-Content $sum.FullName -Raw | ConvertFrom-Json).bootBefore } catch { } }
+    Say ("  Last measured start: {0} s{1}. Windows' own figure for the last full start; it updates a few minutes after each restart." -f $bootNow, $(if ($was) { ' (before the tune: {0} s)' -f $was } else { '' })) 'White'
+  }
   Say ("  Processes running now: {0}" -f (Get-ProcessCount)) 'White'
   # The answer to "why is the number up again": what runs now that did not run right after the tune.
   $afterFile = Get-ChildItem $script:Root -Filter 'processes-after-*.txt' -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
@@ -2578,7 +2591,22 @@ function Format-Snapshot($snap) {
   return ($bits -join ', ')
 }
 
+<# Windows' own measurement of the last full start: event 100 in its boot
+   performance log carries the boot time in milliseconds, written a few
+   minutes after the desktop appears. Null when the log has nothing yet (a
+   fresh install, a build machine, a PC that only ever fast-started). #>
+function Get-BootSeconds {
+  try {
+    $e = Get-WinEvent -FilterHashtable @{ LogName = 'Microsoft-Windows-Diagnostics-Performance/Operational'; Id = 100 } -MaxEvents 1 -ErrorAction Stop
+    if (-not $e) { return $null }
+    $t = (([xml]$e.ToXml()).Event.EventData.Data | Where-Object { $_.Name -eq 'BootTime' } | Select-Object -First 1).'#text'
+    if ($t) { return [math]::Round([double]$t / 1000, 1) }
+  } catch { }
+  return $null
+}
+
 function Write-Report($m, $before, $after, $changesFile) {
+  $script:BootBefore = Get-BootSeconds
   $rep = Join-Path $script:Root ("report-{0}.txt" -f $script:Stamp)
   $target = Get-SafeBar $m
   $top = Get-Process -ErrorAction SilentlyContinue | Group-Object ProcessName | Sort-Object Count -Descending | Select-Object -First 12 | ForEach-Object { "  {0,-28} x{1}" -f $_.Name, $_.Count }
@@ -2594,6 +2622,7 @@ function Write-Report($m, $before, $after, $changesFile) {
     "  target for this PC after a restart: about $target. Every launcher, overlay and driver utility you keep open adds to it.",
     $(if ($script:Snapshots) { "  before: " + (Format-Snapshot $script:Snapshots.before) } else { $null }),
     $(if ($script:Snapshots) { "  now:    " + (Format-Snapshot $script:Snapshots.after) } else { $null }),
+    $(if ($script:BootBefore -ne $null) { "  last start: $($script:BootBefore) s, Windows' own measurement of the last full start; the first start after the tune lands in after-restart.txt, and status shows both" } else { $null }),
     $(if ((Get-GoneProcesses).Count) { "  gone by name: " + ((Get-GoneProcesses) -join ', ') } else { $null }),
     "  full lists: processes-before-$($script:Stamp).txt and processes-after-$($script:Stamp).txt next to this file; after-restart.txt appears after your next sign-in.", "",
     "NEXT STEPS", @($i = 0; Get-NextSteps $m | ForEach-Object { $i++; "  {0}. {1}" -f $i, $_ }), "",
@@ -2613,7 +2642,7 @@ function Write-Report($m, $before, $after, $changesFile) {
   Set-Content -Path (Join-Path $script:Root ("bios-{0}.txt" -f (($m.board -replace '[^A-Za-z0-9]+', '-').Trim('-')))) -Value (Get-BiosChecklist $m) -Encoding UTF8
   try { Write-HtmlReport $m $before $after $target $found $changesFile } catch { Warn ("The HTML report was not written ({0}); the text one is." -f $_.Exception.Message) }
   try {
-    $summary = @{ version = $script:Version; stamp = $script:Stamp; before = $before; after = $after; target = $target; changes = $script:Changes.Count; warnings = $script:Warnings.Count; seconds = [int]$script:Timer.Elapsed.TotalSeconds; os = $m.os; cpu = $m.cpu; gpu = $m.gpu; ramGb = $m.ramGb; board = $m.board; laptop = $m.laptop; games = $found; snapshots = $script:Snapshots; gone = @(Get-GoneProcesses); phases = $script:Phases; extreme = [bool]$Extreme }
+    $summary = @{ version = $script:Version; stamp = $script:Stamp; before = $before; after = $after; target = $target; bootBefore = $script:BootBefore; changes = $script:Changes.Count; warnings = $script:Warnings.Count; seconds = [int]$script:Timer.Elapsed.TotalSeconds; os = $m.os; cpu = $m.cpu; gpu = $m.gpu; ramGb = $m.ramGb; board = $m.board; laptop = $m.laptop; games = $found; snapshots = $script:Snapshots; gone = @(Get-GoneProcesses); phases = $script:Phases; extreme = [bool]$Extreme }
     $summary | ConvertTo-Json -Depth 4 | Set-Content -Path (Join-Path $script:Root ("summary-{0}.json" -f $script:Stamp)) -Encoding UTF8
   } catch { }
   return $rep
@@ -2667,7 +2696,7 @@ details pre{font:12.5px/1.5 ui-monospace,Consolas,monospace;color:#b3a8cf;overfl
 </style></head><body><main>
 <h1>OmniDx Tune <span class="muted" style="font-size:16px">v$(& $h $script:Version)</span></h1>
 <p class="sub">$(& $h ((Get-Date).ToString('f'))) &middot; $(& $h $m.cpu) &middot; $(& $h $m.gpu) &middot; $(& $h $m.ramGb) GB &middot; $(& $h $m.board)</p>
-<div class="big"><div><b>$before</b><span>processes before</span></div><div><b>$after</b><span>now, before a restart</span></div><div><b>~$target</b><span>target for this PC after a restart</span></div></div>
+<div class="big"><div><b>$before</b><span>processes before</span></div><div><b>$after</b><span>now, before a restart</span></div><div><b>~$target</b><span>target for this PC after a restart</span></div>$(if ($script:BootBefore -ne $null) { "<div><b>$($script:BootBefore) s</b><span>last start, before the tune</span></div>" })</div>
 <p class="muted">Many of the "now" processes are only waiting to be stopped. The number after a restart is the one that counts; <code>C:\OmniDx\after-restart.txt</code> gets it at your next sign-in.$(if ($keptCut) { ' Kept cut: a task at each sign-in puts back what a Windows update turns on; undo removes it.' } else { ' Not kept cut: run the command again after a big Windows update, same key, free.' })</p>
 <h2>Next steps</h2><ol>$((Get-NextSteps $m | ForEach-Object { '<li>' + (& $h $_) + '</li>' }) -join '')</ol>
 $(if ($snapRows) { "<h2>Before and after</h2><table><tr><th></th><th>Before</th><th>Now</th></tr>$snapRows</table>" })
