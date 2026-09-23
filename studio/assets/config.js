@@ -281,9 +281,9 @@ export const SITE = {
  * OmniDx Tune — the one-command PC tune sold on omnidx.net.
  *
  * Two products, both paid once. They ride on the Square links above: the
- * $19.99 link (made as "Creator") sells a one-PC Tune key and the $69.99 link
- * (made as "Team") sells a five-PC Squad key, so nothing in the Square
- * dashboard has to change. The $39.99 link is unused; delete it there.
+ * $19.99 link (made as "Creator") sells a one-PC Tune key and the $39.99 link
+ * (made as "Studio") sells Squad, three one-PC keys. The $69.99 link is
+ * unused; delete it in the Square dashboard.
  *
  * `redirect` is the `?e=` each Square link already comes back with; the
  * activation page maps it to the product. The key maths lives in tunekey.js
@@ -298,16 +298,16 @@ export const TUNE = {
   scriptUrl: 'https://omnidx.net/tune/omnidx.ps1',
   configUrl: new URL('../../tune/config.json', import.meta.url).href,
   products: {
-    tune:  { id: 'tune',  tag: 'TUNE',  name: 'Tune',  once: 19.99, seats: 1, checkout: PAY.checkout.creator, redirect: 'creator',
+    tune:  { id: 'tune',  tag: 'TUNE',  name: 'Tune',  once: 19.99, seats: 1, keys: 1, checkout: PAY.checkout.creator, redirect: 'creator',
              blurb: 'One PC. The whole tune, the power plan, every game profile, the BIOS checklist, undo.' },
-    squad: { id: 'squad', tag: 'SQUAD', name: 'Squad', once: 69.99, seats: 5, checkout: PAY.checkout.team, redirect: 'team',
-             compareTo: 99.95, compareLabel: '5 separate keys',
-             blurb: 'The same tune on five PCs — yours, the second rig, the laptop, two friends. One key.' },
+    squad: { id: 'squad', tag: 'TUNE',  name: 'Squad', once: 39.99, seats: 1, keys: 3, checkout: PAY.checkout.studio, redirect: 'studio',
+             compareTo: 59.97, compareLabel: '3 separate keys',
+             blurb: 'Three keys: yours and two to give away. Each locks to its own PC.' },
   },
   /* `?e=` on the redirect → product. The old edition names keep working so no
-     Square link needs editing; `studio` lands on Tune because that link should
-     no longer exist and a $39.99 payment must still get what it paid for. */
-  fromRedirect: { creator: 'tune', tune: 'tune', studio: 'tune', team: 'squad', squad: 'squad' },
+     Square link needs editing: `studio` is the $39.99 link, which now sells
+     Squad; `team` was the $69.99 link, and anyone who still pays it gets Squad. */
+  fromRedirect: { creator: 'tune', tune: 'tune', studio: 'squad', team: 'squad', squad: 'squad' },
   refundDays: 14,
   games: ['Fortnite', 'VALORANT', 'Counter-Strike 2', 'Marvel Rivals', 'Apex Legends', 'Call of Duty', 'Overwatch 2',
     'Rainbow Six Siege', 'Rocket League', 'Minecraft', 'Roblox', 'League of Legends', 'GTA V', 'Rust', 'Escape from Tarkov', 'PUBG',

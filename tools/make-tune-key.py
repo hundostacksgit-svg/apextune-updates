@@ -5,7 +5,7 @@ Keys made here validate in the script, in the browser and in the Worker,
 because all four implement the same four lines of checksum arithmetic.
 
     python3 tools/make-tune-key.py                       # one random Tune key
-    python3 tools/make-tune-key.py --product squad       # five-PC key
+    python3 tools/make-tune-key.py --product squad       # the older three-PC SQUAD tag
     python3 tools/make-tune-key.py --count 5
     python3 tools/make-tune-key.py --order 8Yh3kLm2Qp    # the key the activation page
                                                          #   derives for that Square order
@@ -27,7 +27,7 @@ import time
 ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"   # no I, O, 0 or 1
 SALT = "omnidx-tune-2026"
 TAGS = {"tune": "TUNE", "squad": "SQUAD"}
-SEATS = {"tune": 1, "squad": 5}
+SEATS = {"tune": 1, "squad": 3}
 BY_TAG = {v: k for k, v in TAGS.items()}
 
 

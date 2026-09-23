@@ -1,7 +1,8 @@
 /*
  * OmniDx Tune keys, in the browser.
  *
- * TUNE-XXXX-XXXX-XXXX-CCCC is one PC; SQUAD-XXXX-XXXX-XXXX-CCCC is five. The
+ * TUNE-XXXX-XXXX-XXXX-CCCC is one PC (a Squad order is three of them); the
+ * older SQUAD-XXXX-XXXX-XXXX-CCCC tag is three PCs on one key, still read. The
  * last block is a checksum over the rest, so a mistyped key is caught before
  * anything is asked of a server. These four lines of arithmetic are mirrored
  * exactly in server/worker.js, tune/omnidx.ps1 and tools/make-tune-key.py;
@@ -17,7 +18,7 @@ export const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';   // no I, O, 0 or 1
 export const SALT = 'omnidx-tune-2026';
 export const TAGS = { tune: 'TUNE', squad: 'SQUAD' };
 const BY_TAG = { TUNE: 'tune', SQUAD: 'squad' };
-const SEATS = { tune: 1, squad: 5 };
+const SEATS = { tune: 1, squad: 3 };
 
 function fnv1a(str) {
   let h = 0x811c9dc5;

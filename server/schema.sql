@@ -133,10 +133,13 @@ CREATE TABLE IF NOT EXISTS vaults (
 -- ---------------------------------------------------------------------------
 -- OmniDx Tune.
 --
--- A key is TUNE-XXXX-XXXX-XXXX-CCCC (one PC) or SQUAD-XXXX-XXXX-XXXX-CCCC
--- (five). The checksum block catches typos on the buyer's machine; this table
--- is what makes a key real. One key per Square order, so reloading the
--- activation page hands back the same key rather than minting another.
+-- A key is TUNE-XXXX-XXXX-XXXX-CCCC, one PC. A Squad order is three of them:
+-- three rows sharing the order reference (plain, #2, #3). The checksum block
+-- catches typos on the buyer's machine; this table is what makes a key real.
+-- The keys for an order are minted once, so reloading the activation page or
+-- a repeated Square webhook hands back the same keys rather than minting more.
+-- emailed_at is set once the keys went to the checkout email, so Square's
+-- retries never send the mail twice.
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS tune_keys (
   key           TEXT PRIMARY KEY,        -- compact, no dashes: TUNEXXXXXXXXXXXXCCCC
@@ -168,5 +171,6 @@ CREATE TABLE IF NOT EXISTS tune_machines (
 );
 -- Columns added after the first deploy. Each fails harmlessly when it exists.
 ALTER TABLE tune_keys ADD COLUMN moved_at INTEGER;
+ALTER TABLE tune_keys ADD COLUMN emailed_at INTEGER;
 ALTER TABLE tune_machines ADD COLUMN version TEXT;
 ALTER TABLE tune_machines ADD COLUMN os TEXT;

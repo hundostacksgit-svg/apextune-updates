@@ -50,72 +50,87 @@ updates" box, ticked by default, maps to `-NoKeep` when unticked.
 ## Money → key → PC, step by step
 
 1. The buyer presses **Get it**. The button's link comes from `TUNE.products.tune.checkout`,
-   which is the existing $19.99 Square link. Squad ($69.99, five PCs) uses the
-   existing $69.99 link. **The $39.99 Square link is no longer used — delete it in
-   the Square dashboard** so nobody can pay a price that buys nothing.
+   which is the existing $19.99 Square link. Squad ($39.99, three keys, one PC
+   each) uses the existing $39.99 link (the one made as "Studio"). **The $69.99
+   Square link is no longer used — delete it in the Square dashboard** so nobody
+   pays a price that is not on the site (anyone who does is given Squad).
 2. Square takes the money and sends the buyer to the redirect URL set on that
-   link. Those were set up as `https://omnidx.net/studio/activate/?e=creator`
-   and `?e=team`; the activate page maps `creator → tune` and `team → squad`, so
-   **nothing in Square has to be edited**. Square appends its own order id.
-3. The activate page (`studio/activate/activate.js`) gets a key for that order:
-   - **Worker deployed** (`tune/config.json` has `api`): it POSTs
-     `/v1/tune/issue {product, order}`. The Worker returns one key per order —
-     a refresh gets the same key back — and records it. With
-     `SQUARE_ACCESS_TOKEN` set, the Worker first asks Square whether that order
-     really completed and for how much, and decides the product from the amount.
-   - **No Worker**: the key is derived from the order reference in the browser
-     (`keyForOrder`), so the same receipt always gives the same key.
-     `python3 tools/make-tune-key.py --order <ref>` reproduces it for support.
-4. The page shows the key, the one-liner with the key already in it, and the
-   steps. The key is saved in that browser; the page shows it again on a return
-   visit. No email is sent (there is no email address to send it to — Square
-   does not pass one on the redirect).
-5. The buyer pastes the line. `go.ps1` fetches the script, which checks the
+   link: `https://omnidx.net/studio/activate/?e=creator` on the $19.99 link and
+   `?e=studio` on the $39.99 one. The activate page maps `creator → tune` and
+   `studio → squad` (`TUNE.fromRedirect`), so **nothing in Square has to be
+   edited but the item's name**. Square appends its own order id.
+3. At the same moment Square calls the Worker's webhook
+   (`POST /v1/webhooks/square`, signed with the subscription's signature key
+   over the notification URL plus the body). For a completed payment the Worker
+   decides the product from the amount, mints the key (three for Squad, rows
+   sharing the order reference: plain, `#2`, `#3`), and emails them with the
+   one-liner to `buyer_email_address`, the address typed at checkout, via
+   Resend. `emailed_at` on the rows stops Square's retries sending it twice.
+4. The activate page (`studio/activate/activate.js`) POSTs
+   `/v1/tune/issue {product, order}`. The Worker returns the keys already
+   minted for that order, or, when the webhook has not arrived yet, confirms
+   the order with Square and mints them now (and emails them if Square knows
+   the address). One order, one set of keys, whichever call comes first.
+   Without `SQUARE_ACCESS_TOKEN` nothing is minted from the page: a key is
+   never issued on the strength of a URL.
+5. The page shows the key or the three keys, the one-liner with the first key
+   in it, copy buttons for each friend's line, and the steps. The keys are
+   saved in that browser; the page shows them again on a return visit, and
+   the order number from the Square receipt gets them back on any device.
+6. The buyer pastes the line. `go.ps1` fetches the verified script, which checks the
    key's checksum, fingerprints the PC (SHA-256 of board serial, system UUID,
-   CPU id, first 16 hex chars) and then:
-   - **Worker deployed**: POSTs `/v1/tune/claim {key, hwid, machine}`. The Worker
-     binds the key to that PC (up to `seats`), or refuses: not issued, refunded,
-     or already on another PC. A PC already bound keeps working if the server
-     is unreachable.
-   - **No Worker**: the key and fingerprint are written to
-     `HKLM:\SOFTWARE\OmniDx\Tune`; a different key on the same PC is refused.
-6. The tune runs. Undo, report and backups land in `C:\OmniDx`.
+   CPU id, first 16 hex chars) and POSTs `/v1/tune/claim {key, hwid, machine}`.
+   The Worker binds the key to that PC, or refuses: not issued, refunded, or
+   already on another PC. A PC already bound keeps working if the server is
+   unreachable.
+7. The tune runs. Undo, report and backups land in `C:\OmniDx`.
 
 ## Square: exactly what to do
 
 Everything below is in the Square dashboard (squareup.com > Online > Payment
-links, or Items & orders > Payment links depending on the layout).
+links, or Items & orders > Payment links depending on the layout), and all of
+it works from a phone.
 
-1. **Delete the $39.99 link** (`https://square.link/u/sxi62gva`). Nothing
-   sells at that price now; a visitor who somehow pays it would get a
-   one-PC key and a confusing receipt.
+1. **Rename the $39.99 link** (`https://square.link/u/sxi62gva`) to
+   "OmniDx Tune Squad — three keys". Description: "Three keys, one per PC:
+   yours and two to give away. Paid once. The keys appear on the page after
+   you pay and go to your email. Undo in one line."
 2. **Rename the $19.99 link** (`https://square.link/u/xm9VtiGc`) to
    "OmniDx Tune — one PC". Description: "One command tunes your Windows PC
-   for games. Paid once. Your key appears on the page after you pay; it
-   locks to the first PC that runs it. Undo in one line."
-3. **Rename the $69.99 link** (`https://square.link/u/i8zrHwkn`) to
-   "OmniDx Tune Squad — five PCs". Description: "The same tune on five PCs,
-   one key."
+   for games. Paid once. Your key appears on the page after you pay and goes
+   to your email; it locks to the first PC that runs it. Undo in one line."
+3. **Delete the $69.99 link** (`https://square.link/u/i8zrHwkn`). Nothing
+   sells at that price now.
 4. **Check each link's redirect URL** ("After payment, send the customer
    to"): `https://omnidx.net/studio/activate/?e=creator` on the $19.99 link
-   and `https://omnidx.net/studio/activate/?e=team` on the $69.99 one. They
+   and `https://omnidx.net/studio/activate/?e=studio` on the $39.99 one. They
    were set up that way; if either is blank, set it. Square appends its own
-   order id to that URL and the key page issues the key against it.
-5. **Do one real test purchase** of the $19.99 link with your own card, note
-   the exact URL you land on (it should contain an order or transaction id),
-   confirm the key appears, then refund yourself in Square. If the URL
-   arrives with no id, the key page asks for the receipt number instead and
-   still works; tell me and I will match whatever Square actually sends.
-6. **Receipts**: leave Square's email receipts on. They are the buyer's proof
+   order id to that URL and the key page issues the keys against it.
+5. **Ask for the buyer's email at checkout** (it is on by default for online
+   checkout; the receipt needs it). That address is where the keys go.
+6. **The access token** (developer.squareup.com > your application >
+   Production > Access token, permissions `ORDERS_READ` and `PAYMENTS_READ`):
+   paste it into the repository as the secret `SQUARE_ACCESS_TOKEN`
+   (github.com > the repository > Settings > Secrets and variables > Actions).
+   The deploy workflow pushes it to the Worker.
+7. **The webhook** (developer.squareup.com > your application > Webhooks >
+   Add subscription): URL `https://<the Worker's URL>/v1/webhooks/square`
+   (the deploy log's "The Worker answers at" line, or `api` in
+   `tune/config.json` once the deploy has written it), API version the
+   newest, events `payment.created` and `payment.updated`. Save, then copy
+   the subscription's **Signature key** into the repository secret
+   `SQUARE_WEBHOOK_SIGNATURE_KEY`. The deploy pushes it to the Worker and
+   tells the Worker its own address (`SQUARE_WEBHOOK_URL`), which the
+   signature is computed over.
+8. **Do one real test purchase** of the $19.99 link with your own card and
+   your own email, confirm the key arrives by email and appears on the page,
+   then refund yourself in Square. The refund makes the key stop working
+   (see Refunds below).
+9. **Receipts**: leave Square's email receipts on. They are the buyer's proof
    and the order number on them is what support asks for.
-7. **Payment methods**: make sure Apple Pay, Google Pay, Cash App Pay and
-   Afterpay/Klarna are switched on for online payments (Account & Settings >
-   Payments). The pricing page lists them.
-8. **Optional, for the Worker**: Developer dashboard (developer.squareup.com)
-   > your application > Production > Access token. Give it `ORDERS_READ` and
-   `PAYMENTS_READ`, then `npx wrangler secret put SQUARE_ACCESS_TOKEN` in
-   `server/`. From then on every key is issued only against a completed
-   Square order, and the amount paid decides Tune or Squad.
+10. **Payment methods**: make sure Apple Pay, Google Pay, Cash App Pay and
+    Afterpay/Klarna are switched on for online payments (Account & Settings >
+    Payments). The pricing page lists them.
 
 Prices live in one place, `studio/assets/config.js` (`TUNE.products`). To
 change a price: change it in Square, change it there, commit.
@@ -129,18 +144,27 @@ says the key desk is not open, and the script refuses a first run. So the
 Worker, with `SQUARE_ACCESS_TOKEN`, is the first thing to switch on; until
 then nobody can buy, and nobody can get a key for free either.
 
-1. Set the three repository secrets `.github/workflows/worker.yml` names
-   (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_D1_ID`). The
-   workflow creates the tables (`schema.sql` is all `IF NOT EXISTS`) and deploys.
-2. Put the Worker URL in `tune/config.json` as `api` and commit. Both the key
-   page and `go.ps1` read that file, so that one edit switches everything.
-3. Required: `npx wrangler secret put SQUARE_ACCESS_TOKEN` with a Square
-   access token that can read orders and payments. `/v1/tune/issue` confirms
-   every order with Square before minting and refuses everything else, and a
-   `?e=team` on a $19.99 order gets a one-PC key. Without the token the
-   Worker issues nothing.
+Everything the Worker needs is a repository secret, and the deploy workflow
+(`.github/workflows/worker.yml`, on every push under `server/` and on the
+button) does the rest, so the whole setup is done from a browser:
 
-`GET /v1/health` reports `square: true` when the token is set.
+| Secret | Where it comes from | What it does |
+| --- | --- | --- |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare dashboard > My Profile > API Tokens > Create > "Edit Cloudflare Workers" template, plus D1 Edit | lets the workflow deploy |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare dashboard > Workers & Pages, right-hand column | which account |
+| `CLOUDFLARE_D1_ID` | Cloudflare dashboard > Storage & Databases > D1 > Create database, name `omnidx-studio`, copy its id | where keys are stored |
+| `SQUARE_ACCESS_TOKEN` | Square developer dashboard > Production access token | confirms orders |
+| `SQUARE_WEBHOOK_SIGNATURE_KEY` | Square developer dashboard > Webhooks > the subscription | proves a webhook call is Square's |
+| `RESEND_API_KEY` | resend.com > API Keys, after verifying omnidx.net (three DNS records it shows you) | sends the keys by email |
+
+After a deploy the workflow finds the Worker's URL, writes it into
+`tune/config.json` as `api` (committed with the CI identity, Pages asked to
+publish), and writes `<url>/v1/webhooks/square` into the Worker's
+`SQUARE_WEBHOOK_URL`. `GET /v1/health` reports `square`, `squareWebhook`
+and `mail` as true or false, which is the quickest way to see what is left.
+The email comes from `TUNE_MAIL_FROM` (`wrangler.toml`, `keys@omnidx.net`)
+with `SUPPORT_EMAIL` as the reply-to; Resend refuses to send from a domain
+it has not verified, so the DNS records come first.
 
 ### Refunds
 Refund in Square as normal, then:

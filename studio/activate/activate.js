@@ -86,7 +86,7 @@ async function issue(product, order) {
     throw new Refused('Could not reach the licence server. Try again in a minute; if it keeps failing, email support with your receipt.', 0);
   }
   const data = await r.json().catch(() => ({}));
-  if (r.ok && data.key) return { ...data, order, source: 'server' };
+  if (r.ok && data.key) return { ...data, keys: Array.isArray(data.keys) && data.keys.length ? data.keys : [data.key], order, source: 'server' };
   throw new Refused(data.error || 'The licence server refused this order.', r.status);
 }
 
@@ -94,7 +94,7 @@ function remember(info) {
   try { localStorage.setItem(STORE, JSON.stringify({ ...info, at: Date.now() })); } catch { /* private mode */ }
 }
 function remembered() {
-  try { const v = JSON.parse(localStorage.getItem(STORE) || 'null'); return v && parseKey(v.key) ? v : null; } catch { return null; }
+  try { const v = JSON.parse(localStorage.getItem(STORE) || 'null'); return v && parseKey(v.key) ? { ...v, keys: Array.isArray(v.keys) && v.keys.length ? v.keys : [v.key] } : null; } catch { return null; }
 }
 
 /* ---------------- rendering ---------------- */
@@ -111,38 +111,47 @@ function copyButton(text, label = 'Copy') {
   return `<button class="btn btn-sm" type="button" data-copy-text="${esc(text)}">${esc(label)}</button>`;
 }
 
-function keyFile(info, oneLiner) {
+function keyFile(info) {
   const p = TUNE.products[info.product] || TUNE.products.tune;
+  const keys = info.keys || [info.key];
+  const many = keys.length > 1;
   return [
-    'OmniDx Tune - your key', '',
-    `Key:      ${info.key}`,
-    `Product:  ${p.name} (${p.seats === 1 ? 'one PC' : `${p.seats} PCs`})`,
+    many ? 'OmniDx Tune - your keys' : 'OmniDx Tune - your key', '',
+    ...keys.map((k, i) => (many ? `Key ${i + 1}:    ${k}` : `Key:      ${k}`)),
+    `Product:  ${p.name} (${many ? `${keys.length} keys, one PC each` : 'one PC'})`,
     info.order ? `Order:    ${info.order}` : null, '',
-    'On the PC you want tuned, open PowerShell and paste:', `  ${oneLiner}`, '',
+    'On the PC you want tuned, open PowerShell and paste' + (many ? ' (each person their own line)' : '') + ':',
+    ...keys.map((k) => `  $env:OMNIDX_KEY='${k}'; ${TUNE.command}`), '',
     'Undo:   $env:OMNIDX_MODE=\'undo\'; ' + TUNE.command, '',
     'Extreme (caution - fewer conveniences, a few more frames; undo puts it all back):',
-    `  $env:OMNIDX_MODE='extreme'; ${oneLiner}`,
+    `  $env:OMNIDX_MODE='extreme'; $env:OMNIDX_KEY='${keys[0]}'; ${TUNE.command}`,
     'Help:   https://omnidx.net/studio/download/', '',
-    'The key locks to the first PC that runs it. Keep this file.',
+    many ? 'Each key locks to the first PC that runs it. Keep this file.' : 'The key locks to the first PC that runs it. Keep this file.',
   ].filter((l) => l !== null).join('\r\n');
 }
 
 function renderKey(info, { again = false } = {}) {
   const p = TUNE.products[info.product] || TUNE.products.tune;
-  const oneLiner = `$env:OMNIDX_KEY='${info.key}'; ${TUNE.command}`;
-  const file = keyFile(info, oneLiner);
-  const mail = `mailto:?subject=${encodeURIComponent('My OmniDx Tune key')}&body=${encodeURIComponent(file.replace(/\r\n/g, '\n'))}`;
+  const keys = info.keys || [info.key];
+  const many = keys.length > 1;
+  const oneLiner = `$env:OMNIDX_KEY='${keys[0]}'; ${TUNE.command}`;
+  const file = keyFile(info);
+  const mail = `mailto:?subject=${encodeURIComponent(many ? 'My OmniDx Tune keys' : 'My OmniDx Tune key')}&body=${encodeURIComponent(file.replace(/\r\n/g, '\n'))}`;
   const save = 'data:text/plain;charset=utf-8,' + encodeURIComponent(file);
+  const boxes = keys.map((k, i) => `
+    <div class="keybox"><small>${many ? (i === 0 ? `Key ${i + 1} — yours` : `Key ${i + 1} — give away`) : 'Your key'}</small>${esc(k)}</div>
+    ${many ? `<div class="act-copy" style="gap:8px;flex-wrap:wrap;margin-bottom:10px">${copyButton(k, 'Copy the key')}${copyButton(`$env:OMNIDX_KEY='${k}'; ${TUNE.command}`, 'Copy the whole line for this key')}</div>` : ''}`).join('');
   $('#card').innerHTML = `
     <div class="act-tick" aria-hidden="true">✓</div>
-    <h1>${again ? 'Your key, again' : 'Here is your key'}</h1>
-    <p class="act-sub">${esc(p.name)} — ${p.seats === 1 ? 'one PC' : `${p.seats} PCs`}. Paid once. Nothing renews.</p>
+    <h1>${again ? (many ? 'Your keys, again' : 'Your key, again') : (many ? 'Here are your keys' : 'Here is your key')}</h1>
+    <p class="act-sub">${esc(p.name)} — ${many ? `${keys.length} keys, one PC each` : 'one PC'}. Paid once. Nothing renews.</p>
 
-    <div class="keybox"><small>Your key</small>${esc(info.key)}</div>
-    <div class="act-copy" style="gap:8px;flex-wrap:wrap">${copyButton(info.key, 'Copy the key')}
-      <a class="btn btn-sm btn-ghost" href="${mail}">Email it to myself</a>
+    ${boxes}
+    <div class="act-copy" style="gap:8px;flex-wrap:wrap">${many ? '' : copyButton(keys[0], 'Copy the key')}
+      <a class="btn btn-sm btn-ghost" href="${mail}">${many ? 'Email them to myself' : 'Email it to myself'}</a>
       <a class="btn btn-sm btn-ghost" href="${save}" download="omnidx-tune-key.txt">Save as a file</a>
       <button class="btn btn-sm btn-ghost" type="button" onclick="print()">Print</button></div>
+    ${info.emailed ? `<p class="tiny" style="text-align:center;margin:8px 0 0;color:var(--ok,#35d07f)">Also sent to the email you gave at checkout.</p>` : ''}
     <p class="tiny muted" style="text-align:center;margin:8px 0 0">Letters only look like this: no I, O, 0 or 1 in a key, and capitals do not matter.</p>
     <p class="tiny muted" id="act-seats" style="text-align:center;margin:6px 0 0" hidden></p>
 
@@ -152,18 +161,18 @@ function renderKey(info, { again = false } = {}) {
       <li><b>Open PowerShell</b><p>Press the Windows key, type <b>powershell</b>, press Enter. It does not need to be run as administrator — it asks for that itself.</p></li>
       <li><b>Paste this and press Enter</b>
         <div class="cmd"><code data-text="${esc(oneLiner)}"><span class="ps">&gt;</span>${esc(oneLiner)}</code>${copyButton(oneLiner)}</div>
-        <p class="cmd-note">Your key is in the line, so nothing has to be typed. It opens the app with the key filled in. Nothing is installed: the tune runs from memory and leaves its report, its undo and its backups in <span class="mono">C:\\OmniDx</span>.</p></li>
+        <p class="cmd-note">${many ? 'Your first key is in the line. Each friend pastes the same line with their own key in it: the copy buttons above have each one ready, and "Save as a file" holds all three.' : 'Your key is in the line, so nothing has to be typed.'} It opens the app with the key filled in. Nothing is installed: the tune runs from memory and leaves its report, its undo and its backups in <span class="mono">C:\\OmniDx</span>.</p></li>
       <li><b>Tick what you want, press Run</b><p>The window shows your PC, every phase and every startup app as a tick box. Press Run: a restore point first, then the cut, with a live log. Three to five minutes; the debloat is most of it.</p></li>
       <li><b>Restart, then do the BIOS checklist</b><p>The report it opens at the end has the checklist for your exact board — the memory profile alone is worth more than half of the tune.</p></li>
     </ol>
 
     <div class="act-h" style="color:var(--warn,#ffc247)">Extreme — caution</div>
-    <p class="small" style="margin:0 0 10px">Everything above, plus what the people who tune for a living set afterwards: every extra service, Game Bar entirely, animations and transparency off, the taskbar search box and notification toasts off, multi-plane overlay off, memory compression off, superfetch and Windows Search off, the dynamic tick off, the Xbox pieces gone unless you use Game Pass or Minecraft, and an advanced BIOS list in the report. A few more frames and steadier lows for fewer conveniences. It asks first, records every line, and undo puts all of it back. Run the standard tune first; use this when you want the last of it.</p>
+    <p class="small" style="margin:0 0 10px">Everything above, plus what the people who tune for a living set afterwards: every extra service, Game Bar entirely, animations and transparency off, the taskbar search box and notification toasts off, multi-plane overlay off, memory compression off, superfetch and Windows Search off, the dynamic tick off, the service hosts grouped the old way, the Xbox pieces gone unless you use Game Pass or Minecraft, and an advanced BIOS list in the report. A few more frames and steadier lows for fewer conveniences. It asks first, records every line, and undo puts all of it back. Run the standard tune first; use this when you want the last of it.</p>
     <div class="cmd"><code data-text="${esc(`$env:OMNIDX_MODE='extreme'; ${oneLiner}`)}"><span class="ps">&gt;</span>${esc(`$env:OMNIDX_MODE='extreme'; ${oneLiner}`)}</code>${copyButton(`$env:OMNIDX_MODE='extreme'; ${oneLiner}`)}</div>
     <p class="cmd-note">Same key, same PC, no extra charge. The app opens with Extreme ticked; untick it to run the standard tune instead.</p>
 
     <div class="act-h">Receipt</div>
-    <div class="act-row"><span>Product</span><b>${esc(p.name)} — ${p.seats === 1 ? '1 PC' : `${p.seats} PCs`}</b></div>
+    <div class="act-row"><span>Product</span><b>${esc(p.name)} — ${many ? `${keys.length} keys, one PC each` : '1 PC'}</b></div>
     <div class="act-row"><span>Paid</span><b>$${p.once.toFixed(2)} once</b></div>
     ${info.order ? `<div class="act-row"><span>Square order</span><b class="mono" style="font-size:12px">${esc(info.order)}</b></div>` : ''}
     <div class="act-row"><span>Payment</span><b>${info.verified ? 'Confirmed with Square' : 'From Square\u2019s redirect'}</b></div>
@@ -174,9 +183,11 @@ function renderKey(info, { again = false } = {}) {
     </div>
 
     <details class="act-move" style="margin-top:22px">
-      <summary class="small" style="cursor:pointer;color:var(--text-2)"><b>New PC? Move this key</b> — once every 30 days, by yourself</summary>
+      <summary class="small" style="cursor:pointer;color:var(--text-2)"><b>New PC? Move ${many ? 'a key' : 'this key'}</b> — once every 30 days, by yourself</summary>
       <div class="field" style="margin-top:12px;text-align:left">
-        <label for="act-move-order" class="small"><b>Order or receipt number</b></label>
+        ${many ? `<label for="act-move-key" class="small"><b>Which key</b></label>
+        <select class="input" id="act-move-key">${keys.map((k, i) => `<option value="${esc(k)}">Key ${i + 1} — ${esc(k)}</option>`).join('')}</select>` : ''}
+        <label for="act-move-order" class="small" ${many ? 'style="margin-top:10px;display:block"' : ''}><b>Order or receipt number</b></label>
         <input class="input" id="act-move-order" placeholder="From your Square receipt" autocomplete="off" spellcheck="false" value="${esc(info.order || '')}">
         <p class="tiny muted" style="margin:7px 0 0">The key is unbound from the PC it is on and locks to the next PC that runs it. The old PC keeps its settings and its undo.</p>
       </div>
@@ -185,8 +196,8 @@ function renderKey(info, { again = false } = {}) {
     </details>
 
     <p class="act-note">
-      <b>Keep this key.</b> It is saved in this browser and this page will show it again, but take a screenshot too.
-      It locks to the first PC that runs it${p.seats > 1 ? ` (the first ${p.seats})` : ''}; running it again on the same PC after a Windows update is free and expected.
+      <b>${many ? 'Keep these keys.' : 'Keep this key.'}</b> ${many ? 'They are' : 'It is'} saved in this browser and this page will show ${many ? 'them' : 'it'} again, but take a screenshot too.
+      ${many ? 'Each key locks to the first PC that runs it' : 'It locks to the first PC that runs it'}; running it again on the same PC after a Windows update is free and expected.
       Replaced your PC? Email with the receipt and it moves.
     </p>
     ${supportBlock(`OmniDx Tune — key ${info.key}`)}`;
@@ -217,7 +228,7 @@ function renderUnknown(message = '') {
       <div class="act-actions" style="margin-top:8px">
         ${Object.values(TUNE.products).map((p) =>
           `<button class="btn btn-ghost" type="button" data-pick="${esc(p.id)}">
-            ${esc(p.name)} — $${p.once.toFixed(2)} · ${p.seats === 1 ? 'one PC' : `${p.seats} PCs`}</button>`).join('')}
+            ${esc(p.name)} — $${p.once.toFixed(2)} · ${p.keys > 1 ? `${p.keys} keys, one PC each` : 'one PC'}</button>`).join('')}
       </div>
     </div>
 
@@ -243,25 +254,31 @@ function renderUnknown(message = '') {
 async function wireExtras(info) {
   const base = await api();
   const seats = $('#act-seats');
+  const keys = info.keys || [info.key];
   if (base) {
     try {
-      const r = await fetch(`${base}/v1/tune/check`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: info.key }) });
-      const d = await r.json();
-      if (d.ok && seats) { seats.hidden = false; seats.textContent = `On ${d.used} of ${d.seats} PC${d.seats === 1 ? '' : 's'}.`; }
+      const bits = [];
+      for (const [i, k] of keys.entries()) {
+        const r = await fetch(`${base}/v1/tune/check`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: k }) });
+        const d = await r.json();
+        if (d.ok) bits.push(`${keys.length > 1 ? `Key ${i + 1}: ` : ''}on ${d.used} of ${d.seats} PC${d.seats === 1 ? '' : 's'}`);
+      }
+      if (bits.length && seats) { seats.hidden = false; seats.textContent = bits.join(' · ') + '.'; }
     } catch { /* the server is optional */ }
   }
   $('#act-move')?.addEventListener('click', async () => {
     const out = $('#act-move-out');
     const order = String($('#act-move-order')?.value || '').trim();
+    const which = String($('#act-move-key')?.value || info.key);
     out.hidden = false;
     if (!base) { out.textContent = 'Moving a key by yourself needs the licence server, which is not switched on yet. Email support with your receipt and it moves the same day.'; return; }
     if (order.length < 6) { out.textContent = 'Put in the order number from your Square receipt first.'; return; }
     out.textContent = 'Moving…';
     try {
-      const r = await fetch(`${base}/v1/tune/release`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: info.key, order }) });
+      const r = await fetch(`${base}/v1/tune/release`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: which, order }) });
       const d = await r.json().catch(() => ({}));
       out.textContent = r.ok ? `Done. The key is free again; run the command on the new PC and it locks there.` : (d.error || 'The server refused.');
-      if (r.ok && seats) { seats.textContent = `On 0 of ${d.seats} PC${d.seats === 1 ? '' : 's'}.`; }
+      if (r.ok && seats && keys.length === 1) { seats.textContent = `On 0 of ${d.seats} PC${d.seats === 1 ? '' : 's'}.`; }
     } catch { out.textContent = 'Could not reach the licence server. Try again in a minute, or email support.'; }
   });
 }

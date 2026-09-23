@@ -169,8 +169,18 @@ Then, in Square: refund the order. With the Worker:
 
 ## "Can I get it for a friend / a second PC"
 
-> Yes: buy a second key and give them the key, it locks to their PC. For five
-> PCs, Squad is one key for $69.99.
+> Yes: buy a second key and give them the key, it locks to their PC. For
+> three PCs, Squad is three keys for $39.99: one email, three keys, each
+> locks to its own PC.
+
+## "I paid but no email came"
+
+> The keys go to the email address typed at Square's checkout the moment the
+> payment completes, from keys@omnidx.net; check spam and promotions first.
+> They are also on the page Square sent you to after paying, and that page
+> shows them again any time: omnidx.net/studio/activate/, with the order
+> number from your Square receipt. If neither has them, send the receipt and
+> I will look the order up and send the keys by hand.
 
 ## "It says PowerShell 7 / it says not administrator / 'irm' is not recognised"
 

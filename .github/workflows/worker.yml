@@ -10,11 +10,18 @@ name: Deploy the Worker
 # exist — a fork or a checkout without a Cloudflare account must not go red:
 #   CLOUDFLARE_API_TOKEN   a token with Workers Scripts:Edit and D1:Edit
 #   CLOUDFLARE_ACCOUNT_ID  from the Cloudflare dashboard's right-hand column
-#   CLOUDFLARE_D1_ID       the id "wrangler d1 create omnidx-studio" printed
-# and one optional repository variable:
+#   CLOUDFLARE_D1_ID       the id of the omnidx-studio D1 database
+# The Worker's own secrets are pushed from repository secrets of the same
+# name whenever they are set, so nothing has to be typed into a terminal:
+#   SQUARE_ACCESS_TOKEN            confirms Square orders; keys are not issued without it
+#   SQUARE_WEBHOOK_SIGNATURE_KEY   from the webhook subscription in Square's developer dashboard
+#   RESEND_API_KEY                 sends the keys to the buyer's checkout email
+# After a deploy the Worker's URL is written into tune/config.json (the
+# site and go.ps1 read `api` from there) and into the Worker's own
+# SQUARE_WEBHOOK_URL, and Pages is asked to publish; so the whole setup is
+# secrets in GitHub plus the webhook in Square. One optional variable:
 #   WORKER_URL             e.g. https://omnidx-studio-api.<you>.workers.dev
-#                          (used by the health check; found from the deploy
-#                          output when unset)
+#                          (found from the deploy output when unset)
 on:
   push:
     branches: [main, master, "claude/omnidx-editing-platform-9phdcc"]
@@ -24,7 +31,9 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  # The deploy writes the Worker's URL into tune/config.json and asks Pages to publish.
+  contents: write
+  actions: write
 
 concurrency:
   group: deploy-worker
@@ -41,6 +50,10 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_D1_ID: ${{ secrets.CLOUDFLARE_D1_ID }}
       WORKER_URL: ${{ vars.WORKER_URL }}
+      SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+      SQUARE_WEBHOOK_SIGNATURE_KEY: ${{ secrets.SQUARE_WEBHOOK_SIGNATURE_KEY }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      GITHUB_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
 
@@ -92,13 +105,85 @@ jobs:
         if: steps.ready.outputs.ready == 'true' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
         run: npx wrangler deploy
 
-      - name: Check it answers
+      - name: Find the Worker's URL
+        id: where
         if: steps.ready.outputs.ready == 'true' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
         run: |
           url="$WORKER_URL"
           if [ -z "$url" ]; then
             url="$(npx wrangler deployments list 2>/dev/null | grep -o 'https://[^ ]*workers.dev' | head -1 || true)"
           fi
+          url="${url%/}"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          if [ -n "$url" ]; then echo "The Worker answers at $url"; else echo "Could not find the Worker's URL; set the WORKER_URL repository variable."; fi
+
+      # The Worker's own secrets, from repository secrets of the same name.
+      # Each is pushed only when set; an unset one is left as it is on the
+      # Worker, so removing a secret here never blanks a working one.
+      - name: Push the Worker's secrets
+        if: steps.ready.outputs.ready == 'true' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
+        run: |
+          for name in SQUARE_ACCESS_TOKEN SQUARE_WEBHOOK_SIGNATURE_KEY RESEND_API_KEY; do
+            val="${!name}"
+            if [ -n "$val" ]; then
+              printf '%s' "$val" | npx wrangler secret put "$name" >/dev/null && echo "$name: set"
+            else
+              echo "$name: not in the repository's secrets, left alone"
+            fi
+          done
+
+      # Square signs each webhook call with the exact URL it was told, so the
+      # Worker has to know its own address. Filled in once from the deploy.
+      - name: Tell the Worker its webhook address
+        if: steps.ready.outputs.ready == 'true' && steps.where.outputs.url != '' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
+        run: |
+          hook="${{ steps.where.outputs.url }}/v1/webhooks/square"
+          if grep -q "^SQUARE_WEBHOOK_URL = \"$hook\"" wrangler.toml; then echo "already $hook"; exit 0; fi
+          sed -i "s|^SQUARE_WEBHOOK_URL = \".*\"|SQUARE_WEBHOOK_URL = \"$hook\"|" wrangler.toml
+          npx wrangler deploy >/dev/null && echo "webhook address: $hook"
+
+      # The site and go.ps1 read the licence server's address from
+      # tune/config.json. Written here so nobody has to edit a file by hand;
+      # a push with the workflow token starts nothing, so Pages is asked.
+      - name: Point the site at the Worker
+        if: steps.ready.outputs.ready == 'true' && steps.where.outputs.url != '' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
+        working-directory: .
+        run: |
+          set -euo pipefail
+          url="${{ steps.where.outputs.url }}"
+          git config user.name 'omnidx-ci'
+          git config user.email 'ci@omnidx.net'
+          for try in 1 2 3; do
+            git fetch -q origin "$GITHUB_REF_NAME"
+            git reset -q --hard "origin/$GITHUB_REF_NAME"
+            python3 - "$url" <<'PY'
+          import json, sys
+          p = 'tune/config.json'
+          cfg = json.load(open(p, encoding='utf-8-sig'))
+          if cfg.get('api') == sys.argv[1]:
+              print('config.json already points there'); sys.exit(0)
+          cfg['api'] = sys.argv[1]
+          open(p, 'w', encoding='utf-8', newline='\n').write(json.dumps(cfg, indent=2) + '\n')
+          print('config.json now points at', sys.argv[1])
+          PY
+            git add tune/config.json
+            if git diff --cached --quiet; then echo 'nothing to commit'; exit 0; fi
+            git commit -q -m "Worker deploy: the site and go.ps1 now point at the licence server"
+            if git push -q origin "HEAD:$GITHUB_REF_NAME"; then
+              curl -sS -o /dev/null -w 'Pages asked to publish (%{http_code})\n' -X POST \
+                -H "Authorization: Bearer $GITHUB_TOKEN" -H 'Accept: application/vnd.github+json' \
+                "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/workflows/pages.yml/dispatches" \
+                -d "{\"ref\":\"$GITHUB_REF_NAME\"}"
+              exit 0
+            fi
+            echo "push refused on try $try; the branch moved"; sleep 5
+          done
+          echo 'could not push config.json after three tries'; exit 1
+
+      - name: Check it answers
+        if: steps.ready.outputs.ready == 'true' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
+        run: |
+          url="${{ steps.where.outputs.url }}"
           if [ -n "$url" ]; then
             for i in 1 2 3 4 5 6; do
               if curl -fsS --max-time 20 "$url/v1/health"; then echo; echo "Live at $url"; exit 0; fi

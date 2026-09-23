@@ -150,17 +150,20 @@ function parseKey(code) {
 /* OmniDx Tune keys                                                    */
 /* ------------------------------------------------------------------ */
 /*
- * TUNE-XXXX-XXXX-XXXX-CCCC binds to one PC, SQUAD-XXXX-XXXX-XXXX-CCCC to
- * five. Same alphabet as the Studio keys, a different salt, and the same four
- * lines of checksum arithmetic — mirrored exactly in tune/omnidx.ps1,
- * studio/assets/tunekey.js and tools/make-tune-key.py, so a key made in any
- * of them validates in the others.
+ * TUNE-XXXX-XXXX-XXXX-CCCC binds to one PC. A Squad order ($39.99) is three
+ * of them, one per person, each locked to its own PC; the SQUAD tag (one key
+ * for several PCs) is still parsed so a key issued that way keeps working,
+ * but nothing issues one now. Same alphabet as the Studio keys, a different
+ * salt, and the same four lines of checksum arithmetic — mirrored exactly in
+ * tune/omnidx.ps1, studio/assets/tunekey.js and tools/make-tune-key.py, so a
+ * key made in any of them validates in the others.
  */
 const TUNE_SALT = 'omnidx-tune-2026';
 const TUNE_PRODUCTS = {
-  tune: { tag: 'TUNE', seats: 1, cents: 1999 },
-  squad: { tag: 'SQUAD', seats: 5, cents: 6999 },
+  tune: { tag: 'TUNE', seats: 1, keys: 1, cents: 1999 },
+  squad: { tag: 'TUNE', seats: 1, keys: 3, cents: 3999 },
 };
+const TUNE_SEATS_BY_TAG = { TUNE: 1, SQUAD: 3 };
 const TUNE_BY_TAG = { TUNE: 'tune', SQUAD: 'squad' };
 
 function tuneChecksum(tag, payload) {
@@ -185,7 +188,7 @@ function parseTuneKey(code) {
   const [, tag, payload, sum] = m;
   if ([...payload].some((ch) => !ALPHABET.includes(ch))) return null;
   if (tuneChecksum(tag, payload) !== sum) return null;
-  return { product: TUNE_BY_TAG[tag], key: c, seats: TUNE_PRODUCTS[TUNE_BY_TAG[tag]].seats };
+  return { product: TUNE_BY_TAG[tag], key: c, seats: TUNE_SEATS_BY_TAG[tag] };
 }
 
 /** TUNE-ABCD-EFGH-JKLM-NPQR — the way a person reads it. */
@@ -212,12 +215,69 @@ async function squareOrder(env, ref) {
   };
   const order = await tryGet(`/v2/orders/${encodeURIComponent(ref)}`, (d) => d.order && ({
     ok: d.order.state === 'COMPLETED', cents: Number(d.order.total_money?.amount || 0),
+    email: d.order.fulfillments?.[0]?.pickup_details?.recipient?.email_address || d.order.fulfillments?.[0]?.shipment_details?.recipient?.email_address || null,
   }));
   if (order) return order;
   const payment = await tryGet(`/v2/payments/${encodeURIComponent(ref)}`, (d) => d.payment && ({
     ok: d.payment.status === 'COMPLETED', cents: Number(d.payment.amount_money?.amount || 0),
+    email: d.payment.buyer_email_address || null, receipt: d.payment.receipt_url || null,
   }));
   return payment || { ok: false, cents: 0 };
+}
+
+/** Which product a payment of this many cents bought; null below the price of a key. */
+function tuneProductFor(cents) {
+  if (cents >= TUNE_PRODUCTS.squad.cents - 100) return 'squad';
+  if (cents >= TUNE_PRODUCTS.tune.cents - 100) return 'tune';
+  return null;
+}
+
+/**
+ * The keys for a paid order, minted once. A Squad order is three rows that
+ * share the order reference (the first carries it plainly, the others with
+ * #2 and #3 on the end), so a second look at the same order returns the same
+ * three keys and never a fourth.
+ */
+async function tuneKeysFor(env, order) {
+  const rows = await env.DB.prepare(
+    "SELECT * FROM tune_keys WHERE order_ref = ? OR order_ref LIKE ? ORDER BY order_ref",
+  ).bind(order, `${order}#%`).all();
+  return rows.results || [];
+}
+
+async function issueTuneKeys(env, { order, product, cents, email }) {
+  const p = TUNE_PRODUCTS[product];
+  const keys = [];
+  for (let i = 1; i <= p.keys; i++) {
+    const key = makeTuneKey(product);
+    const ref = i === 1 ? order : `${order}#${i}`;
+    await env.DB.prepare(
+      `INSERT INTO tune_keys (key, product, seats, email, order_ref, provider, amount_cents, verified, created_at)
+       VALUES (?,?,?,?,?,?,?,?,?)`,
+    ).bind(key, product, p.seats, email || null, ref, 'square', cents, 1, Date.now()).run();
+    keys.push(key);
+  }
+  return keys;
+}
+
+function tuneAnswer(rows, env, request) {
+  const live = rows.filter((r) => !r.revoked_at);
+  if (!live.length) return fail('That order was refunded, so its keys no longer work.', 410, env, request);
+  const keys = live.map((r) => prettyTuneKey(r.key));
+  return json({ key: keys[0], keys, product: live[0].product, seats: live[0].seats, verified: Boolean(live[0].verified), emailed: Boolean(live[0].emailed_at) }, { env, request });
+}
+
+/**
+ * Square's webhook signature: base64(HMAC-SHA256(signature key, notification
+ * URL + body)). The URL is the one registered in the Square developer
+ * dashboard, exactly, so it is configured rather than read from the request.
+ */
+async function verifySquare(raw, signature, notificationUrl, signatureKey) {
+  if (!signature || !notificationUrl || !signatureKey) return false;
+  const key = await crypto.subtle.importKey('raw', enc.encode(signatureKey), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const mac = await crypto.subtle.sign('HMAC', key, enc.encode(notificationUrl + raw));
+  const expected = btoa(String.fromCharCode(...new Uint8Array(mac)));
+  return sameSecret(expected, signature);
 }
 
 /* ------------------------------------------------------------------ */
@@ -287,6 +347,7 @@ const routes = {
     payments: Boolean(env.STRIPE_WEBHOOK_SECRET),
     mail: Boolean(env.RESEND_API_KEY),
     square: Boolean(env.SQUARE_ACCESS_TOKEN),
+    squareWebhook: Boolean(env.SQUARE_WEBHOOK_SIGNATURE_KEY && env.SQUARE_WEBHOOK_URL),
   }, { env, request: _req }),
 
   /* ---------------- auth ---------------- */
@@ -717,32 +778,73 @@ const routes = {
     if (!/^[A-Za-z0-9_\-:.]+$/.test(order)) return fail('That does not look like a Square order reference.', 400, env, request);
     const email = validEmail(body.email) ? String(body.email).trim().toLowerCase() : null;
 
-    const existing = await env.DB.prepare('SELECT * FROM tune_keys WHERE order_ref = ?').bind(order).first();
-    if (existing) {
-      if (existing.revoked_at) return fail('That order was refunded, so its key no longer works.', 410, env, request);
-      return json({ key: prettyTuneKey(existing.key), product: existing.product, seats: existing.seats, verified: Boolean(existing.verified) }, { env, request });
-    }
+    const existing = await tuneKeysFor(env, order);
+    if (existing.length) return tuneAnswer(existing, env, request);
 
     if (!env.SQUARE_ACCESS_TOKEN) return fail('Payments cannot be confirmed right now, so no key can be issued. Email support with your Square receipt and it will be sorted by hand.', 503, env, request);
     const sq = await squareOrder(env, order);
     if (!sq || !sq.ok) return fail('Square does not show a completed payment for that order reference. Check the receipt email; the id is near the top.', 402, env, request);
-    const cents = sq.cents;
-    const product = cents >= TUNE_PRODUCTS.squad.cents - 100 ? 'squad' : 'tune';
-    if (cents < TUNE_PRODUCTS.tune.cents - 100) return fail('That payment is below the price of a key.', 402, env, request);
-    const verified = 1;
+    const product = tuneProductFor(sq.cents);
+    if (!product) return fail('That payment is below the price of a key.', 402, env, request);
 
-    const key = makeTuneKey(product);
-    await env.DB.prepare(
-      `INSERT INTO tune_keys (key, product, seats, email, order_ref, provider, amount_cents, verified, created_at)
-       VALUES (?,?,?,?,?,?,?,?,?)`,
-    ).bind(key, product, TUNE_PRODUCTS[product].seats, email, order, 'square', cents, verified, Date.now()).run();
+    await issueTuneKeys(env, { order, product, cents: sq.cents, email: email || sq.email || null });
+    const rows = await tuneKeysFor(env, order);
+    // The keys go to the checkout email too, when there is one and a mailer.
+    const to = email || sq.email;
+    if (env.RESEND_API_KEY && to && !rows[0].emailed_at) {
+      const sent = await emailTuneKeys(env, to, product, rows.map((r) => prettyTuneKey(r.key)), order, sq.receipt || null);
+      if (sent) { await env.DB.prepare("UPDATE tune_keys SET emailed_at = ? WHERE order_ref = ? OR order_ref LIKE ?").bind(Date.now(), order, `${order}#%`).run(); rows.forEach((r) => { r.emailed_at = Date.now(); }); }
+    }
+    return tuneAnswer(rows, env, request);
+  },
 
-    return json({ key: prettyTuneKey(key), product, seats: TUNE_PRODUCTS[product].seats, verified: Boolean(verified) }, { env, request });
+  /**
+   * Square tells us about every payment as it happens, so the keys are
+   * issued and emailed the moment the money lands, whether or not the buyer
+   * ever reaches the key page. The signature proves the call is Square's.
+   * Square retries until it gets a 2xx, and re-sends on any doubt, so this
+   * is safe to run twice: the same order gets the same keys and one email.
+   */
+  'POST /v1/webhooks/square': async (request, env) => {
+    if (!env.SQUARE_WEBHOOK_SIGNATURE_KEY || !env.SQUARE_WEBHOOK_URL) return fail('The Square webhook is not configured.', 503, env, request);
+    const raw = await request.text();
+    const ok = await verifySquare(raw, request.headers.get('x-square-hmacsha256-signature'), env.SQUARE_WEBHOOK_URL, env.SQUARE_WEBHOOK_SIGNATURE_KEY);
+    if (!ok) return fail('Bad signature.', 400, env, request);
+
+    let event; try { event = JSON.parse(raw); } catch { return fail('Not JSON.', 400, env, request); }
+    const type = String(event.type || '');
+    if (type !== 'payment.updated' && type !== 'payment.created') return json({ ignored: type });
+    const payment = event.data?.object?.payment;
+    if (!payment || payment.status !== 'COMPLETED') return json({ ignored: `payment ${payment?.status || 'missing'}` });
+
+    // The order id is what the key page sends, so the same order lands on the same keys either way.
+    const order = String(payment.order_id || payment.id || '').trim().slice(0, 120);
+    if (!/^[A-Za-z0-9_\-:.]{6,}$/.test(order)) return json({ ignored: 'no order id' });
+    const cents = Number(payment.amount_money?.amount || 0);
+    const product = tuneProductFor(cents);
+    if (!product) return json({ ignored: `amount ${cents}` });
+    const to = validEmail(payment.buyer_email_address) ? String(payment.buyer_email_address).trim().toLowerCase() : null;
+
+    let rows = await tuneKeysFor(env, order);
+    if (!rows.length) {
+      await issueTuneKeys(env, { order, product, cents, email: to });
+      rows = await tuneKeysFor(env, order);
+    } else if (to && !rows[0].email) {
+      await env.DB.prepare("UPDATE tune_keys SET email = ? WHERE order_ref = ? OR order_ref LIKE ?").bind(to, order, `${order}#%`).run();
+    }
+    const live = rows.filter((r) => !r.revoked_at);
+    let emailed = Boolean(rows[0]?.emailed_at);
+    if (!emailed && to && env.RESEND_API_KEY && live.length) {
+      const sent = await emailTuneKeys(env, to, live[0].product, live.map((r) => prettyTuneKey(r.key)), order, payment.receipt_url || null);
+      if (sent) { await env.DB.prepare("UPDATE tune_keys SET emailed_at = ? WHERE order_ref = ? OR order_ref LIKE ?").bind(Date.now(), order, `${order}#%`).run(); emailed = true; }
+    }
+    return json({ ok: true, order, product: live[0]?.product || product, keys: live.length, emailed, to: to ? 'yes' : 'none on the payment' });
   },
 
   /**
    * The script calls this before it changes anything. A key binds to the
-   * first PC that claims it (five for Squad) and is refused everywhere else.
+   * first PC that claims it (one PC per key; a Squad order is three keys) and
+   * is refused everywhere else.
    * The same PC claiming again is fine — that is how re-running after a
    * Windows update works — and it is how a refund actually stops a key.
    */
@@ -1198,6 +1300,49 @@ and your recovery code still works as it always did.`,
       }),
     });
   } catch { /* the token exists; the person can ask again */ }
+}
+
+/**
+ * The keys, the one line to paste, and the way back. Plain text: it has to
+ * read the same in every mail app and survive being forwarded to a friend.
+ * Returns true only when Resend accepted it.
+ */
+async function emailTuneKeys(env, email, product, keys, order, receiptUrl) {
+  const three = keys.length > 1;
+  const lines = [
+    three ? 'Thanks for buying OmniDx Tune Squad: three keys, one per PC.' : 'Thanks for buying OmniDx Tune.',
+    '',
+    three ? 'Your keys (one is yours; give the other two away, one each):' : 'Your key:',
+    ...keys.map((k, i) => (three ? `  ${i + 1}.  ${k}` : `  ${k}`)),
+    '',
+    'On the PC you want tuned, open PowerShell (Windows key, type powershell, Enter) and paste:',
+    ...keys.map((k) => `  $env:OMNIDX_KEY='${k}'; irm omnidx.net/go.ps1 | iex`),
+    '',
+    'Each key locks to the first PC that runs it; running it again on that PC after a Windows update is free.',
+    'Undo, any time:   $env:OMNIDX_MODE=\'undo\'; irm omnidx.net/go.ps1 | iex',
+    'Extreme (caution, fewer conveniences, a few more frames; undo puts it all back):',
+    ...keys.slice(0, 1).map((k) => `  $env:OMNIDX_MODE='extreme'; $env:OMNIDX_KEY='${k}'; irm omnidx.net/go.ps1 | iex`),
+    '',
+    `Your keys are also on the page Square sent you to, and any time at https://omnidx.net/studio/activate/ with your order number: ${order}`,
+    receiptUrl ? `Square receipt: ${receiptUrl}` : null,
+    'What it does, screen by screen: https://omnidx.net/studio/download/',
+    '',
+    'Nothing renews and there is no account. Fourteen days to change your mind: reply to this email with the order number.',
+  ].filter((l) => l !== null);
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        from: env.TUNE_MAIL_FROM || env.MAIL_FROM || 'OmniDx Tune <keys@omnidx.net>',
+        to: [email],
+        reply_to: env.SUPPORT_EMAIL || undefined,
+        subject: three ? 'Your three OmniDx Tune keys' : 'Your OmniDx Tune key',
+        text: lines.join('\n'),
+      }),
+    });
+    return r.ok;
+  } catch { return false; }
 }
 
 async function emailKey(env, email, key, edition) {
