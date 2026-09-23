@@ -119,7 +119,9 @@ function keyFile(info, oneLiner) {
     `Product:  ${p.name} (${p.seats === 1 ? 'one PC' : `${p.seats} PCs`})`,
     info.order ? `Order:    ${info.order}` : null, '',
     'On the PC you want tuned, open PowerShell and paste:', `  ${oneLiner}`, '',
-    'Undo:   $env:OMNIDX_MODE=\'undo\'; ' + TUNE.command,
+    'Undo:   $env:OMNIDX_MODE=\'undo\'; ' + TUNE.command, '',
+    'Extreme (caution - fewer conveniences, a few more frames; undo puts it all back):',
+    `  $env:OMNIDX_MODE='extreme'; ${oneLiner}`,
     'Help:   https://omnidx.net/studio/download/', '',
     'The key locks to the first PC that runs it. Keep this file.',
   ].filter((l) => l !== null).join('\r\n');
@@ -154,6 +156,11 @@ function renderKey(info, { again = false } = {}) {
       <li><b>Tick what you want, press Run</b><p>The window shows your PC, every phase and every startup app as a tick box. Press Run: a restore point first, then the cut, with a live log. Three to five minutes; the debloat is most of it.</p></li>
       <li><b>Restart, then do the BIOS checklist</b><p>The report it opens at the end has the checklist for your exact board — the memory profile alone is worth more than half of the tune.</p></li>
     </ol>
+
+    <div class="act-h" style="color:var(--warn,#ffc247)">Extreme — caution</div>
+    <p class="small" style="margin:0 0 10px">Everything above, plus what the people who tune for a living set afterwards: every extra service, Game Bar entirely, animations and transparency off, the taskbar search box and notification toasts off, multi-plane overlay off, memory compression off, superfetch and Windows Search off, the dynamic tick off, the Xbox pieces gone unless you use Game Pass or Minecraft, and an advanced BIOS list in the report. A few more frames and steadier lows for fewer conveniences. It asks first, records every line, and undo puts all of it back. Run the standard tune first; use this when you want the last of it.</p>
+    <div class="cmd"><code data-text="${esc(`$env:OMNIDX_MODE='extreme'; ${oneLiner}`)}"><span class="ps">&gt;</span>${esc(`$env:OMNIDX_MODE='extreme'; ${oneLiner}`)}</code>${copyButton(`$env:OMNIDX_MODE='extreme'; ${oneLiner}`)}</div>
+    <p class="cmd-note">Same key, same PC, no extra charge. The app opens with Extreme ticked; untick it to run the standard tune instead.</p>
 
     <div class="act-h">Receipt</div>
     <div class="act-row"><span>Product</span><b>${esc(p.name)} — ${p.seats === 1 ? '1 PC' : `${p.seats} PCs`}</b></div>

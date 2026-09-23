@@ -43,6 +43,11 @@ param(
   [switch]$Aggressive,
   # Remove the Xbox apps and set their services to manual. Off by default: Game Pass and Minecraft need them.
   [switch]$CutXbox,
+  # Extreme (caution): the standard tune plus every extra service, Game Bar entirely, animations and transparency,
+  # the taskbar search box, notification toasts and badges, multi-plane overlay, memory compression, SysMain on SSDs,
+  # Windows Search, the dynamic tick, and the Xbox pieces unless Game Pass or Minecraft is in use. A few more frames and
+  # steadier lows for fewer conveniences. Asked about first; recorded and undone like everything else.
+  [switch]$Extreme,
   # Startup entries to leave enabled, by the name Task Manager shows (e.g. -Keep 'Wallpaper Engine','RTSS').
   [string[]]$Keep = @(),
   # Point DNS at Cloudflare (1.1.1.1). Off by default; your router's DNS is usually fine.
@@ -82,7 +87,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.29.0'
+$script:Version = '1.30.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -203,7 +208,7 @@ function Test-Licence($parsed, [string]$hwid, $machine) {
         Warn "Could not reach the licence server ($msg). This PC is already on this key, so carrying on."
         return $true
       }
-      Say ("  " + $msg) 'Red'
+      Say ("  The licence server did not accept the key: {0}. Nothing has changed on this PC. If it keeps happening, email support with your Square receipt." -f $msg) 'Red'
       return $false
     }
   }
@@ -399,7 +404,8 @@ foreach ($c in $changes) {
       'file' { if (Test-Path $c.backup) { Copy-Item $c.backup $c.path -Force; Write-Host ("file restored {0}" -f $c.path) -ForegroundColor DarkGray } }
       'appx' { $removedApps += $c.name }
       'fsutil' { $setting = $(if ($c.setting) { $c.setting } else { 'disablelastaccess' }); & fsutil behavior set $setting $c.prev | Out-Null; Write-Host ("fsutil {0} -> {1}" -f $setting, $c.prev) -ForegroundColor DarkGray }
-      'mmagent' { try { Enable-MMAgent -ApplicationPreLaunch -ErrorAction Stop } catch { } }
+      'mmagent' { try { if ($c.feature -eq 'MemoryCompression') { Enable-MMAgent -MemoryCompression -ErrorAction Stop } else { Enable-MMAgent -ApplicationPreLaunch -ErrorAction Stop } } catch { } }
+      'bcdedit' { & bcdedit /deletevalue $c.name 2>$null | Out-Null; Write-Host ("boot setting {0} back to default" -f $c.name) -ForegroundColor DarkGray }
       'task-created' { try { Unregister-ScheduledTask -TaskName $c.name -Confirm:$false -ErrorAction Stop } catch { } }
       'capability' { if (-not $capsBack.Contains($c.name)) { [void]$capsBack.Add($c.name) }; $deferred = $true }
       'feature' { if (-not $featsBack.Contains($c.name)) { [void]$featsBack.Add($c.name) }; $deferred = $true }
@@ -582,9 +588,16 @@ function Get-SafeBar($m) {
 
 <# Which services this PC keeps, and why. Built from what Get-Machine found,
    used by the cut and by the free report, so the two never disagree. #>
+<# Whether the Xbox pieces go: when asked (-CutXbox), or under -Extreme when
+   nothing on this PC uses them. #>
+function Test-CutXbox($m) { return [bool]($CutXbox -or ($Extreme -and -not $m.xboxUsed -and -not $m.xboxPad)) }
+
 function Get-KeepList($m) {
   $k = @{}
-  if ($m.printers) { $k['Spooler'] = 'a printer is installed' }
+  if ($m.printers) { $k['Spooler'] = 'a printer is installed'; $k['WiaRpc'] = 'a printer (or scanner) is installed'; $k['stisvc'] = 'a printer (or scanner) is installed'; $k['PrintWorkflowUserSvc'] = 'a printer is installed' }
+  if ($m.vm) { foreach ($n in 'vmicguestinterface', 'vmicheartbeat', 'vmickvpexchange', 'vmicrdv', 'vmicshutdown', 'vmictimesync', 'vmicvmsession', 'vmicvss') { $k[$n] = 'this is a virtual machine' } }
+  if ($m.domain) { $k['cloudidsvc'] = 'joined to a domain' }
+  if ($m.touch) { $k['PenService'] = 'touch screen' }
   if ($m.btDevices -or $m.btRadio) { foreach ($n in 'bthserv', 'BTAGService', 'BthAvctpSvc') { $k[$n] = 'Bluetooth is in use' } }
   if ($m.wifi) { $k['WlanSvc'] = $(if ($m.wifiLive) { 'Wi-Fi is your connection' } else { 'a Wi-Fi adapter is present' }); $k['RmSvc'] = 'a Wi-Fi adapter is present' }
   if ($m.touch -or $m.laptop) { $k['TabletInputService'] = $(if ($m.touch) { 'touch screen' } else { 'laptop' }) }
@@ -592,8 +605,8 @@ function Get-KeepList($m) {
   if ($m.laptop) { foreach ($n in 'SensorService', 'SensrSvc', 'SensorDataService', 'WwanSvc') { $k[$n] = 'laptop' } }
   if ($m.vpn) { foreach ($n in 'iphlpsvc', 'SSDPSRV', 'upnphost') { $k[$n] = 'a VPN adapter is present' } }
   if (-not $m.allSsd) { $k['SysMain'] = 'a hard disk benefits from prefetch' }
-  if ($m.xboxUsed -and -not $CutXbox) { foreach ($n in 'XblAuthManager', 'XblGameSave', 'XboxNetApiSvc', 'XboxGipSvc') { $k[$n] = 'Game Pass, the Xbox app or Minecraft is installed' } }
-  if ($m.xboxPad -and -not $CutXbox) { $k['XboxGipSvc'] = 'an Xbox controller is connected' }
+  if ($m.xboxUsed -and -not (Test-CutXbox $m)) { foreach ($n in 'XblAuthManager', 'XblGameSave', 'XboxNetApiSvc', 'XboxGipSvc') { $k[$n] = 'Game Pass, the Xbox app or Minecraft is installed' } }
+  if ($m.xboxPad -and -not (Test-CutXbox $m)) { $k['XboxGipSvc'] = 'an Xbox controller is connected' }
   $k['Themes'] = 'Windows 10 falls back to the classic look without it'
   return $k
 }
@@ -678,7 +691,7 @@ function Register-AfterCount {
    and are skipped. #>
 function Get-Drift {
   param([string[]]$Files, [switch]$Fix)
-  $yours = @('\Control Panel\', '\StartupApproved\', '\CurrentVersion\Run', '\Explorer\Advanced', '\GameBar', 'GameConfigStore', '\GameDVR', '\Accessibility\', '\UserGpuPreferences', '\VisualEffects', '\Explorer\Serialize', '\Personalization', '\Classes\CLSID\')
+  $yours = @('\Control Panel\', '\StartupApproved\', '\CurrentVersion\Run', '\Explorer\Advanced', '\GameBar', 'GameConfigStore', '\GameDVR', '\Accessibility\', '\UserGpuPreferences', '\VisualEffects', '\Explorer\Serialize', '\Personalization', '\Classes\CLSID\', '\Themes\Personalize', '\PushNotifications', '\Notifications\', '\CurrentVersion\Search', '\WindowMetrics', '\Dwm')
   $entries = @()
   foreach ($f in @($Files | Sort-Object)) { try { $entries += @(Get-Content $f -Raw | ConvertFrom-Json | ForEach-Object { $_ }) } catch { } }
   [array]::Reverse($entries)
@@ -1142,13 +1155,32 @@ $script:ServiceOff = @(
   @('DPS', 'diagnostic policy'), @('WdiServiceHost', 'diagnostics'), @('WdiSystemHost', 'diagnostics'), @('stisvc', 'scanner (WIA)'),
   @('SCardSvr', 'smart card'), @('ScDeviceEnum', 'smart card'), @('CertPropSvc', 'smart card'), @('WebClient', 'webdav'),
   @('lmhosts', 'netbios'), @('iphlpsvc', 'ipv6 tunnels'), @('TermService', 'remote desktop'), @('SessionEnv', 'remote desktop'), @('UmRdpService', 'remote desktop'),
-  @('Themes', 'themes'), @('cbdhsvc', 'clipboard history'), @('WpnService', 'push notifications'), @('WpnUserService', 'push notifications')
+  @('Themes', 'themes'), @('cbdhsvc', 'clipboard history'), @('WpnService', 'push notifications'), @('WpnUserService', 'push notifications'),
+  @('p2psvc', 'peer networking'), @('p2pimsvc', 'peer networking identity'), @('PNRPsvc', 'peer name resolution'), @('PNRPAutoReg', 'peer name publication'),
+  @('RemoteAccess', 'routing and remote access'), @('SNMPTRAP', 'SNMP traps'), @('SharedRealitySvc', 'mixed reality spatial data'), @('shpamsvc', 'shared PC accounts'),
+  @('SmsRouter', 'SMS routing'), @('TroubleshootingSvc', 'recommended troubleshooting'), @('UevAgentService', 'user experience virtualisation'), @('workfolderssvc', 'Work Folders sync'),
+  @('WFDSConMgrSvc', 'Wi-Fi Direct'), @('WiaRpc', 'still image (scanners)'), @('svsvc', 'spot verifier'), @('autotimesvc', 'cellular time'),
+  @('EntAppSvc', 'enterprise app management'), @('fhsvc', 'File History'), @('DusmSvc', 'data usage'),
+  @('vmicguestinterface', 'Hyper-V guest'), @('vmicheartbeat', 'Hyper-V guest'), @('vmickvpexchange', 'Hyper-V guest'), @('vmicrdv', 'Hyper-V guest'),
+  @('vmicshutdown', 'Hyper-V guest'), @('vmictimesync', 'Hyper-V guest'), @('vmicvmsession', 'Hyper-V guest'), @('vmicvss', 'Hyper-V guest')
 )
+# Extreme only: the services a person might notice going. Manual unless the
+# list below says off; -Extreme sets them, the standard tune leaves them.
+$script:ExtremeServices = @(
+  @('CaptureService', 'screen capture for apps'), @('NPSMSvc', 'media controls (Now Playing)'), @('PrintWorkflowUserSvc', 'print workflow (kept with a printer)'),
+  @('AarSvc', 'voice activation'), @('BcastDVRUserService', 'Game DVR broadcasting'), @('cloudidsvc', 'cloud identity (kept on a domain)'),
+  @('DevicesFlowUserSvc', 'connect-to-device flow'), @('DeviceAssociationBrokerSvc', 'device pairing broker'), @('DevQueryBroker', 'device query broker'),
+  @('PenService', 'pen input (kept with touch)'), @('SysMain', 'superfetch, off on an SSD'), @('WSearch', 'search indexing, off'),
+  @('WpnService', 'notifications, off'), @('WpnUserService', 'notifications, off'), @('cbdhsvc', 'clipboard history, off'),
+  @('CDPSvc', 'nearby sharing, off'), @('CDPUserSvc', 'nearby sharing, off'), @('TabletInputService', 'touch keyboard (kept with touch)')
+)
+$script:ExtremeOff = @('SysMain', 'WSearch', 'WpnService', 'WpnUserService', 'cbdhsvc', 'CDPSvc', 'CDPUserSvc', 'BcastDVRUserService', 'AarSvc')
 # The ones this machine actually uses go to manual instead of off, or stay.
 $script:ManualOnly = @('SysMain', 'WSearch', 'edgeupdate', 'edgeupdatem', 'DPS', 'WdiServiceHost', 'WdiSystemHost', 'iphlpsvc', 'SSDPSRV', 'upnphost',
   'NcbService', 'CDPSvc', 'CDPUserSvc', 'OneSyncSvc', 'PimIndexMaintenanceSvc', 'UnistoreSvc', 'UserDataSvc', 'XblAuthManager', 'XblGameSave',
   'XboxNetApiSvc', 'XboxGipSvc', 'RmSvc', 'FrameServer', 'stisvc', 'WebClient', 'lmhosts', 'TermService', 'SessionEnv', 'UmRdpService',
-  'WpnService', 'WpnUserService', 'cbdhsvc', 'SensorService', 'SensrSvc', 'SensorDataService', 'TabletInputService', 'BTAGService', 'BthAvctpSvc', 'DoSvc')
+  'WpnService', 'WpnUserService', 'cbdhsvc', 'SensorService', 'SensrSvc', 'SensorDataService', 'TabletInputService', 'BTAGService', 'BthAvctpSvc', 'DoSvc',
+  'WFDSConMgrSvc', 'WiaRpc', 'svsvc', 'autotimesvc', 'EntAppSvc', 'fhsvc', 'DusmSvc')
 
 function Cut-Services($m) {
   Head "Services"
@@ -1271,7 +1303,7 @@ function Cut-Apps($m) {
   Head "Preinstalled apps"
   # Quick Assist and Sticky Notes come back from the Store in one press; both are in the undo list.
   $junk = @($script:JunkApps)
-  if ($CutXbox) { $junk += 'Microsoft.XboxApp', 'Microsoft.GamingApp', 'Microsoft.Xbox.TCUI', 'Microsoft.XboxGamingOverlay', 'Microsoft.XboxIdentityProvider', 'Microsoft.XboxSpeechToTextOverlay', 'Microsoft.XboxGameOverlay' }
+  if (Test-CutXbox $m) { $junk += 'Microsoft.XboxApp', 'Microsoft.GamingApp', 'Microsoft.Xbox.TCUI', 'Microsoft.XboxGamingOverlay', 'Microsoft.XboxIdentityProvider', 'Microsoft.XboxSpeechToTextOverlay', 'Microsoft.XboxGameOverlay' }
   $n = 0
   # Every package and every provisioned package once; asking per pattern cost twenty-five seconds.
   $allPkgs = @(Get-AppxPackage -AllUsers -ErrorAction SilentlyContinue)
@@ -1453,6 +1485,9 @@ function Cut-Telemetry($m) {
   Set-Reg 'HKCU:\Software\Microsoft\GameBar' 'AutoGameModeEnabled' 1
   Set-Reg 'HKCU:\Software\Microsoft\GameBar' 'AllowAutoGameMode' 1
   Set-Reg 'HKCU:\Software\Microsoft\GameBar' 'UseNexusForGameBarEnabled' 0
+  Set-Reg 'HKCU:\Software\Microsoft\GameBar' 'ShowStartupPanel' 0
+  # The presence writer is the one Game Bar process that runs whether or not the bar is open.
+  Set-Reg 'HKLM:\SOFTWARE\Microsoft\WindowsRuntime\ActivatableClassId\Windows.Gaming.GameBar.PresenceServer.Internal.PresenceWriter' 'ActivationType' 0
   # Edge: no pre-launch, no background tabs after close.
   Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Edge' 'StartupBoostEnabled' 0
   Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Edge' 'BackgroundModeEnabled' 0
@@ -1822,6 +1857,67 @@ function Tune-Gpu($m) {
 }
 
 # ---------------------------------------------------------------------------
+# extreme (opt-in): fewer conveniences, a few more frames
+# ---------------------------------------------------------------------------
+<# What the people who tune for a living do after the safe tune, minus the
+   myths and minus anything that lowers security: the shell drawn plain, the
+   services a person might notice going, the overlay plane off, memory
+   compression off where there is RAM to spare, the dynamic tick off. Every
+   line recorded; undo puts it back; the keep task leaves the personal ones
+   alone. Asked about first, because "you will notice" is the point. #>
+function Set-Extreme($m) {
+  if (-not $Extreme) { return }
+  Head "Extreme"
+  Say "  Fewer conveniences for a few more frames: notifications, animations, transparency, the search box, clipboard history, nearby sharing, Windows Search, superfetch on an SSD, the Xbox pieces unless they are in use, and the extra services go. Undo puts every one back." 'White'
+  if (-not (Ask "Go extreme?")) { Say "  Skipped. The standard tune stands."; return }
+  $keep = Get-KeepList $m
+  $all = @(Get-Service -ErrorAction SilentlyContinue)
+  $byName = @{}; foreach ($svc in $all) { $byName[$svc.Name] = $svc }
+  $exists = { param($n) if ($byName.ContainsKey($n)) { return $true }; return [bool](Get-Service -Name $n -ErrorAction SilentlyContinue) }
+  foreach ($pair in $script:ExtremeServices) {
+    $name = $pair[0]; $why = $pair[1]
+    if ($keep.ContainsKey($name)) { if (& $exists $name) { Keep $name $keep[$name] }; continue }
+    if ($name -eq 'SysMain' -and -not $m.allSsd) { Keep 'SysMain' 'a hard disk benefits from prefetch'; continue }
+    $mode = if ($script:ExtremeOff -contains $name) { 'Disabled' } else { 'Manual' }
+    if (& $exists $name) { Set-ServiceStart $name $mode $why }
+    foreach ($inst in @($all | Where-Object { $_.Name -like ($name + '_*') -and $_.Status -eq 'Running' })) { try { Stop-Service -Name $inst.Name -Force -ErrorAction Stop -WarningAction SilentlyContinue } catch { } }
+  }
+  # The shell, drawn plain: no transparency, no animations, no shadows, no badges, no toasts, no search box.
+  Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' 'EnableTransparency' 0
+  Set-Reg 'HKCU:\Control Panel\Desktop\WindowMetrics' 'MinAnimate' '0' 'String'
+  Set-Reg 'HKCU:\Control Panel\Desktop' 'UserPreferencesMask' ([byte[]](0x90, 0x12, 0x03, 0x80, 0x10, 0x00, 0x00, 0x00)) 'Binary'
+  Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\VisualEffects' 'VisualFXSetting' 2
+  Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'TaskbarAnimations' 0
+  Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'ListviewShadow' 0
+  Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'ListviewAlphaSelect' 0
+  Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'TaskbarBadges' 0
+  Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Search' 'SearchboxTaskbarMode' 0
+  Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\PushNotifications' 'ToastEnabled' 0
+  Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Notifications\Settings' 'NOC_GLOBAL_SETTING_ALLOW_TOASTS_ABOVE_LOCK' 0
+  Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' 'Start_Layout' 1
+  if (-not $m.touch) { Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\WindowsInkWorkspace' 'AllowWindowsInkWorkspace' 0 }
+  Did "Shell: transparency, animations, shadows, taskbar badges, toasts and the search box off; Start shows more pins"
+  # Exclusive fullscreen everywhere, and the multi-plane overlay off: the two settings behind most "stutter fixed" threads.
+  Set-Reg 'HKCU:\System\GameConfigStore' 'GameDVR_DXGIHonorFSEWindowsCompatible' 1
+  Set-Reg 'HKCU:\System\GameConfigStore' 'GameDVR_EFSEFeatureFlags' 0
+  Set-Reg 'HKLM:\SOFTWARE\Microsoft\Windows\Dwm' 'OverlayTestMode' 5
+  Did "Exclusive fullscreen honoured for every game; multi-plane overlay off"
+  # Memory compression: CPU time spent squeezing pages that 16 GB never needs to squeeze.
+  if ($m.ramGb -ge 16) {
+    try { if ((Get-MMAgent -ErrorAction Stop).MemoryCompression) { Disable-MMAgent -MemoryCompression -ErrorAction Stop; Record @{ type = 'mmagent'; feature = 'MemoryCompression' }; Did "Memory compression off (16 GB or more)" } } catch { }
+  }
+  # The dynamic tick: the kernel stops coalescing timer interrupts to save power, which is not what a gaming desktop is for.
+  if (-not $m.laptop) {
+    $cur = (& bcdedit /enum '{current}' 2>$null) -join ' '
+    if ($cur -notmatch 'disabledynamictick\s+Yes') {
+      & bcdedit /set disabledynamictick yes 2>$null | Out-Null
+      if ($LASTEXITCODE -eq 0) { Record @{ type = 'bcdedit'; name = 'disabledynamictick' }; Did "Dynamic tick off (desktop)" }
+    }
+  }
+  Say "  Extreme applied. Undo puts all of it back; the keep task leaves the shell choices alone."
+}
+
+# ---------------------------------------------------------------------------
 # memory integrity (opt-in)
 # ---------------------------------------------------------------------------
 function Set-Vbs($m) {
@@ -1874,6 +1970,18 @@ function Get-BiosChecklist($m) {
     $(if ($m.wifiLive) { "10. Onboard devices you do not use: serial port, onboard audio if you use USB audio, RGB controllers. Keep Wi-Fi and Bluetooth on: Wi-Fi is your connection." } else { "10. Onboard devices you do not use: serial port, Wi-Fi/Bluetooth if wired, onboard audio if you use USB audio, RGB controllers. Each one removed is an interrupt source gone." }),
     "11. HPET: leave at default. The 'disable HPET' tweak is from 2013 and hurts more than it helps on modern Windows.",
     "12. Virtualisation (SVM / VT-x): leave on if you use WSL, Docker, an emulator, or if VALORANT runs on Windows 11 for you; otherwise off saves a little scheduling overhead.",
+    $(if ($Extreme) { "" } else { $null }),
+    $(if ($Extreme) { "EXTREME - only with a cooler you trust and a memory test to hand. Each of these is what the people tuning for a living set after the list above; none of them is free." } else { $null }),
+    $(if ($Extreme) { "  E1. Global C-states: Disabled. Steadier 1% lows on some boards; more idle heat and power. Try it, measure it, keep it only if the lows improve." } else { $null }),
+    $(if ($Extreme) { "  E2. Spread Spectrum (CPU and PCIe): Disabled. A hair of clock stability for no emissions margin you will ever measure at home." } else { $null }),
+    $(if ($Extreme -and $m.gpuVendor -ne 'Intel') { "  E3. Integrated graphics: Disabled, since the $($m.gpu) does the work. Skip this if you use Quick Sync for recording." } else { $null }),
+    $(if ($Extreme) { "  E4. Onboard devices you do not use: the second network port, the serial header, Wake-on-LAN, Bluetooth if you never pair anything, the audio codec if you use USB or a DAC. Each one is a driver and an interrupt fewer." } else { $null }),
+    $(if ($Extreme) { "  E5. ErP / EuP: Disabled, so USB keeps power for the mouse and keyboard to wake the PC; Enabled only if you want the lowest off-state draw." } else { $null }),
+    $(if ($Extreme) { "  E6. PCIe link speed for the graphics slot: set to the card's generation (Gen 4 or Gen 5) instead of Auto, which stops the link renegotiating under load on a few boards." } else { $null }),
+    $(if ($Extreme -and $m.cpuVendor -eq 'AMD') { "  E7. PBO limits: Motherboard, with a Curve Optimizer negative offset found by testing (start at -10 all-core, run a stress test an hour, step down). Never a positive voltage offset; never above 1.30 V SoC." } else { $null }),
+    $(if ($Extreme -and $m.cpuVendor -ne 'AMD') { "  E7. Power limits: PL1 = PL2 at the board's cooling can hold, with the CPU temperature watched under a stress test; an undervolt found by testing (start at -0.050 V) if the board offers one." } else { $null }),
+    $(if ($Extreme) { "  E8. Memory, after the profile: raise tREFI toward 65535 and lower tRFC in steps, testing an hour each; this is where a memory test earns its keep. Stop at the first error and go back one step." } else { $null }),
+    $(if ($Extreme) { "  E9. Resizable BAR: on (it is above); with it, also 'Above 4G Decoding' on and CSM off, or the card silently falls back." } else { $null }),
     "",
     "After saving: Windows will boot normally. If it does not (rare, usually CSM), go back in and re-enable the last thing you changed.",
     "Do not update the BIOS unless the vendor's notes mention a fix for your exact problem; a failed flash is the one thing here that cannot be undone from Windows."
@@ -2036,6 +2144,7 @@ $script:Xaml = @'
             <CheckBox x:Name="ChkXbox"><TextBlock TextWrapping="Wrap" Foreground="#B3A8CF" Text="Cut the Xbox services too (Game Pass and Minecraft need them)"/></CheckBox>
             <CheckBox x:Name="ChkDns" Content="Point DNS at 1.1.1.1"/>
             <CheckBox x:Name="ChkVbs"><TextBlock TextWrapping="Wrap" Foreground="#B3A8CF" Text="Memory integrity off: a few percent more frames, one layer of kernel protection less"/></CheckBox>
+            <CheckBox x:Name="ChkExtreme"><TextBlock TextWrapping="Wrap" Foreground="#FFC247" Text="Extreme (caution): every extra service, Game Bar entirely, animations and transparency, the search box, notifications, multi-plane overlay, memory compression, superfetch on SSDs, Windows Search, the dynamic tick, and the Xbox pieces unless you use them. Fewer conveniences, a few more frames; undo puts it all back."/></CheckBox>
             <TextBlock Foreground="#7D7199" TextWrapping="Wrap" Margin="0,12,0,0" Text="Discord and Spotify are closed during the run so they can be tuned. A restore point comes first, every change is recorded, and undo is one button. Kept cut means a small task at sign-in puts back whatever a Windows update turned on; it never touches your own settings, and undo removes it."/>
           </StackPanel>
         </ScrollViewer>
@@ -2076,14 +2185,15 @@ function Show-Gui {
   $w = [System.Windows.Markup.XamlReader]::Parse($script:Xaml)
   $ui = @{}
   foreach ($n in 'VersionText', 'StatusText', 'MachineText', 'CountText', 'TargetText', 'AdviceText', 'StartupPanel', 'KeyBox', 'KeyNote', 'BtnRun', 'BtnReport', 'BtnUndo', 'BtnStatus', 'BtnFolder', 'BtnRestart', 'BtnOpenReport', 'ResultText', 'LogBox', 'Progress', 'FootText',
-                  'ChkStartup', 'ChkServices', 'ChkTasks', 'ChkApps', 'ChkDebloat', 'ChkTelemetry', 'ChkSystem', 'ChkPower', 'ChkNetwork', 'ChkPrograms', 'ChkGames', 'ChkNvidia', 'ChkCleanup', 'ChkAfterCount', 'ChkKeep', 'ChkXbox', 'ChkDns', 'ChkVbs') {
+                  'ChkStartup', 'ChkServices', 'ChkTasks', 'ChkApps', 'ChkDebloat', 'ChkTelemetry', 'ChkSystem', 'ChkPower', 'ChkNetwork', 'ChkPrograms', 'ChkGames', 'ChkNvidia', 'ChkCleanup', 'ChkAfterCount', 'ChkKeep', 'ChkXbox', 'ChkDns', 'ChkVbs', 'ChkExtreme') {
     $ui[$n] = $w.FindName($n)
   }
   $ui.VersionText.Text = "v$($script:Version)"
   if ($Key) { $ui.KeyBox.Text = $Key }
+  if ($Extreme) { $ui.ChkExtreme.IsChecked = $true }
   $phases = @{ startup = 'ChkStartup'; services = 'ChkServices'; tasks = 'ChkTasks'; apps = 'ChkApps'; debloat = 'ChkDebloat'; telemetry = 'ChkTelemetry'; system = 'ChkSystem'; power = 'ChkPower'; network = 'ChkNetwork'; programs = 'ChkPrograms'; games = 'ChkGames'; nvidia = 'ChkNvidia'; cleanup = 'ChkCleanup' }
   $state = @{ ps = $null; out = $null; handle = $null; seen = 0; seenOut = 0; mode = ''; heads = 0; startup = @(); probe = $null }
-  $headsTotal = 18
+  $headsTotal = 19
 
   $log = { param($line) $ui.LogBox.AppendText($line + "`r`n"); $ui.LogBox.ScrollToEnd() }
 
@@ -2185,6 +2295,7 @@ function Show-Gui {
     if ($ui.ChkXbox.IsChecked) { $p.CutXbox = $true }
     if ($ui.ChkDns.IsChecked) { $p.Dns = $true }
     if ($ui.ChkVbs.IsChecked) { $p.Aggressive = $true }
+    if ($ui.ChkExtreme.IsChecked) { $p.Extreme = $true }
     if (-not $ui.ChkAfterCount.IsChecked) { $p.NoAfterCount = $true }
     if (-not $ui.ChkKeep.IsChecked) { $p.NoKeep = $true }
     $ui.LogBox.Clear(); $ui.ResultText.Text = ''; $ui.Progress.Value = 2
@@ -2304,7 +2415,7 @@ function Write-Report($m, $before, $after, $changesFile) {
   Set-Content -Path (Join-Path $script:Root ("bios-{0}.txt" -f (($m.board -replace '[^A-Za-z0-9]+', '-').Trim('-')))) -Value (Get-BiosChecklist $m) -Encoding UTF8
   try { Write-HtmlReport $m $before $after $target $found $changesFile } catch { Warn ("The HTML report was not written ({0}); the text one is." -f $_.Exception.Message) }
   try {
-    $summary = @{ version = $script:Version; stamp = $script:Stamp; before = $before; after = $after; target = $target; changes = $script:Changes.Count; warnings = $script:Warnings.Count; seconds = [int]$script:Timer.Elapsed.TotalSeconds; os = $m.os; cpu = $m.cpu; gpu = $m.gpu; ramGb = $m.ramGb; board = $m.board; laptop = $m.laptop; games = $found; snapshots = $script:Snapshots; gone = @(Get-GoneProcesses); phases = $script:Phases }
+    $summary = @{ version = $script:Version; stamp = $script:Stamp; before = $before; after = $after; target = $target; changes = $script:Changes.Count; warnings = $script:Warnings.Count; seconds = [int]$script:Timer.Elapsed.TotalSeconds; os = $m.os; cpu = $m.cpu; gpu = $m.gpu; ramGb = $m.ramGb; board = $m.board; laptop = $m.laptop; games = $found; snapshots = $script:Snapshots; gone = @(Get-GoneProcesses); phases = $script:Phases; extreme = [bool]$Extreme }
     $summary | ConvertTo-Json -Depth 4 | Set-Content -Path (Join-Path $script:Root ("summary-{0}.json" -f $script:Stamp)) -Encoding UTF8
   } catch { }
   return $rep
@@ -2439,6 +2550,7 @@ function Write-Preview($m, $before) {
     "WARNINGS ($($script:Warnings.Count))", @($(if ($script:Warnings.Count) { $script:Warnings | ForEach-Object { "  ! $_" } } else { "  none" })), "",
     "THE PAID REPORT ADDS", "  the BIOS checklist for $($m.board) ($($m.bios)), the GPU control-panel settings, and the competitive settings for each game found.",
     "  And after a paid run: the keep task puts back what a Windows update turns on, and status mode says what is still in place, any time.",
+    "  Extreme (caution), for after the standard tune: every extra service, Game Bar entirely, the shell drawn plain, notifications off, the overlay plane and memory compression off, and an advanced BIOS list. More frames, fewer conveniences; undo puts it all back.",
     "  omnidx.net - one payment, one PC, undo in one line."
   )
   $flat = @(); foreach ($l in $lines) { if ($l -is [array]) { $flat += $l } else { $flat += $l } }
@@ -2583,6 +2695,7 @@ function Main {
     & $run 'programs'  { Tune-Apps $m }
     & $run 'games'     { Set-GameProfiles }
     & $run 'nvidia'    { Tune-Gpu $m }
+    & $run 'extreme'   { Set-Extreme $m }
     Set-Vbs $m
     & $run 'cleanup'   { Clear-Junk }
     Register-AfterCount

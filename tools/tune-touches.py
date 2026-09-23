@@ -30,6 +30,7 @@ SECTIONS = {
     'Cut-Telemetry': 'Telemetry, background activity, the shell', 'Tune-System': 'System tuning', 'New-PowerPlan': 'The OmniDx power plan',
     'Tune-Network': 'Network', 'Tune-Apps': 'Discord, Spotify, browsers', 'Set-GameProfiles': 'Game profiles', 'Tune-Gpu': 'NVIDIA extras',
     'Set-Vbs': 'Memory integrity (opt-in)', 'New-Safety': 'Safety first', 'Register-AfterCount': 'After-restart count',
+    'Set-Extreme': 'Extreme (opt-in, caution)',
 }
 
 # What Get-KeepList keeps, in words. Kept in step with the function by hand;
@@ -117,6 +118,11 @@ def page(text: str) -> str:
         + '</tbody></table></div></details>'
         for section, vals in reg.items())
     reg_total = sum(len(v) for v in reg.values())
+    extreme = pairs(block(text, 'ExtremeServices'))
+    extreme_off = set(strings(block(text, 'ExtremeOff')))
+    extreme_rows = ''.join(
+        f'<tr><td class="mono">{e(n)}</td><td>{e(why)}</td><td class="{"y" if n in extreme_off else "p"}">{"disabled" if n in extreme_off else "manual"}</td></tr>'
+        for n, why in extreme)
     yours = strings(re.search(r"\$yours = @\(([^\n]*)\)", text).group(1))
     yours_items = ''.join(f'<li class="mono">{e(y)}</li>' for y in yours)
     games_block = text[text.index('$script:Games = @('):text.index('function Get-GameRoots')]
@@ -241,6 +247,16 @@ def page(text: str) -> str:
         a value that did not exist is removed again.</p>
     </div>
     {reg_blocks}
+  </div>
+</section>
+
+<section id="extreme">
+  <div class="wrap touch">
+    <div class="section-head reveal">
+      <h2>Extreme, only when asked ({len(extreme)} more services)</h2>
+      <p>The second command on the key page. Everything above, then these services, the shell drawn plain (transparency, animations, shadows, taskbar badges, toasts and the search box off), exclusive fullscreen honoured for every game, the multi-plane overlay off, memory compression off with 16 GB or more, the dynamic tick off on desktops, and the Xbox pieces gone unless Game Pass, the Xbox app, Minecraft or a controller is found. It asks first. Every line is recorded and undone like the rest; the keep task leaves the shell choices alone.</p>
+    </div>
+    <div class="cmp-wrap"><table class="cmp" style="min-width:0"><tbody>{extreme_rows}</tbody></table></div>
   </div>
 </section>
 

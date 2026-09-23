@@ -13,6 +13,7 @@
 #   $env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex     what is still in place, what an update put back
 #   $env:OMNIDX_MODE='support'; irm omnidx.net/go.ps1 | iex    zip the logs and numbers to the desktop for support
 #   $env:OMNIDX_MODE='console'; irm omnidx.net/go.ps1 | iex    the console flow instead of the window
+#   $env:OMNIDX_MODE='extreme'; irm omnidx.net/go.ps1 | iex    the app with Extreme ticked (caution: fewer conveniences)
 #   $env:OMNIDX_FLAGS='-Aggressive -CutXbox -Dns -NoKeep'       options (see omnidx.net/studio/download/#options)
 #   $env:OMNIDX_KEEP='Wallpaper Engine,RTSS'                    startup entries to leave on
 $ErrorActionPreference = 'Stop'
@@ -84,7 +85,7 @@ $block = [scriptblock]::Create([string]$script)
 $opts = @{}
 foreach ($f in ("$env:OMNIDX_FLAGS" -split '[\s,]+' | Where-Object { $_ })) {
   $name = $f.TrimStart('-')
-  if ($name -match '^(Aggressive|CutXbox|Dns|NoRestorePoint|NoAfterCount|NoKeep|Yes)$') { $opts[$name] = $true }
+  if ($name -match '^(Aggressive|CutXbox|Dns|NoRestorePoint|NoAfterCount|NoKeep|Extreme|Yes)$') { $opts[$name] = $true }
 }
 if ($env:OMNIDX_KEEP) { $opts['Keep'] = @($env:OMNIDX_KEEP -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
 switch ($mode) {
@@ -94,5 +95,6 @@ switch ($mode) {
   'support' { & $block -SupportBundle }
   'check'  { & $block -Key $key -CheckKey }
   'app'    { & $block -Key $key -Api $api -Gui @opts }
+  'extreme' { & $block -Key $key -Api $api -Gui -Extreme @opts }
   default  { & $block -Key $key -Api $api @opts }
 }

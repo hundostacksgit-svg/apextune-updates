@@ -758,6 +758,7 @@ function initTune() {
         el.hidden = false;
         el.innerHTML = `<b>${esc(c.before)} → ${esc(c.after)}</b> processes before a restart, <b>${esc(c.changes)}</b> changes recorded in ${esc(c.seconds)} s`
           + (c.second >= 0 ? `; run again, <b>${esc(c.second)}</b> new` : '')
+          + (c.extreme >= 0 ? `; Extreme on top, <b>${esc(c.extreme)}</b> more` : '')
           + `; <b>${esc(c.undone)}</b> put back by undo${c.runs > 1 ? ` across ${esc(c.runs)} runs` : ''}`
           + (c.kept ? `; <b>${esc(c.kept)}</b> settings turned back on by hand and put back by the keep task` : '')
           + ` — the whole tune, run and undone on a fresh Windows build machine${when ? ` on ${esc(when)}` : ''} (script v${esc(c.version)}). Not a gaming PC: a bare server image, so its numbers are lower than yours will be.`;
