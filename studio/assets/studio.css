@@ -325,6 +325,7 @@ section{padding:92px 0;position:relative;scroll-margin-top:74px}
 .hero-note{margin-top:20px;font-size:13.5px;color:var(--text-3);display:flex;
   gap:16px;flex-wrap:wrap;align-items:center}
 .hero-note b{color:var(--text-2);font-weight:600}
+@media(max-width:560px){.hero-note{gap:8px 14px}.hero-note>span:nth-child(even){display:none}}
 .hero-check{margin:14px 0 0;font-size:14px;color:var(--text-3)}
 .hero-check a{color:var(--blue-2);font-weight:650;text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--blue-2) 40%,transparent)}
 .hero-check a:hover{border-bottom-color:var(--blue-2)}
