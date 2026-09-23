@@ -20,7 +20,9 @@ irm omnidx.net/go.ps1 | iex
 - `tune/omnidx.ps1` is the script; `go.ps1` fetches the copy the Windows
   check verified and runs it. `tune/verified.json` says which copy that is.
 - `server/worker.js` is the licence server (Cloudflare Worker + D1): issues,
-  emails, locks, moves and revokes keys; Square's webhook drives it.
+  emails, locks, moves and revokes keys; Square's webhook drives it; a
+  handful of tries per connection shuts out guessing; the owner gets the
+  week's figures every Monday and a note on any partial refund.
 - `.github/workflows/tune-check.yml` runs the whole tune, the keep task and
   undo on a Windows machine on every push; `worker.yml` deploys the server
   from repository secrets, so the whole setup is done from a browser.
