@@ -111,6 +111,16 @@ function verified() {
   if (!/function Main/.test(text)) bad('tune/verified.ps1 does not look like the tune');
 }
 
+/* Out-String wraps at the console width, and a check that reads its output
+   then depends on the build machine's CPU name; every capture in the Windows
+   check reads at full width. */
+function workflowWidth() {
+  const wf = fs.readFileSync(path.join(root, '.github/workflows/tune-check.yml'), 'utf8');
+  const bare = wf.split('\n').filter((l) => /\| Out-String\s*$/.test(l));
+  if (bare.length) bad(`tune-check.yml: ${bare.length} Out-String without -Width (a long line would wrap and fail a check): ${bare[0].trim()}`);
+  else ok('tune-check.yml reads every captured output at full width');
+}
+
 function config(scriptText) {
   const cfg = JSON.parse(fs.readFileSync(path.join(root, 'tune/config.json'), 'utf8'));
   const v = /\$script:Version = '([^']+)'/.exec(scriptText)?.[1];
@@ -203,5 +213,6 @@ siteAgrees(script);
 await keys();
 config(script);
 verified();
+workflowWidth();
 console.log(failed ? `${failed} problem(s)` : 'all good');
 process.exit(failed ? 1 : 0);

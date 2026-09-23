@@ -40,6 +40,11 @@ at their process count.
 **Short (TikTok / Instagram, 80 chars)**
 One command. 200 processes → under 100. $19.99 once. omnidx.net
 
+Squad, for a group: "Three keys for the price of two. $39.99, one for you, two
+to give away; each locks to its own PC. The keys land in your email the
+moment you pay." Say "three keys", never "three PCs on one key": a key is one
+PC, and that is what makes it cheap.
+
 **Medium (X / Twitter, Threads)**
 OmniDx Tune: one command cuts Windows down to what your games need, builds a
 power plan for frames, tunes your network, Discord, Spotify and browser, and
