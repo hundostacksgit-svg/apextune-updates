@@ -133,6 +133,27 @@ try {
     expect(await page.evaluate(() => /not switched on/.test(document.querySelector('#own-health')?.textContent || '')), 'the owner page says the licence server is not switched on');
     await page.fill('#own-token', 'x'); await page.fill('#own-ref', 'ORDER-1'); await page.click('[data-act="lookup"]'); await page.waitForTimeout(300);
     expect(await page.evaluate(() => /not switched on/.test(document.querySelector('#own-out')?.textContent || '')), 'and a lookup says the same instead of failing silently');
+    // With a server answering, the recent-orders list and a lookup render.
+    await page.unroute('**/tune/config.json*');
+    await page.route('**/tune/config.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ api: `${base}/fakeapi`, version: '0', sha256: 'x' }) }));
+    await page.route('**/fakeapi/v1/health', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, square: true, squareWebhook: true, mail: true, owner: true }) }));
+    await page.route('**/fakeapi/v1/tune/admin', (r) => {
+      const b = r.request().postDataJSON();
+      if (b.token !== 'owner-x') return r.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ error: 'Wrong token.' }) });
+      if (b.action === 'recent') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, orders: [
+        { order: 'ORDER-A', receipt: 'AB12', product: 'squad', email: 'a@example.test', paidCents: 3999, createdAt: Date.now(), emailedAt: Date.now(), keys: 3, off: 0 },
+        { order: 'ORDER-B', receipt: null, product: 'tune', email: null, paidCents: 1999, createdAt: Date.now(), emailedAt: null, keys: 1, off: 1 },
+      ] }) });
+      return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, order: 'ORDER-A', receipt: 'AB12', email: 'a@example.test', paidCents: 3999, createdAt: Date.now(), emailedAt: Date.now(), keys: [{ key: 'TUNE-AAAA-BBBB-CCCC-DDDD', product: 'squad', pcs: 1, revoked: false }] }) });
+    });
+    await page.reload({ waitUntil: 'networkidle' }); await page.waitForTimeout(400);
+    expect(await page.evaluate(() => /Owner token: on/.test(document.querySelector('#own-health')?.textContent || '')), 'with a server answering, the status line reads on for every part');
+    await page.fill('#own-token', 'owner-x'); await page.click('[data-act="recent"]'); await page.waitForTimeout(400);
+    expect(await page.evaluate(() => document.querySelectorAll('#own-out .own-key').length === 2 && /not emailed/.test(document.querySelector('#own-out').textContent)), 'recent orders lists two orders and flags the one not emailed');
+    await page.fill('#own-ref', 'ORDER-A'); await page.click('[data-act="lookup"]'); await page.waitForTimeout(400);
+    expect(await page.evaluate(() => /#AB12/.test(document.querySelector('#own-out').textContent) && document.querySelectorAll('#own-out .own-key').length === 1), 'a lookup shows the order, its receipt number and its key');
+    await page.fill('#own-token', 'wrong'); await page.click('[data-act="lookup"]'); await page.waitForTimeout(400);
+    expect(await page.evaluate(() => /Wrong token/.test(document.querySelector('#own-out').textContent)), 'a wrong token shows the refusal in the server\'s words');
     expect(!errs.length, 'owner page: no errors');
     await page.close();
   }
