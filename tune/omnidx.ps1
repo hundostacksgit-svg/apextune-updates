@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.36.0'
+$script:Version = '1.37.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -606,6 +606,8 @@ function Show-Advice($m) {
   if ($m.oem.Count) { Say ("  OEM extras found: {0}. Not touched; remove any you do not use from Settings > Apps." -f ($m.oem -join ', ')) }
   if ($m.otherAv.Count) { Say ("  Antivirus: {0}. Not touched." -f ($m.otherAv -join ', ')) }
   if ($m.vm) { Warn "This looks like a virtual machine. The tune will run, but the numbers mean little here." }
+  # What another tool left switched off: said here as well as in the report, since the console is where most people look.
+  foreach ($n in @(Get-LeftoverNotes $m)) { if ($n -notmatch '^Nothing found') { Say ("  ! Left by another tool: " + $n) 'Yellow' } }
 }
 
 <# An estimate of what this PC needs after the tune and a restart: what
@@ -1017,8 +1019,9 @@ except the two scheduled tasks named below, and nothing here talks to the
 internet.
 
   report-<date>.html / .txt   what it found, what it changed, the numbers,
-                              the BIOS checklist and the per-game settings.
-                              Open the .html in a browser.
+                              the BIOS checklist, the per-game settings, and
+                              what another tool left switched off, with the
+                              way back. Open the .html in a browser.
   summary-<date>.json         the same numbers, for machines
   log-<date>.txt              a transcript of the run
   machine-<date>.json         the PC as it read it
