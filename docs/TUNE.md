@@ -40,6 +40,13 @@ every push and commits the result to `studio/assets/app.png`, which the site
 shows. `-SelfTest` proves the script can see its own text and that a
 background instance delivers the probe and its log.
 
+The probe also carries `lastRun` (from the newest `summary-*.json`),
+`keepOn` and `keyBound`, so on a PC that has run before the window fills
+the key box, says "Run it again" on the button and shows the last run's
+numbers in the status line. "What is still in place" runs `-Status` in a
+background instance. Undo takes two clicks. The "Keep it cut after Windows
+updates" box, ticked by default, maps to `-NoKeep` when unticked.
+
 ## Money → key → PC, step by step
 
 1. The buyer presses **Get it**. The button's link comes from `TUNE.products.tune.checkout`,
