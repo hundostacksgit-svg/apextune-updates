@@ -1,0 +1,142 @@
+/*
+ * The site, in a browser, before it publishes.
+ *
+ * Serves the repository over HTTP and drives every Tune page in Chromium at
+ * desktop and phone width: no script error, no console error, no sideways
+ * scroll. Then the parts that take money or hand out keys, against stand-in
+ * answers: the buy buttons close while no licence server is configured and
+ * while the server says it cannot reach Square, and open when it can; the
+ * key page shows three keys for a Squad order, one for a Tune order, shows
+ * them again on a return visit, and takes the receipt number; the owner
+ * page says when the server is not switched on.
+ *
+ *   node tools/site-test.mjs          (playwright resolved from node_modules,
+ *                                      or PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs)
+ */
+import path from 'node:path';
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+let failed = 0;
+const ok = (m) => console.log('  ok  ' + m);
+const bad = (m) => { failed++; console.log('  FAIL ' + m); };
+const expect = (c, m) => (c ? ok(m) : bad(m));
+
+async function loadPlaywright() {
+  const tries = [process.env.PLAYWRIGHT_MODULE, 'playwright', '/opt/node22/lib/node_modules/playwright/index.mjs'].filter(Boolean);
+  for (const t of tries) { try { return await import(t); } catch { /* next */ } }
+  throw new Error('playwright is not installed: npm install --no-save playwright && npx playwright install chromium');
+}
+
+const port = 8140 + Math.floor(Math.random() * 200);
+const base = `http://127.0.0.1:${port}`;
+const server = spawn('python3', ['-m', 'http.server', String(port), '--bind', '127.0.0.1'], { cwd: root, stdio: 'ignore' });
+for (let i = 0; i < 50; i++) { try { const r = await fetch(`${base}/studio/`); if (r.ok) break; } catch { /* not yet */ } await new Promise((r) => setTimeout(r, 200)); }
+
+const { chromium } = await loadPlaywright();
+const { makeKey, pretty } = await import(path.join(root, 'studio/assets/tunekey.js'));
+const browser = await chromium.launch({ args: ['--no-sandbox'] });
+
+function watch(page) {
+  const errs = [];
+  page.on('pageerror', (e) => errs.push('pageerror: ' + String(e).slice(0, 160)));
+  // The browser logs every non-2xx or aborted fetch as a console error; those are the answers being tested, not faults.
+  page.on('console', (m) => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errs.push('console: ' + m.text().slice(0, 160)); });
+  return errs;
+}
+const overflow = (page) => page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+
+try {
+  console.log('The site, in a browser');
+
+  /* 1. Every page, two widths. */
+  for (const p of ['', 'pricing/', 'download/', 'trust/', 'changelog/', 'what-it-touches/', 'activate/', 'admin/']) {
+    for (const width of [1280, 390]) {
+      const page = await browser.newPage({ viewport: { width, height: 900 } });
+      const errs = watch(page);
+      const resp = await page.goto(`${base}/studio/${p}`, { waitUntil: 'networkidle' });
+      await page.waitForTimeout(300);
+      const title = await page.title();
+      expect(resp.status() === 200 && title && !errs.length && !(await overflow(page)), `studio/${p || 'index'} at ${width}px: loads, no errors, no sideways scroll${errs.length ? ' (' + errs.join('; ') + ')' : ''}`);
+      await page.close();
+    }
+  }
+
+  /* 2. The buy buttons and the key desk. */
+  const closedNow = async (page) => page.evaluate(() => [...document.querySelectorAll('[data-buy]')].map((a) => a.classList.contains('is-closed')));
+  {
+    const page = await browser.newPage(); const errs = watch(page);
+    await page.goto(`${base}/studio/pricing/`, { waitUntil: 'networkidle' }); await page.waitForTimeout(400);
+    const cfg = await (await fetch(`${base}/tune/config.json`)).json();
+    const c = await closedNow(page);
+    if (!cfg.api) expect(c.length >= 2 && c.every(Boolean), 'with no licence server configured, every buy button is closed');
+    else ok(`a licence server is configured (${cfg.api}); the closed state is checked with a stand-in below`);
+    await page.route('**/tune/config.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ api: `${base}/fakeapi`, version: '0', sha256: 'x' }) }));
+    await page.route('**/fakeapi/v1/health', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, square: true }) }));
+    await page.reload({ waitUntil: 'networkidle' }); await page.waitForTimeout(400);
+    expect((await closedNow(page)).every((x) => !x), 'with a server that can reach Square, every buy button is open');
+    await page.unroute('**/fakeapi/v1/health');
+    await page.route('**/fakeapi/v1/health', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, square: false }) }));
+    await page.reload({ waitUntil: 'networkidle' }); await page.waitForTimeout(400);
+    expect((await closedNow(page)).every(Boolean), 'with a server that cannot reach Square, every buy button is closed');
+    await page.unroute('**/fakeapi/v1/health');
+    await page.route('**/fakeapi/v1/health', (r) => r.abort());
+    await page.reload({ waitUntil: 'networkidle' }); await page.waitForTimeout(400);
+    expect((await closedNow(page)).every((x) => !x), 'with a server that cannot be reached from the browser, the buttons stay open');
+    expect(!errs.length, `pricing page: no errors through all of that${errs.length ? ' (' + errs.join('; ') + ')' : ''}`);
+    await page.close();
+  }
+
+  /* 3. The key page. */
+  {
+    const keys = [1, 2, 3].map(() => pretty(makeKey('tune')));
+    const page = await browser.newPage({ viewport: { width: 390, height: 900 } }); const errs = watch(page);
+    await page.route('**/tune/config.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ api: `${base}/fakeapi`, version: '0', sha256: 'x' }) }));
+    await page.route('**/fakeapi/v1/tune/check', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, product: 'squad', seats: 1, used: 0 }) }));
+    let asked = [];
+    await page.route('**/fakeapi/v1/tune/issue', async (r) => { asked.push(r.request().postDataJSON()); r.fulfill({ contentType: 'application/json', body: JSON.stringify({ key: keys[0], keys, product: 'squad', seats: 1, verified: true, emailed: true }) }); });
+    await page.goto(`${base}/studio/activate/?e=studio&orderId=ORDER-TEST-1`, { waitUntil: 'networkidle' }); await page.waitForTimeout(500);
+    const boxes = await page.evaluate(() => [...document.querySelectorAll('.keybox')].map((k) => k.textContent.replace(/\s+/g, ' ').trim()));
+    expect(boxes.length === 3 && boxes[0].includes(keys[0]) && boxes[2].includes(keys[2]), 'a Squad order shows its three keys');
+    expect(asked.length === 1 && asked[0].product === 'squad' && asked[0].order === 'ORDER-TEST-1', 'the page asked the server once, for that order, as Squad (?e=studio)');
+    expect(await page.evaluate(() => document.querySelector('.cmd code')?.dataset.text?.includes("$env:OMNIDX_KEY='" )), 'the paste line carries the first key');
+    expect(await page.evaluate(() => !!document.querySelector('#act-move-key')), 'the move form offers a choice of key');
+    expect(!(await overflow(page)), 'three keys fit a phone without sideways scroll');
+    await page.goto(`${base}/studio/activate/`, { waitUntil: 'networkidle' }); await page.waitForTimeout(500);
+    expect(await page.evaluate(() => document.querySelectorAll('.keybox').length === 3 && /again/.test(document.querySelector('h1')?.textContent || '')), 'a return visit shows the three keys again without asking the server');
+    await page.unroute('**/fakeapi/v1/tune/issue');
+    await page.route('**/fakeapi/v1/tune/issue', (r) => { asked.push(r.request().postDataJSON()); r.fulfill({ contentType: 'application/json', body: JSON.stringify({ key: keys[0], keys: [keys[0]], product: 'tune', seats: 1, verified: true, emailed: false }) }); });
+    await page.evaluate(() => localStorage.clear());
+    await page.goto(`${base}/studio/activate/?e=creator&orderId=ORDER-TEST-2`, { waitUntil: 'networkidle' }); await page.waitForTimeout(500);
+    expect(await page.evaluate(() => document.querySelectorAll('.keybox').length === 1 && /one PC/.test(document.querySelector('.act-sub')?.textContent || '')), 'a Tune order shows one key');
+    await page.evaluate(() => localStorage.clear());
+    await page.goto(`${base}/studio/activate/`, { waitUntil: 'networkidle' }); await page.waitForTimeout(300);
+    await page.fill('#act-order', '#AB12'); await page.click('[data-pick="tune"]'); await page.waitForTimeout(500);
+    expect(asked.some((a) => a.order === '#AB12') && (await page.evaluate(() => document.querySelectorAll('.keybox').length === 1)), 'the receipt-number form asks the server with what was typed and shows the key');
+    await page.unroute('**/fakeapi/v1/tune/issue');
+    await page.route('**/fakeapi/v1/tune/issue', (r) => r.fulfill({ status: 402, contentType: 'application/json', body: JSON.stringify({ error: 'Square does not show a completed payment for that order reference.' }) }));
+    await page.evaluate(() => localStorage.clear());
+    await page.goto(`${base}/studio/activate/?e=creator&orderId=ORDER-NOPE`, { waitUntil: 'networkidle' }); await page.waitForTimeout(500);
+    expect(await page.evaluate(() => /Square does not show/.test(document.body.textContent) && document.querySelectorAll('.keybox').length === 0), "a refusal from the server is shown in the server's words, with no key");
+    expect(!errs.length, `key page: no errors through all of that${errs.length ? ' (' + errs.join('; ') + ')' : ''}`);
+    await page.close();
+  }
+
+  /* 4. The owner page. */
+  {
+    const page = await browser.newPage({ viewport: { width: 390, height: 900 } }); const errs = watch(page);
+    await page.route('**/tune/config.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ api: '', version: '0', sha256: 'x' }) }));
+    await page.goto(`${base}/studio/admin/`, { waitUntil: 'networkidle' }); await page.waitForTimeout(400);
+    expect(await page.evaluate(() => /not switched on/.test(document.querySelector('#own-health')?.textContent || '')), 'the owner page says the licence server is not switched on');
+    await page.fill('#own-token', 'x'); await page.fill('#own-ref', 'ORDER-1'); await page.click('[data-act="lookup"]'); await page.waitForTimeout(300);
+    expect(await page.evaluate(() => /not switched on/.test(document.querySelector('#own-out')?.textContent || '')), 'and a lookup says the same instead of failing silently');
+    expect(!errs.length, 'owner page: no errors');
+    await page.close();
+  }
+} finally {
+  await browser.close();
+  server.kill();
+}
+console.log(failed ? `${failed} problem(s)` : 'all good');
+process.exit(failed ? 1 : 0);

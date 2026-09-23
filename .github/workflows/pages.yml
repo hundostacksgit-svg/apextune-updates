@@ -112,6 +112,16 @@ jobs:
           grep -q "location.replace('studio/" index.html || { echo "root index.html lost its script redirect"; exit 1; }
           echo "site looks complete"
 
+      # Every Tune page in a real browser at desktop and phone width, and the
+      # parts that take money or hand out keys against stand-in answers. A page
+      # that throws, scrolls sideways, sells with the key desk shut or shows the
+      # wrong keys does not publish.
+      - name: The site works in a browser
+        run: |
+          npm install --no-audit --no-fund --no-save playwright@1.47.2
+          npx playwright install --with-deps chromium
+          node tools/site-test.mjs
+
       - name: Publish to gh-pages
         run: |
           set -euo pipefail
