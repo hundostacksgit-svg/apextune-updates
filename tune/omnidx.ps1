@@ -80,7 +80,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.11.0'
+$script:Version = '1.12.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -416,6 +416,10 @@ Write-Host ("Done: {0} put back{1}. Restart to finish." -f $done, $(if ($failed)
 # the machine
 # ---------------------------------------------------------------------------
 function Get-Machine {
+  # How long each slow read takes, kept in the machine record and the probe, so a
+  # slow PC (or a slow build machine) says where the seconds went.
+  $sw = [System.Diagnostics.Stopwatch]::StartNew(); $tm = [ordered]@{}
+  $lap = { param($name) $tm[$name] = [int]$sw.ElapsedMilliseconds; $sw.Restart() }
   $os = Get-CimInstance Win32_OperatingSystem
   $cs = Get-CimInstance Win32_ComputerSystem
   $cpu = Get-CimInstance Win32_Processor | Select-Object -First 1
@@ -433,7 +437,9 @@ function Get-Machine {
   $build = [int]$os.BuildNumber
   $win = if ($build -ge 22000) { 11 } else { 10 }
   $refresh = ($gpus | ForEach-Object { $_.CurrentRefreshRate } | Where-Object { $_ -gt 0 } | Measure-Object -Maximum).Maximum
+  & $lap 'cim'
   $printers = @(Get-Printer -ErrorAction SilentlyContinue | Where-Object { $_.Name -notmatch 'Microsoft|OneNote|Fax|XPS|PDF' })
+  & $lap 'printers'
   $bt = @(Get-PnpDevice -Class Bluetooth -Status OK -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -notmatch 'Adapter|Enumerator|Radio|Microsoft|Generic|RFCOMM|LE Generic|Service' })
   $btRadio = @(Get-PnpDevice -Class Bluetooth -Status OK -ErrorAction SilentlyContinue).Count -gt 0
   $wifi = @(Get-NetAdapter -Physical -ErrorAction SilentlyContinue | Where-Object { $_.PhysicalMediaType -match '802.11|Native' -or $_.Name -match 'Wi-?Fi|Wireless' }).Count -gt 0
@@ -441,7 +447,9 @@ function Get-Machine {
   $bio = @(Get-PnpDevice -Class Biometric -Status OK -ErrorAction SilentlyContinue).Count -gt 0
   $vpn = @(Get-NetAdapter -ErrorAction SilentlyContinue | Where-Object { $_.InterfaceDescription -match 'TAP|Wintun|WireGuard|VPN|NordLynx|Proton|Mullvad|Cloudflare WARP' }).Count -gt 0
   $xboxUsed = (Get-AppxPackage -Name Microsoft.GamingApp -ErrorAction SilentlyContinue) -ne $null -or (Test-Path (Join-Path $script:AppData '.minecraft')) -or (Get-AppxPackage -Name Microsoft.MinecraftUWP -ErrorAction SilentlyContinue) -ne $null
-  $xboxPad = @(Get-PnpDevice -Status OK -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -match 'Xbox' -and $_.Class -match 'HIDClass|XboxComposite|XnaComposite|USB|Bluetooth' }).Count -gt 0
+  # Only the device classes a controller can be in, not every device on the bus.
+  $xboxPad = @(Get-PnpDevice -Class HIDClass, XboxComposite, XnaComposite, Bluetooth -Status OK -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -match 'Xbox' }).Count -gt 0
+  & $lap 'pnp'
   $live = @(Get-NetAdapter -Physical -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq 'Up' })
   $wifiLive = @($live | Where-Object { $_.PhysicalMediaType -match '802.11|Native' -or $_.Name -match 'Wi-?Fi|Wireless' }).Count -gt 0
   $vm = ($cs.Model -match 'Virtual|VMware|VirtualBox|KVM|QEMU|HVM') -or ($cs.Manufacturer -match 'QEMU|Xen|innotek|VMware')
@@ -462,7 +470,15 @@ function Get-Machine {
     $pd = $disks | Where-Object { [int]$_.DeviceId -eq [int]$dn } | Select-Object -First 1
     if ($pd -and $pd.MediaType -eq 'HDD') { $sysHdd = $true }
   } catch { }
-  $maxRefresh = 0; try { $maxRefresh = (Get-CimInstance CIM_VideoControllerResolution -ErrorAction Stop | ForEach-Object { $_.RefreshRate } | Where-Object { $_ } | Measure-Object -Maximum).Maximum } catch { }
+  & $lap 'memory'
+  # Every display mode the driver knows, which some drivers take a long time to list: ten seconds, then it is left out.
+  $maxRefresh = 0
+  try {
+    $job = Start-Job { (Get-CimInstance CIM_VideoControllerResolution -ErrorAction Stop | ForEach-Object { $_.RefreshRate } | Where-Object { $_ } | Measure-Object -Maximum).Maximum }
+    if (Wait-Job $job -Timeout 10) { $maxRefresh = [int](Receive-Job $job -ErrorAction SilentlyContinue | Select-Object -Last 1) } else { Stop-Job $job -ErrorAction SilentlyContinue }
+    Remove-Job $job -Force -ErrorAction SilentlyContinue
+  } catch { }
+  & $lap 'modes'
   $otherAv = @(); try { $otherAv = @(Get-CimInstance -Namespace root\SecurityCenter2 -ClassName AntiVirusProduct -ErrorAction Stop | ForEach-Object { $_.displayName } | Where-Object { $_ -and $_ -notmatch 'Defender' } | Sort-Object -Unique) } catch { }
   $installed = @()
   foreach ($uk in 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*', 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*') { $installed += @(Get-ItemProperty $uk -ErrorAction SilentlyContinue | ForEach-Object { $_.DisplayName } | Where-Object { $_ }) }
@@ -471,6 +487,7 @@ function Get-Machine {
   $uefi = $env:firmware_type -eq 'UEFI'
   $secureBoot = $false; try { $secureBoot = Confirm-SecureBootUEFI -ErrorAction Stop } catch { }
   $tpm = $false; try { $tpm = (Get-Tpm -ErrorAction Stop).TpmPresent } catch { }
+  & $lap 'software'
   $vbsOn = $false; try { $dg = Get-CimInstance -Namespace root\Microsoft\Windows\DeviceGuard -ClassName Win32_DeviceGuard -ErrorAction Stop; $vbsOn = ($dg.VirtualizationBasedSecurityStatus -eq 2) -or ($dg.SecurityServicesRunning -contains 2) } catch { }
   @{
     os = "$($os.Caption) $($os.Version) (build $build)"; win = $win; build = $build
@@ -486,6 +503,7 @@ function Get-Machine {
     sticks = $sticks; ramRated = $ramRated; ramNow = $ramNow; ramSlow = $ramSlow
     noPageFile = $noPageFile; onBattery = $onBattery; sysHdd = $sysHdd; maxRefresh = $maxRefresh
     otherAv = $otherAv; optimizers = $optimizers; oem = $oem
+    timings = $(& $lap 'security'; $tm)
   }
 }
 
@@ -1757,6 +1775,7 @@ function Get-Probe {
     lastRun = (Get-LastRun)
     keepOn = [bool](Get-ScheduledTask -TaskName 'OmniDx keep' -ErrorAction SilentlyContinue)
     keyBound = $(try { [string](Get-ItemProperty 'HKLM:\SOFTWARE\OmniDx\Tune' -ErrorAction Stop).Key } catch { '' })
+    timings = $m.timings
   }
 }
 

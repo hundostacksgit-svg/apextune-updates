@@ -78,6 +78,7 @@ jobs:
           $j = & .\tune\omnidx.ps1 -Probe | Select-Object -Last 1
           $o = $j | ConvertFrom-Json
           Write-Host ("probe: {0} processes, target {1}, {2} startup entries, {3} warnings" -f $o.before, $o.target, @($o.startup).Count, @($o.warnings).Count)
+          Write-Host ("read timings (ms): " + (($o.timings.PSObject.Properties | ForEach-Object { "{0}={1}" -f $_.Name, $_.Value }) -join ' '))
           if (-not $o.cpu -or -not $o.before) { Write-Host 'probe is missing fields'; exit 1 }
           exit 0
 
