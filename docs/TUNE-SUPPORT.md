@@ -78,11 +78,12 @@ lists under "OEM extras".
 
 > It is not stuck: that stretch is Windows re-adding the pieces the debloat
 > removed (WordPad, the legacy media player, the optional features), and it
-> downloads them from Windows Update, which can take a quarter of an hour on
-> a slow line. Leave the window open. If it says they did not come back in
-> ten minutes, Windows Update was out of reach; Settings > Apps > Optional
-> features adds them later, and everything else in the undo has already
-> been put back.
+> downloads them from Windows Update, which can take a few minutes each on
+> a slow line. Leave the window open. If one of them does not come back
+> within five minutes, undo stops waiting, lists the rest for Settings >
+> Apps > Optional features, and finishes; everything else has already been
+> put back by then. Windows Update being out of reach (a metered line, a
+> work network, a VPN) is the usual reason.
 
 ## "Does it boot faster?"
 
