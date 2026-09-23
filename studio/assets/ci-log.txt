@@ -1,13 +1,13 @@
 ﻿== Reading this PC
   ! The GPU driver dates from Jun 2006. A current driver is worth more than most tweaks.
   ! This looks like a virtual machine. The tune will run, but the numbers mean little here.
-  Processes running now: 149
+  Processes running now: 143
   Target for this PC after the tune and a restart: about 70
 == Your key
-  Before: 149 processes, 1446 threads, 50622 handles, 2899 MB in use, idle CPU 0.2%, DPC 0%
+  Before: 143 processes, 1411 threads, 48443 handles, 2900 MB in use, idle CPU 0.8%, DPC 0.13%
 == Safety first
   ! Could not make a restore point (This functionality is not supported on this operating system.). The undo script still records everything.
-  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_22-02
+  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_22-04
   + undo.ps1 written to C:\OmniDx\undo
 == Startup apps
   2 things start with Windows:
@@ -91,12 +91,13 @@
   + NTFS allowed more memory for its cache
   + Defender's scheduled scans capped at 25% of the CPU (was 5%); real-time protection untouched
 == The OmniDx power plan
+  + 2 plan setting(s) this PC does not have were skipped.
   + OmniDx plan created and active: CPU 100/100, boost aggressive, no core parking, no throttle states on a desktop, PCIe, USB and Wi-Fi power saving off, no sleep on mains.
 == Network
   + TCP: autotuning normal, ECN and timestamps off, receive-side scaling on, segment coalescing off, CTCP.
+  + Ethernet 3: Nagle off, power saving off
   + Ethernet 4: Interrupt Moderation off
   + Ethernet 4: Nagle off, power saving off
-  + Ethernet 3: Nagle off, power saving off
 == Discord, Spotify, browsers
   + Chrome: no background mode, hardware acceleration on
   + Edge: no startup boost, no background mode, hardware acceleration on
@@ -104,10 +105,10 @@
   Looked in 16 game folders
   + No listed game found on the usual drives; the CPU-priority profiles are in place for when one is installed.
 == Cleanup
-  + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 374 MB back.
+  + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 307 MB back.
 == Keeping it cut
   + Task 'OmniDx keep' runs three minutes after sign-in, puts back whatever an update turned on, and notes that start's boot time. Log: C:\OmniDx\keep-log.txt. Undo removes it.
-  After:  146 processes, 1557 threads, 50708 handles, 3082 MB in use, idle CPU 0.6%, DPC 0%
+  After:  143 processes, 1440 threads, 49002 handles, 2989 MB in use, idle CPU 17.7%, DPC 0%
   Gone:   spoolsv
 == Done
-  Processes: 149 -> 146 now, in 90 seconds. Restart for the real number: the services that were told to stop are still unwinding.
+  Processes: 143 -> 143 now, in 211 seconds. Restart for the real number: the services that were told to stop are still unwinding.
