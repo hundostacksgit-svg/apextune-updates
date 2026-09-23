@@ -80,7 +80,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.15.0'
+$script:Version = '1.16.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -2334,6 +2334,15 @@ function Main {
     $ps.Dispose()
     return
   }
+  # These two only read, so they run from any PowerShell and any account.
+  if ($CheckKey) {
+    if (-not $Key) { $Key = Read-Host "  Paste the key to check" }
+    $parsed = Read-Key $Key
+    if ($parsed) { Say ("  Valid: {0} ({1} PC{2}). The server decides whether it was issued and where it is bound." -f $parsed.key, $parsed.seats, $(if ($parsed.seats -ne 1) { 's' } else { '' })) 'Green' }
+    else { Say "  That is not an OmniDx key. It looks like TUNE-XXXX-XXXX-XXXX-XXXX; check it for typos." 'Red' }
+    return
+  }
+  if ($Status) { Show-Status; return }
   if ($PSVersionTable.PSEdition -eq 'Core') { Say "  Run this in Windows PowerShell (the blue one, version 5.1), not PowerShell 7: the restore point and Store app commands only exist there. The one command on omnidx.net picks the right one for you." 'Red'; return }
   $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
   if (-not $isAdmin) { Say "  Run this in an administrator PowerShell (right-click PowerShell > Run as administrator), or use the one-liner on omnidx.net which does it for you." 'Red'; return }
@@ -2344,19 +2353,11 @@ function Main {
   Limit-History
   try {
     if ($Undo) { Invoke-Undo; return }
-    if ($Status) { Show-Status; return }
     if ($Probe) { Write-Output (Get-Probe | ConvertTo-Json -Depth 5 -Compress); return }
     if ($Gui) {
       $shown = $false
       try { $shown = Show-Gui } catch { Warn ("The window could not open ({0})." -f $_.Exception.Message) }
       if ($shown) { return } else { Say "  Carrying on in the console." }
-    }
-    if ($CheckKey) {
-      if (-not $Key) { $Key = Read-Host "  Paste the key to check" }
-      $parsed = Read-Key $Key
-      if ($parsed) { Say ("  Valid: {0} ({1} PC{2}). The server decides whether it was issued and where it is bound." -f $parsed.key, $parsed.seats, $(if ($parsed.seats -ne 1) { 's' } else { '' })) 'Green' }
-      else { Say "  That is not an OmniDx key. It looks like TUNE-XXXX-XXXX-XXXX-XXXX; check it for typos." 'Red' }
-      return
     }
     Resolve-User
 

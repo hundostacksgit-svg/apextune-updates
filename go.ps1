@@ -41,7 +41,8 @@ if (-not $key -and $mode -eq 'check') {
 # The tune needs Windows PowerShell 5.1 (Checkpoint-Computer and the Store app
 # commands live only there) and administrator rights. A window that is either
 # not elevated or PowerShell 7 hands over to a fresh elevated 5.1 window.
-if (-not $isAdmin -or $isCore) {
+# Status and the key check only read, so they run right here, in any PowerShell, without asking for anything.
+if (($mode -ne 'status' -and $mode -ne 'check') -and (-not $isAdmin -or $isCore)) {
   Write-Host $(if ($isCore) { '  Switching to Windows PowerShell 5.1 with administrator rights...' } else { '  Asking for administrator rights...' }) -ForegroundColor DarkGray
   # The key never goes on a command line (Windows keeps those in logs). It crosses to the
   # elevated window in a file in this account's own temp folder, which that window deletes.
