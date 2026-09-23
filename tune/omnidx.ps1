@@ -82,7 +82,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.22.0'
+$script:Version = '1.23.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -1279,6 +1279,8 @@ function Get-DebloatPlan($m) {
     }
   }
   foreach ($f in $script:Features) {
+    # The old Media Player is a capability and a feature on newer builds; removing the capability takes the feature with it, so it is one item, not two.
+    if ($f[0] -eq 'WindowsMediaPlayer' -and ($caps | Where-Object { $_.name -like 'Media.WindowsMediaPlayer*' })) { continue }
     # A name this build does not have is an error here, and simply not on the list.
     try { $hit = Get-WindowsOptionalFeature -Online -FeatureName $f[0] -LogPath $dismLog -ErrorAction Stop; if ($hit -and $hit.State -eq 'Enabled') { $feats += @{ name = $hit.FeatureName; what = $f[1] } } } catch { }
   }
