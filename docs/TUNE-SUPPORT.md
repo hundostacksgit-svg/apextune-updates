@@ -185,6 +185,14 @@ Log it: every "kept because" rule lives in `Get-KeepList` in the script.
 > on; the report says whether yours are, and the BIOS checklist says how to
 > turn them on. The tune never turns them off.
 
+## One friend's share of a Squad refunded
+
+Refund the share in Square as normal (a third of $39.99, or whatever was
+agreed). A partial refund switches nothing off by itself; the Worker
+emails you once with the amounts and the order reference. Owner page:
+paste the order, "Look up", then type that friend's key and "Switch off
+this key only". The other two keys stay on.
+
 ## "Refund"
 
 > Done. You will see it from Square within a few days. If you would like the
