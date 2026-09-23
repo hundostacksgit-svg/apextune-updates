@@ -1,13 +1,13 @@
 ﻿== Reading this PC
   ! The GPU driver dates from Jun 2006. A current driver is worth more than most tweaks.
   ! This looks like a virtual machine. The tune will run, but the numbers mean little here.
-  Processes running now: 154
+  Processes running now: 146
   Target for this PC after the tune and a restart: about 70
 == Your key
-  Before: 154 processes, 1556 threads, 51251 handles, 2831 MB in use, idle CPU 8.8%, DPC 0.26%
+  Before: 146 processes, 1522 threads, 49826 handles, 2770 MB in use, idle CPU 1%, DPC 0%
 == Safety first
   ! Could not make a restore point (This functionality is not supported on this operating system.). The undo script still records everything.
-  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_01-58
+  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_02-26
   + undo.ps1 written to C:\OmniDx\undo
 == Startup apps
   2 things start with Windows:
@@ -36,11 +36,6 @@
   + bthserv -> disabled  (bluetooth)
   + WlanSvc -> disabled  (wi-fi)
   + CDPSvc -> manual  (connected devices)
-  + CDPUserSvc -> manual  (connected devices)
-  + OneSyncSvc -> manual  (mail/contacts sync)
-  + PimIndexMaintenanceSvc -> manual  (contacts index)
-  + UnistoreSvc -> manual  (user data storage)
-  + UserDataSvc -> manual  (user data)
   + SSDPSRV -> manual  (ssdp discovery)
   + upnphost -> manual  (upnp)
   + DPS -> manual  (diagnostic policy)
@@ -48,9 +43,7 @@
   + ScDeviceEnum -> disabled  (smart card)
   + CertPropSvc -> disabled  (smart card)
   + iphlpsvc -> manual  (ipv6 tunnels)
-  + cbdhsvc -> manual  (clipboard history)
   + WpnService -> manual  (push notifications)
-  + WpnUserService -> manual  (push notifications)
 == Scheduled tasks
   + PcaPatchDbTask
   + CreateObjectTask
@@ -79,20 +72,20 @@
   + OmniDx plan created and active: CPU 100/100, boost aggressive, no core parking, PCIe and USB power saving off, no sleep on mains.
 == Network
   + TCP: autotuning normal, ECN and timestamps off, receive-side scaling on, segment coalescing off, CTCP.
+  + Ethernet 3: Nagle off, power saving off
   + Ethernet 4: Interrupt Moderation off
   + Ethernet 4: Nagle off, power saving off
-  + Ethernet 3: Nagle off, power saving off
 == Discord, Spotify, browsers
   + Chrome: no background mode, hardware acceleration on
   + Edge: no startup boost, no background mode, hardware acceleration on
 == Game profiles
-  Looked in 2 game folders
+  Looked in 16 game folders
   + No listed game found on the usual drives; the CPU-priority profiles are in place for when one is installed.
 == Cleanup
   + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 370 MB back.
 == Keeping it cut
   + Task 'OmniDx keep' runs three minutes after sign-in and puts back whatever an update turned on. Log: C:\OmniDx\keep-log.txt. Undo removes it.
-  After:  142 processes, 1481 threads, 49007 handles, 3007 MB in use, idle CPU 0.8%, DPC 0%
-  Gone:   default-browser-agent, firefox, MoUsoCoreWorker, spoolsv, WMIADAP
+  After:  144 processes, 1468 threads, 48850 handles, 2918 MB in use, idle CPU 1.8%, DPC 0.26%
+  Gone:   spoolsv
 == Done
-  Processes: 154 -> 142 now, in 149 seconds. Restart for the real number: the services that were told to stop are still unwinding.
+  Processes: 146 -> 144 now, in 126 seconds. Restart for the real number: the services that were told to stop are still unwinding.
