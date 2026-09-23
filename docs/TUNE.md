@@ -425,6 +425,15 @@ one record only. A run's `backup\<stamp>` folder is kept as long as its
 record is; `Limit-History` keeps the newest ten of everything else.
 
 ### Checks that run on every push
+The Windows job runs when the push changed `tune/`, `go.ps1`, the CI
+licence stand-in, the key tool or the workflow itself; the `changes` job
+diffs the whole push (`github.event.before` to the head), not only its
+last commit, so a push of several commits cannot slip a script change past
+it. The runner cannot fetch the optional pieces of Windows back from
+Windows Update, so the job sets `OMNIDX_SKIP_DISM=1` and undo lists them
+for Settings > Apps > Optional features instead of waiting on each; on a
+buyer's PC undo tries them, and stops after the first one times out.
+
 The Windows job (forty minutes) runs when the tune, `go.ps1`, the stand-in
 licence server, the key tool or the workflow itself changed, and always from
 the button; a push that touches only the site or the Worker gets the static

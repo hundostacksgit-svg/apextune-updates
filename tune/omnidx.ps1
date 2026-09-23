@@ -368,6 +368,7 @@ function Invoke-Timed([scriptblock]$work, [object[]]$argList, [int]$seconds) {
 # would only time out again, so it says where to add them later instead.
 function Restore-Dism([string]$verb, [string]$flag, [string[]]$names, [string]$what) {
   if (-not $names -or -not $names.Count) { return 0 }
+  if ($env:OMNIDX_SKIP_DISM -eq '1') { Write-Host ("{0} {1}(s) left for Settings > Apps > Optional features, as asked (OMNIDX_SKIP_DISM): {2}" -f $names.Count, $what, ($names -join ', ')) -ForegroundColor Yellow; return 0 }
   Write-Host ("{0} {1}(s) going back in one go (this can take a few minutes)..." -f $names.Count, $what) -ForegroundColor DarkGray
   $dargs = @('/online', $verb) + @($names | ForEach-Object { "$flag`:$_" }) + @('/NoRestart', '/Quiet')
   $r = Invoke-Timed { param($a) & dism.exe @a *>&1 | Out-Null; if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 3010) { throw "dism exit $LASTEXITCODE" } } @(, $dargs) 600
@@ -375,11 +376,18 @@ function Restore-Dism([string]$verb, [string]$flag, [string[]]$names, [string]$w
   if ($r -eq 'timeout') { Write-Host ("They did not come back in ten minutes; Windows Update is probably out of reach. Settings > Apps > Optional features adds them later: {0}" -f ($names -join ', ')) -ForegroundColor Yellow; return 0 }
   Write-Host "DISM would not take them together; one at a time..." -ForegroundColor Yellow
   $ok = 0
-  foreach ($n in $names) {
+  for ($i = 0; $i -lt $names.Count; $i++) {
+    $n = $names[$i]
     $one = @('/online', $verb, "$flag`:$n", '/NoRestart', '/Quiet')
     $r = Invoke-Timed { param($a) & dism.exe @a *>&1 | Out-Null; if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne 3010) { throw "dism exit $LASTEXITCODE" } } @(, $one) 300
-    if ($r -eq 'ok') { Write-Host ("{0} back: {1}" -f $what, $n) -ForegroundColor DarkGray; $ok++ }
-    else { Write-Host ("{0} did not come back here ({1}); Settings > Apps > Optional features adds it" -f $n, $r) -ForegroundColor Yellow }
+    if ($r -eq 'ok') { Write-Host ("{0} back: {1}" -f $what, $n) -ForegroundColor DarkGray; $ok++; continue }
+    if ($r -eq 'timeout') {
+      # One timeout means Windows Update is out of reach; the rest would only wait five minutes each for the same answer.
+      $rest = @($names | Select-Object -Skip $i)
+      Write-Host ("{0} did not come back in five minutes; Windows Update is probably out of reach. Settings > Apps > Optional features adds these later: {1}" -f $n, ($rest -join ', ')) -ForegroundColor Yellow
+      break
+    }
+    Write-Host ("{0} did not come back here ({1}); Settings > Apps > Optional features adds it" -f $n, $r) -ForegroundColor Yellow
   }
   return $ok
 }
