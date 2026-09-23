@@ -362,6 +362,12 @@ one record only. A run's `backup\<stamp>` folder is kept as long as its
 record is; `Limit-History` keeps the newest ten of everything else.
 
 ### Checks that run on every push
+The Windows job (forty minutes) runs when the tune, `go.ps1`, the stand-in
+licence server, the key tool or the workflow itself changed, and always from
+the button; a push that touches only the site or the Worker gets the static
+job and the browser test (in the Pages workflow), which is all it needs. The
+`changes` job at the top of `tune-check.yml` decides, from the push's diff.
+
 `node tools/site-test.mjs` drives every Tune page in Chromium at desktop and
 phone width (no script or console error, no sideways scroll), then the money
 parts against stand-in answers: the buy buttons close with no licence server
