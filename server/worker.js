@@ -802,7 +802,16 @@ const routes = {
 
     const existing = await tuneKeysFor(env, order);
     if (ordersIn(existing).length > 1) return fail(AMBIGUOUS, 409, env, request);
+    // A four-character receipt number could be guessed; with it, the email the
+    // buyer paid with has to match the order. The long order id stands alone.
+    const isReceipt = order.length <= 8;
+    if (existing.length && isReceipt) {
+      const onFile = String(existing[0].email || '').toLowerCase();
+      if (!email) return fail('With the receipt number, the email address you paid with is needed too.', 403, env, request);
+      if (!onFile || !sameSecret(onFile, email)) return fail('That email address does not match the order for that receipt number. Use the long order id from the page Square sent you to, or email support with the receipt.', 403, env, request);
+    }
     if (existing.length) return tuneAnswer(existing, env, request);
+    if (isReceipt) return fail('That receipt number is not on file yet: Square confirms a payment within a minute or so, then it is. Try again shortly, or use the long order id from the page Square sent you to.', 404, env, request);
 
     if (!env.SQUARE_ACCESS_TOKEN) return fail('Payments cannot be confirmed right now, so no key can be issued. Email support with your Square receipt and it will be sorted by hand.', 503, env, request);
     const sq = await squareOrder(env, order);

@@ -156,15 +156,21 @@ expect(r.status === 200 && r.data.keys === 3 && db.tune_keys.filter((k) => k.ord
 r = await call('/v1/tune/issue', { product: 'squad', order: 'ORDER-DUAL-1' });
 expect(r.status === 200 && JSON.stringify(r.data.keys) === JSON.stringify(dualKeys), 'the order id and the payment id land on the same keys');
 r = await call('/v1/tune/issue', { product: 'squad', order: '#zq7k' });
-expect(r.status === 200 && JSON.stringify(r.data.keys) === JSON.stringify(dualKeys), 'so does the short receipt number from the Square email, typed in any case');
+expect(r.status === 403, 'the short receipt number alone is refused: it could be guessed');
+r = await call('/v1/tune/issue', { product: 'squad', order: '#zq7k', email: 'somebody@else.test' });
+expect(r.status === 403, 'the receipt number with the wrong email is refused');
+r = await call('/v1/tune/issue', { product: 'squad', order: '#zq7k', email: 'Dual@Example.test' });
+expect(r.status === 200 && JSON.stringify(r.data.keys) === JSON.stringify(dualKeys), 'the receipt number with the email paid with, in any case, gets the keys');
+r = await call('/v1/tune/issue', { product: 'tune', order: 'nope', email: 'dual@example.test' });
+expect(r.status === 404, 'a receipt number not on file says so without asking Square');
 r = await call('/v1/tune/release', { key: dualKeys[1], order: 'ZQ7K' });
 expect(r.status === 200 && r.data.ok, 'and the receipt number moves a key');
 
 /* 4c. Two orders with the same short receipt number: the number alone answers nothing. */
 r = await webhook({ id: 'PAY-TWIN-1', order_id: 'ORDER-TWIN-1', status: 'COMPLETED', amount_money: { amount: 1999 }, buyer_email_address: 'a@example.test', receipt_number: 'TW1N' });
 r = await webhook({ id: 'PAY-TWIN-2', order_id: 'ORDER-TWIN-2', status: 'COMPLETED', amount_money: { amount: 1999 }, buyer_email_address: 'b@example.test', receipt_number: 'TW1N' });
-r = await call('/v1/tune/issue', { product: 'tune', order: 'TW1N' });
-expect(r.status === 409, 'a receipt number shared by two orders is refused, so nobody gets another buyer\'s key');
+r = await call('/v1/tune/issue', { product: 'tune', order: 'TW1N', email: 'a@example.test' });
+expect(r.status === 409, 'a receipt number shared by two orders is refused even with a matching email, so nobody gets another buyer\'s key');
 r = await call('/v1/tune/issue', { product: 'tune', order: 'ORDER-TWIN-2' });
 expect(r.status === 200 && (r.data.keys || []).length === 1, 'while the order id still answers');
 r = await call('/v1/tune/admin', { token: 'owner-token-test', action: 'lookup', ref: 'TW1N' });

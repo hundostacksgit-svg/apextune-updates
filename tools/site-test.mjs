@@ -112,8 +112,10 @@ try {
     expect(await page.evaluate(() => document.querySelectorAll('.keybox').length === 1 && /one PC/.test(document.querySelector('.act-sub')?.textContent || '')), 'a Tune order shows one key');
     await page.evaluate(() => localStorage.clear());
     await page.goto(`${base}/studio/activate/`, { waitUntil: 'networkidle' }); await page.waitForTimeout(300);
-    await page.fill('#act-order', '#AB12'); await page.click('[data-pick="tune"]'); await page.waitForTimeout(500);
-    expect(asked.some((a) => a.order === '#AB12') && (await page.evaluate(() => document.querySelectorAll('.keybox').length === 1)), 'the receipt-number form asks the server with what was typed and shows the key');
+    await page.fill('#act-order', '#AB12'); await page.click('[data-pick="tune"]'); await page.waitForTimeout(300);
+    expect(await page.evaluate(() => /email address you paid with/.test(document.querySelector('#act-err')?.textContent || '') && document.querySelectorAll('.keybox').length === 0), 'a receipt number without the email is stopped on the page');
+    await page.fill('#act-email', 'buyer@example.test'); await page.click('[data-pick="tune"]'); await page.waitForTimeout(500);
+    expect(asked.some((a) => a.order === '#AB12' && a.email === 'buyer@example.test') && (await page.evaluate(() => document.querySelectorAll('.keybox').length === 1)), 'the receipt-number form asks the server with the number and the email, and shows the key');
     await page.unroute('**/fakeapi/v1/tune/issue');
     await page.route('**/fakeapi/v1/tune/issue', (r) => r.fulfill({ status: 402, contentType: 'application/json', body: JSON.stringify({ error: 'Square does not show a completed payment for that order reference.' }) }));
     await page.evaluate(() => localStorage.clear());

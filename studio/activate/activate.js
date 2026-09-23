@@ -73,14 +73,14 @@ class Refused extends Error { constructor(message, status) { super(message); thi
  * makes a key itself, so a URL, an order number or this file's source is not
  * a key. No server, or a server that cannot be reached, is a plain message.
  */
-async function issue(product, order) {
+async function issue(product, order, email = '') {
   const base = await api();
   if (!base) throw new Refused('The key desk is not open yet: keys are issued by the licence server after Square confirms the payment, and it is not switched on. If you paid, email support with your receipt.', 503);
   let r;
   try {
     r = await fetch(`${base}/v1/tune/issue`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ product, order }),
+      body: JSON.stringify({ product, order, email: email || undefined }),
     });
   } catch {
     throw new Refused('Could not reach the licence server. Try again in a minute; if it keeps failing, email support with your receipt.', 0);
@@ -218,9 +218,14 @@ function renderUnknown(message = '') {
     ${message ? `<div class="note bad" style="margin:0 0 18px">${esc(message)}</div>` : ''}
 
     <div class="field" style="text-align:left">
-      <label for="act-order" class="small"><b>Order or receipt number</b></label>
-      <input class="input" id="act-order" placeholder="The receipt number from Square's email, e.g. #AB12" autocomplete="off" spellcheck="false">
-      <p class="tiny muted" style="margin:7px 0 0">The short receipt number on Square's email works, and so does the long order id from the page you landed on.</p>
+      <label for="act-order" class="small"><b>Receipt number</b></label>
+      <input class="input" id="act-order" placeholder="From Square's email, e.g. #AB12" autocomplete="off" spellcheck="false">
+      <p class="tiny muted" style="margin:7px 0 0">The short receipt number on Square's email, or the long order id from the page you landed on.</p>
+    </div>
+    <div class="field" style="text-align:left">
+      <label for="act-email" class="small"><b>The email you paid with</b></label>
+      <input class="input" id="act-email" type="email" placeholder="The address Square sent the receipt to" autocomplete="email" spellcheck="false">
+      <p class="tiny muted" style="margin:7px 0 0">Needed with a receipt number, so a guessed number cannot fetch somebody else's key.</p>
     </div>
 
     <div class="field" style="margin-top:16px;text-align:left">
@@ -240,13 +245,19 @@ function renderUnknown(message = '') {
     const pick = e.target.closest('[data-pick]');
     if (!pick) return;
     const order = String($('#act-order')?.value || '').trim();
+    const email = String($('#act-email')?.value || '').trim();
     const err = $('#act-err');
     if (order.replace(/^#/, '').length < 4) {
-      if (err) { err.hidden = false; err.textContent = 'Put in the order number from your Square receipt first — it is what the key is issued against.'; }
+      if (err) { err.hidden = false; err.textContent = 'Put in the receipt number from Square\'s email first — it is what the key is issued against.'; }
       $('#act-order')?.focus();
       return;
     }
-    go(pick.dataset.pick, order);
+    if (order.replace(/^#/, '').length <= 8 && !/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(email)) {
+      if (err) { err.hidden = false; err.textContent = 'With a receipt number, the email address you paid with is needed as well.'; }
+      $('#act-email')?.focus();
+      return;
+    }
+    go(pick.dataset.pick, order, email);
   });
 }
 
@@ -283,10 +294,10 @@ async function wireExtras(info) {
   });
 }
 
-async function go(product, order) {
+async function go(product, order, email = '') {
   $('#card').innerHTML = '<div class="act-spin" aria-hidden="true"></div><h1>Getting your key</h1><p class="act-sub">One moment.</p>';
   try {
-    const info = await issue(product, order);
+    const info = await issue(product, order, email);
     remember(info);
     renderKey(info);
     wireExtras(info);

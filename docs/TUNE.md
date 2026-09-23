@@ -76,7 +76,9 @@ updates" box, ticked by default, maps to `-NoKeep` when unticked.
 5. The page shows the key or the three keys, the one-liner with the first key
    in it, copy buttons for each friend's line, and the steps. The keys are
    saved in that browser; the page shows them again on a return visit, and
-   the order number from the Square receipt gets them back on any device.
+   the receipt number from Square's email plus the email paid with gets
+   them back on any device (a four-character receipt number could be
+   guessed, so it never answers alone; the long order id does).
 6. The buyer pastes the line. `go.ps1` fetches the verified script, which checks the
    key's checksum, fingerprints the PC (SHA-256 of board serial, system UUID,
    CPU id, first 16 hex chars) and POSTs `/v1/tune/claim {key, hwid, machine}`.
