@@ -120,6 +120,11 @@ get more FPS" threads with the twenty-second check, not the link.
 ## What to record for the first videos
 
 On a real PC you own: the free report run; the full run with the startup
-picker and the Discord prompt; the after-restart.txt file; undo; the BIOS
-checklist open in Notepad next to the BIOS screen on a phone. That is enough
-raw footage for the first twenty posts.
+picker and the Discord prompt; the "Keep it cut after updates?" question
+and, a sign-in later, the line in C:\OmniDx\keep-log.txt; the status
+screen (`$env:OMNIDX_MODE='status'`) showing "All still in place"; the
+after-restart.txt file; undo walking back every run; the BIOS checklist
+open in a browser on a phone next to the BIOS screen. And one screen
+recording of omnidx.net/studio/download/ scrolling to "The last run, word
+for word": the log the build machine committed, which nobody typed. That is
+enough raw footage for the first twenty posts.
