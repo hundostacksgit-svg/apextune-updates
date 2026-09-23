@@ -170,6 +170,17 @@ server, the keys from that order stop working, and the buyer gets a short
 email saying so. A partial refund leaves the keys alone on purpose; for that
 one, or for a key issued by hand, the command is in docs/TUNE.md > Refunds.
 
+## "My antivirus / SmartScreen blocked it"
+
+> Nothing is downloaded as a file, so SmartScreen has nothing to judge: the
+> command fetches the script into PowerShell's memory and runs it there,
+> after checking it against the hash the Windows check published. If a
+> third-party antivirus stops PowerShell reaching omnidx.net, allow it for
+> that one run, or use the free report mode first to see it read your PC
+> and change nothing. The whole script is public at
+> omnidx.net/tune/omnidx.ps1, and omnidx.net/studio/what-it-touches/ lists
+> every service, task, app and value it touches.
+
 ## "Is this a virus / it wants admin"
 
 > It needs administrator rights because stopping a service and changing a
