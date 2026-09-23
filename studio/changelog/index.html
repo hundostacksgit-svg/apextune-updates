@@ -133,7 +133,8 @@
       <ul class="tick">
         <li>Undo the last run only: <span class="mono tiny">$env:OMNIDX_MODE='undolast'</span> puts back the newest run (the Extreme one, say) and leaves the earlier runs and the keep task in place. Full undo still walks back every run. The keep task now goes only when no run is left recorded</li>
         <li>The "after" count waits for the services that were told to stop to finish stopping, up to twenty seconds, so the number on screen is closer to the one after a restart</li>
-        <li>The Windows check undoes the Extreme run on its own first, checks that the two earlier runs are untouched and status is clean, then undoes the rest</li>
+        <li>The Windows check undoes the Extreme run on its own first, checks that the two earlier runs are untouched and status is clean, then undoes the rest. A run put back alone now leaves the standard tune exactly as it was: the power plan, the TCP settings and the keep task no longer record themselves again on every run</li>
+        <li>The BIOS checklist and the GPU notes know a laptop: the memory profile, fans, power limits, the integrated graphics and the memory timings are written for what a laptop actually exposes, and the GPU switch (Hybrid, Discrete, MUX) and the per-game High performance setting take their place; Whisper Mode, Battery Boost and Radeon Chill are named as the frame caps they are</li>
       </ul>
     </div>
     <div class="card reveal d1" style="margin-top:16px">
