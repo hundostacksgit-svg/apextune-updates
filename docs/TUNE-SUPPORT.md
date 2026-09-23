@@ -13,8 +13,10 @@ per run; undo moves them to `undo\done\`), `backup\<date>\` (registry
 exports, service list, app settings files). `$env:OMNIDX_MODE='status'`
 prints the lot in one screen: runs in place, what drifted, the keep task,
 the after-restart count, the key.
-Ask for `summary-<date>.json` and `log-<date>.txt` first; they answer most
-questions.
+Ask for the support bundle first: `$env:OMNIDX_MODE='support'; irm
+omnidx.net/go.ps1 | iex` zips the logs, the machine as read, the numbers and
+the change records to their desktop (keys masked, no registry exports, none
+of their files) and opens Explorer on it. It answers most questions.
 
 ## "I paid and did not get a key"
 

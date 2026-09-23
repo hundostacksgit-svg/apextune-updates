@@ -59,6 +59,8 @@ param(
   [switch]$Status,
   # Do not leave the small sign-in task that puts the tune back after a Windows update turns pieces of it on again.
   [switch]$NoKeep,
+  # Zip the logs, the machine as read, the numbers and the change records to the desktop for support. No key, no registry exports, none of your files.
+  [switch]$SupportBundle,
   # Do not leave the one-shot task that writes the after-restart process count.
   [switch]$NoAfterCount,
   # Answer every question yes.
@@ -80,7 +82,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.18.0'
+$script:Version = '1.19.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -867,6 +869,33 @@ function Show-Status {
     if ($new.Count) { Say ("  Running now, not running after the tune: {0}{1}. Whatever you opened since, or a launcher that came back; nothing here is a setting." -f (($new | Select-Object -First 12) -join ', '), $(if ($new.Count -gt 12) { " and $($new.Count - 12) more" } else { '' })) }
     else { Say "  Nothing runs now that was not running right after the tune." }
   }
+}
+
+<# Everything support would ask for, as one zip on the desktop: the run
+   logs, the PC as it was read, the numbers, the change records. No key (any
+   key in a log is masked), no registry exports, none of your files. #>
+function New-SupportBundle {
+  Head "Support bundle"
+  if (-not (Test-Path $script:Root)) { Say "  Nothing to bundle: the tune has not run on this PC." 'Yellow'; return }
+  $desk = [Environment]::GetFolderPath('Desktop'); if (-not $desk) { $desk = $env:USERPROFILE }
+  $zip = Join-Path $desk ("omnidx-support-{0}.zip" -f $script:Stamp)
+  $stage = Join-Path $env:TEMP ("omnidx-support-{0}" -f $script:Stamp)
+  New-Item -ItemType Directory -Path $stage -Force | Out-Null
+  $n = 0
+  foreach ($pat in 'log-*.txt', 'machine-*.json', 'summary-*.json', 'report-*.txt', 'report-preview-*.txt', 'keep-log.txt', 'after-restart.txt', 'README.txt') {
+    foreach ($f in Get-ChildItem $script:Root -Filter $pat -File -ErrorAction SilentlyContinue) {
+      try { (Get-Content $f.FullName -Raw -ErrorAction Stop) -replace '\b(TUNE|SQUAD)-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}\b', '$1-****-****-****-****' | Set-Content -Path (Join-Path $stage $f.Name) -Encoding UTF8; $n++ } catch { }
+    }
+  }
+  foreach ($f in Get-ChildItem (Join-Path $script:Root 'undo') -Filter 'changes-*.json' -File -ErrorAction SilentlyContinue) { try { Copy-Item $f.FullName (Join-Path $stage $f.Name) -Force; $n++ } catch { } }
+  if (-not $n) { Say "  Nothing to bundle yet." 'Yellow'; Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue; return }
+  try {
+    Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -Force -ErrorAction Stop
+    Say ("  {0} files zipped to {1}" -f $n, $zip) 'Green'
+    Say "  Attach it to your email. It holds the run logs, the PC as it was read, the numbers and the change records; no key, no registry exports, none of your files."
+    try { Start-Process explorer.exe ("/select,`"{0}`"" -f $zip) } catch { }
+  } catch { Say ("  Could not write the zip ({0})." -f $_.Exception.Message) 'Red' }
+  Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue
 }
 
 <# Ten seconds to change your mind. #>
@@ -2078,7 +2107,10 @@ function Show-Gui {
   $ui.BtnStatus.Add_Click({ $ui.LogBox.Clear(); & $start @{ Status = $true } 'status' })
   $ui.BtnFolder.Add_Click({ New-Item -ItemType Directory -Path $script:Root -Force | Out-Null; Start-Process explorer.exe $script:Root })
   $ui.BtnOpenReport.IsEnabled = [bool](Get-ChildItem $script:Root -Filter 'report-*.html' -ErrorAction SilentlyContinue)
-  $ui.BtnRestart.Add_Click({ Restart-Computer -Force })
+  $ui.BtnRestart.Add_Click({
+    if (-not $state.restartArmed) { $state.restartArmed = $true; $ui.BtnRestart.Content = 'Sure? Click again to restart'; return }
+    Restart-Computer -Force
+  })
   $w.Add_Closing({ if ($state.ps) { try { $state.ps.Stop() } catch { } } })
 
   if ($Screenshot) {
@@ -2346,6 +2378,7 @@ function Main {
     return
   }
   if ($Status) { Show-Status; return }
+  if ($SupportBundle) { New-SupportBundle; return }
   if ($PSVersionTable.PSEdition -eq 'Core') { Say "  Run this in Windows PowerShell (the blue one, version 5.1), not PowerShell 7: the restore point and Store app commands only exist there. The one command on omnidx.net picks the right one for you." 'Red'; return }
   $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
   if (-not $isAdmin) { Say "  Run this in an administrator PowerShell (right-click PowerShell > Run as administrator), or use the one-liner on omnidx.net which does it for you." 'Red'; return }

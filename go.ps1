@@ -11,6 +11,7 @@
 #   $env:OMNIDX_MODE='undo';   irm omnidx.net/go.ps1 | iex     put everything back
 #   $env:OMNIDX_MODE='check';  irm omnidx.net/go.ps1 | iex     check a key's format, nothing else
 #   $env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex     what is still in place, what an update put back
+#   $env:OMNIDX_MODE='support'; irm omnidx.net/go.ps1 | iex    zip the logs and numbers to the desktop for support
 #   $env:OMNIDX_MODE='console'; irm omnidx.net/go.ps1 | iex    the console flow instead of the window
 #   $env:OMNIDX_FLAGS='-Aggressive -CutXbox -Dns -NoKeep'       options (see omnidx.net/studio/download/#options)
 #   $env:OMNIDX_KEEP='Wallpaper Engine,RTSS'                    startup entries to leave on
@@ -42,7 +43,7 @@ if (-not $key -and $mode -eq 'check') {
 # commands live only there) and administrator rights. A window that is either
 # not elevated or PowerShell 7 hands over to a fresh elevated 5.1 window.
 # Status and the key check only read, so they run right here, in any PowerShell, without asking for anything.
-if (($mode -ne 'status' -and $mode -ne 'check') -and (-not $isAdmin -or $isCore)) {
+if (($mode -ne 'status' -and $mode -ne 'check' -and $mode -ne 'support') -and (-not $isAdmin -or $isCore)) {
   Write-Host $(if ($isCore) { '  Switching to Windows PowerShell 5.1 with administrator rights...' } else { '  Asking for administrator rights...' }) -ForegroundColor DarkGray
   # The key never goes on a command line (Windows keeps those in logs). It crosses to the
   # elevated window in a file in this account's own temp folder, which that window deletes.
@@ -90,6 +91,7 @@ switch ($mode) {
   'undo'   { & $block -Undo }
   'report' { & $block -Report }
   'status' { & $block -Status }
+  'support' { & $block -SupportBundle }
   'check'  { & $block -Key $key -CheckKey }
   'app'    { & $block -Key $key -Api $api -Gui @opts }
   default  { & $block -Key $key -Api $api @opts }
