@@ -1,13 +1,13 @@
 ﻿== Reading this PC
   ! The GPU driver dates from Jun 2006. A current driver is worth more than most tweaks.
   ! This looks like a virtual machine. The tune will run, but the numbers mean little here.
-  Processes running now: 149
+  Processes running now: 145
   Target for this PC after the tune and a restart: about 70
 == Your key
-  Before: 149 processes, 1513 threads, 50188 handles, 2880 MB in use, idle CPU 1.4%, DPC 0%
+  Before: 145 processes, 1514 threads, 50874 handles, 2957 MB in use, idle CPU 1.2%, DPC 0.13%
 == Safety first
   ! Could not make a restore point (This functionality is not supported on this operating system.). The undo script still records everything.
-  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_18-52
+  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_19-42
   + undo.ps1 written to C:\OmniDx\undo
 == Startup apps
   2 things start with Windows:
@@ -94,7 +94,6 @@
   + OmniDx plan created and active: CPU 100/100, boost aggressive, no core parking, no throttle states on a desktop, PCIe, USB and Wi-Fi power saving off, no sleep on mains.
 == Network
   + TCP: autotuning normal, ECN and timestamps off, receive-side scaling on, segment coalescing off, CTCP.
-  + Ethernet 4: Interrupt Moderation off
   + Ethernet 4: Nagle off, power saving off
   + Ethernet 3: Nagle off, power saving off
 == Discord, Spotify, browsers
@@ -107,7 +106,7 @@
   + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 374 MB back.
 == Keeping it cut
   + Task 'OmniDx keep' runs three minutes after sign-in and puts back whatever an update turned on. Log: C:\OmniDx\keep-log.txt. Undo removes it.
-  After:  151 processes, 1545 threads, 51999 handles, 3100 MB in use, idle CPU 1.2%, DPC 0%
-  Gone:   smartscreen, spoolsv
+  After:  148 processes, 1481 threads, 51057 handles, 3168 MB in use, idle CPU 0.2%, DPC 0%
+  Gone:   spoolsv
 == Done
-  Processes: 149 -> 151 now, in 149 seconds. Restart for the real number: the services that were told to stop are still unwinding.
+  Processes: 145 -> 148 now, in 97 seconds. Restart for the real number: the services that were told to stop are still unwinding.
