@@ -277,6 +277,28 @@ jobs:
           if ((Get-ChildItem C:\OmniDx\undo -Filter 'changes-20*.json').Count -ne 3) { Write-Host 'expected three records'; exit 1 }
           exit 0
 
+      # Dropping Extreme without dropping the tune: only the newest run goes
+      # back, the two earlier records stay, status is clean, and the record
+      # that went back is in done.
+      - name: Undo the last run only puts Extreme back and leaves the tune
+        timeout-minutes: 15
+        run: |
+          $out = & .\tune\omnidx.ps1 -UndoLast *>&1 | Out-String
+          Write-Host $out
+          if (([regex]::Matches($out, 'Putting back')).Count -ne 1) { Write-Host 'undo-last should walk back exactly one run'; exit 1 }
+          if ($out -notmatch 'Done: (\d+) put back') { Write-Host 'undo-last did not finish'; exit 1 }
+          $n = [int]$Matches[1]
+          $ex = [int](Get-Content C:\OmniDx\ci-extreme.txt)
+          if ($n -lt [math]::Floor($ex * 0.7)) { Write-Host ("undo-last put back {0} of the Extreme run's {1} changes" -f $n, $ex); exit 1 }
+          if ((Get-ChildItem C:\OmniDx\undo -Filter 'changes-20*.json').Count -ne 2) { Write-Host 'expected two records left in place'; exit 1 }
+          if ((Get-ChildItem C:\OmniDx\undo\done -Filter 'changes-20*.json').Count -ne 1) { Write-Host 'the undone record should be in done'; exit 1 }
+          if (-not (Test-Path C:\OmniDx\undo\changes-latest.json)) { Write-Host 'changes-latest.json should follow the newest remaining run'; exit 1 }
+          $st = & .\tune\omnidx.ps1 -Status *>&1 | Out-String
+          Write-Host $st
+          if ($st -notmatch 'All still in place') { Write-Host "status is not clean after undoing Extreme:`n$st"; exit 1 }
+          if ($st -notmatch 'Runs in place: 2 \(1 undone earlier') { Write-Host 'status should show two runs in place and one undone'; exit 1 }
+          exit 0
+
       - name: Undo the whole tune
         timeout-minutes: 30
         run: |
@@ -293,7 +315,8 @@ jobs:
           $kept = 0; if (Test-Path C:\OmniDx\ci-kept.txt) { $kept = [int](Get-Content C:\OmniDx\ci-kept.txt) }
           $second = -1; if (Test-Path C:\OmniDx\ci-second.txt) { $second = [int](Get-Content C:\OmniDx\ci-second.txt) }
           $extreme = -1; if (Test-Path C:\OmniDx\ci-extreme.txt) { $extreme = [int](Get-Content C:\OmniDx\ci-extreme.txt) }
-          if (([regex]::Matches($out, 'Putting back')).Count -ne 3) { Write-Host 'undo should have walked back all three runs'; exit 1 }
+          # Two runs are left after the undo-last step above; the third is already in done.
+          if (([regex]::Matches($out, 'Putting back')).Count -ne 2) { Write-Host 'undo should have walked back the two remaining runs'; exit 1 }
           $ci = [ordered]@{ version = $s.version; when = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'); os = $s.os; cpu = $s.cpu; before = $s.before; after = $s.after; target = $s.target; changes = $s.changes; warnings = $s.warnings; seconds = $s.seconds; undone = $undone; kept = $kept; second = $second; extreme = $extreme; runs = 3; gone = @($s.gone).Count; phases = $s.phases; sha = $env:GITHUB_SHA.Substring(0, 7) }
           $ci | ConvertTo-Json | Set-Content studio\assets\ci-run.json -Encoding UTF8
           Get-Content studio\assets\ci-run.json

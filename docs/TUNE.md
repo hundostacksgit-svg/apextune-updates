@@ -273,8 +273,11 @@ The BIOS checklist gains nine "EXTREME" items. It asks first (`-Yes`
 answers yes). The keep task leaves the shell choices alone (`$yours` has
 the paths). The key page shows the Extreme command under the standard one,
 marked caution, after a purchase. The Windows check runs it as a third pass
-and undoes all three runs. To drop Extreme but keep the tune: undo, then run
-the standard command again.
+then undoes the Extreme run alone with `-UndoLast` (`$env:OMNIDX_MODE='undolast'`:
+`undo.ps1 -File <newest record>`, which moves that record to `done\`, points
+`changes-latest.json` at the newest remaining run and leaves the keep task
+while any run is recorded), checks the two earlier runs are untouched, and
+undoes the rest. To drop Extreme but keep the tune, that is the command.
 
 ### Decisions made by hand stand
 `Get-CutStartup` reads the live `changes-*.json` records for StartupApproved

@@ -9,6 +9,7 @@
 #
 #   $env:OMNIDX_MODE='report'; irm omnidx.net/go.ps1 | iex     free look, changes nothing
 #   $env:OMNIDX_MODE='undo';   irm omnidx.net/go.ps1 | iex     put everything back
+#   $env:OMNIDX_MODE='undolast'; irm omnidx.net/go.ps1 | iex   put back only the newest run (drop Extreme, keep the tune)
 #   $env:OMNIDX_MODE='check';  irm omnidx.net/go.ps1 | iex     check a key's format, nothing else
 #   $env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex     what is still in place, what an update put back
 #   $env:OMNIDX_MODE='support'; irm omnidx.net/go.ps1 | iex    zip the logs and numbers to the desktop for support
@@ -103,6 +104,7 @@ foreach ($f in ("$env:OMNIDX_FLAGS" -split '[\s,]+' | Where-Object { $_ })) {
 if ($env:OMNIDX_KEEP) { $opts['Keep'] = @($env:OMNIDX_KEEP -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
 switch ($mode) {
   'undo'   { & $block -Undo }
+  'undolast' { & $block -UndoLast }
   'report' { & $block -Report }
   'status' { & $block -Status }
   'support' { & $block -SupportBundle }

@@ -138,8 +138,9 @@ Log it: every "kept because" rule lives in `Get-KeepList` in the script.
 ## "Extreme took my notifications / search box / animations"
 
 > That is what Extreme is: the caution on the key page lists every one of
-> them. To have the tune without them, run undo (`$env:OMNIDX_MODE='undo'`),
-> then the standard command again; same key, same PC, free. Or put back the
+> them. To have the tune without them, `$env:OMNIDX_MODE='undolast'; irm
+> omnidx.net/go.ps1 | iex` puts back only the Extreme run and leaves the
+> tune and the keep task as they were. Or put back the
 > one thing you miss in Settings: Extreme never touches the keep task's
 > list, so it stays put.
 

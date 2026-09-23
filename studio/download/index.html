@@ -209,6 +209,8 @@
     <div class="grid grid-2" style="align-items:center">
       <div class="card reveal">
         <div class="cmd"><code data-text="$env:OMNIDX_MODE='undo'; irm omnidx.net/go.ps1 | iex">$env:OMNIDX_MODE='undo'; irm omnidx.net/go.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
+        <p class="cmd-note">Tried Extreme and want only that gone? This puts back the newest run and leaves the tune and the keep task in place:</p>
+        <div class="cmd" style="margin-top:8px"><code data-text="$env:OMNIDX_MODE='undolast'; irm omnidx.net/go.ps1 | iex">$env:OMNIDX_MODE='undolast'; irm omnidx.net/go.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
         <p class="cmd-note">Or, with no internet at all, in an administrator PowerShell:</p>
         <div class="cmd" style="margin-top:8px"><code data-text="powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1">powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
       </div>

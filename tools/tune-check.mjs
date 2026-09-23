@@ -165,7 +165,7 @@ function flags(scriptText, goText) {
   else if (missing.length) bad(`go.ps1 passes flags the script does not declare: ${missing.join(', ')}`);
   else ok(`go.ps1's ${names.length} flags are all switches the script declares`);
   const modes = new Set([...goText.matchAll(/^\s+'([a-z]+)'\s+\{ & \$block/gm)].map((x) => x[1]));
-  for (const mode of ['undo', 'report', 'status', 'check', 'support', 'app']) if (!modes.has(mode)) bad(`go.ps1: mode '${mode}' is not handled`);
+  for (const mode of ['undo', 'undolast', 'report', 'status', 'check', 'support', 'app', 'extreme']) if (!modes.has(mode)) bad(`go.ps1: mode '${mode}' is not handled`);
   ok(`go.ps1 handles modes ${[...modes].join(' ')}`);
 }
 

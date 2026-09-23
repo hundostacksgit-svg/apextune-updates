@@ -56,6 +56,8 @@ param(
   [switch]$NoRestorePoint,
   # Put everything back from the last run and stop.
   [switch]$Undo,
+  # Put back only the newest run (the Extreme one, say) and leave the earlier runs and the keep task in place.
+  [switch]$UndoLast,
   # Read the machine and count the processes. Change nothing.
   [switch]$Report,
   # Check a key's format and checksum, then stop. Nothing is read or bound.
@@ -87,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.31.0'
+$script:Version = '1.32.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -313,7 +315,9 @@ $script:UndoScript = @'
     With no argument it walks back every run recorded here, newest first, so
     a PC tuned twice ends up as it was before the first run; each record is
     then moved to done\ so a later run starts clean. -File puts back one
-    record only. The keep task, if there is one, is removed either way.
+    record only (the newest, for -UndoLast), moves it to done\ as well, and
+    leaves the earlier runs standing. The keep task goes only when no run is
+    left recorded; with runs still in place it keeps keeping them.
     Run in an administrator PowerShell:  powershell -ExecutionPolicy Bypass -File undo.ps1
 #>
 param([string]$File)
@@ -359,7 +363,6 @@ function Restore-Dism([string]$verb, [string]$flag, [string[]]$names, [string]$w
 }
 $capsBack = New-Object System.Collections.ArrayList
 $featsBack = New-Object System.Collections.ArrayList
-try { Unregister-ScheduledTask -TaskName 'OmniDx keep' -Confirm:$false -ErrorAction Stop; Write-Host "keep task removed" -ForegroundColor DarkGray } catch { }
 foreach ($rec in $files) {
 $changes = @(Get-Content $rec -Raw | ConvertFrom-Json | ForEach-Object { $_ })
 [array]::Reverse($changes)
@@ -422,14 +425,18 @@ foreach ($c in $changes) {
     if (-not $deferred) { $done++ }
   } catch { Write-Host ("could not undo {0}: {1}" -f ($c | ConvertTo-Json -Compress), $_.Exception.Message) -ForegroundColor Yellow; $failed++ }
 }
-if (-not $File) {
-  try {
-    $doneDir = Join-Path $dir 'done'; New-Item -ItemType Directory -Path $doneDir -Force | Out-Null
-    Move-Item $rec (Join-Path $doneDir ([IO.Path]::GetFileName($rec))) -Force
-  } catch { }
+try {
+  $doneDir = Join-Path $dir 'done'; New-Item -ItemType Directory -Path $doneDir -Force | Out-Null
+  Move-Item $rec (Join-Path $doneDir ([IO.Path]::GetFileName($rec))) -Force
+} catch { }
 }
+# What is left: changes-latest.json follows the newest remaining run, and the keep task stays only while one is.
+$left = @(Get-ChildItem $dir -Filter 'changes-20*.json' -ErrorAction SilentlyContinue | Sort-Object Name -Descending)
+if ($left.Count) { Copy-Item $left[0].FullName (Join-Path $dir 'changes-latest.json') -Force; Write-Host ("{0} earlier run(s) still in place; the keep task, if there is one, keeps them" -f $left.Count) -ForegroundColor DarkGray }
+else {
+  Remove-Item (Join-Path $dir 'changes-latest.json') -Force -ErrorAction SilentlyContinue
+  try { Unregister-ScheduledTask -TaskName 'OmniDx keep' -Confirm:$false -ErrorAction Stop; Write-Host "keep task removed" -ForegroundColor DarkGray } catch { }
 }
-if (-not $File) { Remove-Item (Join-Path $dir 'changes-latest.json') -Force -ErrorAction SilentlyContinue }
 $n = Restore-Dism '/Add-Capability' '/CapabilityName' @($capsBack) 'capability'; $done += $n; $failed += (@($capsBack).Count - $n)
 $n = Restore-Dism '/Enable-Feature' '/FeatureName' @($featsBack) 'feature'; $done += $n; $failed += (@($featsBack).Count - $n)
 if ($removedApps.Count) {
@@ -878,6 +885,7 @@ function Show-Status {
     $n = 0; try { $n = @(Get-Content $f.FullName -Raw | ConvertFrom-Json | ForEach-Object { $_ }).Count } catch { }
     Say ("  Run {0}: {1} changes recorded" -f ($f.BaseName -replace '^changes-', ''), $n)
   }
+  if ($undone.Count) { Say ("  Runs in place: {0} ({1} undone earlier, in undo\done)." -f $files.Count, $undone.Count) }
   $r = Get-Drift -Files @($files | ForEach-Object { $_.FullName })
   if ($r.drift.Count) {
     Say ("  Settings checked: {0}. Windows has put back {1}:" -f $r.checked, $r.drift.Count) 'Yellow'
@@ -2688,9 +2696,16 @@ function Write-Preview($m, $before) {
 }
 
 function Invoke-Undo {
+  param([switch]$Last)
   $u = Join-Path $script:Root 'undo\undo.ps1'
   if (-not (Test-Path $u)) { Say "Nothing to undo: no run recorded in C:\OmniDx\undo." 'Yellow'; return }
-  if (-not (Get-ChildItem (Join-Path $script:Root 'undo') -Filter 'changes-20*.json' -ErrorAction SilentlyContinue)) { Say "Nothing to undo: every recorded run has already been put back." 'Yellow'; return }
+  $recs = @(Get-ChildItem (Join-Path $script:Root 'undo') -Filter 'changes-20*.json' -ErrorAction SilentlyContinue | Sort-Object Name -Descending)
+  if (-not $recs.Count) { Say "Nothing to undo: every recorded run has already been put back." 'Yellow'; return }
+  if ($Last) {
+    Say ("Putting back the newest run only ({0}); {1} earlier run(s) and the keep task stay." -f ($recs[0].BaseName -replace '^changes-', ''), ($recs.Count - 1)) 'White'
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $u -File $recs[0].FullName
+    return
+  }
   & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $u
 }
 
@@ -2733,6 +2748,7 @@ function Main {
   Limit-History
   try {
     if ($Undo) { Invoke-Undo; return }
+    if ($UndoLast) { Invoke-Undo -Last; return }
     if ($Probe) { Write-Output (Get-Probe | ConvertTo-Json -Depth 5 -Compress); return }
     if ($Gui) {
       $shown = $false
@@ -2830,6 +2846,13 @@ function Main {
     if ($skip -contains 'keep') { Head "keep (skipped)"; Remove-KeepTask '-Skip keep' } else { Register-Keep }
 
     $changesFile = Save-Changes
+    # The services told to stop take a few seconds to go; the count is taken once they have, up to twenty seconds.
+    $stopping = @(Get-Service -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq 'StopPending' })
+    if ($stopping.Count) {
+      Say ("  Waiting for {0} services to finish stopping..." -f $stopping.Count)
+      $ssw = [System.Diagnostics.Stopwatch]::StartNew()
+      while ($ssw.Elapsed.TotalSeconds -lt 20 -and @(Get-Service -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq 'StopPending' }).Count) { Start-Sleep -Seconds 2 }
+    }
     $after = Get-ProcessCount
     Save-ProcessList 'after'
     $snapAfter = Get-Snapshot
