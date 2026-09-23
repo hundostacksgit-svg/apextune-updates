@@ -251,6 +251,24 @@ expect(r.status === 200 && r.data.ok === true, 'and that key still works');
 r = await refund({ id: 'rf3', order_id: 'ORDER-TUNE-1', status: 'PENDING', amount_money: { amount: 1999 } });
 expect(r.status === 200 && r.data.ignored, 'a refund still pending changes nothing yet');
 
+/* 8b. The keys again, from the key page: to the address on file only, ten minutes apart. */
+{
+  const n = mails.length;
+  r = await call('/v1/tune/issue', { product: 'tune', order: 'ORDER-TUNE-1', resend: true });
+  expect(r.status === 200 && r.data.resent === false && /ten minutes/.test(r.data.reason) && mails.length === n, 'asked within ten minutes of the last send, nothing goes and the page is told why');
+  db.tune_keys.filter((k) => k.order_ref === 'ORDER-TUNE-1').forEach((k) => { k.emailed_at = Date.now() - 11 * 60_000; });
+  r = await call('/v1/tune/issue', { product: 'tune', order: 'ORDER-TUNE-1', resend: true, email: 'someone-else@example.test' });
+  expect(r.status === 200 && r.data.resent === true && r.data.sentTo === 's***@example.test' && mails.length === n + 1 && mails[n].to[0] === 'solo@example.test' && r.data.key, 'after ten minutes the keys go again, to the address on file and never to one typed in, and the answer masks it');
+  expect(db.tune_keys.find((k) => k.order_ref === 'ORDER-TUNE-1').emailed_at > Date.now() - 5000, 'and the send is recorded');
+  db.tune_keys.filter((k) => k.order_ref === 'ORDER-TUNE-1').forEach((k) => { k.emailed_at = Date.now() - 11 * 60_000; });
+  delete env.RESEND_API_KEY;
+  r = await call('/v1/tune/issue', { product: 'tune', order: 'ORDER-TUNE-1', resend: true });
+  expect(r.status === 503 && /not switched on/.test(r.data.error), 'with mail off the page is told to save the keys');
+  env.RESEND_API_KEY = 'rs-test';
+  r = await call('/v1/tune/issue', { product: 'squad', order: 'ORDER-SQUAD-1', resend: true });
+  expect(r.status === 410, 'a refunded order gets no mail');
+}
+
 /* 9. The owner, from a phone. */
 r = await call('/v1/tune/admin', { token: 'nope', action: 'lookup', ref: 'ORDER-TUNE-1' });
 expect(r.status === 403, 'the owner page needs the right token');

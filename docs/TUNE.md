@@ -78,7 +78,10 @@ updates" box, ticked by default, maps to `-NoKeep` when unticked.
    saved in that browser; the page shows them again on a return visit, and
    the receipt number from Square's email plus the email paid with gets
    them back on any device (a four-character receipt number could be
-   guessed, so it never answers alone; the long order id does). Guessing
+   guessed, so it never answers alone; the long order id does). "Send it
+   again" under the keys posts the same route with `resend: true`: the
+   keys go to the address on file and nowhere else, ten minutes apart,
+   and the page says where they went with the address masked. Guessing
    is shut off anyway: twenty tries per connection every ten minutes on
    that route, forty on the claim, ten on a move, sixty on a check, and
    ten wrong owner tokens close the owner page for ten minutes (a right

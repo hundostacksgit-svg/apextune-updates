@@ -317,11 +317,40 @@ async function issueTuneKeys(env, { order, product, cents, email, receipt }) {
   return keys;
 }
 
-function tuneAnswer(rows, env, request) {
+function tuneFields(rows) {
   const live = rows.filter((r) => !r.revoked_at);
-  if (!live.length) return fail('That order was refunded, so its keys no longer work.', 410, env, request);
+  if (!live.length) return null;
   const keys = live.map((r) => prettyTuneKey(r.key));
-  return json({ key: keys[0], keys, product: live[0].product, seats: live[0].seats, verified: Boolean(live[0].verified), emailed: Boolean(live[0].emailed_at) }, { env, request });
+  return { key: keys[0], keys, product: live[0].product, seats: live[0].seats, verified: Boolean(live[0].verified), emailed: Boolean(live[0].emailed_at) };
+}
+const REFUNDED = 'That order was refunded, so its keys no longer work.';
+function tuneAnswer(rows, env, request) {
+  const f = tuneFields(rows);
+  if (!f) return fail(REFUNDED, 410, env, request);
+  return json(f, { env, request });
+}
+/** b***@example.test: enough to recognise the address, not enough to learn it. */
+const maskEmail = (e) => String(e || '').replace(/^(.)[^@]*(@.*)$/, '$1***$2');
+
+/**
+ * The keys again, from the key page, to the address on file and nowhere
+ * else: the order id proves the purchase, not a right to redirect the mail.
+ * Ten minutes between sends, so a stuck button is not a mailbox flood.
+ */
+async function resendTuneKeys(env, request, rows) {
+  const f = tuneFields(rows);
+  if (!f) return fail(REFUNDED, 410, env, request);
+  if (!env.RESEND_API_KEY) return fail('Mail is not switched on here yet. Save the keys from this page, or email support with your receipt.', 503, env, request);
+  const live = rows.filter((r) => !r.revoked_at);
+  const to = live[0].email;
+  if (!to) return fail('No email address is on file for that order. Save the keys from this page, or email support with your receipt.', 400, env, request);
+  const order = ordersIn(rows)[0];
+  const lately = live.some((r) => r.emailed_at && Date.now() - r.emailed_at < 10 * 60_000);
+  if (lately) return json({ ...f, resent: false, sentTo: maskEmail(to), reason: 'Sent within the last ten minutes. Give it a moment, and check spam.' }, { env, request });
+  const sent = await emailTuneKeys(env, to, f.product, f.keys, order, null, live[0].receipt ? receiptOf(live[0].receipt) : null);
+  if (!sent) return fail('The mail could not be sent just now. Save the keys from this page, or email support with your receipt.', 502, env, request);
+  await env.DB.prepare("UPDATE tune_keys SET emailed_at = ? WHERE order_ref = ? OR order_ref LIKE ?").bind(Date.now(), order, `${order}#%`).run();
+  return json({ ...f, emailed: true, resent: true, sentTo: maskEmail(to) }, { env, request });
 }
 
 /**
@@ -848,6 +877,7 @@ const routes = {
       if (!email) return fail('With the receipt number, the email address you paid with is needed too.', 403, env, request);
       if (!onFile || !sameSecret(onFile, email)) return fail('That email address does not match the order for that receipt number. Use the long order id from the page Square sent you to, or email support with the receipt.', 403, env, request);
     }
+    if (existing.length && body.resend === true) return resendTuneKeys(env, request, existing);
     if (existing.length) return tuneAnswer(existing, env, request);
     if (isReceipt) return fail('That receipt number is not on file yet: Square confirms a payment within a minute or so, then it is. Try again shortly, or use the long order id from the page Square sent you to.', 404, env, request);
 

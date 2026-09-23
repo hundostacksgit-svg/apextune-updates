@@ -210,7 +210,8 @@ off or on. No terminal needed.
 > They are also on the page Square sent you to after paying, and that page
 > shows them again any time: omnidx.net/studio/activate/, with the short
 > receipt number from Square's email (#AB12 or so) and the email you paid
-> with. If neither has them, send the receipt and
+> with. Under the keys there is "Send it again", which sends them to your
+> checkout address once more. If neither has them, send the receipt and
 > I will look the order up and send the keys by hand.
 
 ## "It says too many tries"

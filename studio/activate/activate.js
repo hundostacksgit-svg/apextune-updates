@@ -85,7 +85,7 @@ async function issue(product, order, email = '') {
     throw new Refused('Could not reach the licence server. Try again in a minute; if it keeps failing, email support with your receipt.', 0);
   }
   const data = await r.json().catch(() => ({}));
-  if (r.ok && data.key) return { ...data, keys: Array.isArray(data.keys) && data.keys.length ? data.keys : [data.key], order, source: 'server' };
+  if (r.ok && data.key) return { ...data, keys: Array.isArray(data.keys) && data.keys.length ? data.keys : [data.key], order, email: email || '', source: 'server' };
   throw new Refused(data.error || 'The licence server refused this order.', r.status);
 }
 
@@ -150,7 +150,8 @@ function renderKey(info, { again = false } = {}) {
       <a class="btn btn-sm btn-ghost" href="${mail}">${many ? 'Email them to myself' : 'Email it to myself'}</a>
       <a class="btn btn-sm btn-ghost" href="${save}" download="omnidx-tune-key.txt">Save as a file</a>
       <button class="btn btn-sm btn-ghost" type="button" onclick="print()">Print</button></div>
-    ${info.emailed ? `<p class="tiny" style="text-align:center;margin:8px 0 0;color:var(--ok,#35d07f)">Also sent to the email you gave at checkout.</p>` : ''}
+    <p class="tiny" id="act-mail" style="text-align:center;margin:8px 0 0;color:var(--ok,#35d07f)">${info.emailed ? 'Also sent to the email you gave at checkout. ' : ''}<button class="btn btn-sm btn-ghost" type="button" id="act-resend">${info.emailed ? 'Not there? Send it again' : (many ? 'Send them to my checkout email' : 'Send it to my checkout email')}</button></p>
+    <p class="tiny" id="act-mail-out" style="text-align:center;margin:6px 0 0" hidden></p>
     <p class="tiny muted" style="text-align:center;margin:8px 0 0">Letters only look like this: no I, O, 0 or 1 in a key, and capitals do not matter.</p>
     <p class="tiny muted" id="act-seats" style="text-align:center;margin:6px 0 0" hidden></p>
 
@@ -276,6 +277,20 @@ async function wireExtras(info) {
       if (bits.length && seats) { seats.hidden = false; seats.textContent = bits.join(' · ') + '.'; }
     } catch { /* the server is optional */ }
   }
+  // The keys to the checkout address again: the server sends to the address on file and nowhere else.
+  $('#act-resend')?.addEventListener('click', async () => {
+    const out = $('#act-mail-out');
+    out.hidden = false;
+    if (!base) { out.textContent = 'Sending needs the licence server, which is not switched on yet. Save the keys from this page, or email support with your receipt.'; return; }
+    if (!info.order) { out.textContent = 'Open this page from the link Square sent you to, or put in your receipt number, and press this again.'; return; }
+    out.textContent = 'Sending…';
+    try {
+      const r = await fetch(`${base}/v1/tune/issue`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ product: info.product, order: info.order, email: info.email || undefined, resend: true }) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { out.textContent = d.error || 'The server refused.'; return; }
+      out.textContent = d.resent ? `Sent again to ${d.sentTo}. Check spam if it is not there in a minute.` : (d.reason || `Already sent to ${d.sentTo}.`);
+    } catch { out.textContent = 'Could not reach the licence server. Try again in a minute, or email support.'; }
+  });
   $('#act-move')?.addEventListener('click', async () => {
     const out = $('#act-move-out');
     const order = String($('#act-move-order')?.value || '').trim();

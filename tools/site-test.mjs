@@ -96,7 +96,7 @@ try {
     await page.route('**/tune/config.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ api: `${base}/fakeapi`, version: '0', sha256: 'x' }) }));
     await page.route('**/fakeapi/v1/tune/check', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, product: 'squad', seats: 1, used: 0 }) }));
     let asked = [];
-    await page.route('**/fakeapi/v1/tune/issue', async (r) => { asked.push(r.request().postDataJSON()); r.fulfill({ contentType: 'application/json', body: JSON.stringify({ key: keys[0], keys, product: 'squad', seats: 1, verified: true, emailed: true }) }); });
+    await page.route('**/fakeapi/v1/tune/issue', async (r) => { const b = r.request().postDataJSON(); asked.push(b); r.fulfill({ contentType: 'application/json', body: JSON.stringify({ key: keys[0], keys, product: 'squad', seats: 1, verified: true, emailed: true, ...(b.resend ? { resent: true, sentTo: 'b***@example.test' } : {}) }) }); });
     await page.goto(`${base}/studio/activate/?e=studio&orderId=ORDER-TEST-1`, { waitUntil: 'networkidle' }); await page.waitForTimeout(500);
     const boxes = await page.evaluate(() => [...document.querySelectorAll('.keybox')].map((k) => k.textContent.replace(/\s+/g, ' ').trim()));
     expect(boxes.length === 3 && boxes[0].includes(keys[0]) && boxes[2].includes(keys[2]), 'a Squad order shows its three keys');
@@ -104,6 +104,8 @@ try {
     expect(await page.evaluate(() => document.querySelector('.cmd code')?.dataset.text?.includes("$env:OMNIDX_KEY='" )), 'the paste line carries the first key');
     expect(await page.evaluate(() => !!document.querySelector('#act-move-key')), 'the move form offers a choice of key');
     expect(!(await overflow(page)), 'three keys fit a phone without sideways scroll');
+    await page.click('#act-resend'); await page.waitForTimeout(400);
+    expect(asked.some((a) => a.resend === true && a.order === 'ORDER-TEST-1') && (await page.evaluate(() => /Sent again to b\*\*\*@example\.test/.test(document.querySelector('#act-mail-out')?.textContent || ''))), '"Send it again" asks the server for that order and shows where the keys went');
     await page.goto(`${base}/studio/activate/`, { waitUntil: 'networkidle' }); await page.waitForTimeout(500);
     expect(await page.evaluate(() => document.querySelectorAll('.keybox').length === 3 && /again/.test(document.querySelector('h1')?.textContent || '')), 'a return visit shows the three keys again without asking the server');
     await page.unroute('**/fakeapi/v1/tune/issue');
