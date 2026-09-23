@@ -276,6 +276,16 @@ async function hitCount(env, request, scope, add) {
   }
 }
 const tooMany = async (env, request, scope, limit) => (await hitCount(env, request, scope, true)) > limit;
+/** True the first time a mark is seen, false after; kept in tune_hits for the given days, so a repeated webhook does one thing once. */
+async function firstTime(env, mark, days = 30) {
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    const row = await env.DB.prepare('SELECT n, until FROM tune_hits WHERE bucket = ?').bind(mark).first();
+    if (row && row.until > now) return false;
+    await env.DB.prepare('INSERT OR REPLACE INTO tune_hits (bucket, n, until) VALUES (?, ?, ?)').bind(mark, 1, now + days * 86400).run();
+    return true;
+  } catch (err) { console.error('tune_hits', err); return true; }
+}
 
 async function tuneKeysFor(env, order) {
   const rows = await env.DB.prepare(
@@ -1069,7 +1079,19 @@ const routes = {
       if (!rows.length) return json({ ignored: 'no keys for that order' });
       const paid = Number(rows[0].amount_cents || 0);
       const back = Number(refund.amount_money?.amount || 0);
-      if (paid && back < paid - 100) return json({ ok: true, order, partial: true, revoked: 0 });
+      if (paid && back < paid - 100) {
+        // Nothing changes here; the owner hears about it once, and decides on the owner page.
+        let told = false;
+        if (env.RESEND_API_KEY && validEmail(env.SUPPORT_EMAIL) && await firstTime(env, `refund:${String(refund.id || order).slice(0, 80)}`)) {
+          const r = await sendMail(env, {
+            to: String(env.SUPPORT_EMAIL).trim().toLowerCase(),
+            subject: `OmniDx Tune: a partial refund on order ${order}`,
+            text: `Square refunded ${dollars(back)} of the ${dollars(paid)} paid on order ${order}${rows[0].email ? ` (${maskEmail(rows[0].email)})` : ''}.\n\nThe keys stay on: a partial refund is your call. If it was one friend's share of a Squad, switch off that key only from the owner page: https://omnidx.net/studio/admin/\nOrder reference to paste there: ${order}`,
+          });
+          told = r.ok;
+        }
+        return json({ ok: true, order, partial: true, revoked: 0, told });
+      }
       const live = rows.filter((r) => !r.revoked_at);
       if (live.length) {
         await env.DB.prepare("UPDATE tune_keys SET revoked_at = ? WHERE (order_ref = ? OR order_ref LIKE ?) AND revoked_at IS NULL").bind(Date.now(), order, `${order}#%`).run();

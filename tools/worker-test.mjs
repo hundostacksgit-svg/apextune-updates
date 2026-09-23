@@ -247,8 +247,13 @@ r = await call('/v1/tune/issue', { product: 'squad', order: 'ORDER-SQUAD-1' });
 expect(r.status === 410, 'the key page says the order was refunded');
 r = await refund({ id: 'rf1', order_id: 'ORDER-SQUAD-1', status: 'COMPLETED', amount_money: { amount: 3999 } });
 expect(r.status === 200 && r.data.revoked === 0 && mails.length === mailsBefore + 1, 'the same refund again does nothing more');
-r = await refund({ id: 'rf2', order_id: 'ORDER-TUNE-1', status: 'COMPLETED', amount_money: { amount: 500 } });
-expect(r.status === 200 && r.data.partial === true, 'a partial refund is left to support');
+{
+  const n = mails.length;
+  r = await refund({ id: 'rf2', order_id: 'ORDER-TUNE-1', status: 'COMPLETED', amount_money: { amount: 500 } });
+  expect(r.status === 200 && r.data.partial === true && r.data.told === true && mails.length === n + 1 && mails[n].to[0] === 'owner@example.test' && /\$5\.00 of the \$19\.99/.test(mails[n].text) && /ORDER-TUNE-1/.test(mails[n].subject), 'a partial refund changes nothing and tells the owner once, with the amounts and the order');
+  r = await refund({ id: 'rf2', order_id: 'ORDER-TUNE-1', status: 'COMPLETED', amount_money: { amount: 500 } });
+  expect(r.status === 200 && r.data.partial === true && r.data.told === false && mails.length === n + 1, 'the same partial refund again tells nobody twice');
+}
 r = await call('/v1/tune/check', { key: (await call('/v1/tune/issue', { product: 'tune', order: 'ORDER-TUNE-1' })).data.key });
 expect(r.status === 200 && r.data.ok === true, 'and that key still works');
 r = await refund({ id: 'rf3', order_id: 'ORDER-TUNE-1', status: 'PENDING', amount_money: { amount: 1999 } });

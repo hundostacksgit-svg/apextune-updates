@@ -283,7 +283,10 @@ trigger, `[triggers]` in `wrangler.toml`). All of it is
 shut when no token is set (503); the offline test covers each action.
 
 ### Refunds
-Refund in Square as normal; that is the whole job. On the buyer's PC,
+Refund in Square as normal; that is the whole job. A partial refund (one
+friend's share of a Squad, say) switches nothing off; the Worker emails
+you once, with the amounts and the order reference, and "Switch off this
+key only" on the owner page is the usual answer. On the buyer's PC,
 `-Status` and `-CheckKey` ask the server (`Get-ServerView`, `/v1/tune/check`)
 and say "switched off" in so many words, so a refunded key is never a
 mystery. Square sends
