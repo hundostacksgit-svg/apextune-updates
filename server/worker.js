@@ -248,6 +248,35 @@ const receiptOf = (v) => String(v || '').trim().toUpperCase().replace(/^#/, '');
  * share the order reference (plain, #2, #3), so a second look at the same
  * order returns the same three keys and never a fourth.
  */
+/**
+ * A handful of tries per connection every ten minutes on the routes that take
+ * an order reference, a receipt number, a key or the owner token, so none of
+ * them can be found by trying. Counted in D1, one small row per connection and
+ * window, cleared as windows expire. A database that cannot count fails open:
+ * a buyer must never be locked out by a hiccup on our side.
+ */
+const HITS_WINDOW = 600;
+const TOO_MANY = 'Too many tries from this connection. Wait ten minutes and try again, or email support with your Square receipt.';
+async function hitCount(env, request, scope, add) {
+  try {
+    const ip = request.headers.get('cf-connecting-ip') || 'unknown';
+    const bucket = `${scope}:${ip}`;
+    const now = Math.floor(Date.now() / 1000);
+    const row = await env.DB.prepare('SELECT n, until FROM tune_hits WHERE bucket = ?').bind(bucket).first();
+    const live = Boolean(row && row.until > now);
+    if (!add) return live ? row.n : 0;
+    const n = live ? row.n + 1 : 1;
+    const until = live ? row.until : now + HITS_WINDOW;
+    if (!live) await env.DB.prepare('DELETE FROM tune_hits WHERE until < ?').bind(now).run();
+    await env.DB.prepare('INSERT OR REPLACE INTO tune_hits (bucket, n, until) VALUES (?, ?, ?)').bind(bucket, n, until).run();
+    return n;
+  } catch (err) {
+    console.error('tune_hits', err);
+    return 0;
+  }
+}
+const tooMany = async (env, request, scope, limit) => (await hitCount(env, request, scope, true)) > limit;
+
 async function tuneKeysFor(env, order) {
   const rows = await env.DB.prepare(
     "SELECT * FROM tune_keys WHERE order_ref = ? OR order_ref LIKE ? OR (receipt IS NOT NULL AND receipt = ?) ORDER BY order_ref",
@@ -800,6 +829,7 @@ const routes = {
    * is issued at all: a key is never minted on the strength of a URL.
    */
   'POST /v1/tune/issue': async (request, env, body) => {
+    if (await tooMany(env, request, 'issue', 20)) return fail(TOO_MANY, 429, env, request);
     const wanted = String(body.product || 'tune').toLowerCase();
     if (!TUNE_PRODUCTS[wanted]) return fail('Unknown product.', 400, env, request);
     // The Square order id from the redirect, or the short receipt number (four characters, sometimes written with a #) from Square's email.
@@ -851,8 +881,10 @@ const routes = {
    */
   'POST /v1/tune/admin': async (request, env, body) => {
     if (!env.TUNE_ADMIN_TOKEN) return fail('The owner token is not set on the server.', 503, env, request);
+    // Ten wrong tokens from one connection shut the owner page for ten minutes; right ones are never counted.
+    if ((await hitCount(env, request, 'owner', false)) >= 10) return fail(TOO_MANY, 429, env, request);
     const token = String(body.token || '');
-    if (!token || !sameSecret(token, env.TUNE_ADMIN_TOKEN)) return fail('Wrong token.', 403, env, request);
+    if (!token || !sameSecret(token, env.TUNE_ADMIN_TOKEN)) { await hitCount(env, request, 'owner', true); return fail('Wrong token.', 403, env, request); }
     const action = String(body.action || 'lookup');
     // The last sixty keys, grouped by order: what sold, to whom, on or off.
     if (action === 'recent') {
@@ -1003,6 +1035,7 @@ const routes = {
    * Windows update works — and it is how a refund actually stops a key.
    */
   'POST /v1/tune/claim': async (request, env, body) => {
+    if (await tooMany(env, request, 'claim', 40)) return fail(TOO_MANY, 429, env, request);
     const parsed = parseTuneKey(body.key);
     if (!parsed) return fail('That key is not valid. Check it for typos.', 400, env, request);
     const hwid = String(body.hwid || '').trim().toLowerCase();
@@ -1048,6 +1081,7 @@ const routes = {
    * than that is a support email.
    */
   'POST /v1/tune/release': async (request, env, body) => {
+    if (await tooMany(env, request, 'release', 10)) return fail(TOO_MANY, 429, env, request);
     const parsed = parseTuneKey(body.key);
     if (!parsed) return fail('That key is not valid. Check it for typos.', 400, env, request);
     const order = String(body.order || '').trim().replace(/^#/, '').slice(0, 120);
@@ -1076,6 +1110,7 @@ const routes = {
 
   /** Is this key real, and how many PCs is it on. Changes nothing. */
   'POST /v1/tune/check': async (request, env, body) => {
+    if (await tooMany(env, request, 'check', 60)) return json({ ok: false, reason: TOO_MANY }, { status: 429, env, request });
     const parsed = parseTuneKey(body.key);
     if (!parsed) return json({ ok: false, reason: 'That key is not valid.' }, { env, request });
     const row = await env.DB.prepare('SELECT * FROM tune_keys WHERE key = ?').bind(parsed.key).first();

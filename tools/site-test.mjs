@@ -36,7 +36,8 @@ for (let i = 0; i < 50; i++) { try { const r = await fetch(`${base}/studio/`); i
 
 const { chromium } = await loadPlaywright();
 const { makeKey, pretty } = await import(path.join(root, 'studio/assets/tunekey.js'));
-const browser = await chromium.launch({ args: ['--no-sandbox'] });
+// A machine with its own Chromium (the build machine's, or a dev box) names it in PW_CHROMIUM; otherwise Playwright's own.
+const browser = await chromium.launch({ args: ['--no-sandbox'], ...(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {}) });
 
 function watch(page) {
   const errs = [];

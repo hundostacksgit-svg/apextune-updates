@@ -27,15 +27,16 @@ of their files) and opens Explorer on it. It answers most questions.
 
 ## "I paid and did not get a key"
 
-> Square sends you back to omnidx.net/studio/activate/ with the key on
-> screen; if the tab closed on the way, open that page again and it shows
-> the key it saved. If it does not, put in the order number from your Square
-> receipt email (near the top) and choose what you bought. Send me the order
-> number if that fails and I will send the key back by hand.
+> The keys went to the email you typed at Square's checkout the moment the
+> payment cleared; check spam and promotions. Square also sent you back to
+> omnidx.net/studio/activate/ with them on screen, and that page shows them
+> again any time: the receipt number from Square's email (#AB12 or so) plus
+> the email you paid with, or the long order id from the address bar. Send
+> me the receipt if that fails and I will send them again.
 
-By hand: `python3 tools/make-tune-key.py --order <ref>` gives the key the
-page would have derived; with the Worker, check `tune_keys` for the order
-first.
+By hand: the owner page (omnidx.net/studio/admin/): look the order up by
+order reference, receipt number or key, then "Send the keys again". Nothing
+else makes a buyer's key; keys exist only in the server's table.
 
 ## "I lost my key"
 
@@ -44,8 +45,9 @@ first.
 > `$env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex` shows it with the
 > middle hidden. To see it in full, open Registry Editor at
 > HKEY_LOCAL_MACHINE\SOFTWARE\OmniDx\Tune. For a new PC, the key page at
-> omnidx.net/studio/activate/ makes the same key again from your Square
-> order number.
+> omnidx.net/studio/activate/ shows the keys issued for your order: the
+> receipt number from Square's email plus the email you paid with, or the
+> long order id.
 
 ## "It says the key is on another PC"
 
@@ -55,7 +57,8 @@ first.
 > your Square order number: it moves once every 30 days by itself. If the
 > licence server is not on yet, send me the order number and I will move it.
 
-By hand (Worker): `DELETE FROM tune_machines WHERE key = '<compact key>';`
+By hand: the owner page, look the key up, "Free this key from its PC" (it
+does not spend the buyer's own monthly move).
 
 ## "My process count is still 150"
 
@@ -209,6 +212,18 @@ off or on. No terminal needed.
 > receipt number from Square's email (#AB12 or so) and the email you paid
 > with. If neither has them, send the receipt and
 > I will look the order up and send the keys by hand.
+
+## "It says too many tries"
+
+> The key page and the licence server allow a handful of tries per
+> connection every ten minutes, so nobody can guess receipt numbers or keys.
+> Wait ten minutes and try once more with the receipt number and the email
+> you paid with, or send me the receipt and I will send the keys.
+
+A shared connection (a dorm, a school, one router for a house) counts as
+one. Twenty key-page tries, forty key checks from the script, ten moves;
+the owner page shuts the same way after ten wrong tokens, and a right token
+is never counted. Nothing to reset: the window passes on its own.
 
 ## "It says PowerShell 7 / it says not administrator / 'irm' is not recognised"
 

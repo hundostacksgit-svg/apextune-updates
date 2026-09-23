@@ -11,12 +11,11 @@
  * order id to whatever we set, and that id is what the key is issued against —
  * one key per order, so a refresh never mints a second one.
  *
- * With the Worker deployed (tune/config.json has an `api`), the key is minted
- * and recorded on the server, which can also confirm the order with Square.
- * Without it, the key is derived here from the order reference and the
- * script locks it to the first PC that runs it. Honest about what that
- * proves: it believes the redirect. Deploying the Worker is what turns the
- * lock into a real one, and docs/TUNE.md says how.
+ * With the Worker deployed (tune/config.json has an `api`), the keys are
+ * minted and recorded on the server after it confirms the order with Square,
+ * and this page only shows what the server issued. Without it the key desk
+ * is shut: the buy buttons close and this page mints nothing. Nothing here
+ * can make a key; docs/TUNE.md says how the Worker is deployed.
  */
 
 import { TUNE, PAY } from '../assets/config.js';

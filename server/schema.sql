@@ -171,6 +171,16 @@ CREATE TABLE IF NOT EXISTS tune_machines (
   last_seen   INTEGER NOT NULL,
   PRIMARY KEY (key, hwid)
 );
+-- Tries per connection on the routes that take an order reference, a receipt
+-- number, a key or the owner token: one row per connection and ten-minute
+-- window, so none of them can be found by guessing. Expired rows are cleared
+-- as new windows open. Nothing here identifies a buyer.
+CREATE TABLE IF NOT EXISTS tune_hits (
+  bucket  TEXT PRIMARY KEY,             -- '<route>:<connection>'
+  n       INTEGER NOT NULL DEFAULT 0,   -- tries in the current window
+  until   INTEGER NOT NULL              -- unix seconds the window ends
+);
+
 -- Columns added after the first deploy are in the CREATE TABLE statements
 -- above (a fresh database gets them at once) and are added to an older
 -- database by the deploy workflow one ALTER at a time, each allowed to fail

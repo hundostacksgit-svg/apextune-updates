@@ -7,7 +7,8 @@
  * request for the same order must get the same three keys; a one-PC order
  * gets one; a bad signature is refused; each key locks to one PC and a
  * second PC on it is refused; a payment below the price is ignored; a
- * Squad key moves with the plain order number. Anything the Worker asks the
+ * Squad key moves with the plain order number; guessing receipt numbers, keys
+ * or the owner token is shut off after a handful of tries. Anything the Worker asks the
  * database that this file does not model fails the run, on purpose.
  *
  *   node tools/worker-test.mjs
@@ -24,7 +25,7 @@ const bad = (m) => { failed++; console.log('  FAIL ' + m); };
 const expect = (cond, m) => (cond ? ok(m) : bad(m));
 
 /* ---------------- a stand-in D1: the statements the tune routes use ---------------- */
-const db = { tune_keys: [], tune_machines: [] };
+const db = { tune_keys: [], tune_machines: [], tune_hits: [] };
 const like = (v, pat) => pat.endsWith('%') && String(v || '').startsWith(pat.slice(0, -1));
 function statement(sql, args) {
   const s = sql.replace(/\s+/g, ' ').trim();
@@ -68,6 +69,11 @@ function statement(sql, args) {
   }
   if (s.startsWith('UPDATE tune_machines SET last_seen = ?')) return [];
   if (s.startsWith('DELETE FROM tune_machines WHERE key = ?')) { db.tune_machines = db.tune_machines.filter((r) => r.key !== args[0]); return []; }
+  if (s.startsWith('SELECT n, until FROM tune_hits WHERE bucket = ?')) return db.tune_hits.filter((h) => h.bucket === args[0]);
+  if (s.startsWith('DELETE FROM tune_hits WHERE until < ?')) { db.tune_hits = db.tune_hits.filter((h) => h.until >= args[0]); return []; }
+  if (s.startsWith('INSERT OR REPLACE INTO tune_hits (bucket, n, until) VALUES (?, ?, ?)')) {
+    db.tune_hits = db.tune_hits.filter((h) => h.bucket !== args[0]); db.tune_hits.push({ bucket: args[0], n: args[1], until: args[2] }); return [];
+  }
   throw new Error('the stand-in database does not model: ' + s);
 }
 // D1 lets a statement run bound or not; the stand-in does the same.
@@ -269,6 +275,28 @@ r = await admin({ action: 'revoke-key', ref: dualKeys[1] });
 expect(r.status === 200 && r.data.revokedKey === dualKeys[1] && r.data.keys.filter((k) => k.revoked).length === 1, 'one key of a Squad order is switched off, the other two stay on');
 r = await admin({ action: 'revoke-key', ref: 'ORDER-DUAL-1' });
 expect(r.status === 400, 'switching off one key needs the key, not the order');
+/* 10. Guessing is not a way in: a handful of tries per connection, then that connection waits ten minutes. */
+const from = (ip) => ({ 'cf-connecting-ip': ip });
+let last;
+for (let i = 0; i < 20; i++) last = await call('/v1/tune/issue', { product: 'tune', order: 'AB' + String(10 + i), email: 'guess@example.test' }, from('203.0.113.7'));
+expect(last.status === 404, 'twenty wrong receipt numbers from one connection each get the ordinary answer');
+r = await call('/v1/tune/issue', { product: 'tune', order: 'ORDER-TUNE-1' }, from('203.0.113.7'));
+expect(r.status === 429 && /Too many tries/.test(r.data.error), 'the twenty-first try from that connection is refused, even for a real order');
+r = await call('/v1/tune/issue', { product: 'tune', order: 'ORDER-TUNE-1' }, from('203.0.113.8'));
+expect(r.status === 200 && r.data.key, 'another connection is served as usual');
+db.tune_hits.forEach((h) => { if (h.bucket.endsWith(':203.0.113.7')) h.until = 1; });
+r = await call('/v1/tune/issue', { product: 'tune', order: 'ORDER-TUNE-1' }, from('203.0.113.7'));
+expect(r.status === 200 && db.tune_hits.every((h) => h.until > 1), 'ten minutes later that connection is served again and the stale row is gone');
+for (let i = 0; i < 10; i++) last = await call('/v1/tune/admin', { token: 'guess-' + i, action: 'recent' }, from('203.0.113.9'));
+expect(last.status === 403, 'ten wrong owner tokens from one connection each get "wrong token"');
+r = await call('/v1/tune/admin', { token: 'owner-token-test', action: 'recent' }, from('203.0.113.9'));
+expect(r.status === 429, 'the eleventh try from that connection is refused even with the right token');
+r = await admin({ action: 'recent' });
+expect(r.status === 200, 'the owner on another connection is served: right tokens were never counted');
+r = await call('/v1/tune/claim', { key: 'TUNE-AAAA-AAAA-AAAA-AAAA', hwid: hw(1) }, from('203.0.113.10'));
+for (let i = 0; i < 40; i++) last = await call('/v1/tune/claim', { key: 'TUNE-AAAA-AAAA-AAAA-AAAA', hwid: hw(1) }, from('203.0.113.10'));
+expect(last.status === 429, 'forty-one made-up keys from one connection and the door shuts there too');
+
 r = await call('/v1/tune/admin', { token: 'owner-token-test', action: 'lookup', ref: 'ORDER-TUNE-1' });
 delete env.TUNE_ADMIN_TOKEN;
 r = await call('/v1/tune/admin', { token: 'owner-token-test', action: 'lookup', ref: 'ORDER-TUNE-1' });

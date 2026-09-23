@@ -78,7 +78,13 @@ updates" box, ticked by default, maps to `-NoKeep` when unticked.
    saved in that browser; the page shows them again on a return visit, and
    the receipt number from Square's email plus the email paid with gets
    them back on any device (a four-character receipt number could be
-   guessed, so it never answers alone; the long order id does).
+   guessed, so it never answers alone; the long order id does). Guessing
+   is shut off anyway: twenty tries per connection every ten minutes on
+   that route, forty on the claim, ten on a move, sixty on a check, and
+   ten wrong owner tokens close the owner page for ten minutes (a right
+   token is never counted). The counts live in `tune_hits`, one row per
+   connection and window, cleared as windows pass; a database that cannot
+   count fails open, so a hiccup on our side never locks a buyer out.
 6. The buyer pastes the line. `go.ps1` fetches the verified script, which checks the
    key's checksum, fingerprints the PC (SHA-256 of board serial, system UUID,
    CPU id, first 16 hex chars) and POSTs `/v1/tune/claim {key, hwid, machine}`.
@@ -198,6 +204,8 @@ dashboard; none of it needs a terminal.
 | Square dashboard: webhook deliveries failing with 503 | `SQUARE_WEBHOOK_URL` is empty on the Worker | Run the deploy; it fills it in. |
 | A buyer says "the key says switched off" and there was no refund | Someone switched it off from the owner page, or a partial refund | Owner page: look it up, "Switch it back on". |
 | A buyer paid twice | Two orders, two sets of keys | Refund the second in Square; its keys switch off on their own. |
+| A buyer says "too many tries" | Twenty key-page tries from one connection in ten minutes: a retry loop, or a shared connection | Nothing to reset; it passes in ten minutes. Send the keys from the owner page meanwhile. |
+| The owner page says "too many tries" | Ten wrong tokens from your connection | Wait ten minutes; check the token you pasted against the repository secret. |
 | The owner token leaked | Anyone with it can revoke or resend | Make a new one, update `TUNE_ADMIN_TOKEN`, run the deploy; the old one stops at once. |
 | The site shows an old script version in the footer | The newest push has not passed the Windows check yet | Actions > Check the tune: read the failed step. Buyers keep getting the last verified copy, which is the point. |
 
@@ -411,8 +419,10 @@ say "Could not fetch a good copy" and run nothing.
 stand-in database and network: a Squad webhook mints three keys and sends one
 email, a repeat mints and sends nothing, the key page gets the same keys, a
 one-PC order gets one, a bad signature and a payment below the price are
-refused, each key locks to one PC, and a Squad key moves with the plain
-order number. It runs in the static job of the Windows check and before
+refused, each key locks to one PC, a Squad key moves with the plain
+order number, and guessing shuts the door: the twenty-first wrong receipt
+number, the eleventh wrong owner token and the forty-first made-up key from
+one connection are refused while another connection is served. It runs in the static job of the Windows check and before
 every Worker deploy; a statement the Worker sends that the stand-in does not
 model fails the run, so a new query needs a line there.
 
