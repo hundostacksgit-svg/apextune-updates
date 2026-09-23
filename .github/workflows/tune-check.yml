@@ -118,7 +118,7 @@ jobs:
           $summary = Get-ChildItem C:\OmniDx -Filter 'summary-*.json' | Sort-Object LastWriteTime -Descending | Select-Object -First 1
           Copy-Item $summary.FullName C:\OmniDx\ci-summary.json
           # The run, word for word, for the site: the phase headers, what was done, the numbers.
-          $log = @($out -split "`r?`n" | Where-Object { $_ -match '^(== |  \+ |  ! |  Processes|  Before:|  After:|  Gone:|  Target|  Looked|  [0-9]+ )' } | Select-Object -First 200)
+          $log = @($out -split "`r?`n" | Where-Object { $_ -match '^(== |  \+ |  ! |  Processes|  Before:|  After:|  Gone:|  Target|  Looked|  [0-9]+ )' -and $_ -notmatch 'Under 100' } | Select-Object -First 200)
           Set-Content studio\assets\ci-log.txt -Value $log -Encoding UTF8
           Write-Host ("{0} log lines kept for the site" -f $log.Count)
           Get-Content C:\OmniDx\ci-summary.json
