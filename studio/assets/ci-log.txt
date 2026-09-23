@@ -1,13 +1,13 @@
 ﻿== Reading this PC
   ! The GPU driver dates from Jun 2006. A current driver is worth more than most tweaks.
   ! This looks like a virtual machine. The tune will run, but the numbers mean little here.
-  Processes running now: 138
+  Processes running now: 154
   Target for this PC after the tune and a restart: about 70
 == Your key
-  Before: 138 processes, 1410 threads, 47324 handles, 2866 MB in use, idle CPU 0.6%, DPC 0.13%
+  Before: 156 processes, 1733 threads, 53592 handles, 2885 MB in use, idle CPU 4.6%, DPC 0%
 == Safety first
   ! Could not make a restore point (This functionality is not supported on this operating system.). The undo script still records everything.
-  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_02-53
+  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_03-22
   + undo.ps1 written to C:\OmniDx\undo
 == Startup apps
   2 things start with Windows:
@@ -89,10 +89,10 @@
   Looked in 16 game folders
   + No listed game found on the usual drives; the CPU-priority profiles are in place for when one is installed.
 == Cleanup
-  + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 368 MB back.
+  + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 369 MB back.
 == Keeping it cut
   + Task 'OmniDx keep' runs three minutes after sign-in and puts back whatever an update turned on. Log: C:\OmniDx\keep-log.txt. Undo removes it.
-  After:  146 processes, 1505 threads, 50286 handles, 3131 MB in use, idle CPU 15.1%, DPC 0.26%
-  Gone:   spoolsv
+  After:  145 processes, 1588 threads, 50613 handles, 3032 MB in use, idle CPU 1%, DPC 0.26%
+  Gone:   crashhelper, default-browser-agent, firefox, MoUsoCoreWorker, spoolsv
 == Done
-  Processes: 138 -> 146 now, in 121 seconds. Restart for the real number: the services that were told to stop are still unwinding.
+  Processes: 154 -> 145 now, in 79 seconds. Restart for the real number: the services that were told to stop are still unwinding.
