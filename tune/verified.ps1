@@ -156,7 +156,8 @@ function Get-KeyChecksum([string]$tag, [string]$payload) {
   return $out
 }
 
-<# TUNE-XXXX-XXXX-XXXX-CCCC is one PC; SQUAD-XXXX-XXXX-XXXX-CCCC is five. The
+<# TUNE-XXXX-XXXX-XXXX-CCCC is one PC (a Squad order is three of them); the
+   older SQUAD-XXXX-XXXX-XXXX-CCCC tag is three PCs on one key, still read. The
    last block is a checksum, so a mistyped key is caught here rather than on
    the server. The server is what makes a key real. #>
 function Read-Key([string]$raw) {
@@ -165,7 +166,7 @@ function Read-Key([string]$raw) {
     $tag = $Matches[1]; $payload = $Matches[2]; $sum = $Matches[3]
     foreach ($ch in $payload.ToCharArray()) { if ($script:Alphabet.IndexOf($ch) -lt 0) { return $null } }
     if ((Get-KeyChecksum $tag $payload) -ne $sum) { return $null }
-    $seats = if ($tag -eq 'SQUAD') { 5 } else { 1 }
+    $seats = if ($tag -eq 'SQUAD') { 3 } else { 1 }
     $pretty = "{0}-{1}-{2}-{3}-{4}" -f $tag, $payload.Substring(0, 4), $payload.Substring(4, 4), $payload.Substring(8, 4), $sum
     return @{ tag = $tag; payload = $payload; key = $pretty; seats = $seats }
   }
