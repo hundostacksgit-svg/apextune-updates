@@ -274,13 +274,30 @@ jobs:
       - name: Commit the screenshot and the run's numbers to the branch
         if: github.event_name == 'push'
         run: |
-          Copy-Item C:\OmniDx\app.png studio\assets\app.png -Force
+          # These three files belong to the check, and the newest run wins: the
+          # branch is refreshed to its current tip first, then this run's files go on
+          # top, so two overlapping runs never leave a rebase conflict behind.
+          $keep = Join-Path $env:TEMP 'omnidx-ci-out'
+          New-Item -ItemType Directory -Path $keep -Force | Out-Null
+          Copy-Item C:\OmniDx\app.png (Join-Path $keep 'app.png') -Force
+          Copy-Item studio\assets\ci-run.json (Join-Path $keep 'ci-run.json') -Force
+          Copy-Item studio\assets\ci-log.txt (Join-Path $keep 'ci-log.txt') -Force
           git config user.name 'omnidx-ci'
           git config user.email 'ci@omnidx.net'
-          git add studio/assets/app.png studio/assets/ci-run.json studio/assets/ci-log.txt
-          git diff --cached --quiet
-          if ($LASTEXITCODE -eq 0) { Write-Host 'nothing changed'; exit 0 }
-          git commit -q -m 'Windows check: the app window, the numbers and the log from running the tune'
-          git pull --rebase -q origin $env:GITHUB_REF_NAME
-          git push -q origin HEAD:$env:GITHUB_REF_NAME
-          exit 0
+          foreach ($try in 1..3) {
+            git fetch -q origin $env:GITHUB_REF_NAME
+            git reset -q --hard "origin/$env:GITHUB_REF_NAME"
+            Copy-Item (Join-Path $keep 'app.png') studio\assets\app.png -Force
+            Copy-Item (Join-Path $keep 'ci-run.json') studio\assets\ci-run.json -Force
+            Copy-Item (Join-Path $keep 'ci-log.txt') studio\assets\ci-log.txt -Force
+            git add studio/assets/app.png studio/assets/ci-run.json studio/assets/ci-log.txt
+            git diff --cached --quiet
+            if ($LASTEXITCODE -eq 0) { Write-Host 'nothing changed'; exit 0 }
+            git commit -q -m 'Windows check: the app window, the numbers and the log from running the tune'
+            git push -q origin HEAD:$env:GITHUB_REF_NAME
+            if ($LASTEXITCODE -eq 0) { Write-Host ("pushed on try {0}" -f $try); exit 0 }
+            Write-Host ("push refused on try {0}; the branch moved, trying again" -f $try)
+            Start-Sleep -Seconds 5
+          }
+          Write-Host 'could not push the run files after three tries'
+          exit 1
