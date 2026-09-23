@@ -41,6 +41,7 @@ PAGES = {
     'trust/index.html': '../',
     'what-it-touches/index.html': '../',
     'changelog/index.html': '../',
+    'terms/index.html': '../',
 }
 
 LOGO_SVG = (
@@ -102,6 +103,7 @@ MENU = [
             ('🚫', "What it won't touch", 'Defender, firewall, Secure Boot, your drivers', '{s}trust/#cant'),
             ('🔓', 'Paid but no key?', 'Your receipt number gets it', '{s}activate/'),
             ('🗒️', 'Changelog', 'What changed in each version', '{s}changelog/'),
+            ('📄', 'Terms, privacy, refunds', 'Plain words, one page', '{s}terms/'),
             ('🎬', 'OmniDx Studio', 'The video editor, still here', '{s}app/'),
         ],
     },
@@ -238,6 +240,7 @@ def build_footer(s: str) -> str:
         <a href="{s}pricing/#faq">FAQ</a>
         <a href="{s}trust/#cant">What it won't touch</a>
         <a href="{s}changelog/">Changelog</a>
+        <a href="{s}terms/">Terms, privacy, refunds</a>
         <a href="{s}app/">OmniDx Studio — the video editor</a>
         <span class="foot-support" data-support="OmniDx Tune — help" hidden></span>
       </div>

@@ -181,7 +181,10 @@ Every step below is a browser tab; none needs a terminal.
 7. **Square payment links** (squareup.com > Online > Payment links): rename
    the $39.99 link "OmniDx Tune Squad — three keys" and the $19.99 link
    "OmniDx Tune — one PC"; delete the $69.99 link; check the redirects end in
-   `?e=creator` ($19.99) and `?e=studio` ($39.99).
+   `?e=creator` ($19.99) and `?e=studio` ($39.99). Where Square's checkout
+   settings ask for a refund policy or terms link, give
+   `https://omnidx.net/studio/terms/` (the page says fourteen days, what is
+   collected, and what the tune does; keep it in step with the pricing page).
 8. **Check the wiring**: open omnidx.net/studio/admin/ on the phone; the
    status line should read Licence server on, Square on, Webhook on, Mail
    on, Owner token on. Anything off names the step to redo. Then paste the

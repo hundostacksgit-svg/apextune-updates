@@ -1612,6 +1612,7 @@ async function emailTuneKeys(env, email, product, keys, order, receiptUrl, recei
     receiptNumber ? `Receipt number: #${receiptNumber} (that, with this email address, shows the keys again on that page)` : null,
     receiptUrl ? `Square receipt: ${receiptUrl}` : null,
     'What it does, screen by screen: https://omnidx.net/studio/download/',
+    'Terms, privacy and refunds, one page: https://omnidx.net/studio/terms/',
     '',
     'Nothing renews and there is no account. Fourteen days to change your mind: reply to this email with the order number.',
   ].filter((l) => l !== null);
