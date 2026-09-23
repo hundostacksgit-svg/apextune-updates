@@ -56,6 +56,8 @@ param(
   [switch]$NoRestorePoint,
   # Put everything back from the last run and stop.
   [switch]$Undo,
+  # Put back only the newest run (the Extreme one, say) and leave the earlier runs and the keep task in place.
+  [switch]$UndoLast,
   # Read the machine and count the processes. Change nothing.
   [switch]$Report,
   # Check a key's format and checksum, then stop. Nothing is read or bound.
@@ -87,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.31.0'
+$script:Version = '1.32.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -247,6 +249,8 @@ function Set-Reg([string]$path, [string]$name, $value, [string]$kind = 'DWord') 
   } catch { }
   if ($had -and ($prev -is [byte[]]) -and ($value -is [byte[]])) {
     if ([System.Linq.Enumerable]::SequenceEqual([byte[]]$prev, [byte[]]$value)) { return }
+  } elseif ($had -and $kind -eq 'DWord' -and ($prev -is [int] -or $prev -is [int64] -or $prev -is [uint32]) -and ($value -is [int] -or $value -is [int64] -or $value -is [uint32])) {
+    if (([int64]$prev -band [int64]4294967295) -eq ([int64]$value -band [int64]4294967295)) { return }
   } elseif ($had -and "$prev" -eq "$value") { return }
   try {
     New-ItemProperty -Path $path -Name $name -Value $value -PropertyType $kind -Force -ErrorAction Stop | Out-Null
@@ -313,7 +317,9 @@ $script:UndoScript = @'
     With no argument it walks back every run recorded here, newest first, so
     a PC tuned twice ends up as it was before the first run; each record is
     then moved to done\ so a later run starts clean. -File puts back one
-    record only. The keep task, if there is one, is removed either way.
+    record only (the newest, for -UndoLast), moves it to done\ as well, and
+    leaves the earlier runs standing. The keep task goes only when no run is
+    left recorded; with runs still in place it keeps keeping them.
     Run in an administrator PowerShell:  powershell -ExecutionPolicy Bypass -File undo.ps1
 #>
 param([string]$File)
@@ -359,7 +365,6 @@ function Restore-Dism([string]$verb, [string]$flag, [string[]]$names, [string]$w
 }
 $capsBack = New-Object System.Collections.ArrayList
 $featsBack = New-Object System.Collections.ArrayList
-try { Unregister-ScheduledTask -TaskName 'OmniDx keep' -Confirm:$false -ErrorAction Stop; Write-Host "keep task removed" -ForegroundColor DarkGray } catch { }
 foreach ($rec in $files) {
 $changes = @(Get-Content $rec -Raw | ConvertFrom-Json | ForEach-Object { $_ })
 [array]::Reverse($changes)
@@ -408,7 +413,7 @@ foreach ($c in $changes) {
       'fsutil' { $setting = $(if ($c.setting) { $c.setting } else { 'disablelastaccess' }); & fsutil behavior set $setting $c.prev | Out-Null; Write-Host ("fsutil {0} -> {1}" -f $setting, $c.prev) -ForegroundColor DarkGray }
       'mmagent' { try { if ($c.feature -eq 'MemoryCompression') { Enable-MMAgent -MemoryCompression -ErrorAction Stop } else { Enable-MMAgent -ApplicationPreLaunch -ErrorAction Stop } } catch { } }
       'bcdedit' { & bcdedit /deletevalue $c.name 2>$null | Out-Null; Write-Host ("boot setting {0} back to default" -f $c.name) -ForegroundColor DarkGray }
-      'task-created' { try { Unregister-ScheduledTask -TaskName $c.name -Confirm:$false -ErrorAction Stop } catch { } }
+      'task-created' { if ($c.name -ne 'OmniDx keep') { try { Unregister-ScheduledTask -TaskName $c.name -Confirm:$false -ErrorAction Stop } catch { } } }
       'mppref' { $p = @{}; $p[$c.name] = $c.prev; try { Set-MpPreference @p -ErrorAction Stop; Write-Host ("Defender {0} -> {1}" -f $c.name, $c.prev) -ForegroundColor DarkGray } catch { } }
       'capability' { if (-not $capsBack.Contains($c.name)) { [void]$capsBack.Add($c.name) }; $deferred = $true }
       'feature' { if (-not $featsBack.Contains($c.name)) { [void]$featsBack.Add($c.name) }; $deferred = $true }
@@ -422,14 +427,18 @@ foreach ($c in $changes) {
     if (-not $deferred) { $done++ }
   } catch { Write-Host ("could not undo {0}: {1}" -f ($c | ConvertTo-Json -Compress), $_.Exception.Message) -ForegroundColor Yellow; $failed++ }
 }
-if (-not $File) {
-  try {
-    $doneDir = Join-Path $dir 'done'; New-Item -ItemType Directory -Path $doneDir -Force | Out-Null
-    Move-Item $rec (Join-Path $doneDir ([IO.Path]::GetFileName($rec))) -Force
-  } catch { }
+try {
+  $doneDir = Join-Path $dir 'done'; New-Item -ItemType Directory -Path $doneDir -Force | Out-Null
+  Move-Item $rec (Join-Path $doneDir ([IO.Path]::GetFileName($rec))) -Force
+} catch { }
 }
+# What is left: changes-latest.json follows the newest remaining run, and the keep task stays only while one is.
+$left = @(Get-ChildItem $dir -Filter 'changes-20*.json' -ErrorAction SilentlyContinue | Sort-Object Name -Descending)
+if ($left.Count) { Copy-Item $left[0].FullName (Join-Path $dir 'changes-latest.json') -Force; Write-Host ("{0} earlier run(s) still in place; the keep task, if there is one, keeps them" -f $left.Count) -ForegroundColor DarkGray }
+else {
+  Remove-Item (Join-Path $dir 'changes-latest.json') -Force -ErrorAction SilentlyContinue
+  try { Unregister-ScheduledTask -TaskName 'OmniDx keep' -Confirm:$false -ErrorAction Stop; Write-Host "keep task removed" -ForegroundColor DarkGray } catch { }
 }
-if (-not $File) { Remove-Item (Join-Path $dir 'changes-latest.json') -Force -ErrorAction SilentlyContinue }
 $n = Restore-Dism '/Add-Capability' '/CapabilityName' @($capsBack) 'capability'; $done += $n; $failed += (@($capsBack).Count - $n)
 $n = Restore-Dism '/Enable-Feature' '/FeatureName' @($featsBack) 'feature'; $done += $n; $failed += (@($featsBack).Count - $n)
 if ($removedApps.Count) {
@@ -878,6 +887,7 @@ function Show-Status {
     $n = 0; try { $n = @(Get-Content $f.FullName -Raw | ConvertFrom-Json | ForEach-Object { $_ }).Count } catch { }
     Say ("  Run {0}: {1} changes recorded" -f ($f.BaseName -replace '^changes-', ''), $n)
   }
+  if ($undone.Count) { Say ("  Runs in place: {0} ({1} undone earlier, in undo\done)." -f $files.Count, $undone.Count) }
   $r = Get-Drift -Files @($files | ForEach-Object { $_.FullName })
   if ($r.drift.Count) {
     Say ("  Settings checked: {0}. Windows has put back {1}:" -f $r.checked, $r.drift.Count) 'Yellow'
@@ -1640,14 +1650,19 @@ function New-PowerPlan($m) {
   $prevActive = $null
   $act = (& powercfg /getactivescheme) -join ' '
   if ($act -match '([0-9a-f\-]{36})') { $prevActive = $Matches[1] }
-  # An existing OmniDx plan from a previous run is replaced, not stacked.
-  foreach ($line in (& powercfg /list)) { if ($line -match '([0-9a-f\-]{36}).*\(OmniDx\)') { & powercfg /delete $Matches[1] | Out-Null } }
-  $ultimate = 'e9a42b02-d5df-448d-aa00-03f14749eb61'; $high = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
-  $dup = (& powercfg /duplicatescheme $ultimate) -join ' '
-  if ($dup -notmatch '([0-9a-f\-]{36})') { $dup = (& powercfg /duplicatescheme $high) -join ' ' }
-  if ($dup -notmatch '([0-9a-f\-]{36})') { Warn "Could not create the power plan."; return }
-  $guid = $Matches[1]
-  & powercfg /changename $guid 'OmniDx' 'Built by OmniDx Tune for performance. Undo restores the plan that was active before.' | Out-Null
+  # An OmniDx plan from a previous run is kept and its settings re-applied
+  # (every value below is idempotent), so a second run records no power
+  # change and putting back a later run alone leaves the plan standing.
+  $guid = $null; $created = $null
+  foreach ($line in (& powercfg /list)) { if ($line -match '([0-9a-f\-]{36}).*\(OmniDx\)') { $guid = $Matches[1] } }
+  if (-not $guid) {
+    $ultimate = 'e9a42b02-d5df-448d-aa00-03f14749eb61'; $high = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
+    $dup = (& powercfg /duplicatescheme $ultimate) -join ' '
+    if ($dup -notmatch '([0-9a-f\-]{36})') { $dup = (& powercfg /duplicatescheme $high) -join ' ' }
+    if ($dup -notmatch '([0-9a-f\-]{36})') { Warn "Could not create the power plan."; return }
+    $guid = $Matches[1]; $created = $guid
+    & powercfg /changename $guid 'OmniDx' 'Built by OmniDx Tune for performance. Undo restores the plan that was active before.' | Out-Null
+  }
   $sub = @{ proc = '54533251-82be-4824-96c1-47b60b740d00'; pci = '501a4d13-42af-4429-9fd1-a8218c268e20'; usb = '2a737441-1930-4402-8d77-b2bebba308a3'; disk = '0012ee47-9041-4b5d-9b77-535fba8b1442'; sleep = '238c9fa8-0aad-41ed-83f4-97be242c8f20'; video = '7516b95f-f776-4464-8c53-06167f40cc99'; buttons = '4f971e89-eebd-4455-a8de-9e59040e7347'; gfx = '5fb4938d-1ee8-4b0f-9a3c-5036b0ab995c'; wifi = '19cbb8fa-5279-450e-9fac-8a3d5fedd0c1' }
   $set = { param($s, $v, $val) & powercfg /setacvalueindex $guid $s $v $val | Out-Null }
   # Processor: 100% minimum and maximum, aggressive boost, no core parking, no idle demotion games.
@@ -1676,9 +1691,11 @@ function New-PowerPlan($m) {
     & powercfg /setdcvalueindex $guid $sub.proc 'bc5038f7-23e0-4960-96da-33abaf5935ec' 100 | Out-Null
     & powercfg /setdcvalueindex $guid $sub.sleep '29f6c1db-86da-48c5-9fdb-f2b67b1f44da' 1800 | Out-Null
   }
-  & powercfg /setactive $guid | Out-Null
-  Record @{ type = 'power'; prev = $prevActive; created = $guid }
-  Did "OmniDx plan created and active: CPU 100/100, boost aggressive, no core parking, no throttle states on a desktop, PCIe, USB and Wi-Fi power saving off, no sleep on mains."
+  if ($created -or ($prevActive -ne $guid)) {
+    & powercfg /setactive $guid | Out-Null
+    Record @{ type = 'power'; prev = $prevActive; created = $created }
+    Did "OmniDx plan created and active: CPU 100/100, boost aggressive, no core parking, no throttle states on a desktop, PCIe, USB and Wi-Fi power saving off, no sleep on mains."
+  } else { Did "OmniDx plan already active; its settings checked and re-applied." }
   # Hibernation off frees the hiberfile and ends Fast Startup for good - on a desktop.
   if (-not $m.laptop) {
     # The registry says whether hibernation is on in any language; powercfg's text is the fallback.
@@ -1693,16 +1710,22 @@ function New-PowerPlan($m) {
 # ---------------------------------------------------------------------------
 function Tune-Network($m) {
   Head "Network"
-  $restore = @('netsh int tcp set global autotuninglevel=normal', 'netsh int tcp set global ecncapability=default', 'netsh int tcp set global timestamps=default', 'netsh int tcp set global rss=enabled', 'netsh int tcp set global initialrto=1000', 'netsh int tcp set supplemental internet congestionprovider=default', 'netsh int tcp set global rsc=enabled')
-  Record @{ type = 'netsh'; restore = $restore }
-  & netsh int tcp set global autotuninglevel=normal | Out-Null      # normal is right; "disabled" is the myth that halves download speed
-  & netsh int tcp set global ecncapability=disabled | Out-Null
-  & netsh int tcp set global timestamps=disabled | Out-Null
-  & netsh int tcp set global rss=enabled | Out-Null
-  & netsh int tcp set global initialrto=2000 | Out-Null
-  & netsh int tcp set supplemental internet congestionprovider=ctcp 2>$null | Out-Null
-  & netsh int tcp set global rsc=disabled | Out-Null
-  Did "TCP: autotuning normal, ECN and timestamps off, receive-side scaling on, segment coalescing off, CTCP."
+  # Already set by an earlier run (read back in English; another language re-applies, which is harmless): nothing recorded, so a later run put back alone leaves it.
+  $g = (& netsh int tcp show global 2>$null) -join ' '
+  if ($g -match 'ECN Capability\s*:\s*disabled' -and $g -match 'Timestamps\s*:\s*disabled' -and $g -match 'Coalescing State\s*:\s*disabled' -and $g -match 'Initial RTO\s*:\s*2000' -and $g -match 'Auto-Tuning Level\s*:\s*normal') {
+    Did "TCP already set: autotuning normal, ECN and timestamps off, receive-side scaling on, segment coalescing off."
+  } else {
+    $restore = @('netsh int tcp set global autotuninglevel=normal', 'netsh int tcp set global ecncapability=default', 'netsh int tcp set global timestamps=default', 'netsh int tcp set global rss=enabled', 'netsh int tcp set global initialrto=1000', 'netsh int tcp set supplemental internet congestionprovider=default', 'netsh int tcp set global rsc=enabled')
+    Record @{ type = 'netsh'; restore = $restore }
+    & netsh int tcp set global autotuninglevel=normal | Out-Null      # normal is right; "disabled" is the myth that halves download speed
+    & netsh int tcp set global ecncapability=disabled | Out-Null
+    & netsh int tcp set global timestamps=disabled | Out-Null
+    & netsh int tcp set global rss=enabled | Out-Null
+    & netsh int tcp set global initialrto=2000 | Out-Null
+    & netsh int tcp set supplemental internet congestionprovider=ctcp 2>$null | Out-Null
+    & netsh int tcp set global rsc=disabled | Out-Null
+    Did "TCP: autotuning normal, ECN and timestamps off, receive-side scaling on, segment coalescing off, CTCP."
+  }
   # Nagle off on the adapter you actually use: small packets go now, not after a 200 ms wait.
   $active = Get-NetAdapter -Physical -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq 'Up' } | Sort-Object -Property LinkSpeed -Descending
   $ifBase = 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces'
@@ -2270,7 +2293,7 @@ $script:Xaml = @'
             <CheckBox x:Name="ChkXbox"><TextBlock TextWrapping="Wrap" Foreground="#B3A8CF" Text="Cut the Xbox services too (Game Pass and Minecraft need them)"/></CheckBox>
             <CheckBox x:Name="ChkDns" Content="Point DNS at 1.1.1.1"/>
             <CheckBox x:Name="ChkVbs"><TextBlock TextWrapping="Wrap" Foreground="#B3A8CF" Text="Memory integrity off: a few percent more frames, one layer of kernel protection less"/></CheckBox>
-            <CheckBox x:Name="ChkExtreme"><TextBlock TextWrapping="Wrap" Foreground="#FFC247" Text="Extreme (caution): every extra service, Game Bar entirely, animations and transparency, the search box, notifications, multi-plane overlay, memory compression, superfetch on SSDs, Windows Search, the dynamic tick, and the Xbox pieces unless you use them. Fewer conveniences, a few more frames; undo puts it all back."/></CheckBox>
+            <CheckBox x:Name="ChkExtreme"><TextBlock TextWrapping="Wrap" Foreground="#FFC247" Text="Extreme (caution): every extra service, Game Bar entirely, animations and transparency, the search box, notifications, multi-plane overlay, memory compression, superfetch on SSDs, Windows Search, the dynamic tick, the service hosts grouped the old way (twenty to forty processes fewer), and the Xbox pieces unless you use them. Fewer conveniences, a few more frames; undo the last run alone puts only this back."/></CheckBox>
             <TextBlock Foreground="#7D7199" TextWrapping="Wrap" Margin="0,12,0,0" Text="Discord and Spotify are closed during the run so they can be tuned. A restore point comes first, every change is recorded, and undo is one button. Kept cut means a small task at sign-in puts back whatever a Windows update turned on; it never touches your own settings, and undo removes it."/>
           </StackPanel>
         </ScrollViewer>
@@ -2688,9 +2711,16 @@ function Write-Preview($m, $before) {
 }
 
 function Invoke-Undo {
+  param([switch]$Last)
   $u = Join-Path $script:Root 'undo\undo.ps1'
   if (-not (Test-Path $u)) { Say "Nothing to undo: no run recorded in C:\OmniDx\undo." 'Yellow'; return }
-  if (-not (Get-ChildItem (Join-Path $script:Root 'undo') -Filter 'changes-20*.json' -ErrorAction SilentlyContinue)) { Say "Nothing to undo: every recorded run has already been put back." 'Yellow'; return }
+  $recs = @(Get-ChildItem (Join-Path $script:Root 'undo') -Filter 'changes-20*.json' -ErrorAction SilentlyContinue | Sort-Object Name -Descending)
+  if (-not $recs.Count) { Say "Nothing to undo: every recorded run has already been put back." 'Yellow'; return }
+  if ($Last) {
+    Say ("Only the newest run ({0}) goes back; {1} earlier run(s) and the keep task stay." -f ($recs[0].BaseName -replace '^changes-', ''), ($recs.Count - 1)) 'White'
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $u -File $recs[0].FullName
+    return
+  }
   & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $u
 }
 
@@ -2733,6 +2763,7 @@ function Main {
   Limit-History
   try {
     if ($Undo) { Invoke-Undo; return }
+    if ($UndoLast) { Invoke-Undo -Last; return }
     if ($Probe) { Write-Output (Get-Probe | ConvertTo-Json -Depth 5 -Compress); return }
     if ($Gui) {
       $shown = $false
@@ -2830,6 +2861,13 @@ function Main {
     if ($skip -contains 'keep') { Head "keep (skipped)"; Remove-KeepTask '-Skip keep' } else { Register-Keep }
 
     $changesFile = Save-Changes
+    # The services told to stop take a few seconds to go; the count is taken once they have, up to twenty seconds.
+    $stopping = @(Get-Service -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq 'StopPending' })
+    if ($stopping.Count) {
+      Say ("  Waiting for {0} services to finish stopping..." -f $stopping.Count)
+      $ssw = [System.Diagnostics.Stopwatch]::StartNew()
+      while ($ssw.Elapsed.TotalSeconds -lt 20 -and @(Get-Service -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq 'StopPending' }).Count) { Start-Sleep -Seconds 2 }
+    }
     $after = Get-ProcessCount
     Save-ProcessList 'after'
     $snapAfter = Get-Snapshot
