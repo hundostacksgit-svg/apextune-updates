@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.34.0'
+$script:Version = '1.35.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -707,13 +707,13 @@ function Register-AfterCount {
   try {
     $name = 'OmniDx after-restart count'
     $out = Join-Path $script:Root 'after-restart.txt'
-    $cmd = "Start-Sleep -Seconds 120; `$p = @(Get-Process); `$o = Get-CimInstance Win32_OperatingSystem; `$m = [math]::Round((`$o.TotalVisibleMemorySize - `$o.FreePhysicalMemory) / 1024); `$c = ''; try { `$s = Get-Counter -Counter '\Processor(_Total)\% Processor Time', '\Processor(_Total)\% DPC Time' -SampleInterval 1 -MaxSamples 3 -ErrorAction Stop; `$c = ', idle CPU ' + [math]::Round((`$s.CounterSamples | Where-Object { `$_.Path -like '*Processor Time' } | Measure-Object CookedValue -Average).Average, 1) + '%, DPC ' + [math]::Round((`$s.CounterSamples | Where-Object { `$_.Path -like '*DPC Time' } | Measure-Object CookedValue -Average).Average, 2) + '%' } catch { }; `$b = ''; try { `$e = Get-WinEvent -FilterHashtable @{ LogName = 'Microsoft-Windows-Diagnostics-Performance/Operational'; Id = 100 } -MaxEvents 1 -ErrorAction Stop; if (`$e.TimeCreated -gt `$o.LastBootUpTime) { `$t = (([xml]`$e.ToXml()).Event.EventData.Data | Where-Object { `$_.Name -eq 'BootTime' } | Select-Object -First 1).'#text'; if (`$t) { `$b = ', boot ' + [math]::Round([double]`$t / 1000, 1) + ' s' } } } catch { }; Add-Content -Path '$out' -Value ((Get-Date -Format s) + '  after restart: ' + `$p.Count + ' processes, ' + ((`$p | ForEach-Object { `$_.Threads.Count } | Measure-Object -Sum).Sum) + ' threads, ' + ((`$p | Measure-Object HandleCount -Sum).Sum) + ' handles, ' + `$m + ' MB in use' + `$c + `$b); Unregister-ScheduledTask -TaskName '$name' -Confirm:`$false"
+    $cmd = "Start-Sleep -Seconds 120; `$p = @(Get-Process); `$o = Get-CimInstance Win32_OperatingSystem; `$m = [math]::Round((`$o.TotalVisibleMemorySize - `$o.FreePhysicalMemory) / 1024); `$c = ''; try { `$s = Get-Counter -Counter '\Processor(_Total)\% Processor Time', '\Processor(_Total)\% DPC Time' -SampleInterval 1 -MaxSamples 3 -ErrorAction Stop; `$c = ', idle CPU ' + [math]::Round((`$s.CounterSamples | Where-Object { `$_.Path -like '*Processor Time' } | Measure-Object CookedValue -Average).Average, 1) + '%, DPC ' + [math]::Round((`$s.CounterSamples | Where-Object { `$_.Path -like '*DPC Time' } | Measure-Object CookedValue -Average).Average, 2) + '%' } catch { }; `$b = ''; for (`$i = 0; `$i -lt 7 -and -not `$b; `$i++) { try { `$e = Get-WinEvent -FilterHashtable @{ LogName = 'Microsoft-Windows-Diagnostics-Performance/Operational'; Id = 100 } -MaxEvents 1 -ErrorAction Stop; if (`$e.TimeCreated -gt `$o.LastBootUpTime) { `$t = (([xml]`$e.ToXml()).Event.EventData.Data | Where-Object { `$_.Name -eq 'BootTime' } | Select-Object -First 1).'#text'; if (`$t) { `$b = ', boot ' + [math]::Round([double]`$t / 1000, 1) + ' s' } } } catch { }; if (-not `$b -and `$i -lt 6) { Start-Sleep -Seconds 30 } }; Add-Content -Path '$out' -Value ((Get-Date -Format s) + '  after restart: ' + `$p.Count + ' processes, ' + ((`$p | ForEach-Object { `$_.Threads.Count } | Measure-Object -Sum).Sum) + ' threads, ' + ((`$p | Measure-Object HandleCount -Sum).Sum) + ' handles, ' + `$m + ' MB in use' + `$c + `$b); Unregister-ScheduledTask -TaskName '$name' -Confirm:`$false"
     $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "' + $cmd + '"')
     $trigger = New-ScheduledTaskTrigger -AtLogOn
     Unregister-ScheduledTask -TaskName $name -Confirm:$false -ErrorAction SilentlyContinue
     Register-ScheduledTask -TaskName $name -Action $action -Trigger $trigger -RunLevel Highest -Force -ErrorAction Stop | Out-Null
     Record @{ type = 'task-created'; name = $name }
-    Did "One task runs once at your next sign-in: it writes the after-restart process count, memory, threads, handles, idle CPU and the boot time of that start to C:\OmniDx\after-restart.txt, then removes itself."
+    Did "One task runs once at your next sign-in: it writes the after-restart process count, memory, threads, handles, idle CPU and the boot time of that start (it waits up to three minutes more for Windows to log it) to C:\OmniDx\after-restart.txt, then removes itself."
   } catch { Warn ("Could not set the after-restart count task ({0})." -f $_.Exception.Message) }
 }
 
@@ -827,7 +827,17 @@ $logFile = Join-Path (Split-Path $dir) 'keep-log.txt'
 if (-not $files.Count) { Write-Host "Nothing recorded here; nothing to keep."; exit 0 }
 __DRIFT__
 $r = Get-Drift -Files $files -Fix:(-not $Check)
-$line = "{0}  checked {1}, {2} had drifted{3}{4}; {5} processes running" -f (Get-Date -Format s), $r.checked, $r.drift.Count, $(if ($Check) { ' (check only)' } elseif ($r.fixed) { ", $($r.fixed) put back" } else { '' }), $(if ($r.failed) { ", $($r.failed) could not be" } else { '' }), @(Get-Process -ErrorAction SilentlyContinue).Count
+# The boot time of this start, in Windows' own figure (event 100), when it has been logged by now.
+$boot = ''
+try {
+  $o = Get-CimInstance Win32_OperatingSystem -ErrorAction Stop
+  $e = Get-WinEvent -FilterHashtable @{ LogName = 'Microsoft-Windows-Diagnostics-Performance/Operational'; Id = 100 } -MaxEvents 1 -ErrorAction Stop
+  if ($e.TimeCreated -gt $o.LastBootUpTime) {
+    $t = (([xml]$e.ToXml()).Event.EventData.Data | Where-Object { $_.Name -eq 'BootTime' } | Select-Object -First 1).'#text'
+    if ($t) { $boot = '; boot {0} s' -f [math]::Round([double]$t / 1000, 1) }
+  }
+} catch { }
+$line = "{0}  checked {1}, {2} had drifted{3}{4}; {5} processes running{6}" -f (Get-Date -Format s), $r.checked, $r.drift.Count, $(if ($Check) { ' (check only)' } elseif ($r.fixed) { ", $($r.fixed) put back" } else { '' }), $(if ($r.failed) { ", $($r.failed) could not be" } else { '' }), @(Get-Process -ErrorAction SilentlyContinue).Count, $boot
 Write-Host $line -ForegroundColor $(if ($r.drift.Count) { 'Yellow' } else { 'Green' })
 foreach ($d in $r.drift) { Write-Host ("  " + $d) -ForegroundColor DarkGray }
 try {
@@ -878,7 +888,7 @@ function Register-Keep {
     Unregister-ScheduledTask -TaskName $name -Confirm:$false -ErrorAction SilentlyContinue
     Register-ScheduledTask -TaskName $name -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force -ErrorAction Stop | Out-Null
     Record @{ type = 'task-created'; name = $name }
-    Did "Task 'OmniDx keep' runs three minutes after sign-in and puts back whatever an update turned on. Log: C:\OmniDx\keep-log.txt. Undo removes it."
+    Did "Task 'OmniDx keep' runs three minutes after sign-in, puts back whatever an update turned on, and notes that start's boot time. Log: C:\OmniDx\keep-log.txt. Undo removes it."
   } catch { Warn ("Could not set the keep task ({0}). Run the command again after a big update instead." -f $_.Exception.Message) }
 }
 
@@ -942,6 +952,10 @@ function Show-Status {
   if ($bootNow -ne $null) {
     $was = $null; if ($sum) { try { $was = (Get-Content $sum.FullName -Raw | ConvertFrom-Json).bootBefore } catch { } }
     Say ("  Last measured start: {0} s{1}. Windows' own figure for the last full start; it updates a few minutes after each restart." -f $bootNow, $(if ($was) { ' (before the tune: {0} s)' -f $was } else { '' })) 'White'
+  }
+  if (Test-Path $keepLog) {
+    $boots = @(Get-Content $keepLog -ErrorAction SilentlyContinue | ForEach-Object { if ($_ -match '^\d{4}-.*; boot ([\d.]+) s') { $Matches[1] } })
+    if ($boots.Count -gt 1) { Say ("  Starts since the tune, as the keep task saw them, oldest first: {0} s" -f (($boots | Select-Object -Last 8) -join ', ')) }
   }
   Say ("  Processes running now: {0}" -f (Get-ProcessCount)) 'White'
   # The answer to "why is the number up again": what runs now that did not run right after the tune.
@@ -2153,7 +2167,7 @@ function Get-BiosChecklist($m) {
 # what to do next: five lines at the top of the report
 # ---------------------------------------------------------------------------
 function Get-NextSteps($m) {
-  $steps = @('Restart. The services told to stop are still unwinding until you do, and the after-restart count lands in C:\OmniDx\after-restart.txt at your next sign-in.')
+  $steps = @('Restart. The services told to stop are still unwinding until you do, and the after-restart count lands in C:\OmniDx\after-restart.txt at your next sign-in, with the boot time of that start next to the one from before the tune.')
   if ($m.ramSlow) { $steps += "BIOS, item 1: the memory profile is OFF on this PC (the RAM runs at $($m.ramNow) MT/s, rated $($m.ramRated)). That one setting is worth more than the rest of this report." }
   elseif ($m.laptop) { $steps += 'BIOS: item 10, the GPU switch, is the one that matters on a laptop; then the power mode in the maker''s app.' }
   else { $steps += 'BIOS: items 1 to 3 (memory profile, Re-Size BAR, CSM). Ten minutes, and the memory profile alone is the biggest free gain any PC has.' }
