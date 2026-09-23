@@ -196,10 +196,19 @@ jobs:
         timeout-minutes: 15
         run: |
           Start-Sleep -Seconds 61
+          # A startup entry the first run switched off, turned back on by hand (as Task Manager would): the second run must leave it on.
+          $rec = @(Get-Content C:\OmniDx\undo\changes-latest.json -Raw | ConvertFrom-Json | ForEach-Object { $_ })
+          $entry = @($rec | Where-Object { $_.type -eq 'reg' -and $_.path -like '*StartupApproved\Run*' -and $_.kind -eq 'Binary' } | Select-Object -First 1)[0]
+          if (-not $entry) { Write-Host 'the first run cut no Run startup entry to test with'; exit 1 }
+          Set-ItemProperty -Path $entry.path -Name $entry.name -Value ([byte[]](2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+          Write-Host ("turned back on by hand: {0}" -f $entry.name)
           # No -Key: the PC remembers it. -NoKeep: a "no" must also take down the task the first run left.
           $out = & .\tune\omnidx.ps1 -Yes -NoRestart -NoAfterCount -NoKeep *>&1 | Out-String
           Write-Host $out
           if ($out -notmatch '== Done') { Write-Host 'the second run did not reach Done'; exit 1 }
+          if ($out -notmatch 'you turned it back on after the last run: stays on') { Write-Host 'the second run did not notice the entry turned back on'; exit 1 }
+          $now = (Get-ItemProperty -Path $entry.path -Name $entry.name).($entry.name)
+          if ($now[0] -ne 2) { Write-Host ("the second run cut {0} again; a decision made by hand must stand" -f $entry.name); exit 1 }
           if ($out -notmatch 'Using the key already bound') { Write-Host 'the second run did not reuse the bound key'; exit 1 }
           if ($out -notmatch 'Key accepted') { Write-Host 'the same key on the same PC was not accepted'; exit 1 }
           if ($out -notmatch 'Keep task from an earlier run removed') { Write-Host '-NoKeep did not remove the keep task the first run left'; exit 1 }

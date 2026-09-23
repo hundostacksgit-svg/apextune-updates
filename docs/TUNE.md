@@ -225,6 +225,15 @@ and passes only that path (`OMNIDX_KEYFILE`); the elevated instance reads
 and deletes it. Command lines end up in Windows logs and in the run's
 transcript, which is why.
 
+### Decisions made by hand stand
+`Get-CutStartup` reads the live `changes-*.json` records for StartupApproved
+values and Store-app startup states an earlier run switched off. An entry
+that is on again was turned back on in Task Manager: the console lists it
+as "stays on" and keeps it (type `all` at the picker to cut those too), the
+probe marks it `wasCut` and the app shows it unticked. Undo moves the
+records to `done\`, after which nothing counts as cut. The Windows check
+turns one entry back on before its second run and requires it to stay on.
+
 ### The key is remembered
 The first run binds the key under `HKLM:\SOFTWARE\OmniDx\Tune`. Every later
 run reads it from there when none is given: the console flow says "Using
