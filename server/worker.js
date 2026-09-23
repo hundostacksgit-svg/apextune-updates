@@ -435,6 +435,8 @@ const routes = {
     square: Boolean(env.SQUARE_ACCESS_TOKEN),
     squareWebhook: Boolean(env.SQUARE_WEBHOOK_SIGNATURE_KEY && env.SQUARE_WEBHOOK_URL),
     owner: Boolean(env.TUNE_ADMIN_TOKEN),
+    build: env.DEPLOYED_SHA || null,
+    deployed: env.DEPLOYED_AT || null,
   }, { env, request: _req }),
 
   /* ---------------- auth ---------------- */

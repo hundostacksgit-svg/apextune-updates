@@ -139,7 +139,7 @@ try {
     // With a server answering, the recent-orders list and a lookup render.
     await page.unroute('**/tune/config.json*');
     await page.route('**/tune/config.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ api: `${base}/fakeapi`, version: '0', sha256: 'x' }) }));
-    await page.route('**/fakeapi/v1/health', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, square: true, squareWebhook: true, mail: true, owner: true }) }));
+    await page.route('**/fakeapi/v1/health', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, square: true, squareWebhook: true, mail: true, owner: true, build: 'abc1234', deployed: '2026-09-23T21:00Z' }) }));
     await page.route('**/fakeapi/v1/tune/admin', (r) => {
       const b = r.request().postDataJSON();
       if (b.token !== 'owner-x') return r.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ error: 'Wrong token.' }) });
@@ -152,7 +152,7 @@ try {
       return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, order: 'ORDER-A', receipt: 'AB12', email: 'a@example.test', paidCents: 3999, createdAt: Date.now(), emailedAt: Date.now(), keys: [{ key: 'TUNE-AAAA-BBBB-CCCC-DDDD', product: 'squad', pcs: 1, revoked: false }] }) });
     });
     await page.reload({ waitUntil: 'networkidle' }); await page.waitForTimeout(400);
-    expect(await page.evaluate(() => /Owner token: on/.test(document.querySelector('#own-health')?.textContent || '')), 'with a server answering, the status line reads on for every part');
+    expect(await page.evaluate(() => /Owner token: on/.test(document.querySelector('#own-health')?.textContent || '') && /build abc1234, deployed 2026-09-23 21:00 UTC/.test(document.querySelector('#own-health')?.textContent || '')), 'with a server answering, the status line reads on for every part and names the deploy');
     await page.fill('#own-token', 'owner-x'); await page.click('[data-act="recent"]'); await page.waitForTimeout(400);
     expect(await page.evaluate(() => document.querySelectorAll('#own-out .own-key').length === 2 && /not emailed/.test(document.querySelector('#own-out').textContent) && /2 orders · \$39\.99 kept · 1 refunded \(\$19\.99\)/.test(document.querySelector('#own-out').textContent)), 'recent orders shows the totals since the first sale, lists two orders and flags the one not emailed');
     await page.fill('#own-ref', 'ORDER-A'); await page.click('[data-act="lookup"]'); await page.waitForTimeout(400);

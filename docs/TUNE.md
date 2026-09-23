@@ -243,7 +243,10 @@ After a deploy the workflow finds the Worker's URL, writes it into
 `tune/config.json` as `api` (committed with the CI identity, Pages asked to
 publish), and writes `<url>/v1/webhooks/square` into the Worker's
 `SQUARE_WEBHOOK_URL`. `GET /v1/health` reports `square`, `squareWebhook`
-and `mail` as true or false, which is the quickest way to see what is left.
+and `mail` as true or false, which is the quickest way to see what is left,
+and `build` and `deployed` (the commit and the minute the deploy workflow
+put it up, passed in as plain variables), so the owner page's status line
+says which deploy is answering.
 The email comes from `TUNE_MAIL_FROM` (`wrangler.toml`, `keys@omnidx.net`)
 with `SUPPORT_EMAIL` as the reply-to; Resend refuses to send from a domain
 it has not verified, so the DNS records come first.

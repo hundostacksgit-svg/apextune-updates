@@ -29,7 +29,8 @@ const when = (ms) => (ms ? new Date(ms).toLocaleString() : 'never');
   try {
     const h = await (await fetch(`${base}/v1/health`, { cache: 'no-store' })).json();
     const bit = (on, name) => `<span class="${on ? 'on' : 'off'}">${esc(name)}: ${on ? 'on' : 'off'}</span>`;
-    el.innerHTML = [bit(true, 'Licence server'), bit(h.square, 'Square'), bit(h.squareWebhook, 'Webhook'), bit(h.mail, 'Mail'), bit(h.owner, 'Owner token')].join(' · ');
+    el.innerHTML = [bit(true, 'Licence server'), bit(h.square, 'Square'), bit(h.squareWebhook, 'Webhook'), bit(h.mail, 'Mail'), bit(h.owner, 'Owner token')].join(' · ')
+      + (h.build ? ` <span class="muted">· build ${esc(h.build)}${h.deployed ? `, deployed ${esc(h.deployed.replace('T', ' ').replace('Z', ' UTC'))}` : ''}</span>` : '');
   } catch { el.innerHTML = `<span class="off">Licence server: not answering</span> at ${esc(base)}.`; }
 })();
 

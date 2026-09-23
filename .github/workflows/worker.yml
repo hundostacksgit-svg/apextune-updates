@@ -123,7 +123,8 @@ jobs:
 
       - name: Deploy
         if: steps.ready.outputs.ready == 'true' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
-        run: npx wrangler deploy 2>&1 | tee deploy.log
+        # The build and the time go in as plain variables, so /v1/health can say which deploy is answering.
+        run: npx wrangler deploy --var DEPLOYED_SHA:"${GITHUB_SHA::7}" --var DEPLOYED_AT:"$(date -u +%Y-%m-%dT%H:%MZ)" 2>&1 | tee deploy.log
 
       # The address, three ways: the deploy output prints it; the account's
       # workers.dev subdomain names it; the WORKER_URL variable overrides both.
@@ -169,7 +170,7 @@ jobs:
           hook="${{ steps.where.outputs.url }}/v1/webhooks/square"
           if grep -q "^SQUARE_WEBHOOK_URL = \"$hook\"" wrangler.toml; then echo "already $hook"; exit 0; fi
           sed -i "s|^SQUARE_WEBHOOK_URL = \".*\"|SQUARE_WEBHOOK_URL = \"$hook\"|" wrangler.toml
-          npx wrangler deploy >/dev/null && echo "webhook address: $hook"
+          npx wrangler deploy --var DEPLOYED_SHA:"${GITHUB_SHA::7}" --var DEPLOYED_AT:"$(date -u +%Y-%m-%dT%H:%MZ)" >/dev/null && echo "webhook address: $hook"
 
       # The site and go.ps1 read the licence server's address from
       # tune/config.json. Written here so nobody has to edit a file by hand;
