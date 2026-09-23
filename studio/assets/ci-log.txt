@@ -1,14 +1,13 @@
-﻿  200 processes. Under 100. One run.
-== Reading this PC
+﻿== Reading this PC
   ! The GPU driver dates from Jun 2006. A current driver is worth more than most tweaks.
   ! This looks like a virtual machine. The tune will run, but the numbers mean little here.
-  Processes running now: 149
+  Processes running now: 141
   Target for this PC after the tune and a restart: about 70
 == Your key
-  Before: 149 processes, 1566 threads, 51591 handles, 2884 MB in use, idle CPU 0.8%, DPC 0%
+  Before: 141 processes, 1484 threads, 49189 handles, 2872 MB in use, idle CPU 0.2%, DPC 0%
 == Safety first
-  ! Could not make a restore point (This functionality is not supported on this operating system.). The undo script 
-  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_00-37
+  ! Could not make a restore point (This functionality is not supported on this operating system.). The undo script still records everything.
+  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_00-49
   + undo.ps1 written to C:\OmniDx\undo
 == Startup apps
   2 things start with Windows:
@@ -63,7 +62,7 @@
   7 telemetry and feedback tasks disabled.
 == Preinstalled apps
   + Microsoft.WindowsFeedbackHub
-  1 apps removed. Spotify, the Store, the Xbox apps, Photos, Calculator, Media Player, Snipping Tool, Terminal and 
+  1 apps removed. Spotify, the Store, the Xbox apps, Photos, Calculator, Media Player, Snipping Tool, Terminal and Notepad stay.
 == Debloat
   + removed Steps Recorder (screenshots every click, retired by Microsoft)
   + removed the 2009 Windows Media Player (the Store one stays)
@@ -78,23 +77,23 @@
   + NTFS last-access stamps off
   + NTFS allowed more memory for its cache
 == The OmniDx power plan
-  + OmniDx plan created and active: CPU 100/100, boost aggressive, no core parking, PCIe and USB power saving off, no 
+  + OmniDx plan created and active: CPU 100/100, boost aggressive, no core parking, PCIe and USB power saving off, no sleep on mains.
 == Network
   + TCP: autotuning normal, ECN and timestamps off, receive-side scaling on, segment coalescing off, CTCP.
-  + Ethernet 3: Nagle off, power saving off
   + Ethernet 4: Interrupt Moderation off
   + Ethernet 4: Nagle off, power saving off
+  + Ethernet 3: Nagle off, power saving off
 == Discord, Spotify, browsers
   + Chrome: no background mode, hardware acceleration on
   + Edge: no startup boost, no background mode, hardware acceleration on
 == Game profiles
   Looked in 2 game folders
-  + Installed and profiled: Minecraft
+  + No listed game found on the usual drives; the CPU-priority profiles are in place for when one is installed.
 == Cleanup
   + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 370 MB back.
 == Keeping it cut
-  + Task 'OmniDx keep' runs three minutes after sign-in and puts back whatever an update turned on. Log: 
-  After:  141 processes, 1396 threads, 48314 handles, 3012 MB in use, idle CPU 0.7%, DPC 0%
-  Gone:   MoUsoCoreWorker, smartscreen, spoolsv
+  + Task 'OmniDx keep' runs three minutes after sign-in and puts back whatever an update turned on. Log: C:\OmniDx\keep-log.txt. Undo removes it.
+  After:  142 processes, 1346 threads, 48783 handles, 3149 MB in use, idle CPU 1.2%, DPC 0%
+  Gone:   spoolsv
 == Done
-  Processes: 149 -> 141 now, in 200 seconds. Restart for the real number: the services that were told to stop are 
+  Processes: 141 -> 142 now, in 251 seconds. Restart for the real number: the services that were told to stop are still unwinding.
