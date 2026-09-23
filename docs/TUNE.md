@@ -368,8 +368,8 @@ parts against stand-in answers: the buy buttons close with no licence server
 and when the server cannot reach Square, and stay open when it merely cannot
 be reached from the browser; the key page shows three keys for a Squad order
 and one for Tune, shows them again on a return visit, takes the receipt
-number, and shows a refusal in the server's words; the owner page says when
-the server is off. It runs in the Pages workflow before anything publishes.
+number with the email paid with (and stops without it), and shows a refusal
+in the server's words; the owner page says when the server is off. It runs in the Pages workflow before anything publishes.
 
 The Windows check serves the tune files from the build machine (LF bytes,
 as the site serves them) and runs `go.ps1` against them with

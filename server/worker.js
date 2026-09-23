@@ -828,7 +828,7 @@ const routes = {
     // The keys go to the checkout email too, when there is one and a mailer.
     const to = email || sq.email;
     if (env.RESEND_API_KEY && to && !rows[0].emailed_at) {
-      const sent = await emailTuneKeys(env, to, product, rows.map((r) => prettyTuneKey(r.key)), canonical, sq.receipt || null);
+      const sent = await emailTuneKeys(env, to, product, rows.map((r) => prettyTuneKey(r.key)), canonical, sq.receipt || null, sq.receiptNumber ? receiptOf(sq.receiptNumber) : null);
       if (sent) { await env.DB.prepare("UPDATE tune_keys SET emailed_at = ? WHERE order_ref = ? OR order_ref LIKE ?").bind(Date.now(), canonical, `${canonical}#%`).run(); rows.forEach((r) => { r.emailed_at = Date.now(); }); }
     }
     return tuneAnswer(rows, env, request);
@@ -875,7 +875,7 @@ const routes = {
       if (!env.RESEND_API_KEY) return fail('No mailer is configured on the server.', 503, env, request);
       const live = rows.filter((r) => !r.revoked_at);
       if (!live.length) return fail('Every key of that order is switched off.', 410, env, request);
-      const sent = await emailTuneKeys(env, to, live[0].product, live.map((r) => prettyTuneKey(r.key)), order, null);
+      const sent = await emailTuneKeys(env, to, live[0].product, live.map((r) => prettyTuneKey(r.key)), order, null, live[0].receipt || null);
       if (sent) {
         await env.DB.prepare("UPDATE tune_keys SET email = ?, emailed_at = ? WHERE order_ref = ? OR order_ref LIKE ?").bind(to, Date.now(), order, `${order}#%`).run();
         rows = await tuneKeysFor(env, order);
@@ -963,7 +963,7 @@ const routes = {
     const live = rows.filter((r) => !r.revoked_at);
     let emailed = Boolean(rows[0]?.emailed_at);
     if (!emailed && to && env.RESEND_API_KEY && live.length) {
-      const sent = await emailTuneKeys(env, to, live[0].product, live.map((r) => prettyTuneKey(r.key)), order, payment.receipt_url || null);
+      const sent = await emailTuneKeys(env, to, live[0].product, live.map((r) => prettyTuneKey(r.key)), order, payment.receipt_url || null, receipt);
       if (sent) { await env.DB.prepare("UPDATE tune_keys SET emailed_at = ? WHERE order_ref = ? OR order_ref LIKE ?").bind(Date.now(), order, `${order}#%`).run(); emailed = true; }
     }
     return json({ ok: true, order, product: live[0]?.product || product, keys: live.length, emailed, to: to ? 'yes' : 'none on the payment' });
@@ -1440,7 +1440,7 @@ and your recovery code still works as it always did.`,
  * read the same in every mail app and survive being forwarded to a friend.
  * Returns true only when Resend accepted it.
  */
-async function emailTuneKeys(env, email, product, keys, order, receiptUrl) {
+async function emailTuneKeys(env, email, product, keys, order, receiptUrl, receiptNumber = null) {
   const three = keys.length > 1;
   const lines = [
     three ? 'Thanks for buying OmniDx Tune Squad: three keys, one per PC.' : 'Thanks for buying OmniDx Tune.',
@@ -1457,6 +1457,7 @@ async function emailTuneKeys(env, email, product, keys, order, receiptUrl) {
     ...keys.slice(0, 1).map((k) => `  $env:OMNIDX_MODE='extreme'; $env:OMNIDX_KEY='${k}'; irm omnidx.net/go.ps1 | iex`),
     '',
     `Your keys are also on the page Square sent you to, and any time at https://omnidx.net/studio/activate/ with your order number: ${order}`,
+    receiptNumber ? `Receipt number: #${receiptNumber} (that, with this email address, shows the keys again on that page)` : null,
     receiptUrl ? `Square receipt: ${receiptUrl}` : null,
     'What it does, screen by screen: https://omnidx.net/studio/download/',
     '',
