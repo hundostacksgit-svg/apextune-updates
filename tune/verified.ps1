@@ -2103,6 +2103,20 @@ function Get-BiosChecklist($m) {
 }
 
 # ---------------------------------------------------------------------------
+# what to do next: five lines at the top of the report
+# ---------------------------------------------------------------------------
+function Get-NextSteps($m) {
+  $steps = @('Restart. The services told to stop are still unwinding until you do, and the after-restart count lands in C:\OmniDx\after-restart.txt at your next sign-in.')
+  if ($m.ramSlow) { $steps += "BIOS, item 1: the memory profile is OFF on this PC (the RAM runs at $($m.ramNow) MT/s, rated $($m.ramRated)). That one setting is worth more than the rest of this report." }
+  elseif ($m.laptop) { $steps += 'BIOS: item 10, the GPU switch, is the one that matters on a laptop; then the power mode in the maker''s app.' }
+  else { $steps += 'BIOS: items 1 to 3 (memory profile, Re-Size BAR, CSM). Ten minutes, and the memory profile alone is the biggest free gain any PC has.' }
+  $steps += 'GPU control panel: low latency mode, power management and V-Sync, from the list below. Two minutes.'
+  $steps += 'Launchers and overlays: the list below names the one or two settings in each that matter; the overlays are the usual cause of a stutter that "came from nowhere".'
+  $steps += 'Any time: $env:OMNIDX_MODE=''status''; irm omnidx.net/go.ps1 | iex shows what is still in place; undo is one line, and it is in this report.'
+  return $steps
+}
+
+# ---------------------------------------------------------------------------
 # GPU control-panel notes
 # ---------------------------------------------------------------------------
 function Get-GpuNotes($m) {
@@ -2548,6 +2562,7 @@ function Write-Report($m, $before, $after, $changesFile) {
     $(if ($script:Snapshots) { "  now:    " + (Format-Snapshot $script:Snapshots.after) } else { $null }),
     $(if ((Get-GoneProcesses).Count) { "  gone by name: " + ((Get-GoneProcesses) -join ', ') } else { $null }),
     "  full lists: processes-before-$($script:Stamp).txt and processes-after-$($script:Stamp).txt next to this file; after-restart.txt appears after your next sign-in.", "",
+    "NEXT STEPS", @($i = 0; Get-NextSteps $m | ForEach-Object { $i++; "  {0}. {1}" -f $i, $_ }), "",
     "STILL RUNNING (most instances)", @($top), "",
     "KEPT, AND WHY", @($(if ($script:Kept.Count) { $script:Kept | Sort-Object -Unique | ForEach-Object { "  $_" } } else { "  nothing needed keeping" })), "",
     "WHAT WAS DONE", @($script:Log | Where-Object { $_ -match '^(==|  \+)' }), "",
@@ -2620,6 +2635,7 @@ details pre{font:12.5px/1.5 ui-monospace,Consolas,monospace;color:#b3a8cf;overfl
 <p class="sub">$(& $h ((Get-Date).ToString('f'))) &middot; $(& $h $m.cpu) &middot; $(& $h $m.gpu) &middot; $(& $h $m.ramGb) GB &middot; $(& $h $m.board)</p>
 <div class="big"><div><b>$before</b><span>processes before</span></div><div><b>$after</b><span>now, before a restart</span></div><div><b>~$target</b><span>target for this PC after a restart</span></div></div>
 <p class="muted">Many of the "now" processes are only waiting to be stopped. The number after a restart is the one that counts; <code>C:\OmniDx\after-restart.txt</code> gets it at your next sign-in.$(if ($keptCut) { ' Kept cut: a task at each sign-in puts back what a Windows update turns on; undo removes it.' } else { ' Not kept cut: run the command again after a big Windows update, same key, free.' })</p>
+<h2>Next steps</h2><ol>$((Get-NextSteps $m | ForEach-Object { '<li>' + (& $h $_) + '</li>' }) -join '')</ol>
 $(if ($snapRows) { "<h2>Before and after</h2><table><tr><th></th><th>Before</th><th>Now</th></tr>$snapRows</table>" })
 $(if ((Get-GoneProcesses).Count) { "<h2>Gone, by name</h2><p class='muted'>Running before, not running now: " + (& $h ((Get-GoneProcesses) -join ', ')) + "</p>" })
 $procTables
