@@ -286,12 +286,25 @@ is deployed.
   `python3 tools/build-site.py`.
 - **The share card**: `tools/promo/tune-og.html`, then
   `python3 -m http.server 8099 &` and `node tools/promo/render-studio-og.mjs`.
-- **The script**: `tune/omnidx.ps1`. Bump `$script:Version`, then run
-  `python3 tools/tune-stamp.py` so `tune/config.json` carries the new version
-  and SHA-256 (`go.ps1` refuses a script that does not match, and the publish
-  check refuses a stale stamp). The Windows check parses and runs it on every
-  push. The one command fetches the newest script every run, so a fix reaches
-  everyone on their next run.
+- **The script**: `tune/omnidx.ps1`. Bump `$script:Version`, add a card at
+  the top of `studio/changelog/index.html` with the same version (the check
+  refuses a script whose version is not the changelog's newest), then run
+  `python3 tools/tune-stamp.py` (config.json's version and SHA-256; `go.ps1`
+  refuses a script that does not match), `python3 tools/tune-touches.py`
+  (the transparency page is generated from the script's lists and fails the
+  build when stale) and `python3 tools/build-site.py`. `node
+  tools/tune-check.mjs` runs every static check. The Windows check parses
+  and runs it on every push. The one command fetches the newest script
+  every run, so a fix reaches everyone on their next run.
+- **A game profile**: add it to `$script:Games` in the script and its name
+  to `TUNE.games` in `studio/assets/config.js`; the check requires the two
+  counts to agree, and `data-games` on the pages shows the count.
+- **A new kind of recorded change**: add the `Record @{ type = '...' }`, a
+  handler in the undo here-string (`$script:UndoScript`), and, if the keep
+  task should re-apply it, a branch in `Get-Drift`. The check refuses a
+  recorded type with no undo handler.
+- **Never by hand**: `studio/assets/app.png`, `studio/assets/ci-run.json`,
+  `studio/assets/ci-log.txt`. The Windows check writes them.
 - **Key format**: the four checksum lines live in four places —
   `tune/omnidx.ps1`, `studio/assets/tunekey.js`, `server/worker.js`,
   `tools/make-tune-key.py`. Change all four or none.
