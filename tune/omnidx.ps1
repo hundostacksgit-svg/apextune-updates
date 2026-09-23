@@ -123,6 +123,7 @@ function Head([string]$t) { Write-Host ''; Write-Host ("== " + $t) -ForegroundCo
 function Did([string]$t) { Write-Host ("  + " + $t) -ForegroundColor DarkGray; [void]$script:Log.Add("  + $t") }
 function Warn([string]$t) { Write-Host ("  ! " + $t) -ForegroundColor Yellow; [void]$script:Log.Add("  ! $t"); [void]$script:Warnings.Add($t) }
 function Keep([string]$what, [string]$why) { [void]$script:Kept.Add(("{0}: {1}" -f $what, $why)) }
+function Plural([int]$n, [string]$one, [string]$many) { if ($n -eq 1) { return "$n $one" } else { return "$n $many" } }
 function Ask([string]$q) {
   if ($Yes) { return $true }
   $a = Read-Host ("  " + $q + " [Y/n]")
@@ -1186,7 +1187,7 @@ function Cut-Startup {
   $disabled = [byte[]](3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
   $live = @(Get-StartupEntries | Where-Object { $_.on -and -not (Test-Keep $_.name) })
   if (-not $live.Count) { Say "  Nothing starts with Windows that is not already off."; return }
-  Say ("  {0} things start with Windows:" -f $live.Count)
+  Say ("  {0} with Windows:" -f (Plural $live.Count 'thing starts' 'things start'))
   $back = @($live | Where-Object { $_.wasCut })
   for ($i = 0; $i -lt $live.Count; $i++) { Say ("   {0,2}. {1}{2}" -f ($i + 1), $live[$i].label, $(if ($live[$i].wasCut) { '  (you turned it back on after the last run: stays on)' } else { '' })) 'White' }
   # Turned back on by hand since an earlier run: that was a decision, and it stands unless this run is told otherwise.
@@ -1205,7 +1206,7 @@ function Cut-Startup {
     if ($e.kind -eq 'store') { Set-Reg $e.ok 'State' 1 'DWord' } else { Set-Reg $e.ok $e.value $disabled 'Binary' }
     $n++; Did ("off: {0}" -f $e.label)
   }
-  Say ("  {0} startup entries switched off. Task Manager > Startup can switch any one back on." -f $n)
+  Say ("  {0} switched off. Task Manager > Startup can switch any one back on." -f (Plural $n 'startup entry' 'startup entries'))
 }
 
 # ---------------------------------------------------------------------------
@@ -1342,7 +1343,7 @@ function Cut-Tasks {
       try { Disable-ScheduledTask -TaskPath $t[0] -TaskName $t[1] -ErrorAction Stop | Out-Null; Record @{ type = 'task'; path = $t[0]; name = $t[1] }; $n++; Did $t[1] } catch { }
     }
   }
-  Say ("  {0} telemetry, feedback and background tasks disabled." -f $n)
+  Say ("  {0} disabled." -f (Plural $n 'telemetry, feedback or background task' 'telemetry, feedback and background tasks'))
 }
 
 $script:JunkApps = @(
@@ -1417,7 +1418,7 @@ function Cut-Apps($m) {
       try { Remove-AppxProvisionedPackage -Online -PackageName $prov.PackageName -ErrorAction Stop | Out-Null } catch { }
     }
   }
-  Say ("  {0} apps removed. Spotify, the Store, the Xbox apps{1}, Photos, Calculator, Media Player, Snipping Tool, Terminal and Notepad stay." -f $n, $(if ($CutXbox) { ' (no - you said -CutXbox)' } else { '' }))
+  Say ("  {0} removed. Spotify, the Store, the Xbox apps{1}, Photos, Calculator, Media Player, Snipping Tool, Terminal and Notepad stay." -f (Plural $n 'app' 'apps'), $(if ($CutXbox) { ' (no - you said -CutXbox)' } else { '' }))
 }
 
 # ---------------------------------------------------------------------------
