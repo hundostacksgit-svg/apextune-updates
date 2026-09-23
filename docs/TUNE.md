@@ -272,7 +272,8 @@ refusal on screen when the domain is not verified or the from address is
 wrong, so mail is proved before the first sale), and **Send every unsent
 order** (for the day mail was off or refused while orders came in: each
 order marked "not emailed" goes to its checkout address once, and the
-ones Resend still refuses are listed), and **Email me the week** (the
+ones Resend still refuses are listed; switching off and freeing take two
+presses within five seconds, a thumb slips on a phone), and **Email me the week** (the
 last seven days and everything since the first sale: orders, money kept,
 refunds, keys issued, PCs bound, orders not emailed; the same email
 arrives by itself every Monday at 13:00 UTC from the Worker's cron

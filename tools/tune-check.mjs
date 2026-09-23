@@ -114,6 +114,22 @@ function verified() {
 /* Out-String wraps at the console width, and a check that reads its output
    then depends on the build machine's CPU name; every capture in the Windows
    check reads at full width. */
+/* Every public page is in the sitemap and every private one is kept out of search; a page added
+   to the site's builder that nobody added to sitemap.xml would otherwise be published unlisted. */
+function sitemapAgrees() {
+  const at = (f) => fs.readFileSync(path.join(root, f), 'utf8');
+  const site = at('sitemap.xml');
+  const robots = at('robots.txt');
+  const builder = at('tools/build-site.py');
+  const pages = [...builder.matchAll(/^\s+'([a-z-]*\/?)index\.html': /gm)].map((m) => m[1]);
+  const missing = pages.filter((p) => !['account/'].includes(p) && !site.includes(`<loc>https://omnidx.net/studio/${p}</loc>`));
+  if (missing.length) bad(`sitemap.xml is missing ${missing.map((p) => 'studio/' + p).join(', ')}`);
+  else ok(`sitemap.xml lists every public page the builder writes (${pages.length - 1})`);
+  const hidden = ['activate', 'account', 'admin'].filter((p) => !robots.includes(`Disallow: /studio/${p}/`));
+  if (hidden.length) bad(`robots.txt no longer keeps ${hidden.join(', ')} out of search`);
+  else ok('robots.txt keeps the key page, the account page and the owner page out of search');
+}
+
 function workflowWidth() {
   const wf = fs.readFileSync(path.join(root, '.github/workflows/tune-check.yml'), 'utf8');
   const bare = wf.split('\n').filter((l) => /\| Out-String\s*$/.test(l));
@@ -214,5 +230,6 @@ await keys();
 config(script);
 verified();
 workflowWidth();
+sitemapAgrees();
 console.log(failed ? `${failed} problem(s)` : 'all good');
 process.exit(failed ? 1 : 0);
