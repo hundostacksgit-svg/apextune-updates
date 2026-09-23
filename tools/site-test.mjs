@@ -13,6 +13,7 @@
  *   node tools/site-test.mjs          (playwright resolved from node_modules,
  *                                      or PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs)
  */
+import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -68,12 +69,15 @@ try {
           if (/^(https?:|mailto:|tel:|javascript:|data:)/i.test(h)) continue;
           const u = new URL(h, page.url());
           if (u.origin !== new URL(base).origin) continue;
+          // The target is checked on disk, not fetched: every page is a static file, and Node's fetch
+          // trips an internal assertion when dozens of small responses are opened and left unread.
           let html = '';
           if (u.pathname === new URL(page.url()).pathname) html = await page.content();
           else {
-            const r = await fetch(u.origin + u.pathname).catch(() => null);
-            if (!r || r.status !== 200) { broken.push(h); continue; }
-            if (u.hash) html = await r.text();
+            let f = path.join(root, decodeURIComponent(u.pathname));
+            if (u.pathname.endsWith('/')) f = path.join(f, 'index.html');
+            if (!fs.existsSync(f)) { broken.push(h); continue; }
+            if (u.hash) html = fs.readFileSync(f, 'utf8');
           }
           if (u.hash && !new RegExp(`id=["']${u.hash.slice(1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`).test(html)) broken.push(h);
         }
