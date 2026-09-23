@@ -184,6 +184,23 @@ Until step 3 is verified, buyers get the key on screen but not by email.
 Until step 5 is done nobody can buy: the buy buttons say the key desk is
 not open, and the key page says the same.
 
+### When something breaks, from a phone
+Everything below is the owner page's status line, the Actions tab, or a
+dashboard; none of it needs a terminal.
+
+| What you see | What it means | What to do |
+| --- | --- | --- |
+| Owner page: "Licence server: not answering"; buy buttons closed; key page says the key desk is not open | The Worker is down or was never deployed | Actions > Deploy the Worker > Run workflow. The scheduled run every six hours redeploys on its own when the health check fails. |
+| Owner page: "Square: off"; buy buttons closed | `SQUARE_ACCESS_TOKEN` is missing, revoked or expired | Square developer dashboard > Production > new access token; update the repository secret; run the deploy. |
+| Keys are on the page but no email arrives; owner page says "Mail: on" | Resend refused the send: domain no longer verified, or the address bounced | resend.com > Emails shows each attempt and why; Domains shows whether omnidx.net is still verified (the DNS records). "Send the keys again" on the owner page once it is fixed. |
+| Owner page says "Mail: off" | `RESEND_API_KEY` is not set on the Worker | Set the repository secret; run the deploy. Keys still show on the page meanwhile. |
+| Square dashboard: webhook deliveries failing with 400 | The signature key on the Worker is not the subscription's, or the subscription's URL is not exactly the Worker's `SQUARE_WEBHOOK_URL` | Re-copy the Signature key into `SQUARE_WEBHOOK_SIGNATURE_KEY`, check the URL ends in `/v1/webhooks/square` on the workers.dev address, run the deploy. Keys were still issued from the key page meanwhile; "Recent orders" shows any that were not emailed. |
+| Square dashboard: webhook deliveries failing with 503 | `SQUARE_WEBHOOK_URL` is empty on the Worker | Run the deploy; it fills it in. |
+| A buyer says "the key says switched off" and there was no refund | Someone switched it off from the owner page, or a partial refund | Owner page: look it up, "Switch it back on". |
+| A buyer paid twice | Two orders, two sets of keys | Refund the second in Square; its keys switch off on their own. |
+| The owner token leaked | Anyone with it can revoke or resend | Make a new one, update `TUNE_ADMIN_TOKEN`, run the deploy; the old one stops at once. |
+| The site shows an old script version in the footer | The newest push has not passed the Windows check yet | Actions > Check the tune: read the failed step. Buyers keep getting the last verified copy, which is the point. |
+
 ### The Worker is required to sell
 Since 1.29 nothing hands out a key but the Worker, and the Worker hands one
 out only after Square confirms the order was paid. Without it the key page
