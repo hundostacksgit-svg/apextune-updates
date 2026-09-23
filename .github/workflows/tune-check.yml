@@ -103,12 +103,30 @@ jobs:
       # The real thing, on a machine nobody needs afterwards: a valid key,
       # every phase, no prompts, no restart. Then undo. Then the numbers go to
       # the site, so every visitor sees the last run on a fresh Windows.
+      # A first run needs a licence server to vouch for the key; the build machine
+      # gets a stand-in on 127.0.0.1 that accepts any well-formed key. First, though,
+      # the script must refuse a first run with no server at all.
+      - name: Without a licence server, a first run refuses and changes nothing
+        run: |
+          $key = (& python tools\make-tune-key.py | Select-Object -First 1).Trim()
+          $out = & .\tune\omnidx.ps1 -Key $key -Api 'http://127.0.0.1:1/' -Yes -NoRestart -NoAfterCount *>&1 | Out-String -Width 4000
+          Write-Host $out
+          if ($out -match '== Done') { Write-Host 'the tune ran with a server that does not exist'; exit 1 }
+          if ($out -notmatch 'Could not reach|not switched on|refused|error') { Write-Host 'no refusal was printed'; exit 1 }
+          if (Test-Path C:\OmniDx\undo\changes-latest.json) { Write-Host 'a change record was written without a licence check'; exit 1 }
+          Start-Process powershell -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File tools\ci-licence.ps1' -WindowStyle Hidden
+          Start-Sleep -Seconds 3
+          $h = Invoke-RestMethod http://127.0.0.1:8787/v1/health
+          if (-not $h.mock) { Write-Host 'the stand-in licence server did not start'; exit 1 }
+          Write-Host 'stand-in licence server up'
+          exit 0
+
       - name: Run the whole tune with a real key
         timeout-minutes: 20
         run: |
           $key = (& python tools\make-tune-key.py | Select-Object -First 1).Trim()
           # -Width: Out-String wraps at the console width otherwise, and the site shows these lines whole.
-          $out = & .\tune\omnidx.ps1 -Key $key -Yes -NoRestart -NoAfterCount *>&1 | Out-String -Width 4000
+          $out = & .\tune\omnidx.ps1 -Key $key -Api http://127.0.0.1:8787 -Yes -NoRestart -NoAfterCount *>&1 | Out-String -Width 4000
           Write-Host $out
           if ($out -notmatch '== Done') { Write-Host 'the tune did not reach Done'; exit 1 }
           if ($out -notmatch 'Processes: (\d+) -> (\d+)') { Write-Host 'no before/after line'; exit 1 }
@@ -209,7 +227,7 @@ jobs:
           Set-ItemProperty -Path $entry.path -Name $entry.name -Value ([byte[]](2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
           Write-Host ("turned back on by hand: {0}" -f $entry.name)
           # No -Key: the PC remembers it. -NoKeep: a "no" must also take down the task the first run left.
-          $out = & .\tune\omnidx.ps1 -Yes -NoRestart -NoAfterCount -NoKeep *>&1 | Out-String
+          $out = & .\tune\omnidx.ps1 -Api http://127.0.0.1:8787 -Yes -NoRestart -NoAfterCount -NoKeep *>&1 | Out-String
           Write-Host $out
           if ($out -notmatch '== Done') { Write-Host 'the second run did not reach Done'; exit 1 }
           if ($out -notmatch 'you turned it back on after the last run: stays on') { Write-Host 'the second run did not notice the entry turned back on'; exit 1 }
@@ -277,10 +295,6 @@ jobs:
               Write-Host "$key accepted; $bad refused"
             }
           }
-          $order = (& python tools\make-tune-key.py --order TESTORDER123456 | Select-Object -First 1).Trim()
-          $out = & .\tune\omnidx.ps1 -Key $order -CheckKey *>&1 | Out-String
-          if ($out -notmatch 'Valid:') { Write-Host "refused the order-derived key: $order`n$out"; exit 1 }
-          Write-Host "order-derived key $order accepted"
           exit 0
 
       # The screenshot goes into the repository as the site's picture of the

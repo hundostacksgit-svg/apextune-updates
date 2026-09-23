@@ -86,10 +86,9 @@ spec=importlib.util.spec_from_file_location('k','${path.join(root, 'tools/make-t
 print(k.checksum('TUNE','ABCDEFGHJKLM'),k.checksum('SQUAD','ABCDEFGHJKLM'))`]).toString().trim();
   if (js === py) ok(`key checksum agrees between the browser and the Python tool (${js})`);
   else bad(`key checksum differs: browser ${js}, python ${py}`);
-  const order = await m.keyForOrder('tune', 'abc123XYZ');
-  const pyOrder = execFileSync('python3', [path.join(root, 'tools/make-tune-key.py'), '--order', 'abc123XYZ']).toString().trim();
-  if (m.pretty(order) === pyOrder) ok(`order-derived key agrees (${pyOrder})`);
-  else bad(`order-derived key differs: browser ${m.pretty(order)}, python ${pyOrder}`);
+  const page = fs.readFileSync(path.join(root, 'studio/activate/activate.js'), 'utf8');
+  if (/keyForOrder|makeKey\(/.test(page) || /keyForOrder/.test(fs.readFileSync(path.join(root, 'studio/assets/tunekey.js'), 'utf8'))) bad('the key page must never make a key itself; only the licence server issues keys');
+  else ok('the key page makes no keys of its own');
 }
 
 function config(scriptText) {

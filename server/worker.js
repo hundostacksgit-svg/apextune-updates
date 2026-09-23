@@ -704,10 +704,10 @@ const routes = {
    * the same id gets the same key back, so a refresh, a lost tab or a second
    * browser can never mint a second licence.
    *
-   * With SQUARE_ACCESS_TOKEN set the order is looked up and the product is
-   * decided by what was actually paid — a $19.99 order asking for a five-PC
-   * key gets a one-PC key. Without the token the redirect is trusted, and the
-   * row says so (verified = 0) so it can be audited later.
+   * The order is looked up in Square and the product is decided by what was
+   * actually paid — a $19.99 order asking for a five-PC key gets a one-PC
+   * key. Without SQUARE_ACCESS_TOKEN nothing can confirm a payment, so no key
+   * is issued at all: a key is never minted on the strength of a URL.
    */
   'POST /v1/tune/issue': async (request, env, body) => {
     const wanted = String(body.product || 'tune').toLowerCase();
@@ -723,17 +723,13 @@ const routes = {
       return json({ key: prettyTuneKey(existing.key), product: existing.product, seats: existing.seats, verified: Boolean(existing.verified) }, { env, request });
     }
 
-    let product = wanted;
-    let verified = 0;
-    let cents = null;
+    if (!env.SQUARE_ACCESS_TOKEN) return fail('Payments cannot be confirmed right now, so no key can be issued. Email support with your Square receipt and it will be sorted by hand.', 503, env, request);
     const sq = await squareOrder(env, order);
-    if (sq) {
-      if (!sq.ok) return fail('Square does not show a completed payment for that order reference. Check the receipt email; the id is near the top.', 402, env, request);
-      cents = sq.cents;
-      product = cents >= TUNE_PRODUCTS.squad.cents - 100 ? 'squad' : 'tune';
-      if (cents < TUNE_PRODUCTS.tune.cents - 100) return fail('That payment is below the price of a key.', 402, env, request);
-      verified = 1;
-    }
+    if (!sq || !sq.ok) return fail('Square does not show a completed payment for that order reference. Check the receipt email; the id is near the top.', 402, env, request);
+    const cents = sq.cents;
+    const product = cents >= TUNE_PRODUCTS.squad.cents - 100 ? 'squad' : 'tune';
+    if (cents < TUNE_PRODUCTS.tune.cents - 100) return fail('That payment is below the price of a key.', 402, env, request);
+    const verified = 1;
 
     const key = makeTuneKey(product);
     await env.DB.prepare(

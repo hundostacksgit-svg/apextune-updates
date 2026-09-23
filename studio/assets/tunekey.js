@@ -61,21 +61,3 @@ export function pretty(key) {
   return `${tag}-${rest.slice(0, 4)}-${rest.slice(4, 8)}-${rest.slice(8, 12)}-${rest.slice(12, 16)}`;
 }
 
-/**
- * The key for an order, with no server.
- *
- * Derived from the order reference, so the same receipt always produces the
- * same key — on a second visit, in another browser, or by hand with
- * tools/make-tune-key.py --order <ref> when somebody emails their receipt.
- * With the Worker deployed this is never used; the server mints and records.
- */
-export async function keyForOrder(product, order) {
-  const tag = TAGS[product];
-  if (!tag) throw new Error(`No key format for "${product}"`);
-  const ref = String(order || '').trim().toUpperCase();
-  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256',
-    new TextEncoder().encode(`omnidx-tune-order:${tag}:${ref}`)));
-  let payload = '';
-  for (let i = 0; i < 12; i++) payload += ALPHABET[digest[i] % ALPHABET.length];
-  return `${tag}${payload}${checksum(tag, payload)}`;
-}

@@ -122,24 +122,23 @@ change a price: change it in Square, change it there, commit.
 
 ## What to switch on
 
-### Nothing, to sell today
-The site, the key page and the script work with no server. Keys are checked by
-checksum and locked locally. This is the same strength the Studio activation
-page had: it trusts Square's redirect.
-
-### The Worker, to make keys real
-Deploying `server/` is what makes "one key, one PC" enforceable and lets a
-refund actually stop a key.
+### The Worker is required to sell
+Since 1.29 nothing hands out a key but the Worker, and the Worker hands one
+out only after Square confirms the order was paid. Without it the key page
+says the key desk is not open, and the script refuses a first run. So the
+Worker, with `SQUARE_ACCESS_TOKEN`, is the first thing to switch on; until
+then nobody can buy, and nobody can get a key for free either.
 
 1. Set the three repository secrets `.github/workflows/worker.yml` names
    (`CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_D1_ID`). The
    workflow creates the tables (`schema.sql` is all `IF NOT EXISTS`) and deploys.
 2. Put the Worker URL in `tune/config.json` as `api` and commit. Both the key
    page and `go.ps1` read that file, so that one edit switches everything.
-3. Optional, recommended: `npx wrangler secret put SQUARE_ACCESS_TOKEN` with a
-   Square access token that can read orders and payments. From then on
-   `/v1/tune/issue` confirms every order with Square before minting, and a
-   `?e=team` on a $19.99 order gets a one-PC key.
+3. Required: `npx wrangler secret put SQUARE_ACCESS_TOKEN` with a Square
+   access token that can read orders and payments. `/v1/tune/issue` confirms
+   every order with Square before minting and refuses everything else, and a
+   `?e=team` on a $19.99 order gets a one-PC key. Without the token the
+   Worker issues nothing.
 
 `GET /v1/health` reports `square: true` when the token is set.
 
@@ -294,7 +293,11 @@ is deployed.
 ## The lock, honestly
 
 - The checksum stops typos, not people. Anyone can read `tunekey.js` and make a
-  key that passes it. **The Worker is what makes a key real.**
+  key that passes it, which is why a key that passes it gets nobody anything:
+  the script asks the Worker, the Worker answers only for keys it minted, and
+  it mints only against a Square order it has confirmed. The key page makes
+  no keys. `tools/make-tune-key.py` makes keys for the build machine's
+  checks and for a giveaway you insert into the database by hand.
 - The script is public and readable. Someone determined could save a copy and
   delete the key check. That is a trade made on purpose: a script people can
   read is the reason anyone should run it with administrator rights, and a

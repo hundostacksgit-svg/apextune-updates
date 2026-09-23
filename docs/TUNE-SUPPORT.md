@@ -18,6 +18,13 @@ omnidx.net/go.ps1 | iex` zips the logs, the machine as read, the numbers and
 the change records to their desktop (keys masked, no registry exports, none
 of their files) and opens Explorer on it. It answers most questions.
 
+## "The key page says the key desk is not open"
+
+> The licence server is not switched on (or cannot be reached), and keys
+> come only from it. Owner: deploy the Worker and set `SQUARE_ACCESS_TOKEN`
+> (docs/TUNE.md, "What to switch on"). Buyer: reply with your Square receipt
+> and the key is issued by hand from the order.
+
 ## "I paid and did not get a key"
 
 > Square sends you back to omnidx.net/studio/activate/ with the key on

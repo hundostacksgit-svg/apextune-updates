@@ -20,7 +20,7 @@
  */
 
 import { TUNE, PAY } from '../assets/config.js';
-import { keyForOrder, parseKey, pretty } from '../assets/tunekey.js';
+import { parseKey } from '../assets/tunekey.js';
 
 const STORE = 'omnidx.tune.key';
 const $ = (s, r = document) => r.querySelector(s);
@@ -68,28 +68,26 @@ async function api() {
 class Refused extends Error { constructor(message, status) { super(message); this.status = status; } }
 
 /**
- * Get the key for an order. Server first; if there is no server or it cannot
- * be reached, derive it here. A server that positively refuses (no completed
- * payment, refunded) is not worked around.
+ * Get the key for an order: from the licence server, which confirms the
+ * payment with Square before minting, and from nowhere else. This page never
+ * makes a key itself, so a URL, an order number or this file's source is not
+ * a key. No server, or a server that cannot be reached, is a plain message.
  */
 async function issue(product, order) {
   const base = await api();
-  if (base) {
-    try {
-      const r = await fetch(`${base}/v1/tune/issue`, {
-        method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ product, order }),
-      });
-      const data = await r.json().catch(() => ({}));
-      if (r.ok && data.key) return { ...data, order, source: 'server' };
-      if (r.status === 402 || r.status === 410 || r.status === 400) throw new Refused(data.error || 'The licence server refused this order.', r.status);
-    } catch (err) {
-      if (err instanceof Refused) throw err;
-      // Down, slow or blocked: fall through. The key still has to appear.
-    }
+  if (!base) throw new Refused('The key desk is not open yet: keys are issued by the licence server after Square confirms the payment, and it is not switched on. If you paid, email support with your receipt.', 503);
+  let r;
+  try {
+    r = await fetch(`${base}/v1/tune/issue`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ product, order }),
+    });
+  } catch {
+    throw new Refused('Could not reach the licence server. Try again in a minute; if it keeps failing, email support with your receipt.', 0);
   }
-  const key = await keyForOrder(product, order);
-  return { key: pretty(key), product, seats: TUNE.products[product].seats, verified: false, order, source: 'local' };
+  const data = await r.json().catch(() => ({}));
+  if (r.ok && data.key) return { ...data, order, source: 'server' };
+  throw new Refused(data.error || 'The licence server refused this order.', r.status);
 }
 
 function remember(info) {
@@ -269,7 +267,8 @@ async function go(product, order) {
     renderKey(info);
     wireExtras(info);
   } catch (err) {
-    console.error('activation', err);
+    // A refusal is the expected answer on a wrong order or a closed desk; only a surprise is an error.
+    if (err instanceof Refused) console.warn('activation', err.message); else console.error('activation', err);
     renderUnknown(err instanceof Refused ? err.message : 'Could not issue a key just now. Try again, or email with your receipt.');
   }
 }

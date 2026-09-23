@@ -37,7 +37,7 @@
 param(
   # The key from the page after you paid. Locks to this PC on first run.
   [string]$Key = $env:OMNIDX_KEY,
-  # The licence server. Empty means the key is checked and bound on this PC only.
+  # The licence server. When not given, read from omnidx.net/tune/config.json. A first run needs it: nothing else can vouch for a key.
   [string]$Api = $env:OMNIDX_API,
   # Also switch memory integrity (VBS / HVCI) off. More frames, less security. Asked about first.
   [switch]$Aggressive,
@@ -82,7 +82,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.28.0'
+$script:Version = '1.29.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -208,16 +208,15 @@ function Test-Licence($parsed, [string]$hwid, $machine) {
     }
   }
 
-  # No server: the key is checked by its checksum and locked to this PC here.
-  if ($local.Key -and $local.Hwid -and $local.Key -ne $parsed.key) {
-    Say "  A different key is already bound to this PC. One key per PC." 'Red'
-    return $false
+  # No server configured. A key this PC already holds from an earlier, server-checked run
+  # keeps working (the server may be down, or gone); a first run has nothing to vouch for
+  # the key, and stops. The checksum only catches typos; the server is what makes a key real.
+  if ($local.Key -eq $parsed.key -and $local.Hwid -eq $hwid -and $local.Bound) {
+    Say "  This key is already bound to this PC from an earlier run; the licence server is not configured right now, so carrying on with that." 'Yellow'
+    return $true
   }
-  Set-ItemProperty -Path $regPath -Name Key -Value $parsed.key
-  Set-ItemProperty -Path $regPath -Name Hwid -Value $hwid
-  Set-ItemProperty -Path $regPath -Name Bound -Value (Get-Date -Format s)
-  Say "  Key accepted and locked to this PC." 'Green'
-  return $true
+  Say "  The licence server is not switched on, so a key cannot be checked yet. Nothing has changed on this PC. If you bought a key, email support with your Square receipt." 'Red'
+  return $false
 }
 
 # ---------------------------------------------------------------------------
@@ -2527,6 +2526,14 @@ function Main {
     if (-not $parsed) { Say "  That is not an OmniDx key. It looks like TUNE-XXXX-XXXX-XXXX-XXXX; check it for typos, or get it again at omnidx.net/studio/activate/." 'Red'; return }
     $hwid = Get-Hwid
     $machine = @{ cpu = $m.cpu; gpu = $m.gpu; board = $m.board; os = $m.os; name = $m.name; version = $script:Version }
+    if (-not $Api) {
+      # The one command passes the server in; by hand, the script reads the same config.json.
+      try {
+        $web = New-Object System.Net.WebClient; $web.Headers['User-Agent'] = 'OmniDxTune/script'
+        $cfg = $web.DownloadString('https://omnidx.net/tune/config.json?v=' + [DateTime]::UtcNow.Ticks) | ConvertFrom-Json
+        if ($cfg.api) { $Api = [string]$cfg.api }
+      } catch { }
+    }
     if (-not (Test-Licence $parsed $hwid $machine)) { return }
 
     if ($m.domain) {
