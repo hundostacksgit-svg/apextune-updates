@@ -159,8 +159,9 @@ try {
     await page.unroute('**/tune/config.json*');
     await page.route('**/tune/config.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ api: `${base}/fakeapi`, version: '0', sha256: 'x' }) }));
     await page.route('**/fakeapi/v1/health', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, square: true, squareWebhook: true, mail: true, owner: true, build: 'abc1234', deployed: '2026-09-23T21:00Z' }) }));
+    const adminAsked = [];
     await page.route('**/fakeapi/v1/tune/admin', (r) => {
-      const b = r.request().postDataJSON();
+      const b = r.request().postDataJSON(); adminAsked.push(b.action);
       if (b.token !== 'owner-x') return r.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ error: 'Wrong token.' }) });
       if (b.action === 'summary') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, sentTo: 'owner@example.test', week: { orders: 1, paidCents: 1999, refundedOrders: 0, refundedCents: 0, tune: 1, squad: 0, unsent: 0 }, all: { orders: 2, paidCents: 5998, refundedOrders: 0, refundedCents: 0, tune: 1, squad: 1, unsent: 0 }, keys: 4, pcs: 2 }) });
       if (b.action === 'resend-unsent') return r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, orders: 2, sent: [{ order: 'ORDER-B', email: 'x***@example.test' }], failed: [{ order: 'ORDER-C', email: 'y***@example.test' }] }) });
@@ -177,6 +178,10 @@ try {
     expect(await page.evaluate(() => document.querySelectorAll('#own-out .own-key').length === 2 && /not emailed/.test(document.querySelector('#own-out').textContent) && /2 orders · \$39\.99 kept · 1 refunded \(\$19\.99\)/.test(document.querySelector('#own-out').textContent)), 'recent orders shows the totals since the first sale, lists two orders and flags the one not emailed');
     await page.fill('#own-ref', 'ORDER-A'); await page.click('[data-act="lookup"]'); await page.waitForTimeout(400);
     expect(await page.evaluate(() => /#AB12/.test(document.querySelector('#own-out').textContent) && document.querySelectorAll('#own-out .own-key').length === 1), 'a lookup shows the order, its receipt number and its key');
+    await page.click('[data-act="revoke"]'); await page.waitForTimeout(200);
+    expect(await page.evaluate(() => document.querySelector('[data-act="revoke"]').textContent === 'Press again to confirm') && !adminAsked.includes('revoke'), 'switching an order off asks for a second press and sends nothing yet');
+    await page.click('[data-act="revoke"]'); await page.waitForTimeout(400);
+    expect(adminAsked.includes('revoke') && (await page.evaluate(() => document.querySelector('[data-act="revoke"]').textContent === 'Switch the order off' && /switched off/.test(document.querySelector('#own-out').textContent))), 'the second press sends it and the button reads as before');
     await page.fill('#own-ref', ''); await page.click('[data-act="resend-unsent"]'); await page.waitForTimeout(400);
     expect(await page.evaluate(() => /1 of 2 unsent orders sent; 1 refused/.test(document.querySelector('#own-out').textContent) && /ORDER-C/.test(document.querySelector('#own-out').textContent)), 'sending every unsent order reports what went and what Resend refused');
     await page.click('[data-act="summary"]'); await page.waitForTimeout(400);

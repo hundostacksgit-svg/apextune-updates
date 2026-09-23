@@ -68,7 +68,19 @@ function render(d, note) {
     <div style="margin-top:10px">${keys}</div>`;
 }
 
+// Switching keys off or freeing them from a PC takes two presses within five seconds: a phone is where this runs, and a thumb slips.
+const RISKY = ['revoke', 'revoke-key', 'release'];
+function armed(b) {
+  if (!RISKY.includes(b.dataset.act)) return true;
+  if (b.dataset.armed === '1') { b.dataset.armed = ''; b.textContent = b.dataset.label; return true; }
+  b.dataset.label = b.dataset.label || b.textContent;
+  b.dataset.armed = '1'; b.textContent = 'Press again to confirm';
+  setTimeout(() => { if (b.dataset.armed === '1') { b.dataset.armed = ''; b.textContent = b.dataset.label; } }, 5000);
+  return false;
+}
+
 document.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click', async () => {
+  if (!armed(b)) return;
   const token = $('#own-token').value.trim();
   const ref = $('#own-ref').value.trim();
   const email = $('#own-email').value.trim();
