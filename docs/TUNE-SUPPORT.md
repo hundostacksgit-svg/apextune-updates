@@ -186,8 +186,8 @@ off or on. No terminal needed.
 > The keys go to the email address typed at Square's checkout the moment the
 > payment completes, from keys@omnidx.net; check spam and promotions first.
 > They are also on the page Square sent you to after paying, and that page
-> shows them again any time: omnidx.net/studio/activate/, with the order
-> number from your Square receipt. If neither has them, send the receipt and
+> shows them again any time: omnidx.net/studio/activate/, with the short
+> receipt number from Square's email (#AB12 or so). If neither has them, send the receipt and
 > I will look the order up and send the keys by hand.
 
 ## "It says PowerShell 7 / it says not administrator / 'irm' is not recognised"
