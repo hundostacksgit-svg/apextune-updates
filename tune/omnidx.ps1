@@ -82,7 +82,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.26.1'
+$script:Version = '1.27.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -1327,8 +1327,10 @@ function Debloat($m) {
   $batched = $false
   if (@($plan.caps).Count -gt 1) {
     $dargs = @('/online', '/Remove-Capability') + @($plan.caps | ForEach-Object { "/CapabilityName:$($_.name)" }) + @('/NoRestart', '/Quiet')
+    $dsw = [System.Diagnostics.Stopwatch]::StartNew()
     & dism.exe @dargs *>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3010) { $batched = $true; foreach ($c in $plan.caps) { Record @{ type = 'capability'; name = $c.name }; Did ("removed {0}" -f $c.what) } }
+    if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3010) { $batched = $true; foreach ($c in $plan.caps) { Record @{ type = 'capability'; name = $c.name }; Did ("removed {0}" -f $c.what) }; Say ("  ({0} pieces in one DISM session, {1} s)" -f @($plan.caps).Count, [int]$dsw.Elapsed.TotalSeconds) }
+    else { Say ("  (DISM would not take them together, exit {0}; one at a time)" -f $LASTEXITCODE) }
   }
   if (-not $batched) {
     foreach ($c in $plan.caps) {

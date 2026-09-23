@@ -153,6 +153,18 @@
         <h3>It is run before it is published</h3>
         <p>Every change to the script is parsed by PowerShell on a Windows build machine, run in report mode, then run for real with a key, then undone, before the site publishes it. The last run:</p>
         <p class="small" data-ci-run hidden style="margin-top:10px"></p>
+        <details style="margin-top:12px"><summary class="small">What that check proves, every push</summary>
+          <ul class="tick small" style="margin-top:8px">
+            <li>Both scripts parse; the free report reads the machine and changes nothing; the app window draws</li>
+            <li>The whole tune runs with a real key and reaches Done; the support bundle is written with the key masked</li>
+            <li>Status finds every recorded setting still in place, and the keep task is registered</li>
+            <li>A service, a task and a policy value are turned back on by hand; the keep task sees all three and puts them back</li>
+            <li>A second run finds the bound key without being given it, records a handful of changes, leaves a startup app you turned back on alone, and takes the keep task down when told no</li>
+            <li>Undo walks back both runs, leaves no record behind, and a third undo says there is nothing left</li>
+            <li>A bad key is refused; keys from the key tool are accepted and a corrupted one is not</li>
+            <li>A run that records noticeably fewer changes than the last published one fails, so a change that quietly stops doing something cannot ship</li>
+          </ul>
+        </details>
       </div>
       <div class="card reveal d2">
         <div class="card-icon">🔎</div>
