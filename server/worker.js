@@ -255,6 +255,16 @@ async function tuneKeysFor(env, order) {
   return rows.results || [];
 }
 
+/** The distinct orders a set of rows belongs to (a Squad order's #2 and #3 count as its own). */
+const ordersIn = (rows) => [...new Set(rows.map((r) => String(r.order_ref || '').replace(/#\d+$/, '')))];
+
+/**
+ * Square's four-character receipt numbers are short enough to repeat over
+ * time. A reference that lands on more than one order answers nothing: the
+ * long order id from the page Square sent the buyer to always works.
+ */
+const AMBIGUOUS = 'That receipt number belongs to more than one order. Use the long order id from the page Square sent you to, or email support with the receipt.';
+
 async function issueTuneKeys(env, { order, product, cents, email, receipt }) {
   const p = TUNE_PRODUCTS[product];
   const keys = [];
@@ -791,6 +801,7 @@ const routes = {
     const email = validEmail(body.email) ? String(body.email).trim().toLowerCase() : null;
 
     const existing = await tuneKeysFor(env, order);
+    if (ordersIn(existing).length > 1) return fail(AMBIGUOUS, 409, env, request);
     if (existing.length) return tuneAnswer(existing, env, request);
 
     if (!env.SQUARE_ACCESS_TOKEN) return fail('Payments cannot be confirmed right now, so no key can be issued. Email support with your Square receipt and it will be sorted by hand.', 503, env, request);
@@ -838,6 +849,7 @@ const routes = {
       rows = await tuneKeysFor(env, ref.replace(/#\d+$/, ''));
     }
     if (!rows.length) return fail('No keys for that order or key.', 404, env, request);
+    if (ordersIn(rows).length > 1) return fail(AMBIGUOUS, 409, env, request);
     const order = String(rows[0].order_ref || '').replace(/#\d+$/, '');
     const describe = async () => {
       const keys = [];
