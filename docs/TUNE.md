@@ -222,7 +222,10 @@ many PCs each is on, the email on file, when the keys were emailed), **Send
 the keys again** (to the address on file, or a new one typed in, which then
 becomes the address on file), **Free this key from its PC** (the typed key,
 or the first of the order; does not spend the buyer's own monthly move),
-**Switch the order off** and **Switch it back on**. All of it is
+**Switch the order off**, **Switch it back on**, **Switch off this key
+only** (a partial refund of a Squad: type the key), and **Recent orders**
+(the last sixty keys grouped by order: product, amount, when, the email,
+on or off, emailed or not). All of it is
 `POST /v1/tune/admin` on the Worker, refused without the token (403) and
 shut when no token is set (503); the offline test covers each action.
 

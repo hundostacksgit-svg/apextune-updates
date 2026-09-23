@@ -854,6 +854,17 @@ const routes = {
     const token = String(body.token || '');
     if (!token || !sameSecret(token, env.TUNE_ADMIN_TOKEN)) return fail('Wrong token.', 403, env, request);
     const action = String(body.action || 'lookup');
+    // The last sixty keys, grouped by order: what sold, to whom, on or off.
+    if (action === 'recent') {
+      const recent = (await env.DB.prepare('SELECT * FROM tune_keys ORDER BY created_at DESC LIMIT 60').all()).results || [];
+      const byOrder = new Map();
+      for (const r of recent) {
+        const o = String(r.order_ref || '').replace(/#\d+$/, '');
+        if (!byOrder.has(o)) byOrder.set(o, { order: o, receipt: r.receipt || null, product: r.product, email: r.email || null, paidCents: r.amount_cents || null, createdAt: r.created_at, emailedAt: r.emailed_at || null, keys: 0, off: 0 });
+        const g = byOrder.get(o); g.keys++; if (r.revoked_at) g.off++;
+      }
+      return json({ ok: true, orders: [...byOrder.values()] }, { env, request });
+    }
     const ref = String(body.ref || '').trim().slice(0, 120);
     if (!ref) return fail('An order reference or a key is needed.', 400, env, request);
     // By key or by order; a key finds its order, and the whole order is answered.
@@ -899,6 +910,13 @@ const routes = {
       await env.DB.prepare("UPDATE tune_keys SET revoked_at = NULL WHERE order_ref = ? OR order_ref LIKE ?").bind(order, `${order}#%`).run();
       rows = await tuneKeysFor(env, order);
       return json({ ok: true, ...(await describe()) }, { env, request });
+    }
+    // One key of a Squad order, for a partial refund; the order's other keys stay on.
+    if (action === 'revoke-key') {
+      if (!parsed) return fail('Switching off one key needs the key itself, not the order.', 400, env, request);
+      await env.DB.prepare('UPDATE tune_keys SET revoked_at = ? WHERE key = ? AND revoked_at IS NULL').bind(Date.now(), parsed.key).run();
+      rows = await tuneKeysFor(env, order);
+      return json({ ok: true, revokedKey: prettyTuneKey(parsed.key), ...(await describe()) }, { env, request });
     }
     if (action === 'release') {
       const which = parsed ? parsed.key : rows[0].key;

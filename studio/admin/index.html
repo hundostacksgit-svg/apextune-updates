@@ -47,14 +47,16 @@
     </div>
     <div class="own-actions">
       <button class="btn btn-primary btn-sm" type="button" data-act="lookup">Look up</button>
+      <button class="btn btn-sm" type="button" data-act="recent">Recent orders</button>
       <button class="btn btn-sm" type="button" data-act="resend">Send the keys again</button>
       <button class="btn btn-sm btn-ghost" type="button" data-act="release">Free this key from its PC</button>
       <button class="btn btn-sm btn-ghost" type="button" data-act="revoke">Switch the order off</button>
+      <button class="btn btn-sm btn-ghost" type="button" data-act="revoke-key">Switch off this key only</button>
       <button class="btn btn-sm btn-ghost" type="button" data-act="restore">Switch it back on</button>
     </div>
     <div class="own-out" id="own-out" hidden></div>
   </div>
-  <p class="tiny muted" style="margin-top:18px">A refund in Square switches an order off by itself; "Switch the order off" is for the rest. "Free this key" takes the key you typed (or the first of the order) off its PC without spending the buyer's own monthly move.</p>
+  <p class="tiny muted" style="margin-top:18px">A refund in Square switches an order off by itself; "Switch the order off" is for the rest, and "Switch off this key only" is for a partial refund of a Squad order (type the key). "Free this key" takes the key you typed (or the first of the order) off its PC without spending the buyer's own monthly move.</p>
 </main>
 <script type="module" src="./admin.js"></script>
 </body>

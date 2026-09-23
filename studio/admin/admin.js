@@ -37,6 +37,12 @@ function render(d, note) {
   const out = $('#own-out');
   out.hidden = false;
   if (d.error) { out.innerHTML = `<div class="note bad">${esc(d.error)}</div>`; return; }
+  if (d.orders) {
+    out.innerHTML = `<p class="small muted" style="margin:0 0 6px">The last ${d.orders.length} orders, newest first. Paste an order or a key above to act on one.</p>` + (d.orders.length ? d.orders.map((o) => `
+      <div class="own-key"><span><b>${esc(o.product === 'squad' ? 'Squad' : 'Tune')}</b> · ${o.paidCents ? `$${(o.paidCents / 100).toFixed(2)}` : '?'} · ${esc(when(o.createdAt))}<br><span class="muted tiny">${esc(o.email || 'no email')} · order ${esc(o.order)}${o.receipt ? ` · receipt #${esc(o.receipt)}` : ''}</span></span>
+        <span>${o.off ? `<b class="off">${esc(o.off)} of ${esc(o.keys)} off</b>` : `<b class="on">${esc(o.keys)} on</b>`}${o.emailedAt ? '' : ' · <span class="off">not emailed</span>'}</span></div>`).join('') : '<p class="muted">Nothing sold yet.</p>');
+    return;
+  }
   const keys = (d.keys || []).map((k, i) => `
     <div class="own-key"><span class="mono">${esc(k.key)}</span>
       <span>${k.revoked ? '<b class="off">off</b>' : '<b class="on">on</b>'} · on ${esc(k.pcs)} PC${k.pcs === 1 ? '' : 's'}${k.movedAt ? ` · moved ${esc(when(k.movedAt))}` : ''}</span></div>`).join('');
@@ -57,14 +63,15 @@ document.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click
   const email = $('#own-email').value.trim();
   const out = $('#own-out');
   try { localStorage.setItem(STORE, token); } catch { /* private mode */ }
-  if (!token || !ref) { render({ error: 'The token and an order reference or key are both needed.' }); return; }
+  if (!token) { render({ error: 'The owner token is needed.' }); return; }
+  if (!ref && b.dataset.act !== 'recent') { render({ error: 'An order reference or a key is needed.' }); return; }
   const base = await api();
   if (!base) { render({ error: 'The licence server is not switched on yet (tune/config.json has no api).' }); return; }
   out.hidden = false; out.innerHTML = '<p class="small muted">Asking the server…</p>';
   try {
     const r = await fetch(`${base}/v1/tune/admin`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token, action: b.dataset.act, ref, email: email || undefined }) });
     const d = await r.json().catch(() => ({ error: `The server answered ${r.status} with no detail.` }));
-    const notes = { resend: d.ok ? `Sent to ${d.sentTo}.` : 'Not sent.', revoke: 'The order is switched off.', restore: 'The order is back on.', release: d.released ? `${d.released} is free; the next PC that runs it locks it.` : '' };
+    const notes = { resend: d.ok ? `Sent to ${d.sentTo}.` : 'Not sent.', revoke: 'The order is switched off.', 'revoke-key': d.revokedKey ? `${d.revokedKey} is switched off; the order's other keys stay on.` : '', restore: 'The order is back on.', release: d.released ? `${d.released} is free; the next PC that runs it locks it.` : '' };
     render(d, r.ok ? notes[b.dataset.act] || '' : '');
   } catch { render({ error: 'Could not reach the licence server.' }); }
 }));
