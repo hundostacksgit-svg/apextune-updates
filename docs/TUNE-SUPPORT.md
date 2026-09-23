@@ -108,6 +108,14 @@ Log it: every "kept because" rule lives in `Get-KeepList` in the script.
 > `$env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex` shows the
 > whole picture. Small drifts are fixed without a notification.
 
+## "Is my key still good / it says switched off"
+
+> Run status (`$env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex`): it
+> asks the licence server what it holds on the key bound to that PC and says
+> so in plain words: issued and on one PC, or switched off. "Switched off"
+> means the order was refunded, or I switched it off by hand; if that is
+> wrong, send the receipt and I will switch it back on from the owner page.
+
 ## "Status says something has drifted / lists processes I don't know"
 
 > The drifted lines are settings a Windows update turned back on; the
