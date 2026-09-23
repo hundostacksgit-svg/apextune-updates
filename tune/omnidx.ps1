@@ -249,6 +249,8 @@ function Set-Reg([string]$path, [string]$name, $value, [string]$kind = 'DWord') 
   } catch { }
   if ($had -and ($prev -is [byte[]]) -and ($value -is [byte[]])) {
     if ([System.Linq.Enumerable]::SequenceEqual([byte[]]$prev, [byte[]]$value)) { return }
+  } elseif ($had -and $kind -eq 'DWord' -and ($prev -is [int] -or $prev -is [int64] -or $prev -is [uint32]) -and ($value -is [int] -or $value -is [int64] -or $value -is [uint32])) {
+    if (([int64]$prev -band [int64]4294967295) -eq ([int64]$value -band [int64]4294967295)) { return }
   } elseif ($had -and "$prev" -eq "$value") { return }
   try {
     New-ItemProperty -Path $path -Name $name -Value $value -PropertyType $kind -Force -ErrorAction Stop | Out-Null
@@ -411,7 +413,7 @@ foreach ($c in $changes) {
       'fsutil' { $setting = $(if ($c.setting) { $c.setting } else { 'disablelastaccess' }); & fsutil behavior set $setting $c.prev | Out-Null; Write-Host ("fsutil {0} -> {1}" -f $setting, $c.prev) -ForegroundColor DarkGray }
       'mmagent' { try { if ($c.feature -eq 'MemoryCompression') { Enable-MMAgent -MemoryCompression -ErrorAction Stop } else { Enable-MMAgent -ApplicationPreLaunch -ErrorAction Stop } } catch { } }
       'bcdedit' { & bcdedit /deletevalue $c.name 2>$null | Out-Null; Write-Host ("boot setting {0} back to default" -f $c.name) -ForegroundColor DarkGray }
-      'task-created' { try { Unregister-ScheduledTask -TaskName $c.name -Confirm:$false -ErrorAction Stop } catch { } }
+      'task-created' { if ($c.name -ne 'OmniDx keep') { try { Unregister-ScheduledTask -TaskName $c.name -Confirm:$false -ErrorAction Stop } catch { } } }
       'mppref' { $p = @{}; $p[$c.name] = $c.prev; try { Set-MpPreference @p -ErrorAction Stop; Write-Host ("Defender {0} -> {1}" -f $c.name, $c.prev) -ForegroundColor DarkGray } catch { } }
       'capability' { if (-not $capsBack.Contains($c.name)) { [void]$capsBack.Add($c.name) }; $deferred = $true }
       'feature' { if (-not $featsBack.Contains($c.name)) { [void]$featsBack.Add($c.name) }; $deferred = $true }
@@ -1648,14 +1650,19 @@ function New-PowerPlan($m) {
   $prevActive = $null
   $act = (& powercfg /getactivescheme) -join ' '
   if ($act -match '([0-9a-f\-]{36})') { $prevActive = $Matches[1] }
-  # An existing OmniDx plan from a previous run is replaced, not stacked.
-  foreach ($line in (& powercfg /list)) { if ($line -match '([0-9a-f\-]{36}).*\(OmniDx\)') { & powercfg /delete $Matches[1] | Out-Null } }
-  $ultimate = 'e9a42b02-d5df-448d-aa00-03f14749eb61'; $high = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
-  $dup = (& powercfg /duplicatescheme $ultimate) -join ' '
-  if ($dup -notmatch '([0-9a-f\-]{36})') { $dup = (& powercfg /duplicatescheme $high) -join ' ' }
-  if ($dup -notmatch '([0-9a-f\-]{36})') { Warn "Could not create the power plan."; return }
-  $guid = $Matches[1]
-  & powercfg /changename $guid 'OmniDx' 'Built by OmniDx Tune for performance. Undo restores the plan that was active before.' | Out-Null
+  # An OmniDx plan from a previous run is kept and its settings re-applied
+  # (every value below is idempotent), so a second run records no power
+  # change and putting back a later run alone leaves the plan standing.
+  $guid = $null; $created = $null
+  foreach ($line in (& powercfg /list)) { if ($line -match '([0-9a-f\-]{36}).*\(OmniDx\)') { $guid = $Matches[1] } }
+  if (-not $guid) {
+    $ultimate = 'e9a42b02-d5df-448d-aa00-03f14749eb61'; $high = '8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'
+    $dup = (& powercfg /duplicatescheme $ultimate) -join ' '
+    if ($dup -notmatch '([0-9a-f\-]{36})') { $dup = (& powercfg /duplicatescheme $high) -join ' ' }
+    if ($dup -notmatch '([0-9a-f\-]{36})') { Warn "Could not create the power plan."; return }
+    $guid = $Matches[1]; $created = $guid
+    & powercfg /changename $guid 'OmniDx' 'Built by OmniDx Tune for performance. Undo restores the plan that was active before.' | Out-Null
+  }
   $sub = @{ proc = '54533251-82be-4824-96c1-47b60b740d00'; pci = '501a4d13-42af-4429-9fd1-a8218c268e20'; usb = '2a737441-1930-4402-8d77-b2bebba308a3'; disk = '0012ee47-9041-4b5d-9b77-535fba8b1442'; sleep = '238c9fa8-0aad-41ed-83f4-97be242c8f20'; video = '7516b95f-f776-4464-8c53-06167f40cc99'; buttons = '4f971e89-eebd-4455-a8de-9e59040e7347'; gfx = '5fb4938d-1ee8-4b0f-9a3c-5036b0ab995c'; wifi = '19cbb8fa-5279-450e-9fac-8a3d5fedd0c1' }
   $set = { param($s, $v, $val) & powercfg /setacvalueindex $guid $s $v $val | Out-Null }
   # Processor: 100% minimum and maximum, aggressive boost, no core parking, no idle demotion games.
@@ -1684,9 +1691,11 @@ function New-PowerPlan($m) {
     & powercfg /setdcvalueindex $guid $sub.proc 'bc5038f7-23e0-4960-96da-33abaf5935ec' 100 | Out-Null
     & powercfg /setdcvalueindex $guid $sub.sleep '29f6c1db-86da-48c5-9fdb-f2b67b1f44da' 1800 | Out-Null
   }
-  & powercfg /setactive $guid | Out-Null
-  Record @{ type = 'power'; prev = $prevActive; created = $guid }
-  Did "OmniDx plan created and active: CPU 100/100, boost aggressive, no core parking, no throttle states on a desktop, PCIe, USB and Wi-Fi power saving off, no sleep on mains."
+  if ($created -or ($prevActive -ne $guid)) {
+    & powercfg /setactive $guid | Out-Null
+    Record @{ type = 'power'; prev = $prevActive; created = $created }
+    Did "OmniDx plan created and active: CPU 100/100, boost aggressive, no core parking, no throttle states on a desktop, PCIe, USB and Wi-Fi power saving off, no sleep on mains."
+  } else { Did "OmniDx plan already active; its settings checked and re-applied." }
   # Hibernation off frees the hiberfile and ends Fast Startup for good - on a desktop.
   if (-not $m.laptop) {
     # The registry says whether hibernation is on in any language; powercfg's text is the fallback.
@@ -1701,16 +1710,22 @@ function New-PowerPlan($m) {
 # ---------------------------------------------------------------------------
 function Tune-Network($m) {
   Head "Network"
-  $restore = @('netsh int tcp set global autotuninglevel=normal', 'netsh int tcp set global ecncapability=default', 'netsh int tcp set global timestamps=default', 'netsh int tcp set global rss=enabled', 'netsh int tcp set global initialrto=1000', 'netsh int tcp set supplemental internet congestionprovider=default', 'netsh int tcp set global rsc=enabled')
-  Record @{ type = 'netsh'; restore = $restore }
-  & netsh int tcp set global autotuninglevel=normal | Out-Null      # normal is right; "disabled" is the myth that halves download speed
-  & netsh int tcp set global ecncapability=disabled | Out-Null
-  & netsh int tcp set global timestamps=disabled | Out-Null
-  & netsh int tcp set global rss=enabled | Out-Null
-  & netsh int tcp set global initialrto=2000 | Out-Null
-  & netsh int tcp set supplemental internet congestionprovider=ctcp 2>$null | Out-Null
-  & netsh int tcp set global rsc=disabled | Out-Null
-  Did "TCP: autotuning normal, ECN and timestamps off, receive-side scaling on, segment coalescing off, CTCP."
+  # Already set by an earlier run (read back in English; another language re-applies, which is harmless): nothing recorded, so a later run put back alone leaves it.
+  $g = (& netsh int tcp show global 2>$null) -join ' '
+  if ($g -match 'ECN Capability\s*:\s*disabled' -and $g -match 'Timestamps\s*:\s*disabled' -and $g -match 'Coalescing State\s*:\s*disabled' -and $g -match 'Initial RTO\s*:\s*2000' -and $g -match 'Auto-Tuning Level\s*:\s*normal') {
+    Did "TCP already set: autotuning normal, ECN and timestamps off, receive-side scaling on, segment coalescing off."
+  } else {
+    $restore = @('netsh int tcp set global autotuninglevel=normal', 'netsh int tcp set global ecncapability=default', 'netsh int tcp set global timestamps=default', 'netsh int tcp set global rss=enabled', 'netsh int tcp set global initialrto=1000', 'netsh int tcp set supplemental internet congestionprovider=default', 'netsh int tcp set global rsc=enabled')
+    Record @{ type = 'netsh'; restore = $restore }
+    & netsh int tcp set global autotuninglevel=normal | Out-Null      # normal is right; "disabled" is the myth that halves download speed
+    & netsh int tcp set global ecncapability=disabled | Out-Null
+    & netsh int tcp set global timestamps=disabled | Out-Null
+    & netsh int tcp set global rss=enabled | Out-Null
+    & netsh int tcp set global initialrto=2000 | Out-Null
+    & netsh int tcp set supplemental internet congestionprovider=ctcp 2>$null | Out-Null
+    & netsh int tcp set global rsc=disabled | Out-Null
+    Did "TCP: autotuning normal, ECN and timestamps off, receive-side scaling on, segment coalescing off, CTCP."
+  }
   # Nagle off on the adapter you actually use: small packets go now, not after a 200 ms wait.
   $active = Get-NetAdapter -Physical -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq 'Up' } | Sort-Object -Property LinkSpeed -Descending
   $ifBase = 'HKLM:\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces'
@@ -2702,7 +2717,7 @@ function Invoke-Undo {
   $recs = @(Get-ChildItem (Join-Path $script:Root 'undo') -Filter 'changes-20*.json' -ErrorAction SilentlyContinue | Sort-Object Name -Descending)
   if (-not $recs.Count) { Say "Nothing to undo: every recorded run has already been put back." 'Yellow'; return }
   if ($Last) {
-    Say ("Putting back the newest run only ({0}); {1} earlier run(s) and the keep task stay." -f ($recs[0].BaseName -replace '^changes-', ''), ($recs.Count - 1)) 'White'
+    Say ("Only the newest run ({0}) goes back; {1} earlier run(s) and the keep task stay." -f ($recs[0].BaseName -replace '^changes-', ''), ($recs.Count - 1)) 'White'
     & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $u -File $recs[0].FullName
     return
   }
