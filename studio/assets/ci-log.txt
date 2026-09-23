@@ -1,13 +1,13 @@
 ﻿== Reading this PC
   ! The GPU driver dates from Jun 2006. A current driver is worth more than most tweaks.
   ! This looks like a virtual machine. The tune will run, but the numbers mean little here.
-  Processes running now: 147
+  Processes running now: 150
   Target for this PC after the tune and a restart: about 70
 == Your key
-  Before: 147 processes, 1540 threads, 50629 handles, 2876 MB in use, idle CPU 0.6%, DPC 0.13%
+  Before: 150 processes, 1572 threads, 51661 handles, 2945 MB in use, idle CPU 2%, DPC 0%
 == Safety first
   ! Could not make a restore point (This functionality is not supported on this operating system.). The undo script still records everything.
-  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_18-49
+  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_18-48
   + undo.ps1 written to C:\OmniDx\undo
 == Startup apps
   2 things start with Windows:
@@ -106,7 +106,7 @@
   + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 374 MB back.
 == Keeping it cut
   + Task 'OmniDx keep' runs three minutes after sign-in and puts back whatever an update turned on. Log: C:\OmniDx\keep-log.txt. Undo removes it.
-  After:  149 processes, 1617 threads, 52241 handles, 3116 MB in use, idle CPU 5%, DPC 0%
-  Gone:   spoolsv
+  After:  147 processes, 1539 threads, 50974 handles, 3032 MB in use, idle CPU 1.1%, DPC 0%
+  Gone:   spoolsv, WMIADAP
 == Done
-  Processes: 147 -> 149 now, in 93 seconds. Restart for the real number: the services that were told to stop are still unwinding.
+  Processes: 150 -> 147 now, in 91 seconds. Restart for the real number: the services that were told to stop are still unwinding.
