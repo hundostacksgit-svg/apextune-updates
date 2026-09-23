@@ -119,6 +119,9 @@ def page(text: str) -> str:
     reg_total = sum(len(v) for v in reg.values())
     yours = strings(re.search(r"\$yours = @\(([^\n]*)\)", text).group(1))
     yours_items = ''.join(f'<li class="mono">{e(y)}</li>' for y in yours)
+    games_block = text[text.index('$script:Games = @('):text.index('function Get-GameRoots')]
+    games = [(m.group(1), strings(m.group(2))) for m in re.finditer(r"@\{ name = '([^']+)'; exes = @\(([^)]*)\)", games_block)]
+    game_rows = ''.join(f'<tr><td>{e(n)}</td><td class="mono">{e(", ".join(x))}</td></tr>' for n, x in games)
     legacy_rows = ''.join(f'<tr><td class="mono">{e(n)}</td><td>{e(what)}</td><td>capability</td></tr>' for n, what in caps) + \
         ''.join(f'<tr><td class="mono">{e(n)}</td><td>{e(what)}</td><td>optional feature</td></tr>' for n, what in feats)
 
@@ -238,6 +241,16 @@ def page(text: str) -> str:
         a value that did not exist is removed again.</p>
     </div>
     {reg_blocks}
+  </div>
+</section>
+
+<section id="games">
+  <div class="wrap touch">
+    <div class="section-head reveal">
+      <h2>Games it writes a profile for ({len(games)})</h2>
+      <p>By the game's own executable name, so it applies wherever the game is installed: CPU priority high, I/O and memory priority raised, the high-performance GPU, fullscreen optimisations off. The report adds each game's competitive in-game settings. Vanguard, Easy Anti-Cheat, BattlEye, Ricochet and every game file are never touched.</p>
+    </div>
+    <div class="cmp-wrap"><table class="cmp" style="min-width:0"><thead><tr><th>Game</th><th>Executables</th></tr></thead><tbody>{game_rows}</tbody></table></div>
   </div>
 </section>
 
