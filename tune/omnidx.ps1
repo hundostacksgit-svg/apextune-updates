@@ -82,7 +82,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.23.0'
+$script:Version = '1.24.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -2254,7 +2254,7 @@ function Write-Report($m, $before, $after, $changesFile) {
   Set-Content -Path (Join-Path $script:Root ("bios-{0}.txt" -f (($m.board -replace '[^A-Za-z0-9]+', '-').Trim('-')))) -Value (Get-BiosChecklist $m) -Encoding UTF8
   try { Write-HtmlReport $m $before $after $target $found $changesFile } catch { Warn ("The HTML report was not written ({0}); the text one is." -f $_.Exception.Message) }
   try {
-    $summary = @{ version = $script:Version; stamp = $script:Stamp; before = $before; after = $after; target = $target; changes = $script:Changes.Count; warnings = $script:Warnings.Count; seconds = [int]$script:Timer.Elapsed.TotalSeconds; os = $m.os; cpu = $m.cpu; gpu = $m.gpu; ramGb = $m.ramGb; board = $m.board; laptop = $m.laptop; games = $found; snapshots = $script:Snapshots; gone = @(Get-GoneProcesses) }
+    $summary = @{ version = $script:Version; stamp = $script:Stamp; before = $before; after = $after; target = $target; changes = $script:Changes.Count; warnings = $script:Warnings.Count; seconds = [int]$script:Timer.Elapsed.TotalSeconds; os = $m.os; cpu = $m.cpu; gpu = $m.gpu; ramGb = $m.ramGb; board = $m.board; laptop = $m.laptop; games = $found; snapshots = $script:Snapshots; gone = @(Get-GoneProcesses); phases = $script:Phases }
     $summary | ConvertTo-Json -Depth 4 | Set-Content -Path (Join-Path $script:Root ("summary-{0}.json" -f $script:Stamp)) -Encoding UTF8
   } catch { }
   return $rep
@@ -2500,7 +2500,14 @@ function Main {
     if (-not (Ask "Go?")) { Say "  Stopped. Nothing changed."; return }
 
     $skip = @($Skip | ForEach-Object { "$_".ToLower() })
-    $run = { param($name, $block) if ($skip -contains $name) { Head ("{0} (skipped)" -f $name) } else { & $block } }
+    # Each phase is timed; the seconds go into the summary and one line at the end, so a slow phase is a fact, not a feeling.
+    $script:Phases = [ordered]@{}
+    $run = { param($name, $block)
+      if ($skip -contains $name) { Head ("{0} (skipped)" -f $name); return }
+      $psw = [System.Diagnostics.Stopwatch]::StartNew()
+      & $block
+      $script:Phases[$name] = [math]::Round($psw.Elapsed.TotalSeconds, 1)
+    }
     Save-ProcessList 'before'
     $snapBefore = Get-Snapshot
     Say ("  Before: {0}" -f (Format-Snapshot $snapBefore))
@@ -2534,6 +2541,7 @@ function Main {
 
     Head "Done"
     Say ("  Processes: {0} -> {1} now, in {2} seconds. Restart for the real number: the services that were told to stop are still unwinding." -f $before, $after, [int]$script:Timer.Elapsed.TotalSeconds) 'Green'
+    if ($script:Phases.Count) { Say ("  Where the time went: " + (($script:Phases.GetEnumerator() | Sort-Object Value -Descending | Select-Object -First 6 | ForEach-Object { "{0} {1} s" -f $_.Key, $_.Value }) -join ', ')) }
     Say ("  Report, BIOS checklist and per-game settings: {0}" -f $rep) 'White'
     Say "  Undo, any time: powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1" 'White'
     Say "  What is still in place, any time: `$env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex" 'White'
