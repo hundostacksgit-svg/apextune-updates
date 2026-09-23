@@ -13,7 +13,10 @@ pieces fit and the short list of what still needs a human to switch on.
 | The script | `tune/omnidx.ps1` (served at `omnidx.net/tune/omnidx.ps1`) | The tune itself: read the PC, check the key, restore point, the cut, power plan, network, apps, game profiles, report, undo. Public on purpose. |
 | The config | `tune/config.json` | One field that matters: `api`. Empty means no licence server. `version` and `sha256` are stamped by `tools/tune-stamp.py`. |
 | On the buyer's PC | `C:\OmniDx\README.txt`, `undo\undo.ps1`, `undo\keep.ps1`, `undo\changes-*.json`; `keep-log.txt`, `after-restart.txt`, `report-*.html`, `summary-*.json` | Written by the script. README.txt explains the folder; undo walks back every record; keep.ps1 is what the sign-in task runs; the log has one line per sign-in. |
-| Keys in the browser | `studio/assets/tunekey.js`, `studio/activate/` | Makes and checks keys on the page after paying. |
+| Keys in the browser | `studio/assets/tunekey.js`, `studio/activate/` | The key page: shows the keys the server issued for an order (from Square's redirect, or the receipt number plus the checkout email), sends them again, moves a key. `tunekey.js` only reads a key's checksum, for typos. |
+| The owner's page | `studio/admin/`, `POST /v1/tune/admin` | Support from a phone: look up, send again, switch off or on, free a key, totals, a test email, every unsent order. Needs `TUNE_ADMIN_TOKEN`. |
+| Terms | `studio/terms/` | Terms, privacy and refunds in plain words; linked from every footer and the key email. |
+| The checks | `tools/tune-check.mjs`, `tools/worker-test.mjs`, `tools/site-test.mjs`; `.github/workflows/tune-check.yml`, `pages.yml`, `worker.yml` | Static checks, the licence server offline, the site in a browser (every page, both widths, every link), and the whole tune on a Windows machine; only a copy that passed is what the command fetches. |
 | Keys on the server | `server/worker.js` (`/v1/tune/*`), `server/schema.sql` (`tune_keys`, `tune_machines`) | Issues keys against Square orders, binds them to PCs, refuses the rest, moves them on request. |
 | Keys by hand | `tools/make-tune-key.py` | Make or check a key; print the D1 insert. |
 | Support | `docs/TUNE-SUPPORT.md` | The replies, and where every file lives on the buyer's PC. |
