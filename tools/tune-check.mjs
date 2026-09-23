@@ -91,6 +91,26 @@ print(k.checksum('TUNE','ABCDEFGHJKLM'),k.checksum('SQUAD','ABCDEFGHJKLM'))`]).t
   else ok('the key page makes no keys of its own');
 }
 
+/* The copy the Windows check published, when there is one: go.ps1 fetches
+   that copy and checks it against the hash next to it, so the two files must
+   agree, and the script must be the plain ASCII, LF-only text the hash was
+   taken over. */
+function verified() {
+  const vp = path.join(root, 'tune/verified.json');
+  const sp = path.join(root, 'tune/verified.ps1');
+  if (!fs.existsSync(vp) && !fs.existsSync(sp)) { ok('no verified copy published yet: go.ps1 fetches the newest script until the Windows check publishes one'); return; }
+  if (!fs.existsSync(vp) || !fs.existsSync(sp)) { bad('tune/verified.json and tune/verified.ps1 must exist together'); return; }
+  const v = JSON.parse(fs.readFileSync(vp, 'utf8'));
+  const bytes = fs.readFileSync(sp);
+  const digest = crypto.createHash('sha256').update(bytes).digest('hex');
+  if (v.sha256 === digest) ok(`tune/verified.json sha256 matches tune/verified.ps1 (v${v.version}, checked ${v.when}, commit ${v.sha})`);
+  else bad('tune/verified.json sha256 does not match tune/verified.ps1');
+  const text = bytes.toString('latin1');
+  if (/[^\x00-\x7f]/.test(text)) bad('tune/verified.ps1 is not ASCII');
+  if (text.includes('\r')) bad('tune/verified.ps1 has CR line endings; the hash must be over LF text');
+  if (!/function Main/.test(text)) bad('tune/verified.ps1 does not look like the tune');
+}
+
 function config(scriptText) {
   const cfg = JSON.parse(fs.readFileSync(path.join(root, 'tune/config.json'), 'utf8'));
   const v = /\$script:Version = '([^']+)'/.exec(scriptText)?.[1];
@@ -182,5 +202,6 @@ flags(script, go);
 siteAgrees(script);
 await keys();
 config(script);
+verified();
 console.log(failed ? `${failed} problem(s)` : 'all good');
 process.exit(failed ? 1 : 0);

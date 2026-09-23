@@ -291,8 +291,10 @@ record is; `Limit-History` keeps the newest ten of everything else.
   accepted. The screenshot (`studio/assets/app.png`), the run's numbers
   (`studio/assets/ci-run.json`, read by the proof line on the front and
   trust pages) and the run's log (`studio/assets/ci-log.txt`, shown on the
-  run-it page) are committed back to the branch by the check itself; never
-  edit those three by hand. This is the only place the script actually executes before a
+  run-it page) and the verified copy of the script (`tune/verified.ps1`,
+  `tune/verified.json`, the copy `go.ps1` fetches) are committed back to
+  the branch by the check itself, which then dispatches the Pages workflow
+  so they reach the site at once; never edit any of them by hand. This is the only place the script actually executes before a
   buyer runs it; watch it after every script change.
 
 Two guards in the full-tune step exist because of regressions the logs
@@ -346,8 +348,18 @@ is deployed.
   (the transparency page is generated from the script's lists and fails the
   build when stale) and `python3 tools/build-site.py`. `node
   tools/tune-check.mjs` runs every static check. The Windows check parses
-  and runs it on every push. The one command fetches the newest script
-  every run, so a fix reaches everyone on their next run.
+  and runs it on every push, and when the whole check passes it commits the
+  exact script it tested as `tune/verified.ps1` with its hash, version,
+  commit and date in `tune/verified.json`, then dispatches the Pages
+  workflow. `go.ps1` fetches `verified.json` first and, when it carries a
+  hash, `verified.ps1` checked against it; only when there is no record (or
+  it cannot be read) does it fall back to `tune/omnidx.ps1` and the hash in
+  `config.json`. So a push reaches everyone on their next run only once the
+  Windows check has passed on it; a push that fails the check reaches nobody.
+  The static check requires `verified.json` and `verified.ps1` to agree and
+  the verified copy to be ASCII with LF endings (the hash is over those
+  bytes; the check normalises before hashing, so a CRLF checkout on the
+  build machine cannot skew it).
 - **A game profile**: add it to `$script:Games` in the script and its name
   to `TUNE.games` in `studio/assets/config.js`; the check requires the two
   counts to agree, and `data-games` on the pages shows the count.
@@ -362,7 +374,8 @@ is deployed.
   task should re-apply it, a branch in `Get-Drift`. The check refuses a
   recorded type with no undo handler.
 - **Never by hand**: `studio/assets/app.png`, `studio/assets/ci-run.json`,
-  `studio/assets/ci-log.txt`. The Windows check writes them.
+  `studio/assets/ci-log.txt`, `tune/verified.ps1`, `tune/verified.json`.
+  The Windows check writes them.
 - **Key format**: the four checksum lines live in four places —
   `tune/omnidx.ps1`, `studio/assets/tunekey.js`, `server/worker.js`,
   `tools/make-tune-key.py`. Change all four or none.

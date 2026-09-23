@@ -14,9 +14,12 @@ on:
   workflow_dispatch:
 
 permissions:
-  # The Windows job commits the window's screenshot back to the branch, so
-  # the site always shows the app exactly as the current script draws it.
+  # The Windows job commits the window's screenshot, the run's numbers and the
+  # script it tested back to the branch, then asks the Pages workflow to
+  # publish them (a push made with the workflow token starts no workflow by
+  # itself, but a dispatch does).
   contents: write
+  actions: write
 
 jobs:
   static:
@@ -321,19 +324,30 @@ jobs:
           exit 0
 
       # The screenshot goes into the repository as the site's picture of the
-      # app. A push made with the workflow token starts no other workflow, so
-      # the picture reaches the site with the next ordinary push.
-      - name: Commit the screenshot and the run's numbers to the branch
+      # app, and the script this run tested goes in as tune/verified.ps1 with
+      # its hash in tune/verified.json: that is the copy go.ps1 fetches, so a
+      # change that fails this check never reaches anyone. A push made with
+      # the workflow token starts no workflow, so Pages is asked to publish.
+      - name: Commit the screenshot, the run's numbers and the verified script to the branch
         if: github.event_name == 'push'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
-          # These three files belong to the check, and the newest run wins: the
-          # branch is refreshed to its current tip first, then this run's files go on
+          # These files belong to the check, and the newest run wins: the branch
+          # is refreshed to its current tip first, then this run's files go on
           # top, so two overlapping runs never leave a rebase conflict behind.
           $keep = Join-Path $env:TEMP 'omnidx-ci-out'
           New-Item -ItemType Directory -Path $keep -Force | Out-Null
           Copy-Item C:\OmniDx\app.png (Join-Path $keep 'app.png') -Force
           Copy-Item studio\assets\ci-run.json (Join-Path $keep 'ci-run.json') -Force
           Copy-Item studio\assets\ci-log.txt (Join-Path $keep 'ci-log.txt') -Force
+          # The tested script, LF-only and hashed as the bytes the site will serve.
+          $text = [IO.File]::ReadAllText((Resolve-Path 'tune\omnidx.ps1').Path) -replace "`r`n", "`n"
+          [IO.File]::WriteAllText((Join-Path $keep 'verified.ps1'), $text, [Text.Encoding]::ASCII)
+          $digest = (([Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::ASCII.GetBytes($text)) | ForEach-Object { $_.ToString('x2') }) -join '')
+          $s = Get-Content C:\OmniDx\ci-summary.json | ConvertFrom-Json
+          [IO.File]::WriteAllText((Join-Path $keep 'verified.json'), (([ordered]@{ version = $s.version; sha256 = $digest; sha = $env:GITHUB_SHA.Substring(0, 7); when = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd') } | ConvertTo-Json) -replace "`r`n", "`n") + "`n", [Text.Encoding]::ASCII)
+          Write-Host ("verified copy: v{0} sha256 {1}" -f $s.version, $digest.Substring(0, 12))
           git config user.name 'omnidx-ci'
           git config user.email 'ci@omnidx.net'
           foreach ($try in 1..3) {
@@ -342,12 +356,21 @@ jobs:
             Copy-Item (Join-Path $keep 'app.png') studio\assets\app.png -Force
             Copy-Item (Join-Path $keep 'ci-run.json') studio\assets\ci-run.json -Force
             Copy-Item (Join-Path $keep 'ci-log.txt') studio\assets\ci-log.txt -Force
-            git add studio/assets/app.png studio/assets/ci-run.json studio/assets/ci-log.txt
+            Copy-Item (Join-Path $keep 'verified.ps1') tune\verified.ps1 -Force
+            Copy-Item (Join-Path $keep 'verified.json') tune\verified.json -Force
+            git add studio/assets/app.png studio/assets/ci-run.json studio/assets/ci-log.txt tune/verified.ps1 tune/verified.json
             git diff --cached --quiet
             if ($LASTEXITCODE -eq 0) { Write-Host 'nothing changed'; exit 0 }
-            git commit -q -m 'Windows check: the app window, the numbers and the log from running the tune'
+            git commit -q -m 'Windows check: the app window, the numbers, the log, and the script this run verified'
             git push -q origin HEAD:$env:GITHUB_REF_NAME
-            if ($LASTEXITCODE -eq 0) { Write-Host ("pushed on try {0}" -f $try); exit 0 }
+            if ($LASTEXITCODE -eq 0) {
+              Write-Host ("pushed on try {0}" -f $try)
+              try {
+                Invoke-RestMethod -Method Post -Uri "https://api.github.com/repos/$env:GITHUB_REPOSITORY/actions/workflows/pages.yml/dispatches" -Headers @{ Authorization = "Bearer $env:GITHUB_TOKEN"; Accept = 'application/vnd.github+json' } -ContentType 'application/json' -Body (@{ ref = $env:GITHUB_REF_NAME } | ConvertTo-Json) | Out-Null
+                Write-Host 'asked Pages to publish the verified copy'
+              } catch { Write-Host ("Pages was not asked to publish ({0}); the next ordinary push will" -f $_.Exception.Message) }
+              exit 0
+            }
             Write-Host ("push refused on try {0}; the branch moved, trying again" -f $try)
             Start-Sleep -Seconds 5
           }

@@ -756,7 +756,12 @@ function initTune() {
       const when = c.when ? new Date(c.when).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '';
       proof.forEach((el) => {
         el.hidden = false;
-        el.innerHTML = `<b>${esc(c.before)} → ${esc(c.after)}</b> processes before a restart, <b>${esc(c.changes)}</b> changes recorded in ${esc(c.seconds)} s`
+        // The build machine's services stop late, so its count sometimes only
+        // drops after the restart the check never does; say so rather than show a rise.
+        const procs = c.after < c.before
+          ? `<b>${esc(c.before)} → ${esc(c.after)}</b> processes before a restart`
+          : `<b>${esc(c.before)}</b> processes (the count there only drops after the restart the check does not do)`;
+        el.innerHTML = `${procs}, <b>${esc(c.changes)}</b> changes recorded in ${esc(c.seconds)} s`
           + (c.second >= 0 ? `; run again, <b>${esc(c.second)}</b> new` : '')
           + (c.extreme >= 0 ? `; Extreme on top, <b>${esc(c.extreme)}</b> more` : '')
           + `; <b>${esc(c.undone)}</b> put back by undo${c.runs > 1 ? ` across ${esc(c.runs)} runs` : ''}`

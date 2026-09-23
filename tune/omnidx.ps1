@@ -2070,6 +2070,41 @@ function Get-GpuNotes($m) {
   }
 }
 
+<# The launchers and helper apps on this PC, and the one or two settings in
+   each that matter: the things the script cannot set for you because each
+   keeps its own settings store, so they go in the report instead. #>
+function Get-LauncherNotes($m) {
+  $notes = @()
+  $pf = "$env:ProgramFiles"; $pf86 = "${env:ProgramFiles(x86)}"
+  $has = { param($p) return [bool]($p -and (Test-Path $p)) }
+  $steam = $null; foreach ($k in 'HKLM:\SOFTWARE\WOW6432Node\Valve\Steam', 'HKLM:\SOFTWARE\Valve\Steam') { try { $steam = (Get-ItemProperty $k -ErrorAction Stop).InstallPath; if ($steam) { break } } catch { } }
+  if ($steam) {
+    $notes += 'Steam: Settings > Downloads > "Allow background processing of Vulkan shaders" off (it compiles while you play), "Enable shader pre-caching" on. Settings > In Game > the overlay off unless you use it (a browser process inside every game). Settings > Interface > "Run Steam when my computer starts" off (the tune switched the entry off) and "GPU accelerated rendering in web views" on. Per game: Properties > General > Launch options from the PER GAME list.'
+    if (& $has (Join-Path $steam 'steamapps\common\wallpaper_engine')) { $notes += 'Wallpaper Engine: Settings > Performance > "Other application fullscreen: pause" and "Other application focused: pause", playback FPS 30; a live wallpaper is a game running behind your game.' }
+  }
+  if (& $has (Join-Path $env:ProgramData 'Epic\EpicGamesLauncher')) { $notes += 'Epic Games Launcher: Settings > "Run when my computer starts" off, "Enable notifications" off; leave "Throttle downloads" off. The overlay is off by default; keep it so.' }
+  if ((& $has (Join-Path $env:ProgramData 'Battle.net')) -or (& $has (Join-Path $pf86 'Battle.net'))) { $notes += 'Battle.net: Settings > General > "Launch Battle.net when I start my computer" off, "On game launch: exit Battle.net completely" (the client is a browser), "Use browser hardware acceleration" on. Streaming off.' }
+  if (& $has (Join-Path $env:ProgramData 'Riot Games')) { $notes += 'Riot Client: Settings > General > "Open Riot Client on startup" off. Vanguard stays: VALORANT will not run without it, and on Windows 11 it wants Secure Boot and TPM on (see BIOS).' }
+  if ((& $has (Join-Path $pf 'Electronic Arts\EA Desktop')) -or (& $has (Join-Path $pf86 'Origin'))) { $notes += 'EA app: Settings > Application > "Automatically launch EA app on startup" off; "In-game overlay" off.' }
+  if (& $has (Join-Path $pf86 'Ubisoft\Ubisoft Game Launcher')) { $notes += 'Ubisoft Connect: Settings > General > "Launch at startup" off, "Enable in-game overlay" off, "Display notifications" off.' }
+  if ((& $has (Join-Path $pf86 'GOG Galaxy')) -or (& $has (Join-Path $pf 'GOG Galaxy'))) { $notes += 'GOG Galaxy: Settings > General > "Launch at startup" off; Game features > overlay off.' }
+  if (& $has (Join-Path $script:LocalAppData 'Discord')) { $notes += 'Discord: the tune set hardware acceleration on and start-with-Windows off. Also Settings > Voice & Video > "H.264 hardware acceleration" on, "OpenH264" off; Settings > Windows Settings > "Minimise to tray" on, so closing it does not quit it mid-call.' }
+  if ((& $has (Join-Path $pf 'NVIDIA Corporation\NVIDIA app')) -or (& $has (Join-Path $pf 'NVIDIA Corporation\NVIDIA GeForce Experience'))) { $notes += 'NVIDIA app: Settings > "In-game overlay" off unless you record or use Reflex analyzer; "Automatically optimise games" off (it picks quality over frames). Drivers > Game Ready, clean install.' }
+  if ((& $has (Join-Path $pf 'AMD\CNext')) -or (& $has (Join-Path $pf 'AMD\RadeonSoftware'))) { $notes += 'AMD Software: Settings > Preferences > "In-game overlay" off unless you record; "Startup" as needed; Performance > Metrics off outside a benchmark.' }
+  if ($m.xboxUsed) { $notes += 'Xbox app: Settings > General > "Auto-start" off (the entry the tune switched off), "Show notifications" off. Game Pass games install under C:\XboxGames and are already in the CPU-priority list where the game is listed.' }
+  if (& $has (Join-Path $script:LocalAppData 'Overwolf')) { $notes += 'Overwolf (and every app built on it: CurseForge, Outplayed, Tracker.gg, Lethal Company mods): the background app most often behind a stutter that "came from nowhere". Close it before a match, or uninstall it and use the browser versions.' }
+  $suites = @()
+  if (& $has (Join-Path $pf 'Corsair\CORSAIR iCUE 5 Software')) { $suites += 'iCUE' } elseif (& $has (Join-Path $pf86 'Corsair\CORSAIR iCUE 4 Software')) { $suites += 'iCUE' }
+  if (& $has (Join-Path $pf86 'Razer\Synapse3')) { $suites += 'Razer Synapse' } elseif (& $has (Join-Path $pf 'Razer\Synapse')) { $suites += 'Razer Synapse' }
+  if (& $has (Join-Path $pf 'LGHUB')) { $suites += 'Logitech G HUB' }
+  if (& $has (Join-Path $pf 'SteelSeries\GG')) { $suites += 'SteelSeries GG' }
+  if ($m.oem -match 'Armoury Crate') { $suites += 'Armoury Crate' }
+  if ($m.oem -match 'MSI Center|Dragon Center') { $suites += 'MSI Center' }
+  if ($suites.Count) { $notes += ("{0}: once your lighting and macros are saved to the device (onboard memory), set it not to start with Windows; each of these runs four to twelve processes and polls the hardware all day. Open it when you want to change something." -f ($suites -join ', ')) }
+  if (-not $notes.Count) { $notes += 'None of the usual launchers, overlays or peripheral suites found. The same notes apply the day you install one; run the command again and they appear here.' }
+  return $notes
+}
+
 # ---------------------------------------------------------------------------
 # the app: a window around the same script
 # ---------------------------------------------------------------------------
@@ -2474,6 +2509,7 @@ function Write-Report($m, $before, $after, $changesFile) {
     "WHAT WAS DONE", @($script:Log | Where-Object { $_ -match '^(==|  \+)' }), "",
     "WARNINGS ($($script:Warnings.Count))", @($(if ($script:Warnings.Count) { $script:Warnings | ForEach-Object { "  ! $_" } } else { "  none" })), "",
     "GPU CONTROL PANEL", @(Get-GpuNotes $m | ForEach-Object { "  - $_" }), "",
+    "LAUNCHERS, OVERLAYS AND HELPER APPS", @(Get-LauncherNotes $m | ForEach-Object { "  - $_" }), "",
     "PER GAME", @($gameLines), "",
     "BIOS", @(Get-BiosChecklist $m | ForEach-Object { "  $_" }), "",
     "UNDO", "  Administrator PowerShell:  powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1", "  Or Windows Recovery > System Restore > the point named 'OmniDx Tune $($script:Stamp)'.", "  Changes recorded in: $changesFile", "",
@@ -2547,6 +2583,7 @@ $procTables
 <h2>Warnings ($($script:Warnings.Count))</h2><div class="warn">$(& $list $script:Warnings)</div>
 <h2>BIOS checklist for $(& $h $m.board)</h2><div class="bios"><ul>$((Get-BiosChecklist $m | Select-Object -Skip 3 | Where-Object { $_ } | ForEach-Object { '<li>' + (& $h $_) + '</li>' }) -join '')</ul></div>
 <h2>GPU control panel</h2>$(& $list (Get-GpuNotes $m))
+<h2>Launchers, overlays and helper apps</h2>$(& $list (Get-LauncherNotes $m))
 <h2>Per game</h2>$games
 <h2>What was done</h2>$done
 <h2>Undo</h2><p>Administrator PowerShell: <code>powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1</code><br>Or Windows Recovery &rsaquo; System Restore &rsaquo; the point named <code>OmniDx Tune $(& $h $script:Stamp)</code>.<br>Changes recorded in <code>$(& $h $changesFile)</code>.</p>
@@ -2783,7 +2820,7 @@ function Main {
     Head "Done"
     Say ("  Processes: {0} -> {1} now, in {2} seconds. Restart for the real number: the services that were told to stop are still unwinding." -f $before, $after, [int]$script:Timer.Elapsed.TotalSeconds) 'Green'
     if ($script:Phases.Count) { Say ("  Where the time went: " + (($script:Phases.GetEnumerator() | Sort-Object Value -Descending | Select-Object -First 6 | ForEach-Object { "{0} {1} s" -f $_.Key, $_.Value }) -join ', ')) }
-    Say ("  Report, BIOS checklist and per-game settings: {0}" -f $rep) 'White'
+    Say ("  Report, BIOS checklist, launcher notes and per-game settings: {0}" -f $rep) 'White'
     Say "  Undo, any time: powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1" 'White'
     Say "  What is still in place, any time: `$env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex" 'White'
     Say "  Next: restart, then do the BIOS checklist - the memory profile alone is worth more than half of this." 'White'

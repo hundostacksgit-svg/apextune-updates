@@ -163,13 +163,14 @@
             <li>Undo walks back both runs, leaves no record behind, and a third undo says there is nothing left</li>
             <li>A bad key is refused; keys from the key tool are accepted and a corrupted one is not</li>
             <li>A run that records noticeably fewer changes than the last published one fails, so a change that quietly stops doing something cannot ship</li>
+            <li>Only a script that passed all of the above is what your command fetches: the check publishes the exact copy it tested next to its hash (<span class="mono tiny">tune/verified.json</span>), and the one command asks for that copy, not the newest push</li>
           </ul>
         </details>
       </div>
       <div class="card reveal d2">
         <div class="card-icon">🔎</div>
         <h3>Watch what it sends</h3>
-        <p>Open Resource Monitor's network tab while it runs. You will see two requests to omnidx.net (the config, which carries the script's hash, and the script, which is refused if it does not match) and, if a licence server is configured, one to it with your key and the PC fingerprint. That is all. The report stays in <span class="mono tiny">C:\OmniDx</span>. And <a href="../what-it-touches/">every service, task, app and value it touches is listed</a>, generated from the script itself.</p>
+        <p>Open Resource Monitor's network tab while it runs. You will see three requests to omnidx.net (the config, the record the Windows check wrote with the hash of the copy it tested, and that copy of the script, refused if it does not match) and, if a licence server is configured, one to it with your key and the PC fingerprint. That is all. The report stays in <span class="mono tiny">C:\OmniDx</span>. And <a href="../what-it-touches/">every service, task, app and value it touches is listed</a>, generated from the script itself.</p>
       </div>
     </div>
   </div>

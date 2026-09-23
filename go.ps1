@@ -64,19 +64,32 @@ $bust = [DateTime]::UtcNow.Ticks
 $api = ''; $want = ''
 try { $cfg = $web.DownloadString("$base/tune/config.json?v=$bust") | ConvertFrom-Json; if ($cfg.api) { $api = [string]$cfg.api }; if ($cfg.sha256) { $want = ([string]$cfg.sha256).ToLower() } } catch { }
 
-# Fetched fresh every run, past any cache, so a fix reaches you on your next
-# run - and checked against the hash published next to it, so a truncated
-# download, a stale cache or a tampered copy never runs.
+# The copy that passed the Windows check is the one that runs: the check runs
+# the whole tune, the keep task and undo on a fresh Windows machine, then
+# publishes the exact script it tested next to its hash (tune/verified.json).
+# A change that fails the check never reaches anyone. Until the check has
+# published a copy, or if its record cannot be read, the newest script and the
+# hash next to it are used instead. Either way the download is checked against
+# the hash, so a truncated download, a stale cache or a tampered copy never runs.
+$sources = @()
+try {
+  $ver = $web.DownloadString("$base/tune/verified.json?v=$bust") | ConvertFrom-Json
+  if ($ver.sha256 -and ([string]$ver.sha256) -match '^[0-9A-Fa-f]{64}$') { $sources += @{ file = 'tune/verified.ps1'; want = ([string]$ver.sha256).ToLower(); from = ("the copy the Windows check tested (v{0}, checked {1})" -f $ver.version, $ver.when) } }
+} catch { }
+$sources += @{ file = 'tune/omnidx.ps1'; want = $want; from = 'the hash published at omnidx.net/tune/config.json' }
 $sha = [System.Security.Cryptography.SHA256]::Create()
 $script = ''
-foreach ($try in 1..2) {
-  try { $script = $web.DownloadString("$base/tune/omnidx.ps1?v=$bust-$try") } catch { $script = '' }
-  if (-not $script -or $script.Length -lt 1000 -or $script -notmatch 'function Main') { continue }
-  if (-not $want) { break }
-  $got = (($sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($script)) | ForEach-Object { $_.ToString('x2') }) -join '')
-  if ($got -eq $want) { Write-Host ("  Script verified: sha256 {0}... matches the hash published at omnidx.net/tune/config.json" -f $got.Substring(0, 12)) -ForegroundColor DarkGray; break }
-  Write-Host ("  The script did not match its published hash (attempt {0}); fetching again." -f $try) -ForegroundColor Yellow
-  $script = ''
+foreach ($src in $sources) {
+  foreach ($try in 1..2) {
+    try { $script = $web.DownloadString("$base/$($src.file)?v=$bust-$try") } catch { $script = '' }
+    if (-not $script -or $script.Length -lt 1000 -or $script -notmatch 'function Main') { continue }
+    if (-not $src.want) { break }
+    $got = (($sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($script)) | ForEach-Object { $_.ToString('x2') }) -join '')
+    if ($got -eq $src.want) { Write-Host ("  Script verified: sha256 {0}... matches {1}" -f $got.Substring(0, 12), $src.from) -ForegroundColor DarkGray; break }
+    Write-Host ("  {0} did not match its published hash (attempt {1}); fetching again." -f $src.file, $try) -ForegroundColor Yellow
+    $script = ''
+  }
+  if ($script) { break }
 }
 if (-not $script) { throw 'Could not fetch a good copy of the tune from omnidx.net. Check your connection and try again in a minute.' }
 $block = [scriptblock]::Create([string]$script)
