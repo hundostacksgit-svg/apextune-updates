@@ -82,7 +82,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.24.0'
+$script:Version = '1.25.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -265,7 +265,10 @@ function Remove-Reg([string]$path, [string]$name) {
 function Set-ServiceStart([string]$name, [string]$start, [string]$why = '') {
   $svc = Get-Service -Name $name -ErrorAction SilentlyContinue
   if (-not $svc) { return }
-  $prev = (Get-CimInstance Win32_Service -Filter "Name='$name'" -ErrorAction SilentlyContinue).StartMode
+  # One WMI read for every service's start mode (Cut-Services fills it); a query per service cost fourteen seconds.
+  $prev = $null
+  if ($script:SvcModes -and $script:SvcModes.ContainsKey($name)) { $prev = $script:SvcModes[$name] }
+  else { $prev = (Get-CimInstance Win32_Service -Filter "Name='$name'" -ErrorAction SilentlyContinue).StartMode }
   if (-not $prev) { $prev = $svc.StartType.ToString() }
   $want = switch ($start) { 'Disabled' { 'Disabled' } 'Manual' { 'Manual' } default { 'Automatic' } }
   if ($prev -eq 'Auto') { $prev = 'Automatic' }
@@ -1136,14 +1139,18 @@ function Cut-Services($m) {
   Head "Services"
   $keep = Get-KeepList $m
   Keep 'Defender, the firewall, Windows Update, audio, networking' 'always'
+  # The service list and every start mode, read once.
+  $all = @(Get-Service -ErrorAction SilentlyContinue)
+  $byName = @{}; foreach ($svc in $all) { $byName[$svc.Name] = $svc }
+  $script:SvcModes = @{}; foreach ($w in @(Get-CimInstance Win32_Service -ErrorAction SilentlyContinue)) { $script:SvcModes[$w.Name] = $w.StartMode }
   foreach ($pair in $script:ServiceOff) {
     $name = $pair[0]; $why = $pair[1]
-    if ($keep.ContainsKey($name)) { if (Get-Service -Name $name -ErrorAction SilentlyContinue) { Keep $name $keep[$name] }; continue }
+    if ($keep.ContainsKey($name)) { if ($byName.ContainsKey($name)) { Keep $name $keep[$name] }; continue }
     $mode = if ($script:ManualOnly -contains $name) { 'Manual' } else { 'Disabled' }
     # Per-user services carry a suffix (CDPUserSvc_1a2b3c). The template is
     # the one whose start type can be set; the instances are only stopped.
-    if (Get-Service -Name $name -ErrorAction SilentlyContinue) { Set-ServiceStart $name $mode $why }
-    foreach ($inst in @(Get-Service -ErrorAction SilentlyContinue | Where-Object { $_.Name -like ($name + '_*') -and $_.Status -eq 'Running' })) {
+    if ($byName.ContainsKey($name)) { Set-ServiceStart $name $mode $why }
+    foreach ($inst in @($all | Where-Object { $_.Name -like ($name + '_*') -and $_.Status -eq 'Running' })) {
       try { Stop-Service -Name $inst.Name -Force -ErrorAction Stop -WarningAction SilentlyContinue } catch { }
     }
   }
@@ -1247,8 +1254,11 @@ function Cut-Apps($m) {
   $junk = @($script:JunkApps)
   if ($CutXbox) { $junk += 'Microsoft.XboxApp', 'Microsoft.GamingApp', 'Microsoft.Xbox.TCUI', 'Microsoft.XboxGamingOverlay', 'Microsoft.XboxIdentityProvider', 'Microsoft.XboxSpeechToTextOverlay', 'Microsoft.XboxGameOverlay' }
   $n = 0
+  # Every package and every provisioned package once; asking per pattern cost twenty-five seconds.
+  $allPkgs = @(Get-AppxPackage -AllUsers -ErrorAction SilentlyContinue)
+  $allProv = @(Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue)
   foreach ($pat in $junk) {
-    foreach ($pkg in Get-AppxPackage -Name $pat -AllUsers -ErrorAction SilentlyContinue) {
+    foreach ($pkg in @($allPkgs | Where-Object { $_.Name -like $pat })) {
       if ($pkg.NonRemovable -or $pkg.IsFramework) { continue }
       try {
         Remove-AppxPackage -Package $pkg.PackageFullName -AllUsers -ErrorAction Stop
@@ -1257,7 +1267,7 @@ function Cut-Apps($m) {
         try { Remove-AppxPackage -Package $pkg.PackageFullName -ErrorAction Stop; Record @{ type = 'appx'; name = $pkg.Name }; $n++; Did $pkg.Name } catch { }
       }
     }
-    foreach ($prov in Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -like $pat }) {
+    foreach ($prov in @($allProv | Where-Object { $_.DisplayName -like $pat })) {
       try { Remove-AppxProvisionedPackage -Online -PackageName $prov.PackageName -ErrorAction Stop | Out-Null } catch { }
     }
   }
@@ -1711,8 +1721,14 @@ function Get-GameRoots {
   foreach ($mf in Get-ChildItem (Join-Path $env:ProgramData 'Epic\EpicGamesLauncher\Data\Manifests') -Filter '*.item' -ErrorAction SilentlyContinue) {
     try { $loc = (Get-Content $mf.FullName -Raw | ConvertFrom-Json).InstallLocation; if ($loc -and (Test-Path $loc) -and -not $roots.Contains($loc)) { [void]$roots.Add($loc) } } catch { }
   }
-  foreach ($r in 'C:\Riot Games', 'D:\Riot Games', 'C:\XboxGames', 'D:\XboxGames', 'C:\Games', 'D:\Games', "$env:ProgramFiles", "${env:ProgramFiles(x86)}", (Join-Path $script:LocalAppData 'Programs'), (Join-Path $script:LocalAppData 'Roblox\Versions')) {
+  foreach ($r in 'C:\Riot Games', 'D:\Riot Games', 'C:\XboxGames', 'D:\XboxGames', 'C:\Games', 'D:\Games', (Join-Path $script:LocalAppData 'Programs'), (Join-Path $script:LocalAppData 'Roblox\Versions')) {
     if ($r -and (Test-Path $r) -and -not $roots.Contains($r)) { [void]$roots.Add($r) }
+  }
+  # Program Files, folder by folder, leaving out the vendors no game ships under: walking all of it took twenty seconds.
+  $noGame = '^(Microsoft.*|Windows.*|Common Files|Internet Explorer|Git|dotnet|NVIDIA.*|Intel.*|AMD.*|Google|Mozilla.*|Adobe|Java|Python.*|nodejs|Docker.*|WindowsApps|ModifiableWindowsApps|PowerShell|7-Zip|VideoLAN|Realtek.*|Logitech.*|Corsair|Razer.*|Oracle|OpenJDK|Eclipse.*|Android|JetBrains|MSBuild|Reference Assemblies|WindowsPowerShell|MySQL|PostgreSQL|Amazon.*|Azure.*|Notepad\+\+|CMake|LLVM|Go|Rust.*|Mercurial|Subversion|OpenSSL|Uninstall Information|Wolfram.*|Zoom|Slack|Dropbox|OneDrive|Waves.*|Dolby|Creative|Sonic.*|Hyper-V|Application Verifier|Debugging Tools.*|IIS.*|SQL Server.*|Visual Studio.*|Dell|HP|Lenovo|ASUS|MSI|Gigabyte)$'
+  foreach ($pf in @("$env:ProgramFiles", "${env:ProgramFiles(x86)}")) {
+    if (-not $pf -or -not (Test-Path $pf)) { continue }
+    foreach ($d in Get-ChildItem $pf -Directory -ErrorAction SilentlyContinue) { if ($d.Name -notmatch $noGame -and -not $roots.Contains($d.FullName)) { [void]$roots.Add($d.FullName) } }
   }
   return @($roots)
 }
@@ -2352,7 +2368,8 @@ function Write-Preview($m, $before) {
   $idx = Get-TaskIndex
   $tasks = @(); foreach ($t in $script:TaskList) { $task = $idx[($t[0] + $t[1]).ToLower()]; if ($task -and $task.State -ne 'Disabled') { $tasks += $t[1] } }
   & $lap 'tasks'
-  $apps = @(); foreach ($pat in $script:JunkApps) { foreach ($pkg in Get-AppxPackage -Name $pat -AllUsers -ErrorAction SilentlyContinue) { if (-not ($pkg.NonRemovable -or $pkg.IsFramework)) { $apps += $pkg.Name } } }
+  $allPkgs = @(Get-AppxPackage -AllUsers -ErrorAction SilentlyContinue)
+  $apps = @(); foreach ($pat in $script:JunkApps) { foreach ($pkg in @($allPkgs | Where-Object { $_.Name -like $pat })) { if (-not ($pkg.NonRemovable -or $pkg.IsFramework)) { $apps += $pkg.Name } } }
   $apps = @($apps | Sort-Object -Unique)
   & $lap 'apps'
   $plan = Get-DebloatPlan $m
