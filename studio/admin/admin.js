@@ -43,6 +43,7 @@ function render(d, note) {
   out.innerHTML = `
     ${note ? `<div class="note ok" style="margin-bottom:12px">${esc(note)}</div>` : ''}
     <div class="own-row"><span>Order</span><b class="mono" style="font-size:12px">${esc(d.order)}</b></div>
+    <div class="own-row"><span>Receipt number</span><b>${d.receipt ? '#' + esc(d.receipt) : 'none on file'}</b></div>
     <div class="own-row"><span>Email on file</span><b>${esc(d.email || 'none')}</b></div>
     <div class="own-row"><span>Paid</span><b>${d.paidCents ? `$${(d.paidCents / 100).toFixed(2)}` : 'unknown'}</b></div>
     <div class="own-row"><span>Bought</span><b>${esc(when(d.createdAt))}</b></div>

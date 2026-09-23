@@ -119,6 +119,7 @@ const refund = async (refund) => {
   return call('/v1/webhooks/square', raw, { 'x-square-hmacsha256-signature': await sign(raw) });
 };
 const keyRe = /^TUNE-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/;
+const admin = (body) => call('/v1/tune/admin', { token: 'owner-token-test', ...body });
 
 console.log('The licence server, offline');
 
@@ -153,6 +154,9 @@ expect(r.status === 200 && (r.data.keys || []).length === 3, 'the key page, give
 const dualKeys = r.data.keys;
 r = await webhook({ id: 'PAY-DUAL-1', order_id: 'ORDER-DUAL-1', status: 'COMPLETED', amount_money: { amount: 3999 }, buyer_email_address: 'dual@example.test', receipt_number: 'zq7K' });
 expect(r.status === 200 && r.data.keys === 3 && db.tune_keys.filter((k) => k.order_ref.startsWith('ORDER-DUAL-1')).length === 3, 'the webhook for the same purchase mints nothing more');
+expect(mails.some((m) => m.to[0] === 'dual@example.test' && /Receipt number: #ZQ7K/.test(m.text)), 'the key email carries the receipt number');
+r = await admin({ action: 'lookup', ref: 'ORDER-DUAL-1' });
+expect(r.status === 200 && r.data.receipt === 'ZQ7K', 'the owner page shows the receipt number on file');
 r = await call('/v1/tune/issue', { product: 'squad', order: 'ORDER-DUAL-1' });
 expect(r.status === 200 && JSON.stringify(r.data.keys) === JSON.stringify(dualKeys), 'the order id and the payment id land on the same keys');
 r = await call('/v1/tune/issue', { product: 'squad', order: '#zq7k' });
@@ -227,7 +231,6 @@ r = await refund({ id: 'rf3', order_id: 'ORDER-TUNE-1', status: 'PENDING', amoun
 expect(r.status === 200 && r.data.ignored, 'a refund still pending changes nothing yet');
 
 /* 9. The owner, from a phone. */
-const admin = (body) => call('/v1/tune/admin', { token: 'owner-token-test', ...body });
 r = await call('/v1/tune/admin', { token: 'nope', action: 'lookup', ref: 'ORDER-TUNE-1' });
 expect(r.status === 403, 'the owner page needs the right token');
 r = await admin({ action: 'lookup', ref: 'ORDER-SQUAD-1' });

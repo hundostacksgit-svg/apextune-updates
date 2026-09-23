@@ -866,7 +866,7 @@ const routes = {
         const { count } = await env.DB.prepare('SELECT COUNT(*) AS count FROM tune_machines WHERE key = ?').bind(r.key).first();
         keys.push({ key: prettyTuneKey(r.key), product: r.product, pcs: count, revoked: Boolean(r.revoked_at), movedAt: r.moved_at || null });
       }
-      return { order, email: rows[0].email || null, paidCents: rows[0].amount_cents || null, createdAt: rows[0].created_at, emailedAt: rows[0].emailed_at || null, keys };
+      return { order, receipt: rows[0].receipt || null, email: rows[0].email || null, paidCents: rows[0].amount_cents || null, createdAt: rows[0].created_at, emailedAt: rows[0].emailed_at || null, keys };
     };
     if (action === 'lookup') return json({ ok: true, ...(await describe()) }, { env, request });
     if (action === 'resend') {
