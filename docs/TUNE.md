@@ -227,7 +227,10 @@ or the first of the order; does not spend the buyer's own monthly move),
 shut when no token is set (503); the offline test covers each action.
 
 ### Refunds
-Refund in Square as normal; that is the whole job. Square sends
+Refund in Square as normal; that is the whole job. On the buyer's PC,
+`-Status` and `-CheckKey` ask the server (`Get-ServerView`, `/v1/tune/check`)
+and say "switched off" in so many words, so a refunded key is never a
+mystery. Square sends
 `refund.updated` to the webhook, and a completed refund of the full amount
 sets `revoked_at` on every key of that order and emails the buyer that the
 keys have stopped. The next run on any of those PCs is refused; a PC already

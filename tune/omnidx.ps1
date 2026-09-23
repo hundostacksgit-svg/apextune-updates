@@ -188,6 +188,26 @@ function Get-Hwid {
   return (($bytes | ForEach-Object { $_.ToString('x2') }) -join '').Substring(0, 16)
 }
 
+<# The server's view of a key, for status and the key check: issued or not,
+   switched off by a refund or not, and on how many PCs. The server comes
+   from -Api or from config.json; with neither, nothing is asked. #>
+function Get-ServerView([string]$key) {
+  $api = $Api
+  if (-not $api) {
+    try {
+      $web = New-Object System.Net.WebClient; $web.Headers['User-Agent'] = 'OmniDxTune/script'
+      $cfg = $web.DownloadString('https://omnidx.net/tune/config.json?v=' + [DateTime]::UtcNow.Ticks) | ConvertFrom-Json
+      if ($cfg.api) { $api = [string]$cfg.api }
+    } catch { }
+  }
+  if (-not $api) { return $null }
+  try {
+    $r = Invoke-RestMethod -Method Post -Uri ("{0}/v1/tune/check" -f $api.TrimEnd('/')) -ContentType 'application/json' -Body (@{ key = $key } | ConvertTo-Json -Compress) -TimeoutSec 15
+    if ($r.ok) { return ("issued; on {0} of {1} PC{2}" -f $r.used, $r.seats, $(if ($r.seats -ne 1) { 's' } else { '' })) }
+    return [string]$r.reason
+  } catch { return $null }
+}
+
 function Test-Licence($parsed, [string]$hwid, $machine) {
   $regPath = 'HKLM:\SOFTWARE\OmniDx\Tune'
   if (-not (Test-Path $regPath)) { New-Item -Path $regPath -Force | Out-Null }
@@ -876,7 +896,11 @@ function Show-Status {
   $files = @(Get-ChildItem $dir -Filter 'changes-*.json' -ErrorAction SilentlyContinue | Where-Object { $_.Name -ne 'changes-latest.json' } | Sort-Object Name)
   $undone = @(Get-ChildItem (Join-Path $dir 'done') -Filter 'changes-*.json' -ErrorAction SilentlyContinue)
   $lic = Get-ItemProperty 'HKLM:\SOFTWARE\OmniDx\Tune' -ErrorAction SilentlyContinue
-  if ($lic -and $lic.Key) { Say ("  Key: {0}-****-****-{1}, bound to this PC {2}" -f $lic.Key.Split('-')[0], $lic.Key.Split('-')[-1], "$($lic.Bound)".Substring(0, [math]::Min(10, "$($lic.Bound)".Length))) } else { Say "  Key: none bound on this PC yet." }
+  if ($lic -and $lic.Key) {
+    Say ("  Key: {0}-****-****-{1}, bound to this PC {2}" -f $lic.Key.Split('-')[0], $lic.Key.Split('-')[-1], "$($lic.Bound)".Substring(0, [math]::Min(10, "$($lic.Bound)".Length)))
+    $view = Get-ServerView $lic.Key
+    if ($view) { Say ("  The licence server says: {0}." -f $view) $(if ($view -match 'issued;') { 'Gray' } else { 'Yellow' }) }
+  } else { Say "  Key: none bound on this PC yet." }
   if (-not $files.Count) {
     Say ("  Runs in place: none{0}." -f $(if ($undone.Count) { " ({0} undone)" -f $undone.Count } else { '' }))
     if (Get-ScheduledTask -TaskName 'OmniDx keep' -ErrorAction SilentlyContinue) { Say "  Keep task: still registered with nothing to keep; undo removes it." 'Yellow' } else { Say "  Keep task: none." }
@@ -2762,7 +2786,11 @@ function Main {
   if ($CheckKey) {
     if (-not $Key) { $Key = Read-Host "  Paste the key to check" }
     $parsed = Read-Key $Key
-    if ($parsed) { Say ("  Valid: {0} ({1} PC{2}). The server decides whether it was issued and where it is bound." -f $parsed.key, $parsed.seats, $(if ($parsed.seats -ne 1) { 's' } else { '' })) 'Green' }
+    if ($parsed) {
+      $view = Get-ServerView $parsed.key
+      if ($view) { Say ("  Valid: {0}. The server says: {1}." -f $parsed.key, $view) 'Green' }
+      else { Say ("  Valid: {0} ({1} PC{2}). The server decides whether it was issued and where it is bound." -f $parsed.key, $parsed.seats, $(if ($parsed.seats -ne 1) { 's' } else { '' })) 'Green' }
+    }
     else { Say "  That is not an OmniDx key. It looks like TUNE-XXXX-XXXX-XXXX-XXXX; check it for typos." 'Red' }
     return
   }
