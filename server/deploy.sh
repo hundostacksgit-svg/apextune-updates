@@ -61,6 +61,14 @@ fi
 
 say "Creating any missing tables…"
 npx wrangler d1 execute omnidx-studio --file=schema.sql --remote --yes
+# Columns added after the first deploy, one at a time; each may already be there.
+for stmt in \
+  "ALTER TABLE tune_keys ADD COLUMN moved_at INTEGER" \
+  "ALTER TABLE tune_keys ADD COLUMN emailed_at INTEGER" \
+  "ALTER TABLE tune_machines ADD COLUMN version TEXT" \
+  "ALTER TABLE tune_machines ADD COLUMN os TEXT"; do
+  npx wrangler d1 execute omnidx-studio --remote --yes --command "$stmt" >/dev/null 2>&1 && echo "added: $stmt" || echo "already there: $stmt"
+done
 
 # Secrets are only asked for once. wrangler keeps them; this never stores them.
 for secret in ANTHROPIC_API_KEY STRIPE_WEBHOOK_SECRET RESEND_API_KEY; do

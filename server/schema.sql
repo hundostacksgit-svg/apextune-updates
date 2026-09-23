@@ -152,7 +152,8 @@ CREATE TABLE IF NOT EXISTS tune_keys (
   verified      INTEGER NOT NULL DEFAULT 0, -- 1 when the order was confirmed with Square's API
   created_at    INTEGER NOT NULL,
   revoked_at    INTEGER,                 -- set on refund; the row is never deleted
-  moved_at      INTEGER                  -- last self-service move to a new PC
+  moved_at      INTEGER,                 -- last self-service move to a new PC
+  emailed_at    INTEGER                  -- when the keys went to the checkout email
 );
 CREATE INDEX IF NOT EXISTS tune_keys_email ON tune_keys(email);
 
@@ -169,8 +170,10 @@ CREATE TABLE IF NOT EXISTS tune_machines (
   last_seen   INTEGER NOT NULL,
   PRIMARY KEY (key, hwid)
 );
--- Columns added after the first deploy. Each fails harmlessly when it exists.
-ALTER TABLE tune_keys ADD COLUMN moved_at INTEGER;
-ALTER TABLE tune_keys ADD COLUMN emailed_at INTEGER;
-ALTER TABLE tune_machines ADD COLUMN version TEXT;
-ALTER TABLE tune_machines ADD COLUMN os TEXT;
+-- Columns added after the first deploy are in the CREATE TABLE statements
+-- above (a fresh database gets them at once) and are added to an older
+-- database by the deploy workflow one ALTER at a time, each allowed to fail
+-- with "duplicate column". They are not in this file because D1 runs a file
+-- as one batch, and one failing ALTER would fail the whole batch, tables
+-- included. The list lives in .github/workflows/worker.yml and server/deploy.sh:
+--   tune_keys.moved_at, tune_keys.emailed_at, tune_machines.version, tune_machines.os

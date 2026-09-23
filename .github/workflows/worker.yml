@@ -97,25 +97,45 @@ jobs:
             echo "$url did not answer — redeploying."; echo "ok=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # The schema file is one batch (every CREATE is IF NOT EXISTS), then the
+      # columns that arrived after the first deploy go on one at a time, each
+      # allowed to fail with "duplicate column" on a database that has them.
       - name: Create any missing tables
         if: steps.ready.outputs.ready == 'true' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
-        run: npx wrangler d1 execute omnidx-studio --file=schema.sql --remote --yes
+        run: |
+          npx wrangler d1 execute omnidx-studio --file=schema.sql --remote --yes
+          for stmt in \
+            "ALTER TABLE tune_keys ADD COLUMN moved_at INTEGER" \
+            "ALTER TABLE tune_keys ADD COLUMN emailed_at INTEGER" \
+            "ALTER TABLE tune_machines ADD COLUMN version TEXT" \
+            "ALTER TABLE tune_machines ADD COLUMN os TEXT"; do
+            npx wrangler d1 execute omnidx-studio --remote --yes --command "$stmt" >/dev/null 2>&1 && echo "added: $stmt" || echo "already there: $stmt"
+          done
 
       - name: Deploy
         if: steps.ready.outputs.ready == 'true' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
-        run: npx wrangler deploy
+        run: npx wrangler deploy 2>&1 | tee deploy.log
 
+      # The address, three ways: the deploy output prints it; the account's
+      # workers.dev subdomain names it; the WORKER_URL variable overrides both.
       - name: Find the Worker's URL
         id: where
         if: steps.ready.outputs.ready == 'true' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
         run: |
           url="$WORKER_URL"
+          if [ -z "$url" ] && [ -f deploy.log ]; then
+            url="$(grep -o 'https://[A-Za-z0-9.-]*\.workers\.dev' deploy.log | head -1 || true)"
+          fi
           if [ -z "$url" ]; then
-            url="$(npx wrangler deployments list 2>/dev/null | grep -o 'https://[^ ]*workers.dev' | head -1 || true)"
+            sub="$(curl -sS --max-time 20 -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" \
+              | python3 -c 'import sys,json; print(json.load(sys.stdin).get("result",{}).get("subdomain",""))' 2>/dev/null || true)"
+            name="$(grep -m1 '^name *= *"' wrangler.toml | sed 's/.*"\(.*\)".*/\1/')"
+            if [ -n "$sub" ] && [ -n "$name" ]; then url="https://$name.$sub.workers.dev"; fi
           fi
           url="${url%/}"
           echo "url=$url" >> "$GITHUB_OUTPUT"
-          if [ -n "$url" ]; then echo "The Worker answers at $url"; else echo "Could not find the Worker's URL; set the WORKER_URL repository variable."; fi
+          if [ -n "$url" ]; then echo "The Worker answers at $url"; else echo "Could not find the Worker's URL; set the WORKER_URL repository variable and run this again."; fi
 
       # The Worker's own secrets, from repository secrets of the same name.
       # Each is pushed only when set; an unset one is left as it is on the
