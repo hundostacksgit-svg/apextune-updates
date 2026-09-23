@@ -80,7 +80,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.9.0'
+$script:Version = '1.10.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -747,12 +747,20 @@ try {
    a ten-minute limit, and is recorded so undo removes it. When the
    administrator rights came from a different account than the one signed
    in, the task would fire at the wrong sign-in, so it is not made. #>
+<# A run that says no to keeping it cut also takes down a keep task an
+   earlier run left, so "no" means no from now on, not just for this run. #>
+function Remove-KeepTask([string]$why) {
+  if (-not (Get-ScheduledTask -TaskName 'OmniDx keep' -ErrorAction SilentlyContinue)) { return }
+  try { Unregister-ScheduledTask -TaskName 'OmniDx keep' -Confirm:$false -ErrorAction Stop; Did ("Keep task from an earlier run removed ({0})." -f $why) }
+  catch { Warn ("Could not remove the keep task from an earlier run ({0})." -f $_.Exception.Message) }
+}
+
 function Register-Keep {
-  if ($NoKeep) { return }
   Head "Keeping it cut"
+  if ($NoKeep) { Say "  Not kept (-NoKeep)."; Remove-KeepTask '-NoKeep'; return }
   if ($script:UserName -ne $env:USERNAME) { Say "  Not kept: administrator rights came from a different account than the one signed in. Run the command again after a big update instead."; return }
   Say "  Windows updates turn some of this back on. A small task can check three minutes after each sign-in and put the tune back. It only touches what this run recorded, leaves your own settings alone, and undo removes it." 'White'
-  if (-not (Ask "Keep it cut after updates?")) { Say "  Not kept. Run the command again after a big update instead: same key, same PC, free."; return }
+  if (-not (Ask "Keep it cut after updates?")) { Say "  Not kept. Run the command again after a big update instead: same key, same PC, free."; Remove-KeepTask 'you said no'; return }
   try {
     $keep = Join-Path $script:Root 'undo\keep.ps1'
     Set-Content -Path $keep -Value ($script:KeepScript.Replace('__DRIFT__', ("function Get-Drift {" + ${function:Get-Drift}.ToString() + "}"))) -Encoding UTF8
@@ -2374,7 +2382,7 @@ function Main {
     Set-Vbs $m
     & $run 'cleanup'   { Clear-Junk }
     Register-AfterCount
-    & $run 'keep'      { Register-Keep }
+    if ($skip -contains 'keep') { Head "keep (skipped)"; Remove-KeepTask '-Skip keep' } else { Register-Keep }
 
     $changesFile = Save-Changes
     $after = Get-ProcessCount
