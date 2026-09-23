@@ -1,13 +1,13 @@
 ﻿== Reading this PC
   ! The GPU driver dates from Jun 2006. A current driver is worth more than most tweaks.
   ! This looks like a virtual machine. The tune will run, but the numbers mean little here.
-  Processes running now: 151
+  Processes running now: 144
   Target for this PC after the tune and a restart: about 70
 == Your key
-  Before: 149 processes, 1606 threads, 51691 handles, 2920 MB in use, idle CPU 1.1%, DPC 0%
+  Before: 144 processes, 1470 threads, 48890 handles, 2828 MB in use, idle CPU 1.6%, DPC 0%
 == Safety first
   ! Could not make a restore point (This functionality is not supported on this operating system.). The undo script still records everything.
-  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_04-27
+  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_04-34
   + undo.ps1 written to C:\OmniDx\undo
 == Startup apps
   2 things start with Windows:
@@ -104,10 +104,10 @@
   Looked in 16 game folders
   + No listed game found on the usual drives; the CPU-priority profiles are in place for when one is installed.
 == Cleanup
-  + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 370 MB back.
+  + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 369 MB back.
 == Keeping it cut
   + Task 'OmniDx keep' runs three minutes after sign-in and puts back whatever an update turned on. Log: C:\OmniDx\keep-log.txt. Undo removes it.
-  After:  142 processes, 1571 threads, 50137 handles, 3051 MB in use, idle CPU 0.8%, DPC 0.26%
-  Gone:   MoUsoCoreWorker, smartscreen, spoolsv, sppsvc
+  After:  151 processes, 1662 threads, 52536 handles, 3104 MB in use, idle CPU 19.3%, DPC 0%
+  Gone:   smartscreen, spoolsv
 == Done
-  Processes: 151 -> 142 now, in 83 seconds. Restart for the real number: the services that were told to stop are still unwinding.
+  Processes: 144 -> 151 now, in 88 seconds. Restart for the real number: the services that were told to stop are still unwinding.
