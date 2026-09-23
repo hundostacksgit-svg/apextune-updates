@@ -1,13 +1,13 @@
 ﻿== Reading this PC
   ! The GPU driver dates from Jun 2006. A current driver is worth more than most tweaks.
   ! This looks like a virtual machine. The tune will run, but the numbers mean little here.
-  Processes running now: 142
+  Processes running now: 138
   Target for this PC after the tune and a restart: about 70
 == Your key
-  Before: 142 processes, 1528 threads, 49549 handles, 2840 MB in use, idle CPU 1.6%, DPC 0%
+  Before: 138 processes, 1410 threads, 47324 handles, 2866 MB in use, idle CPU 0.6%, DPC 0.13%
 == Safety first
   ! Could not make a restore point (This functionality is not supported on this operating system.). The undo script still records everything.
-  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_02-30
+  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_02-53
   + undo.ps1 written to C:\OmniDx\undo
 == Startup apps
   2 things start with Windows:
@@ -36,6 +36,11 @@
   + bthserv -> disabled  (bluetooth)
   + WlanSvc -> disabled  (wi-fi)
   + CDPSvc -> manual  (connected devices)
+  + CDPUserSvc -> manual  (connected devices)
+  + OneSyncSvc -> manual  (mail/contacts sync)
+  + PimIndexMaintenanceSvc -> manual  (contacts index)
+  + UnistoreSvc -> manual  (user data storage)
+  + UserDataSvc -> manual  (user data)
   + SSDPSRV -> manual  (ssdp discovery)
   + upnphost -> manual  (upnp)
   + DPS -> manual  (diagnostic policy)
@@ -43,7 +48,9 @@
   + ScDeviceEnum -> disabled  (smart card)
   + CertPropSvc -> disabled  (smart card)
   + iphlpsvc -> manual  (ipv6 tunnels)
+  + cbdhsvc -> manual  (clipboard history)
   + WpnService -> manual  (push notifications)
+  + WpnUserService -> manual  (push notifications)
 == Scheduled tasks
   + PcaPatchDbTask
   + CreateObjectTask
@@ -82,10 +89,10 @@
   Looked in 16 game folders
   + No listed game found on the usual drives; the CPU-priority profiles are in place for when one is installed.
 == Cleanup
-  + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 369 MB back.
+  + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 368 MB back.
 == Keeping it cut
   + Task 'OmniDx keep' runs three minutes after sign-in and puts back whatever an update turned on. Log: C:\OmniDx\keep-log.txt. Undo removes it.
-  After:  141 processes, 1512 threads, 49256 handles, 2976 MB in use, idle CPU 1.2%, DPC 0%
-  Gone:   smartscreen, spoolsv
+  After:  146 processes, 1505 threads, 50286 handles, 3131 MB in use, idle CPU 15.1%, DPC 0.26%
+  Gone:   spoolsv
 == Done
-  Processes: 142 -> 141 now, in 82 seconds. Restart for the real number: the services that were told to stop are still unwinding.
+  Processes: 138 -> 146 now, in 121 seconds. Restart for the real number: the services that were told to stop are still unwinding.
