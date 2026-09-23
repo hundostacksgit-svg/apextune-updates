@@ -312,7 +312,9 @@ export const TUNE = {
   games: ['Fortnite', 'VALORANT', 'Counter-Strike 2', 'Marvel Rivals', 'Apex Legends', 'Call of Duty', 'Overwatch 2',
     'Rainbow Six Siege', 'Rocket League', 'Minecraft', 'Roblox', 'League of Legends', 'GTA V', 'Rust', 'Escape from Tarkov', 'PUBG',
     'The Finals', 'Dota 2', 'Battlefield 6', 'Deadlock', 'Delta Force', 'ARC Raiders', 'Helldivers 2', 'Warframe', 'Destiny 2', 'Halo Infinite',
-    'Dead by Daylight', 'Hunt: Showdown 1896', 'War Thunder', 'World of Warcraft', 'Squad'],
+    'Dead by Daylight', 'Hunt: Showdown 1896', 'War Thunder', 'World of Warcraft', 'Squad', 'Battlefield 2042', 'EA Sports FC 26', 'NBA 2K26',
+    'Palworld', 'Path of Exile 2', 'Diablo IV', 'Monster Hunter Wilds', 'Elden Ring / Nightreign', 'Cyberpunk 2077', "Baldur's Gate 3", 'Star Citizen',
+    'DayZ', 'Arma Reforger', 'Hell Let Loose', 'Genshin Impact', 'Ready or Not', 'Final Fantasy XIV', 'STALKER 2', 'Sea of Thieves'],
 };
 
 /** The Square link for a Tune product. */
