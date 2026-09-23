@@ -117,7 +117,8 @@ it works from a phone.
    Add subscription): URL `https://<the Worker's URL>/v1/webhooks/square`
    (the deploy log's "The Worker answers at" line, or `api` in
    `tune/config.json` once the deploy has written it), API version the
-   newest, events `payment.created` and `payment.updated`. Save, then copy
+   newest, events `payment.created`, `payment.updated`, `refund.created` and
+   `refund.updated` (the refunds are what switch a key off). Save, then copy
    the subscription's **Signature key** into the repository secret
    `SQUARE_WEBHOOK_SIGNATURE_KEY`. The deploy pushes it to the Worker and
    tells the Worker its own address (`SQUARE_WEBHOOK_URL`), which the
@@ -167,14 +168,18 @@ with `SUPPORT_EMAIL` as the reply-to; Resend refuses to send from a domain
 it has not verified, so the DNS records come first.
 
 ### Refunds
-Refund in Square as normal, then:
+Refund in Square as normal; that is the whole job. Square sends
+`refund.updated` to the webhook, and a completed refund of the full amount
+sets `revoked_at` on every key of that order and emails the buyer that the
+keys have stopped. The next run on any of those PCs is refused; a PC already
+tuned keeps its settings and its undo. A partial refund (one share of a
+Squad, say) revokes nothing; decide that one by hand with the command below,
+naming the key rather than the order. For a key issued by hand, or with the
+webhook not yet set up:
 
 ```
-npx wrangler d1 execute omnidx-studio --remote --command "UPDATE tune_keys SET revoked_at = strftime('%s','now')*1000 WHERE order_ref = '<square order id>';"
+npx wrangler d1 execute omnidx-studio --remote --command "UPDATE tune_keys SET revoked_at = strftime('%s','now')*1000 WHERE order_ref = '<square order id>' OR order_ref LIKE '<square order id>#%';"
 ```
-
-The next run on that PC is refused. Without the Worker there is nothing to
-revoke; the key keeps working on the PC it is bound to.
 
 ### Moving a key to a new PC
 Buyers do it themselves from the key page ("New PC? Move this key") with

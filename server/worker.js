@@ -813,6 +813,28 @@ const routes = {
 
     let event; try { event = JSON.parse(raw); } catch { return fail('Not JSON.', 400, env, request); }
     const type = String(event.type || '');
+
+    // A refund switches the keys off, so refunding in Square is the whole job.
+    // A partial refund (one friend's share of a Squad, say) changes nothing
+    // here; support decides that one by hand.
+    if (type === 'refund.created' || type === 'refund.updated') {
+      const refund = event.data?.object?.refund;
+      if (!refund || refund.status !== 'COMPLETED') return json({ ignored: `refund ${refund?.status || 'missing'}` });
+      const order = String(refund.order_id || '').trim().slice(0, 120);
+      if (!/^[A-Za-z0-9_\-:.]{6,}$/.test(order)) return json({ ignored: 'refund without an order id' });
+      const rows = await tuneKeysFor(env, order);
+      if (!rows.length) return json({ ignored: 'no keys for that order' });
+      const paid = Number(rows[0].amount_cents || 0);
+      const back = Number(refund.amount_money?.amount || 0);
+      if (paid && back < paid - 100) return json({ ok: true, order, partial: true, revoked: 0 });
+      const live = rows.filter((r) => !r.revoked_at);
+      if (live.length) {
+        await env.DB.prepare("UPDATE tune_keys SET revoked_at = ? WHERE (order_ref = ? OR order_ref LIKE ?) AND revoked_at IS NULL").bind(Date.now(), order, `${order}#%`).run();
+        if (rows[0].email && env.RESEND_API_KEY) await emailTuneRefund(env, rows[0].email, live.length, order);
+      }
+      return json({ ok: true, order, revoked: live.length });
+    }
+
     if (type !== 'payment.updated' && type !== 'payment.created') return json({ ignored: type });
     const payment = event.data?.object?.payment;
     if (!payment || payment.status !== 'COMPLETED') return json({ ignored: `payment ${payment?.status || 'missing'}` });
@@ -1342,6 +1364,28 @@ async function emailTuneKeys(env, email, product, keys, order, receiptUrl) {
         reply_to: env.SUPPORT_EMAIL || undefined,
         subject: three ? 'Your three OmniDx Tune keys' : 'Your OmniDx Tune key',
         text: lines.join('\n'),
+      }),
+    });
+    return r.ok;
+  } catch { return false; }
+}
+
+/** The keys stop working with the refund; say so, so nobody wonders. */
+async function emailTuneRefund(env, email, count, order) {
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        from: env.TUNE_MAIL_FROM || env.MAIL_FROM || 'OmniDx Tune <keys@omnidx.net>',
+        to: [email],
+        reply_to: env.SUPPORT_EMAIL || undefined,
+        subject: 'Your OmniDx Tune refund',
+        text: `Your refund for order ${order} has gone through on Square's side; the money follows in a few days, depending on the bank.
+
+${count === 1 ? 'The key from that order no longer works.' : `The ${count} keys from that order no longer work.`} Nothing else changes: a PC that was tuned keeps its settings, and C:\\OmniDx\\undo\\undo.ps1 puts every one of them back whenever you like.
+
+If this refund was not you, reply to this email.`,
       }),
     });
     return r.ok;

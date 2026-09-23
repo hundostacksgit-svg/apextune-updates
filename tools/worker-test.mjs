@@ -46,6 +46,9 @@ function statement(sql, args) {
     db.tune_keys.filter((r) => r.order_ref === args[1] || like(r.order_ref, args[2])).forEach((r) => { r.email = args[0]; }); return [];
   }
   if (s.startsWith('UPDATE tune_keys SET moved_at = ? WHERE key = ?')) { db.tune_keys.filter((r) => r.key === args[1]).forEach((r) => { r.moved_at = args[0]; }); return []; }
+  if (s.startsWith('UPDATE tune_keys SET revoked_at = ? WHERE (order_ref = ? OR order_ref LIKE ?) AND revoked_at IS NULL')) {
+    db.tune_keys.filter((r) => (r.order_ref === args[1] || like(r.order_ref, args[2])) && !r.revoked_at).forEach((r) => { r.revoked_at = args[0]; }); return [];
+  }
   if (s.startsWith('SELECT hwid FROM tune_machines WHERE key = ? AND hwid = ?')) return db.tune_machines.filter((r) => r.key === args[0] && r.hwid === args[1]);
   if (s.startsWith('SELECT COUNT(*) AS count FROM tune_machines WHERE key = ?')) return [{ count: db.tune_machines.filter((r) => r.key === args[0]).length }];
   if (s.startsWith('INSERT INTO tune_machines (key, hwid, label, version, os, first_seen, last_seen)')) {
@@ -100,6 +103,10 @@ async function call(pathname, body, headers = {}) {
 const webhook = async (payment, key) => {
   const raw = JSON.stringify({ type: 'payment.updated', data: { object: { payment } } });
   return call('/v1/webhooks/square', raw, { 'x-square-hmacsha256-signature': await sign(raw, key) });
+};
+const refund = async (refund) => {
+  const raw = JSON.stringify({ type: 'refund.updated', data: { object: { refund } } });
+  return call('/v1/webhooks/square', raw, { 'x-square-hmacsha256-signature': await sign(raw) });
 };
 const keyRe = /^TUNE-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/;
 
@@ -159,6 +166,24 @@ r = await call('/v1/tune/release', { key: squadKeys[1], order: 'ORDER-SQUAD-1' }
 expect(r.status === 429, 'and cannot move again the same month');
 r = await call('/v1/tune/release', { key: squadKeys[2], order: 'ORDER-OTHER-1' });
 expect(r.status === 403, 'a wrong order number does not move a key');
+
+/* 8. Refunds switch keys off; a partial refund does not. */
+const mailsBefore = mails.length;
+r = await refund({ id: 'rf1', order_id: 'ORDER-SQUAD-1', status: 'COMPLETED', amount_money: { amount: 3999 } });
+expect(r.status === 200 && r.data.revoked === 3, `a full refund of the Squad order revokes all three keys (${JSON.stringify(r.data)})`);
+expect(mails.length === mailsBefore + 1 && /no longer work/.test(mails[mails.length - 1].text), 'and the buyer is told');
+r = await call('/v1/tune/claim', { key: squadKeys[0], hwid: hw(1) });
+expect(r.status === 410, 'a refunded key is refused even on the PC it was on');
+r = await call('/v1/tune/issue', { product: 'squad', order: 'ORDER-SQUAD-1' });
+expect(r.status === 410, 'the key page says the order was refunded');
+r = await refund({ id: 'rf1', order_id: 'ORDER-SQUAD-1', status: 'COMPLETED', amount_money: { amount: 3999 } });
+expect(r.status === 200 && r.data.revoked === 0 && mails.length === mailsBefore + 1, 'the same refund again does nothing more');
+r = await refund({ id: 'rf2', order_id: 'ORDER-TUNE-1', status: 'COMPLETED', amount_money: { amount: 500 } });
+expect(r.status === 200 && r.data.partial === true, 'a partial refund is left to support');
+r = await call('/v1/tune/check', { key: (await call('/v1/tune/issue', { product: 'tune', order: 'ORDER-TUNE-1' })).data.key });
+expect(r.status === 200 && r.data.ok === true, 'and that key still works');
+r = await refund({ id: 'rf3', order_id: 'ORDER-TUNE-1', status: 'PENDING', amount_money: { amount: 1999 } });
+expect(r.status === 200 && r.data.ignored, 'a refund still pending changes nothing yet');
 
 console.log(failed ? `${failed} problem(s)` : 'all good');
 process.exit(failed ? 1 : 0);
