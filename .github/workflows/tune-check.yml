@@ -8,7 +8,7 @@ name: Check the tune
 on:
   push:
     branches: [main, master, "claude/omnidx-editing-platform-9phdcc"]
-    paths: ["tune/**", "go.ps1", "tools/**", ".github/workflows/tune-check.yml"]
+    paths: ["tune/**", "go.ps1", "tools/**", "server/worker.js", ".github/workflows/tune-check.yml"]
   pull_request:
     paths: ["tune/**", "go.ps1"]
   workflow_dispatch:
@@ -31,6 +31,12 @@ jobs:
           node-version: 22
       - name: ASCII, brackets, key maths, config
         run: node tools/tune-check.mjs
+      # The licence server's money path, offline: three keys per Squad order,
+      # one email, Square's signature, one PC per key.
+      - name: The licence server issues, emails, locks and moves keys as promised
+        run: |
+          npm install --no-audit --no-fund --prefix server
+          node tools/worker-test.mjs
 
   windows:
     # A push to a checked branch already ran this; the pull request for the

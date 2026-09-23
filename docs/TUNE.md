@@ -295,6 +295,15 @@ one record only. A run's `backup\<stamp>` folder is kept as long as its
 record is; `Limit-History` keeps the newest ten of everything else.
 
 ### Checks that run on every push
+`node tools/worker-test.mjs` runs the licence server in Node against a
+stand-in database and network: a Squad webhook mints three keys and sends one
+email, a repeat mints and sends nothing, the key page gets the same keys, a
+one-PC order gets one, a bad signature and a payment below the price are
+refused, each key locks to one PC, and a Squad key moves with the plain
+order number. It runs in the static job of the Windows check and before
+every Worker deploy; a statement the Worker sends that the stand-in does not
+model fails the run, so a new query needs a line there.
+
 - `tools/tune-check.mjs`: both scripts are ASCII, brackets balance outside
   strings and comments, every function Main calls exists, the key checksum
   agrees between the browser module and the Python tool, config.json's

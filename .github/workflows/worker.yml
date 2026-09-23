@@ -77,6 +77,12 @@ jobs:
         if: steps.ready.outputs.ready == 'true'
         run: npm install --no-audit --no-fund
 
+      # A Worker that hands out the wrong number of keys, or mails twice, must
+      # not deploy: the offline money-path test runs first.
+      - name: The money path, offline
+        if: steps.ready.outputs.ready == 'true'
+        run: node ../tools/worker-test.mjs
+
       - name: Point the config at the database
         if: steps.ready.outputs.ready == 'true'
         run: sed -i "s/PASTE_YOUR_DATABASE_ID_HERE/$CLOUDFLARE_D1_ID/" wrangler.toml

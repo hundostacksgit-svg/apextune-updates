@@ -901,7 +901,10 @@ const routes = {
     const row = await env.DB.prepare('SELECT * FROM tune_keys WHERE key = ?').bind(parsed.key).first();
     if (!row) return fail('That key was not issued by us.', 404, env, request);
     if (row.revoked_at) return fail('That key has been refunded or revoked.', 410, env, request);
-    if (!row.order_ref || !sameSecret(row.order_ref.toLowerCase(), order.toLowerCase())) {
+    // The second and third keys of a Squad order carry #2 and #3 after the
+    // order reference; the receipt shows the plain reference, so that is what is compared.
+    const plainRef = String(row.order_ref || '').replace(/#\d+$/, '');
+    if (!plainRef || !sameSecret(plainRef.toLowerCase(), order.toLowerCase())) {
       return fail('That order reference does not match this key.', 403, env, request);
     }
     const days = 30;
