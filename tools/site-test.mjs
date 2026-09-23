@@ -60,6 +60,25 @@ try {
       await page.waitForTimeout(300);
       const title = await page.title();
       expect(resp.status() === 200 && title && !errs.length && !(await overflow(page)), `studio/${p || 'index'} at ${width}px: loads, no errors, no sideways scroll${errs.length ? ' (' + errs.join('; ') + ')' : ''}`);
+      // Every link on the page that points into this site must land: the file exists, and the anchor is on it.
+      if (width === 1280) {
+        const hrefs = await page.evaluate(() => [...new Set([...document.querySelectorAll('a[href]')].map((a) => a.getAttribute('href')))]);
+        const broken = [];
+        for (const h of hrefs) {
+          if (/^(https?:|mailto:|tel:|javascript:|data:)/i.test(h)) continue;
+          const u = new URL(h, page.url());
+          if (u.origin !== new URL(base).origin) continue;
+          let html = '';
+          if (u.pathname === new URL(page.url()).pathname) html = await page.content();
+          else {
+            const r = await fetch(u.origin + u.pathname).catch(() => null);
+            if (!r || r.status !== 200) { broken.push(h); continue; }
+            if (u.hash) html = await r.text();
+          }
+          if (u.hash && !new RegExp(`id=["']${u.hash.slice(1).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']`).test(html)) broken.push(h);
+        }
+        expect(!broken.length, `studio/${p || 'index'}: every link into the site lands (${hrefs.length} checked)${broken.length ? ': broken ' + broken.join(', ') : ''}`);
+      }
       await page.close();
     }
   }
