@@ -125,6 +125,23 @@ jobs:
           Get-Content C:\OmniDx\ci-summary.json
           exit 0
 
+      # The support zip: on the desktop, with the logs in it and no key in them.
+      - name: The support bundle zips the logs with the key masked
+        run: |
+          $out = & .\tune\omnidx.ps1 -SupportBundle *>&1 | Out-String
+          Write-Host $out
+          if ($out -notmatch 'files zipped to (.+\.zip)') { Write-Host 'no zip was written'; exit 1 }
+          $zip = $Matches[1].Trim()
+          if (-not (Test-Path $zip)) { Write-Host "zip missing: $zip"; exit 1 }
+          Expand-Archive $zip -DestinationPath C:\OmniDx\bundle-check -Force
+          $names = @(Get-ChildItem C:\OmniDx\bundle-check | ForEach-Object { $_.Name })
+          Write-Host ("bundle: " + ($names -join ', '))
+          if (-not ($names -like 'log-*.txt') -or -not ($names -like 'summary-*.json') -or -not ($names -like 'changes-*.json')) { Write-Host 'the bundle is missing a log, a summary or a change record'; exit 1 }
+          $key = (Get-ItemProperty 'HKLM:\SOFTWARE\OmniDx\Tune').Key
+          foreach ($f in Get-ChildItem C:\OmniDx\bundle-check -File) { if ((Get-Content $f.FullName -Raw) -match [regex]::Escape($key)) { Write-Host ("the key is in the bundle: {0}" -f $f.Name); exit 1 } }
+          Write-Host 'bundle written, key masked'
+          exit 0
+
       # Everything the run recorded must still be in place, and the keep task
       # must be registered (the run answered yes to it).
       - name: Status says everything is still in place
