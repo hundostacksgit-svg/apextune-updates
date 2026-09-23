@@ -897,6 +897,20 @@ const routes = {
       }
       return json({ ok: true, orders: [...byOrder.values()] }, { env, request });
     }
+    // Does mail work: one short email to the support address or one typed in, with Resend's exact refusal when it does not.
+    if (action === 'mail-test') {
+      if (!env.RESEND_API_KEY) return fail('Mail is off: RESEND_API_KEY is not set on the Worker.', 503, env, request);
+      const to = validEmail(body.email) ? String(body.email).trim().toLowerCase() : (validEmail(env.SUPPORT_EMAIL) ? String(env.SUPPORT_EMAIL).trim().toLowerCase() : null);
+      if (!to) return fail('No address to send to: type one, or set SUPPORT_EMAIL.', 400, env, request);
+      const from = env.TUNE_MAIL_FROM || env.MAIL_FROM || 'OmniDx Tune <keys@omnidx.net>';
+      const sent = await sendMail(env, {
+        to,
+        subject: 'OmniDx Tune: the mail works',
+        text: `If you are reading this, the key emails will arrive.\n\nSent from ${from}; replies go to ${env.SUPPORT_EMAIL || 'nobody (SUPPORT_EMAIL is not set)'}.\nSent from the owner page at ${new Date().toISOString()}.`,
+      });
+      if (!sent.ok) return fail(`Resend refused the send (${sent.status || 'no answer'}): ${sent.detail || 'no detail'}`, 502, env, request);
+      return json({ ok: true, sentTo: to, from }, { env, request });
+    }
     const ref = String(body.ref || '').trim().slice(0, 120);
     if (!ref) return fail('An order reference or a key is needed.', 400, env, request);
     // By key or by order; a key finds its order, and the whole order is answered.
@@ -1501,6 +1515,24 @@ and your recovery code still works as it always did.`,
  * read the same in every mail app and survive being forwarded to a friend.
  * Returns true only when Resend accepted it.
  */
+/** One email through Resend, with Resend's own words when it refuses (an unverified domain, a bad from address). */
+async function sendMail(env, { to, subject, text }) {
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
+      body: JSON.stringify({ from: env.TUNE_MAIL_FROM || env.MAIL_FROM || 'OmniDx Tune <keys@omnidx.net>', to: [to], reply_to: env.SUPPORT_EMAIL || undefined, subject, text }),
+    });
+    if (r.ok) return { ok: true, status: r.status, detail: '' };
+    const raw = (await r.text().catch(() => '')).slice(0, 400);
+    let detail = raw;
+    try { detail = JSON.parse(raw).message || raw; } catch { /* not JSON */ }
+    return { ok: false, status: r.status, detail };
+  } catch (err) {
+    return { ok: false, status: 0, detail: String((err && err.message) || err) };
+  }
+}
+
 async function emailTuneKeys(env, email, product, keys, order, receiptUrl, receiptNumber = null) {
   const three = keys.length > 1;
   const lines = [

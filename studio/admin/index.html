@@ -42,8 +42,8 @@
       <input class="input" id="own-ref" autocomplete="off" spellcheck="false" placeholder="From the Square receipt, or TUNE-XXXX-XXXX-XXXX-XXXX">
     </div>
     <div class="field">
-      <label for="own-email">Email, only when sending the keys somewhere new</label>
-      <input class="input" id="own-email" type="email" autocomplete="off" spellcheck="false" placeholder="Leave empty to use the address on the order">
+      <label for="own-email">Email, for sending the keys somewhere new or a test email</label>
+      <input class="input" id="own-email" type="email" autocomplete="off" spellcheck="false" placeholder="Empty: the address on the order, or the support address for a test">
     </div>
     <div class="own-actions">
       <button class="btn btn-primary btn-sm" type="button" data-act="lookup">Look up</button>
@@ -53,10 +53,11 @@
       <button class="btn btn-sm btn-ghost" type="button" data-act="revoke">Switch the order off</button>
       <button class="btn btn-sm btn-ghost" type="button" data-act="revoke-key">Switch off this key only</button>
       <button class="btn btn-sm btn-ghost" type="button" data-act="restore">Switch it back on</button>
+      <button class="btn btn-sm btn-ghost" type="button" data-act="mail-test">Send a test email</button>
     </div>
     <div class="own-out" id="own-out" hidden></div>
   </div>
-  <p class="tiny muted" style="margin-top:18px">A refund in Square switches an order off by itself; "Switch the order off" is for the rest, and "Switch off this key only" is for a partial refund of a Squad order (type the key). "Free this key" takes the key you typed (or the first of the order) off its PC without spending the buyer's own monthly move.</p>
+  <p class="tiny muted" style="margin-top:18px">A refund in Square switches an order off by itself; "Switch the order off" is for the rest, and "Switch off this key only" is for a partial refund of a Squad order (type the key). "Free this key" takes the key you typed (or the first of the order) off its PC without spending the buyer's own monthly move. "Send a test email" proves the key emails deliver before the first sale: it goes to the support address (or the one typed above), and when Resend refuses, its exact reason shows here.</p>
 </main>
 <script type="module" src="./admin.js"></script>
 </body>

@@ -181,7 +181,10 @@ Every step below is a browser tab; none needs a terminal.
    `?e=creator` ($19.99) and `?e=studio` ($39.99).
 8. **Check the wiring**: open omnidx.net/studio/admin/ on the phone; the
    status line should read Licence server on, Square on, Webhook on, Mail
-   on, Owner token on. Anything off names the step to redo.
+   on, Owner token on. Anything off names the step to redo. Then paste the
+   owner token and press **Send a test email**: it lands in the support
+   inbox within a minute, or the page shows Resend's exact reason (almost
+   always "domain is not verified": step 3's DNS records are not in yet).
 9. **Test**: buy the $19.99 link with your own card and email. The key is on
    the page you land on and in your inbox within a minute. Refund yourself
    in Square; the key stops working and a second email says so.
@@ -198,7 +201,7 @@ dashboard; none of it needs a terminal.
 | --- | --- | --- |
 | Owner page: "Licence server: not answering"; buy buttons closed; key page says the key desk is not open | The Worker is down or was never deployed | Actions > Deploy the Worker > Run workflow. The scheduled run every six hours redeploys on its own when the health check fails. |
 | Owner page: "Square: off"; buy buttons closed | `SQUARE_ACCESS_TOKEN` is missing, revoked or expired | Square developer dashboard > Production > new access token; update the repository secret; run the deploy. |
-| Keys are on the page but no email arrives; owner page says "Mail: on" | Resend refused the send: domain no longer verified, or the address bounced | resend.com > Emails shows each attempt and why; Domains shows whether omnidx.net is still verified (the DNS records). "Send the keys again" on the owner page once it is fixed. |
+| Keys are on the page but no email arrives; owner page says "Mail: on" | Resend refused the send: domain no longer verified, or the address bounced. "Send a test email" on the owner page shows Resend's exact reason | resend.com > Emails shows each attempt and why; Domains shows whether omnidx.net is still verified (the DNS records). "Send the keys again" on the owner page once it is fixed. |
 | Owner page says "Mail: off" | `RESEND_API_KEY` is not set on the Worker | Set the repository secret; run the deploy. Keys still show on the page meanwhile. |
 | Square dashboard: webhook deliveries failing with 400 | The signature key on the Worker is not the subscription's, or the subscription's URL is not exactly the Worker's `SQUARE_WEBHOOK_URL` | Re-copy the Signature key into `SQUARE_WEBHOOK_SIGNATURE_KEY`, check the URL ends in `/v1/webhooks/square` on the workers.dev address, run the deploy. Keys were still issued from the key page meanwhile; "Recent orders" shows any that were not emailed. |
 | Square dashboard: webhook deliveries failing with 503 | `SQUARE_WEBHOOK_URL` is empty on the Worker | Run the deploy; it fills it in. |
@@ -250,7 +253,10 @@ or the first of the order; does not spend the buyer's own monthly move),
 **Switch the order off**, **Switch it back on**, **Switch off this key
 only** (a partial refund of a Squad: type the key), and **Recent orders**
 (the last sixty keys grouped by order: product, amount, when, the email,
-on or off, emailed or not). All of it is
+on or off, emailed or not), and **Send a test email** (needs no order: one
+short email to the support address or the one typed in, with Resend's own
+refusal on screen when the domain is not verified or the from address is
+wrong, so mail is proved before the first sale). All of it is
 `POST /v1/tune/admin` on the Worker, refused without the token (403) and
 shut when no token is set (503); the offline test covers each action.
 

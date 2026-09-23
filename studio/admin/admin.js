@@ -37,6 +37,7 @@ function render(d, note) {
   const out = $('#own-out');
   out.hidden = false;
   if (d.error) { out.innerHTML = `<div class="note bad">${esc(d.error)}</div>`; return; }
+  if (d.sentTo && !d.keys) { out.innerHTML = `<div class="note ok">${esc(note || `Sent to ${d.sentTo}.`)}</div>`; return; }
   if (d.orders) {
     out.innerHTML = `<p class="small muted" style="margin:0 0 6px">The last ${d.orders.length} orders, newest first. Paste an order or a key above to act on one.</p>` + (d.orders.length ? d.orders.map((o) => `
       <div class="own-key"><span><b>${esc(o.product === 'squad' ? 'Squad' : 'Tune')}</b> · ${o.paidCents ? `$${(o.paidCents / 100).toFixed(2)}` : '?'} · ${esc(when(o.createdAt))}<br><span class="muted tiny">${esc(o.email || 'no email')} · order ${esc(o.order)}${o.receipt ? ` · receipt #${esc(o.receipt)}` : ''}</span></span>
@@ -64,14 +65,14 @@ document.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click
   const out = $('#own-out');
   try { localStorage.setItem(STORE, token); } catch { /* private mode */ }
   if (!token) { render({ error: 'The owner token is needed.' }); return; }
-  if (!ref && b.dataset.act !== 'recent') { render({ error: 'An order reference or a key is needed.' }); return; }
+  if (!ref && !['recent', 'mail-test'].includes(b.dataset.act)) { render({ error: 'An order reference or a key is needed.' }); return; }
   const base = await api();
   if (!base) { render({ error: 'The licence server is not switched on yet (tune/config.json has no api).' }); return; }
   out.hidden = false; out.innerHTML = '<p class="small muted">Asking the server…</p>';
   try {
     const r = await fetch(`${base}/v1/tune/admin`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ token, action: b.dataset.act, ref, email: email || undefined }) });
     const d = await r.json().catch(() => ({ error: `The server answered ${r.status} with no detail.` }));
-    const notes = { resend: d.ok ? `Sent to ${d.sentTo}.` : 'Not sent.', revoke: 'The order is switched off.', 'revoke-key': d.revokedKey ? `${d.revokedKey} is switched off; the order's other keys stay on.` : '', restore: 'The order is back on.', release: d.released ? `${d.released} is free; the next PC that runs it locks it.` : '' };
+    const notes = { resend: d.ok ? `Sent to ${d.sentTo}.` : 'Not sent.', revoke: 'The order is switched off.', 'revoke-key': d.revokedKey ? `${d.revokedKey} is switched off; the order's other keys stay on.` : '', restore: 'The order is back on.', release: d.released ? `${d.released} is free; the next PC that runs it locks it.` : '', 'mail-test': d.sentTo ? `A test email went to ${d.sentTo} from ${d.from}. Check that inbox, and spam.` : '' };
     render(d, r.ok ? notes[b.dataset.act] || '' : '');
   } catch { render({ error: 'Could not reach the licence server.' }); }
 }));

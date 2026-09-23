@@ -89,7 +89,11 @@ const mails = [];
 const payments = {}; // order id -> { cents, email }
 globalThis.fetch = async (url, init = {}) => {
   const u = String(url);
-  if (u.startsWith('https://api.resend.com/emails')) { mails.push(JSON.parse(init.body)); return new Response('{"id":"m"}', { status: 200 }); }
+  if (u.startsWith('https://api.resend.com/emails')) {
+    const mail = JSON.parse(init.body);
+    if (mail.to[0] === 'refuse@example.test') return new Response('{"statusCode":403,"message":"The omnidx.net domain is not verified"}', { status: 403 });
+    mails.push(mail); return new Response('{"id":"m"}', { status: 200 });
+  }
   let m = /\/v2\/orders\/([^/?]+)/.exec(u);
   if (m) return new Response('{}', { status: 404 });
   m = /\/v2\/payments\/([^/?]+)/.exec(u);
@@ -103,7 +107,7 @@ globalThis.fetch = async (url, init = {}) => {
 
 const env = {
   DB, SQUARE_ACCESS_TOKEN: 'sq-test', SQUARE_WEBHOOK_SIGNATURE_KEY: 'sig-test-key', TUNE_ADMIN_TOKEN: 'owner-token-test',
-  SQUARE_WEBHOOK_URL: 'https://api.example.test/v1/webhooks/square', RESEND_API_KEY: 'rs-test', ALLOWED_ORIGINS: '',
+  SQUARE_WEBHOOK_URL: 'https://api.example.test/v1/webhooks/square', RESEND_API_KEY: 'rs-test', ALLOWED_ORIGINS: '', SUPPORT_EMAIL: 'owner@example.test',
 };
 const enc = new TextEncoder();
 async function sign(body, key = env.SQUARE_WEBHOOK_SIGNATURE_KEY) {
@@ -296,6 +300,19 @@ expect(r.status === 200, 'the owner on another connection is served: right token
 r = await call('/v1/tune/claim', { key: 'TUNE-AAAA-AAAA-AAAA-AAAA', hwid: hw(1) }, from('203.0.113.10'));
 for (let i = 0; i < 40; i++) last = await call('/v1/tune/claim', { key: 'TUNE-AAAA-AAAA-AAAA-AAAA', hwid: hw(1) }, from('203.0.113.10'));
 expect(last.status === 429, 'forty-one made-up keys from one connection and the door shuts there too');
+
+/* 11. Does mail work, from the owner page. */
+let n = mails.length;
+r = await admin({ action: 'mail-test' });
+expect(r.status === 200 && r.data.sentTo === 'owner@example.test' && mails.length === n + 1 && mails[n].to[0] === 'owner@example.test' && /mail works/.test(mails[n].subject), 'a test email goes to the support address');
+r = await admin({ action: 'mail-test', email: 'me@example.test' });
+expect(r.status === 200 && r.data.sentTo === 'me@example.test' && mails[mails.length - 1].to[0] === 'me@example.test', 'or to an address typed in');
+r = await admin({ action: 'mail-test', email: 'refuse@example.test' });
+expect(r.status === 502 && /not verified/.test(r.data.error), 'and Resend\'s refusal comes back in its own words');
+delete env.RESEND_API_KEY;
+r = await admin({ action: 'mail-test' });
+expect(r.status === 503 && /Mail is off/.test(r.data.error), 'with no mail key the answer says so');
+env.RESEND_API_KEY = 'rs-test';
 
 r = await call('/v1/tune/admin', { token: 'owner-token-test', action: 'lookup', ref: 'ORDER-TUNE-1' });
 delete env.TUNE_ADMIN_TOKEN;
