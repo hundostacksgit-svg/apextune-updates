@@ -82,7 +82,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.25.0'
+$script:Version = '1.26.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -1318,8 +1318,21 @@ function Debloat($m) {
     }
   }
   # Legacy pieces of Windows nobody has opened in years. Each one is re-enabled by undo.
-  foreach ($c in $plan.caps) {
-    try { Remove-WindowsCapability -Online -Name $c.name -ErrorAction Stop | Out-Null; Record @{ type = 'capability'; name = $c.name }; Did ("removed {0}" -f $c.what) } catch { Warn ("Could not remove {0} ({1})." -f $c.what, $_.Exception.Message) }
+  # All of them in one DISM session first: Remove-WindowsCapability opens a session
+  # per call and each took ten to fifteen seconds on the build machine.
+  $batched = $false
+  if (@($plan.caps).Count -gt 1) {
+    $dargs = @('/online', '/Remove-Capability') + @($plan.caps | ForEach-Object { "/CapabilityName:$($_.name)" }) + @('/NoRestart', '/Quiet')
+    & dism.exe @dargs *>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3010) { $batched = $true; foreach ($c in $plan.caps) { Record @{ type = 'capability'; name = $c.name }; Did ("removed {0}" -f $c.what) } }
+  }
+  if (-not $batched) {
+    foreach ($c in $plan.caps) {
+      # A batch that stopped part way may have taken this one already.
+      $state = $null; try { $state = (Get-WindowsCapability -Online -Name $c.name -ErrorAction Stop).State } catch { }
+      if ("$state" -eq 'NotPresent') { Record @{ type = 'capability'; name = $c.name }; Did ("removed {0}" -f $c.what); continue }
+      try { Remove-WindowsCapability -Online -Name $c.name -ErrorAction Stop | Out-Null; Record @{ type = 'capability'; name = $c.name }; Did ("removed {0}" -f $c.what) } catch { Warn ("Could not remove {0} ({1})." -f $c.what, $_.Exception.Message) }
+    }
   }
   foreach ($f in $plan.feats) {
     # A capability removed a moment ago can take the feature with it (the 2009 Media Player is both); look again before touching it.
