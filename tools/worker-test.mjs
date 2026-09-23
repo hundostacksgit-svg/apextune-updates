@@ -330,6 +330,10 @@ expect(r.status === 200, 'the owner on another connection is served: right token
 r = await call('/v1/tune/claim', { key: 'TUNE-AAAA-AAAA-AAAA-AAAA', hwid: hw(1) }, from('203.0.113.10'));
 for (let i = 0; i < 40; i++) last = await call('/v1/tune/claim', { key: 'TUNE-AAAA-AAAA-AAAA-AAAA', hwid: hw(1) }, from('203.0.113.10'));
 expect(last.status === 429, 'forty-one made-up keys from one connection and the door shuts there too');
+for (let i = 0; i < 11; i++) last = await call('/v1/tune/release', { key: 'TUNE-AAAA-AAAA-AAAA-AAAA', order: 'ORDER-X' }, from('203.0.113.11'));
+expect(last.status === 429, 'the eleventh move attempt from one connection is refused');
+for (let i = 0; i < 61; i++) last = await call('/v1/tune/check', { key: 'TUNE-AAAA-AAAA-AAAA-AAAA' }, from('203.0.113.12'));
+expect(last.status === 429 && last.data.ok === false && /Too many tries/.test(last.data.reason), 'the sixty-first key check from one connection is refused, in the shape the script reads');
 
 /* 10b. The orders whose keys never went out, sent in one press. */
 {
