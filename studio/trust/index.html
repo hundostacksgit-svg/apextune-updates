@@ -160,7 +160,7 @@
             <li>Status finds every recorded setting still in place, and the keep task is registered</li>
             <li>A service, a task and a policy value are turned back on by hand; the keep task sees all three and puts them back</li>
             <li>A second run finds the bound key without being given it, records a handful of changes, leaves a startup app you turned back on alone, and takes the keep task down when told no</li>
-            <li>Undo walks back both runs, leaves no record behind, and a third undo says there is nothing left</li>
+            <li>A third run with Extreme on top records its extras and leaves status clean; undoing that run alone puts only Extreme back and leaves the tune standing; then undo walks back the rest, leaves no record behind, and one more undo says there is nothing left</li>
             <li>A bad key is refused; keys from the key tool are accepted and a corrupted one is not</li>
             <li>A run that records noticeably fewer changes than the last published one fails, so a change that quietly stops doing something cannot ship</li>
             <li>The one command itself is run end to end against a copy of the site on the build machine: it must fetch the verified copy, match its hash and run; with the served copies altered by one line it must refuse to run anything</li>
