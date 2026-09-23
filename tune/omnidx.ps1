@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.32.0'
+$script:Version = '1.33.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -433,6 +433,7 @@ foreach ($c in $changes) {
       'fsutil' { $setting = $(if ($c.setting) { $c.setting } else { 'disablelastaccess' }); & fsutil behavior set $setting $c.prev | Out-Null; Write-Host ("fsutil {0} -> {1}" -f $setting, $c.prev) -ForegroundColor DarkGray }
       'mmagent' { try { if ($c.feature -eq 'MemoryCompression') { Enable-MMAgent -MemoryCompression -ErrorAction Stop } else { Enable-MMAgent -ApplicationPreLaunch -ErrorAction Stop } } catch { } }
       'bcdedit' { & bcdedit /deletevalue $c.name 2>$null | Out-Null; Write-Host ("boot setting {0} back to default" -f $c.name) -ForegroundColor DarkGray }
+      'bcdset' { & bcdedit /set $c.name $c.prev 2>$null | Out-Null; Write-Host ("boot setting {0} back to {1}" -f $c.name, $c.prev) -ForegroundColor DarkGray }
       'task-created' { if ($c.name -ne 'OmniDx keep') { try { Unregister-ScheduledTask -TaskName $c.name -Confirm:$false -ErrorAction Stop } catch { } } }
       'mppref' { $p = @{}; $p[$c.name] = $c.prev; try { Set-MpPreference @p -ErrorAction Stop; Write-Host ("Defender {0} -> {1}" -f $c.name, $c.prev) -ForegroundColor DarkGray } catch { } }
       'capability' { if (-not $capsBack.Contains($c.name)) { [void]$capsBack.Add($c.name) }; $deferred = $true }
@@ -1646,6 +1647,14 @@ function Tune-System($m) {
   & $fs 'disablelastaccess' '1' 'NTFS last-access stamps off'
   if ($m.ramGb -ge 16) { & $fs 'memoryusage' '2' 'NTFS allowed more memory for its cache' }
   if ($m.allSsd -or $m.nvme) { & $fs 'DisableDeleteNotify' '0' 'TRIM was off for the SSDs; on' }
+  # An old guide's "bcdedit /set useplatformclock true" forces the slow HPET as the clock
+  # source on a modern CPU: every timer read costs more, and frame pacing suffers. Windows
+  # chooses better on its own. The value goes, and undo sets it back.
+  $bcd = (& bcdedit /enum '{current}' 2>$null) -join ' '
+  if ($bcd -match 'useplatformclock\s+Yes') {
+    & bcdedit /deletevalue useplatformclock 2>$null | Out-Null
+    if ($LASTEXITCODE -eq 0) { Record @{ type = 'bcdset'; name = 'useplatformclock'; prev = 'true' }; Did "A forced platform clock (HPET) from an old guide removed; Windows picks the clock source again after a restart" }
+  }
   Limit-Defender $m
   Say "  Scheduler set for the game in front, throttling off, visuals lean, mouse acceleration off, HAGS on, Defender's scans capped."
 }
@@ -2051,7 +2060,8 @@ function Set-Extreme($m) {
   Set-Reg 'HKLM:\SYSTEM\CurrentControlSet\Control' 'WaitToKillServiceTimeout' '2000' 'String'
   Set-Reg 'HKCU:\Control Panel\Desktop' 'HungAppTimeout' '2000' 'String'
   Set-Reg 'HKCU:\Control Panel\Desktop' 'WaitToKillAppTimeout' '2000' 'String'
-  Did "Shutdown and restart wait two seconds for a slow service or app instead of five and twenty"
+  Set-Reg 'HKCU:\Control Panel\Desktop' 'AutoEndTasks' '1' 'String'
+  Did "Shutdown and restart wait two seconds for a slow service or app instead of five and twenty, and end a stuck app instead of asking"
   Say "  Extreme applied. Undo puts all of it back; the keep task leaves the shell choices alone."
 }
 

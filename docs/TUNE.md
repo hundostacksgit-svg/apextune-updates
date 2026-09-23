@@ -15,7 +15,7 @@ pieces fit and the short list of what still needs a human to switch on.
 | On the buyer's PC | `C:\OmniDx\README.txt`, `undo\undo.ps1`, `undo\keep.ps1`, `undo\changes-*.json`; `keep-log.txt`, `after-restart.txt`, `report-*.html`, `summary-*.json` | Written by the script. README.txt explains the folder; undo walks back every record; keep.ps1 is what the sign-in task runs; the log has one line per sign-in. |
 | Keys in the browser | `studio/assets/tunekey.js`, `studio/activate/` | Makes and checks keys on the page after paying. |
 | Keys on the server | `server/worker.js` (`/v1/tune/*`), `server/schema.sql` (`tune_keys`, `tune_machines`) | Issues keys against Square orders, binds them to PCs, refuses the rest, moves them on request. |
-| Keys by hand | `tools/make-tune-key.py` | Make, check or reproduce a key; print the D1 insert. |
+| Keys by hand | `tools/make-tune-key.py` | Make or check a key; print the D1 insert. |
 | Support | `docs/TUNE-SUPPORT.md` | The replies, and where every file lives on the buyer's PC. |
 | Promotion | `docs/TUNE-PROMOTION.md` | Bios, hooks, rules, where to post. |
 | Transparency | `tools/tune-touches.py` → `studio/what-it-touches/` | The page listing every service, task, app and value, generated from the script. |
@@ -356,7 +356,8 @@ deletes the value), `SvcHostSplitThresholdInKB` set above the installed RAM
 (the service hosts share processes again, as on a PC with under 3.5 GB;
 twenty to forty processes fewer after a restart; the keep task holds it, and
 `Get-SafeBar` takes 24 off the target while `-Extreme` stands), the shutdown
-timeouts at two seconds, `SgrmBroker` off where it exists, and the Xbox
+timeouts at two seconds with `AutoEndTasks` so a stuck app is ended rather
+than asked about, `SgrmBroker` off where it exists, and the Xbox
 pieces treated as `-CutXbox` unless Game Pass, the Xbox app, Minecraft or a
 controller is found (`Test-CutXbox`).
 The BIOS checklist gains nine "EXTREME" items. It asks first (`-Yes`

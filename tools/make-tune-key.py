@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Make, check or reproduce an OmniDx Tune key.
+"""Make or check an OmniDx Tune key.
 
 Keys made here validate in the script, in the browser and in the Worker,
 because all four implement the same four lines of checksum arithmetic.
@@ -7,16 +7,13 @@ because all four implement the same four lines of checksum arithmetic.
     python3 tools/make-tune-key.py                       # one random Tune key
     python3 tools/make-tune-key.py --product squad       # the older three-PC SQUAD tag
     python3 tools/make-tune-key.py --count 5
-    python3 tools/make-tune-key.py --order 8Yh3kLm2Qp    # the key the activation page
-                                                         #   derives for that Square order
-                                                         #   when no Worker is deployed
     python3 tools/make-tune-key.py --check TUNE-ABCD-EFGH-JKLM-NPQR
     python3 tools/make-tune-key.py --sql                 # also print the INSERT for D1
 
-When the Worker is deployed, a key only works if it is in the tune_keys table:
-paste the --sql line into `npx wrangler d1 execute omnidx-studio --remote
---command "..."`. Without the Worker, the script checks the checksum and
-binds the key to the first PC that runs it; keep a note of who got what.
+A key only works once it is in the Worker's tune_keys table: paste the --sql
+line into `npx wrangler d1 execute omnidx-studio --remote --command "..."`.
+Nothing derives a buyer's key from an order; the Worker mints those after
+Square confirms the payment, and the checksum here only catches typos.
 """
 
 import argparse
@@ -54,13 +51,6 @@ def make(product: str) -> str:
     return f"{tag}{payload}{checksum(tag, payload)}"
 
 
-def for_order(product: str, order: str) -> str:
-    """The same derivation studio/assets/tunekey.js uses when no Worker is deployed."""
-    tag = TAGS[product]
-    digest = hashlib.sha256(f"omnidx-tune-order:{tag}:{order.strip().upper()}".encode()).digest()
-    payload = "".join(ALPHABET[b % len(ALPHABET)] for b in digest[:12])
-    return f"{tag}{payload}{checksum(tag, payload)}"
-
 
 def pretty(key: str) -> str:
     tag = "SQUAD" if key.startswith("SQUAD") else "TUNE"
@@ -90,10 +80,9 @@ def sql(key: str, product: str, order: str | None) -> str:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Make, check or reproduce an OmniDx Tune key.")
+    ap = argparse.ArgumentParser(description="Make or check an OmniDx Tune key.")
     ap.add_argument("--product", choices=sorted(TAGS), default="tune")
     ap.add_argument("--count", type=int, default=1)
-    ap.add_argument("--order", metavar="REF", help="derive the key the activation page gives this Square order")
     ap.add_argument("--check", metavar="KEY", help="validate a key instead of making one")
     ap.add_argument("--sql", action="store_true", help="print the D1 INSERT for each key")
     args = ap.parse_args()
@@ -106,13 +95,6 @@ def main() -> int:
             return 0
         print("not a valid OmniDx Tune key")
         return 1
-
-    if args.order:
-        key = for_order(args.product, args.order)
-        print(pretty(key))
-        if args.sql:
-            print(sql(key, args.product, args.order))
-        return 0
 
     for _ in range(args.count):
         key = make(args.product)
