@@ -85,7 +85,8 @@ for secret in ANTHROPIC_API_KEY STRIPE_WEBHOOK_SECRET RESEND_API_KEY; do
 done
 
 say "Deploying…"
-npx wrangler deploy
+# The build and the minute go in as plain variables, so /v1/health and the owner page say which deploy is answering.
+npx wrangler deploy --var DEPLOYED_SHA:"$(git rev-parse --short HEAD 2>/dev/null || echo by-hand)" --var DEPLOYED_AT:"$(date -u +%Y-%m-%dT%H:%MZ)"
 
 say "Checking it answers…"
 url="$(npx wrangler deployments list 2>/dev/null | grep -o 'https://[^ ]*workers.dev' | head -1 || true)"
