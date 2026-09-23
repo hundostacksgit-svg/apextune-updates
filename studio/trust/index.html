@@ -163,6 +163,7 @@
             <li>Undo walks back both runs, leaves no record behind, and a third undo says there is nothing left</li>
             <li>A bad key is refused; keys from the key tool are accepted and a corrupted one is not</li>
             <li>A run that records noticeably fewer changes than the last published one fails, so a change that quietly stops doing something cannot ship</li>
+            <li>The licence server's money path runs offline on the same push, and before every deploy of it: a Squad payment mints three keys and sends one email, a repeat sends nothing, a bad signature is refused, each key locks to one PC and a second is refused, a refund switches the keys off</li>
             <li>Only a script that passed all of the above is what your command fetches: the check publishes the exact copy it tested next to its hash (<span class="mono tiny">tune/verified.json</span>), and the one command asks for that copy, not the newest push</li>
           </ul>
         </details>

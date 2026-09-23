@@ -711,12 +711,48 @@ function initDownloads() {
  * text; `data-copy` on a button copies the text of the code element next to
  * it (or of the element its value points at).
  */
+/*
+ * Nobody pays while the key desk is shut. Keys come only from the licence
+ * server after Square confirms the payment, so with no server configured
+ * (tune/config.json has no `api`) or one that says it cannot reach Square,
+ * a payment would buy a wait. The buy buttons then say so instead of
+ * charging. A server that merely cannot be reached from this browser is
+ * left alone: Square retries the webhook, and the keys still arrive.
+ */
+async function keyDeskGate() {
+  const buys = $$('[data-buy]');
+  if (!buys.length) return;
+  let closed = '';
+  try {
+    const cfg = await (await fetch(TUNE.configUrl, { cache: 'no-store' })).json();
+    const api = String(cfg.api || '').replace(/\/+$/, '');
+    if (!api) closed = 'Not on sale yet: the key desk (the server that issues keys the moment Square confirms a payment) is not switched on. Nothing is charged until it is.';
+    else {
+      try {
+        const h = await (await fetch(`${api}/v1/health`, { cache: 'no-store' })).json();
+        if (h && h.square === false) closed = 'Not on sale for the moment: the key desk cannot confirm payments with Square right now, so a payment would only buy a wait. Back shortly.';
+      } catch { /* unreachable from here is not the same as shut */ }
+    }
+  } catch { return; }
+  if (!closed) return;
+  buys.forEach((a) => {
+    a.setAttribute('aria-disabled', 'true');
+    a.classList.add('is-closed');
+    a.href = '#';
+    a.addEventListener('click', (e) => { e.preventDefault(); toast('The key desk is not open yet, so nothing is charged.'); });
+    if (!a.nextElementSibling?.matches('[data-desk-note]')) {
+      a.insertAdjacentHTML('afterend', `<p class="tiny" data-desk-note style="margin:10px 0 0;color:var(--warn,#ffc247)">${esc(closed)}</p>`);
+    }
+  });
+}
+
 function initTune() {
   $$('[data-buy]').forEach((a) => {
     const url = tuneBuyUrl(a.dataset.buy);
     if (url) { a.href = url; a.rel = 'noopener'; }
   });
   $$('[data-price]').forEach((el) => { el.textContent = tunePrice(el.dataset.price); });
+  keyDeskGate();
   $$('[data-cmd]').forEach((el) => { el.textContent = TUNE.command; });
 
   $$('[data-copy]').forEach((b) => b.addEventListener('click', async () => {

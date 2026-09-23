@@ -156,8 +156,10 @@ Log it: every "kept because" rule lives in `Get-KeepList` in the script.
 > settings back, undo is in C:\OmniDx\undo. No hard feelings, and if you can
 > tell me what it did not do, that is worth more to me than the money.
 
-Then, in Square: refund the order. With the Worker:
-`UPDATE tune_keys SET revoked_at = strftime('%s','now')*1000 WHERE order_ref = '<order>';`
+Then, in Square: refund the order. That is all: Square tells the licence
+server, the keys from that order stop working, and the buyer gets a short
+email saying so. A partial refund leaves the keys alone on purpose; for that
+one, or for a key issued by hand, the command is in docs/TUNE.md > Refunds.
 
 ## "Is this a virus / it wants admin"
 

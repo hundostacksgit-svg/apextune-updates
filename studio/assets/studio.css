@@ -283,7 +283,7 @@ body.drawer-open{overflow:hidden}
 .btn-lg{padding:15px 30px;font-size:16.5px;border-radius:13px}
 .btn-sm{padding:8px 15px;font-size:13.5px;border-radius:9px}
 .btn-row{display:flex;gap:12px;flex-wrap:wrap}
-.btn[disabled]{opacity:.5;cursor:not-allowed;transform:none}
+.btn[disabled],.btn.is-closed{opacity:.5;cursor:not-allowed;transform:none}
 
 /* ================= type ================= */
 h1,h2,h3,h4{line-height:1.13;letter-spacing:-.028em;margin:0}

@@ -1,5 +1,9 @@
 # Take money for OmniDx Studio — the ten-minute version
 
+> **Selling OmniDx Tune?** This is the older Studio guide. The Tune steps,
+> all of them doable from a phone, are in [TUNE.md](TUNE.md) under "Square:
+> exactly what to do" and "The Worker is required to sell".
+
 This is the short one. Follow it top to bottom and people can buy the app and
 the money lands in your Cash App. Every link goes straight to the page you
 need, so you are never hunting through a menu.
