@@ -80,7 +80,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.16.0'
+$script:Version = '1.17.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -1240,6 +1240,9 @@ function Debloat($m) {
     try { Remove-WindowsCapability -Online -Name $c.name -ErrorAction Stop | Out-Null; Record @{ type = 'capability'; name = $c.name }; Did ("removed {0}" -f $c.what) } catch { Warn ("Could not remove {0} ({1})." -f $c.what, $_.Exception.Message) }
   }
   foreach ($f in $plan.feats) {
+    # A capability removed a moment ago can take the feature with it (the 2009 Media Player is both); look again before touching it.
+    $still = $null; try { $still = Get-WindowsOptionalFeature -Online -FeatureName $f.name -ErrorAction Stop } catch { }
+    if (-not $still -or $still.State -ne 'Enabled') { Did ("already gone: {0}" -f $f.what); continue }
     try { Disable-WindowsOptionalFeature -Online -FeatureName $f.name -NoRestart -ErrorAction Stop | Out-Null; Record @{ type = 'feature'; name = $f.name }; Did ("off: {0}" -f $f.what) } catch { Warn ("Could not switch off {0} ({1})." -f $f.what, $_.Exception.Message) }
   }
   # Edge's add-ons: shopping, recommendations, Spotlight, feedback and reporting. Your tabs and settings are untouched.
