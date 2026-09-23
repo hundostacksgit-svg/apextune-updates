@@ -1,15 +1,18 @@
 ﻿{
-    "version":  "1.5.1",
-    "when":  "2026-09-22T23:45:14Z",
+    "version":  "1.10.0",
+    "when":  "2026-09-23T00:33:44Z",
     "os":  "Microsoft Windows Server 2025 Datacenter 10.0.26100 (build 26100)",
-    "cpu":  "INTEL(R) XEON(R) PLATINUM 8573C",
-    "before":  142,
-    "after":  144,
+    "cpu":  "AMD EPYC 7763 64-Core Processor",
+    "before":  137,
+    "after":  136,
     "target":  70,
-    "changes":  234,
+    "changes":  289,
     "warnings":  4,
-    "seconds":  320,
-    "undone":  234,
-    "gone":  1,
-    "sha":  "19648ee"
+    "seconds":  209,
+    "undone":  293,
+    "kept":  3,
+    "second":  4,
+    "runs":  2,
+    "gone":  2,
+    "sha":  "3bce90b"
 }

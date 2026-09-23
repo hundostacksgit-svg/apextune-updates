@@ -1,0 +1,96 @@
+﻿  200 processes. Under 100. One run.
+== Reading this PC
+  Processes running now: 137
+  Target for this PC after the tune and a restart: about 70
+== Your key
+  Before: 137 processes, 1290 threads, 46784 handles, 3327 MB in use, idle CPU 1%, DPC 0%
+== Safety first
+  + Registry and service list backed up to C:\OmniDx\backup\2026-09-23_00-05
+  + undo.ps1 written to C:\OmniDx\undo
+== Startup apps
+  2 things start with Windows:
+  + off: AzureArcSetup
+  + off: Service Fabric Local Cluster Manager (Startup folder)
+  2 startup entries switched off. Task Manager > Startup can switch any one back on.
+== Services
+  + dmwappushservice -> disabled  (telemetry push)
+  + WerSvc -> disabled  (error reporting)
+  + wercplsupport -> disabled  (error reporting)
+  + PcaSvc -> disabled  (compatibility assistant)
+  + lfsvc -> disabled  (geolocation)
+  + RemoteRegistry -> disabled  (remote registry)
+  + WMPNetworkSvc -> disabled  (media sharing)
+  + TrkWks -> disabled  (link tracking)
+  + WalletService -> disabled  (wallet)
+  + wisvc -> disabled  (insider program)
+  + SEMgrSvc -> disabled  (payments and NFC)
+  + TapiSrv -> disabled  (telephony)
+  + SharedAccess -> disabled  (internet connection sharing)
+  + edgeupdate -> manual  (Edge updater (runs on demand))
+  + WbioSrvc -> disabled  (biometrics)
+  + SysMain -> manual  (superfetch)
+  + WSearch -> manual  (search indexing)
+  + Spooler -> disabled  (print spooler)
+  + bthserv -> disabled  (bluetooth)
+  + WlanSvc -> disabled  (wi-fi)
+  + CDPSvc -> manual  (connected devices)
+  + CDPUserSvc -> manual  (connected devices)
+  + OneSyncSvc -> manual  (mail/contacts sync)
+  + PimIndexMaintenanceSvc -> manual  (contacts index)
+  + UnistoreSvc -> manual  (user data storage)
+  + UserDataSvc -> manual  (user data)
+  + SSDPSRV -> manual  (ssdp discovery)
+  + upnphost -> manual  (upnp)
+  + DPS -> manual  (diagnostic policy)
+  + SCardSvr -> disabled  (smart card)
+  + ScDeviceEnum -> disabled  (smart card)
+  + CertPropSvc -> disabled  (smart card)
+  + iphlpsvc -> manual  (ipv6 tunnels)
+  + cbdhsvc -> manual  (clipboard history)
+  + WpnService -> manual  (push notifications)
+  + WpnUserService -> manual  (push notifications)
+== Scheduled tasks
+  + PcaPatchDbTask
+  + CreateObjectTask
+  + Device
+  + Device User
+  + LoginCheck
+  + WindowsActionDialog
+  + OobeDiscovery
+  7 telemetry and feedback tasks disabled.
+== Preinstalled apps
+  + Microsoft.WindowsFeedbackHub
+  1 apps removed. Spotify, the Store, the Xbox apps, Photos, Calculator, Media Player, Snipping Tool, Terminal and 
+== Debloat
+  + removed Steps Recorder (screenshots every click, retired by Microsoft)
+  + removed the 2009 Windows Media Player (the Store one stays)
+  + removed Math Input Panel
+  + removed Internet Explorer 11
+  + off: Work Folders (corporate sync)
+  + Edge: shopping assistant, recommendations, Spotlight, feedback prompts and reporting off
+  + Kept gone: consumer features, suggested apps, account nags and the 'finish setting up' screen are off by policy
+== Telemetry, background activity, the shell
+== System tuning
+  + NTFS last-access stamps off
+  + NTFS allowed more memory for its cache
+== The OmniDx power plan
+  + OmniDx plan created and active: CPU 100/100, boost aggressive, no core parking, PCIe and USB power saving off, no 
+== Network
+  + TCP: autotuning normal, ECN and timestamps off, receive-side scaling on, segment coalescing off, CTCP.
+  + Ethernet 4: Interrupt Moderation off
+  + Ethernet 4: Nagle off, power saving off
+  + Ethernet 3: Nagle off, power saving off
+== Discord, Spotify, browsers
+  + Chrome: no background mode, hardware acceleration on
+  + Edge: no startup boost, no background mode, hardware acceleration on
+== Game profiles
+  Looked in 2 game folders
+  + Installed and profiled: Minecraft
+== Cleanup
+  + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 370 MB back.
+== Keeping it cut
+  + Task 'OmniDx keep' runs three minutes after sign-in and puts back whatever an update turned on. Log: 
+  After:  136 processes, 1311 threads, 46619 handles, 3407 MB in use, idle CPU 0.7%, DPC 0%
+  Gone:   backgroundTaskHost, spoolsv
+== Done
+  Processes: 137 -> 136 now, in 209 seconds. Restart for the real number: the services that were told to stop are 
