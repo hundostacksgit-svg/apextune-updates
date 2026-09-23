@@ -173,9 +173,12 @@ Every step below is a browser tab; none needs a terminal.
    `RESEND_API_KEY`, and `TUNE_ADMIN_TOKEN` (any thirty-plus characters you
    make up; it unlocks the owner page).
 5. **Deploy**: Actions > "Deploy the Worker" > Run workflow on the branch.
-   The log's "The Worker answers at https://…workers.dev" line is the
-   server's address; the workflow has already written it into
-   `tune/config.json` and published the site.
+   The run's Summary tab shows a table of every secret, set or not, and
+   what each is for; with one of the three Cloudflare ones missing the
+   run stops there and says which. When it runs through, the log's "The
+   Worker answers at https://…workers.dev" line is the server's address;
+   the workflow has already written it into `tune/config.json` and
+   published the site.
 6. **Square webhook** (developer.squareup.com > your application > Webhooks
    > Add subscription): URL = that address + `/v1/webhooks/square`; events
    `payment.created`, `payment.updated`, `refund.created`, `refund.updated`.
