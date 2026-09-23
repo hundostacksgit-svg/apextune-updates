@@ -80,7 +80,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.14.0'
+$script:Version = '1.15.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -858,6 +858,15 @@ function Show-Status {
   $sum = Get-ChildItem $script:Root -Filter 'summary-*.json' -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
   if ($sum) { try { $s = Get-Content $sum.FullName -Raw | ConvertFrom-Json; Say ("  Last run: {0} -> {1} processes, target about {2} after a restart" -f $s.before, $s.after, $s.target) } catch { } }
   Say ("  Processes running now: {0}" -f (Get-ProcessCount)) 'White'
+  # The answer to "why is the number up again": what runs now that did not run right after the tune.
+  $afterFile = Get-ChildItem $script:Root -Filter 'processes-after-*.txt' -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
+  if ($afterFile) {
+    $then = @(Get-Content $afterFile.FullName -ErrorAction SilentlyContinue | ForEach-Object { ($_ -split '\s{2,}')[0].Trim() } | Where-Object { $_ })
+    $now = @(Get-Process -ErrorAction SilentlyContinue | ForEach-Object { $_.ProcessName } | Sort-Object -Unique)
+    $new = @($now | Where-Object { $then -notcontains $_ })
+    if ($new.Count) { Say ("  Running now, not running after the tune: {0}{1}. Whatever you opened since, or a launcher that came back; nothing here is a setting." -f (($new | Select-Object -First 12) -join ', '), $(if ($new.Count -gt 12) { " and $($new.Count - 12) more" } else { '' })) }
+    else { Say "  Nothing runs now that was not running right after the tune." }
+  }
 }
 
 <# Ten seconds to change your mind. #>
