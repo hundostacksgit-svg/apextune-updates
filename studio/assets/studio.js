@@ -775,10 +775,15 @@ function initTune() {
   $$('[data-games]').forEach((el) => { el.textContent = String(TUNE.games.length); });
   // The script's version, from the same file the command reads, so the footer
   // never claims a version the wire does not serve.
+  // The version shown is the copy the command fetches: the one the Windows
+  // check verified when there is one, the newest otherwise.
   const vers = $$('[data-script-version]');
   if (vers.length) {
-    fetch(TUNE.configUrl, { cache: 'no-store' }).then((r) => r.json()).then((cfg) => {
-      if (cfg.version) vers.forEach((el) => { el.textContent = `v${cfg.version}`; });
+    fetch(new URL('../../tune/verified.json', import.meta.url).href, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((v) => {
+      if (v && v.version) { vers.forEach((el) => { el.textContent = `v${v.version}`; el.title = `The copy your command fetches, verified on a Windows build machine on ${v.when}`; }); return; }
+      return fetch(TUNE.configUrl, { cache: 'no-store' }).then((r) => r.json()).then((cfg) => {
+        if (cfg.version) vers.forEach((el) => { el.textContent = `v${cfg.version}`; });
+      });
     }).catch(() => {});
   }
 

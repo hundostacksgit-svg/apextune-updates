@@ -29,15 +29,18 @@ const like = (v, pat) => pat.endsWith('%') && String(v || '').startsWith(pat.sli
 function statement(sql, args) {
   const s = sql.replace(/\s+/g, ' ').trim();
   const byOrder = (r) => r.order_ref === args[0] || like(r.order_ref, args[1]);
-  if (s.startsWith('SELECT * FROM tune_keys WHERE order_ref = ? OR order_ref LIKE ?')) {
-    return db.tune_keys.filter(byOrder).sort((a, b) => a.order_ref.localeCompare(b.order_ref));
+  if (s.startsWith('SELECT * FROM tune_keys WHERE order_ref = ? OR order_ref LIKE ? OR (receipt IS NOT NULL AND receipt = ?)')) {
+    return db.tune_keys.filter((r) => byOrder(r) || (r.receipt && r.receipt === args[2])).sort((a, b) => a.order_ref.localeCompare(b.order_ref));
   }
   if (s.startsWith('SELECT * FROM tune_keys WHERE key = ?')) return db.tune_keys.filter((r) => r.key === args[0]);
-  if (s.startsWith('INSERT INTO tune_keys (key, product, seats, email, order_ref, provider, amount_cents, verified, created_at)')) {
-    const [key, product, seats, email, order_ref, provider, amount_cents, verified, created_at] = args;
+  if (s.startsWith('INSERT INTO tune_keys (key, product, seats, email, order_ref, receipt, provider, amount_cents, verified, created_at)')) {
+    const [key, product, seats, email, order_ref, receipt, provider, amount_cents, verified, created_at] = args;
     if (db.tune_keys.some((r) => r.key === key || r.order_ref === order_ref)) throw new Error('UNIQUE constraint failed');
-    db.tune_keys.push({ key, product, seats, email, order_ref, provider, amount_cents, verified, created_at, revoked_at: null, moved_at: null, emailed_at: null });
+    db.tune_keys.push({ key, product, seats, email, order_ref, receipt, provider, amount_cents, verified, created_at, revoked_at: null, moved_at: null, emailed_at: null });
     return [];
+  }
+  if (s.startsWith('UPDATE tune_keys SET receipt = ? WHERE order_ref = ? OR order_ref LIKE ?')) {
+    db.tune_keys.filter((r) => r.order_ref === args[1] || like(r.order_ref, args[2])).forEach((r) => { r.receipt = args[0]; }); return [];
   }
   if (s.startsWith('UPDATE tune_keys SET emailed_at = ? WHERE order_ref = ? OR order_ref LIKE ?')) {
     db.tune_keys.filter((r) => r.order_ref === args[1] || like(r.order_ref, args[2])).forEach((r) => { r.emailed_at = args[0]; }); return [];
@@ -87,7 +90,7 @@ globalThis.fetch = async (url, init = {}) => {
   if (m) {
     const p = payments[decodeURIComponent(m[1])];
     if (!p) return new Response('{}', { status: 404 });
-    return new Response(JSON.stringify({ payment: { status: 'COMPLETED', amount_money: { amount: p.cents }, buyer_email_address: p.email, receipt_url: 'https://squareup.com/receipt/x' } }), { status: 200 });
+    return new Response(JSON.stringify({ payment: { status: 'COMPLETED', amount_money: { amount: p.cents }, buyer_email_address: p.email, receipt_url: 'https://squareup.com/receipt/x', order_id: p.orderId || null, receipt_number: p.receipt || null } }), { status: 200 });
   }
   throw new Error('unexpected fetch ' + u);
 };
@@ -143,13 +146,28 @@ expect(mails.length === 2 && mails[1].to[0] === 'solo@example.test', 'and it is 
 r = await call('/v1/tune/issue', { product: 'squad', order: 'ORDER-TUNE-1' });
 expect(r.status === 200 && (r.data.keys || []).length === 1 && r.data.product === 'tune', 'asking for Squad on a $19.99 order still gets one key');
 
+/* 4b. The redirect carries the payment id, the webhook the order id: one purchase, one set of keys. */
+payments['PAY-DUAL-1'] = { cents: 3999, email: 'dual@example.test', orderId: 'ORDER-DUAL-1', receipt: 'zq7K' };
+r = await call('/v1/tune/issue', { product: 'squad', order: 'PAY-DUAL-1' });
+expect(r.status === 200 && (r.data.keys || []).length === 3, 'the key page, given the payment id, gets three keys');
+const dualKeys = r.data.keys;
+r = await webhook({ id: 'PAY-DUAL-1', order_id: 'ORDER-DUAL-1', status: 'COMPLETED', amount_money: { amount: 3999 }, buyer_email_address: 'dual@example.test', receipt_number: 'zq7K' });
+expect(r.status === 200 && r.data.keys === 3 && db.tune_keys.filter((k) => k.order_ref.startsWith('ORDER-DUAL-1')).length === 3, 'the webhook for the same purchase mints nothing more');
+r = await call('/v1/tune/issue', { product: 'squad', order: 'ORDER-DUAL-1' });
+expect(r.status === 200 && JSON.stringify(r.data.keys) === JSON.stringify(dualKeys), 'the order id and the payment id land on the same keys');
+r = await call('/v1/tune/issue', { product: 'squad', order: '#zq7k' });
+expect(r.status === 200 && JSON.stringify(r.data.keys) === JSON.stringify(dualKeys), 'so does the short receipt number from the Square email, typed in any case');
+r = await call('/v1/tune/release', { key: dualKeys[1], order: 'ZQ7K' });
+expect(r.status === 200 && r.data.ok, 'and the receipt number moves a key');
+
 /* 5. Refusals. */
+const n0 = db.tune_keys.length;
 r = await webhook({ id: 'pay9', order_id: 'ORDER-FORGED-1', status: 'COMPLETED', amount_money: { amount: 3999 } }, 'wrong-key');
-expect(r.status === 400 && db.tune_keys.length === 4, 'a webhook with a bad signature is refused and mints nothing');
+expect(r.status === 400 && db.tune_keys.length === n0, 'a webhook with a bad signature is refused and mints nothing');
 r = await webhook({ id: 'pay5', order_id: 'ORDER-CHEAP-1', status: 'COMPLETED', amount_money: { amount: 500 } });
-expect(r.status === 200 && r.data.ignored && db.tune_keys.length === 4, 'a payment below the price is ignored');
+expect(r.status === 200 && r.data.ignored && db.tune_keys.length === n0, 'a payment below the price is ignored');
 r = await webhook({ id: 'pay6', order_id: 'ORDER-PENDING-1', status: 'PENDING', amount_money: { amount: 1999 } });
-expect(r.status === 200 && r.data.ignored && db.tune_keys.length === 4, 'a payment that has not completed is ignored');
+expect(r.status === 200 && r.data.ignored && db.tune_keys.length === n0, 'a payment that has not completed is ignored');
 r = await call('/v1/tune/issue', { product: 'tune', order: 'ORDER-NOPE-1' });
 expect(r.status === 402, 'an order Square does not know gets no key');
 

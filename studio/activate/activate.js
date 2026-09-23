@@ -219,8 +219,8 @@ function renderUnknown(message = '') {
 
     <div class="field" style="text-align:left">
       <label for="act-order" class="small"><b>Order or receipt number</b></label>
-      <input class="input" id="act-order" placeholder="From your Square receipt email" autocomplete="off" spellcheck="false">
-      <p class="tiny muted" style="margin:7px 0 0">It is on the confirmation email from Square, near the top.</p>
+      <input class="input" id="act-order" placeholder="The receipt number from Square's email, e.g. #AB12" autocomplete="off" spellcheck="false">
+      <p class="tiny muted" style="margin:7px 0 0">The short receipt number on Square's email works, and so does the long order id from the page you landed on.</p>
     </div>
 
     <div class="field" style="margin-top:16px;text-align:left">
@@ -241,7 +241,7 @@ function renderUnknown(message = '') {
     if (!pick) return;
     const order = String($('#act-order')?.value || '').trim();
     const err = $('#act-err');
-    if (order.length < 6) {
+    if (order.replace(/^#/, '').length < 4) {
       if (err) { err.hidden = false; err.textContent = 'Put in the order number from your Square receipt first — it is what the key is issued against.'; }
       $('#act-order')?.focus();
       return;
@@ -272,7 +272,7 @@ async function wireExtras(info) {
     const which = String($('#act-move-key')?.value || info.key);
     out.hidden = false;
     if (!base) { out.textContent = 'Moving a key by yourself needs the licence server, which is not switched on yet. Email support with your receipt and it moves the same day.'; return; }
-    if (order.length < 6) { out.textContent = 'Put in the order number from your Square receipt first.'; return; }
+    if (order.replace(/^#/, '').length < 4) { out.textContent = 'Put in the order number from your Square receipt first.'; return; }
     out.textContent = 'Moving…';
     try {
       const r = await fetch(`${base}/v1/tune/release`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: which, order }) });

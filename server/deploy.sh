@@ -65,6 +65,7 @@ npx wrangler d1 execute omnidx-studio --file=schema.sql --remote --yes
 for stmt in \
   "ALTER TABLE tune_keys ADD COLUMN moved_at INTEGER" \
   "ALTER TABLE tune_keys ADD COLUMN emailed_at INTEGER" \
+  "ALTER TABLE tune_keys ADD COLUMN receipt TEXT" \
   "ALTER TABLE tune_machines ADD COLUMN version TEXT" \
   "ALTER TABLE tune_machines ADD COLUMN os TEXT"; do
   npx wrangler d1 execute omnidx-studio --remote --yes --command "$stmt" >/dev/null 2>&1 && echo "added: $stmt" || echo "already there: $stmt"

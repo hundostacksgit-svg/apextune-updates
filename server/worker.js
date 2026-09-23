@@ -221,6 +221,7 @@ async function squareOrder(env, ref) {
   const payment = await tryGet(`/v2/payments/${encodeURIComponent(ref)}`, (d) => d.payment && ({
     ok: d.payment.status === 'COMPLETED', cents: Number(d.payment.amount_money?.amount || 0),
     email: d.payment.buyer_email_address || null, receipt: d.payment.receipt_url || null,
+    orderId: d.payment.order_id || null, receiptNumber: d.payment.receipt_number || null,
   }));
   return payment || { ok: false, cents: 0 };
 }
@@ -238,23 +239,32 @@ function tuneProductFor(cents) {
  * #2 and #3 on the end), so a second look at the same order returns the same
  * three keys and never a fourth.
  */
+const receiptOf = (v) => String(v || '').trim().toUpperCase().replace(/^#/, '');
+
+/**
+ * The keys for a paid order, minted once, found by the Square order id or by
+ * the short receipt number printed on Square's receipt email (the thing a
+ * buyer who closed the tab actually has). A Squad order is three rows that
+ * share the order reference (plain, #2, #3), so a second look at the same
+ * order returns the same three keys and never a fourth.
+ */
 async function tuneKeysFor(env, order) {
   const rows = await env.DB.prepare(
-    "SELECT * FROM tune_keys WHERE order_ref = ? OR order_ref LIKE ? ORDER BY order_ref",
-  ).bind(order, `${order}#%`).all();
+    "SELECT * FROM tune_keys WHERE order_ref = ? OR order_ref LIKE ? OR (receipt IS NOT NULL AND receipt = ?) ORDER BY order_ref",
+  ).bind(order, `${order}#%`, receiptOf(order)).all();
   return rows.results || [];
 }
 
-async function issueTuneKeys(env, { order, product, cents, email }) {
+async function issueTuneKeys(env, { order, product, cents, email, receipt }) {
   const p = TUNE_PRODUCTS[product];
   const keys = [];
   for (let i = 1; i <= p.keys; i++) {
     const key = makeTuneKey(product);
     const ref = i === 1 ? order : `${order}#${i}`;
     await env.DB.prepare(
-      `INSERT INTO tune_keys (key, product, seats, email, order_ref, provider, amount_cents, verified, created_at)
-       VALUES (?,?,?,?,?,?,?,?,?)`,
-    ).bind(key, product, p.seats, email || null, ref, 'square', cents, 1, Date.now()).run();
+      `INSERT INTO tune_keys (key, product, seats, email, order_ref, receipt, provider, amount_cents, verified, created_at)
+       VALUES (?,?,?,?,?,?,?,?,?,?)`,
+    ).bind(key, product, p.seats, email || null, ref, receipt ? receiptOf(receipt) : null, 'square', cents, 1, Date.now()).run();
     keys.push(key);
   }
   return keys;
@@ -774,8 +784,9 @@ const routes = {
   'POST /v1/tune/issue': async (request, env, body) => {
     const wanted = String(body.product || 'tune').toLowerCase();
     if (!TUNE_PRODUCTS[wanted]) return fail('Unknown product.', 400, env, request);
-    const order = String(body.order || '').trim().slice(0, 120);
-    if (order.length < 6) return fail('The order reference from your Square receipt is needed to issue a key.', 400, env, request);
+    // The Square order id from the redirect, or the short receipt number (four characters, sometimes written with a #) from Square's email.
+    const order = String(body.order || '').trim().replace(/^#/, '').slice(0, 120);
+    if (order.length < 4) return fail('The order reference or the receipt number from your Square receipt is needed to issue a key.', 400, env, request);
     if (!/^[A-Za-z0-9_\-:.]+$/.test(order)) return fail('That does not look like a Square order reference.', 400, env, request);
     const email = validEmail(body.email) ? String(body.email).trim().toLowerCase() : null;
 
@@ -788,13 +799,17 @@ const routes = {
     const product = tuneProductFor(sq.cents);
     if (!product) return fail('That payment is below the price of a key.', 402, env, request);
 
-    await issueTuneKeys(env, { order, product, cents: sq.cents, email: email || sq.email || null });
-    const rows = await tuneKeysFor(env, order);
+    // Square's redirect may carry the payment id while the webhook carries the
+    // order id; the keys live under the order id, so a purchase is never minted twice.
+    const canonical = sq.orderId || order;
+    const already = canonical !== order ? await tuneKeysFor(env, canonical) : [];
+    if (!already.length) await issueTuneKeys(env, { order: canonical, product, cents: sq.cents, email: email || sq.email || null, receipt: sq.receiptNumber || null });
+    const rows = await tuneKeysFor(env, canonical);
     // The keys go to the checkout email too, when there is one and a mailer.
     const to = email || sq.email;
     if (env.RESEND_API_KEY && to && !rows[0].emailed_at) {
-      const sent = await emailTuneKeys(env, to, product, rows.map((r) => prettyTuneKey(r.key)), order, sq.receipt || null);
-      if (sent) { await env.DB.prepare("UPDATE tune_keys SET emailed_at = ? WHERE order_ref = ? OR order_ref LIKE ?").bind(Date.now(), order, `${order}#%`).run(); rows.forEach((r) => { r.emailed_at = Date.now(); }); }
+      const sent = await emailTuneKeys(env, to, product, rows.map((r) => prettyTuneKey(r.key)), canonical, sq.receipt || null);
+      if (sent) { await env.DB.prepare("UPDATE tune_keys SET emailed_at = ? WHERE order_ref = ? OR order_ref LIKE ?").bind(Date.now(), canonical, `${canonical}#%`).run(); rows.forEach((r) => { r.emailed_at = Date.now(); }); }
     }
     return tuneAnswer(rows, env, request);
   },
@@ -915,12 +930,14 @@ const routes = {
     if (!product) return json({ ignored: `amount ${cents}` });
     const to = validEmail(payment.buyer_email_address) ? String(payment.buyer_email_address).trim().toLowerCase() : null;
 
+    const receipt = payment.receipt_number ? receiptOf(payment.receipt_number) : null;
     let rows = await tuneKeysFor(env, order);
     if (!rows.length) {
-      await issueTuneKeys(env, { order, product, cents, email: to });
+      await issueTuneKeys(env, { order, product, cents, email: to, receipt });
       rows = await tuneKeysFor(env, order);
-    } else if (to && !rows[0].email) {
-      await env.DB.prepare("UPDATE tune_keys SET email = ? WHERE order_ref = ? OR order_ref LIKE ?").bind(to, order, `${order}#%`).run();
+    } else {
+      if (to && !rows[0].email) await env.DB.prepare("UPDATE tune_keys SET email = ? WHERE order_ref = ? OR order_ref LIKE ?").bind(to, order, `${order}#%`).run();
+      if (receipt && !rows[0].receipt) await env.DB.prepare("UPDATE tune_keys SET receipt = ? WHERE order_ref = ? OR order_ref LIKE ?").bind(receipt, order, `${order}#%`).run();
     }
     const live = rows.filter((r) => !r.revoked_at);
     let emailed = Boolean(rows[0]?.emailed_at);
@@ -986,15 +1003,17 @@ const routes = {
   'POST /v1/tune/release': async (request, env, body) => {
     const parsed = parseTuneKey(body.key);
     if (!parsed) return fail('That key is not valid. Check it for typos.', 400, env, request);
-    const order = String(body.order || '').trim().slice(0, 120);
-    if (order.length < 6) return fail('The order reference from your Square receipt is needed.', 400, env, request);
+    const order = String(body.order || '').trim().replace(/^#/, '').slice(0, 120);
+    if (order.length < 4) return fail('The order reference or the receipt number from your Square receipt is needed.', 400, env, request);
     const row = await env.DB.prepare('SELECT * FROM tune_keys WHERE key = ?').bind(parsed.key).first();
     if (!row) return fail('That key was not issued by us.', 404, env, request);
     if (row.revoked_at) return fail('That key has been refunded or revoked.', 410, env, request);
     // The second and third keys of a Squad order carry #2 and #3 after the
     // order reference; the receipt shows the plain reference, so that is what is compared.
     const plainRef = String(row.order_ref || '').replace(/#\d+$/, '');
-    if (!plainRef || !sameSecret(plainRef.toLowerCase(), order.toLowerCase())) {
+    const byOrder = plainRef && sameSecret(plainRef.toLowerCase(), order.toLowerCase());
+    const byReceipt = row.receipt && sameSecret(String(row.receipt), receiptOf(order));
+    if (!byOrder && !byReceipt) {
       return fail('That order reference does not match this key.', 403, env, request);
     }
     const days = 30;
