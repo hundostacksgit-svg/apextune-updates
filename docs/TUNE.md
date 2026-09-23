@@ -301,7 +301,12 @@ The number that matters is the one after a restart. The script leaves one
 scheduled task ("OmniDx after-restart count") that runs once at the next
 sign-in, waits two minutes, writes the count to `C:\OmniDx\after-restart.txt`
 and unregisters itself. It is recorded as a change, so undo removes it, and
-`-NoAfterCount` skips it. The site says so on the run-it, pricing and trust
+`-NoAfterCount` skips it. The same line carries the boot time of that start
+when Windows has logged it by then (event 100 of its boot-performance log,
+written a few minutes after the desktop appears; `Get-BootSeconds`). The
+report and `summary-<date>.json` (`bootBefore`) hold the figure from before
+the tune, and status prints the last measured start next to it. It is
+Windows' own number, never a stopwatch of ours. The site says so on the run-it, pricing and trust
 pages; keep it that way.
 
 ### Keeping it cut (the sign-in task)
