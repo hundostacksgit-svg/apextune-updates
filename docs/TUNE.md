@@ -440,8 +440,9 @@ one record only. A run's `backup\<stamp>` folder is kept as long as its
 record is; `Limit-History` keeps the newest ten of everything else.
 
 ### Checks that run on every push
-The Windows job runs when the push changed `tune/`, `go.ps1`, the CI
-licence stand-in, the key tool or the workflow itself; the `changes` job
+The Windows job runs when the push changed `tune/`, `go.ps1`, the Worker
+(`server/worker.js`), the test stand-ins, the key tool or the workflow
+itself; the `changes` job
 diffs the whole push (`github.event.before` to the head), not only its
 last commit, so a push of several commits cannot slip a script change past
 it. The runner cannot fetch the optional pieces of Windows back from
@@ -449,11 +450,19 @@ Windows Update, so the job sets `OMNIDX_SKIP_DISM=1` and undo lists them
 for Settings > Apps > Optional features instead of waiting on each; on a
 buyer's PC undo tries them, and stops after the first one times out.
 
-The Windows job (forty minutes) runs when the tune, `go.ps1`, the stand-in
-licence server, the key tool or the workflow itself changed, and always from
-the button; a push that touches only the site or the Worker gets the static
+The Windows job (about fifteen minutes) runs when the tune, `go.ps1`, the
+Worker, the stand-ins, the key tool or the workflow itself changed, and
+always from the button; a push that touches only the site gets the static
 job and the browser test (in the Pages workflow), which is all it needs. The
 `changes` job at the top of `tune-check.yml` decides, from the push's diff.
+
+The licence server the Windows job runs the tune against is the real one:
+`tools/worker-serve.mjs` runs `server/worker.js` under Node on the loopback
+address, with the stand-in database and Square from
+`tools/worker-standin.mjs`, issues one key for a stand-in order at start
+(the way the key page does after a payment) and writes it to a file the
+steps read. So the script's claim, the second run, Extreme, status and the
+key checks all meet the answers a buyer's PC meets, not a stand-in of them.
 
 `node tools/site-test.mjs` drives every Tune page in Chromium at desktop and
 phone width (no script or console error, no sideways scroll), then the money
@@ -462,7 +471,13 @@ and when the server cannot reach Square, and stay open when it merely cannot
 be reached from the browser; the key page shows three keys for a Squad order
 and one for Tune, shows them again on a return visit, takes the receipt
 number with the email paid with (and stops without it), and shows a refusal
-in the server's words; the owner page says when the server is off. It runs in the Pages workflow before anything publishes.
+in the server's words; the owner page says when the server is off. Then the
+key page is driven against the real Worker code (its API calls routed into
+`worker.fetch` in the same process, with the stand-ins): a buyer lands from
+Square and sees the key the server minted, the email line is absent with no
+mailer and present with the Gmail secrets, a resend goes through the fake
+Gmail to the address Square holds, and a refund shows as refunded. It runs
+in the Pages workflow before anything publishes.
 
 The Windows check serves the tune files from the build machine (LF bytes,
 as the site serves them) and runs `go.ps1` against them with
