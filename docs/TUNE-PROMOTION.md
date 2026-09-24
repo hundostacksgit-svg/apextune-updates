@@ -155,6 +155,15 @@ get more FPS" threads with the twenty-second check, not the link.
   start next to the one from before the tune). Numbers from a real PC are
   fine to show as long as they are labelled as that PC's.
 
+## The card
+
+Every run writes `C:\OmniDx\card-<date>.png`: the before and after on one
+1080 x 1080 picture with the CPU and GPU, the date and "an example run on one
+PC; yours will differ" already on it. That is the post. Status mode
+(`$env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex`) writes another
+with the after-restart number, which is the one to use. Never edit the
+numbers on a card; the whole point is that Windows counted them.
+
 ## What to record for the first videos
 
 On a real PC you own: the free report run; the full run with the startup

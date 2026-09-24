@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.50.0'
+$script:Version = '1.51.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -939,7 +939,7 @@ function Register-Keep {
    backup folder stays as long as its record does. #>
 function Limit-History {
   $keep = 10
-  foreach ($pat in 'log-*.txt', 'machine-*.json', 'processes-before-*.txt', 'processes-after-*.txt', 'report-20*.txt', 'report-20*.html', 'report-preview-*.txt', 'summary-*.json') {
+  foreach ($pat in 'log-*.txt', 'machine-*.json', 'processes-before-*.txt', 'processes-after-*.txt', 'report-20*.txt', 'report-20*.html', 'report-preview-*.txt', 'summary-*.json', 'card-*.png') {
     try { Get-ChildItem $script:Root -Filter $pat -File -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -Skip $keep | Remove-Item -Force -ErrorAction SilentlyContinue } catch { }
   }
   try {
@@ -987,11 +987,25 @@ function Show-Status {
   if ($task) { Say ("  Keep task: on ({0}). {1}" -f $task.State, $(if ($last) { "Last: $last" } else { 'Has not run yet; it runs three minutes after sign-in.' })) }
   else { Say "  Keep task: not set. Run the tune again and answer yes to keep it cut, or leave it; the tune holds until a big update either way." }
   $ar = Join-Path $script:Root 'after-restart.txt'
-  if (Test-Path $ar) { $l = @(Get-Content $ar -ErrorAction SilentlyContinue) | Select-Object -Last 1; if ($l) { Say ("  After restart: {0}" -f $l) 'White' } }
+  $arCount = 0
+  if (Test-Path $ar) { $l = @(Get-Content $ar -ErrorAction SilentlyContinue) | Select-Object -Last 1; if ($l) { Say ("  After restart: {0}" -f $l) 'White'; if ($l -match 'after restart: (\d+) processes') { $arCount = [int]$Matches[1] } } }
   # The newest run still in place (its record is not in undo\done), so an undone Extreme does not speak for the tune.
   $stamps = @($files | ForEach-Object { $_.BaseName -replace '^changes-', '' })
   $sum = Get-ChildItem $script:Root -Filter 'summary-*.json' -ErrorAction SilentlyContinue | Where-Object { $stamps -contains ($_.BaseName -replace '^summary-', '') } | Sort-Object Name -Descending | Select-Object -First 1
-  if ($sum) { try { $s = Get-Content $sum.FullName -Raw | ConvertFrom-Json; Say ("  Last run in place: {0} -> {1} processes, target about {2} after a restart" -f $s.before, $s.after, $s.target) } catch { } }
+  if ($sum) {
+    try {
+      $s = Get-Content $sum.FullName -Raw | ConvertFrom-Json; Say ("  Last run in place: {0} -> {1} processes, target about {2} after a restart" -f $s.before, $s.after, $s.target)
+      # The card with the number that counts: before the tune, and after a restart.
+      if ($arCount -and $s.before) {
+        $mm = @{ cpu = ''; gpu = '' }
+        $mj = Join-Path $script:Root ("machine-{0}.json" -f ($sum.BaseName -replace '^summary-', ''))
+        try { if (Test-Path $mj) { $mo = Get-Content $mj -Raw | ConvertFrom-Json; $mm = @{ cpu = $mo.cpu; gpu = $mo.gpu } } } catch { }
+        if (-not $mm.cpu) { try { $mm = @{ cpu = (Get-CimInstance Win32_Processor | Select-Object -First 1).Name.Trim(); gpu = (Get-CimInstance Win32_VideoController | Where-Object { $_.Name -notmatch 'Basic Display|Remote|Virtual' } | Select-Object -First 1).Name } } catch { } }
+        Write-Card $mm ([int]$s.before) $arCount 'after a restart'
+        if ($script:Card) { Say ("  A card with the after-restart number, for posting: {0}" -f $script:Card) 'White' }
+      }
+    } catch { }
+  }
   $bootNow = Get-BootSeconds
   if ($bootNow -ne $null) {
     $was = $null; if ($sum) { try { $was = (Get-Content $sum.FullName -Raw | ConvertFrom-Json).bootBefore } catch { } }
@@ -2726,6 +2740,98 @@ function Get-BootSeconds {
   return $null
 }
 
+# ---------------------------------------------------------------------------
+# the card: the number, on one picture, for the person who wants to post it
+# ---------------------------------------------------------------------------
+<# One 1080 x 1080 PNG: the process count before and after, counted on this
+   PC by Windows itself, the CPU and GPU, and the words that keep it honest
+   (an example run on one PC; yours will differ). Written at the end of a run
+   with the "now" number, and again by status mode once the after-restart
+   count exists. System.Drawing ships with Windows; a PC without it simply
+   has no card, and the run says so in one line. #>
+function New-RoundedPath([float]$x, [float]$y, [float]$w, [float]$h, [float]$r) {
+  $p = New-Object System.Drawing.Drawing2D.GraphicsPath
+  $d = $r * 2
+  $p.AddArc($x, $y, $d, $d, 180, 90); $p.AddArc($x + $w - $d, $y, $d, $d, 270, 90)
+  $p.AddArc($x + $w - $d, $y + $h - $d, $d, $d, 0, 90); $p.AddArc($x, $y + $h - $d, $d, $d, 90, 90)
+  $p.CloseFigure()
+  return $p
+}
+
+function Write-Card($m, [int]$before, [int]$after, [string]$when) {
+  $script:Card = $null
+  try {
+    Add-Type -AssemblyName System.Drawing -ErrorAction Stop
+    $w = 1080; $h = 1080
+    $bmp = New-Object System.Drawing.Bitmap $w, $h
+    $g = [System.Drawing.Graphics]::FromImage($bmp)
+    $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+    $g.TextRenderingHint = [System.Drawing.Text.TextRenderingHint]::AntiAliasGridFit
+    $g.Clear([System.Drawing.ColorTranslator]::FromHtml('#050308'))
+    # A soft purple glow, top right.
+    $gp = New-Object System.Drawing.Drawing2D.GraphicsPath
+    $gp.AddEllipse(520, -320, 1000, 1000)
+    $pgb = New-Object System.Drawing.Drawing2D.PathGradientBrush $gp
+    $pgb.CenterColor = [System.Drawing.Color]::FromArgb(120, 139, 92, 246)
+    $pgb.SurroundColors = [System.Drawing.Color[]]@([System.Drawing.Color]::FromArgb(0, 5, 3, 8))
+    $g.FillPath($pgb, $gp)
+    # The mark: the three bars and the bolt, top left.
+    $mr = New-Object System.Drawing.Rectangle 80, 80, 150, 150
+    $lgb = New-Object System.Drawing.Drawing2D.LinearGradientBrush $mr, ([System.Drawing.ColorTranslator]::FromHtml('#5b21b6')), ([System.Drawing.ColorTranslator]::FromHtml('#d946ef')), 45
+    $g.FillPath($lgb, (New-RoundedPath 80 80 150 150 34))
+    $white = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml('#ffffff'))
+    $g.FillPath($white, (New-RoundedPath 107 119 69 14 7))
+    $g.FillPath((New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(184, 255, 255, 255))), (New-RoundedPath 107 148 47 14 7))
+    $g.FillPath((New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(118, 255, 255, 255))), (New-RoundedPath 107 177 26 14 7))
+    $bolt = [System.Drawing.PointF[]]@((New-Object System.Drawing.PointF 190, 107), (New-Object System.Drawing.PointF 166, 156), (New-Object System.Drawing.PointF 184, 156), (New-Object System.Drawing.PointF 174, 203), (New-Object System.Drawing.PointF 205, 143), (New-Object System.Drawing.PointF 187, 143))
+    $g.FillPolygon($white, $bolt)
+    $text = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml('#f1ecff'))
+    $muted = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml('#b3a8cf'))
+    $purple = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml('#c084fc'))
+    $font = { param($size, $bold) New-Object System.Drawing.Font 'Segoe UI', ([float]$size), $(if ($bold) { [System.Drawing.FontStyle]::Bold } else { [System.Drawing.FontStyle]::Regular }), ([System.Drawing.GraphicsUnit]::Pixel) }
+    $g.DrawString('OmniDx Tune', (& $font 46 $true), $text, 258, 92)
+    $g.DrawString('Processes, counted on this PC by Windows itself', (& $font 27 $false), $muted, 260, 154)
+    # The numbers: before, an arrow, after; the font shrinks until the three fit the width.
+    $arrow = [string][char]0x2192
+    $size = 200
+    do {
+      $fBig = & $font $size $true
+      $fArrow = & $font ([int]($size * 0.6)) $false
+      $wb = $g.MeasureString("$before", $fBig).Width; $wa = $g.MeasureString("$after", $fBig).Width; $ww = $g.MeasureString($arrow, $fArrow).Width
+      $total = $wb + $ww + $wa + 40
+      if ($total -le 940) { break }
+      $size -= 10
+    } while ($size -gt 90)
+    $y = 300
+    $x = 70
+    $g.DrawString("$before", $fBig, $text, $x, $y)
+    $g.DrawString($arrow, $fArrow, $purple, $x + $wb + 8, $y + ($size * 0.28))
+    $tr = New-Object System.Drawing.Rectangle ([int]($x + $wb + $ww + 24)), $y, ([int]$wa + 10), ([int]($size * 1.3))
+    $grad = New-Object System.Drawing.Drawing2D.LinearGradientBrush $tr, ([System.Drawing.ColorTranslator]::FromHtml('#8b5cf6')), ([System.Drawing.ColorTranslator]::FromHtml('#d946ef')), 0
+    $g.DrawString("$after", $fBig, $grad, $x + $wb + $ww + 24, $y)
+    $fLabel = & $font 30 $false
+    $g.DrawString('before', $fLabel, $muted, $x + 12, $y + ($size * 1.22))
+    $g.DrawString($when, $fLabel, $muted, $x + $wb + $ww + 36, $y + ($size * 1.22))
+    # The machine, trimmed to the width.
+    $fit = { param($t, $f, $max) $t = "$t"; while ($t.Length -gt 4 -and $g.MeasureString($t, $f).Width -gt $max) { $t = $t.Substring(0, $t.Length - 2).TrimEnd() + '...' }; return $t }
+    $fLine = & $font 34 $false
+    $cpu = & $fit $m.cpu $fLine 920
+    $gpu = & $fit $m.gpu $fLine 920
+    $g.DrawString($cpu, $fLine, $text, 80, 640)
+    $g.DrawString($gpu, $fLine, $text, 80, 690)
+    $fSmall = & $font 27 $false
+    $g.DrawString('An example run on one PC. Yours will differ; the free report shows what it would find on yours.', $fSmall, $muted, 80, 770)
+    $dot = [string][char]0x00B7
+    $g.DrawString(("OmniDx Tune v{0} {1} {2}" -f $script:Version, $dot, (Get-Date).ToString('d MMMM yyyy')), $fSmall, $muted, 80, 812)
+    $g.DrawString('omnidx.net', (& $font 44 $true), $purple, 80, 930)
+    $g.DrawString('One command. Undo in one line. Nothing installed.', $fSmall, $muted, 80, 996)
+    $path = Join-Path $script:Root ("card-{0}.png" -f $script:Stamp)
+    $bmp.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
+    $g.Dispose(); $bmp.Dispose()
+    $script:Card = $path
+  } catch { Say ("  (No card this time: {0})" -f $_.Exception.Message) }
+}
+
 function Write-Report($m, $before, $after, $changesFile) {
   $script:BootBefore = Get-BootSeconds
   $rep = Join-Path $script:Root ("report-{0}.txt" -f $script:Stamp)
@@ -2819,6 +2925,7 @@ details pre{font:12.5px/1.5 ui-monospace,Consolas,monospace;color:#b3a8cf;overfl
 <h1>OmniDx Tune <span class="muted" style="font-size:16px">v$(& $h $script:Version)</span></h1>
 <p class="sub">$(& $h ((Get-Date).ToString('f'))) &middot; $(& $h $m.cpu) &middot; $(& $h $m.gpu) &middot; $(& $h $m.ramGb) GB &middot; $(& $h $m.board)</p>
 <div class="big"><div><b>$before</b><span>processes before</span></div><div><b>$after</b><span>now, before a restart</span></div><div><b>~$target</b><span>target for this PC after a restart</span></div>$(if ($script:BootBefore -ne $null) { "<div><b>$($script:BootBefore) s</b><span>last start, before the tune</span></div>" })</div>
+$(if ($script:Card) { "<p class='muted'>The card, for posting (the same numbers, on one picture): <code>$(& $h (Split-Path $script:Card -Leaf))</code></p><img src='$(& $h (Split-Path $script:Card -Leaf))' alt='Before and after, on a card' style='max-width:340px;width:100%;border-radius:14px;border:1px solid #2a1f45'>" })
 <p class="muted">Many of the "now" processes are only waiting to be stopped. The number after a restart is the one that counts; <code>C:\OmniDx\after-restart.txt</code> gets it at your next sign-in.$(if ($keptCut) { ' Kept cut: a task at each sign-in puts back what a Windows update turns on; undo removes it.' } else { ' Not kept cut: run the command again after a big Windows update, same key, free.' })</p>
 <h2>Next steps</h2><ol>$((Get-NextSteps $m | ForEach-Object { '<li>' + (& $h $_) + '</li>' }) -join '')</ol>
 $(if ($snapRows) { "<h2>Before and after</h2><table><tr><th></th><th>Before</th><th>Now</th></tr>$snapRows</table>" })
@@ -3091,11 +3198,13 @@ function Main {
     $gone = Get-GoneProcesses
     if ($gone.Count) { Say ("  Gone:   {0}" -f ($gone -join ', ')) }
     $script:Snapshots = @{ before = $snapBefore; after = $snapAfter }
+    Write-Card $m $before $after 'now, before a restart'
     $rep = Write-Report $m $before $after $changesFile
     $stoppedAny = @($script:Changes | Where-Object { $_.type -eq 'service' }).Count -gt 0
     Say ("  Processes: {0} -> {1} now, in {2} seconds. Restart for the real number{3}" -f $before, $after, [int]$script:Timer.Elapsed.TotalSeconds, $(if ($stoppedAny) { ': the services that were told to stop are still unwinding.' } else { '.' })) 'Green'
     if ($script:Phases.Count) { Say ("  Where the time went: " + (($script:Phases.GetEnumerator() | Sort-Object Value -Descending | Select-Object -First 6 | ForEach-Object { "{0} {1} s" -f $_.Key, $_.Value }) -join ', ')) }
     Say ("  Report, BIOS checklist, launcher notes and per-game settings: {0}" -f $rep) 'White'
+    if ($script:Card) { Say ("  A card with these numbers, for posting: {0} (status mode writes one with the after-restart number)" -f $script:Card) 'White' }
     Say "  Undo, any time: powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1" 'White'
     Say "  What is still in place, any time: `$env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex" 'White'
     Say "  Next: restart, then do the BIOS checklist - the memory profile alone is worth more than half of this." 'White'

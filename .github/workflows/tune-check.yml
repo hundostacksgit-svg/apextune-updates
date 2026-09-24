@@ -236,8 +236,15 @@ jobs:
           if ($out -notmatch 'WpnUserService -> manual') { Write-Host 'the per-user template services were not configured'; exit 1 }
           $html = Get-ChildItem C:\OmniDx -Filter 'report-*.html' | Select-Object -First 1
           if (-not $html) { Write-Host 'no HTML report'; exit 1 }
+          # The card the run writes for posting: one PNG with the before and after; a run without one is a run that lost a feature.
+          $card = Get-ChildItem C:\OmniDx -Filter 'card-*.png' | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $card) { Write-Host 'no card was drawn'; exit 1 }
+          if ($card.Length -lt 20000) { Write-Host ("the card is {0} bytes; a drawn one is far bigger" -f $card.Length); exit 1 }
+          Write-Host ("card: {0} ({1} bytes)" -f $card.Name, $card.Length)
+          Copy-Item $card.FullName C:\OmniDx\ci-card.png -Force
           # The report of this run, as it opened on the build machine, for the site: a buyer can see the real thing before paying.
-          Copy-Item $html.FullName C:\OmniDx\ci-report.html -Force
+          # Its card image is renamed to the one the site commits next to it.
+          Set-Content C:\OmniDx\ci-report.html -Value ((Get-Content $html.FullName -Raw) -replace 'card-[0-9_\-]+\.png', 'ci-card.png') -Encoding UTF8 -NoNewline
           # Its "What was done" must be a list of headings and lines, not one blob: 1.42.0 drew every line into a single heading and nothing caught it.
           $h4 = ([regex]::Matches((Get-Content $html.FullName -Raw), '<h4>')).Count
           if ($h4 -lt 8) { Write-Host ("the HTML report's What was done has {0} headings; expected one per phase" -f $h4); exit 1 }
@@ -500,6 +507,7 @@ jobs:
           Copy-Item studio\assets\ci-run.json (Join-Path $keep 'ci-run.json') -Force
           Copy-Item studio\assets\ci-log.txt (Join-Path $keep 'ci-log.txt') -Force
           if (Test-Path C:\OmniDx\ci-report.html) { Copy-Item C:\OmniDx\ci-report.html (Join-Path $keep 'ci-report.html') -Force }
+          if (Test-Path C:\OmniDx\ci-card.png) { Copy-Item C:\OmniDx\ci-card.png (Join-Path $keep 'ci-card.png') -Force }
           # The tested script, LF-only and hashed as the bytes the site will serve.
           $text = [IO.File]::ReadAllText((Resolve-Path 'tune\omnidx.ps1').Path) -replace "`r`n", "`n"
           [IO.File]::WriteAllText((Join-Path $keep 'verified.ps1'), $text, [Text.Encoding]::ASCII)
@@ -516,10 +524,12 @@ jobs:
             Copy-Item (Join-Path $keep 'ci-run.json') studio\assets\ci-run.json -Force
             Copy-Item (Join-Path $keep 'ci-log.txt') studio\assets\ci-log.txt -Force
             if (Test-Path (Join-Path $keep 'ci-report.html')) { Copy-Item (Join-Path $keep 'ci-report.html') studio\assets\ci-report.html -Force }
+            if (Test-Path (Join-Path $keep 'ci-card.png')) { Copy-Item (Join-Path $keep 'ci-card.png') studio\assets\ci-card.png -Force }
             Copy-Item (Join-Path $keep 'verified.ps1') tune\verified.ps1 -Force
             Copy-Item (Join-Path $keep 'verified.json') tune\verified.json -Force
             git add studio/assets/app.png studio/assets/ci-run.json studio/assets/ci-log.txt tune/verified.ps1 tune/verified.json
             if (Test-Path studio\assets\ci-report.html) { git add studio/assets/ci-report.html }
+            if (Test-Path studio\assets\ci-card.png) { git add studio/assets/ci-card.png }
             git diff --cached --quiet
             if ($LASTEXITCODE -eq 0) { Write-Host 'nothing changed'; exit 0 }
             git commit -q -m 'Windows check: the app window, the numbers, the log, and the script this run verified'
