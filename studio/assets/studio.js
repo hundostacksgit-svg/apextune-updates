@@ -1420,6 +1420,20 @@ function initBackground() {
     ctx.beginPath(); ctx.moveTo(4, -12); ctx.lineTo(-6, 2); ctx.lineTo(0, 2); ctx.lineTo(-3, 12); ctx.lineTo(7, -3); ctx.lineTo(1, -3); ctx.closePath(); ctx.fill();
     ctx.restore();
   };
+  // A mote is the same soft dot at different sizes and strengths: painted once per colour, then drawn scaled
+  // with the object's alpha (the gradient's stops were fractions of that alpha, so the picture is the same).
+  const moteSprites = {};
+  const moteSprite = (rgb) => {
+    if (moteSprites[rgb]) return moteSprites[rgb];
+    const sp = document.createElement('canvas'); sp.width = sp.height = 48;
+    const sc = sp.getContext('2d');
+    if (sc) {
+      const g = sc.createRadialGradient(24, 24, 0, 24, 24, 24);
+      g.addColorStop(0, `rgba(${rgb},.9)`); g.addColorStop(.35, `rgba(${rgb},.25)`); g.addColorStop(1, `rgba(${rgb},0)`);
+      sc.fillStyle = g; sc.fillRect(0, 0, 48, 48);
+    }
+    moteSprites[rgb] = sp; return sp;
+  };
   const chip = (x, y, s, rot) => {
     ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
     ctx.beginPath();
@@ -1428,6 +1442,10 @@ function initBackground() {
   };
   const frame = (now) => {
     raf = 0;
+    // Thirty drawn frames a second, not sixty: the drift is slow enough that the eye cannot tell, and it is
+    // half the work (measured at a steady sixty: the script alone cost 30 ms of every second, four times
+    // that on a slow CPU, before the painting). The skipped frames cost nothing but the callback.
+    if (last && now - last < 28) { if (!reduce.matches && !document.hidden) raf = requestAnimationFrame(frame); return; }
     const dt = Math.min(.05, last ? (now - last) / 1000 : .016); last = now; t += dt;
     const p = palette();
     ctx.clearRect(0, 0, w, h);
@@ -1467,10 +1485,8 @@ function initBackground() {
       if (o.kind === 'bolt') bolt(x, y, o.s * o.z * 1.15, o.rot);
       else if (o.kind === 'chip') chip(x, y, 5.5 * o.s * o.z, o.rot);
       else {
-        const r = 1.4 * o.s * o.z + .6;
-        const g = ctx.createRadialGradient(x, y, 0, x, y, r * 4);
-        g.addColorStop(0, `rgba(${p.obj},${(a * .9).toFixed(3)})`); g.addColorStop(.35, `rgba(${p.obj},${(a * .25).toFixed(3)})`); g.addColorStop(1, `rgba(${p.obj},0)`);
-        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r * 4, 0, 6.2832); ctx.fill();
+        const rr = (1.4 * o.s * o.z + .6) * 4;
+        ctx.globalAlpha = a; ctx.drawImage(moteSprite(p.obj), x - rr, y - rr, rr * 2, rr * 2); ctx.globalAlpha = 1;
       }
     }
     if (!reduce.matches && !document.hidden) raf = requestAnimationFrame(frame);

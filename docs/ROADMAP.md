@@ -116,11 +116,21 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   23.1 s against 17.3 s and 17.6 s for 1.64.0. The two reads share the WMI
   service and slow each other more than the overlap saves, at least on the
   build machine's two cores. Sequential again; recorded in the left-alone
-  list.
+  list. 1.66.0's own sample, same code as 1.64.0: read 5.4 s, pieces 15.2 s,
+  look 17.8 s, whole 25.4 s. The pieces lap has ranged from 8.2 to 15.2 s
+  across identical code, so single samples of the look are worth little;
+  the read's laps are steadier.
 - **The moving background**: one canvas behind every page, hard black,
   purple shades and small purple objects at different depths that drift,
   slide with the scroll and lean toward the pointer; still under reduced
-  motion, paused in a hidden tab, lavender in the light theme.
+  motion, paused in a hidden tab, lavender in the light theme. Its cost,
+  measured in the browser at a steady sixty frames a second with every
+  callback timed: the script alone took 30 ms of every second (95 ms on a
+  CPU throttled four times). Now thirty drawn frames a second, the drift
+  being far too slow for the eye to tell: 16 ms and 58 ms. The motes are
+  drawn from one pre-rendered sprite instead of a radial gradient each, per
+  frame (same picture; the saving is in the painting, which this
+  measurement cannot see).
 
 ## Looked at and left alone, with the reason
 
