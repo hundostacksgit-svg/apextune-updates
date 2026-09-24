@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Owner — OmniDx Tune</title>
-<meta name="description" content="The owner's support page for OmniDx Tune keys.">
+<meta name="description" content="The owner's support page for OmniDx Tune keys and support tickets.">
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="../assets/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="../assets/icons/icon-192.png" sizes="192x192" type="image/png">
@@ -22,6 +22,17 @@
   .own-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line);font-size:14px}
   .own-out{margin-top:18px}
   .off{color:var(--bad,#ff5d6c)}.on{color:var(--ok,#35d07f)}
+  .own-ticket{display:grid;gap:4px;width:100%;text-align:left;padding:12px 14px;margin-top:8px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:inherit;cursor:pointer}
+  .own-ticket:hover{border-color:var(--blue)}
+  .own-ticket.unread{border-color:color-mix(in srgb,var(--blue) 60%,var(--line));box-shadow:0 0 0 3px var(--glow)}
+  .own-ticket-top{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
+  .own-ticket-last{font-size:13.5px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .own-st{margin-left:auto;font-size:12px;font-weight:650;padding:2px 9px;border-radius:99px;border:1px solid var(--line);color:var(--text-2)}
+  .unread .own-st{color:var(--ok,#35d07f);border-color:rgba(48,211,138,.45)}
+  .own-msgs{display:grid;gap:10px;margin:14px 0 16px}
+  .own-msg{max-width:92%;padding:10px 13px;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+  .own-msg.me{justify-self:end;background:color-mix(in srgb,var(--blue) 14%,var(--surface))}
+  .own-msg-body{white-space:pre-wrap;overflow-wrap:anywhere;font-size:14.5px;line-height:1.55;margin-top:3px}
 </style>
 </head>
 <body>
@@ -60,8 +71,15 @@
     </div>
     <div class="own-out" id="own-out" aria-live="polite" hidden></div>
   </div>
+  <div class="own-card" id="support">
+    <h2 style="margin:0 0 4px;font-size:20px">Support tickets <span class="small on" id="sup-count"></span></h2>
+    <p class="tiny muted" style="margin:0 0 14px">From the Contact support button on every page. Readable here, on your support device, and by the customer who opened each one: nowhere else, and not with the owner token alone.</p>
+    <div id="sup-owner" aria-live="polite"><p class="small muted">Loading…</p></div>
+  </div>
+
   <p class="tiny muted" style="margin-top:18px">A refund in Square switches an order off by itself; "Switch the order off" is for the rest, and "Switch off this key only" is for a partial refund of a Squad order (type the key). "Free this key" takes the key you typed (or the first of the order) off its PC without spending the buyer's own monthly move. "Send a test email" proves the key emails deliver before the first sale: it goes to the support address (or the one typed above), and when Resend refuses, its exact reason shows here. "Send every unsent order" is for the day mail was off or refused while orders came in: every order marked "not emailed" goes out once, to its checkout address. "Email me the week" sends the figures (last seven days and since the first sale) to the support address now; the same email arrives by itself every Monday morning.</p>
 </main>
 <script type="module" src="./admin.js"></script>
+<script type="module" src="./tickets.js"></script>
 </body>
 </html>

@@ -3,34 +3,83 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Undervolt, not overclock — OmniDx Tune</title>
-<meta name="description" content="How to undervolt an NVIDIA or AMD graphics card and a Ryzen or Intel CPU, set a frame cap that stays smooth, and test it properly. Cooler, quieter, the same frames or more held for longer. No overclocking.">
+<title>Contact support — OmniDx Tune</title>
+<meta name="description" content="Open a private support ticket for OmniDx Tune: a missing key, a key that will not take, a new PC, a run that went wrong, or a question before buying. Only you and support can read it.">
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="../assets/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="../assets/icons/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
-<link rel="canonical" href="https://omnidx.net/studio/undervolt/">
-<meta property="og:url" content="https://omnidx.net/studio/undervolt/">
+<link rel="canonical" href="https://omnidx.net/studio/support/">
+<meta property="og:url" content="https://omnidx.net/studio/support/">
 <meta property="og:image" content="https://omnidx.net/studio/assets/og-card.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="OmniDx: the eagle mark and the OMNIDX wordmark in purple on black, and the line: one command, Windows cut down to what your games need.">
 <meta name="twitter:image" content="https://omnidx.net/studio/assets/og-card.jpg">
-<meta name="twitter:title" content="Undervolt, not overclock — OmniDx Tune">
-<meta name="twitter:description" content="Undervolt your GPU and CPU the safe way, set a smooth frame cap, and test it. Cooler, quieter, same frames.">
+<meta name="twitter:title" content="Contact support — OmniDx Tune">
+<meta name="twitter:description" content="A private ticket between you and the person who wrote the script.">
 <meta property="og:site_name" content="OmniDx Tune">
-<meta property="og:title" content="Undervolt, not overclock — OmniDx Tune">
-<meta property="og:description" content="Undervolt your GPU and CPU the safe way, set a smooth frame cap, and test it. Cooler, quieter, same frames.">
+<meta property="og:title" content="Contact support — OmniDx Tune">
+<meta property="og:description" content="A private ticket between you and the person who wrote the script.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
+<!-- A ticket's link carries its secret after the #, which never reaches a
+     server, a log or a referrer; nothing else on this page is private. -->
+<meta name="referrer" content="no-referrer">
 <link rel="preload" as="image" href="../assets/logo/omnidx-logo-800.webp" type="image/webp">
 <link rel="stylesheet" href="../assets/studio.css">
+<style>
+  .sup-wrap{max-width:860px;margin:0 auto}
+  .sup-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-l,20px);padding:26px 24px;margin-bottom:22px}
+  @media(max-width:560px){.sup-card{padding:20px 16px}}
+  .sup-h{font-size:12px;font-weight:750;letter-spacing:.14em;text-transform:uppercase;color:var(--blue-2);margin:0 0 12px}
+  .sup-topics{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:10px;border:0;padding:0;margin:0}
+  .sup-topics legend{padding:0;margin-bottom:12px}
+  .sup-topic{position:relative;display:flex;gap:12px;align-items:flex-start;padding:14px;border-radius:14px;border:1px solid var(--line);
+    background:var(--surface-2);cursor:pointer;transition:border-color .15s,background .15s,transform .15s}
+  .sup-topic:hover{border-color:var(--blue);transform:translateY(-1px)}
+  .sup-topic input{position:absolute;opacity:0;pointer-events:none}
+  .sup-topic:has(input:checked){border-color:var(--blue);background:color-mix(in srgb,var(--blue) 14%,var(--surface-2));box-shadow:0 0 0 3px var(--glow)}
+  .sup-topic:has(input:focus-visible){outline:2px solid var(--blue);outline-offset:2px}
+  .sup-topic .ico{width:34px;height:34px;flex:none;border-radius:10px;display:grid;place-items:center;font-size:17px;background:var(--surface-3);border:1px solid var(--line-soft)}
+  .sup-topic b{display:block;font-size:14.5px;font-weight:650;color:var(--text)}
+  .sup-topic span.t{display:block;font-size:12.5px;color:var(--text-3);line-height:1.45;margin-top:2px}
+  .sup-help{margin:18px 0 20px;padding:16px 18px;border-radius:14px;border:1px solid rgba(139,92,246,.4);background:rgba(139,92,246,.08);font-size:14.5px;color:var(--text-2);line-height:1.6}
+  .sup-help b{color:var(--text)}
+  .sup-help p{margin:0 0 8px}.sup-help p:last-child{margin:0}
+  .sup-help .cmd{margin:8px 0}
+  textarea.input{min-height:150px;resize:vertical;font:inherit;line-height:1.55}
+  .sup-count{float:right;font-weight:500;color:var(--text-3)}
+  .sup-hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+  .sup-private{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--text-3);margin:14px 0 0;line-height:1.55}
+  .sup-list{display:grid;gap:8px}
+  .sup-row{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;padding:13px 14px;border-radius:12px;
+    border:1px solid var(--line);background:var(--surface-2);color:var(--text);cursor:pointer;font:inherit;flex-wrap:wrap}
+  .sup-row:hover{border-color:var(--blue)}
+  .sup-row .mono{font-size:13px}
+  .sup-row small{color:var(--text-3);font-size:12.5px}
+  .chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:650;border:1px solid var(--line);background:var(--surface-3);color:var(--text-2);white-space:nowrap}
+  .chip.open{border-color:rgba(255,194,71,.45);color:var(--warn,#ffc247)}
+  .chip.answered{border-color:rgba(48,211,138,.45);color:var(--ok,#35d07f)}
+  .chip.closed{color:var(--text-3)}
+  .thread-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .thread-top h2{margin:0;font-size:22px}
+  .thread-top .sub{font-size:13.5px;color:var(--text-3);margin-top:4px}
+  .msgs{display:grid;gap:12px;margin:8px 0 18px}
+  .msg{max-width:88%;padding:12px 15px;border-radius:14px;border:1px solid var(--line);background:var(--surface-2);font-size:14.5px;line-height:1.6}
+  .msg.me{justify-self:end;background:color-mix(in srgb,var(--blue) 16%,var(--surface-2));border-color:color-mix(in srgb,var(--blue) 40%,var(--line))}
+  .msg .who{display:flex;justify-content:space-between;gap:12px;font-size:12px;font-weight:650;color:var(--text-3);margin-bottom:5px}
+  .msg .body{white-space:pre-wrap;overflow-wrap:anywhere;color:var(--text)}
+  .seen{justify-self:end;font-size:12px;color:var(--text-3);margin-top:-6px}
+  .linkbox{display:flex;gap:8px;align-items:center;margin:10px 0 4px}
+  .linkbox input{font-family:var(--mono,ui-monospace,monospace);font-size:12.5px}
+  .sup-actions{display:flex;gap:8px;flex-wrap:wrap}
+</style>
 <script>
 (function(){try{var t=localStorage.getItem('omnidx.theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
 </script>
 </head>
 <body>
-<div class="aurora" aria-hidden="true"><div class="grid"></div></div>
 <!-- chrome:nav -->
 <nav class="nav">
   <div class="wrap">
@@ -130,73 +179,52 @@
   </div>
 </div>
 <!-- /chrome:nav -->
-
-<header class="hero" style="padding:64px 0 30px">
+<header class="hero" style="padding:60px 0 26px">
   <div class="wrap center">
-    <div class="eyebrow"><span class="pulse"></span>Nothing to buy on this page</div>
-    <h1 style="font-size:clamp(34px,5.6vw,58px)">Undervolt, not overclock.</h1>
+    <div class="eyebrow"><span class="pulse"></span>Private: you and support, nobody else</div>
+    <h1 style="font-size:clamp(34px,5.6vw,56px)">Contact support</h1>
     <p class="lede">
-      A modern graphics card and CPU already boost as high as their heat and power limits allow. Give them less
-      voltage for the same clock and they run cooler, quieter, and hold that clock for longer. An overclock does the
-      opposite: more heat and more voltage for frames you cannot see. The tune never touches voltage; this is how you
-      do it yourself, and the tune's report says which parts apply to your PC.
+      Open a ticket and the person who wrote the script answers it. Pick what it is about:
+      most questions have a quick answer right under the choice, and the ticket is there when they don't.
     </p>
   </div>
 </header>
 
-<section id="gpu-nvidia" data-rail="NVIDIA">
-  <div class="wrap">
-    <div class="section-head reveal"><h2>An NVIDIA card: flatten the curve.</h2>
-      <p>Twenty minutes, with MSI Afterburner (free). Every step is undone by the reset button.</p></div>
-    <div class="grid grid-2">
-      <div class="card reveal"><h3>1. Find the clock it holds</h3><p>Play a demanding game for ten minutes with Afterburner's overlay or graph open. Note the core clock the card settles at under load.</p></div>
-      <div class="card reveal d1"><h3>2. Open the curve</h3><p>In Afterburner press <span class="mono">Ctrl+F</span>. Each point is a voltage and the clock the card runs at that voltage.</p></div>
-      <div class="card reveal d2"><h3>3. Pick a lower voltage</h3><p>Take a point around 0.90 V on a 30 or 40 series card (0.95 V on older ones). Drag it up to the clock from step 1. Select every point to its right and pull them level with it (hold Shift and drag, then press L on the point to lock it on newer versions). Apply.</p></div>
-      <div class="card reveal d3"><h3>4. Test, and step back once</h3><p>Twenty minutes of the heaviest game you play. A crash, a driver reset or artefacts mean that clock needs more voltage: drop the point by a step and test again. Save it as a profile and tick "apply at startup".</p></div>
-    </div>
-  </div>
-</section>
+<section id="tickets" style="padding-top:10px">
+  <div class="wrap sup-wrap">
+    <div id="sup-off" class="note info" hidden></div>
 
-<section id="gpu-amd" data-rail="AMD and Intel">
-  <div class="wrap">
-    <div class="section-head reveal"><h2>An AMD or Intel card: voltage down in small steps.</h2></div>
-    <div class="grid grid-2">
-      <div class="card reveal"><h3>AMD Radeon</h3><p><b>AMD Software &rsaquo; Performance &rsaquo; Tuning &rsaquo; Custom</b>, turn on GPU Tuning and Advanced Control. Lower the voltage in small steps, twenty minutes of a game each, and stop one step above the first crash. On RDNA 3 and 4 cards the power-limit slider can also go to its maximum without adding voltage.</p></div>
-      <div class="card reveal d1"><h3>Intel Arc</h3><p><b>Intel Graphics Software &rsaquo; Performance</b>: a small voltage offset is where Arc gains, tested the same way. The frame limiter is in the same panel.</p></div>
+    <div class="sup-card" id="sup-mine" hidden>
+      <h2 class="sup-h">Your tickets on this browser</h2>
+      <div class="sup-list" id="sup-mine-list"></div>
     </div>
-  </div>
-</section>
 
-<section id="cpu" data-rail="The CPU">
-  <div class="wrap">
-    <div class="section-head reveal"><h2>The CPU: in the BIOS, once.</h2></div>
-    <div class="grid grid-2">
-      <div class="card reveal"><h3>Ryzen: Curve Optimizer</h3><p><b>BIOS &rsaquo; Precision Boost Overdrive &rsaquo; Curve Optimizer &rsaquo; All Cores, Negative</b>. Start at 15 and go further in steps of 5 while it stays stable; every chip is different. An hour of a game and a stress test after each change; any crash, reboot or odd error means one step back. Lower temperature, higher sustained boost.</p></div>
-      <div class="card reveal d1"><h3>Intel 13th and 14th gen: the BIOS first</h3><p>Install the newest BIOS for your board before anything else: it carries the microcode that stops these chips degrading. Then leave the voltage to the board's default profile unless it offers a negative offset; a small one is the same idea as Curve Optimizer.</p></div>
-    </div>
-  </div>
-</section>
+    <div class="sup-card" id="sup-thread" hidden aria-live="polite"></div>
 
-<section id="cap" data-rail="Frame cap">
-  <div class="wrap">
-    <div class="section-head reveal"><h2>The frame cap that stays smooth.</h2>
-      <p>With a variable-refresh monitor (G-Sync or FreeSync), cap the frame rate a little under the refresh rate so it never leaves the range the monitor smooths.</p></div>
-    <div class="grid grid-2">
-      <div class="card reveal"><h3>NVIDIA</h3><p><b>NVIDIA app or Control Panel &rsaquo; Manage 3D settings &rsaquo; Max Frame Rate</b>: three below the refresh rate. G-Sync on, V-Sync on in the driver and off in the game.</p></div>
-      <div class="card reveal d1"><h3>AMD</h3><p><b>AMD Software &rsaquo; Gaming &rsaquo; Radeon Chill</b> on, with the minimum and maximum both three below the refresh rate, and FreeSync on.</p></div>
-    </div>
-  </div>
-</section>
-
-<section id="not" data-rail="What not to do">
-  <div class="wrap">
-    <div class="section-head reveal"><h2>What not to do.</h2></div>
-    <div class="grid grid-2">
-      <div class="card reveal"><h3>No overclock on top</h3><p>More voltage and more heat for frames you cannot see, and the first thing a crash points at.</p></div>
-      <div class="card reveal d1"><h3>No untested profile at startup</h3><p>Apply at startup only after it has survived a real session. An unstable profile at boot is a harder fix.</p></div>
-      <div class="card reveal d2"><h3>Not on a laptop's GPU without care</h3><p>Many laptops lock the curve; the maker's own performance mode is the safer lever there.</p></div>
-      <div class="card reveal d3"><h3>The tune does the rest</h3><p>Power plan, services, network, game files, and a BIOS checklist for your board; never voltage. <a href="../pricing/">What the tune does</a>.</p></div>
-    </div>
+    <form class="sup-card" id="sup-form" novalidate>
+      <fieldset class="sup-topics" id="sup-topics">
+        <legend class="sup-h">What is it about?</legend>
+      </fieldset>
+      <div id="sup-step2" hidden>
+        <div class="sup-help" id="sup-help"></div>
+        <div class="field">
+          <label for="sup-msg"><span id="sup-msg-label">What happened</span> <span class="sup-count" id="sup-count">0 / 5000</span></label>
+          <textarea class="input" id="sup-msg" maxlength="5000" required></textarea>
+        </div>
+        <div class="field" id="sup-ref-field">
+          <label for="sup-ref" id="sup-ref-label">Receipt or order number</label>
+          <input class="input" id="sup-ref" maxlength="120" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="field">
+          <label for="sup-email">Your email, to hear when support answers (optional)</label>
+          <input class="input" id="sup-email" type="email" autocomplete="email" spellcheck="false" placeholder="you@example.com">
+        </div>
+        <div class="sup-hp" aria-hidden="true"><label for="sup-website">Leave this empty</label><input id="sup-website" name="website" tabindex="-1" autocomplete="off"></div>
+        <div id="sup-out" aria-live="polite"></div>
+        <button class="btn btn-primary btn-lg" type="submit" id="sup-send">Open the ticket</button>
+        <p class="sup-private"><span aria-hidden="true">🔒</span><span>Only you and OmniDx support can read a ticket. You get a private link to it (saved in this browser, and emailed if you give an address); anyone with that link can read the ticket, so keep it to yourself. No key, password or card number is ever needed here: support never asks for one.</span></p>
+      </div>
+    </form>
   </div>
 </section>
 
@@ -250,5 +278,6 @@
 </footer>
 <!-- /chrome:footer -->
 <script type="module" src="../assets/studio.js"></script>
+<script type="module" src="./support.js"></script>
 </body>
 </html>

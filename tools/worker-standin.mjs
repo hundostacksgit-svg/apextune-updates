@@ -10,9 +10,35 @@ const realFetch = globalThis.fetch;
 
 /* ---------------- a stand-in D1: the statements the tune routes use ---------------- */
 export const db = { tune_keys: [], tune_machines: [], tune_hits: [] };
+
+/*
+ * The support tables are a real SQLite in memory, made from server/schema.sql,
+ * so every statement the ticket routes send is checked against the schema D1
+ * gets. (node:sqlite ships with Node 22; its "experimental" notice is dropped.)
+ */
+let lite = null;
+{
+  const emit = process.emitWarning;
+  process.emitWarning = (w, ...rest) => (String(w && w.message || w).includes('SQLite') ? undefined : emit.call(process, w, ...rest));
+  try {
+    const { DatabaseSync } = await import('node:sqlite');
+    const { readFileSync } = await import('node:fs');
+    lite = new DatabaseSync(':memory:');
+    lite.exec(readFileSync(new URL('../server/schema.sql', import.meta.url), 'utf8'));
+  } catch (err) { lite = { error: err }; }
+  process.emitWarning = emit;
+}
+export const supportDb = lite;
+function sqlite(s, args) {
+  if (!lite || lite.error) throw new Error('the support tables need node:sqlite (Node 22.13 or newer): ' + (lite && lite.error && lite.error.message));
+  const st = lite.prepare(s);
+  if (/^(SELECT|WITH)\b/i.test(s)) return st.all(...args).map((r) => ({ ...r }));
+  const out = []; out.changes = Number(st.run(...args).changes); return out;
+}
 const like = (v, pat) => pat.endsWith('%') && String(v || '').startsWith(pat.slice(0, -1));
 function statement(sql, args) {
   const s = sql.replace(/\s+/g, ' ').trim();
+  if (/\bsupport_(tickets|messages|keys|devices)\b/.test(s)) return sqlite(s, args);
   const byOrder = (r) => r.order_ref === args[0] || like(r.order_ref, args[1]);
   if (s.startsWith('SELECT * FROM tune_keys WHERE order_ref = ? OR order_ref LIKE ? OR (receipt IS NOT NULL AND receipt = ?)')) {
     return db.tune_keys.filter((r) => byOrder(r) || (r.receipt && r.receipt === args[2])).sort((a, b) => a.order_ref.localeCompare(b.order_ref));
@@ -75,7 +101,7 @@ function statement(sql, args) {
 const bound = (sql, args) => ({
   first: async () => statement(sql, args)[0] ?? null,
   all: async () => ({ results: statement(sql, args) }),
-  run: async () => { statement(sql, args); return { success: true }; },
+  run: async () => { const r = statement(sql, args); return { success: true, meta: { changes: r.changes ?? 1 } }; },
 });
 export const DB = { prepare: (sql) => ({ bind: (...args) => bound(sql, args), ...bound(sql, []) }) };
 

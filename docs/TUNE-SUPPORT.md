@@ -13,6 +13,10 @@ per run; undo moves them to `undo\done\`), `backup\<date>\` (registry
 exports, service list, app settings files). `$env:OMNIDX_MODE='status'`
 prints the lot in one screen: runs in place, what drifted, the keep task,
 the after-restart count, the key.
+Most questions now arrive as tickets (the Contact support button on every
+page; they are read and answered on your support device, see docs/TUNE.md >
+Support tickets). The replies below paste into a ticket's answer box as they
+are.
 Ask for the support bundle first: `$env:OMNIDX_MODE='support'; irm
 omnidx.net/go.ps1 | iex` zips the logs, the machine as read, the numbers and
 the change records to their desktop (keys masked, no registry exports, none

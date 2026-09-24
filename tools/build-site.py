@@ -46,6 +46,7 @@ PAGES = {
     'what-it-touches/index.html': '../',
     'changelog/index.html': '../',
     'terms/index.html': '../',
+    'support/index.html': '../',
 }
 
 LOGO_SVG = (
@@ -106,6 +107,7 @@ MENU = [
     {
         'label': 'Help',
         'items': [
+            ('🎫', 'Contact support', 'A private ticket, answered by the person who wrote it', '{s}support/'),
             ('💬', 'FAQ', 'Anti-cheat, laptops, money, new PC', '{s}pricing/#faq'),
             ('🛡️', 'Is this safe? Is it a scam?', 'The straight answer, and how to check', '{s}trust/'),
             ('📘', 'Do it by hand', 'The honest list, nothing to buy', '{s}guide/'),
@@ -164,6 +166,7 @@ def build_nav(s: str) -> str:
     </div>
 
     <div class="nav-right">
+      <a class="nav-help" href="{s}support/" aria-label="Contact support" title="Contact support"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.2 3.6c-.5.4-1.3.1-1.3-.6V16A2.5 2.5 0 0 1 4 13.5z"/><path d="M8.5 8.2h7M8.5 11.4h4.5"/></svg><span>Contact support</span></a>
       <button class="tbtn" data-theme-toggle aria-label="Switch between dark and light">
         <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>
         <svg class="moon" viewBox="0 0 24 24"><path d="M20 14.5A8.2 8.2 0 0 1 9.5 4a8.3 8.3 0 1 0 10.5 10.5z"/></svg>
@@ -193,6 +196,7 @@ def build_drawer(s: str) -> str:
         '    <div class="drawer-top">',
         f'      <a class="btn btn-primary btn-lg" href="{s}pricing/">Get it — <span data-price="tune">$19.99</span></a>',
         f'      <a class="btn btn-lg" href="{s}download/">Run it</a>',
+        f'      <a class="btn btn-lg btn-ghost" href="{s}support/">Contact support</a>',
         '    </div>',
     ]
     for group in MENU:
@@ -247,6 +251,7 @@ def build_footer(s: str) -> str:
       </div>
       <div>
         <h4>More</h4>
+        <a href="{s}support/">Contact support</a>
         <a href="{s}trust/">Is this safe? Is it a scam?</a>
         <a href="{s}pricing/#faq">FAQ</a>
         <a href="{s}trust/#cant">What it won't touch</a>

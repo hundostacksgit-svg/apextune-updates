@@ -1551,7 +1551,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Mark the current page in the nav without hard-coding it per page.
   const here = location.pathname.replace(/index\.html$/, '');
-  $$('.menubox a, .nav-login, .nav-key, .mb-pop a').forEach((a) => {
+  $$('.menubox a, .nav-login, .nav-key, .nav-help, .mb-pop a').forEach((a) => {
     const href = a.getAttribute('href') || '';
     if (href.startsWith('http') || href.startsWith('#')) return;
     const target = new URL(href, location.href).pathname.replace(/index\.html$/, '');
