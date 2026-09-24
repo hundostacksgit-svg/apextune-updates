@@ -729,7 +729,8 @@ footer{border-top:1px solid var(--line-soft);padding:52px 0 60px;background:colo
 
 /* The trust page's run history: a plain table that scrolls sideways on a phone. */
 .ci-history-wrap{margin-top:8px;overflow-x:auto;-webkit-overflow-scrolling:touch}
-.ci-history{border-collapse:collapse;width:100%;font-size:.86rem;white-space:nowrap}
-.ci-history th,.ci-history td{text-align:left;padding:6px 10px;border-bottom:1px solid color-mix(in srgb, var(--text) 12%, transparent)}
+.ci-history{border-collapse:collapse;width:100%;font-size:.86rem}
+.ci-history th,.ci-history td{text-align:left;padding:6px 10px;border-bottom:1px solid color-mix(in srgb, var(--text) 12%, transparent);vertical-align:top}
+.ci-history td:nth-child(3),.ci-history td:nth-child(1){white-space:nowrap}
 .ci-history th{font-weight:600;color:var(--muted)}
 .ci-history td b{font-weight:600}
