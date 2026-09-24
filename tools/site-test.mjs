@@ -181,6 +181,57 @@ try {
     await page.close();
   }
 
+  /* 3b. The buyer's path against the real licence server code: the Worker runs in this process, with the
+        stand-in Square and Gmail the offline test uses, and the page is the real page. Nothing here is a fake answer. */
+  {
+    const { db, mails, payments, refunds, fakeConnect, installFetch, makeEnv } = await import(path.join(root, 'tools/worker-standin.mjs'));
+    const worker = (await import(path.join(root, 'server/worker.js'))).default;
+    const nodeFetch = globalThis.fetch;
+    installFetch({ strict: false });
+    // The two-secret setup the guide describes: Square on, no mailer, no webhook.
+    const env = makeEnv({ GMAIL_USER: undefined, GMAIL_APP_PASSWORD: undefined, __connect: undefined, SQUARE_WEBHOOK_SIGNATURE_KEY: undefined, SQUARE_WEBHOOK_URL: undefined });
+    payments['ORDER-LIVE-1'] = { cents: 1999, email: 'live@example.test' };
+    const page = await browser.newPage({ viewport: { width: 390, height: 900 } }); const errs = watch(page);
+    await page.route('**/tune/config.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ api: `${base}/liveapi`, version: '0', sha256: 'x' }) }));
+    await page.route('**/liveapi/**', async (r) => {
+      const q = r.request();
+      const u = new URL(q.url()); u.pathname = u.pathname.replace(/^\/liveapi/, '');
+      const h = q.headers(); const headers = {};
+      for (const k of ['content-type', 'origin', 'accept']) if (h[k]) headers[k] = h[k];
+      const init = { method: q.method(), headers };
+      if (q.method() === 'POST') init.body = q.postData() || '';
+      const res = await worker.fetch(new Request(u.toString(), init), env);
+      const out = {}; res.headers.forEach((v, k) => { out[k] = v; });
+      await r.fulfill({ status: res.status, headers: out, body: await res.text() });
+    });
+    const liveKey = /TUNE-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}/;
+    const landing = `${base}/studio/activate/?e=creator&orderId=ORDER-LIVE-1`;
+    await page.goto(landing, { waitUntil: 'networkidle' }); await page.waitForTimeout(700);
+    const shown = await page.evaluate(() => [...document.querySelectorAll('.keybox')].map((b) => b.textContent));
+    const row = db.tune_keys.find((k) => k.order_ref === 'ORDER-LIVE-1');
+    const prettyRow = row ? `TUNE-${row.key.slice(4, 8)}-${row.key.slice(8, 12)}-${row.key.slice(12, 16)}-${row.key.slice(16, 20)}` : '';
+    expect(shown.length === 1 && liveKey.test(shown[0]) && row && shown[0].includes(prettyRow) && row.verified === 1 && row.email === 'live@example.test', 'landing from Square, the page shows the one key the server minted for that order, confirmed with Square');
+    expect(await page.evaluate(() => document.querySelector('#act-mail')?.hidden === true), 'with no mailer the page says nothing about email');
+    expect(!errs.length, `no page errors on the live key page${errs.length ? ': ' + errs.join(' | ') : ''}`);
+    // Switch mail on (the optional Gmail secrets) and come back: the email line appears and a resend goes out through the fake Gmail.
+    env.GMAIL_USER = 'owner@gmail.test'; env.GMAIL_APP_PASSWORD = 'app-pass'; env.__connect = fakeConnect;
+    await page.goto(landing, { waitUntil: 'networkidle' }); await page.waitForTimeout(700);
+    expect(await page.evaluate(() => document.querySelector('#act-mail')?.hidden === false && /checkout email/.test(document.querySelector('#act-resend')?.textContent || '')), 'with Gmail on the page offers to send the key to the checkout email');
+    const n = mails.length;
+    await page.click('#act-resend'); await page.waitForTimeout(600);
+    expect(mails.length === n + 1 && mails[n].to[0] === 'live@example.test' && mails[n].via === 'gmail' && liveKey.test(mails[n].text) && await page.evaluate(() => /Sent again to l\*\*\*@example\.test/.test(document.querySelector('#act-mail-out')?.textContent || '')), 'the resend leaves through Gmail, to the address Square holds, carrying the key, and the page says so with the address masked');
+    // A refund in Square, seen by the hourly look: the page says so and the buyer is told.
+    refunds['ORDER-LIVE-1'] = { paid: 1999, back: 1999 };
+    db.tune_keys.filter((k) => k.order_ref === 'ORDER-LIVE-1').forEach((k) => { k.refund_checked_at = Date.now() - 2 * 3600_000; });
+    const m = mails.length;
+    await page.evaluate(() => localStorage.clear());
+    await page.goto(landing, { waitUntil: 'networkidle' }); await page.waitForTimeout(700);
+    expect(await page.evaluate(() => /refunded/.test(document.querySelector('.note.bad')?.textContent || '') && document.querySelectorAll('.keybox').length === 0), 'after a refund the page shows no key and says the order was refunded');
+    expect(mails.length === m + 1 && mails[m].to[0] === 'live@example.test' && /no longer work/.test(mails[m].text), 'and the buyer is emailed that the key no longer works');
+    await page.close();
+    globalThis.fetch = nodeFetch;
+  }
+
   /* 4. The owner page. */
   {
     const page = await browser.newPage({ viewport: { width: 390, height: 900 } }); const errs = watch(page);
