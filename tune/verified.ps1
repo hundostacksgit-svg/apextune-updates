@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.58.0'
+$script:Version = '1.59.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -523,17 +523,23 @@ function Get-Machine {
   & $lap 'cim'
   $printers = @(Get-Printer -ErrorAction SilentlyContinue | Where-Object { $_.Name -notmatch 'Microsoft|OneNote|Fax|XPS|PDF' })
   & $lap 'printers'
-  $bt = @(Get-PnpDevice -Class Bluetooth -Status OK -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -notmatch 'Adapter|Enumerator|Radio|Microsoft|Generic|RFCOMM|LE Generic|Service' })
-  $btRadio = @(Get-PnpDevice -Class Bluetooth -Status OK -ErrorAction SilentlyContinue).Count -gt 0
-  $wifi = @(Get-NetAdapter -Physical -ErrorAction SilentlyContinue | Where-Object { $_.PhysicalMediaType -match '802.11|Native' -or $_.Name -match 'Wi-?Fi|Wireless' }).Count -gt 0
-  $touch = @(Get-PnpDevice -Class HIDClass -Status OK -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -match 'touch screen|touchscreen' }).Count -gt 0
-  $bio = @(Get-PnpDevice -Class Biometric -Status OK -ErrorAction SilentlyContinue).Count -gt 0
+  # One device listing for the five classes that matter, filtered in memory: 1.58.0's read line showed the
+  # five class-by-class queries costing 2.2 s on the build machine, each one walking the whole bus.
+  $devs = @(Get-PnpDevice -Class HIDClass, XboxComposite, XnaComposite, Bluetooth, Biometric -Status OK -ErrorAction SilentlyContinue)
+  $btAll = @($devs | Where-Object { $_.Class -eq 'Bluetooth' })
+  $bt = @($btAll | Where-Object { $_.FriendlyName -notmatch 'Adapter|Enumerator|Radio|Microsoft|Generic|RFCOMM|LE Generic|Service' })
+  $btRadio = $btAll.Count -gt 0
+  $touch = @($devs | Where-Object { $_.Class -eq 'HIDClass' -and $_.FriendlyName -match 'touch screen|touchscreen' }).Count -gt 0
+  $bio = @($devs | Where-Object { $_.Class -eq 'Biometric' }).Count -gt 0
+  # Only the device classes a controller can be in, not every device on the bus.
+  $xboxPad = @($devs | Where-Object { $_.FriendlyName -match 'Xbox' }).Count -gt 0
+  # The adapters once each: the physical ones (Wi-Fi present, which one is live) and all of them (a VPN adapter).
+  $physical = @(Get-NetAdapter -Physical -ErrorAction SilentlyContinue)
+  $wifi = @($physical | Where-Object { $_.PhysicalMediaType -match '802.11|Native' -or $_.Name -match 'Wi-?Fi|Wireless' }).Count -gt 0
   $vpn = @(Get-NetAdapter -ErrorAction SilentlyContinue | Where-Object { $_.InterfaceDescription -match 'TAP|Wintun|WireGuard|VPN|NordLynx|Proton|Mullvad|Cloudflare WARP' }).Count -gt 0
   $xboxUsed = (Get-AppxPackage -Name Microsoft.GamingApp -ErrorAction SilentlyContinue) -ne $null -or (Test-Path (Join-Path $script:AppData '.minecraft')) -or (Get-AppxPackage -Name Microsoft.MinecraftUWP -ErrorAction SilentlyContinue) -ne $null
-  # Only the device classes a controller can be in, not every device on the bus.
-  $xboxPad = @(Get-PnpDevice -Class HIDClass, XboxComposite, XnaComposite, Bluetooth -Status OK -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -match 'Xbox' }).Count -gt 0
   & $lap 'pnp'
-  $live = @(Get-NetAdapter -Physical -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq 'Up' })
+  $live = @($physical | Where-Object { $_.Status -eq 'Up' })
   $wifiLive = @($live | Where-Object { $_.PhysicalMediaType -match '802.11|Native' -or $_.Name -match 'Wi-?Fi|Wireless' }).Count -gt 0
   $vm = ($cs.Model -match 'Virtual|VMware|VirtualBox|KVM|QEMU|HVM') -or ($cs.Manufacturer -match 'QEMU|Xen|innotek|VMware')
   $domain = [bool]$cs.PartOfDomain
