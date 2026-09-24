@@ -1,5 +1,17 @@
 [
     {
+        "version":  "1.72.0",
+        "when":  "2026-09-24T12:32:16Z",
+        "sha":  "04848fc",
+        "before":  139,
+        "after":  132,
+        "changes":  386,
+        "seconds":  63,
+        "look":  9.5,
+        "read":  5.4,
+        "red":  0
+    },
+    {
         "version":  "1.71.0",
         "when":  "2026-09-24T12:24:41Z",
         "sha":  "448b33a",
@@ -343,18 +355,6 @@
         "after":  139,
         "changes":  386,
         "seconds":  82,
-        "look":  null,
-        "read":  null,
-        "red":  0
-    },
-    {
-        "version":  "1.48.0",
-        "when":  "2026-09-24T04:13:36Z",
-        "sha":  "dc7e470",
-        "before":  147,
-        "after":  137,
-        "changes":  386,
-        "seconds":  86,
         "look":  null,
         "read":  null,
         "red":  0

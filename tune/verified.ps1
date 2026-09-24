@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.71.0'
+$script:Version = '1.72.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -1716,7 +1716,7 @@ function Debloat($m) {
     $fargs = @('/online', '/Disable-Feature') + @($todo | ForEach-Object { "/FeatureName:$($_.name)" }) + @('/NoRestart', '/Quiet')
     $fsw = [System.Diagnostics.Stopwatch]::StartNew()
     & dism.exe @fargs *>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3010) { $fbatched = $true; foreach ($f in $todo) { Record @{ type = 'feature'; name = $f.name }; Did ("off: {0}" -f $f.what) }; Say ("  ({0} features in one DISM session, {1} s)" -f $todo.Count, [int]$fsw.Elapsed.TotalSeconds) }
+    if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3010) { $fbatched = $true; foreach ($f in $todo) { Record @{ type = 'feature'; name = $f.name }; Did ("off: {0}" -f $f.what) }; Say ("  ({0} {1} in one DISM session, {2} s)" -f $todo.Count, $(if ($todo.Count -eq 1) { 'feature' } else { 'features' }), [int]$fsw.Elapsed.TotalSeconds) }
     else { Say ("  (DISM would not take the features together, exit {0}; one at a time)" -f $LASTEXITCODE) }
   }
   foreach ($f in $(if ($fbatched) { @() } else { $todo })) {
