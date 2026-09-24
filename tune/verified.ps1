@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.62.0'
+$script:Version = '1.63.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -1515,6 +1515,23 @@ $script:CapabilityIds = @{
   'Print.Fax.Scan' = @('Print.Fax.Scan~~~~0.0.1.0')
   'Hello.Face' = @('Hello.Face.20134~~~~0.0.1.0', 'Hello.Face.18967~~~~0.0.1.0', 'Hello.Face.17658~~~~0.0.1.0')
 }
+# The component store's record of each capability, by package name. A name verified on the build machine
+# (the check's discovery step, 1.62.0) decides by state without DISM; a hint says whether the store mentions
+# the piece at all, and a piece it never mentions is not on the PC. Anything else is asked of DISM by name.
+$script:CapabilityPackages = @{
+  'App.StepsRecorder' = 'Microsoft-Windows-StepsRecorder-Package~31bf3856ad364e35~amd64~~'
+  'Media.WindowsMediaPlayer' = 'Microsoft-Windows-MediaPlayer-Opt-Package~31bf3856ad364e35~amd64~~'
+  'Browser.InternetExplorer' = 'Microsoft-Windows-InternetExplorer-Optional-Package~31bf3856ad364e35~amd64~~'
+}
+$script:CapabilityHints = @{
+  'App.StepsRecorder' = 'StepsRecorder'
+  'Media.WindowsMediaPlayer' = 'MediaPlayer-Opt'
+  'Microsoft.Windows.WordPad' = 'WordPad'
+  'MathRecognizer' = 'Math|TabletPC'
+  'Browser.InternetExplorer' = 'InternetExplorer-Optional'
+  'Print.Fax.Scan' = 'Fax|WFS'
+  'Hello.Face' = 'Hello'
+}
 $script:Features = @(
   @('MicrosoftWindowsPowerShellV2Root', 'the PowerShell 2.0 engine: old, bypasses modern security logging, nothing needs it'),
   @('MicrosoftWindowsPowerShellV2', 'the PowerShell 2.0 engine'),
@@ -1557,23 +1574,47 @@ function Get-DebloatPlan($m) {
   # What is actually on this PC from the two lists above, with the keep rules applied.
   $caps = @(); $feats = @()
   $dismLog = Join-Path $env:TEMP 'omnidx-dism.log'
-  # Every piece is asked for by name, never as a listing. Measured on the build machine: the seven capability
-  # names and three feature names take about fifteen seconds cold; one listing of every capability took 77,
-  # and one listing of every optional feature 75 to 90, run after run (1.44.0 to 1.47.0). The listings
-  # walk the whole component store; the names touch only their packages.
-  $capState = $null; $featState = $null
+  # DISM is asked only where nothing cheaper can answer. Measured on the build machine (the check's discovery
+  # step, 1.62.0): every name asked of DISM costs half a second warm and a second cold, and the free look asked
+  # fifteen. The component store's own record in the registry lists all 7,844 packages in under a second and
+  # says which are installed (state 112; an older version of the same package sits at 64, a removed one at 5
+  # and then 0), and the optional-feature class answers every feature name at once in one to four seconds.
+  # A listing through DISM itself is the one thing never done: 77 to 90 seconds (1.44.0 to 1.47.0).
+  $pk = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\Packages'
+  $pkgs = $null; try { $pkgs = @(Get-ChildItem -Path $pk -Name -ErrorAction Stop) } catch { $pkgs = $null }
   foreach ($c in $script:Capabilities) {
     if ($c[0] -eq 'Print.Fax.Scan' -and $m.printers) { continue }
     if ($c[0] -eq 'Hello.Face' -and $m.biometric) { continue }
+    $decided = $false
+    if ($pkgs -ne $null) {
+      # Nothing in the component store mentions the piece: it is not on this PC, and DISM need not be asked.
+      $cands = @($pkgs | Where-Object { $_ -match $script:CapabilityHints[$c[0]] })
+      if (-not $cands.Count) { continue }
+      # A package name verified on the build machine decides by its state; any other name is left to DISM.
+      $prefix = $script:CapabilityPackages[$c[0]]
+      if ($prefix) {
+        $mine = @($cands | Where-Object { $_.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase) })
+        if ($mine.Count) {
+          $decided = $true
+          foreach ($n in $mine) {
+            $state = -1; try { $state = [int](Get-Item -Path (Join-Path $pk $n) -ErrorAction Stop).GetValue('CurrentState') } catch { }
+            if ($state -eq 112) { $caps += @{ name = $script:CapabilityIds[$c[0]][0]; what = $c[1] }; break }
+          }
+        }
+      }
+    }
+    if ($decided) { continue }
     foreach ($id in $script:CapabilityIds[$c[0]]) {
-      if ($capState -ne $null) { if ($capState[$id] -eq 'Installed') { $caps += @{ name = $id; what = $c[1] }; break }; continue }
       try { $hit = Get-WindowsCapability -Online -Name $id -LogPath $dismLog -ErrorAction Stop; if ($hit -and $hit.State -eq 'Installed') { $caps += @{ name = $hit.Name; what = $c[1] }; break } } catch { }
     }
   }
+  # Every optional feature's state in one read (1 is enabled); DISM by name is the fallback when the class fails.
+  $featState = $null
+  try { $featState = @{}; foreach ($o in @(Get-CimInstance -ClassName Win32_OptionalFeature -OperationTimeoutSec 60 -ErrorAction Stop)) { $featState["$($o.Name)"] = [int]$o.InstallState } } catch { $featState = $null }
   foreach ($f in $script:Features) {
     # The old Media Player is a capability and a feature on newer builds; removing the capability takes the feature with it, so it is one item, not two.
     if ($f[0] -eq 'WindowsMediaPlayer' -and ($caps | Where-Object { $_.name -like 'Media.WindowsMediaPlayer*' })) { continue }
-    if ($featState -ne $null) { if ($featState[$f[0]] -eq 'Enabled') { $feats += @{ name = $f[0]; what = $f[1] } }; continue }
+    if ($featState -ne $null) { if ($featState.ContainsKey($f[0]) -and $featState[$f[0]] -eq 1) { $feats += @{ name = $f[0]; what = $f[1] } }; continue }
     # A name this build does not have is an error here, and simply not on the list.
     try { $hit = Get-WindowsOptionalFeature -Online -FeatureName $f[0] -LogPath $dismLog -ErrorAction Stop; if ($hit -and $hit.State -eq 'Enabled') { $feats += @{ name = $hit.FeatureName; what = $f[1] } } } catch { }
   }
