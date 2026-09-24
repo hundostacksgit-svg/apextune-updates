@@ -127,15 +127,16 @@ it works from a phone.
    paste it into the repository as the secret `SQUARE_ACCESS_TOKEN`
    (github.com > the repository > Settings > Secrets and variables > Actions).
    The deploy workflow pushes it to the Worker.
-7. **The webhook** (developer.squareup.com > your application > Webhooks >
-   Add subscription): URL `https://<the Worker's URL>/v1/webhooks/square`
-   (the deploy log's "The Worker answers at" line, or `api` in
-   `tune/config.json` once the deploy has written it), API version the
-   newest, events `payment.created`, `payment.updated`, `refund.created` and
-   `refund.updated` (the refunds are what switch a key off). Save, then copy
-   the subscription's **Signature key** into the repository secret
-   `SQUARE_WEBHOOK_SIGNATURE_KEY`. The deploy pushes it to the Worker and
-   tells the Worker its own address (`SQUARE_WEBHOOK_URL`), which the
+7. **The webhook, optional** (developer.squareup.com > your application >
+   Webhooks > Add subscription): without it the Worker asks Square about
+   refunds on the hour and at every key check, which is enough. With it a
+   refund switches the keys off in seconds: URL `https://<the Worker's
+   URL>/v1/webhooks/square` (the deploy log's "The Worker answers at" line,
+   or `api` in `tune/config.json`), API version the newest, events
+   `payment.created`, `payment.updated`, `refund.created` and
+   `refund.updated`. Save, then copy the subscription's **Signature key**
+   into the repository secret `SQUARE_WEBHOOK_SIGNATURE_KEY` and run the
+   deploy once more; it tells the Worker its own address, which the
    signature is computed over.
 8. **Do one real test purchase** of the $19.99 link with your own card and
    your own email, confirm the key arrives by email and appears on the page,
@@ -153,57 +154,57 @@ change a price: change it in Square, change it there, commit.
 ## What to switch on
 
 ### Going live from a phone: the checklist
-Every step below is a browser tab; none needs a terminal.
+Three things to copy, one button, and Square's own pages. No terminal, no DNS
+records, no webhook. The deploy finds your Cloudflare account and makes the
+database itself; the keys go out through your Gmail; the owner token is made
+for you and emailed to you.
 
-1. **Cloudflare** (dash.cloudflare.com, the free plan is enough): Workers &
-   Pages page, copy the **Account ID** from the right-hand column. Storage &
-   Databases > D1 > Create database, named exactly `omnidx-studio`, copy its
-   **Database ID**. Profile icon > My Profile > API Tokens > Create Token >
-   the "Edit Cloudflare Workers" template, add the permission **D1: Edit**,
-   Create, copy the token.
-2. **Square developer dashboard** (developer.squareup.com > your application
-   > Production): copy the **Access token**.
-3. **Resend** (resend.com, free): Domains > Add domain `omnidx.net`; add the
-   three DNS records it shows in the panel where the four A records for
-   omnidx.net were added (docs/CUSTOM-DOMAIN.md); wait for Verified. API
-   Keys > Create, copy it.
-4. **GitHub** (the repository > Settings > Secrets and variables > Actions >
-   New repository secret), names exactly: `CLOUDFLARE_API_TOKEN`,
-   `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_D1_ID`, `SQUARE_ACCESS_TOKEN`,
-   `RESEND_API_KEY`, and `TUNE_ADMIN_TOKEN` (any thirty-plus characters you
-   make up; it unlocks the owner page).
+1. **Cloudflare** (dash.cloudflare.com, the free plan): profile icon > My
+   Profile > API Tokens > Create Token > the "Edit Cloudflare Workers"
+   template > under Permissions add one row, **D1: Edit** > Continue >
+   Create Token. Copy it.
+2. **Square** (developer.squareup.com > your application > Production):
+   copy the **Access token**.
+3. **Gmail**: myaccount.google.com > Security > 2-Step Verification (turn it
+   on if it is off) > App passwords > name it OmniDx > Create. Copy the
+   sixteen letters.
+4. **GitHub** (the repository > Settings > Secrets and variables > Actions
+   > New repository secret), four secrets, names exactly:
+   `CLOUDFLARE_API_TOKEN` (step 1), `SQUARE_ACCESS_TOKEN` (step 2),
+   `GMAIL_USER` (the Gmail address) and `GMAIL_APP_PASSWORD` (step 3).
 5. **Deploy**: Actions > "Deploy the Worker" > Run workflow on the branch.
-   The run's Summary tab shows a table of every secret, set or not, and
-   what each is for; with one of the three Cloudflare ones missing the
-   run stops there and says which. When it runs through, the log's "The
-   Worker answers at https://…workers.dev" line is the server's address;
-   the workflow has already written it into `tune/config.json` and
-   published the site.
-6. **Square webhook** (developer.squareup.com > your application > Webhooks
-   > Add subscription): URL = that address + `/v1/webhooks/square`; events
-   `payment.created`, `payment.updated`, `refund.created`, `refund.updated`.
-   Save, open it, copy the **Signature key** into the repository secret
-   `SQUARE_WEBHOOK_SIGNATURE_KEY`, then run "Deploy the Worker" once more.
-7. **Square payment links** (squareup.com > Online > Payment links): rename
+   The run's Summary tab lists every secret, and ends with the server's
+   health line. The workflow finds the account, makes the `omnidx-studio`
+   database if there is none, pushes the secrets, writes the server's
+   address into `tune/config.json` and publishes the site. The first time,
+   an email lands in that Gmail with the owner-page token and what is left.
+6. **Square payment links** (squareup.com > Online > Payment links): rename
    the $39.99 link "OmniDx Tune Squad — three keys" and the $19.99 link
    "OmniDx Tune — one PC"; delete the $69.99 link; check the redirects end in
    `?e=creator` ($19.99) and `?e=studio` ($39.99). Where Square's checkout
    settings ask for a refund policy or terms link, give
-   `https://omnidx.net/studio/terms/` (the page says fourteen days, what is
-   collected, and what the tune does; keep it in step with the pricing page).
-8. **Check the wiring**: open omnidx.net/studio/admin/ on the phone; the
-   status line should read Licence server on, Square on, Webhook on, Mail
-   on, Owner token on. Anything off names the step to redo. Then paste the
-   owner token and press **Send a test email**: it lands in the support
-   inbox within a minute, or the page shows Resend's exact reason (almost
-   always "domain is not verified": step 3's DNS records are not in yet).
-9. **Test**: buy the $19.99 link with your own card and email. The key is on
-   the page you land on and in your inbox within a minute. Refund yourself
-   in Square; the key stops working and a second email says so.
+   `https://omnidx.net/studio/terms/`.
+7. **Check**: open omnidx.net/studio/admin/ on the phone; the status line
+   should read Licence server on, Square on, Refunds checked hourly, Mail
+   through Gmail, Owner token on. Paste the token from the email and press
+   **Send a test email**: it lands in the same inbox within a minute.
+8. **Test**: buy the $19.99 link with your own card and email. The key is on
+   the page you land on and in your inbox within a minute. Refund yourself in
+   Square; within the hour the key stops working and a second email says so.
 
-Until step 3 is verified, buyers get the key on screen but not by email.
 Until step 5 is done nobody can buy: the buy buttons say the key desk is
-not open, and the key page says the same.
+not open, and the key page says the same. Without `SQUARE_ACCESS_TOKEN` the
+deploy still runs, and the health line says `square: false`.
+
+Optional, only if you want them: `SQUARE_WEBHOOK_SIGNATURE_KEY` (a webhook
+subscription in Square's developer dashboard at the Worker's address plus
+`/v1/webhooks/square`, events `payment.*` and `refund.*`; refunds then reach
+the keys in seconds rather than within the hour, and the deploy tells the
+Worker its own address), `RESEND_API_KEY` (Resend instead of Gmail; needs
+the domain verified with three DNS records), `TUNE_ADMIN_TOKEN` (your own
+owner token instead of the one made from the app password),
+`CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_D1_ID` (to pin an account or a
+database when the token can see several).
 
 ### When something breaks, from a phone
 Everything below is the owner page's status line, the Actions tab, or a
@@ -213,16 +214,17 @@ dashboard; none of it needs a terminal.
 | --- | --- | --- |
 | Owner page: "Licence server: not answering"; buy buttons closed; key page says the key desk is not open | The Worker is down or was never deployed | Actions > Deploy the Worker > Run workflow. The scheduled run every six hours redeploys on its own when the health check fails. |
 | Owner page: "Square: off"; buy buttons closed | `SQUARE_ACCESS_TOKEN` is missing, revoked or expired | Square developer dashboard > Production > new access token; update the repository secret; run the deploy. |
-| Keys are on the page but no email arrives; owner page says "Mail: on" | Resend refused the send: domain no longer verified, or the address bounced. "Send a test email" on the owner page shows Resend's exact reason | resend.com > Emails shows each attempt and why; Domains shows whether omnidx.net is still verified (the DNS records). "Send the keys again" on the owner page once it is fixed. |
-| Owner page says "Mail: off" | `RESEND_API_KEY` is not set on the Worker | Set the repository secret; run the deploy; then "Send every unsent order" on the owner page. Keys still show on the page meanwhile. |
-| Square dashboard: webhook deliveries failing with 400 | The signature key on the Worker is not the subscription's, or the subscription's URL is not exactly the Worker's `SQUARE_WEBHOOK_URL` | Re-copy the Signature key into `SQUARE_WEBHOOK_SIGNATURE_KEY`, check the URL ends in `/v1/webhooks/square` on the workers.dev address, run the deploy. Keys were still issued from the key page meanwhile; "Recent orders" shows any that were not emailed. |
-| Square dashboard: webhook deliveries failing with 503 | `SQUARE_WEBHOOK_URL` is empty on the Worker | Run the deploy; it fills it in. |
+| Keys are on the page but no email arrives; owner page says "Mail through Gmail: on" | Gmail refused the send: the app password was revoked (changing the Google password revokes every app password), 2-Step Verification was turned off, or the day's five hundred are spent. "Send a test email" on the owner page shows Gmail's exact words | Make a new app password, update `GMAIL_APP_PASSWORD`, run the deploy (a new owner token is made and emailed, since it is derived from the app password). Then "Send every unsent order" on the owner page. |
+| Owner page says "Mail: off" | Neither `GMAIL_USER` with `GMAIL_APP_PASSWORD` nor `RESEND_API_KEY` is set on the Worker | Set the repository secrets; run the deploy; then "Send every unsent order" on the owner page. Keys still show on the page meanwhile. |
+| A refund in Square, but the key still works an hour later | Refunds are checked on the hour (and at every key check) by asking Square; `SQUARE_ACCESS_TOKEN` is missing or expired, or the order was refunded only in part | Owner page: look the order up; a partial refund is your call ("Switch off this key only"); otherwise check the Square token and run the deploy. With the optional webhook set up, refunds land in seconds instead. |
+| Square dashboard (webhook set up): deliveries failing with 400 or 503 | The signature key on the Worker is not the subscription's, or the Worker was deployed before the key was set | Re-copy the Signature key into `SQUARE_WEBHOOK_SIGNATURE_KEY`, check the URL ends in `/v1/webhooks/square` on the workers.dev address, run the deploy. Refunds are still checked hourly meanwhile. |
 | A buyer says "the key says switched off" and there was no refund | Someone switched it off from the owner page, or a partial refund | Owner page: look it up, "Switch it back on". |
 | A buyer paid twice | Two orders, two sets of keys | Refund the second in Square; its keys switch off on their own. |
 | A buyer says "too many tries" | Twenty key-page tries from one connection in ten minutes: a retry loop, or a shared connection | Nothing to reset; it passes in ten minutes. Send the keys from the owner page meanwhile. |
 | The owner page says "too many tries" | Ten wrong tokens from your connection | Wait ten minutes; check the token you pasted against the repository secret. |
 | No Monday email came | Mail is off, `SUPPORT_EMAIL` is not the address you check, or the cron trigger is not on the Worker (an old deploy) | Owner page: "Email me the week" says which; run the deploy so `wrangler.toml`'s `[triggers]` is on the Worker. |
-| The owner token leaked | Anyone with it can revoke or resend | Make a new one, update `TUNE_ADMIN_TOKEN`, run the deploy; the old one stops at once. |
+| The owner token leaked | Anyone with it can revoke or resend | Make a new Gmail app password and update `GMAIL_APP_PASSWORD` (the token is made from it), or set your own `TUNE_ADMIN_TOKEN`; run the deploy; the old one stops at once. |
+| No owner-token email came after the first deploy | The deploy makes the token only when `GMAIL_APP_PASSWORD` is set, and emails it the first time it lands on the Worker | Run "Deploy the Worker" with "Email me the owner-page token again" ticked. |
 | The site shows an old script version in the footer | The newest push has not passed the Windows check yet | Actions > Check the tune: read the failed step. Buyers keep getting the last verified copy, which is the point. |
 
 ### The Worker is required to sell
@@ -238,25 +240,33 @@ button) does the rest, so the whole setup is done from a browser:
 
 | Secret | Where it comes from | What it does |
 | --- | --- | --- |
-| `CLOUDFLARE_API_TOKEN` | Cloudflare dashboard > My Profile > API Tokens > Create > "Edit Cloudflare Workers" template, plus D1 Edit | lets the workflow deploy |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare dashboard > Workers & Pages, right-hand column | which account |
-| `CLOUDFLARE_D1_ID` | Cloudflare dashboard > Storage & Databases > D1 > Create database, name `omnidx-studio`, copy its id | where keys are stored |
-| `SQUARE_ACCESS_TOKEN` | Square developer dashboard > Production access token | confirms orders |
-| `SQUARE_WEBHOOK_SIGNATURE_KEY` | Square developer dashboard > Webhooks > the subscription | proves a webhook call is Square's |
-| `RESEND_API_KEY` | resend.com > API Keys, after verifying omnidx.net (three DNS records it shows you) | sends the keys by email |
-| `TUNE_ADMIN_TOKEN` | any long random string you make up (thirty characters or more) | unlocks the owner page, `omnidx.net/studio/admin/` |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare dashboard > My Profile > API Tokens > Create > "Edit Cloudflare Workers" template, plus D1: Edit | lets the workflow deploy; the account is read off it and the `omnidx-studio` database is found or made |
+| `SQUARE_ACCESS_TOKEN` | Square developer dashboard > Production access token | confirms orders; asks Square about refunds on the hour and at every key check |
+| `GMAIL_USER`, `GMAIL_APP_PASSWORD` | the owner's Gmail address and an app password (Google Account > Security > 2-Step Verification > App passwords) | sends the keys to buyers, from the owner's own address; the owner token is made from the app password |
+| `SQUARE_WEBHOOK_SIGNATURE_KEY` (optional) | Square developer dashboard > Webhooks > the subscription | refunds reach the keys in seconds instead of within the hour |
+| `RESEND_API_KEY` (optional) | resend.com > API Keys, after verifying omnidx.net (three DNS records it shows you) | Resend instead of Gmail |
+| `TUNE_ADMIN_TOKEN` (optional) | any long random string you make up | your own owner-page token instead of the made one |
+| `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_D1_ID` (optional) | the Cloudflare dashboard | pin an account or database by hand |
 
 After a deploy the workflow finds the Worker's URL, writes it into
 `tune/config.json` as `api` (committed with the CI identity, Pages asked to
-publish), and writes `<url>/v1/webhooks/square` into the Worker's
-`SQUARE_WEBHOOK_URL`. `GET /v1/health` reports `square`, `squareWebhook`
-and `mail` as true or false, which is the quickest way to see what is left,
-and `build` and `deployed` (the commit and the minute the deploy workflow
-put it up, passed in as plain variables), so the owner page's status line
-says which deploy is answering.
-The email comes from `TUNE_MAIL_FROM` (`wrangler.toml`, `keys@omnidx.net`)
-with `SUPPORT_EMAIL` as the reply-to; Resend refuses to send from a domain
-it has not verified, so the DNS records come first.
+publish), and, when a webhook key is set, writes `<url>/v1/webhooks/square`
+into the Worker's `SQUARE_WEBHOOK_URL`. `GET /v1/health` reports `square`,
+`mail` (with `mailer`: `gmail` or `resend`), `refunds` (`webhook` or
+`hourly`) and `owner`, which is the quickest way to see what is left, and
+`build` and `deployed` (the commit and the minute the deploy workflow put it
+up, passed in as plain variables), so the owner page's status line says
+which deploy is answering.
+Through Gmail the mail leaves from the Gmail address with the display name
+from `TUNE_MAIL_FROM` and `SUPPORT_EMAIL` as the reply-to; the Worker speaks
+SMTP over TLS to smtp.gmail.com itself (`smtpSend`), five hundred a day is
+Gmail's limit. Through Resend the address in `TUNE_MAIL_FROM` must belong to
+a domain Resend has verified.
+Refunds without a webhook: `refreshRefund` asks Square about an order at
+most once an hour, whenever its keys are looked at (the key page, the
+script's claim, a check), and the hourly cron (`sweepRefunds`) covers the
+orders nobody asked about. A full refund revokes the keys and emails the
+buyer; a partial one emails the owner once and changes nothing.
 
 ### Support from a phone
 `omnidx.net/studio/admin/` (not linked anywhere, `noindex`) is the owner's

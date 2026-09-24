@@ -66,6 +66,7 @@ for stmt in \
   "ALTER TABLE tune_keys ADD COLUMN moved_at INTEGER" \
   "ALTER TABLE tune_keys ADD COLUMN emailed_at INTEGER" \
   "ALTER TABLE tune_keys ADD COLUMN receipt TEXT" \
+  "ALTER TABLE tune_keys ADD COLUMN refund_checked_at INTEGER" \
   "ALTER TABLE tune_machines ADD COLUMN version TEXT" \
   "ALTER TABLE tune_machines ADD COLUMN os TEXT"; do
   npx wrangler d1 execute omnidx-studio --remote --yes --command "$stmt" >/dev/null 2>&1 && echo "added: $stmt" || echo "already there: $stmt"
@@ -77,7 +78,7 @@ for secret in ANTHROPIC_API_KEY STRIPE_WEBHOOK_SECRET RESEND_API_KEY; do
     case "$secret" in
       ANTHROPIC_API_KEY)     warn "ANTHROPIC_API_KEY is not set — the cloud AI planner will be off." ;;
       STRIPE_WEBHOOK_SECRET) warn "STRIPE_WEBHOOK_SECRET is not set — licences will not be issued automatically." ;;
-      RESEND_API_KEY)        warn "RESEND_API_KEY is not set — licence keys will not be emailed." ;;
+      RESEND_API_KEY)        warn "RESEND_API_KEY is not set — fine if GMAIL_USER and GMAIL_APP_PASSWORD are (the keys then go out through Gmail)." ;;
     esac
     read -r -p "Set $secret now? [y/N] " answer
     [ "${answer:-n}" = "y" ] && npx wrangler secret put "$secret"

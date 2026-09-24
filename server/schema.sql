@@ -154,7 +154,8 @@ CREATE TABLE IF NOT EXISTS tune_keys (
   revoked_at    INTEGER,                 -- set on refund; the row is never deleted
   moved_at      INTEGER,                 -- last self-service move to a new PC
   emailed_at    INTEGER,                 -- when the keys went to the checkout email
-  receipt       TEXT                     -- the short receipt number on Square's email, upper-case
+  receipt       TEXT,                    -- the short receipt number on Square's email, upper-case
+  refund_checked_at INTEGER              -- when Square was last asked whether the order was refunded (no webhook needed)
 );
 CREATE INDEX IF NOT EXISTS tune_keys_email ON tune_keys(email);
 

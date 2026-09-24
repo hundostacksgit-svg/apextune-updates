@@ -298,6 +298,95 @@ async function tuneKeysFor(env, order) {
 const ordersIn = (rows) => [...new Set(rows.map((r) => String(r.order_ref || '').replace(/#\d+$/, '')))];
 
 /**
+ * What Square says was paid and refunded on an order, in cents: the order id
+ * the keys were issued under, or a payment id. Null when Square cannot be asked.
+ */
+async function squareRefunded(env, ref) {
+  if (!env.SQUARE_ACCESS_TOKEN || !ref) return null;
+  const base = env.SQUARE_API_BASE || 'https://connect.squareup.com';
+  const headers = { authorization: `Bearer ${env.SQUARE_ACCESS_TOKEN}`, 'Square-Version': '2025-01-23' };
+  const get = async (path) => { const r = await fetch(`${base}${path}`, { headers }); return r.ok ? r.json() : null; };
+  const o = await get(`/v2/orders/${encodeURIComponent(ref)}`);
+  if (o && o.order) {
+    const done = (o.order.refunds || []).filter((r) => r.status === 'COMPLETED');
+    return { paid: Number(o.order.total_money?.amount || 0), back: done.reduce((n, r) => n + Number(r.amount_money?.amount || 0), 0), id: done[0]?.id || null };
+  }
+  const p = await get(`/v2/payments/${encodeURIComponent(ref)}`);
+  if (p && p.payment) return { paid: Number(p.payment.amount_money?.amount || 0), back: Number(p.payment.refunded_money?.amount || 0), id: null };
+  return null;
+}
+
+/**
+ * A refund switches the order's keys off and tells the buyer; a partial one
+ * (one friend's share of a Squad, say) changes nothing and the owner hears
+ * about it once. Shared by Square's webhook and the hourly look at Square.
+ */
+async function settleRefund(env, order, rows, paid, back, refundId) {
+  if (paid && back < paid - 100) {
+    let told = false;
+    if (mailOn(env) && validEmail(env.SUPPORT_EMAIL) && await firstTime(env, `refund:${String(refundId || order).slice(0, 80)}`)) {
+      const r = await sendMail(env, {
+        to: String(env.SUPPORT_EMAIL).trim().toLowerCase(),
+        subject: `OmniDx Tune: a partial refund on order ${order}`,
+        text: `Square refunded ${dollars(back)} of the ${dollars(paid)} paid on order ${order}${rows[0].email ? ` (${maskEmail(rows[0].email)})` : ''}.\n\nThe keys stay on: a partial refund is your call. If it was one friend's share of a Squad, switch off that key only from the owner page: https://omnidx.net/studio/admin/\nOrder reference to paste there: ${order}`,
+      });
+      told = r.ok;
+    }
+    return { partial: true, revoked: 0, told };
+  }
+  const live = rows.filter((r) => !r.revoked_at);
+  if (live.length) {
+    await env.DB.prepare("UPDATE tune_keys SET revoked_at = ? WHERE (order_ref = ? OR order_ref LIKE ?) AND revoked_at IS NULL").bind(Date.now(), order, `${order}#%`).run();
+    if (rows[0].email && mailOn(env)) await emailTuneRefund(env, rows[0].email, live.length, order);
+  }
+  return { partial: false, revoked: live.length, told: false };
+}
+
+/**
+ * Without a webhook, Square is asked about refunds here: whenever an order's
+ * keys are looked at (the key page, the script's claim, a status check) if it
+ * has not been asked in the last hour, and on the hour for every order of the
+ * last sixty days. So a refunded order's keys go off within the hour, and at
+ * once when the script next asks. Returns the rows as they stand afterwards.
+ */
+async function refreshRefund(env, rows) {
+  if (!env.SQUARE_ACCESS_TOKEN || !rows.length || !rows.some((r) => !r.revoked_at)) return rows;
+  if (Date.now() - Number(rows[0].refund_checked_at || 0) < 60 * 60_000) return rows;
+  const order = ordersIn(rows)[0];
+  await env.DB.prepare('UPDATE tune_keys SET refund_checked_at = ? WHERE order_ref = ? OR order_ref LIKE ?').bind(Date.now(), order, `${order}#%`).run();
+  let state = null;
+  try { state = await squareRefunded(env, order); } catch { state = null; }
+  if (!state || !(state.back > 0)) return rows;
+  await settleRefund(env, order, rows, Number(rows[0].amount_cents || state.paid || 0), state.back, state.id);
+  return tuneKeysFor(env, order);
+}
+
+/** The same look, from one key: true when its order turns out to be refunded. */
+async function refundedNow(env, row) {
+  const order = String(row.order_ref || '').replace(/#\d+$/, '');
+  if (!order) return false;
+  const after = await refreshRefund(env, await tuneKeysFor(env, order));
+  return after.some((r) => r.key === row.key && r.revoked_at);
+}
+
+/** The hourly cron: every live order of the last sixty days not asked about in the last hour, a few dozen at a time. */
+async function sweepRefunds(env) {
+  if (!env.SQUARE_ACCESS_TOKEN) return { looked: 0, revoked: 0 };
+  const since = Date.now() - 60 * 86400_000;
+  const stale = Date.now() - 60 * 60_000;
+  const { results } = await env.DB.prepare('SELECT DISTINCT order_ref FROM tune_keys WHERE revoked_at IS NULL AND created_at > ? AND (refund_checked_at IS NULL OR refund_checked_at < ?) LIMIT 40').bind(since, stale).all();
+  const orders = [...new Set((results || []).map((r) => String(r.order_ref || '').replace(/#\d+$/, '')).filter(Boolean))];
+  let revoked = 0;
+  for (const order of orders) {
+    const rows = await tuneKeysFor(env, order);
+    const before = rows.filter((r) => r.revoked_at).length;
+    const after = await refreshRefund(env, rows);
+    revoked += after.filter((r) => r.revoked_at).length - before;
+  }
+  return { looked: orders.length, revoked };
+}
+
+/**
  * Square's four-character receipt numbers are short enough to repeat over
  * time. A reference that lands on more than one order answers nothing: the
  * long order id from the page Square sent the buyer to always works.
@@ -350,7 +439,7 @@ const maskEmail = (e) => String(e || '').replace(/^(.)[^@]*(@.*)$/, '$1***$2');
 async function resendTuneKeys(env, request, rows) {
   const f = tuneFields(rows);
   if (!f) return fail(REFUNDED, 410, env, request);
-  if (!env.RESEND_API_KEY) return fail('Mail is not switched on here yet. Save the keys from this page, or email support with your receipt.', 503, env, request);
+  if (!mailOn(env)) return fail('Mail is not switched on here yet. Save the keys from this page, or email support with your receipt.', 503, env, request);
   const live = rows.filter((r) => !r.revoked_at);
   const to = live[0].email;
   if (!to) return fail('No email address is on file for that order. Save the keys from this page, or email support with your receipt.', 400, env, request);
@@ -441,9 +530,12 @@ const routes = {
     ai: Boolean(env.ANTHROPIC_API_KEY),
     transcription: Boolean(env.STT_URL && env.STT_KEY),
     payments: Boolean(env.STRIPE_WEBHOOK_SECRET),
-    mail: Boolean(env.RESEND_API_KEY),
+    mail: mailOn(env),
+    mailer: env.GMAIL_USER && env.GMAIL_APP_PASSWORD ? 'gmail' : (env.RESEND_API_KEY ? 'resend' : null),
     square: Boolean(env.SQUARE_ACCESS_TOKEN),
     squareWebhook: Boolean(env.SQUARE_WEBHOOK_SIGNATURE_KEY && env.SQUARE_WEBHOOK_URL),
+    // How a refund reaches the keys: Square's webhook when one is set up, otherwise Square is asked on the hour and at every key check.
+    refunds: env.SQUARE_ACCESS_TOKEN ? (env.SQUARE_WEBHOOK_SIGNATURE_KEY && env.SQUARE_WEBHOOK_URL ? 'webhook' : 'hourly') : null,
     owner: Boolean(env.TUNE_ADMIN_TOKEN),
     build: env.DEPLOYED_SHA || null,
     deployed: env.DEPLOYED_AT || null,
@@ -556,7 +648,7 @@ const routes = {
      same whether or not the address has an account. */
   'POST /v1/auth/reset/request': async (request, env, body) => {
     const email = String(body.email || '').trim().toLowerCase();
-    if (!env.RESEND_API_KEY) return json({ ok: true, sent: false, reason: 'no mailer configured' }, { env, request });
+    if (!mailOn(env)) return json({ ok: true, sent: false, reason: 'no mailer configured' }, { env, request });
     const user = await env.DB.prepare('SELECT id, name FROM users WHERE email = ?').bind(email).first();
     if (user) {
       const token = randomHex(32);
@@ -718,7 +810,7 @@ const routes = {
        VALUES (?,?,?,?,?,?)`,
     ).bind(licence.key, email, target?.id || null, invite, target ? Date.now() : null, Date.now()).run();
 
-    if (env.RESEND_API_KEY) await emailInvite(env, email, invite, user.email);
+    if (mailOn(env)) await emailInvite(env, email, invite, user.email);
 
     return json({
       ok: true,
@@ -889,8 +981,8 @@ const routes = {
       if (!email) return fail('With the receipt number, the email address you paid with is needed too.', 403, env, request);
       if (!onFile || !sameSecret(onFile, email)) return fail('That email address does not match the order for that receipt number. Use the long order id from the page Square sent you to, or email support with the receipt.', 403, env, request);
     }
-    if (existing.length && body.resend === true) return resendTuneKeys(env, request, existing);
-    if (existing.length) return tuneAnswer(existing, env, request);
+    if (existing.length && body.resend === true) return resendTuneKeys(env, request, await refreshRefund(env, existing));
+    if (existing.length) return tuneAnswer(await refreshRefund(env, existing), env, request);
     if (isReceipt) return fail('That receipt number is not on file yet: Square confirms a payment within a minute or so, then it is. Try again shortly, or use the long order id from the page Square sent you to.', 404, env, request);
 
     if (!env.SQUARE_ACCESS_TOKEN) return fail('Payments cannot be confirmed right now, so no key can be issued. Email support with your Square receipt and it will be sorted by hand.', 503, env, request);
@@ -907,7 +999,7 @@ const routes = {
     const rows = await tuneKeysFor(env, canonical);
     // The keys go to the checkout email too, when there is one and a mailer.
     const to = email || sq.email;
-    if (env.RESEND_API_KEY && to && !rows[0].emailed_at) {
+    if (mailOn(env) && to && !rows[0].emailed_at) {
       const sent = await emailTuneKeys(env, to, product, rows.map((r) => prettyTuneKey(r.key)), canonical, sq.receipt || null, sq.receiptNumber ? receiptOf(sq.receiptNumber) : null);
       if (sent) { await env.DB.prepare("UPDATE tune_keys SET emailed_at = ? WHERE order_ref = ? OR order_ref LIKE ?").bind(Date.now(), canonical, `${canonical}#%`).run(); rows.forEach((r) => { r.emailed_at = Date.now(); }); }
     }
@@ -954,7 +1046,7 @@ const routes = {
     }
     // Every order whose keys never went out (mail was off or refused at the time): send them now, once each.
     if (action === 'resend-unsent') {
-      if (!env.RESEND_API_KEY) return fail('Mail is off: RESEND_API_KEY is not set on the Worker.', 503, env, request);
+      if (!mailOn(env)) return fail(MAIL_OFF, 503, env, request);
       const unsent = (await env.DB.prepare('SELECT * FROM tune_keys WHERE emailed_at IS NULL AND revoked_at IS NULL AND email IS NOT NULL ORDER BY created_at').all()).results || [];
       const groups = new Map();
       for (const r of unsent) { const o = String(r.order_ref || '').replace(/#\d+$/, ''); if (!groups.has(o)) groups.set(o, []); groups.get(o).push(r); }
@@ -976,7 +1068,7 @@ const routes = {
     }
     // Does mail work: one short email to the support address or one typed in, with Resend's exact refusal when it does not.
     if (action === 'mail-test') {
-      if (!env.RESEND_API_KEY) return fail('Mail is off: RESEND_API_KEY is not set on the Worker.', 503, env, request);
+      if (!mailOn(env)) return fail(MAIL_OFF, 503, env, request);
       const to = validEmail(body.email) ? String(body.email).trim().toLowerCase() : (validEmail(env.SUPPORT_EMAIL) ? String(env.SUPPORT_EMAIL).trim().toLowerCase() : null);
       if (!to) return fail('No address to send to: type one, or set SUPPORT_EMAIL.', 400, env, request);
       const from = env.TUNE_MAIL_FROM || env.MAIL_FROM || 'OmniDx Tune <keys@omnidx.net>';
@@ -1014,7 +1106,7 @@ const routes = {
     if (action === 'resend') {
       const to = validEmail(body.email) ? String(body.email).trim().toLowerCase() : rows[0].email;
       if (!to) return fail('No email on that order; give one.', 400, env, request);
-      if (!env.RESEND_API_KEY) return fail('No mailer is configured on the server.', 503, env, request);
+      if (!mailOn(env)) return fail(MAIL_OFF, 503, env, request);
       const live = rows.filter((r) => !r.revoked_at);
       if (!live.length) return fail('Every key of that order is switched off.', 410, env, request);
       const sent = await emailTuneKeys(env, to, live[0].product, live.map((r) => prettyTuneKey(r.key)), order, null, live[0].receipt || null);
@@ -1079,25 +1171,8 @@ const routes = {
       if (!rows.length) return json({ ignored: 'no keys for that order' });
       const paid = Number(rows[0].amount_cents || 0);
       const back = Number(refund.amount_money?.amount || 0);
-      if (paid && back < paid - 100) {
-        // Nothing changes here; the owner hears about it once, and decides on the owner page.
-        let told = false;
-        if (env.RESEND_API_KEY && validEmail(env.SUPPORT_EMAIL) && await firstTime(env, `refund:${String(refund.id || order).slice(0, 80)}`)) {
-          const r = await sendMail(env, {
-            to: String(env.SUPPORT_EMAIL).trim().toLowerCase(),
-            subject: `OmniDx Tune: a partial refund on order ${order}`,
-            text: `Square refunded ${dollars(back)} of the ${dollars(paid)} paid on order ${order}${rows[0].email ? ` (${maskEmail(rows[0].email)})` : ''}.\n\nThe keys stay on: a partial refund is your call. If it was one friend's share of a Squad, switch off that key only from the owner page: https://omnidx.net/studio/admin/\nOrder reference to paste there: ${order}`,
-          });
-          told = r.ok;
-        }
-        return json({ ok: true, order, partial: true, revoked: 0, told });
-      }
-      const live = rows.filter((r) => !r.revoked_at);
-      if (live.length) {
-        await env.DB.prepare("UPDATE tune_keys SET revoked_at = ? WHERE (order_ref = ? OR order_ref LIKE ?) AND revoked_at IS NULL").bind(Date.now(), order, `${order}#%`).run();
-        if (rows[0].email && env.RESEND_API_KEY) await emailTuneRefund(env, rows[0].email, live.length, order);
-      }
-      return json({ ok: true, order, revoked: live.length });
+      const r = await settleRefund(env, order, rows, paid, back, refund.id);
+      return json({ ok: true, order, ...r });
     }
 
     if (type !== 'payment.updated' && type !== 'payment.created') return json({ ignored: type });
@@ -1123,7 +1198,7 @@ const routes = {
     }
     const live = rows.filter((r) => !r.revoked_at);
     let emailed = Boolean(rows[0]?.emailed_at);
-    if (!emailed && to && env.RESEND_API_KEY && live.length) {
+    if (!emailed && to && mailOn(env) && live.length) {
       const sent = await emailTuneKeys(env, to, live[0].product, live.map((r) => prettyTuneKey(r.key)), order, payment.receipt_url || null, receipt);
       if (sent) { await env.DB.prepare("UPDATE tune_keys SET emailed_at = ? WHERE order_ref = ? OR order_ref LIKE ?").bind(Date.now(), order, `${order}#%`).run(); emailed = true; }
     }
@@ -1146,7 +1221,7 @@ const routes = {
 
     const row = await env.DB.prepare('SELECT * FROM tune_keys WHERE key = ?').bind(parsed.key).first();
     if (!row) return fail('That key was not issued by us.', 404, env, request);
-    if (row.revoked_at) return fail('That key has been refunded or revoked.', 410, env, request);
+    if (row.revoked_at || await refundedNow(env, row)) return fail('That key has been refunded or revoked.', 410, env, request);
 
     const label = body.machine
       ? String([body.machine.name, body.machine.cpu, body.machine.gpu].filter(Boolean).join(' · ')).slice(0, 160)
@@ -1211,14 +1286,14 @@ const routes = {
     return json({ ok: true, released: count, seats: row.seats }, { env, request });
   },
 
-  /** Is this key real, and how many PCs is it on. Changes nothing. */
+  /** Is this key real, and how many PCs is it on. Changes nothing, though a refund Square reports is applied on the way. */
   'POST /v1/tune/check': async (request, env, body) => {
     if (await tooMany(env, request, 'check', 60)) return json({ ok: false, reason: TOO_MANY }, { status: 429, env, request });
     const parsed = parseTuneKey(body.key);
     if (!parsed) return json({ ok: false, reason: 'That key is not valid.' }, { env, request });
     const row = await env.DB.prepare('SELECT * FROM tune_keys WHERE key = ?').bind(parsed.key).first();
     if (!row) return json({ ok: false, reason: 'That key was not issued by us.' }, { env, request });
-    if (row.revoked_at) return json({ ok: false, reason: 'That key has been refunded or revoked.' }, { env, request });
+    if (row.revoked_at || await refundedNow(env, row)) return json({ ok: false, reason: 'That key has been refunded or revoked.' }, { env, request });
     const { count: used } = await env.DB.prepare('SELECT COUNT(*) AS count FROM tune_machines WHERE key = ?').bind(parsed.key).first();
     return json({ ok: true, product: row.product, seats: row.seats, used }, { env, request });
   },
@@ -1257,9 +1332,9 @@ const routes = {
     // Deliver the key. If no mailer is configured the licence still exists and
     // is attached to the buyer's account the moment they sign in with that
     // email — nobody's money is stranded by a missing env var.
-    if (env.RESEND_API_KEY && email) await emailKey(env, email, key, edition);
+    if (mailOn(env) && email) await emailKey(env, email, key, edition);
 
-    return json({ ok: true, edition, emailed: Boolean(env.RESEND_API_KEY && email) });
+    return json({ ok: true, edition, emailed: Boolean(mailOn(env) && email) });
   },
 };
 
@@ -1556,15 +1631,10 @@ async function verifyStripe(payload, header, secret) {
 /* ------------------------------------------------------------------ */
 
 async function emailInvite(env, email, invite, from) {
-  try {
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
-      body: JSON.stringify({
-        from: env.MAIL_FROM || 'OmniDx Studio <keys@omnidx.net>',
-        to: [email],
-        subject: 'You have a seat on OmniDx Studio',
-        text: `${from} has given you a seat on their OmniDx Studio Team licence.
+  await sendMail(env, {
+    to: email, from: env.MAIL_FROM || 'OmniDx Studio <keys@omnidx.net>',
+    subject: 'You have a seat on OmniDx Studio',
+    text: `${from} has given you a seat on their OmniDx Studio Team licence.
 
 Your invite code: ${invite}
 
@@ -1573,30 +1643,21 @@ then paste the code in. That unlocks everything — the full editor, unlimited A
 every effect — on up to three of your devices.
 
 There is nothing to pay and nothing to cancel.`,
-      }),
-    });
-  } catch { /* the seat row exists; the code can be passed on by hand */ }
+  }); // the seat row exists either way; the code can be passed on by hand
 }
 
 async function emailReset(env, email, link) {
-  try {
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
-      body: JSON.stringify({
-        from: env.MAIL_FROM || 'OmniDx Studio <keys@omnidx.net>',
-        to: [email],
-        subject: 'Reset your OmniDx Studio password',
-        text: `Somebody asked to reset the password on your OmniDx Studio account.
+  await sendMail(env, {
+    to: email, from: env.MAIL_FROM || 'OmniDx Studio <keys@omnidx.net>',
+    subject: 'Reset your OmniDx Studio password',
+    text: `Somebody asked to reset the password on your OmniDx Studio account.
 
 If that was you, open this link within the hour and choose a new one:
 ${link}
 
 If it was not you, nothing happens — the link does nothing until it is used,
 and your recovery code still works as it always did.`,
-      }),
-    });
-  } catch { /* the token exists; the person can ask again */ }
+  }); // the token exists either way; the person can ask again
 }
 
 /**
@@ -1604,13 +1665,24 @@ and your recovery code still works as it always did.`,
  * read the same in every mail app and survive being forwarded to a friend.
  * Returns true only when Resend accepted it.
  */
-/** One email through Resend, with Resend's own words when it refuses (an unverified domain, a bad from address). */
-async function sendMail(env, { to, subject, text }) {
+/** Is any mailer configured: the owner's Gmail (an app password) or Resend. */
+const mailOn = (env) => Boolean((env.GMAIL_USER && env.GMAIL_APP_PASSWORD) || env.RESEND_API_KEY);
+const MAIL_OFF = 'Mail is off: neither GMAIL_USER with GMAIL_APP_PASSWORD nor RESEND_API_KEY is set on the Worker.';
+
+/**
+ * One email, through whichever mailer is configured: the owner's own Gmail
+ * (GMAIL_USER and an app password; no domain records to add, and the mail comes
+ * from an address a buyer can reply to) or Resend (RESEND_API_KEY, a verified
+ * domain). Returns { ok, status, detail }, with the mailer's own words when it refuses.
+ */
+async function sendMail(env, { to, subject, text, from }) {
+  if (env.GMAIL_USER && env.GMAIL_APP_PASSWORD) return smtpSend(env, { to, subject, text, from });
+  if (!env.RESEND_API_KEY) return { ok: false, status: 0, detail: 'no mailer is configured' };
   try {
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ from: env.TUNE_MAIL_FROM || env.MAIL_FROM || 'OmniDx Tune <keys@omnidx.net>', to: [to], reply_to: env.SUPPORT_EMAIL || undefined, subject, text }),
+      body: JSON.stringify({ from: from || env.TUNE_MAIL_FROM || env.MAIL_FROM || 'OmniDx Tune <keys@omnidx.net>', to: [to], reply_to: env.SUPPORT_EMAIL || undefined, subject, text }),
     });
     if (r.ok) return { ok: true, status: r.status, detail: '' };
     const raw = (await r.text().catch(() => '')).slice(0, 400);
@@ -1619,6 +1691,95 @@ async function sendMail(env, { to, subject, text }) {
     return { ok: false, status: r.status, detail };
   } catch (err) {
     return { ok: false, status: 0, detail: String((err && err.message) || err) };
+  }
+}
+
+/** A header value: plain when it is printable ASCII, otherwise RFC 2047 UTF-8. */
+const mailHeader = (v) => (/^[\x20-\x7e]*$/.test(v) ? v : '=?UTF-8?B?' + btoa(String.fromCharCode(...new TextEncoder().encode(v))) + '?=');
+
+/**
+ * Plain SMTP over TLS to Gmail (or SMTP_HOST and SMTP_PORT), enough to hand one
+ * message over: EHLO, AUTH PLAIN, MAIL FROM, RCPT TO, DATA, QUIT. Gmail allows
+ * five hundred a day from an account, which is more keys than one seller sends,
+ * and the mail leaves from the owner's own address, so a reply reaches them.
+ * The socket comes from cloudflare:sockets; the offline test hands in its own.
+ */
+async function smtpSend(env, { to, subject, text, from }) {
+  const user = String(env.GMAIL_USER).trim();
+  let connect = env.__connect;
+  if (!connect) {
+    try { ({ connect } = await import('cloudflare:sockets')); }
+    catch (err) { return { ok: false, status: 0, detail: 'this runtime has no raw sockets: ' + String((err && err.message) || err) }; }
+  }
+  const host = env.SMTP_HOST || 'smtp.gmail.com';
+  const port = Number(env.SMTP_PORT || 465);
+  let socket;
+  try { socket = connect({ hostname: host, port }, { secureTransport: 'on', allowHalfOpen: false }); }
+  catch (err) { return { ok: false, status: 0, detail: `could not open ${host}:${port}: ${String((err && err.message) || err)}` }; }
+  const reader = socket.readable.getReader();
+  const writer = socket.writable.getWriter();
+  const dec = new TextDecoder();
+  const enc = new TextEncoder();
+  let buf = '';
+  const deadline = Date.now() + 25_000;
+  // A reply is one or more "250-..." lines closed by a "250 ..." line.
+  async function reply() {
+    for (;;) {
+      if (buf.includes('\r\n')) {
+        const lines = buf.split('\r\n');
+        let end = -1;
+        for (let i = 0; i < lines.length - 1; i++) { if (/^\d{3}(?: |$)/.test(lines[i])) { end = i; break; } }
+        if (end >= 0) {
+          const got = lines.slice(0, end + 1);
+          buf = lines.slice(end + 1).join('\r\n');
+          return { code: Number(got[end].slice(0, 3)), text: got.join(' ') };
+        }
+      }
+      if (Date.now() > deadline) throw new Error('the mail server did not answer in time');
+      const { value, done } = await reader.read();
+      if (done) throw new Error('the mail server closed the connection' + (buf.trim() ? ': ' + buf.trim() : ''));
+      buf += dec.decode(value, { stream: true });
+    }
+  }
+  const send = async (line, want) => {
+    await writer.write(enc.encode(line + '\r\n'));
+    const r = await reply();
+    if (!want.includes(r.code)) throw Object.assign(new Error(r.text.slice(0, 300)), { code: r.code });
+    return r;
+  };
+  try {
+    const hello = await reply();
+    if (hello.code !== 220) throw Object.assign(new Error(hello.text.slice(0, 300)), { code: hello.code });
+    await send('EHLO omnidx.net', [250]);
+    await send('AUTH PLAIN ' + btoa(`\u0000${user}\u0000${env.GMAIL_APP_PASSWORD}`), [235]);
+    // The envelope sender is the account itself: Gmail rewrites anything else.
+    await send(`MAIL FROM:<${user}>`, [250]);
+    await send(`RCPT TO:<${to}>`, [250, 251]);
+    await send('DATA', [354]);
+    const name = String(from || env.TUNE_MAIL_FROM || 'OmniDx Tune').replace(/\s*<[^>]*>\s*$/, '').trim() || 'OmniDx Tune';
+    const headers = [
+      `From: ${mailHeader(name)} <${user}>`,
+      `To: <${to}>`,
+      validEmail(env.SUPPORT_EMAIL) ? `Reply-To: <${String(env.SUPPORT_EMAIL).trim()}>` : null,
+      `Subject: ${mailHeader(subject)}`,
+      `Date: ${new Date().toUTCString()}`,
+      `Message-ID: <${crypto.randomUUID()}@omnidx.net>`,
+      'MIME-Version: 1.0',
+      'Content-Type: text/plain; charset=utf-8',
+      'Content-Transfer-Encoding: 8bit',
+    ].filter(Boolean);
+    // Lines beginning with a dot are doubled, as SMTP requires; a lone dot ends the message.
+    const body = String(text).replace(/\r?\n/g, '\r\n').split('\r\n').map((l) => (l.startsWith('.') ? '.' + l : l)).join('\r\n');
+    await send(headers.join('\r\n') + '\r\n\r\n' + body + '\r\n.', [250]);
+    // Accepted. The goodbye is a courtesy; a server that hangs up first is not an error.
+    try { await send('QUIT', [221]); } catch { /* accepted already */ }
+    return { ok: true, status: 250, detail: '' };
+  } catch (err) {
+    return { ok: false, status: Number(err && err.code) || 0, detail: String((err && err.message) || err) };
+  } finally {
+    try { reader.releaseLock(); } catch { /* closing anyway */ }
+    try { writer.releaseLock(); } catch { /* closing anyway */ }
+    try { Promise.resolve(socket.close()).catch(() => {}); } catch { /* closed by the server */ }
   }
 }
 
@@ -1654,7 +1815,7 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
 /** The week as one email to the owner: sent by the Monday cron and by the owner page on demand. */
 async function emailTuneSummary(env, when = 'the week') {
-  if (!env.RESEND_API_KEY || !validEmail(env.SUPPORT_EMAIL)) return { ok: false, reason: 'Mail is off, or SUPPORT_EMAIL is not set.' };
+  if (!mailOn(env) || !validEmail(env.SUPPORT_EMAIL)) return { ok: false, reason: 'Mail is off, or SUPPORT_EMAIL is not set.' };
   const f = await tuneFigures(env);
   const line = (t) => `${plural(t.orders, 'order')} (${t.tune} Tune, ${t.squad} Squad), ${dollars(t.paidCents)} kept, ${t.refundedOrders} refunded (${dollars(t.refundedCents)})${t.unsent ? `, ${t.unsent} not emailed` : ''}`;
   const text = [
@@ -1693,49 +1854,27 @@ async function emailTuneKeys(env, email, product, keys, order, receiptUrl, recei
     '',
     'Nothing renews and there is no account. Fourteen days to change your mind: reply to this email with the order number.',
   ].filter((l) => l !== null);
-  try {
-    const r = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
-      body: JSON.stringify({
-        from: env.TUNE_MAIL_FROM || env.MAIL_FROM || 'OmniDx Tune <keys@omnidx.net>',
-        to: [email],
-        reply_to: env.SUPPORT_EMAIL || undefined,
-        subject: three ? 'Your three OmniDx Tune keys' : 'Your OmniDx Tune key',
-        text: lines.join('\n'),
-      }),
-    });
-    return r.ok;
-  } catch { return false; }
+  const r = await sendMail(env, { to: email, subject: three ? 'Your three OmniDx Tune keys' : 'Your OmniDx Tune key', text: lines.join('\n') });
+  return r.ok;
 }
 
 /** The keys stop working with the refund; say so, so nobody wonders. */
 async function emailTuneRefund(env, email, count, order) {
-  try {
-    const r = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
-      body: JSON.stringify({
-        from: env.TUNE_MAIL_FROM || env.MAIL_FROM || 'OmniDx Tune <keys@omnidx.net>',
-        to: [email],
-        reply_to: env.SUPPORT_EMAIL || undefined,
-        subject: 'Your OmniDx Tune refund',
-        text: `Your refund for order ${order} has gone through on Square's side; the money follows in a few days, depending on the bank.
+  const r = await sendMail(env, {
+    to: email, subject: 'Your OmniDx Tune refund',
+    text: `Your refund for order ${order} has gone through on Square's side; the money follows in a few days, depending on the bank.
 
 ${count === 1 ? 'The key from that order no longer works.' : `The ${count} keys from that order no longer work.`} Nothing else changes: a PC that was tuned keeps its settings, and C:\\OmniDx\\undo\\undo.ps1 puts every one of them back whenever you like.
 
 If this refund was not you, reply to this email.`,
-      }),
-    });
-    return r.ok;
-  } catch { return false; }
+  });
+  return r.ok;
 }
 
 async function emailKey(env, email, key, edition) {
   const pretty = `OMNIDX-${key.slice(6, 9)}-${key.slice(9, 13)}-${key.slice(13, 17)}-${key.slice(17, 21)}`;
-  const body = {
-    from: env.MAIL_FROM || 'OmniDx Studio <keys@omnidx.net>',
-    to: [email],
+  await sendMail(env, {
+    to: email, from: env.MAIL_FROM || 'OmniDx Studio <keys@omnidx.net>',
     subject: `Your OmniDx Studio ${edition} key`,
     text: `Thanks for buying OmniDx Studio.
 
@@ -1746,14 +1885,7 @@ https://omnidx.net/studio/account/ — it unlocks every device you sign in on.
 
 Nothing expires and there is nothing to renew. If you want a refund within 14
 days, just reply to this email.`,
-  };
-  try {
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { authorization: `Bearer ${env.RESEND_API_KEY}`, 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-  } catch { /* the licence row is already written; delivery can be retried by hand */ }
+  }); // the licence row is already written; delivery can be retried by hand
 }
 
 /* ------------------------------------------------------------------ */
@@ -1761,9 +1893,10 @@ days, just reply to this email.`,
 /* ------------------------------------------------------------------ */
 
 export default {
-  // Monday mornings (wrangler.toml, [triggers]): the week's figures to the owner.
+  // wrangler.toml, [triggers]: on the hour, Square is asked about refunds; Monday mornings, the week's figures go to the owner.
   async scheduled(event, env, ctx) {
-    ctx.waitUntil(emailTuneSummary(env, 'the week').catch((err) => console.error('summary', err)));
+    if (String(event.cron || '') === '0 13 * * 1') ctx.waitUntil(emailTuneSummary(env, 'the week').catch((err) => console.error('summary', err)));
+    else ctx.waitUntil(sweepRefunds(env).catch((err) => console.error('refunds', err)));
   },
 
   async fetch(request, env) {

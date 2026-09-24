@@ -37,7 +37,7 @@ function statement(sql, args) {
   if (s.startsWith('INSERT INTO tune_keys (key, product, seats, email, order_ref, receipt, provider, amount_cents, verified, created_at)')) {
     const [key, product, seats, email, order_ref, receipt, provider, amount_cents, verified, created_at] = args;
     if (db.tune_keys.some((r) => r.key === key || r.order_ref === order_ref)) throw new Error('UNIQUE constraint failed');
-    db.tune_keys.push({ key, product, seats, email, order_ref, receipt, provider, amount_cents, verified, created_at, revoked_at: null, moved_at: null, emailed_at: null });
+    db.tune_keys.push({ key, product, seats, email, order_ref, receipt, provider, amount_cents, verified, created_at, revoked_at: null, moved_at: null, emailed_at: null, refund_checked_at: null });
     return [];
   }
   if (s.startsWith('UPDATE tune_keys SET receipt = ? WHERE order_ref = ? OR order_ref LIKE ?')) {
@@ -78,6 +78,13 @@ function statement(sql, args) {
   }
   if (s === 'SELECT product, amount_cents, order_ref, revoked_at, created_at, emailed_at, email FROM tune_keys') return db.tune_keys.map((r) => ({ product: r.product, amount_cents: r.amount_cents, order_ref: r.order_ref, revoked_at: r.revoked_at, created_at: r.created_at, emailed_at: r.emailed_at, email: r.email }));
   if (s === 'SELECT COUNT(*) AS count FROM tune_machines') return [{ count: db.tune_machines.length }];
+  if (s.startsWith('UPDATE tune_keys SET refund_checked_at = ? WHERE order_ref = ? OR order_ref LIKE ?')) {
+    db.tune_keys.filter((r) => r.order_ref === args[1] || like(r.order_ref, args[2])).forEach((r) => { r.refund_checked_at = args[0]; }); return [];
+  }
+  if (s.startsWith('SELECT DISTINCT order_ref FROM tune_keys WHERE revoked_at IS NULL AND created_at > ? AND (refund_checked_at IS NULL OR refund_checked_at < ?) LIMIT 40')) {
+    const seen = new Set();
+    return db.tune_keys.filter((r) => !r.revoked_at && r.created_at > args[0] && (!r.refund_checked_at || r.refund_checked_at < args[1]) && !seen.has(r.order_ref) && seen.add(r.order_ref)).slice(0, 40).map((r) => ({ order_ref: r.order_ref }));
+  }
   throw new Error('the stand-in database does not model: ' + s);
 }
 // D1 lets a statement run bound or not; the stand-in does the same.
@@ -88,18 +95,25 @@ const bound = (sql, args) => ({
 });
 const DB = { prepare: (sql) => ({ bind: (...args) => bound(sql, args), ...bound(sql, []) }) };
 
-/* ---------------- a stand-in network: Square and Resend ---------------- */
+/* ---------------- a stand-in network: Square, Resend, and Gmail's SMTP server ---------------- */
 const mails = [];
 const payments = {}; // order id -> { cents, email }
+const refunds = {}; // order id -> { paid, back }: what Square would say when asked about the order
+let squareLooks = 0;
 globalThis.fetch = async (url, init = {}) => {
   const u = String(url);
   if (u.startsWith('https://api.resend.com/emails')) {
     const mail = JSON.parse(init.body);
     if (mail.to[0] === 'refuse@example.test') return new Response('{"statusCode":403,"message":"The omnidx.net domain is not verified"}', { status: 403 });
-    mails.push(mail); return new Response('{"id":"m"}', { status: 200 });
+    mails.push({ ...mail, via: 'resend' }); return new Response('{"id":"m"}', { status: 200 });
   }
   let m = /\/v2\/orders\/([^/?]+)/.exec(u);
-  if (m) return new Response('{}', { status: 404 });
+  if (m) {
+    squareLooks++;
+    const f = refunds[decodeURIComponent(m[1])];
+    if (!f) return new Response('{}', { status: 404 });
+    return new Response(JSON.stringify({ order: { id: m[1], state: 'COMPLETED', total_money: { amount: f.paid }, refunds: f.back ? [{ id: 'rf-' + m[1], status: 'COMPLETED', amount_money: { amount: f.back } }] : [] } }), { status: 200 });
+  }
   m = /\/v2\/payments\/([^/?]+)/.exec(u);
   if (m) {
     const p = payments[decodeURIComponent(m[1])];
@@ -109,9 +123,52 @@ globalThis.fetch = async (url, init = {}) => {
   throw new Error('unexpected fetch ' + u);
 };
 
+/*
+ * Gmail, as the Worker sees it: a TLS socket to smtp.gmail.com. This one
+ * speaks just enough SMTP to take a message, keeps what was sent, checks the
+ * app password, and refuses one address so a refusal can be seen to come back.
+ */
+let smtpSessions = 0;
+function fakeConnect() {
+  smtpSessions++;
+  let buf = ''; let rcpt = null; let data = null;
+  const out = new TransformStream();
+  const w = out.writable.getWriter();
+  const enc = new TextEncoder(); const dec = new TextDecoder();
+  const say = (t) => { w.write(enc.encode(t + '\r\n')).catch(() => {}); };
+  say('220 smtp.gmail.test ESMTP ready');
+  const writable = new WritableStream({
+    write(chunk) {
+      buf += dec.decode(chunk);
+      for (;;) {
+        if (data !== null) {
+          const end = buf.indexOf('\r\n.\r\n');
+          if (end < 0) break;
+          const msg = buf.slice(0, end); buf = buf.slice(end + 5); data = null;
+          const at = msg.indexOf('\r\n\r\n');
+          const head = msg.slice(0, at); const body = msg.slice(at + 4);
+          mails.push({ to: [rcpt], subject: (/^Subject: (.*)$/m.exec(head) || [])[1] || '', text: body.replace(/\r\n/g, '\n').replace(/^\.\./gm, '.'), head, via: 'gmail' });
+          say('250 2.0.0 OK queued'); continue;
+        }
+        const nl = buf.indexOf('\r\n'); if (nl < 0) break;
+        const line = buf.slice(0, nl); buf = buf.slice(nl + 2);
+        if (/^EHLO /i.test(line)) say('250-smtp.gmail.test at your service\r\n250-SIZE 35882577\r\n250-AUTH LOGIN PLAIN\r\n250 8BITMIME');
+        else if (/^AUTH PLAIN /i.test(line)) { const c = atob(line.slice(11)).split('\u0000'); say(c[1] === 'owner@gmail.test' && c[2] === 'app-pass' ? '235 2.7.0 Accepted' : '535-5.7.8 Username and Password not accepted.\r\n535 5.7.8 https://support.google.com/mail/?p=BadCredentials'); }
+        else if (/^MAIL FROM:/i.test(line)) say('250 2.1.0 OK');
+        else if (/^RCPT TO:/i.test(line)) { rcpt = (/<([^>]+)>/.exec(line) || [])[1]; say(rcpt === 'refuse@example.test' ? '550-5.1.1 The email account that you tried to reach does not exist.\r\n550 5.1.1 That address is not verified anywhere' : '250 2.1.5 OK'); }
+        else if (/^DATA$/i.test(line)) { data = ''; say('354 Go ahead'); }
+        else if (/^QUIT$/i.test(line)) say('221 2.0.0 closing connection');
+        else say('500 5.5.1 Unrecognized command');
+      }
+    },
+  });
+  return { readable: out.readable, writable, close: async () => { w.abort().catch(() => {}); } };
+}
+
 const env = {
   DB, SQUARE_ACCESS_TOKEN: 'sq-test', SQUARE_WEBHOOK_SIGNATURE_KEY: 'sig-test-key', TUNE_ADMIN_TOKEN: 'owner-token-test',
-  SQUARE_WEBHOOK_URL: 'https://api.example.test/v1/webhooks/square', RESEND_API_KEY: 'rs-test', ALLOWED_ORIGINS: '', SUPPORT_EMAIL: 'owner@example.test',
+  SQUARE_WEBHOOK_URL: 'https://api.example.test/v1/webhooks/square', ALLOWED_ORIGINS: '', SUPPORT_EMAIL: 'owner@example.test',
+  GMAIL_USER: 'owner@gmail.test', GMAIL_APP_PASSWORD: 'app-pass', __connect: fakeConnect,
 };
 const enc = new TextEncoder();
 async function sign(body, key = env.SQUARE_WEBHOOK_SIGNATURE_KEY) {
@@ -269,10 +326,10 @@ expect(r.status === 200 && r.data.ignored, 'a refund still pending changes nothi
   expect(r.status === 200 && r.data.resent === true && r.data.sentTo === 's***@example.test' && mails.length === n + 1 && mails[n].to[0] === 'solo@example.test' && r.data.key, 'after ten minutes the keys go again, to the address on file and never to one typed in, and the answer masks it');
   expect(db.tune_keys.find((k) => k.order_ref === 'ORDER-TUNE-1').emailed_at > Date.now() - 5000, 'and the send is recorded');
   db.tune_keys.filter((k) => k.order_ref === 'ORDER-TUNE-1').forEach((k) => { k.emailed_at = Date.now() - 11 * 60_000; });
-  delete env.RESEND_API_KEY;
+  delete env.GMAIL_USER;
   r = await call('/v1/tune/issue', { product: 'tune', order: 'ORDER-TUNE-1', resend: true });
   expect(r.status === 503 && /not switched on/.test(r.data.error), 'with mail off the page is told to save the keys');
-  env.RESEND_API_KEY = 'rs-test';
+  env.GMAIL_USER = 'owner@gmail.test';
   r = await call('/v1/tune/issue', { product: 'squad', order: 'ORDER-SQUAD-1', resend: true });
   expect(r.status === 410, 'a refunded order gets no mail');
 }
@@ -360,11 +417,25 @@ expect(r.status === 200 && r.data.sentTo === 'owner@example.test' && mails.lengt
 r = await admin({ action: 'mail-test', email: 'me@example.test' });
 expect(r.status === 200 && r.data.sentTo === 'me@example.test' && mails[mails.length - 1].to[0] === 'me@example.test', 'or to an address typed in');
 r = await admin({ action: 'mail-test', email: 'refuse@example.test' });
-expect(r.status === 502 && /not verified/.test(r.data.error), 'and Resend\'s refusal comes back in its own words');
-delete env.RESEND_API_KEY;
+expect(r.status === 502 && /not verified/.test(r.data.error), 'and the mail server\'s refusal comes back in its own words');
+expect(mails[mails.length - 1].via === 'gmail' && /^From: OmniDx Tune <owner@gmail.test>$/m.test(mails[mails.length - 1].head) && /^Reply-To: <owner@example.test>$/m.test(mails[mails.length - 1].head), 'the mail left through Gmail, from the owner\'s own address, with the support address as the reply-to');
+{
+  const saved = env.GMAIL_APP_PASSWORD; env.GMAIL_APP_PASSWORD = 'wrong';
+  r = await admin({ action: 'mail-test' });
+  expect(r.status === 502 && /Password not accepted/.test(r.data.error), 'a wrong app password comes back as Gmail\'s own refusal');
+  env.GMAIL_APP_PASSWORD = saved;
+  delete env.GMAIL_USER; env.RESEND_API_KEY = 'rs-test';
+  const n2 = mails.length;
+  r = await admin({ action: 'mail-test' });
+  expect(r.status === 200 && mails.length === n2 + 1 && mails[n2].via === 'resend', 'with Resend configured instead, the same mail goes through Resend');
+  delete env.RESEND_API_KEY; env.GMAIL_USER = 'owner@gmail.test';
+}
+delete env.GMAIL_USER;
 r = await admin({ action: 'mail-test' });
-expect(r.status === 503 && /Mail is off/.test(r.data.error), 'with no mail key the answer says so');
+expect(r.status === 503 && /Mail is off/.test(r.data.error), 'with no mailer the answer says so');
 env.RESEND_API_KEY = 'rs-test';
+
+env.GMAIL_USER = 'owner@gmail.test';
 
 /* 12. The week, as one email: Monday's cron, and the owner page on demand. */
 {
@@ -380,6 +451,55 @@ env.RESEND_API_KEY = 'rs-test';
   r = await admin({ action: 'summary' });
   expect(r.status === 503 && /SUPPORT_EMAIL/.test(r.data.error), 'without a support address the answer says so');
   env.SUPPORT_EMAIL = saved;
+}
+
+/* 13. No webhook: Square is asked about refunds at the key page, the claim, the check, and on the hour. */
+{
+  const solo = db.tune_keys.find((k) => k.order_ref === 'ORDER-TUNE-1');
+  const order = 'ORDER-TUNE-1';
+  const rowsOf = () => db.tune_keys.filter((k) => String(k.order_ref).replace(/#\d+$/, '') === order);
+  rowsOf().forEach((k) => { k.revoked_at = null; k.refund_checked_at = null; k.email = 'solo@example.test'; });
+  const pretty = (k) => { const tag = k.startsWith('SQUAD') ? 'SQUAD' : 'TUNE'; const t = k.slice(tag.length); return `${tag}-${t.slice(0, 4)}-${t.slice(4, 8)}-${t.slice(8, 12)}-${t.slice(12, 16)}`; };
+  const mine = db.tune_machines.find((m) => m.key === solo.key);
+  const hwid = mine ? mine.hwid : 'a'.repeat(32);
+  let looks = squareLooks;
+  r = await call('/v1/tune/claim', { key: pretty(solo.key), hwid });
+  expect(r.status === 200 && squareLooks === looks + 1 && rowsOf().every((k) => k.refund_checked_at), 'a claim asks Square about the order once, and notes when');
+  r = await call('/v1/tune/claim', { key: pretty(solo.key), hwid });
+  expect(r.status === 200 && squareLooks === looks + 1, 'a second claim within the hour does not ask again');
+  rowsOf().forEach((k) => { k.refund_checked_at = Date.now() - 2 * 3600_000; });
+  refunds[order] = { paid: solo.amount_cents, back: 500 };
+  let n = mails.length;
+  r = await call('/v1/tune/claim', { key: pretty(solo.key), hwid });
+  expect(r.status === 200 && rowsOf().every((k) => !k.revoked_at) && mails.length === n + 1 && mails[n].to[0] === 'owner@example.test' && /partial refund/.test(mails[n].subject), 'a partial refund Square reports leaves the key on and tells the owner once');
+  rowsOf().forEach((k) => { k.refund_checked_at = Date.now() - 2 * 3600_000; });
+  r = await call('/v1/tune/claim', { key: pretty(solo.key), hwid });
+  expect(r.status === 200 && mails.length === n + 1, 'and the same partial refund is not reported twice');
+  refunds[order] = { paid: solo.amount_cents, back: solo.amount_cents };
+  rowsOf().forEach((k) => { k.refund_checked_at = Date.now() - 2 * 3600_000; });
+  n = mails.length;
+  r = await call('/v1/tune/claim', { key: pretty(solo.key), hwid });
+  expect(r.status === 410 && rowsOf().every((k) => k.revoked_at) && mails.length === n + 1 && mails[n].to[0] === 'solo@example.test' && /no longer work/.test(mails[n].text), 'a full refund Square reports switches the key off at the next claim, and the buyer is told');
+  db.tune_hits = []; // the scenarios above spent this connection's tries
+  r = await call('/v1/tune/issue', { order });
+  expect(r.status === 410, 'the key page says the order was refunded');
+  // The hourly cron: a refunded order nobody has asked about since goes off on its own.
+  const other = db.tune_keys.find((k) => !k.revoked_at && String(k.order_ref).replace(/#\d+$/, '') !== order);
+  const o2 = String(other.order_ref).replace(/#\d+$/, '');
+  db.tune_keys.filter((k) => String(k.order_ref).replace(/#\d+$/, '') === o2).forEach((k) => { k.refund_checked_at = null; k.created_at = Date.now() - 86400_000; });
+  refunds[o2] = { paid: other.amount_cents, back: other.amount_cents };
+  const jobs = [];
+  await worker.scheduled({ cron: '0 * * * *', scheduledTime: Date.now() }, env, { waitUntil: (p) => jobs.push(p) });
+  const swept = await Promise.all(jobs);
+  expect(swept[0] && swept[0].revoked >= 1 && db.tune_keys.filter((k) => String(k.order_ref).replace(/#\d+$/, '') === o2).every((k) => k.revoked_at), 'the hourly cron finds a refund on an order nobody asked about and switches its keys off');
+  r = await call('/v1/tune/check', { key: pretty(other.key) });
+  expect(r.status === 200 && r.data.ok === false && /refunded/.test(r.data.reason), 'and a check of that key says refunded');
+  const h = await (await worker.fetch(new Request('https://api.example.test/v1/health'), env)).json();
+  expect(h.mail === true && h.mailer === 'gmail' && h.refunds === 'webhook', 'the health line names the mailer and how refunds arrive');
+  const savedSig = env.SQUARE_WEBHOOK_SIGNATURE_KEY; delete env.SQUARE_WEBHOOK_SIGNATURE_KEY;
+  const h2 = await (await worker.fetch(new Request('https://api.example.test/v1/health'), env)).json();
+  expect(h2.refunds === 'hourly' && h2.squareWebhook === false, 'without a webhook it says refunds are checked hourly');
+  env.SQUARE_WEBHOOK_SIGNATURE_KEY = savedSig;
 }
 
 r = await call('/v1/tune/admin', { token: 'owner-token-test', action: 'lookup', ref: 'ORDER-TUNE-1' });

@@ -11,9 +11,10 @@ binding = "DB"
 database_name = "omnidx-studio"
 database_id = "PASTE_YOUR_DATABASE_ID_HERE"
 
+# On the hour: Square is asked about refunds (no webhook needed; a refunded order's keys go off within the hour).
 # Monday, 13:00 UTC: the week's orders, money and refunds, emailed to SUPPORT_EMAIL.
 [triggers]
-crons = ["0 13 * * 1"]
+crons = ["0 * * * *", "0 13 * * 1"]
 
 [vars]
 # Comma-separated list of sites allowed to call this API. Set it before you go
@@ -31,7 +32,8 @@ PBKDF2_ROUNDS = "210000"
 CLAUDE_MODEL = "claude-opus-5"
 
 MAIL_FROM = "OmniDx Studio <keys@omnidx.net>"
-# The Tune key emails come from here; the address's domain must be verified in Resend.
+# The display name on the key emails. Through Gmail (GMAIL_USER, GMAIL_APP_PASSWORD) the address is the
+# Gmail account itself; through Resend the address here must belong to a domain Resend has verified.
 TUNE_MAIL_FROM = "OmniDx Tune <keys@omnidx.net>"
 SUPPORT_EMAIL = "ahmirpierce36@gmail.com"
 # The exact notification URL registered for the Square webhook: this Worker's
@@ -46,7 +48,9 @@ SALT_PEPPER = "change-me-to-a-long-random-string"
 # Secrets are NOT set here — they would end up in git. Set each one with:
 #   npx wrangler secret put ANTHROPIC_API_KEY
 #   npx wrangler secret put STRIPE_WEBHOOK_SECRET
-#   npx wrangler secret put RESEND_API_KEY      (emails the Tune keys after a payment)
+#   npx wrangler secret put GMAIL_USER          (the owner's Gmail address: the Tune keys go to buyers from it)
+#   npx wrangler secret put GMAIL_APP_PASSWORD  (an app password for it; Google Account > Security > 2-Step Verification > App passwords)
+#   npx wrangler secret put RESEND_API_KEY      (Resend instead of Gmail; needs a verified domain)
 #   npx wrangler secret put SQUARE_ACCESS_TOKEN (confirms Square orders; keys are not issued without it)
 #   npx wrangler secret put SQUARE_WEBHOOK_SIGNATURE_KEY (from the webhook subscription in the Square developer dashboard)
 # The deploy workflow sets every one of these from the repository's secrets, so

@@ -31,7 +31,10 @@ const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
   try {
     const h = await (await fetch(`${base}/v1/health`, { cache: 'no-store' })).json();
     const bit = (on, name) => `<span class="${on ? 'on' : 'off'}">${esc(name)}: ${on ? 'on' : 'off'}</span>`;
-    el.innerHTML = [bit(true, 'Licence server'), bit(h.square, 'Square'), bit(h.squareWebhook, 'Webhook'), bit(h.mail, 'Mail'), bit(h.owner, 'Owner token')].join(' · ')
+    // Refunds reach the keys by Square's webhook when one is set up; otherwise the server asks Square on the hour, which is fine.
+    const refunds = h.refunds === 'webhook' ? bit(true, 'Refunds by webhook') : (h.refunds === 'hourly' ? bit(true, 'Refunds checked hourly') : bit(false, 'Refunds'));
+    const mail = h.mail ? bit(true, h.mailer === 'gmail' ? 'Mail through Gmail' : 'Mail') : bit(false, 'Mail');
+    el.innerHTML = [bit(true, 'Licence server'), bit(h.square, 'Square'), refunds, mail, bit(h.owner, 'Owner token')].join(' · ')
       + (h.build ? ` <span class="muted">· build ${esc(h.build)}${h.deployed ? `, deployed ${esc(h.deployed.replace('T', ' ').replace('Z', ' UTC'))}` : ''}</span>` : '');
   } catch { el.innerHTML = `<span class="off">Licence server: not answering</span> at ${esc(base)}.`; }
 })();
