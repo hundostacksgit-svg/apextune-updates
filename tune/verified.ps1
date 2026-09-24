@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.45.0'
+$script:Version = '1.44.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -2640,9 +2640,7 @@ function Get-DoneLines {
     if ($lines[$i] -match '^== ') { if ($i + 1 -lt $lines.Count -and $lines[$i + 1] -match '^  \+') { $out += $lines[$i] } }
     else { $out += $lines[$i] }
   }
-  # Plain return, so a pipeline gets one line at a time: wrapped as one object, the HTML report's
-  # ForEach-Object saw the whole list at once and drew every line into a single heading (1.42.0, 1.43.0).
-  return $out
+  return ,$out
 }
 
 <# The numbers that say whether it worked, beyond the process count: memory
