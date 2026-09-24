@@ -1472,13 +1472,14 @@ function initBackground() {
   window.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') { ptr.tx = e.clientX; ptr.ty = e.clientY; } }, { passive: true });
   window.addEventListener('pointerleave', () => { ptr.tx = -1; ptr.ty = -1; ptr.x = -1; ptr.y = -1; }, { passive: true });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) kick(); });
-  reduce.addEventListener('change', kick);
+  if (reduce.addEventListener) reduce.addEventListener('change', kick);
   document.documentElement.addEventListener('omnidx:theme', kick);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   applyTheme();
-  initBackground();
+  // The background is decoration: if an old browser chokes on it, the page still works.
+  try { initBackground(); } catch (e) { document.querySelector('.bg-canvas')?.remove(); }
   $$('[data-theme-toggle]').forEach((b) => b.addEventListener('click', toggleTheme));
   initMenuBox();
   initDrawer();
