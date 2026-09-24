@@ -114,6 +114,26 @@ try {
       `front page tour: next goes to 2, a dot to 7, seven slides inert, pause holds, the run slide reads the published log${errs.length ? ' (' + errs.join('; ') + ')' : ''}`);
     await page.close();
   }
+  /* 1b. "Watch it work" opens the tutorial in a dialog: WebM first, MP4 after it, a poster, the steps in words; Esc closes
+     it and pauses the video. The files it points at exist and are not empty. */
+  {
+    const page = await openPage({ viewport: { width: 1280, height: 900 } });
+    const errs = watch(page);
+    await page.goto(`${base}/studio/`, { waitUntil: 'networkidle' });
+    await page.click('.hero [data-watch]');
+    await page.waitForSelector('dialog.watch[open]');
+    const v = await page.evaluate(() => {
+      const d = document.querySelector('dialog.watch'), vid = d.querySelector('video');
+      return { types: [...vid.querySelectorAll('source')].map((x) => x.type).join(','), srcs: [...vid.querySelectorAll('source')].map((x) => x.src), poster: vid.poster, steps: d.querySelectorAll('.watch-tx li').length, modal: d.matches(':modal') };
+    });
+    await page.keyboard.press('Escape');
+    const closed = await page.evaluate(() => { const d = document.querySelector('dialog.watch'); return !d.open && d.querySelector('video').paused; });
+    const sizes = [];
+    for (const u of [...v.srcs, v.poster]) { const r = await page.request.get(u); sizes.push(r.ok() ? (await r.body()).length : 0); }
+    expect(v.types === 'video/webm,video/mp4' && v.steps >= 8 && v.modal && closed && sizes.every((n) => n > 20000) && !errs.length,
+      `front page "Watch it work": a modal player, WebM then MP4, a poster, the steps in words, Esc closes and pauses (${sizes.map((n) => Math.round(n / 1024) + ' KB').join(', ')})${errs.length ? ' (' + errs.join('; ') + ')' : ''}`);
+    await page.close();
+  }
   {
     const page = await openPage({ viewport: { width: 1280, height: 900 } });
     const errs = watch(page);

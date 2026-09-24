@@ -26,6 +26,7 @@ pieces fit and the short list of what still needs a human to switch on.
 | The undervolt guide | `studio/undervolt/` | GPU and CPU undervolting and frame caps, step by step; nothing to buy. The report's undervolt notes point here. |
 | Custom builds, compared | `studio/builds/` | What stripped Windows builds turn off, what it costs, and where the tune stops. No names. |
 | The front-page tour | `studio/index.html#tour`, `studio/assets/tour.js` | Eight slides of what a buyer gets, from real artifacts: the published run log, `app.png`, `ci-card.png`. Checked by the browser test. |
+| "Watch it work" | `studio/assets/watch.js`, `studio/assets/video/`, made by `tools/promo/tune/` | The 74-second tutorial in a dialog on the front page and the download page: PowerShell, the line, the admin prompt, the fingerprint check, the app, the key, the run, a game's file, the report, undo. Rendered from code (`node tools/promo/tune/render.mjs`); re-cut it when the app's wording changes. Checked by the browser test. |
 | The by-hand guide | `studio/guide/` | Everything the tune does, as a list a person can do themselves; nothing to buy on it. The one link that is fine to post in a help thread. |
 | The card | `C:\OmniDx\card-<date>.png` on the buyer's PC; `studio/assets/ci-card.png` from the build machine | The before and after on one picture, labelled as one PC's, for posting. Status mode writes one with the after-restart number. |
 | The roadmap | `docs/ROADMAP.md` | What was surveyed, what to build next in order, and what was looked at and left alone, with reasons. |

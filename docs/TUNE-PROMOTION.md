@@ -195,7 +195,11 @@ recorded": thirty runs in a table, each with its count before and after,
 its seconds and its free-look timing, plus the median line above it. Nobody
 else in this category shows a run history at all; when someone says "one
 lucky run", that table is the reply. That is enough raw footage for the
-first twenty posts. Newer footage worth having: the front page's tour
+first twenty posts. The site's own tutorial (omnidx.net/studio/#watch, the file
+is `studio/assets/video/omnidx-tune-how-it-works.mp4`) is 74 seconds, 16:9,
+music and no voice: cut the run section (0:36 to 0:50) as a 15-second clip, or
+post it whole on YouTube and X; it already carries "Example run" and "Sped up".
+Newer footage worth having: the front page's tour
 (omnidx.net/studio/#tour) scrolled slide by slide; the free report on a PC with
 Fortnite installed, listing the settings it would write into the game's file;
 the answer-file page making autounattend.xml; a fresh install coming up with no

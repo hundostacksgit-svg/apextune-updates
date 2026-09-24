@@ -145,6 +145,16 @@
       </ul>
     </div>
     <div class="card reveal d1" style="margin-top:16px">
+      <div class="eyebrow" style="margin-bottom:12px">v1.77.0 · September 2026</div>
+      <h3>Discord or Spotify left on at startup stays on, and a video of the whole thing</h3>
+      <ul class="tick">
+        <li>Unticking Discord or Spotify in the startup list left its Windows entry alone, but the step that tunes those apps still switched off the app's own "open at startup" setting, so it dropped off the list at its next start anyway. Now an app you keep keeps that setting too; the log says so ("it still starts with Windows, as you chose"). Found while filming the tutorial</li>
+        <li>The Windows check plants Discord's and Spotify's settings files, keeps Discord in the run, and proves Discord's setting was left on, Spotify's auto-start switched off, and both files back byte for byte after the undo</li>
+        <li>New on the front page and the download page: "Watch it work", a 74-second video of the whole thing on the site's example PC. It shows opening PowerShell, the one line, the administrator prompt, the fingerprint check, the app reading the PC, the key, the run with its live log, a game's settings file, the report's BIOS checklist and undo. The run is shown eight times faster, and the video says so. Every step is also written out under the player</li>
+        <li>1.76.1 on the build machine: 398 changes recorded, 394 put back by undo, no red text</li>
+      </ul>
+    </div>
+    <div class="card reveal d1" style="margin-top:16px">
       <div class="eyebrow" style="margin-bottom:12px">v1.76.1 · September 2026</div>
       <h3>The window's new checkbox fits, and its keep list names streaming</h3>
       <ul class="tick">

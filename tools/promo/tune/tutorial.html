@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OmniDx Tune - how it works (composition)</title>
+<!--
+  The tutorial video, as one page. window.seek(t) puts every element where it
+  is at time t, so render.mjs can step through it frame by frame. Nothing here
+  animates on its own: no CSS transitions, no timers.
+
+  The OmniDx Tune window is drawn from the window's own layout in
+  tune/omnidx.ps1 ($script:Xaml): the same columns, cards, labels, buttons and
+  colours. The desktop around it is drawn here and carries no one's logo.
+-->
+<style>
+@font-face { font-family: 'Inter'; src: url('/fonts/InterVariable.ttf') format('truetype'); font-weight: 100 900; }
+@font-face { font-family: 'JetBrains Mono'; src: url('/fonts/JetBrainsMono-Regular.ttf') format('truetype'); font-weight: 400; }
+@font-face { font-family: 'JetBrains Mono'; src: url('/fonts/JetBrainsMono-Medium.ttf') format('truetype'); font-weight: 500; }
+@font-face { font-family: 'JetBrains Mono'; src: url('/fonts/JetBrainsMono-Bold.ttf') format('truetype'); font-weight: 700; }
+
+:root {
+  --ink: #F1ECFF; --ink2: #B3A8CF; --ink3: #7D7199; --card: #0E0A17; --line: #2A1F45; --btn: #1D1530;
+  --violet: #8B5CF6; --lilac: #C084FC; --grad: linear-gradient(135deg, #6D28D9 0%, #8B5CF6 45%, #D946EF 100%);
+  --ui: 'Inter', 'Segoe UI', system-ui, sans-serif; --mono: 'JetBrains Mono', Consolas, monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1920px; height: 1080px; overflow: hidden; background: #000; }
+pre, code, #logbox, .kbox, #ini, #outro .cmd { font-variant-ligatures: none; font-feature-settings: 'liga' 0, 'calt' 0; }
+body { font-family: var(--ui); color: var(--ink); -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision; font-feature-settings: 'cv11', 'ss01'; }
+.abs { position: absolute; }
+.hide { display: none !important; }
+
+#frame { position: absolute; inset: 0; overflow: hidden; background: #050308; }
+#cam { position: absolute; inset: 0; overflow: hidden; }
+#world { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+
+/* ---------------- the desktop ---------------- */
+#wall { position: absolute; inset: 0; background-size: cover; }
+#taskbar { z-index: 25; position: absolute; left: 0; right: 0; bottom: 0; height: 48px; background: rgba(32, 30, 38, .86); border-top: 1px solid rgba(255,255,255,.06); display: flex; align-items: center; justify-content: center; }
+#taskbar .apps { display: flex; gap: 4px; }
+.tb { width: 40px; height: 40px; border-radius: 4px; display: grid; place-items: center; position: relative; }
+.tb.hover, .tb.open { background: rgba(255,255,255,.07); }
+.tb .ind { position: absolute; bottom: 2px; left: 50%; width: 6px; height: 3px; margin-left: -3px; border-radius: 2px; background: #9d9d9d; display: none; }
+.tb.run .ind { display: block; }
+.tb.focus .ind { display: block; width: 16px; margin-left: -8px; background: #a98cf2; }
+#tray { position: absolute; right: 12px; top: 0; height: 48px; display: flex; align-items: center; gap: 14px; color: #fff; font-size: 12px; }
+#tray .clock { text-align: right; line-height: 16px; }
+#tray svg { opacity: .95; }
+
+/* Start menu */
+#start { z-index: 30; position: absolute; left: 628px; top: 246px; width: 664px; height: 774px; border-radius: 8px; background: rgba(36, 33, 44, .96); border: 1px solid rgba(255,255,255,.08); box-shadow: 0 24px 60px rgba(0,0,0,.55); overflow: hidden; transform-origin: 50% 100%; }
+#start .search { margin: 30px 32px 0; height: 36px; border-radius: 18px; background: #1c1a22; border: 1px solid rgba(255,255,255,.08); border-bottom: 2px solid #a98cf2; display: flex; align-items: center; gap: 12px; padding: 0 16px; font-size: 14px; color: #cfcfcf; }
+#start .search .ph { color: #9a9a9a; }
+#start .search .typed { color: #fff; }
+#start .caret { display: inline-block; width: 1px; height: 17px; background: #fff; vertical-align: -3px; margin-left: 1px; }
+#start .sec { display: flex; justify-content: space-between; align-items: center; margin: 26px 56px 14px; font-size: 14px; font-weight: 600; }
+#start .pill { font-size: 12px; font-weight: 400; background: rgba(255,255,255,.06); border-radius: 4px; padding: 3px 9px; color: #e6e6e6; }
+#start .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px 0; margin: 0 40px; }
+#start .gi { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 0 10px; font-size: 12px; color: #eee; border-radius: 4px; }
+#start .rec { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; margin: 0 48px; }
+#start .ri { display: flex; gap: 14px; align-items: center; padding: 8px; font-size: 12.5px; }
+#start .ri small { display: block; color: #a4a4a4; font-size: 11.5px; margin-top: 2px; }
+#start .foot { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; background: rgba(0,0,0,.18); border-top: 1px solid rgba(255,255,255,.06); display: flex; align-items: center; justify-content: space-between; padding: 0 56px; font-size: 13px; }
+#start .me { display: flex; align-items: center; gap: 12px; }
+#start .av { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #5b4a8b, #2d2640); display: grid; place-items: center; font-size: 13px; font-weight: 600; }
+#results { position: absolute; left: 0; right: 0; top: 80px; bottom: 64px; display: flex; gap: 0; }
+#results .tabs { position: absolute; top: 0; left: 32px; display: flex; gap: 18px; font-size: 13px; color: #cfcfcf; }
+#results .tabs b { color: #fff; font-weight: 600; border-bottom: 3px solid #a98cf2; padding-bottom: 6px; }
+#results .left { position: absolute; left: 24px; top: 46px; width: 300px; }
+#results .right { position: absolute; left: 336px; top: 46px; right: 24px; bottom: 16px; background: rgba(255,255,255,.035); border-radius: 8px; display: flex; flex-direction: column; align-items: center; padding-top: 34px; }
+#results h6 { font-size: 13px; font-weight: 600; margin: 8px 12px 10px; color: #fff; }
+#results .best { display: flex; gap: 14px; align-items: center; padding: 12px; border-radius: 6px; font-size: 14px; }
+#results .best.sel { background: rgba(255,255,255,.075); }
+#results .best.sel::before { content: ''; position: absolute; left: 0; width: 3px; height: 18px; border-radius: 2px; background: #a98cf2; }
+#results .best small, #results .item small { display: block; color: #a9a9a9; font-size: 12px; margin-top: 3px; }
+#results .item { display: flex; gap: 12px; align-items: center; padding: 9px 12px; font-size: 13px; }
+#results .right .big { margin-bottom: 12px; }
+#results .right .nm { font-size: 18px; font-weight: 600; }
+#results .right .ty { font-size: 12px; color: #a9a9a9; margin: 4px 0 18px; }
+#results .right .acts { width: 100%; border-top: 1px solid rgba(255,255,255,.07); padding: 10px 22px; }
+#results .right .act { display: flex; gap: 14px; align-items: center; padding: 9px 4px; font-size: 13px; color: #eee; }
+
+/* Windows */
+.win { position: absolute; border-radius: 8px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.08); transform-origin: 50% 50%; }
+.caps { position: absolute; right: 0; top: 0; display: flex; }
+.caps i { width: 46px; height: 32px; display: grid; place-items: center; font-style: normal; }
+
+/* Terminal (dark) */
+.term { background: #0C0C0C; }
+.term .bar { height: 40px; background: #1F1D24; display: flex; align-items: flex-end; padding-left: 8px; position: relative; }
+.term .tab { height: 32px; width: 240px; background: #0C0C0C; border-radius: 8px 8px 0 0; display: flex; align-items: center; gap: 10px; padding: 0 12px; font-size: 12px; color: #fff; }
+.term .tab .x { margin-left: auto; color: #bbb; font-size: 12px; }
+.term .plus { color: #ccc; font-size: 16px; padding: 0 12px 7px; }
+.term .caps { color: #ddd; font-size: 12px; }
+.term pre { font-family: var(--mono); font-size: 14px; line-height: 19px; color: #CCCCCC; padding: 10px 14px; white-space: pre-wrap; word-break: break-all; }
+.term .dim { color: #767676; }
+.term .mag { color: #B4009E; }
+.term .cur { display: inline-block; width: 8px; height: 17px; background: #CCCCCC; vertical-align: -3px; }
+
+/* UAC */
+#uacwrap { position: absolute; inset: 0; z-index: 40; }
+#uacdim { position: absolute; inset: 0; background: rgba(0,0,0,.62); }
+#uac { position: absolute; left: 732px; top: 318px; width: 456px; background: #2b2b2b; border: 1px solid rgba(255,255,255,.12); border-radius: 8px; box-shadow: 0 30px 90px rgba(0,0,0,.7); overflow: hidden; }
+#uac .hd { background: #1f1f1f; padding: 14px 22px 22px; }
+#uac .hd .ttl { font-size: 12px; color: #d8d8d8; margin-bottom: 14px; }
+#uac .hd .q { font-size: 20px; line-height: 27px; font-weight: 600; color: #fff; }
+#uac .bd { padding: 20px 22px 0; }
+#uac .app { display: flex; gap: 14px; align-items: center; font-size: 15px; font-weight: 600; }
+#uac .meta { font-size: 13px; color: #cfcfcf; margin: 16px 0 4px; line-height: 20px; }
+#uac .more { font-size: 13px; color: #b9a2f6; margin: 10px 0 22px; }
+#uac .btns { display: flex; gap: 8px; padding: 22px; background: #202020; border-top: 1px solid rgba(255,255,255,.07); }
+#uac .btns div { flex: 1; height: 32px; border-radius: 4px; display: grid; place-items: center; font-size: 14px; }
+#uac .yes { background: #9c7cf0; color: #111; font-weight: 600; }
+#uac .yes.hover { background: #ae93f5; }
+#uac .no { background: #3a3a3a; border: 1px solid rgba(255,255,255,.1); }
+
+/* ---------------- the OmniDx Tune window (from $script:Xaml) ---------------- */
+#w-app { width: 1120px; height: 792px; background: #050308; }
+#w-app .tbar { height: 32px; background: #FFFFFF; color: #1a1a1a; display: flex; align-items: center; gap: 10px; padding-left: 12px; font-size: 12px; }
+#w-app .tbar .caps { color: #1a1a1a; font-size: 11px; }
+.client { position: absolute; left: 0; top: 32px; width: 1120px; height: 760px; padding: 18px; font-size: 13px; line-height: 17px; }
+.hdr { position: absolute; left: 20px; top: 18px; right: 20px; height: 40px; display: flex; align-items: center; }
+.hdr img { height: 40px; }
+.hdr .ver { font-size: 11px; color: var(--ink3); margin: 2px 0 0 14px; }
+.hdr .status { margin-left: auto; color: var(--ink2); font-size: 13px; }
+.card { position: absolute; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; overflow: hidden; }
+.lbl { font-size: 10.5px; font-weight: 700; color: var(--ink3); margin-bottom: 8px; letter-spacing: .01em; }
+.sb { position: absolute; right: 4px; width: 6px; border-radius: 4px; background: #2A1F45; }
+#c-pc { left: 18px; top: 72px; width: 268px; height: 453px; }
+#c-pc .mt { color: var(--ink2); line-height: 21px; padding-right: 10px; }
+#c-pc .count { font-size: 46px; line-height: 50px; font-weight: 700; color: var(--lilac); margin-top: -6px; font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+#c-pc .tgt { color: var(--ink3); margin-top: -2px; padding-right: 8px; }
+#c-pc .adv { color: #FFC247; line-height: 19px; margin-top: 8px; padding-right: 10px; }
+#c-tune { left: 298px; top: 72px; width: 522px; height: 453px; }
+.ug { display: grid; grid-template-columns: 1fr 1fr; }
+.cb { display: flex; align-items: center; gap: 7px; color: var(--ink2); margin: 3px 10px 3px 0; min-height: 17px; white-space: nowrap; }
+.cb .bx { width: 13px; height: 13px; flex: none; background: #fff; border: 1px solid #333; display: grid; place-items: center; }
+.cb .bx svg { display: none; }
+.cb.on .bx svg { display: block; }
+.cb.hover .bx { border-color: #0078D4; background: #f0f7ff; }
+.cb.wrap { white-space: normal; align-items: flex-start; }
+.cb.wrap .bx { margin-top: 2px; }
+#startup .cb { width: 280px; }
+#c-key { left: 832px; top: 72px; width: 270px; height: 453px; }
+.kbox { height: 34px; background: #150F22; border: 1px solid var(--line); padding: 0 8px; display: flex; align-items: center; font-family: var(--mono); font-size: 13.5px; color: var(--ink); position: relative; overflow: hidden; }
+.kbox.focus { border-color: var(--violet); }
+.kbox .kc { display: inline-block; width: 1px; height: 17px; background: var(--lilac); margin-left: 1px; }
+.kbox .blur { position: absolute; inset: 3px 4px; border-radius: 3px; backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px); background: rgba(21,15,34,.25); }
+.knote { color: var(--ink3); margin-top: 6px; }
+.btn { height: 36px; border-radius: 10px; background: var(--btn); border: 1px solid var(--line); display: grid; place-items: center; font-weight: 600; margin-bottom: 8px; white-space: nowrap; }
+.btn.primary { height: 44px; background: var(--grad); border-color: transparent; color: #fff; font-size: 14px; margin: 16px 0 8px; }
+.btn.off { opacity: .4; }
+.btn.hover { border-color: var(--violet); }
+.btn.primary.hover { box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); }
+.btn.press { filter: brightness(.86); }
+.result { color: #30D38A; font-weight: 600; margin-top: 14px; }
+#c-log { left: 18px; top: 540px; width: 1084px; height: 176px; padding: 8px; }
+#logbox { position: absolute; inset: 8px 10px 8px 11px; overflow: hidden; font-family: var(--mono); font-size: 12px; line-height: 14px; color: var(--ink2); }
+#logbox div { white-space: pre-wrap; word-break: break-word; }
+.foot { position: absolute; left: 20px; right: 20px; top: 728px; height: 16px; display: flex; align-items: center; gap: 16px; }
+.prog { flex: 1; height: 8px; background: #1D1530; border: 1px solid var(--line); position: relative; overflow: hidden; }
+.prog i { position: absolute; top: 0; bottom: 0; left: 0; background: #8B5CF6; }
+.foot span { color: var(--ink3); font-size: 11.5px; white-space: nowrap; }
+
+/* Notepad (dark) */
+#w-note { width: 980px; height: 700px; background: #272727; }
+#w-note .tabs { height: 40px; background: #202020; display: flex; align-items: flex-end; padding-left: 8px; }
+#w-note .tabs .tab { height: 32px; width: 250px; background: #272727; border-radius: 8px 8px 0 0; display: flex; align-items: center; gap: 10px; padding: 0 12px; font-size: 12px; color: #fff; }
+#w-note .tabs .tab .x { margin-left: auto; color: #aaa; }
+#w-note .menu { height: 36px; display: flex; gap: 22px; align-items: center; padding: 0 18px; font-size: 13px; color: #eee; border-bottom: 1px solid rgba(255,255,255,.06); }
+#w-note .caps { color: #ddd; font-size: 12px; }
+#w-note .ed { position: absolute; left: 0; right: 0; top: 76px; bottom: 30px; background: #1f1f1f; padding: 12px 16px; font-family: var(--mono); font-size: 15px; line-height: 26px; color: #f2f2f2; }
+#w-note .ln { position: relative; height: 26px; white-space: pre; display: flex; align-items: center; padding-left: 6px; border-radius: 3px; }
+#w-note .ln .val { display: inline-block; position: relative; overflow: hidden; height: 26px; vertical-align: top; }
+#w-note .ln .val span { display: block; }
+#w-note .ln .tag { position: absolute; left: 520px; font-family: var(--ui); font-size: 13px; font-weight: 600; color: #EBDDFF; background: rgba(139,92,246,.28); border: 1px solid rgba(192,132,252,.5); border-radius: 999px; padding: 2px 11px; }
+#w-note .status { position: absolute; left: 0; right: 0; bottom: 0; height: 30px; background: #202020; display: flex; gap: 0; align-items: center; font-size: 12px; color: #d6d6d6; padding-left: 18px; }
+#w-note .status span { padding: 0 16px; border-left: 1px solid rgba(255,255,255,.1); }
+#w-note .status span:first-child { border: 0; padding-left: 0; }
+
+/* Browser (dark, unbranded) with the report */
+#w-web { width: 1420px; height: 960px; background: #16131d; }
+#w-web .strip { height: 40px; background: #1d1a24; display: flex; align-items: flex-end; padding-left: 10px; }
+#w-web .strip .tab { height: 32px; width: 300px; background: #2a2632; border-radius: 8px 8px 0 0; display: flex; align-items: center; gap: 9px; padding: 0 12px; font-size: 12px; color: #eee; white-space: nowrap; overflow: hidden; }
+#w-web .strip .tab img { width: 16px; height: 16px; border-radius: 3px; }
+#w-web .caps { color: #ddd; font-size: 12px; }
+#w-web .tool { height: 44px; background: #2a2632; display: flex; align-items: center; gap: 16px; padding: 0 14px; color: #cfcfcf; font-size: 13px; }
+#w-web .addr { flex: 1; height: 30px; border-radius: 15px; background: #1b1822; display: flex; align-items: center; padding: 0 14px; gap: 10px; color: #e7e7e7; font-size: 13.5px; }
+#w-web .addr em { font-style: normal; color: #9b93ad; }
+#w-web .page { position: absolute; left: 0; right: 0; top: 84px; bottom: 0; overflow: hidden; background: #050308; }
+#report { position: absolute; left: 0; right: 0; top: 0; }
+#report main { max-width: 860px; margin: 0 auto; padding: 36px 20px 80px; font-size: 15px; line-height: 1.6; color: #f1ecff; }
+#report h1 { font-size: 30px; letter-spacing: -.02em; margin: 0 0 4px; display: flex; align-items: center; gap: 10px; }
+#report h1 img { width: 44px; height: 44px; }
+#report h2 { font-size: 12px; letter-spacing: .14em; text-transform: uppercase; color: #c084fc; margin: 36px 0 12px; }
+#report .sub { color: #b3a8cf; margin: 0 0 24px; }
+#report .muted { color: #8a7ea6; }
+#report .big { display: flex; gap: 28px; margin: 18px 0; }
+#report .big div { background: #0e0a17; border: 1px solid #2a1f45; border-radius: 14px; padding: 16px 20px; min-width: 150px; }
+#report .big b { display: block; font-size: 40px; font-weight: 700; letter-spacing: -.03em; background: linear-gradient(115deg, #8b5cf6, #c084fc 45%, #d946ef); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#report .big span { font-size: 12px; color: #8a7ea6; }
+#report ol, #report ul { padding-left: 20px; color: #b3a8cf; }
+#report li { margin: 4px 0; }
+#report table { width: 100%; border-collapse: collapse; background: #0e0a17; border: 1px solid #2a1f45; }
+#report td, #report th { padding: 9px 14px; border-bottom: 1px solid #1b1430; text-align: left; font-size: 14px; }
+#report th { color: #8a7ea6; font-size: 11.5px; text-transform: uppercase; letter-spacing: .08em; }
+#report .bios { background: #0e0a17; border: 1px solid #2a1f45; border-radius: 14px; padding: 6px 18px; }
+#report .bios ul { list-style: none; padding-left: 2px; }
+#report .bios li { margin: 8px 0; color: #f1ecff; position: relative; padding: 2px 8px; border-radius: 6px; }
+#report .bios li .mk { position: absolute; inset: 0; border-radius: 6px; background: rgba(139,92,246,.22); transform-origin: 0 50%; transform: scaleX(0); }
+#report .bios li .tx { position: relative; }
+#report .bios li .tick { position: absolute; left: -44px; top: 4px; width: 26px; height: 26px; border-radius: 50%; background: #30D38A; display: grid; place-items: center; }
+
+/* Pointer */
+#pointer { z-index: 50; position: absolute; left: 0; top: 0; width: 24px; height: 36px; transform-origin: 0 0; filter: drop-shadow(0 2px 3px rgba(0,0,0,.45)); }
+#ring { z-index: 49; position: absolute; left: 0; top: 0; width: 1px; height: 1px; }
+#ring i { position: absolute; border-radius: 50%; border: 2px solid rgba(214,178,255,.9); background: rgba(192,132,252,.16); }
+
+/* ---------------- screen-space layers ---------------- */
+.layer { position: absolute; inset: 0; pointer-events: none; }
+#scrim { background: radial-gradient(ellipse 62% 34% at 22% 100%, rgba(5,3,8,.72) 0%, rgba(5,3,8,.35) 60%, rgba(5,3,8,0) 100%), linear-gradient(0deg, rgba(5,3,8,.84) 0%, rgba(5,3,8,.5) 20%, rgba(5,3,8,0) 44%); }
+#cap { position: absolute; left: 112px; bottom: 104px; max-width: 1180px; }
+#cap .eb { display: flex; align-items: center; gap: 14px; font-size: 19px; font-weight: 700; letter-spacing: .22em; text-transform: uppercase; color: var(--lilac); margin-bottom: 14px; height: 24px; }
+#cap .eb .rule { height: 2px; background: var(--lilac); }
+#cap .ln { font-size: 46px; line-height: 58px; font-weight: 650; letter-spacing: -.015em; text-shadow: 0 2px 18px rgba(0,0,0,.5); }
+#cap .w { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: 4px; margin-bottom: -4px; }
+#cap .w span { display: inline-block; }
+.chips { position: absolute; top: 56px; right: 64px; display: flex; gap: 12px; }
+.chip { display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 18px; border-radius: 20px; background: rgba(10,7,17,.78); border: 1px solid rgba(192,132,252,.28); font-size: 17px; font-weight: 600; color: var(--ink); letter-spacing: .01em; }
+.chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lilac); box-shadow: 0 0 10px var(--lilac); }
+#keys { position: absolute; right: 96px; bottom: 112px; display: flex; gap: 10px; align-items: center; font-size: 22px; font-weight: 600; }
+.key { min-width: 64px; height: 58px; padding: 0 18px; border-radius: 10px; background: linear-gradient(#2a2437, #1b1726); border: 1px solid rgba(255,255,255,.14); box-shadow: 0 5px 0 #0c0a12, 0 10px 24px rgba(0,0,0,.5); display: grid; place-items: center; color: #fff; }
+.key.dn { transform: translateY(4px); box-shadow: 0 1px 0 #0c0a12, 0 6px 16px rgba(0,0,0,.5); }
+.plus { color: var(--ink2); font-size: 22px; }
+#result { display: grid; place-items: center; }
+#result .rc { width: 760px; padding: 42px 56px 40px; border-radius: 28px; background: rgba(12,9,20,.92); border: 1px solid rgba(192,132,252,.3); box-shadow: 0 40px 120px rgba(0,0,0,.6), 0 0 0 1px rgba(0,0,0,.4); text-align: left; }
+#result .k { font-size: 17px; font-weight: 700; letter-spacing: .22em; color: var(--lilac); text-transform: uppercase; }
+#result .row { display: flex; align-items: baseline; gap: 28px; margin: 14px 0 8px; }
+#result .was { font-size: 64px; font-weight: 600; color: #6f6689; font-variant-numeric: tabular-nums; position: relative; }
+#result .was::after { content: ''; position: absolute; left: -4px; right: -4px; top: 52%; height: 4px; background: #6f6689; transform-origin: 0 50%; transform: scaleX(var(--strike, 0)); }
+#result .arrow { font-size: 44px; color: var(--ink3); }
+#result .now { font-size: 168px; line-height: 160px; font-weight: 800; letter-spacing: -.045em; font-variant-numeric: tabular-nums; background: linear-gradient(115deg, #8b5cf6, #c084fc 45%, #d946ef); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#result .sm { font-size: 20px; color: var(--ink2); line-height: 30px; }
+#result .sm b { color: var(--ink); font-weight: 600; }
+
+/* Cold open, title, outro */
+.glow { position: absolute; inset: 0; background-size: cover; }
+#cold .l { position: absolute; left: 190px; font-size: 64px; line-height: 78px; font-weight: 650; letter-spacing: -.025em; white-space: nowrap; }
+#cold .w { display: inline-block; margin-right: .26em; }
+.gradtext { background: linear-gradient(115deg, #a78bfa, #c084fc 45%, #e879f9); -webkit-background-clip: text; background-clip: text; color: transparent; }
+#title .logo, #outro .logo { position: absolute; left: 50%; transform-origin: 50% 50%; }
+#title .logo img, #outro .logo img { display: block; width: 100%; }
+.sweep { position: absolute; inset: 0; -webkit-mask-size: 100% 100%; mask-size: 100% 100%; }
+.sweep i { position: absolute; top: -10%; bottom: -10%; width: 22%; background: linear-gradient(100deg, rgba(255,255,255,0), rgba(255,255,255,.55), rgba(255,255,255,0)); mix-blend-mode: screen; }
+#title .eb, #outro .eb { position: absolute; left: 0; right: 0; text-align: center; font-size: 22px; font-weight: 700; letter-spacing: .32em; color: var(--lilac); text-transform: uppercase; }
+#title .big, #outro .big { position: absolute; left: 0; right: 0; text-align: center; font-size: 56px; font-weight: 650; letter-spacing: -.02em; }
+#outro .cmd { position: absolute; left: 50%; top: 600px; transform: translateX(-50%); height: 88px; padding: 0 40px; border-radius: 18px; background: #0e0a17; border: 1px solid #3a2c60; box-shadow: 0 0 0 6px rgba(139,92,246,.08), 0 30px 80px rgba(0,0,0,.5); display: flex; align-items: center; gap: 22px; font-family: var(--mono); font-size: 40px; color: var(--ink); white-space: nowrap; }
+#outro .cmd .ps { color: var(--ink3); }
+#outro .cmd .cc { display: inline-block; width: 3px; height: 42px; background: var(--lilac); margin-left: 4px; vertical-align: middle; }
+#outro .small { position: absolute; left: 0; right: 0; text-align: center; font-size: 22px; color: var(--ink2); }
+#outro .small code { font-family: var(--mono); font-size: 21px; color: var(--ink); background: #150f22; border: 1px solid #2a1f45; border-radius: 8px; padding: 4px 12px; margin-left: 8px; }
+#outro .url { position: absolute; left: 0; right: 0; text-align: center; font-size: 64px; font-weight: 800; letter-spacing: -.02em; }
+
+#grain { mix-blend-mode: overlay; opacity: .075; background-repeat: repeat; }
+#vig { background: radial-gradient(ellipse 75% 70% at 50% 48%, rgba(0,0,0,0) 58%, rgba(0,0,0,.34) 100%); }
+#black { background: #000; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <filter id="mb" x="-4%" y="-4%" width="108%" height="108%" color-interpolation-filters="sRGB"><feGaussianBlur id="mbg" stdDeviation="0 0" edgeMode="duplicate"/></filter>
+  <symbol id="i-ps" viewBox="0 0 16 16"><rect x=".5" y="1.5" width="15" height="13" rx="2.2" fill="#2B5BB5"/><path d="M4 5.2 7.2 8 4 10.8" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.2 11h3.8" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></symbol>
+  <symbol id="i-term" viewBox="0 0 16 16"><rect x=".5" y="1.5" width="15" height="13" rx="2.2" fill="#2d2d2d" stroke="#6b6b6b"/><path d="M4 5.2 7 8 4 10.8" fill="none" stroke="#e6e6e6" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M8.2 11h3.6" stroke="#e6e6e6" stroke-width="1.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 16 16"><path d="M1 4.2c0-.9.7-1.6 1.6-1.6h3.2l1.5 1.5h6.1c.9 0 1.6.7 1.6 1.6v6.6c0 .9-.7 1.6-1.6 1.6H2.6c-.9 0-1.6-.7-1.6-1.6z" fill="#E8B84A"/><path d="M1 6.2h14v5.9c0 .9-.7 1.6-1.6 1.6H2.6c-.9 0-1.6-.7-1.6-1.6z" fill="#F5CE62"/></symbol>
+  <symbol id="i-web" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="#3A7BD5"/><path d="M1 8h14M8 1c2.2 2 2.2 12 0 14M8 1c-2.2 2-2.2 12 0 14" fill="none" stroke="#fff" stroke-width=".9" opacity=".85"/></symbol>
+  <symbol id="i-note" viewBox="0 0 16 16"><rect x="2" y="1" width="12" height="14" rx="1.6" fill="#5DA9E9"/><path d="M4.5 5h7M4.5 7.5h7M4.5 10h5" stroke="#fff" stroke-width="1.1" stroke-linecap="round"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.5" fill="#6b6b78"/><circle cx="8" cy="8" r="2.4" fill="#2b2b33"/></symbol>
+  <symbol id="i-check" viewBox="0 0 12 12"><path d="M2.2 6.3 4.8 8.8 9.8 3.4" fill="none" stroke="#1a1a1a" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div id="frame">
+  <div id="cam">
+    <div id="world">
+      <div id="wall"></div>
+
+      <!-- The first PowerShell window -->
+      <div class="win term hide" id="w-term" style="left:300px;top:150px;width:1080px;height:600px">
+        <div class="bar"><div class="tab"><svg width="16" height="16"><use href="#i-ps"/></svg>Windows PowerShell<span class="x">&#x2715;</span></div><div class="plus">+&nbsp;&nbsp;&#x2304;</div>
+          <div class="caps"><i>&#x2014;</i><i>&#x2610;</i><i>&#x2715;</i></div></div>
+        <pre id="term-text"></pre>
+      </div>
+
+      <!-- The elevated window go.ps1 opens -->
+      <div class="win term hide" id="w-admin" style="left:420px;top:196px;width:1080px;height:600px">
+        <div class="bar"><div class="tab" style="width:330px"><svg width="16" height="16"><use href="#i-ps"/></svg>Administrator: Windows PowerShell<span class="x">&#x2715;</span></div><div class="plus">+&nbsp;&nbsp;&#x2304;</div>
+          <div class="caps"><i>&#x2014;</i><i>&#x2610;</i><i>&#x2715;</i></div></div>
+        <pre id="admin-text"></pre>
+      </div>
+
+      <!-- OmniDx Tune -->
+      <div class="win hide" id="w-app" style="left:400px;top:120px">
+        <div class="tbar"><svg width="16" height="16"><use href="#i-ps"/></svg>OmniDx Tune<div class="caps"><i>&#x2014;</i><i>&#x2610;</i><i>&#x2715;</i></div></div>
+        <div class="client">
+          <div class="hdr"><img src="/studio/assets/logo/omnidx-logo-480.png" alt=""><span class="ver" id="a-ver">v1.77.0</span><span class="status" id="a-status">Reading this PC...</span></div>
+          <div class="card" id="c-pc">
+            <div class="sb" style="top:16px;height:344px"></div>
+            <div class="lbl">THIS PC</div>
+            <div class="mt" id="a-mt">Reading...</div>
+            <div class="lbl" style="margin:16px 0 2px">PROCESSES RUNNING NOW</div>
+            <div class="count" id="a-count">-</div>
+            <div class="tgt" id="a-tgt"></div>
+            <div class="adv" id="a-adv"></div>
+          </div>
+          <div class="card" id="c-tune">
+            <div class="sb" style="top:16px;height:282px"></div>
+            <div class="lbl">THE TUNE</div>
+            <div class="ug" id="a-tune"></div>
+            <div class="lbl" style="margin:14px 0 6px">STARTS WITH WINDOWS&nbsp;&nbsp;-&nbsp;&nbsp;ticked means it gets switched off</div>
+            <div id="startup"><div style="color:var(--ink3)">Reading...</div></div>
+            <div class="lbl" style="margin:14px 0 6px">OFF UNLESS YOU SAY SO</div>
+          </div>
+          <div class="card" id="c-key">
+            <div class="lbl">YOUR KEY</div>
+            <div class="kbox" id="a-key"></div>
+            <div class="knote" id="a-knote">From the page after you paid. It locks to this PC.</div>
+            <div class="btn primary off" id="b-run">Run the tune</div>
+            <div class="btn off" id="b-report">Free report&nbsp;&nbsp;-&nbsp;&nbsp;changes nothing</div>
+            <div class="btn" id="b-undo">Undo every run</div>
+            <div class="btn" id="b-status">What is still in place</div>
+            <div class="btn off" id="b-open">Open the report</div>
+            <div class="btn" id="b-folder">Open C:\OmniDx</div>
+            <div class="btn off" id="b-restart">Restart now</div>
+            <div class="result" id="a-result"></div>
+          </div>
+          <div class="card" id="c-log"><div id="logbox"></div></div>
+          <div class="foot"><div class="prog" id="a-prog"><i></i></div><span id="a-foot">Restore point first. Every change recorded. Undo is one button. Security never lowered.</span></div>
+        </div>
+      </div>
+
+      <!-- Notepad with the game's own settings file -->
+      <div class="win hide" id="w-note" style="left:470px;top:150px">
+        <div class="tabs"><div class="tab"><svg width="16" height="16"><use href="#i-note"/></svg>GameUserSettings.ini<span class="x">&#x2715;</span></div><div class="caps"><i>&#x2014;</i><i>&#x2610;</i><i>&#x2715;</i></div></div>
+        <div class="menu"><span>File</span><span>Edit</span><span>View</span></div>
+        <div class="ed" id="ini"></div>
+        <div class="status"><span id="n-pos">Ln 11, Col 16</span><span>100%</span><span>Windows (CRLF)</span><span>UTF-16 LE</span></div>
+      </div>
+
+      <!-- The report, in a browser -->
+      <div class="win hide" id="w-web" style="left:250px;top:48px">
+        <div class="strip"><div class="tab"><img src="/studio/assets/icons/icon-192.png" alt="">OmniDx Tune report - 2026-09-24_20-14-07</div><div class="caps"><i>&#x2014;</i><i>&#x2610;</i><i>&#x2715;</i></div></div>
+        <div class="tool"><span>&#x2190;</span><span>&#x2192;</span><span>&#x21bb;</span><div class="addr"><em>File</em>&nbsp;C:/OmniDx/report-2026-09-24_20-14-07.html</div><span>&#x22ef;</span></div>
+        <div class="page"><div id="report"></div></div>
+      </div>
+
+      <!-- Start menu -->
+      <div id="start" class="hide">
+        <div class="search"><svg width="16" height="16" viewBox="0 0 16 16"><circle cx="6.8" cy="6.8" r="5" fill="none" stroke="#e8e8e8" stroke-width="1.4"/><path d="m10.6 10.6 4 4" stroke="#e8e8e8" stroke-width="1.4" stroke-linecap="round"/></svg><span id="s-text"><span class="ph">Search for apps, settings, and documents</span></span></div>
+        <div id="pinned">
+          <div class="sec">Pinned<span class="pill">All&nbsp;&nbsp;&#x203A;</span></div>
+          <div class="grid" id="s-grid"></div>
+          <div class="sec" style="margin-top:22px">Recommended<span class="pill">More&nbsp;&nbsp;&#x203A;</span></div>
+          <div class="rec" id="s-rec"></div>
+        </div>
+        <div id="results" class="hide">
+          <div class="tabs"><b>All</b><span>Apps</span><span>Documents</span><span>Web</span><span>Settings</span><span>More&nbsp;&#x2304;</span></div>
+          <div class="left">
+            <h6>Best match</h6>
+            <div class="best sel" id="best"><svg width="32" height="32"><use href="#i-ps"/></svg><div>Windows PowerShell<small>App</small></div></div>
+            <h6 style="margin-top:16px">Apps</h6>
+            <div class="item"><svg width="20" height="20"><use href="#i-ps"/></svg><div>Windows PowerShell ISE</div></div>
+            <div class="item"><svg width="20" height="20"><use href="#i-ps"/></svg><div>Windows PowerShell (x86)</div></div>
+            <h6 style="margin-top:16px">Search the web</h6>
+            <div class="item"><svg width="20" height="20" viewBox="0 0 16 16"><circle cx="6.8" cy="6.8" r="5" fill="none" stroke="#e8e8e8" stroke-width="1.4"/><path d="m10.6 10.6 4 4" stroke="#e8e8e8" stroke-width="1.4" stroke-linecap="round"/></svg><div>powershell<small>See more search results</small></div></div>
+          </div>
+          <div class="right">
+            <svg class="big" width="64" height="64"><use href="#i-ps"/></svg>
+            <div class="nm">Windows PowerShell</div><div class="ty">App</div>
+            <div class="acts">
+              <div class="act">&#x2197;&nbsp;&nbsp;Open</div>
+              <div class="act">&#x1F6E1;&#xFE0E;&nbsp;&nbsp;Run as Administrator</div>
+              <div class="act">&#x1F4C1;&#xFE0E;&nbsp;&nbsp;Open file location</div>
+              <div class="act">&#x1F4CC;&#xFE0E;&nbsp;&nbsp;Pin to Start</div>
+              <div class="act">&#x1F4CC;&#xFE0E;&nbsp;&nbsp;Pin to taskbar</div>
+            </div>
+          </div>
+        </div>
+        <div class="foot"><div class="me"><div class="av">P</div>Player</div><svg width="18" height="18" viewBox="0 0 16 16"><path d="M8 1.5v6" stroke="#eee" stroke-width="1.4" stroke-linecap="round"/><path d="M4.4 3.9a5.4 5.4 0 1 0 7.2 0" fill="none" stroke="#eee" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+      </div>
+
+      <div id="taskbar">
+        <div class="apps">
+          <div class="tb" id="tb-start"><svg width="22" height="22" viewBox="0 0 22 22"><rect x="1" y="1" width="9.4" height="9.4" rx="1.2" fill="#a98cf2"/><rect x="11.6" y="1" width="9.4" height="9.4" rx="1.2" fill="#b89ef5"/><rect x="1" y="11.6" width="9.4" height="9.4" rx="1.2" fill="#b89ef5"/><rect x="11.6" y="11.6" width="9.4" height="9.4" rx="1.2" fill="#c7b2f8"/></svg><div class="ind"></div></div>
+          <div class="tb"><svg width="20" height="20" viewBox="0 0 16 16"><circle cx="6.8" cy="6.8" r="5" fill="none" stroke="#f0f0f0" stroke-width="1.4"/><path d="m10.6 10.6 4 4" stroke="#f0f0f0" stroke-width="1.4" stroke-linecap="round"/></svg></div>
+          <div class="tb"><svg width="22" height="22"><use href="#i-folder"/></svg><div class="ind"></div></div>
+          <div class="tb run"><svg width="22" height="22"><use href="#i-web"/></svg><div class="ind"></div></div>
+          <div class="tb" id="tb-ps"><svg width="22" height="22"><use href="#i-ps"/></svg><div class="ind"></div></div>
+          <div class="tb hide" id="tb-note"><svg width="22" height="22"><use href="#i-note"/></svg><div class="ind"></div></div>
+        </div>
+        <div id="tray">
+          <span>&#x2303;</span>
+          <svg width="16" height="16" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="8" rx="1" fill="none" stroke="#fff" stroke-width="1.2"/><path d="M6 14h4M8 11v3" stroke="#fff" stroke-width="1.2"/></svg>
+          <svg width="16" height="16" viewBox="0 0 16 16"><path d="M2 6h3l4-3v10l-4-3H2z" fill="#fff"/><path d="M11 5.5c1 1.4 1 3.6 0 5M12.8 4c1.8 2.3 1.8 5.7 0 8" fill="none" stroke="#fff" stroke-width="1.1" stroke-linecap="round"/></svg>
+          <div class="clock"><div id="clock-t">8:14 PM</div><div>9/24/2026</div></div>
+        </div>
+      </div>
+
+      <div id="uacwrap" class="hide">
+        <div id="uacdim"></div>
+        <div id="uac">
+          <div class="hd"><div class="ttl">User Account Control</div><div class="q">Do you want to allow this app to make changes to your device?</div></div>
+          <div class="bd">
+            <div class="app"><svg width="34" height="34"><use href="#i-ps"/></svg>Windows PowerShell</div>
+            <div class="meta">Verified publisher: Microsoft Windows<br>File origin: Hard drive on this computer</div>
+            <div class="more">Show more details</div>
+          </div>
+          <div class="btns"><div class="yes" id="uac-yes">Yes</div><div class="no">No</div></div>
+        </div>
+      </div>
+
+      <div id="ring"></div>
+      <svg id="pointer" viewBox="0 0 24 36"><path d="M1.5 1.5v26.2l6.2-6 4.1 9.6 4.3-1.9-4.1-9.3h8.6z" fill="#fff" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/></svg>
+    </div>
+  </div>
+
+  <!-- Screen space: what the editor put on top of the recording -->
+  <div class="layer" id="scrim"></div>
+  <div class="layer" id="capl"><div id="cap"><div class="eb"><span class="rule"></span><span class="ebt"></span></div><div class="ln"></div></div></div>
+  <div class="chips" id="chips"><div class="chip" id="chip-ex"><span class="dot"></span>Example run</div><div class="chip" id="chip-ff"><svg width="20" height="14" viewBox="0 0 20 14"><path d="M1 1l8 6-8 6zM10 1l8 6-8 6z" fill="#F1ECFF"/></svg><span id="ff-t">Sped up</span></div></div>
+  <div id="keys"></div>
+  <div class="layer" id="result"><div class="rc">
+    <div class="k">Processes running</div>
+    <div class="row"><span class="was">214</span><span class="arrow">&#x2192;</span><span class="now" id="r-now">214</span></div>
+    <div class="sm"><b>Restart for the real number.</b><br>An example run on one PC; yours will differ.</div>
+  </div></div>
+
+  <div class="layer" id="cold"><div class="glow" id="cold-bg"></div><div class="l" id="cold1" style="top:420px"></div><div class="l" id="cold2" style="top:510px"></div></div>
+  <div class="layer" id="title"><div class="glow" id="title-bg"></div>
+    <div class="logo" id="t-logo" style="top:250px;width:620px;margin-left:-310px"><img src="/studio/assets/logo/omnidx-logo.png" alt=""><div class="sweep" id="t-sweep"><i></i></div></div>
+    <div class="eb" id="t-eb" style="top:640px">How it works</div>
+    <div class="big" id="t-big" style="top:690px">One command, start to finish.</div>
+  </div>
+  <div class="layer" id="outro"><div class="glow" id="outro-bg"></div>
+    <div class="logo" id="o-logo" style="top:140px;width:520px;margin-left:-260px"><img src="/studio/assets/logo/omnidx-logo.png" alt=""><div class="sweep" id="o-sweep"><i></i></div></div>
+    <div class="small" id="o-lead" style="top:540px">Paste it into Windows PowerShell</div>
+    <div class="cmd" id="o-cmd"><span class="ps">PS&gt;</span><span id="o-cmdt"></span></div>
+    <div class="small" id="o-free" style="top:736px">Try the free report first. It changes nothing.<code id="o-rep"></code></div>
+    <div class="big" id="o-price" style="top:560px">$19.99 once. No subscription.</div>
+    <div class="small" id="o-fine" style="top:648px">One PC per key. The whole script is public.</div>
+    <div class="url" id="o-url" style="top:730px"><span class="gradtext">omnidx.net</span></div>
+  </div>
+  <div class="layer" id="grain"></div>
+  <div class="layer" id="vig"></div>
+  <div class="layer" id="black"></div>
+</div>
+<script type="module" src="./tutorial.js"></script>
+</body>
+</html>

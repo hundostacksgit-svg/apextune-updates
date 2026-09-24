@@ -1546,6 +1546,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // The front page's showcase; the module is only fetched where it is used.
   if ($('#tour-deck')) import('./tour.js').then((m) => m.initTour()).catch(() => {});
   if ($('#fresh-form')) import('./fresh.js').then((m) => m.initFresh()).catch(() => {});
+  if ($('[data-watch]')) import('./watch.js').then((m) => m.initWatch()).catch(() => {});
   if ($('#showcase')) import('./showcase.js').then((m) => { window.__showcase = m; m.initShowcase(); }).catch(() => {});
 
   // Mark the current page in the nav without hard-coding it per page.
