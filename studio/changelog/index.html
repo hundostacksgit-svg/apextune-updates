@@ -139,6 +139,13 @@
       </ul>
     </div>
     <div class="card reveal d1" style="margin-top:16px">
+      <div class="eyebrow" style="margin-bottom:12px">v1.60.0 · September 2026</div>
+      <h3>Two more seconds off the read</h3>
+      <ul class="tick">
+        <li>The disks are read straight from the storage class instead of through a cmdlet that loads a whole module for three fields, and the display-mode listing (bounded at ten seconds because some drivers take that long) runs in a runspace inside the script instead of a second PowerShell process, which cost a second by itself on the build machine. 1.59.0's read line: cim 2.3, modes 1.0; the next one says what these two saved</li>
+      </ul>
+    </div>
+    <div class="card reveal d1" style="margin-top:16px">
       <div class="eyebrow" style="margin-bottom:12px">v1.59.0 · September 2026</div>
       <h3>The read asks the device bus once</h3>
       <ul class="tick">
