@@ -159,6 +159,10 @@
         <p class="small" data-ci-run hidden style="margin-top:10px"></p>
         <p class="small" data-ci-report hidden style="margin-top:8px"></p>
         <figure class="small" data-ci-card hidden style="margin:12px 0 0"></figure>
+        <details style="margin-top:12px" data-ci-history hidden><summary class="small">Every verified run the site has recorded, newest first</summary>
+          <div class="ci-history-wrap"><table class="ci-history"><thead><tr><th>Script</th><th>Date</th><th>Processes</th><th>Changes</th><th>Run</th><th>Free look</th><th>Errors</th></tr></thead><tbody data-ci-history-rows></tbody></table></div>
+          <p class="small" style="margin-top:8px">One line per run of the check on its Windows build machine (a bare server image, not a gaming PC). "Processes" is the count before and after the tune without the restart the check never does. "Free look" is the report mode's own timing, which swings with the machine's cold start; the read's laps are steadier.</p>
+        </details>
         <details style="margin-top:12px"><summary class="small">What that check proves, every push</summary>
           <ul class="tick small" style="margin-top:8px">
             <li>Both scripts parse; the free report reads the machine and changes nothing; the app window draws</li>

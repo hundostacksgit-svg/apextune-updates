@@ -726,3 +726,10 @@ footer{border-top:1px solid var(--line-soft);padding:52px 0 60px;background:colo
 .price-card .amount small{font-family:var(--sans);font-size:15px;color:var(--text-3);font-weight:500;letter-spacing:0}
 .price-card .btn{width:100%;margin-top:18px}
 .price-card .alt{margin:14px 0 0;font-size:13px;color:var(--text-3)}
+
+/* The trust page's run history: a plain table that scrolls sideways on a phone. */
+.ci-history-wrap{margin-top:8px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.ci-history{border-collapse:collapse;width:100%;font-size:.86rem;white-space:nowrap}
+.ci-history th,.ci-history td{text-align:left;padding:6px 10px;border-bottom:1px solid color-mix(in srgb, var(--text) 12%, transparent)}
+.ci-history th{font-weight:600;color:var(--muted)}
+.ci-history td b{font-weight:600}

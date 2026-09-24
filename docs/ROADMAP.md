@@ -124,7 +124,14 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   waited for each of some forty stops to complete, six to ten seconds on
   the build machine; the stop is requested and the run moves on, the count
   at the end already allowing for services still unwinding. The keep task
-  still waits. Measured below once the check has run.
+  still waits. Measured: 4.4 s, from 6.5 to 8.6 s over the five runs before,
+  same two processes gone. 1.68.0 puts the in-process cmdlet before the one
+  sc.exe process per service that was most of the rest.
+- **A history of every verified run** (1.68.0): the check appends each run's
+  record to `studio/assets/ci-history.json` (thirty kept, seeded from the
+  branch's history) and the trust page shows it as a table. One sample of
+  the look has swung from 8.6 to 18.9 s on identical code; the table shows
+  the trend and the swings instead of one number.
 - **The moving background**: one canvas behind every page, hard black,
   purple shades and small purple objects at different depths that drift,
   slide with the scroll and lean toward the pointer; still under reduced

@@ -139,6 +139,14 @@
       </ul>
     </div>
     <div class="card reveal d1" style="margin-top:16px">
+      <div class="eyebrow" style="margin-bottom:12px">v1.68.0 · September 2026</div>
+      <h3>The trust page shows every verified run, not one</h3>
+      <ul class="tick">
+        <li>The check now keeps a history of its runs (script version, date, the count before and after, changes, seconds, the free look's timing, error lines) and the trust page shows it as a table, newest first. One run's numbers swing with the build machine; thirty runs show the trend, and the swings, honestly</li>
+        <li>Services: the in-process cmdlet sets the start type first and sc.exe is the fallback, instead of one sc.exe process per service. 1.67.0's no-wait stops measured: the services phase 4.4 s, from 6.5 to 8.6 s over the five runs before</li>
+      </ul>
+    </div>
+    <div class="card reveal d1" style="margin-top:16px">
       <div class="eyebrow" style="margin-bottom:12px">v1.67.0 · September 2026</div>
       <h3>Services are told to stop and the run moves on</h3>
       <ul class="tick">

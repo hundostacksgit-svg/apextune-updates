@@ -547,6 +547,7 @@ jobs:
           $s = Get-Content C:\OmniDx\ci-summary.json | ConvertFrom-Json
           [IO.File]::WriteAllText((Join-Path $keep 'verified.json'), (([ordered]@{ version = $s.version; sha256 = $digest; sha = $env:GITHUB_SHA.Substring(0, 7); when = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd') } | ConvertTo-Json) -replace "`r`n", "`n") + "`n", [Text.Encoding]::ASCII)
           Write-Host ("verified copy: v{0} sha256 {1}" -f $s.version, $digest.Substring(0, 12))
+          $rec = Get-Content (Join-Path $keep 'ci-run.json') -Raw | ConvertFrom-Json
           git config user.name 'omnidx-ci'
           git config user.email 'ci@omnidx.net'
           foreach ($try in 1..3) {
@@ -559,7 +560,12 @@ jobs:
             if (Test-Path (Join-Path $keep 'ci-card.png')) { Copy-Item (Join-Path $keep 'ci-card.png') studio\assets\ci-card.png -Force }
             Copy-Item (Join-Path $keep 'verified.ps1') tune\verified.ps1 -Force
             Copy-Item (Join-Path $keep 'verified.json') tune\verified.json -Force
-            git add studio/assets/app.png studio/assets/ci-run.json studio/assets/ci-log.txt tune/verified.ps1 tune/verified.json
+            # Every verified run, newest first, so the trust page shows a history and not one sample.
+            $hist = @(); try { $hist = @(Get-Content studio\assets\ci-history.json -Raw | ConvertFrom-Json) } catch { $hist = @() }
+            $row = [ordered]@{ version = $rec.version; when = $rec.when; sha = $rec.sha; before = $rec.before; after = $rec.after; changes = $rec.changes; seconds = $rec.seconds; look = $rec.look; read = $rec.read; red = $rec.red }
+            $hist = @($row) + @($hist | Where-Object { -not ($_.sha -eq $rec.sha -and $_.when -eq $rec.when) }) | Select-Object -First 30
+            [IO.File]::WriteAllText((Resolve-Path 'studio\assets').Path + '\ci-history.json', ((ConvertTo-Json -InputObject @($hist) -Depth 3) -replace "`r`n", "`n") + "`n", [Text.Encoding]::ASCII)
+            git add studio/assets/app.png studio/assets/ci-run.json studio/assets/ci-log.txt studio/assets/ci-history.json tune/verified.ps1 tune/verified.json
             if (Test-Path studio\assets\ci-report.html) { git add studio/assets/ci-report.html }
             if (Test-Path studio\assets\ci-card.png) { git add studio/assets/ci-card.png }
             git diff --cached --quiet
