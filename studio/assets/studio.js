@@ -822,6 +822,16 @@ function initTune() {
     }).catch(() => {});
   }
 
+  // The last build-machine report, as a buyer sees it: linked where a page asks for it, and only once the check has published one.
+  const reports = $$('[data-ci-report]');
+  if (reports.length) {
+    const href = new URL('ci-report.html', import.meta.url).href;
+    fetch(href, { method: 'HEAD', cache: 'no-store' }).then((r) => {
+      if (!r.ok) return;
+      reports.forEach((el) => { el.hidden = false; el.innerHTML = `<a href="${esc(href)}" target="_blank" rel="noopener">The report from that run, exactly as it opened on the build machine</a> — a bare server, so its numbers are low; the shape is what yours will be.`; });
+    }).catch(() => {});
+  }
+
   // The front page's console; the module is only fetched where it is used.
   if ($('#console')) import('./tune.js').then((m) => m.initConsole($('#console'))).catch(() => {});
 }

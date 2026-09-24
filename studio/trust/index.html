@@ -154,6 +154,7 @@
         <h3>It is run before it is published</h3>
         <p>Every change to the script is parsed by PowerShell on a Windows build machine, run in report mode, then run for real with a key, then undone, before the site publishes it. The last run:</p>
         <p class="small" data-ci-run hidden style="margin-top:10px"></p>
+        <p class="small" data-ci-report hidden style="margin-top:8px"></p>
         <details style="margin-top:12px"><summary class="small">What that check proves, every push</summary>
           <ul class="tick small" style="margin-top:8px">
             <li>Both scripts parse; the free report reads the machine and changes nothing; the app window draws</li>
