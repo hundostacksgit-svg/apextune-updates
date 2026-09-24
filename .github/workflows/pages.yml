@@ -41,7 +41,7 @@ jobs:
                    tools/tune-check.mjs tools/tune-touches.py docs/TUNE.md \
                    studio/assets/studio.css studio/assets/studio.js studio/assets/showcase.css studio/assets/showcase.js \
                    studio/assets/config.js studio/assets/auth.js studio/assets/rate.js studio/assets/mark.svg \
-                   studio/assets/og-card.png \
+                   studio/assets/og-card.jpg \
                    studio/assets/icons/icon-192.png studio/assets/icons/icon-512.png \
                    studio/assets/icons/maskable-192.png studio/assets/icons/maskable-512.png \
                    studio/assets/icons/apple-touch-icon.png \
