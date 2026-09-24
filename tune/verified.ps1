@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.67.0'
+$script:Version = '1.68.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -316,10 +316,14 @@ function Set-ServiceStart([string]$name, [string]$start, [string]$why = '') {
   # A service somebody already disabled is further off than manual. Moving it to manual would let the next
   # thing that asks start it again: on the build machine, search indexing came back with eight processes that way.
   if ($prev -eq 'Disabled' -and $want -eq 'Manual') { Did ("{0} already disabled; left that way" -f $name); return }
-  $scStart = switch ($want) { 'Disabled' { 'disabled' } 'Manual' { 'demand' } default { 'auto' } }
-  $out = & sc.exe config $name start= $scStart 2>&1
-  if ($LASTEXITCODE -ne 0) {
-    try { Set-Service -Name $name -StartupType $want -ErrorAction Stop } catch { Warn ("Service {0} would not change ({1})" -f $name, $_.Exception.Message); return }
+  # The cmdlet first (in-process; one sc.exe per service was most of what was left of the phase after 1.67.0),
+  # sc.exe when it refuses: some per-user templates and protected services take one and not the other.
+  $set = $false
+  try { Set-Service -Name $name -StartupType $want -ErrorAction Stop; $set = $true } catch { }
+  if (-not $set) {
+    $scStart = switch ($want) { 'Disabled' { 'disabled' } 'Manual' { 'demand' } default { 'auto' } }
+    $out = & sc.exe config $name start= $scStart 2>&1
+    if ($LASTEXITCODE -ne 0) { Warn ("Service {0} would not change ({1})" -f $name, (($out | Out-String).Trim() -replace '\s+', ' ')); return }
   }
   # The stop is asked for and the run moves on: waiting for each service to finish stopping was most of the
   # phase's six to ten seconds on the build machine, and the count at the end already allows for services
