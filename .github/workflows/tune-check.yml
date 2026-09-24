@@ -254,7 +254,7 @@ jobs:
           Set-Content C:\OmniDx\ci-left-alone.txt $leftAlone
           if ($last -and $last.changes -and (($now.changes + $leftAlone) -lt ($last.changes - 6))) { Write-Host ("this run recorded {0} changes and left {1} alone on purpose, the last published run recorded {2}: something is no longer being done; compare the logs" -f $now.changes, $leftAlone, $last.changes); exit 1 }
           # The run, word for word, for the site: the phase headers, what was done, the numbers.
-          $log = @($out -split "`r?`n" | Where-Object { $_ -match '^(== |  \+ |  ! |  Processes|  Before:|  After:|  Gone:|  Target|  Looked|  \(debloat|  \([0-9]+ pieces|  [0-9]+ )' -and $_ -notmatch 'Under 100' } | Select-Object -First 200)
+          $log = @($out -split "`r?`n" | Where-Object { $_ -match '^(== |  \+ |  ! |  Processes|  Before:|  After:|  Gone:|  Target|  Looked|  Key accepted|  \(debloat|  \([0-9]+ pieces|  [0-9]+ )' -and $_ -notmatch 'Under 100' } | Select-Object -First 200)
           Set-Content studio\assets\ci-log.txt -Value $log -Encoding UTF8
           Write-Host ("{0} log lines kept for the site" -f $log.Count)
           Get-Content C:\OmniDx\ci-summary.json
