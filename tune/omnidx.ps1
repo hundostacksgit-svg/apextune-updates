@@ -514,7 +514,7 @@ Write-Host ("Done: {0} put back{1}{2}. Restart to finish." -f $done, $(if ($fail
 # the machine
 # ---------------------------------------------------------------------------
 <# An external program with a time limit: its output, or $null when it did not finish in time or did not start. #>
-function Invoke-Timed([string]$exe, [string[]]$argv, [int]$ms) {
+function Invoke-External([string]$exe, [string[]]$argv, [int]$ms) {
   try {
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = $exe; $psi.Arguments = (($argv | ForEach-Object { if ($_ -match '\s') { '"' + $_ + '"' } else { $_ } }) -join ' ')
@@ -716,7 +716,7 @@ function Get-Machine {
     $smi = @("$env:SystemRoot\System32\nvidia-smi.exe", "$env:ProgramFiles\NVIDIA Corporation\NVSMI\nvidia-smi.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
     if ($smi) {
       $q = 'temperature.gpu,power.draw,power.limit,power.max_limit,clocks.sm,clocks.max.sm,fan.speed,pstate,clocks_throttle_reasons.hw_thermal_slowdown,clocks_throttle_reasons.sw_thermal_slowdown,clocks_throttle_reasons.sw_power_cap,clocks_throttle_reasons.hw_power_brake_slowdown,clocks_throttle_reasons.hw_slowdown'
-      $gpuHealth = Read-GpuHealth (Invoke-Timed $smi @("--query-gpu=$q", '--format=csv,noheader,nounits') 8000)
+      $gpuHealth = Read-GpuHealth (Invoke-External $smi @("--query-gpu=$q", '--format=csv,noheader,nounits') 8000)
     }
   }
   & $lap 'gpu'
@@ -780,10 +780,12 @@ function Show-Machine($m) {
   Say ("  RAM   {0} GB{1}{2}" -f $m.ramGb, $(if ($m.sticks) { ", $($m.sticks) stick$(if ($m.sticks -ne 1) { 's' })" } else { '' }), $(if ($m.ramNow) { ", $($m.ramNow) MT/s$(if ($m.ramRated -and $m.ramRated -ne $m.ramNow) { " of $($m.ramRated) rated" })" } else { '' }))
   Say ("  Board {0}  |  BIOS {1}" -f $m.board, $m.bios)
   Say ("  {0}{1}{2}, {3}" -f $(if ($m.laptop) { 'Laptop' } else { 'Desktop' }), $(if ($m.allSsd) { ', all SSD' } else { ', has a hard disk' }), $(if ($m.nvme) { ', NVMe' } else { '' }), $(if ($m.refresh) { "$($m.refresh) Hz" } else { 'refresh unknown' }))
-  $keeps = @(
+  # Wrapped twice: one survivor from Where-Object is a bare string, and Windows PowerShell 5.1 gives a pipeline's lone
+  # string no count, so a PC with exactly one reason to keep something read "nothing extra" (found by 1.75.0's check).
+  $keeps = @(@(
     $(if ($m.printers) { "printer" }), $(if ($m.btDevices) { "Bluetooth ($($m.btDevices) paired)" }), $(if ($m.wifi) { "Wi-Fi" }),
     $(if ($m.touch) { "touch" }), $(if ($m.biometric) { "Windows Hello" }), $(if ($m.vpn) { "VPN" }), $(if ($m.xboxUsed -and -not $CutXbox) { "Xbox / Game Pass" }), $(if ($m.xboxPad -and -not $CutXbox) { "Xbox controller" }), $(if ($m.streamer.Count) { "streaming (" + ($m.streamer -join ', ') + ")" }), $(if ($m.laptop) { "battery, hibernate" })
-  ) | Where-Object { $_ }
+  ) | Where-Object { $_ })
   Say ("  Keeps: {0}" -f $(if ($keeps.Count) { $keeps -join ', ' } else { 'nothing extra' }))
   Say ("  UEFI {0}, Secure Boot {1}, TPM {2}, memory integrity {3}, IOMMU {4}" -f $m.uefi, $m.secureBoot, $m.tpm, $(if ($m.vbs) { 'on' } else { 'off' }), $(if ($m.iommu) { 'on' } else { 'off' }))
   # Where the read spent its time, in seconds, largest first: a slow PC (or a slow build machine) says so on its own line.
@@ -832,8 +834,8 @@ function Show-Advice($m) {
   # The 2026 anti-cheat rules: FACEIT (all players by mid-2026) and Vanguard On-Demand (Windows 11 25H2) want Secure Boot,
   # TPM 2.0, IOMMU and memory integrity on. Said here, once, because turning any of them off is the one "tweak" that ends a game.
   if ($m.riot -or $m.faceit) {
-    $who = @($(if ($m.riot) { 'VALORANT (Vanguard)' }), $(if ($m.faceit) { 'FACEIT' })) | Where-Object { $_ }
-    $missing = @($(if (-not $m.secureBoot) { 'Secure Boot' }), $(if (-not $m.tpm) { 'TPM 2.0' }), $(if (-not $m.iommu) { 'IOMMU' }), $(if (-not $m.vbs) { 'memory integrity' })) | Where-Object { $_ }
+    $who = @(@($(if ($m.riot) { 'VALORANT (Vanguard)' }), $(if ($m.faceit) { 'FACEIT' })) | Where-Object { $_ })
+    $missing = @(@($(if (-not $m.secureBoot) { 'Secure Boot' }), $(if (-not $m.tpm) { 'TPM 2.0' }), $(if (-not $m.iommu) { 'IOMMU' }), $(if (-not $m.vbs) { 'memory integrity' })) | Where-Object { $_ })
     if ($missing.Count) { Warn ("{0} found. Since 2026 it requires Secure Boot, TPM 2.0, IOMMU and memory integrity on, and {1} {2} off on this PC. The BIOS checklist (items 4, 5 and 12) says where; the tune never turns any of them off." -f ($who -join ' and '), ($missing -join ', '), $(if ($missing.Count -eq 1) { 'is' } else { 'are' })) }
     else { Say ("  {0} found: Secure Boot, TPM, IOMMU and memory integrity are on, which is what its anti-cheat wants. The tune leaves all four alone." -f ($who -join ' and ')) }
     # FACEIT's own timetable: Windows 11 for every player from October 2026 (its security FAQ). Said in the console, not only in the report.
@@ -2246,7 +2248,7 @@ function Tune-Apps($m) {
     if (-not (Test-Path $pf)) { continue }
     if (Get-Process -Name Spotify -ErrorAction SilentlyContinue) { Warn "Spotify is running, so its settings were left alone. Close it and run again."; break }
     $bk = Join-Path $script:Root ("backup\{0}\spotify-prefs.bak" -f $script:Stamp); Copy-Item $pf $bk -Force; Record @{ type = 'file'; path = $pf; backup = $bk }
-    $lines = @(Get-Content $pf) | Where-Object { $_ -notmatch '^(ui\.hardware_acceleration|app\.autostart-mode|app\.autostart-configured|ui\.show_friend_feed|audio\.normalize_v2)=' }
+    $lines = @(@(Get-Content $pf) | Where-Object { $_ -notmatch '^(ui\.hardware_acceleration|app\.autostart-mode|app\.autostart-configured|ui\.show_friend_feed|audio\.normalize_v2)=' })
     $lines += 'ui.hardware_acceleration=true', 'app.autostart-mode="off"', 'app.autostart-configured=true', 'ui.show_friend_feed=false'
     Set-Content -Path $pf -Value $lines -Encoding UTF8
     Did "Spotify: hardware acceleration on, no auto-start, friend feed off"

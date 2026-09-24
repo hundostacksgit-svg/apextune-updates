@@ -147,6 +147,7 @@
         <li>The network as numbers: five pings to the router and five to the internet's edge, median, jitter and loss. A slow or jittery link to the router is named as Wi-Fi or a bad cable; loss is named as the line, which no tweak fixes</li>
         <li>Streamer profile: with OBS Studio, Streamlabs Desktop or XSplit installed (or -Streamer), the camera frame server and Windows Graphics Capture stay, in Extreme too, and the report carries the encoder and capture notes</li>
         <li>The report gains "Undervolt, not overclock, and a frame cap": the voltage curve on NVIDIA, the voltage steps on AMD, Curve Optimizer on Ryzen, the BIOS microcode on 13th and 14th gen Intel, and a frame cap three below the refresh rate with adaptive sync. Words only; the tune never touches voltage</li>
+        <li>Fixed, found by this version's own check: in Windows PowerShell a list that filters down to one item stops being a list, and two places counted it. A PC with exactly one reason to keep something (only Wi-Fi, say) was told "Keeps: nothing extra"; worse, a PC with VALORANT or FACEIT missing exactly one of Secure Boot, TPM 2.0, IOMMU and memory integrity was told all four were on. Both now count properly, and so does the Spotify settings rewrite, which could have joined two lines into one</li>
       </ul>
     </div>
     <div class="card reveal d1" style="margin-top:16px">
