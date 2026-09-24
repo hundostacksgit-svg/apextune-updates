@@ -96,14 +96,22 @@ try {
       // The published report of the build machine's run is a page every buyer opens; it is scanned too, once the check has published one.
       const pages = ['', 'pricing/', 'download/', 'trust/', 'changelog/', 'what-it-touches/', 'terms/', 'activate/', 'admin/'];
       if (fs.existsSync(path.join(root, 'studio/assets/ci-report.html'))) pages.push('assets/ci-report.html');
+      // Every site page is scanned in both themes (the sun button switches the whole palette); the report has one look, so it is scanned once.
       for (const p of pages) {
-        const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
-        await page.goto(`${base}/studio/${p}`, { waitUntil: 'networkidle' });
-        await page.addScriptTag({ content: axe });
-        const res = await page.evaluate(async () => await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa'] } }));
-        const found = res.violations.map((v) => `${v.id} x${v.nodes.length} (${v.nodes[0].target[0]})`);
-        expect(!found.length, `studio/${p || 'index'}: no WCAG A or AA violation${found.length ? ': ' + found.join('; ') : ''}`);
-        await page.close();
+        for (const theme of p.startsWith('assets/') ? ['dark'] : ['dark', 'light']) {
+          const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+          await page.goto(`${base}/studio/${p}`, { waitUntil: 'networkidle' });
+          if (theme === 'light') {
+            // The page fades between palettes; the fade is switched off first so the scan sees the finished light colours, not a blend.
+            await page.addStyleTag({ content: '*{transition:none!important}' });
+            await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'light'));
+          }
+          await page.addScriptTag({ content: axe });
+          const res = await page.evaluate(async () => await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa'] } }));
+          const found = res.violations.map((v) => `${v.id} x${v.nodes.length} (${v.nodes[0].target[0]})`);
+          expect(!found.length, `studio/${p || 'index'} (${theme}): no WCAG A or AA violation${found.length ? ': ' + found.join('; ') : ''}`);
+          await page.close();
+        }
       }
     }
   }

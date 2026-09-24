@@ -54,6 +54,10 @@
   --text:#14092b;
   --text-2:#524871;
   --text-3:#6b6187;
+  /* the status colours read as text (error lines, the desk note, on/off on the owner page): darkened so each clears 4.5:1 on the palest surface */
+  --ok:#0b6b41;
+  --warn:#8a5a00;
+  --bad:#b5222f;
   --blue-2:#7c3aed;
   --glow:rgba(139,92,246,.26);
   --shadow:0 20px 54px rgba(60,30,120,.14);
