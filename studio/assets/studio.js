@@ -1375,6 +1375,10 @@ function initBackground() {
   document.body.prepend(c);
   const ctx = c.getContext('2d');
   if (!ctx) { c.remove(); return; }
+  // The shades are soft by nature, so they are painted at an eighth of the size and scaled up:
+  // four full-screen gradients a frame would cost an integrated GPU real battery for nothing visible.
+  const low = document.createElement('canvas');
+  const lctx = low.getContext('2d');
   const reduce = matchMedia('(prefers-reduced-motion: reduce)');
   const rnd = (a, b) => a + Math.random() * (b - a);
   let w = 0, h = 0, raf = 0, last = 0, t = rnd(0, 100), sy = window.scrollY || 0;
@@ -1389,11 +1393,14 @@ function initBackground() {
       rot: rnd(0, 6.28), vr: rnd(-.5, .5), kind: k < .34 ? 'bolt' : (k < .58 ? 'chip' : 'mote'), a: rnd(.35, .95) };
   };
   const objs = Array.from({ length: 44 }, make);
+  let lw = 1, lh = 1;
   const resize = () => {
     const dpr = Math.min(1.5, window.devicePixelRatio || 1);
     w = window.innerWidth; h = window.innerHeight;
     c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    lw = Math.max(8, Math.round(w / 8)); lh = Math.max(8, Math.round(h / 8));
+    low.width = lw; low.height = lh;
   };
   const palette = () => (document.documentElement.getAttribute('data-theme') === 'light'
     ? { blob: .13, sat: '70%', lum: '62%', obj: '124,58,237', objA: .45, mix: 'source-over' }
@@ -1415,19 +1422,25 @@ function initBackground() {
     const p = palette();
     ctx.clearRect(0, 0, w, h);
     if (ptr.tx >= 0) { ptr.x = ptr.x < 0 ? ptr.tx : ptr.x + (ptr.tx - ptr.x) * .06; ptr.y = ptr.y < 0 ? ptr.ty : ptr.y + (ptr.ty - ptr.y) * .06; }
-    ctx.globalCompositeOperation = p.mix;
-    for (const b of blobs) {
-      const cx = (b.ax + Math.sin(t * b.fx + b.ph) * .16) * w;
-      const span = h * 1.8;
-      const cy = (((b.ay + Math.cos(t * b.fy + b.ph) * .14) * h - sy * b.depth) % span + span) % span - h * .4;
-      const r = b.r * Math.max(w, h);
-      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      g.addColorStop(0, `hsla(${b.hue},${p.sat},${p.lum},${p.blob})`);
-      g.addColorStop(.5, `hsla(${b.hue},${p.sat},${p.lum},${p.blob * .32})`);
-      g.addColorStop(1, `hsla(${b.hue},${p.sat},${p.lum},0)`);
-      ctx.fillStyle = g; ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+    if (lctx) {
+      lctx.clearRect(0, 0, lw, lh);
+      lctx.globalCompositeOperation = p.mix;
+      const k = lw / w;
+      for (const b of blobs) {
+        const cx = (b.ax + Math.sin(t * b.fx + b.ph) * .16) * w * k;
+        const span = h * 1.8;
+        const cy = ((((b.ay + Math.cos(t * b.fy + b.ph) * .14) * h - sy * b.depth) % span + span) % span - h * .4) * k;
+        const r = b.r * Math.max(w, h) * k;
+        const g = lctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        g.addColorStop(0, `hsla(${b.hue},${p.sat},${p.lum},${p.blob})`);
+        g.addColorStop(.5, `hsla(${b.hue},${p.sat},${p.lum},${p.blob * .32})`);
+        g.addColorStop(1, `hsla(${b.hue},${p.sat},${p.lum},0)`);
+        lctx.fillStyle = g; lctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+      }
+      lctx.globalCompositeOperation = 'source-over';
+      ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'low';
+      ctx.drawImage(low, 0, 0, lw, lh, 0, 0, w, h);
     }
-    ctx.globalCompositeOperation = 'source-over';
     const wrap = h + 80;
     for (const o of objs) {
       o.x += o.vx * dt; o.y += o.vy * dt * (.4 + o.z); o.rot += o.vr * dt;
