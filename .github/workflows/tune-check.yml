@@ -561,7 +561,9 @@ jobs:
             Copy-Item (Join-Path $keep 'verified.ps1') tune\verified.ps1 -Force
             Copy-Item (Join-Path $keep 'verified.json') tune\verified.json -Force
             # Every verified run, newest first, so the trust page shows a history and not one sample.
-            $hist = @(); try { $hist = @(Get-Content studio\assets\ci-history.json -Raw | ConvertFrom-Json) } catch { $hist = @() }
+            # ConvertFrom-Json hands the array back as one object in Windows PowerShell; @() around a variable keeps its rows, @() around the pipeline did not.
+            $hist = @(); try { $parsed = Get-Content studio\assets\ci-history.json -Raw | ConvertFrom-Json; $hist = @($parsed) } catch { $hist = @() }
+            $hist = @($hist | ForEach-Object { $_ } | Where-Object { $_ -and $_.version })
             $row = [ordered]@{ version = $rec.version; when = $rec.when; sha = $rec.sha; before = $rec.before; after = $rec.after; changes = $rec.changes; seconds = $rec.seconds; look = $rec.look; read = $rec.read; red = $rec.red }
             $hist = @($row) + @($hist | Where-Object { -not ($_.sha -eq $rec.sha -and $_.when -eq $rec.when) }) | Select-Object -First 30
             [IO.File]::WriteAllText((Resolve-Path 'studio\assets').Path + '\ci-history.json', ((ConvertTo-Json -InputObject @($hist) -Depth 3) -replace "`r`n", "`n") + "`n", [Text.Encoding]::ASCII)

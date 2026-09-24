@@ -823,7 +823,9 @@ function initTune() {
   const history = $$('[data-ci-history]');
   if (history.length) {
     fetch(new URL('ci-history.json', import.meta.url).href, { cache: 'no-store' }).then((r) => r.json()).then((rows) => {
-      if (!Array.isArray(rows) || !rows.length) return;
+      if (!Array.isArray(rows)) return;
+      rows = rows.flat(2).filter((c) => c && typeof c === 'object' && c.version);
+      if (!rows.length) return;
       const day = (w) => { try { return new Date(w).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }); } catch { return ''; } };
       const html = rows.map((c) => `<tr><td>v${esc(c.version)}</td><td>${esc(day(c.when))}</td><td>${esc(c.before)} → <b>${esc(c.after)}</b></td><td>${esc(c.changes)}</td><td>${esc(c.seconds)} s</td><td>${c.look >= 0 ? esc(c.look) + ' s' : '–'}${c.read >= 0 ? ` (read ${esc(c.read)} s)` : ''}</td><td>${typeof c.red === 'number' ? esc(c.red) : '–'}</td></tr>`).join('');
       history.forEach((el) => { const body = el.querySelector('[data-ci-history-rows]'); if (body) { body.innerHTML = html; el.hidden = false; } });
