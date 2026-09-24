@@ -1,16 +1,16 @@
 ﻿== Reading this PC
-  Read in 6.0 s (net 2.8, cim 1.2, pnp 0.9, software 0.5)
+  Read in 5.6 s (net 2.7, cim 1.2, pnp 0.7, software 0.5)
   ! The GPU driver dates from Jun 2006. A current driver is worth more than most tweaks.
   ! This looks like a virtual machine. The tune will run, but the numbers mean little here.
-  Processes running now: 149
-  Target for this PC after the tune and a restart: about 70
+  Processes running now: 150
+  Target for this PC after the tune and a restart: about 75
 == Your key
   Key accepted. PC 1 of 1 on this key.
 == Before the cut
-  Before: 148 processes, 1463 threads, 49856 handles, 2830 MB in use, idle CPU 0.7%, DPC 0%
+  Before: 150 processes, 1448 threads, 50754 handles, 3003 MB in use, idle CPU 0.6%, DPC 0%
 == Safety first
   ! Could not make a restore point (This functionality is not supported on this operating system.). The undo script still records everything.
-  + Registry and service list backed up to C:\OmniDx\backup\2026-09-24_21-05-59
+  + Registry and service list backed up to C:\OmniDx\backup\2026-09-24_21-17-41
   + undo.ps1 written to C:\OmniDx\undo
 == Startup apps
   2 things start with Windows:
@@ -85,12 +85,12 @@
   + removed the 2009 Windows Media Player (the Store one stays)
   + removed Math Input Panel
   + removed Internet Explorer 11
-  (4 pieces in one DISM session, 22 s)
+  (4 pieces in one DISM session, 60 s)
   + off: Work Folders (corporate sync)
   (1 feature in one DISM session, 6 s)
   + Edge: shopping assistant, recommendations, Spotlight, feedback prompts and reporting off
   + Kept gone: consumer features, suggested apps, account nags and the 'finish setting up' screen are off by policy
-  (debloat, where the time went: look 3.9 s, pieces 22 s, features 7.3 s)
+  (debloat, where the time went: look 5.1 s, pieces 60.5 s, features 6.8 s)
 == Telemetry, background activity, the shell
   + Telemetry, the advertising id, activity history, suggestions, Bing in Start, Recall and Edge's reporting off; background apps off; widgets, news, Copilot and Cortana off; Game DVR off, Game Mode on; the classic right-click menu on 11
 == System tuning
@@ -102,22 +102,26 @@
   + OmniDx plan created and active: CPU 100/100, boost aggressive, energy preference on performance, no core parking, no throttle states on a desktop, PCIe, USB and Wi-Fi power saving off, no sleep on mains.
 == Network
   + TCP: autotuning normal, ECN and timestamps off, receive-side scaling on, segment coalescing off, CTCP.
-  + Ethernet 3: Nagle off, power saving off
-  + Ethernet 4: Interrupt Moderation off
   + Ethernet 4: Nagle off, power saving off
+  + Ethernet 3: Nagle off, power saving off
 == Discord, Spotify, browsers
   + Chrome: no background mode, hardware acceleration on
   + Edge: no startup boost, no background mode, hardware acceleration on
 == Game profiles
-  Looked in 16 game folders in 1.9 s
+  Looked in 16 game folders in 4.8 s
   + No listed game found on the usual drives; the CPU-priority profiles are in place for when one is installed.
+== Game settings files
+  + Fortnite: V-Sync off, motion blur off, shadows off, post-processing low
+  + Apex Legends: V-Sync off, sun shadows off, spot shadows off
+  + Rocket League: V-Sync off, motion blur off, dynamic shadows off, depth of field off
+  + Minecraft (Java): V-Sync off
 == Cleanup
-  + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 374 MB back.
+  + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 323 MB back.
 == Keeping it cut
   + Task 'OmniDx keep' runs three minutes after sign-in, puts back whatever an update turned on, notes that start's boot time and writes card-after-restart.png with that start's count. Log: C:\OmniDx\keep-log.txt. Undo removes it.
 == Done
-  After:  138 processes, 1486 threads, 47125 handles, 2940 MB in use, idle CPU 1.1%, DPC 0.2%
-  Gone:   spoolsv
-  Processes: 148 -> 138 now, in 71 seconds. Restart for the real number: the services that were told to stop are still unwinding.
-  Where the time went: debloat 33.2 s, games 7.3 s, services 3.8 s, apps 3.4 s, cleanup 2.9 s, network 1.9 s
-  Outside the phases: read 6.5 s, key 1.2 s, before 2.8 s, after 2.1 s, report 1 s
+  After:  141 processes, 1359 threads, 47949 handles, 3137 MB in use, idle CPU 1.3%, DPC 0%
+  Gone:   rundll32, spoolsv, VSSVC
+  Processes: 150 -> 141 now, in 122 seconds. Restart for the real number: the services that were told to stop are still unwinding.
+  Where the time went: debloat 72.5 s, games 8.7 s, services 7.1 s, apps 5.9 s, network 4.3 s, cleanup 3 s
+  Outside the phases: read 5.9 s, key 1.1 s, before 2.8 s, after 2.1 s, report 2.2 s

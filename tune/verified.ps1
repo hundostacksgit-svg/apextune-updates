@@ -75,7 +75,7 @@ param(
   # Answer every question yes.
   [switch]$Yes,
   # Phases to leave out, by name: startup services tasks apps debloat telemetry
-  # system power network programs games nvidia cleanup keep. The app uses this.
+  # system power network programs games gamefiles nvidia cleanup keep. The app uses this.
   [string[]]$Skip = @(),
   # Never restart or offer to. The app has its own button for that.
   [switch]$NoRestart,
@@ -91,7 +91,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.75.0'
+$script:Version = '1.76.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -465,6 +465,20 @@ foreach ($c in $changes) {
       'nicpower' { try { Enable-NetAdapterPowerManagement -Name $c.adapter -ErrorAction Stop } catch { } }
       'dns' { try { Set-DnsClientServerAddress -InterfaceIndex $c.index -ResetServerAddresses -ErrorAction Stop } catch { } }
       'task' { try { Enable-ScheduledTask -TaskPath $c.path -TaskName $c.name -ErrorAction Stop | Out-Null } catch { } }
+      'gamefile' {
+        if (Test-Path -LiteralPath $c.path) {
+          $gb = [IO.File]::ReadAllBytes($c.path)
+          $genc = New-Object System.Text.UTF8Encoding($false)
+          if ($gb.Length -ge 2 -and $gb[0] -eq 0xFF -and $gb[1] -eq 0xFE) { $genc = New-Object System.Text.UnicodeEncoding($false, $true) }
+          elseif ($gb.Length -ge 3 -and $gb[0] -eq 0xEF -and $gb[1] -eq 0xBB -and $gb[2] -eq 0xBF) { $genc = New-Object System.Text.UTF8Encoding($true) }
+          $gk = [regex]::Escape([string]$c.key)
+          $gpat = switch ($c.format) { 'ini' { "^(\s*$gk\s*=\s*)(.*?)(\s*)$" } 'kv' { "^(\s*`"$gk`"\s+`")(.*?)(`"\s*)$" } default { "^($gk\:)(.*?)(\s*)$" } }
+          $gparts = [regex]::Split([IO.File]::ReadAllText($c.path, $genc), '(\r?\n)'); $ghit = $false
+          for ($gi = 0; $gi -lt $gparts.Count; $gi += 2) { $gm = [regex]::Match($gparts[$gi], $gpat); if ($gm.Success) { if ($gm.Groups[2].Value -eq [string]$c.value) { $gparts[$gi] = $gm.Groups[1].Value + [string]$c.prev + $gm.Groups[3].Value; $ghit = $true }; break } }
+          if ($ghit) { [IO.File]::WriteAllText($c.path, ($gparts -join ''), $genc); Write-Host ("{0}: {1} back to {2}" -f $c.game, $c.key, $c.prev) -ForegroundColor DarkGray }
+          else { Write-Host ("{0}: {1} was changed after the tune set it; left as it is" -f $c.game, $c.key) -ForegroundColor DarkGray }
+        }
+      }
       'file' { if (Test-Path $c.backup) { Copy-Item $c.backup $c.path -Force; Write-Host ("file restored {0}" -f $c.path) -ForegroundColor DarkGray } }
       'appx' { $removedApps += $c.name }
       'fsutil' { $setting = $(if ($c.setting) { $c.setting } else { 'disablelastaccess' }); & fsutil behavior set $setting $c.prev | Out-Null; Write-Host ("fsutil {0} -> {1}" -f $setting, $c.prev) -ForegroundColor DarkGray }
@@ -896,6 +910,7 @@ function Get-KeepList($m) {
   if ($m.touch -or $m.laptop) { $k['TabletInputService'] = $(if ($m.touch) { 'touch screen' } else { 'laptop' }) }
   if ($m.biometric) { $k['WbioSrvc'] = 'a Windows Hello reader is present' }
   if ($m.laptop) { foreach ($n in 'SensorService', 'SensrSvc', 'SensorDataService', 'WwanSvc') { $k[$n] = 'laptop' } }
+  if ($m.laptop) { foreach ($n in 'HPAppHelperCap', 'HPDiagsCap', 'HPNetworkCap', 'HPSysInfoCap', 'LenovoVantageService', 'ImControllerService', 'AsusAppService', 'ArmouryCrateService', 'ASUSOptimization') { $k[$n] = 'laptop: the PC maker runs the fans, the battery limit or the hotkeys through it' } }
   if ($m.vpn) { foreach ($n in 'iphlpsvc', 'SSDPSRV', 'upnphost') { $k[$n] = 'a VPN adapter is present' } }
   if (-not $m.allSsd) { $k['SysMain'] = 'a hard disk benefits from prefetch' }
   if ($m.xboxUsed -and -not (Test-CutXbox $m)) { foreach ($n in 'XblAuthManager', 'XblGameSave', 'XboxNetApiSvc', 'XboxGipSvc') { $k[$n] = 'Game Pass, the Xbox app or Minecraft is installed' } }
@@ -1529,9 +1544,26 @@ $script:ExtremeServices = @(
   @('PenService', 'pen input (kept with touch)'), @('SysMain', 'superfetch, off on an SSD'), @('WSearch', 'search indexing, off'),
   @('WpnService', 'notifications, off'), @('WpnUserService', 'notifications, off'), @('cbdhsvc', 'clipboard history, off'),
   @('CDPSvc', 'nearby sharing, off'), @('CDPUserSvc', 'nearby sharing, off'), @('TabletInputService', 'touch keyboard (kept with touch)'),
-  @('SgrmBroker', 'System Guard attestation broker, off (24H2 no longer ships it)')
+  @('SgrmBroker', 'System Guard attestation broker, off (24H2 no longer ships it)'),
+  @('SupportAssistAgent', 'Dell SupportAssist agent (support for the PC maker), off'), @('DDVDataCollector', 'Dell Data Vault (PC maker telemetry), off'),
+  @('DDVRulesProcessor', 'Dell Data Vault (PC maker telemetry), off'), @('DDVCollectorSvcApi', 'Dell Data Vault (PC maker telemetry), off'),
+  @('HpTouchpointAnalyticsService', 'HP Touchpoint Analytics (PC maker telemetry), off'),
+  @('HPAppHelperCap', 'HP app helper (kept on a laptop)'), @('HPDiagsCap', 'HP diagnostics (kept on a laptop)'), @('HPNetworkCap', 'HP network helper (kept on a laptop)'), @('HPSysInfoCap', 'HP system information (kept on a laptop)'),
+  @('LenovoVantageService', 'Lenovo Vantage (kept on a laptop)'), @('ImControllerService', 'Lenovo System Interface Foundation (kept on a laptop)'),
+  @('AsusAppService', 'ASUS app service (kept on a laptop)'), @('ArmouryCrateService', 'Armoury Crate (kept on a laptop)'), @('ASUSOptimization', 'ASUS optimization (kept on a laptop)')
 )
-$script:ExtremeOff = @('SysMain', 'WSearch', 'WpnService', 'WpnUserService', 'cbdhsvc', 'CDPSvc', 'CDPUserSvc', 'BcastDVRUserService', 'AarSvc', 'SgrmBroker')
+# The PC maker's own apps, in Extreme. Support agents and promotions go on every PC; the hubs that run the fans, the
+# battery limit and the hotkeys (Vantage, MyASUS, Armoury Crate, myHP, My Dell, Acer Care Center) go only on a desktop.
+$script:OemApps = @(
+  @('*SupportAssist*', 'Dell SupportAssist', 'any'), @('DellInc.DellDigitalDelivery', 'Dell Digital Delivery', 'any'), @('DellInc.PartnerPromo', 'Dell partner offers', 'any'),
+  @('DellInc.DellCustomerConnect', 'Dell Customer Connect', 'any'), @('DellInc.MyDell', 'My Dell', 'desktop'),
+  @('AD2F1837.HPPrivacySettings', 'HP Privacy Settings', 'any'), @('AD2F1837.HPJumpStarts', 'HP JumpStarts', 'any'), @('AD2F1837.HPSupportAssistant', 'HP Support Assistant', 'any'), @('AD2F1837.myHP', 'myHP', 'desktop'),
+  @('LenovoCorporation.LenovoID', 'Lenovo ID', 'any'), @('E046963F.LenovoCompanion', 'Lenovo Vantage', 'desktop'),
+  @('B9ECED6F.MyASUS', 'MyASUS', 'desktop'), @('B9ECED6F.ArmouryCrate', 'Armoury Crate', 'desktop'),
+  @('AcerIncorporated.AcerCollectionS', 'Acer Collection', 'any'), @('AcerIncorporated.UserExperienceImprovementProgram', 'Acer user experience program', 'any'), @('AcerIncorporated.AcerCareCenterS', 'Acer Care Center', 'desktop')
+)
+$script:ExtremeOff = @('SysMain', 'WSearch', 'WpnService', 'WpnUserService', 'cbdhsvc', 'CDPSvc', 'CDPUserSvc', 'BcastDVRUserService', 'AarSvc', 'SgrmBroker',
+  'SupportAssistAgent', 'DDVDataCollector', 'DDVRulesProcessor', 'DDVCollectorSvcApi', 'HpTouchpointAnalyticsService')
 # The ones this machine actually uses go to manual instead of off, or stay.
 $script:ManualOnly = @('SysMain', 'WSearch', 'edgeupdate', 'edgeupdatem', 'DPS', 'WdiServiceHost', 'WdiSystemHost', 'iphlpsvc', 'SSDPSRV', 'upnphost',
   'NcbService', 'CDPSvc', 'CDPUserSvc', 'OneSyncSvc', 'PimIndexMaintenanceSvc', 'UnistoreSvc', 'UserDataSvc', 'XblAuthManager', 'XblGameSave',
@@ -2407,6 +2439,139 @@ function Set-GameProfiles {
   Say "  Every listed game: high CPU priority, high-performance GPU, fullscreen optimisations off, Game DVR off. In-game settings are in the report."
 }
 
+<# Competitive settings written into the games' own settings files. Only a line already in the file changes, and
+   only when its value has the shape the game uses (a key a game renames is left alone, never added). Each file is
+   backed up before the first change; each change is recorded, and undo puts back the value it replaced, if the
+   line still holds what the tune wrote. A running game is skipped: it rewrites its file when it closes. VALORANT,
+   Overwatch 2 and League of Legends sync settings from the account, so their files are left alone and the report
+   carries their settings instead. #>
+$script:GameFiles = @(
+  @{ game = 'Fortnite'; where = '%LOCALAPPDATA%\FortniteGame\Saved\Config\WindowsClient\GameUserSettings.ini';  procs = @('FortniteClient-Win64-Shipping'); format = 'ini'
+     find = { @(Join-Path $script:LocalAppData 'FortniteGame\Saved\Config\WindowsClient\GameUserSettings.ini') }
+     set = @(@('bUseVSync', 'False', 'V-Sync off'), @('bMotionBlur', 'False', 'motion blur off'), @('sg.ShadowQuality', '0', 'shadows off'), @('sg.PostProcessQuality', '0', 'post-processing low')) },
+  @{ game = 'Marvel Rivals'; where = '%LOCALAPPDATA%\Marvel\Saved\Config\Windows\GameUserSettings.ini';  procs = @('Marvel-Win64-Shipping'); format = 'ini'
+     find = { @(Join-Path $script:LocalAppData 'Marvel\Saved\Config\Windows\GameUserSettings.ini') }
+     set = @(@('bUseVSync', 'False', 'V-Sync off'), @('sg.ShadowQuality', '0', 'shadows low'), @('sg.PostProcessQuality', '0', 'post-processing low')) },
+  @{ game = 'Apex Legends'; where = '%USERPROFILE%\Saved Games\Respawn\Apex\local\videoconfig.txt';  procs = @('r5apex', 'r5apex_dx12'); format = 'kv'
+     find = { @(Join-Path $script:UserProfile 'Saved Games\Respawn\Apex\local\videoconfig.txt') }
+     set = @(@('setting.mat_vsync_mode', '0', 'V-Sync off'), @('setting.csm_enabled', '0', 'sun shadows off'), @('setting.shadow_enable', '0', 'spot shadows off'), @('setting.dvs_enable', '0', 'adaptive resolution off')) },
+  @{ game = 'Counter-Strike 2'; where = 'Steam\userdata\<account>\730\local\cfg\cs2_video.txt';  procs = @('cs2'); format = 'kv'
+     find = { $s = Get-SteamDir; if ($s) { @(Get-ChildItem -Path (Join-Path $s 'userdata') -Directory -ErrorAction SilentlyContinue | ForEach-Object { Join-Path $_.FullName '730\local\cfg\cs2_video.txt' }) } else { @() } }
+     set = @(@('setting.mat_vsync', '0', 'V-Sync off'), @('setting.r_player_visibility_mode', '1', 'boost player contrast on')) },
+  @{ game = 'Rocket League'; where = 'Documents\My Games\Rocket League\TAGame\Config\TASystemSettings.ini';  procs = @('RocketLeague'); format = 'ini'
+     find = { @(Join-Path (Get-DocumentsDir) 'My Games\Rocket League\TAGame\Config\TASystemSettings.ini') }
+     set = @(@('UseVsync', 'False', 'V-Sync off'), @('MotionBlur', 'False', 'motion blur off'), @('DynamicShadows', 'False', 'dynamic shadows off'), @('DepthOfField', 'False', 'depth of field off')) },
+  @{ game = 'Rainbow Six Siege'; where = 'Documents\My Games\Rainbow Six - Siege\<account>\GameSettings.ini';  procs = @('RainbowSix', 'RainbowSix_Vulkan', 'RainbowSix_BE'); format = 'ini'
+     find = { @(Get-ChildItem -Path (Join-Path (Get-DocumentsDir) 'My Games\Rainbow Six - Siege') -Directory -ErrorAction SilentlyContinue | ForEach-Object { Join-Path $_.FullName 'GameSettings.ini' }) }
+     set = @(@('VSync', '0', 'V-Sync off')) },
+  @{ game = 'Minecraft (Java)'; where = '%APPDATA%\.minecraft\options.txt';  procs = @('javaw'); format = 'colon'
+     find = { @(Join-Path $script:AppData '.minecraft\options.txt') }
+     set = @(@('enableVsync', 'false', 'V-Sync off'), @('entityShadows', 'false', 'entity shadows off')) }
+)
+
+# Documents as Windows has it for this person: moved to OneDrive, another drive, or the default.
+function Get-DocumentsDir {
+  $d = $null
+  try { $d = (Get-Item -Path (Join-Path $script:HKCU 'Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders') -ErrorAction Stop).GetValue('Personal', $null, 'DoNotExpandEnvironmentNames') } catch { }
+  if ($d) { $d = [Environment]::ExpandEnvironmentVariables(($d -replace '%USERPROFILE%', $script:UserProfile)) }
+  if (-not $d -or -not (Test-Path -Path $d)) { $d = Join-Path $script:UserProfile 'Documents' }
+  return $d
+}
+
+function Get-SteamDir {
+  foreach ($k in 'HKLM:\SOFTWARE\WOW6432Node\Valve\Steam', 'HKLM:\SOFTWARE\Valve\Steam') { try { $p = (Get-ItemProperty $k -ErrorAction Stop).InstallPath; if ($p -and (Test-Path $p)) { return $p } } catch { } }
+  return $null
+}
+
+# One line's key, current value and the text around the value, in the file's own syntax.
+function Get-GameLinePattern([string]$format, [string]$key) {
+  $k = [regex]::Escape($key)
+  switch ($format) {
+    'ini' { return "^(\s*$k\s*=\s*)(.*?)(\s*)$" }
+    'kv' { return "^(\s*`"$k`"\s+`")(.*?)(`"\s*)$" }
+    'colon' { return "^($k\:)(.*?)(\s*)$" }
+  }
+}
+
+# Whether the value on disk is the kind the tune would write: a switch for a switch, a number for a number.
+function Test-GameValueShape([string]$current, [string]$target) {
+  if ($target -match '^(?i)(true|false)$') { return [bool]($current -match '^(?i)(true|false)$') }
+  if ($target -match '^-?[0-9]+(\.[0-9]+)?$') { return [bool]($current -match '^-?[0-9]+(\.[0-9]+)?$') }
+  return $false
+}
+
+<# The file's text with the pairs applied, and the list of what changed. Nothing is written here. #>
+function Get-GameFileEdit([string]$text, [string]$format, $pairs) {
+  $parts = [regex]::Split($text, '(\r?\n)')
+  $done = New-Object System.Collections.ArrayList
+  foreach ($pair in $pairs) {
+    $pat = Get-GameLinePattern $format $pair[0]
+    for ($i = 0; $i -lt $parts.Count; $i += 2) {
+      $mt = [regex]::Match($parts[$i], $pat)
+      if (-not $mt.Success) { continue }
+      $cur = $mt.Groups[2].Value
+      if ($cur -eq $pair[1]) { break }
+      if (-not (Test-GameValueShape $cur $pair[1])) { break }
+      $parts[$i] = $mt.Groups[1].Value + $pair[1] + $mt.Groups[3].Value
+      [void]$done.Add(@{ key = $pair[0]; prev = $cur; value = $pair[1]; what = $pair[2] })
+      break
+    }
+  }
+  return @{ text = ($parts -join ''); changes = @($done) }
+}
+
+# The file as text in its own encoding (UTF-16 or UTF-8, with or without a byte-order mark), and that encoding.
+function Read-GameFile([string]$path) {
+  $bytes = [IO.File]::ReadAllBytes($path)
+  $enc = New-Object System.Text.UTF8Encoding($false)
+  if ($bytes.Length -ge 2 -and $bytes[0] -eq 0xFF -and $bytes[1] -eq 0xFE) { $enc = New-Object System.Text.UnicodeEncoding($false, $true) }
+  elseif ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) { $enc = New-Object System.Text.UTF8Encoding($true) }
+  return @{ text = [IO.File]::ReadAllText($path, $enc); enc = $enc }
+}
+
+<# What the tune would change in every game file it finds, without changing anything: for the free look and the run. #>
+function Get-GameFilePlan {
+  $plan = New-Object System.Collections.ArrayList
+  foreach ($g in $script:GameFiles) {
+    foreach ($path in @(& $g.find)) {
+      if (-not $path -or -not (Test-Path -LiteralPath $path -PathType Leaf)) { continue }
+      try {
+        $f = Read-GameFile $path
+        $e = Get-GameFileEdit $f.text $g.format $g.set
+        [void]$plan.Add(@{ game = $g.game; procs = $g.procs; path = $path; format = $g.format; set = $g.set; changes = $e.changes; enc = $f.enc })
+      } catch { }
+    }
+  }
+  return @($plan)
+}
+
+function Set-GameFiles($m) {
+  Head "Game settings files"
+  $plan = @(Get-GameFilePlan)
+  if (-not $plan.Count) { Did "No settings file from the listed games is on this PC; nothing to write. The report has each game's settings to set by hand."; return }
+  foreach ($p in @($plan | Where-Object { -not $_.changes.Count })) { Did ("{0}: nothing to change (already set, or the game has renamed the setting)" -f $p.game) }
+  $todo = @($plan | Where-Object { $_.changes.Count })
+  if (-not $todo.Count) { return }
+  foreach ($p in $todo) { Say ("  {0}: {1}" -f $p.game, (($p.changes | ForEach-Object { $_.what }) -join ', ')) 'White' }
+  if (-not (Ask "Write these into the games' own settings files? Each file is backed up first, and undo puts every value back.")) { Say "  Skipped. The report has each game's settings to set by hand."; return }
+  $bdir = Join-Path $script:Root ("backup\{0}\games" -f $script:Stamp)
+  foreach ($p in $todo) {
+    if (@($p.procs | Where-Object { Get-Process -Name $_ -ErrorAction SilentlyContinue }).Count) { Warn ("{0} is running, so its settings file was left alone: the game rewrites it when it closes. Close it and run the tune again; nothing else is repeated." -f $p.game); continue }
+    try {
+      if ((Get-Item -LiteralPath $p.path -ErrorAction Stop).IsReadOnly) { Did ("{0}: the settings file is read-only, set that way on purpose; left alone" -f $p.game); continue }
+      $f = Read-GameFile $p.path; $e = Get-GameFileEdit $f.text $p.format $p.set
+      if (-not $e.changes.Count) { continue }
+      New-Item -ItemType Directory -Path $bdir -Force | Out-Null
+      $stem = ($p.game -replace '[^A-Za-z0-9]+', '-').Trim('-'); $bk = Join-Path $bdir ("{0}-{1}" -f $stem, [IO.Path]::GetFileName($p.path)); $n = 2
+      while (Test-Path -LiteralPath $bk) { $bk = Join-Path $bdir ("{0}-{1}-{2}" -f $stem, $n, [IO.Path]::GetFileName($p.path)); $n++ }
+      Copy-Item -LiteralPath $p.path -Destination $bk -Force
+      [IO.File]::WriteAllText($p.path, $e.text, $f.enc)
+      foreach ($c in $e.changes) { Record @{ type = 'gamefile'; game = $p.game; path = $p.path; format = $p.format; key = $c.key; prev = $c.prev; value = $c.value; backup = $bk } }
+      Did ("{0}: {1}" -f $p.game, (($e.changes | ForEach-Object { $_.what }) -join ', '))
+    } catch { Warn ("{0}: the settings file could not be written ({1}); left as it is." -f $p.game, $_.Exception.Message) }
+  }
+}
+
 # ---------------------------------------------------------------------------
 # GPU vendor extras
 # ---------------------------------------------------------------------------
@@ -2433,7 +2598,7 @@ function Tune-Gpu($m) {
 function Set-Extreme($m) {
   if (-not $Extreme) { return }
   Head "Extreme"
-  Say "  Fewer conveniences for a few more frames: notifications, animations, transparency, the search box, clipboard history, nearby sharing, Windows Search, superfetch on an SSD, the Xbox pieces unless they are in use, and the extra services go; the service hosts are grouped the old way, which is twenty to forty processes fewer after a restart. Undo puts every one back." 'White'
+  Say "  Fewer conveniences for a few more frames: notifications, animations, transparency, the search box, clipboard history, nearby sharing, Windows Search, superfetch on an SSD, the Xbox pieces unless they are in use, and the extra services go; the service hosts are grouped the old way, which is twenty to forty processes fewer after a restart. Undo puts every one back. The PC maker's support agents go too, and on a desktop its hub apps." 'White'
   if (-not (Ask "Go extreme?")) { Say "  Skipped. The standard tune stands."; $script:ExtremeDeclined = $true; return }
   $keep = Get-KeepList $m
   $all = @(Get-Service -ErrorAction SilentlyContinue)
@@ -2447,6 +2612,18 @@ function Set-Extreme($m) {
     if (& $exists $name) { Set-ServiceStart $name $mode $why }
     foreach ($inst in @($all | Where-Object { $_.Name -like ($name + '_*') -and $_.Status -eq 'Running' })) { try { Stop-Service -Name $inst.Name -Force -NoWait -ErrorAction Stop -WarningAction SilentlyContinue } catch { } }
   }
+  # The PC maker's own apps ($script:OemApps): support agents and promotions everywhere, the hubs only on a desktop.
+  $opkgs = @(Get-AppxPackage -AllUsers -ErrorAction SilentlyContinue); $oprov = @(Get-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue); $oemGone = @()
+  foreach ($o in $script:OemApps) {
+    $hits = @($opkgs | Where-Object { $_.Name -like $o[0] -and -not ($_.NonRemovable -or $_.IsFramework) })
+    if ($o[2] -eq 'desktop' -and $m.laptop) { if ($hits.Count) { Keep $o[1] 'laptop: the PC maker runs the fans, the battery limit or the hotkeys through it' }; continue }
+    foreach ($pk in $hits) {
+      try { Remove-AppxPackage -Package $pk.PackageFullName -AllUsers -ErrorAction Stop; Record @{ type = 'appx'; name = $pk.Name }; $oemGone += $o[1] }
+      catch { try { Remove-AppxPackage -Package $pk.PackageFullName -ErrorAction Stop; Record @{ type = 'appx'; name = $pk.Name }; $oemGone += $o[1] } catch { } }
+    }
+    foreach ($pv in @($oprov | Where-Object { $_.DisplayName -like $o[0] })) { try { Remove-AppxProvisionedPackage -Online -PackageName $pv.PackageName -ErrorAction Stop | Out-Null } catch { } }
+  }
+  if ($oemGone.Count) { Did ("PC maker software removed: {0}. Undo lists each one; all are in the Microsoft Store or on the maker's site." -f (($oemGone | Sort-Object -Unique) -join ', ')) }
   # The shell, drawn plain: no transparency, no animations, no shadows, no badges, no toasts, no search box.
   Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' 'EnableTransparency' 0
   Set-Reg 'HKCU:\Control Panel\Desktop\WindowMetrics' 'MinAnimate' '0' 'String'
@@ -2802,6 +2979,7 @@ $script:Xaml = @'
               <CheckBox x:Name="ChkNetwork" IsChecked="True" Content="Network latency"/>
               <CheckBox x:Name="ChkPrograms" IsChecked="True" Content="Discord, Spotify, browsers"/>
               <CheckBox x:Name="ChkGames" IsChecked="True" Content="Game profiles"/>
+              <CheckBox x:Name="ChkGameFiles" IsChecked="True" Content="Settings in your games' own files (backed up)"/>
               <CheckBox x:Name="ChkNvidia" IsChecked="True" Content="NVIDIA telemetry off"/>
               <CheckBox x:Name="ChkCleanup" IsChecked="True" Content="Clear update caches, temp files"/>
               <CheckBox x:Name="ChkAfterCount" IsChecked="True" Content="Write the after-restart count"/>
@@ -2854,7 +3032,7 @@ function Show-Gui {
   $w = [System.Windows.Markup.XamlReader]::Parse($script:Xaml)
   $ui = @{}
   foreach ($n in 'LogoImage', 'MarkDrawn', 'WordDrawn', 'TuneDrawn', 'VersionText', 'StatusText', 'MachineText', 'CountText', 'TargetText', 'AdviceText', 'StartupPanel', 'KeyBox', 'KeyNote', 'BtnRun', 'BtnReport', 'BtnUndo', 'BtnStatus', 'BtnFolder', 'BtnRestart', 'BtnOpenReport', 'ResultText', 'LogBox', 'Progress', 'FootText',
-                  'ChkStartup', 'ChkServices', 'ChkTasks', 'ChkApps', 'ChkDebloat', 'ChkTelemetry', 'ChkSystem', 'ChkPower', 'ChkNetwork', 'ChkPrograms', 'ChkGames', 'ChkNvidia', 'ChkCleanup', 'ChkAfterCount', 'ChkKeep', 'ChkXbox', 'ChkDns', 'ChkVbs', 'ChkExtreme') {
+                  'ChkStartup', 'ChkServices', 'ChkTasks', 'ChkApps', 'ChkDebloat', 'ChkTelemetry', 'ChkSystem', 'ChkPower', 'ChkNetwork', 'ChkPrograms', 'ChkGames', 'ChkGameFiles', 'ChkNvidia', 'ChkCleanup', 'ChkAfterCount', 'ChkKeep', 'ChkXbox', 'ChkDns', 'ChkVbs', 'ChkExtreme') {
     $ui[$n] = $w.FindName($n)
   }
   $ui.VersionText.Text = "v$($script:Version)"
@@ -2871,7 +3049,7 @@ function Show-Gui {
   } catch { }
   if ($Key) { $ui.KeyBox.Text = $Key }
   if ($Extreme) { $ui.ChkExtreme.IsChecked = $true }
-  $phases = @{ startup = 'ChkStartup'; services = 'ChkServices'; tasks = 'ChkTasks'; apps = 'ChkApps'; debloat = 'ChkDebloat'; telemetry = 'ChkTelemetry'; system = 'ChkSystem'; power = 'ChkPower'; network = 'ChkNetwork'; programs = 'ChkPrograms'; games = 'ChkGames'; nvidia = 'ChkNvidia'; cleanup = 'ChkCleanup' }
+  $phases = @{ startup = 'ChkStartup'; services = 'ChkServices'; tasks = 'ChkTasks'; apps = 'ChkApps'; debloat = 'ChkDebloat'; telemetry = 'ChkTelemetry'; system = 'ChkSystem'; power = 'ChkPower'; network = 'ChkNetwork'; programs = 'ChkPrograms'; games = 'ChkGames'; gamefiles = 'ChkGameFiles'; nvidia = 'ChkNvidia'; cleanup = 'ChkCleanup' }
   $state = @{ ps = $null; out = $null; handle = $null; seen = 0; seenOut = 0; mode = ''; heads = 0; startup = @(); probe = $null }
   $headsTotal = 19
 
@@ -3351,6 +3529,11 @@ function Write-Preview($m, $before) {
   & $lap 'apps'
   $plan = Get-DebloatPlan $m
   & $lap 'pieces'
+  $gplan = @(Get-GameFilePlan)
+  $gtodo = @($gplan | Where-Object { $_.changes.Count })
+  $gset = 0; foreach ($g in $gtodo) { $gset += @($g.changes).Count }
+  $glines = @($gtodo | ForEach-Object { "{0}: {1}" -f $_.game, ((@($_.changes) | ForEach-Object { $_.what }) -join ', ') })
+  & $lap 'gamefiles'
   $extras = @($plan.caps | ForEach-Object { $_.what }) + @($plan.feats | ForEach-Object { $_.what })
   if ($plan.oneInstalled -and -not $plan.oneSignedIn) { $extras += 'OneDrive (nobody is signed in to it)' }
   $target = Get-SafeBar $m
@@ -3363,9 +3546,11 @@ function Write-Preview($m, $before) {
   Say ("  Preinstalled apps it would remove: {0}" -f $apps.Count) 'White'
   Say ("  Legacy Windows pieces it would remove: {0}" -f $extras.Count) 'White'
   foreach ($x in $extras) { Say ("    - {0}" -f $x) }
+  Say ("  Settings it would write into your games' own files: {0}{1}" -f $gset, $(if (-not $gplan.Count) { ' (no settings file from the listed games is on this PC)' } elseif (-not $gset) { ' (every one found is already set)' } else { '' })) 'White'
+  foreach ($x in $glines) { Say ("    - {0}" -f $x) }
   Say ("  Plus: the OmniDx power plan, network latency settings, Discord / Spotify / browser, game profiles, the BIOS checklist for {0}." -f $m.board) 'White'
   Say ("  Processes now: {0}. Target after the tune and a restart: about {1}." -f $before, $target) 'Green'
-  Say ("  Looked in {0} s: startup {1}, services {2}, tasks {3}, apps {4}, Windows pieces {5}" -f [math]::Round(($tm.Values | Measure-Object -Sum).Sum, 1), $tm.startup, $tm.services, $tm.tasks, $tm.apps, $tm.pieces)
+  Say ("  Looked in {0} s: startup {1}, services {2}, tasks {3}, apps {4}, Windows pieces {5}, game files {6}" -f [math]::Round(($tm.Values | Measure-Object -Sum).Sum, 1), $tm.startup, $tm.services, $tm.tasks, $tm.apps, $tm.pieces, $tm.gamefiles)
   $rep = Join-Path $script:Root ("report-preview-{0}.txt" -f $script:Stamp)
   $lines = @(
     "OmniDx Tune $($script:Version) - free report (nothing was changed), $((Get-Date).ToString('f'))", "",
@@ -3377,13 +3562,14 @@ function Write-Preview($m, $before) {
     "  scheduled tasks off: $($tasks.Count)", @($tasks | ForEach-Object { "    - $_" }),
     "  preinstalled apps removed: $($apps.Count)", @($apps | ForEach-Object { "    - $_" }),
     "  legacy Windows pieces removed: $($extras.Count)", @($extras | ForEach-Object { "    - $_" }),
+    "  settings written into games' own files: $gset", @($glines | ForEach-Object { "    - $_" }),
     "  plus the OmniDx power plan, network, Discord / Spotify / browsers, game profiles, memory integrity only if asked", "",
     "KEPT FOR THIS PC, AND WHY", @($(if ($svcKeep.Count) { $svcKeep | ForEach-Object { "  $_" } } else { "  nothing needed keeping" })), "",
     "WARNINGS ($($script:Warnings.Count))", @($(if ($script:Warnings.Count) { $script:Warnings | ForEach-Object { "  ! $_" } } else { "  none" })), "",
     "LEFT BY OTHER TOOLS (the tune changes none of these)", @(Get-LeftoverNotes $m | ForEach-Object { "  - $_" }), "",
     "THE PAID REPORT ADDS", "  the BIOS checklist for $($m.board) ($($m.bios)), the GPU control-panel settings, and the competitive settings for each game found.",
     "  And after a paid run: the keep task puts back what a Windows update turns on, and status mode says what is still in place, any time.",
-    "  Extreme (caution), for after the standard tune: every extra service, Game Bar entirely, the shell drawn plain, notifications off, the overlay plane and memory compression off, and an advanced BIOS list. More frames, fewer conveniences; undo puts it all back.",
+    "  Extreme (caution), for after the standard tune: every extra service, the PC maker's support agents (and its hub apps on a desktop), Game Bar entirely, the shell drawn plain, notifications off, the overlay plane and memory compression off, and an advanced BIOS list. More frames, fewer conveniences; undo puts it all back.",
     "  omnidx.net - one payment, one PC, undo in one line."
   )
   $flat = @(); foreach ($l in $lines) { if ($l -is [array]) { $flat += $l } else { $flat += $l } }
@@ -3546,6 +3732,7 @@ function Main {
     & $run 'network'   { Tune-Network $m }
     & $run 'programs'  { Tune-Apps $m }
     & $run 'games'     { Set-GameProfiles }
+    & $run 'gamefiles' { Set-GameFiles $m }
     & $run 'nvidia'    { Tune-Gpu $m }
     & $run 'extreme'   { Set-Extreme $m }
     Set-Vbs $m
