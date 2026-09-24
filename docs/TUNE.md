@@ -22,6 +22,9 @@ pieces fit and the short list of what still needs a human to switch on.
 | Support | `docs/TUNE-SUPPORT.md` | The replies, and where every file lives on the buyer's PC. |
 | Promotion | `docs/TUNE-PROMOTION.md` | Bios, hooks, rules, where to post. |
 | Transparency | `tools/tune-touches.py` → `studio/what-it-touches/` | The page listing every service, task, app and value, generated from the script. |
+| The by-hand guide | `studio/guide/` | Everything the tune does, as a list a person can do themselves; nothing to buy on it. The one link that is fine to post in a help thread. |
+| The card | `C:\OmniDx\card-<date>.png` on the buyer's PC; `studio/assets/ci-card.png` from the build machine | The before and after on one picture, labelled as one PC's, for posting. Status mode writes one with the after-restart number. |
+| The roadmap | `docs/ROADMAP.md` | What was surveyed, what to build next in order, and what was looked at and left alone, with reasons. |
 | Prices and links | `studio/assets/config.js` → `TUNE` | The only place a price or a Square link lives. |
 
 The video editor (OmniDx Studio) still lives at `studio/app/` and is linked from
