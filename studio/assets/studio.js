@@ -836,7 +836,7 @@ function initTune() {
     const src = new URL('ci-card.png', import.meta.url).href;
     fetch(src, { method: 'HEAD', cache: 'no-store' }).then((r) => {
       if (!r.ok) return;
-      cards.forEach((el) => { el.hidden = false; el.innerHTML = `<img src="${esc(src)}" alt="The card that run wrote: the process count before and after on the build machine, its CPU and GPU, and the words that keep it honest" width="1080" height="1080" loading="lazy" decoding="async" style="width:100%;max-width:260px;border-radius:14px;border:1px solid var(--line)"><figcaption class="tiny muted" style="margin-top:6px;max-width:34ch">The card that run wrote, for posting. Every run writes one with its own PC's numbers.</figcaption>`; });
+      cards.forEach((el) => { el.hidden = false; el.innerHTML = `<img src="${esc(src)}" alt="The card that run wrote: the process count before and after on the build machine, its CPU and GPU, and the words that keep it honest" width="1080" height="1080" loading="lazy" decoding="async" style="width:100%;max-width:260px;height:auto;border-radius:14px;border:1px solid var(--line)"><figcaption class="tiny muted" style="margin-top:6px;max-width:34ch">The card that run wrote, for posting. Every run writes one with its own PC's numbers.</figcaption>`; });
     }).catch(() => {});
   }
   // The last build-machine report, as a buyer sees it: linked where a page asks for it, and only once the check has published one.
