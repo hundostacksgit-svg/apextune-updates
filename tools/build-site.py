@@ -146,7 +146,7 @@ def build_nav(s: str) -> str:
         )
     return f'''<nav class="nav">
   <div class="wrap">
-    <a class="logo" href="{s or './'}"><span class="mark">{LOGO_SVG}</span>OmniDx <small>Tune</small></a>
+    <a class="logo" href="{s or './'}" aria-label="OmniDx"><img class="logo-img" src="{s}assets/logo/omnidx-logo-800.webp" srcset="{s}assets/logo/omnidx-logo-800.webp 800w, {s}assets/logo/omnidx-logo-1600.webp 1600w" sizes="132px" width="800" height="402" alt="OmniDx" decoding="async"></a>
 
     <!-- The menu box. One row on a desktop, and the same links live in the
          drawer below for phones — never two different menus to keep in step. -->
@@ -211,7 +211,7 @@ def build_footer(s: str) -> str:
   <div class="wrap">
     <div class="foot">
       <div>
-        <a class="logo" href="{s or './'}"><span class="mark">{LOGO_SVG}</span>OmniDx <small>Tune</small></a>
+        <a class="logo logo-foot" href="{s or './'}" aria-label="OmniDx"><img class="logo-img" src="{s}assets/logo/omnidx-logo-800.webp" width="800" height="402" alt="OmniDx" loading="lazy" decoding="async"></a>
         <p class="small" style="margin-top:14px;max-width:34ch">One command. Windows cut down to what your
           games need, a power plan built for frames, and a BIOS checklist for your exact board.</p>
         <p class="tiny muted" style="margin-top:10px">One payment. No subscription, ever. Nothing installed.</p>

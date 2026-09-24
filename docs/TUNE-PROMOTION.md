@@ -64,28 +64,28 @@ your disk. Nothing installed, nothing left running, security never lowered.
 $19.99 once, locked to one PC. The whole script is public, and the free
 report mode shows what it would do before you pay. omnidx.net
 
-## The badge: Peregrine
+## The logo
 
-The animal mark, the way a Mustang carries the Coyote and a Hellcat its cat.
-A peregrine falcon in the stoop, the dive that makes it the fastest animal
-alive, in chrome, with the brand purple as the falcon's dark hood and the
-bolt from the main mark down its back. Files, all in `studio/assets/logo/`
-(and at `omnidx.net/studio/assets/logo/<name>`):
+The eagle: a black metallic head with purple edges and a purple eye over
+OMNIDX in bevelled black, "PC OPTIMIZATION" underneath. It is the mark on
+every page, the favicon, the social card and the profile picture. Files,
+all in `studio/assets/` (and at `omnidx.net/studio/assets/<path>`):
 
 | File | Use |
 |---|---|
-| `peregrine-plate-1024.png` | The badge: falcon on a chrome shield with the name. Stickers, thumbnails, the end card of a video |
-| `peregrine-pfp-800.png` | Profile picture on every platform (round crop safe) |
-| `peregrine-banner-1500x500.png` | X, TikTok and Discord banner |
-| `peregrine-lockup-2880.png` | Falcon + PEREGRINE + OmniDx Tune, for video title cards and the top of a Reddit profile |
-| `peregrine-1024.png` | The falcon alone, transparent, to drop on anything |
-| `peregrine*.svg` | The vectors; rebuild with `python3 tools/logo/peregrine.py` then `node tools/logo/render.mjs` |
+| `logo/omnidx-logo.png` | The full logo, transparent, 1504 px wide. Anything printed or large |
+| `logo/omnidx-logo-800.webp`, `-1600.webp` | The same for the web; the site's nav and footer use them |
+| `logo/omnidx-head-1024.png` | The head alone, transparent, feathers fading out on the left. Stickers, watermarks |
+| `logo/pfp-800.jpg` | Profile picture on every platform (round crop safe) |
+| `logo/banner-1500x500.jpg` | X, TikTok and Discord banner |
+| `logo/banner-youtube-2560x1440.jpg` | YouTube channel art (the safe area in the middle carries the logo) |
+| `logo/post-1080.jpg` | The square post image: the logo and the one line |
+| `og-card.jpg` | What a link to the site shows on X, Discord and iMessage |
+| `icons/` | Favicons and app icons, all the head |
 
-The rule for the badge: the falcon is the fastest *animal*; never let a
-caption turn that into a number about the product. "Named for the fastest
-animal alive" is fine. "The fastest PC tuner" is not (nothing measures it).
-The main mark (three bars and the bolt) stays the app icon and the favicon;
-Peregrine is the badge on top, not a replacement.
+The main mark of the old set (three bars and a bolt) is gone from the site;
+the card the script writes still draws it until the next script release
+picks up the head from the site.
 
 ## Handles to try
 

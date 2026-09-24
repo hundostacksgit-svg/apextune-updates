@@ -29,6 +29,7 @@ export function applyTheme(t) {
   document.querySelector('meta[name="theme-color"]')
     ?.setAttribute('content', theme === 'light' ? '#f7f4fe' : '#050308');
   try { localStorage.setItem(THEME_KEY, theme); } catch { /* private mode */ }
+  try { document.documentElement.dispatchEvent(new Event('omnidx:theme')); } catch { /* old browser */ }
   return theme;
 }
 
@@ -1359,8 +1360,112 @@ async function initAccount() {
 /* ------------------------------------------------------------------ */
 applyTheme();
 
+/* ------------------------------------------------------------------ */
+/* the moving background                                               */
+/* ------------------------------------------------------------------ */
+/* Hard black, four soft purple shades drifting on slow paths, and a few dozen small purple
+   objects (bolts, chips, motes) at different depths. They move on their own, they slide at
+   different speeds as the page scrolls, and the ones near the pointer lean toward it. One
+   canvas fixed behind the page; nothing here is ever in front of a word or a button.
+   Reduced motion: one still frame. Hidden tab: paused. Light theme: lavender, quieter. */
+function initBackground() {
+  if (document.querySelector('.bg-canvas') || !window.requestAnimationFrame) return;
+  const c = document.createElement('canvas');
+  c.className = 'bg-canvas'; c.setAttribute('aria-hidden', 'true');
+  document.body.prepend(c);
+  const ctx = c.getContext('2d');
+  if (!ctx) { c.remove(); return; }
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)');
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  let w = 0, h = 0, raf = 0, last = 0, t = rnd(0, 100), sy = window.scrollY || 0;
+  const ptr = { x: -1, y: -1, tx: -1, ty: -1 };
+  const blobs = [270, 286, 258, 296].map((hue, i) => ({
+    hue, r: rnd(.30, .50), ax: [.18, .78, .55, .3][i], ay: [.22, .3, .8, .7][i],
+    fx: rnd(.05, .10), fy: rnd(.04, .09), ph: rnd(0, 6.28), depth: rnd(.04, .12),
+  }));
+  const make = () => {
+    const k = Math.random();
+    return { x: Math.random(), y: Math.random(), z: rnd(.25, 1), s: rnd(.55, 1.4), vx: rnd(-.010, .010), vy: rnd(-.030, -.008),
+      rot: rnd(0, 6.28), vr: rnd(-.5, .5), kind: k < .34 ? 'bolt' : (k < .58 ? 'chip' : 'mote'), a: rnd(.35, .95) };
+  };
+  const objs = Array.from({ length: 44 }, make);
+  const resize = () => {
+    const dpr = Math.min(1.5, window.devicePixelRatio || 1);
+    w = window.innerWidth; h = window.innerHeight;
+    c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  };
+  const palette = () => (document.documentElement.getAttribute('data-theme') === 'light'
+    ? { blob: .13, sat: '70%', lum: '62%', obj: '124,58,237', objA: .45, mix: 'source-over' }
+    : { blob: .30, sat: '85%', lum: '52%', obj: '192,132,252', objA: .85, mix: 'lighter' });
+  const bolt = (x, y, s, rot) => {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.scale(s, s);
+    ctx.beginPath(); ctx.moveTo(4, -12); ctx.lineTo(-6, 2); ctx.lineTo(0, 2); ctx.lineTo(-3, 12); ctx.lineTo(7, -3); ctx.lineTo(1, -3); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  };
+  const chip = (x, y, s, rot) => {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot);
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(-s, -s, s * 2, s * 2, s * .35); else ctx.rect(-s, -s, s * 2, s * 2);
+    ctx.fill(); ctx.restore();
+  };
+  const frame = (now) => {
+    raf = 0;
+    const dt = Math.min(.05, last ? (now - last) / 1000 : .016); last = now; t += dt;
+    const p = palette();
+    ctx.clearRect(0, 0, w, h);
+    if (ptr.tx >= 0) { ptr.x = ptr.x < 0 ? ptr.tx : ptr.x + (ptr.tx - ptr.x) * .06; ptr.y = ptr.y < 0 ? ptr.ty : ptr.y + (ptr.ty - ptr.y) * .06; }
+    ctx.globalCompositeOperation = p.mix;
+    for (const b of blobs) {
+      const cx = (b.ax + Math.sin(t * b.fx + b.ph) * .16) * w;
+      const span = h * 1.8;
+      const cy = (((b.ay + Math.cos(t * b.fy + b.ph) * .14) * h - sy * b.depth) % span + span) % span - h * .4;
+      const r = b.r * Math.max(w, h);
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      g.addColorStop(0, `hsla(${b.hue},${p.sat},${p.lum},${p.blob})`);
+      g.addColorStop(.5, `hsla(${b.hue},${p.sat},${p.lum},${p.blob * .32})`);
+      g.addColorStop(1, `hsla(${b.hue},${p.sat},${p.lum},0)`);
+      ctx.fillStyle = g; ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+    }
+    ctx.globalCompositeOperation = 'source-over';
+    const wrap = h + 80;
+    for (const o of objs) {
+      o.x += o.vx * dt; o.y += o.vy * dt * (.4 + o.z); o.rot += o.vr * dt;
+      const x = o.x * w;
+      const y = ((o.y * h - sy * o.z * .35) % wrap + wrap) % wrap - 40;
+      if (ptr.x >= 0) {
+        const dx = ptr.x - x, dy = ptr.y - y, d = Math.hypot(dx, dy);
+        if (d < 240 && d > 2) { const f = (1 - d / 240) * .9 * dt; o.x += (dx / w) * f; o.y += (dy / h) * f; }
+      }
+      if (o.y < -.15) { o.y = 1.15; o.x = Math.random(); }
+      if (o.x < -.06) o.x = 1.06; else if (o.x > 1.06) o.x = -.06;
+      const a = o.a * (.3 + .7 * o.z) * p.objA;
+      ctx.fillStyle = `rgba(${p.obj},${a.toFixed(3)})`;
+      if (o.kind === 'bolt') bolt(x, y, o.s * o.z * 1.15, o.rot);
+      else if (o.kind === 'chip') chip(x, y, 5.5 * o.s * o.z, o.rot);
+      else {
+        const r = 1.4 * o.s * o.z + .6;
+        const g = ctx.createRadialGradient(x, y, 0, x, y, r * 4);
+        g.addColorStop(0, `rgba(${p.obj},${(a * .9).toFixed(3)})`); g.addColorStop(.35, `rgba(${p.obj},${(a * .25).toFixed(3)})`); g.addColorStop(1, `rgba(${p.obj},0)`);
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r * 4, 0, 6.2832); ctx.fill();
+      }
+    }
+    if (!reduce.matches && !document.hidden) raf = requestAnimationFrame(frame);
+  };
+  const kick = () => { if (!raf) { last = 0; raf = requestAnimationFrame(frame); } };
+  resize(); kick();
+  window.addEventListener('resize', () => { resize(); kick(); }, { passive: true });
+  window.addEventListener('scroll', () => { sy = window.scrollY || 0; if (reduce.matches) kick(); }, { passive: true });
+  window.addEventListener('pointermove', (e) => { if (e.pointerType === 'mouse') { ptr.tx = e.clientX; ptr.ty = e.clientY; } }, { passive: true });
+  window.addEventListener('pointerleave', () => { ptr.tx = -1; ptr.ty = -1; ptr.x = -1; ptr.y = -1; }, { passive: true });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) kick(); });
+  reduce.addEventListener('change', kick);
+  document.documentElement.addEventListener('omnidx:theme', kick);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   applyTheme();
+  initBackground();
   $$('[data-theme-toggle]').forEach((b) => b.addEventListener('click', toggleTheme));
   initMenuBox();
   initDrawer();

@@ -22,8 +22,8 @@
   --glow:rgba(139,92,246,.45);
 
   /* ---- dark surface stack (default) ---- */
-  --bg:#050308;
-  --bg-2:#08050e;
+  --bg:#000000;
+  --bg-2:#07050c;
   --surface:#0e0a17;
   --surface-2:#150f22;
   --surface-3:#1d1530;
@@ -78,6 +78,9 @@ body{
   overflow-x:hidden;transition:background .3s ease,color .3s ease;
 }
 img,svg,video{max-width:100%;display:block}
+/* The moving background: one canvas fixed behind everything (z-index -1 sits above the body's
+   own colour, which propagates to the viewport, and below every element). It never takes a click. */
+.bg-canvas{position:fixed;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
 a{color:var(--blue-2);text-decoration:none}
 /* A link inside running text is told apart by more than its colour. */
 p a,li a,.note a,.act-note a,td a{text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px}
@@ -129,6 +132,8 @@ button{font:inherit;color:inherit}
 .logo .mark{width:30px;height:30px;border-radius:9px;background:var(--grad);
   display:grid;place-items:center;color:#fff;font-size:15px;font-weight:800;flex:none;
   box-shadow:0 0 0 1px rgba(255,255,255,.12),0 6px 18px var(--glow)}
+.logo .logo-img{height:52px;width:auto;display:block;filter:drop-shadow(0 0 10px rgba(139,92,246,.35))}
+.logo-foot .logo-img{height:64px}
 .logo small{font-weight:600;color:var(--text-3);font-size:12.5px;letter-spacing:.06em;
   text-transform:uppercase;margin-left:2px}
 
@@ -246,6 +251,7 @@ body.drawer-open{overflow:hidden}
   .nav .wrap{gap:10px;height:62px}
   .drawer{inset:62px 0 0}
   .logo{font-size:17px}
+  .logo .logo-img{height:42px}
   .logo small{display:none}
   .nav-cta{padding:10px 15px;font-size:14px}
   /* Labels never fit next to a phone's content, so the rail is dots only and
@@ -560,7 +566,7 @@ section{padding:92px 0;position:relative;scroll-margin-top:74px}
 .band h2{margin-bottom:14px}
 
 /* ================= footer ================= */
-footer{border-top:1px solid var(--line-soft);padding:52px 0 60px;background:var(--bg-2)}
+footer{border-top:1px solid var(--line-soft);padding:52px 0 60px;background:color-mix(in srgb,var(--bg-2) 72%,transparent)}
 .foot{display:grid;grid-template-columns:1.6fr repeat(3,1fr);gap:34px}
 @media(max-width:760px){.foot{grid-template-columns:1fr 1fr;gap:28px}}
 .foot h4{font-size:12px;letter-spacing:.13em;text-transform:uppercase;color:var(--text-3);
