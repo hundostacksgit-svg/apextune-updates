@@ -118,7 +118,7 @@ jobs:
       # wrong keys does not publish.
       - name: The site works in a browser
         run: |
-          npm install --no-audit --no-fund --no-save playwright@1.47.2
+          npm install --no-audit --no-fund --no-save playwright@1.47.2 axe-core@4.10.2
           npx playwright install --with-deps chromium
           node tools/site-test.mjs
 
