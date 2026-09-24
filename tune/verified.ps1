@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.72.0'
+$script:Version = '1.73.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -102,6 +102,10 @@ $script:RestorePointMade = $false
 $script:GamesFound = New-Object System.Collections.ArrayList
 $script:ExtremeDeclined = $false
 $script:Timer = [System.Diagnostics.Stopwatch]::StartNew()
+# The steps outside the timed phases (the read, the key, the two counts, the safety net, the keep task, the report),
+# each as the seconds since the previous mark: 1.72.0's record showed a re-run's phases at 13 of its 29 seconds.
+$script:Steps = [ordered]@{}; $script:LastMark = 0.0
+function Mark-Step([string]$name) { $now = $script:Timer.Elapsed.TotalSeconds; $script:Steps[$name] = [math]::Round($now - $script:LastMark, 1); $script:LastMark = $now }
 # The window runs the work in a second PowerShell instance, which needs this
 # script's text. From a file that is the file; from memory (the one command)
 # it is the scriptblock the bootstrapper made.
@@ -3076,7 +3080,7 @@ function Write-Report($m, $before, $after, $changesFile) {
   Set-Content -Path (Join-Path $script:Root ("bios-{0}.txt" -f (($m.board -replace '[^A-Za-z0-9]+', '-').Trim('-')))) -Value (Get-BiosChecklist $m) -Encoding UTF8
   try { Write-HtmlReport $m $before $after $target $found $changesFile } catch { Warn ("The HTML report was not written ({0}); the text one is." -f $_.Exception.Message) }
   try {
-    $summary = @{ version = $script:Version; stamp = $script:Stamp; before = $before; after = $after; target = $target; bootBefore = $script:BootBefore; changes = $script:Changes.Count; warnings = $script:Warnings.Count; seconds = [int]$script:Timer.Elapsed.TotalSeconds; os = $m.os; cpu = $m.cpu; gpu = $m.gpu; ramGb = $m.ramGb; board = $m.board; laptop = $m.laptop; games = $found; snapshots = $script:Snapshots; gone = @(Get-GoneProcesses); phases = $script:Phases; extreme = [bool]$Extreme }
+    $summary = @{ version = $script:Version; stamp = $script:Stamp; before = $before; after = $after; target = $target; bootBefore = $script:BootBefore; changes = $script:Changes.Count; warnings = $script:Warnings.Count; seconds = [int]$script:Timer.Elapsed.TotalSeconds; os = $m.os; cpu = $m.cpu; gpu = $m.gpu; ramGb = $m.ramGb; board = $m.board; laptop = $m.laptop; games = $found; snapshots = $script:Snapshots; gone = @(Get-GoneProcesses); phases = $script:Phases; steps = $script:Steps; extreme = [bool]$Extreme }
     $summary | ConvertTo-Json -Depth 4 | Set-Content -Path (Join-Path $script:Root ("summary-{0}.json" -f $script:Stamp)) -Encoding UTF8
   } catch { }
   return $rep
@@ -3310,6 +3314,7 @@ function Main {
     Say ("  Processes running now: {0}" -f $before) 'White'
     Say ("  Target for this PC after the tune and a restart: about {0}" -f (Get-SafeBar $m)) 'White'
     if ($Report) { Write-Preview $m $before; return }
+    Mark-Step 'read'
 
     Head "Your key"
     # A PC that has run before already holds its key; a second run asks for nothing.
@@ -3331,6 +3336,7 @@ function Main {
       } catch { }
     }
     if (-not (Test-Licence $parsed $hwid $machine)) { return }
+    Mark-Step 'key'
 
     if ($m.domain) {
       Warn "This PC is joined to a domain (a work or school machine). Group policy can put settings back, and IT may have opinions."
@@ -3369,7 +3375,9 @@ function Main {
     # The report's big number, its table and the Done line all read this one snapshot, so they agree to the process.
     $before = [int]$snapBefore.processes
     Say ("  Before: {0}" -f (Format-Snapshot $snapBefore))
+    Mark-Step 'before'
     New-Safety
+    Mark-Step 'safety'
     & $run 'startup'   { Cut-Startup }
     & $run 'services'  { Cut-Services $m }
     & $run 'tasks'     { Cut-Tasks }
@@ -3385,8 +3393,10 @@ function Main {
     & $run 'extreme'   { Set-Extreme $m }
     Set-Vbs $m
     & $run 'cleanup'   { Clear-Junk }
+    Mark-Step 'phases'
     Register-AfterCount
     if ($skip -contains 'keep') { Head "keep (skipped)"; Remove-KeepTask '-Skip keep' } else { Register-Keep }
+    Mark-Step 'keep'
 
     $changesFile = Save-Changes
     Head "Done"
@@ -3403,12 +3413,16 @@ function Main {
     Say ("  After:  {0}" -f (Format-Snapshot $snapAfter))
     $gone = Get-GoneProcesses
     if ($gone.Count) { Say ("  Gone:   {0}" -f ($gone -join ', ')) }
+    Mark-Step 'after'
     $script:Snapshots = @{ before = $snapBefore; after = $snapAfter }
     Write-Card $m $before $after 'now, before a restart'
     $rep = Write-Report $m $before $after $changesFile
+    Mark-Step 'report'
     $stoppedAny = @($script:Changes | Where-Object { $_.type -eq 'service' }).Count -gt 0
     Say ("  Processes: {0} -> {1} now, in {2} seconds. Restart for the real number{3}" -f $before, $after, [int]$script:Timer.Elapsed.TotalSeconds, $(if ($stoppedAny) { ': the services that were told to stop are still unwinding.' } else { '.' })) 'Green'
     if ($script:Phases.Count) { Say ("  Where the time went: " + (($script:Phases.GetEnumerator() | Sort-Object Value -Descending | Select-Object -First 6 | ForEach-Object { "{0} {1} s" -f $_.Key, $_.Value }) -join ', ')) }
+    $outside = @($script:Steps.GetEnumerator() | Where-Object { $_.Key -ne 'phases' -and $_.Value -ge 1 } | ForEach-Object { "{0} {1} s" -f $_.Key, $_.Value })
+    if ($outside.Count) { Say ("  Outside the phases: " + ($outside -join ', ')) }
     Say ("  Report, BIOS checklist, launcher notes and per-game settings: {0}" -f $rep) 'White'
     if ($script:Card) { Say ("  A card with these numbers, for posting: {0} (status mode writes one with the after-restart number)" -f $script:Card) 'White' }
     Say "  Undo, any time: powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1" 'White'
