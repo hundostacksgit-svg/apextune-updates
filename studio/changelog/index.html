@@ -139,6 +139,13 @@
       </ul>
     </div>
     <div class="card reveal d1" style="margin-top:16px">
+      <div class="eyebrow" style="margin-bottom:12px">v1.59.0 · September 2026</div>
+      <h3>The read asks the device bus once</h3>
+      <ul class="tick">
+        <li>1.58.0's new read line showed the five device queries (Bluetooth twice, touch, a fingerprint reader, a controller) costing 2.2 seconds of a 7.7 second read on the build machine, each walking the whole bus. They are one listing filtered in memory now, and the physical adapters are listed once instead of twice. Every mode reads the machine, so every mode starts sooner</li>
+      </ul>
+    </div>
+    <div class="card reveal d1" style="margin-top:16px">
       <div class="eyebrow" style="margin-bottom:12px">v1.58.0 · September 2026</div>
       <h3>The read and the free look are timed on their own lines</h3>
       <ul class="tick">
