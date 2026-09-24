@@ -139,6 +139,14 @@
       </ul>
     </div>
     <div class="card reveal d1" style="margin-top:16px">
+      <div class="eyebrow" style="margin-bottom:12px">v1.66.0 · September 2026</div>
+      <h3>1.65.0's background read comes out: measured, it made the look slower</h3>
+      <ul class="tick">
+        <li>Two runs of 1.65.0 on the build machine said the same thing: the pieces lap fell from eight to ten seconds to six or seven, but the machine read's own laps doubled while the feature query ran beside them (the device lap 4.7 s and 5.6 s against 1.1 to 1.8 s before), and the whole free look came out at 23 to 24 s against 17.5 s for 1.64.0. The two reads share the same service and get in each other's way</li>
+        <li>The pieces read is sequential again, as in 1.64.0. The servicing stack's cold start is the one cost left in the look, and it is recorded as such rather than hidden</li>
+      </ul>
+    </div>
+    <div class="card reveal d1" style="margin-top:16px">
       <div class="eyebrow" style="margin-bottom:12px">v1.65.0 · September 2026</div>
       <h3>The Windows-pieces read runs while the machine is read</h3>
       <ul class="tick">

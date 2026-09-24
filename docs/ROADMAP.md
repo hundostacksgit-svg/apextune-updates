@@ -108,11 +108,15 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   that is the optional-feature class starting the servicing stack cold. The
   next discovery step asks whether the six feature states are in the
   component store's registry too.
-- **The pieces read in a runspace** (1.65.0): the optional-feature class
-  and the package list start in a runspace before the machine read and are
-  collected by the debloat plan, which reads them itself if the runspace
-  fails or runs past a minute. The last cold cost in the look (eight to ten
-  seconds) now overlaps the read.
+- **The pieces read in a runspace** (1.65.0, taken out in 1.66.0): the
+  optional-feature class and the package list started in a runspace before
+  the machine read. Two samples: pieces lap 6.1 s and 6.8 s (from 8.2 to
+  9.9), but the read's device lap 4.7 s and 5.6 s (from 1.1 to 1.8) and its
+  base CIM lap 2.9 s and 2.4 s (from 1.2 to 1.9), the whole look 24.0 s and
+  23.1 s against 17.3 s and 17.6 s for 1.64.0. The two reads share the WMI
+  service and slow each other more than the overlap saves, at least on the
+  build machine's two cores. Sequential again; recorded in the left-alone
+  list.
 - **The moving background**: one canvas behind every page, hard black,
   purple shades and small purple objects at different depths that drift,
   slide with the scroll and lean toward the pointer; still under reduced
@@ -160,6 +164,10 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   build machine (the unbounded walk ran past thirty minutes) and found none
   of the six names in the 383 it reached. The optional-feature class stays;
   its only cost is the cold start.
+- **The feature read beside the machine read** (1.65.0). Measured twice:
+  the look got five seconds slower, because the two reads share the WMI
+  service. The servicing stack's cold start is a fixed cost of a truthful
+  look and stays in the open.
 - **Removing the Windows pieces in the background** while the rest of the
   run goes on: it would overlap the 34 s of DISM with about fifteen seconds
   of other phases, but the Store-app removals and the update-cache cleanup
