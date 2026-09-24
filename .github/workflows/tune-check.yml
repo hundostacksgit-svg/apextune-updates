@@ -326,6 +326,11 @@ jobs:
           if ([int]$Matches[2] -lt 3) { Write-Host ("keep put back {0}, expected 3" -f $Matches[2]); exit 1 }
           Set-Content C:\OmniDx\ci-kept.txt $Matches[2]
           if (-not (Test-Path C:\OmniDx\keep-log.txt)) { Write-Host 'no keep log'; exit 1 }
+          # keep.ps1 writes the after-restart card with this start's count; a run without one lost the feature.
+          $kc = Get-Item C:\OmniDx\card-after-restart.png -ErrorAction SilentlyContinue
+          if (-not $kc) { Write-Host 'keep.ps1 wrote no card-after-restart.png'; exit 1 }
+          if ($kc.Length -lt 20000) { Write-Host ("the after-restart card is {0} bytes" -f $kc.Length); exit 1 }
+          Write-Host ("after-restart card: {0} bytes" -f $kc.Length)
           Get-Content C:\OmniDx\keep-log.txt
           $out = & .\tune\omnidx.ps1 -Status *>&1 | Out-String -Width 4000
           & .\tools\ci-red.ps1 -Text $out -Step 'The keep task puts back what an update turns on'

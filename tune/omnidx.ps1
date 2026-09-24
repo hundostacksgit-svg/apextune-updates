@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.56.0'
+$script:Version = '1.57.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -904,6 +904,23 @@ try {
   $old = @(); if (Test-Path $logFile) { $old = @(Get-Content $logFile -ErrorAction SilentlyContinue | Select-Object -Last 199) }
   Set-Content -Path $logFile -Value ($old + @($line) + @($r.drift | ForEach-Object { "  " + $_ })) -Encoding UTF8
 } catch { }
+# The card with this start's count: the same picture the run wrote, with the number that counts,
+# written fresh at every sign-in as card-after-restart.png. Drawn with the run's own code, pasted below.
+if (-not $Check) {
+  try {
+    function Say { param([string]$t, [string]$c = 'Gray') Write-Host $t }
+__CARD__
+    $root = Split-Path $dir
+    $stamps = @($files | ForEach-Object { [IO.Path]::GetFileNameWithoutExtension($_) -replace '^changes-', '' })
+    $sum = Get-ChildItem $root -Filter 'summary-*.json' -ErrorAction SilentlyContinue | Where-Object { $stamps -contains ($_.BaseName -replace '^summary-', '') } | Sort-Object Name -Descending | Select-Object -First 1
+    if ($sum) {
+      $s = Get-Content $sum.FullName -Raw | ConvertFrom-Json
+      $script:Root = $root; $script:Stamp = 'after-restart'; $script:Version = "$($s.version)"
+      Write-Card @{ cpu = "$($s.cpu)"; gpu = "$($s.gpu)" } ([int]$s.before) (@(Get-Process -ErrorAction SilentlyContinue).Count) 'after a restart'
+      if ($script:Card) { Write-Host ("  card: " + $script:Card) -ForegroundColor DarkGray }
+    }
+  } catch { }
+}
 # A feature update resets things by the dozen. That is worth one notification; a stray value is not.
 if (-not $Check -and $r.fixed -ge 5) {
   try {
@@ -937,7 +954,8 @@ function Register-Keep {
   if (-not (Ask "Keep it cut after updates?")) { Say "  Not kept. Run the command again after a big update instead: same key, same PC, free."; Remove-KeepTask 'you said no'; return }
   try {
     $keep = Join-Path $script:Root 'undo\keep.ps1'
-    Set-Content -Path $keep -Value ($script:KeepScript.Replace('__DRIFT__', ("function Get-Drift {" + ${function:Get-Drift}.ToString() + "}"))) -Encoding UTF8
+    $card = "    function New-RoundedPath {" + ${function:New-RoundedPath}.ToString() + "}`n    function Write-Card {" + ${function:Write-Card}.ToString() + "}"
+    Set-Content -Path $keep -Value ($script:KeepScript.Replace('__DRIFT__', ("function Get-Drift {" + ${function:Get-Drift}.ToString() + "}")).Replace('__CARD__', $card)) -Encoding UTF8
     $name = 'OmniDx keep'
     $who = "$env:USERDOMAIN\$env:USERNAME"
     $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "' + $keep + '"')
@@ -948,7 +966,7 @@ function Register-Keep {
     Unregister-ScheduledTask -TaskName $name -Confirm:$false -ErrorAction SilentlyContinue
     Register-ScheduledTask -TaskName $name -Action $action -Trigger $trigger -Principal $principal -Settings $settings -Force -ErrorAction Stop | Out-Null
     Record @{ type = 'task-created'; name = $name }
-    Did "Task 'OmniDx keep' runs three minutes after sign-in, puts back whatever an update turned on, and notes that start's boot time. Log: C:\OmniDx\keep-log.txt. Undo removes it."
+    Did "Task 'OmniDx keep' runs three minutes after sign-in, puts back whatever an update turned on, notes that start's boot time and writes card-after-restart.png with that start's count. Log: C:\OmniDx\keep-log.txt. Undo removes it."
   } catch { Warn ("Could not set the keep task ({0}). Run the command again after a big update instead." -f $_.Exception.Message) }
 }
 
@@ -1006,6 +1024,8 @@ function Show-Status {
   else { Say "  Keep task: not set. Run the tune again and answer yes to keep it cut, or leave it; the tune holds until a big update either way." }
   $ar = Join-Path $script:Root 'after-restart.txt'
   $arCount = 0
+  $kc = Join-Path $script:Root 'card-after-restart.png'
+  if (Test-Path $kc) { Say ("  Card with the last start's count, for posting: {0} (the keep task writes it fresh at every sign-in)" -f $kc) 'White' }
   if (Test-Path $ar) { $l = @(Get-Content $ar -ErrorAction SilentlyContinue) | Select-Object -Last 1; if ($l) { Say ("  After restart: {0}" -f $l) 'White'; if ($l -match 'after restart: (\d+) processes') { $arCount = [int]$Matches[1] } } }
   # The newest run still in place (its record is not in undo\done), so an undone Extreme does not speak for the tune.
   $stamps = @($files | ForEach-Object { $_.BaseName -replace '^changes-', '' })
@@ -2785,7 +2805,8 @@ function Get-BootSeconds {
    with the "now" number, and again by status mode once the after-restart
    count exists. System.Drawing ships with Windows; a PC without it simply
    has no card, and the run says so in one line. #>
-function New-RoundedPath([float]$x, [float]$y, [float]$w, [float]$h, [float]$r) {
+function New-RoundedPath {
+  param([float]$x, [float]$y, [float]$w, [float]$h, [float]$r)
   $p = New-Object System.Drawing.Drawing2D.GraphicsPath
   $d = $r * 2
   $p.AddArc($x, $y, $d, $d, 180, 90); $p.AddArc($x + $w - $d, $y, $d, $d, 270, 90)
@@ -2794,7 +2815,8 @@ function New-RoundedPath([float]$x, [float]$y, [float]$w, [float]$h, [float]$r) 
   return $p
 }
 
-function Write-Card($m, [int]$before, [int]$after, [string]$when) {
+function Write-Card {
+  param($m, [int]$before, [int]$after, [string]$when)
   $script:Card = $null
   try {
     Add-Type -AssemblyName System.Drawing -ErrorAction Stop
