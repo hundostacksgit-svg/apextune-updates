@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.66.0'
+$script:Version = '1.67.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -321,8 +321,11 @@ function Set-ServiceStart([string]$name, [string]$start, [string]$why = '') {
   if ($LASTEXITCODE -ne 0) {
     try { Set-Service -Name $name -StartupType $want -ErrorAction Stop } catch { Warn ("Service {0} would not change ({1})" -f $name, $_.Exception.Message); return }
   }
+  # The stop is asked for and the run moves on: waiting for each service to finish stopping was most of the
+  # phase's six to ten seconds on the build machine, and the count at the end already allows for services
+  # still unwinding (it says so). The keep task, unattended at sign-in, still waits.
   if ($want -ne 'Automatic' -and $svc.Status -eq 'Running') {
-    try { Stop-Service -Name $name -Force -ErrorAction Stop -WarningAction SilentlyContinue } catch { }
+    try { Stop-Service -Name $name -Force -NoWait -ErrorAction Stop -WarningAction SilentlyContinue } catch { }
   }
   Record @{ type = 'service'; name = $name; prev = $prev; now = $want }
   Did ("{0} -> {1}{2}" -f $name, $want.ToLower(), $(if ($why) { "  ($why)" } else { '' }))
@@ -1418,7 +1421,7 @@ function Cut-Services($m) {
     # the one whose start type can be set; the instances are only stopped.
     if (& $exists $name) { Set-ServiceStart $name $mode $why }
     foreach ($inst in @($all | Where-Object { $_.Name -like ($name + '_*') -and $_.Status -eq 'Running' })) {
-      try { Stop-Service -Name $inst.Name -Force -ErrorAction Stop -WarningAction SilentlyContinue } catch { }
+      try { Stop-Service -Name $inst.Name -Force -NoWait -ErrorAction Stop -WarningAction SilentlyContinue } catch { }
     }
   }
   # Windows Search: not off, manual - the search box still works, the background indexer stops.
@@ -2273,7 +2276,7 @@ function Set-Extreme($m) {
     if ($name -eq 'SysMain' -and -not $m.allSsd) { Keep 'SysMain' 'a hard disk benefits from prefetch'; continue }
     $mode = if ($script:ExtremeOff -contains $name) { 'Disabled' } else { 'Manual' }
     if (& $exists $name) { Set-ServiceStart $name $mode $why }
-    foreach ($inst in @($all | Where-Object { $_.Name -like ($name + '_*') -and $_.Status -eq 'Running' })) { try { Stop-Service -Name $inst.Name -Force -ErrorAction Stop -WarningAction SilentlyContinue } catch { } }
+    foreach ($inst in @($all | Where-Object { $_.Name -like ($name + '_*') -and $_.Status -eq 'Running' })) { try { Stop-Service -Name $inst.Name -Force -NoWait -ErrorAction Stop -WarningAction SilentlyContinue } catch { } }
   }
   # The shell, drawn plain: no transparency, no animations, no shadows, no badges, no toasts, no search box.
   Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize' 'EnableTransparency' 0
