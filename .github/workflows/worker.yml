@@ -156,6 +156,26 @@ jobs:
           sed -i "s/PASTE_YOUR_DATABASE_ID_HERE/$id/" wrangler.toml
           echo "CLOUDFLARE_D1_ID=$id" >> "$GITHUB_ENV"
 
+      # A new account has no workers.dev address until one is registered, and a non-interactive deploy
+      # cannot ask; so it is registered here, once, with a name built from the product and the account.
+      - name: Register the workers.dev address
+        if: steps.ready.outputs.ready == 'true'
+        run: |
+          api="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain"
+          sub="$(curl -sS --max-time 20 -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$api" \
+            | python3 -c 'import sys,json; print((json.load(sys.stdin).get("result") or {}).get("subdomain") or "")' 2>/dev/null || true)"
+          if [ -n "$sub" ]; then echo "workers.dev address already registered: $sub.workers.dev"; exit 0; fi
+          short="${CLOUDFLARE_ACCOUNT_ID:0:6}"
+          for try in "omnidx-tune" "omnidx-tune-$short" "omnidx-$short" "omnidx-$CLOUDFLARE_ACCOUNT_ID"; do
+            out="$(curl -sS --max-time 20 -X PUT -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H 'Content-Type: application/json' "$api" -d "{\"subdomain\":\"$try\"}")"
+            if printf '%s' "$out" | python3 -c 'import sys,json; d=json.load(sys.stdin); sys.exit(0 if d.get("success") else 1)' 2>/dev/null; then
+              echo "workers.dev address registered: $try.workers.dev"; exit 0
+            fi
+            echo "$try was not accepted: $(printf '%s' "$out" | python3 -c 'import sys,json; print("; ".join(e.get("message","") for e in json.load(sys.stdin).get("errors",[])))' 2>/dev/null)"
+          done
+          echo "::error title=No workers.dev address::Could not register one. Register it once by hand: dash.cloudflare.com > Workers & Pages > Overview > 'Your subdomain', then run this workflow again."
+          exit 1
+
       # On a scheduled run, deploy only when the Worker is not answering.
       - name: Health check (scheduled runs)
         id: health
@@ -192,7 +212,8 @@ jobs:
       - name: Deploy
         if: steps.ready.outputs.ready == 'true' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
         # The build and the time go in as plain variables, so /v1/health can say which deploy is answering.
-        run: npx wrangler deploy --var DEPLOYED_SHA:"${GITHUB_SHA::7}" --var DEPLOYED_AT:"$(date -u +%Y-%m-%dT%H:%MZ)" 2>&1 | tee deploy.log
+        # pipefail: a deploy that fails must fail this step, not hide behind tee.
+        run: set -o pipefail; npx wrangler deploy --var DEPLOYED_SHA:"${GITHUB_SHA::7}" --var DEPLOYED_AT:"$(date -u +%Y-%m-%dT%H:%MZ)" 2>&1 | tee deploy.log
 
       # The address, three ways: the deploy output prints it; the account's
       # workers.dev subdomain names it; the WORKER_URL variable overrides both.
