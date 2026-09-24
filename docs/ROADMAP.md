@@ -102,7 +102,12 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   feature-on-demand packages ship under; the hint for the Media Player is
   now the bare word, because the 1.63.0 hint would have skipped it on a
   Windows 11 PC. The printer, device and Secure Boot reads lost their
-  module loads the same way as 1.62.0's.
+  module loads the same way as 1.62.0's. Measured: the cold read 9.6 s to
+  3.9 s and the warm read 3.7 s to 2.4 s; the free look 15.7 s to 11.7 s,
+  of which the pieces lap is still 9.9 s, and with no DISM call left in it
+  that is the optional-feature class starting the servicing stack cold. The
+  next discovery step asks whether the six feature states are in the
+  component store's registry too.
 - **The moving background**: one canvas behind every page, hard black,
   purple shades and small purple objects at different depths that drift,
   slide with the scroll and lean toward the pointer; still under reduced

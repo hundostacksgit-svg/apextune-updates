@@ -143,7 +143,7 @@
       <h3>Every Windows piece decided from the component store, and three fewer module loads in the read</h3>
       <ul class="tick">
         <li>1.63.0 still asked DISM about two names on the build machine, and those two carried its whole cold start (13.1 s of the look). Math Input Panel's package name came out of the check's discovery step; WordPad, Fax and Scan and the client name of the old Media Player are the names their feature-on-demand packages ship under. The old Media Player matters: its package is named differently on Windows 11 than on the build machine, and the previous hint would have skipped it on a buyer's PC. Anything the store mentions under an unknown name still goes to DISM</li>
-        <li>The printer list, the device listing and the Secure Boot flag are read from their classes and the boot-time flag instead of loading three modules; the cmdlets remain the fallback. The cold read's slowest lap was the printer listing at 2.3 s</li>
+        <li>The printer list, the device listing and the Secure Boot flag are read from their classes and the boot-time flag instead of loading three modules; the cmdlets remain the fallback. The cold read's slowest lap was the printer listing at 2.3 s. Measured on the build machine: the cold read 9.6 s to 3.9 s, the warm read 3.7 s to 2.4 s, the free look 15.7 s to 11.7 s</li>
       </ul>
     </div>
     <div class="card reveal d1" style="margin-top:16px">
