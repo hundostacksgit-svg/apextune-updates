@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.68.0'
+$script:Version = '1.69.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -1677,6 +1677,8 @@ function Debloat($m) {
   # per call and each took ten to fifteen seconds on the build machine.
   $batched = $false
   if (@($plan.caps).Count -gt 1) {
+    # The one step that takes a while, said before it starts: sixteen to forty-four seconds on the build machine, most of the run.
+    Say ("  Removing {0} Windows pieces in one DISM session. This is the slow part of the run: about half a minute, sometimes more, with nothing on screen until it ends." -f @($plan.caps).Count)
     $dargs = @('/online', '/Remove-Capability') + @($plan.caps | ForEach-Object { "/CapabilityName:$($_.name)" }) + @('/NoRestart', '/Quiet')
     $dsw = [System.Diagnostics.Stopwatch]::StartNew()
     & dism.exe @dargs *>&1 | Out-Null
