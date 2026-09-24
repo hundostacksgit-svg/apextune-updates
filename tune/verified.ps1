@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.70.0'
+$script:Version = '1.71.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -1696,10 +1696,33 @@ function Debloat($m) {
     }
   }
   $dtimes['pieces'] = [math]::Round($dt.Elapsed.TotalSeconds, 1); $dt.Restart()
-  foreach ($f in $plan.feats) {
-    # A capability removed a moment ago can take the feature with it (the 2009 Media Player is both); look again before touching it.
+  # The features in one DISM session as well: one session per feature cost about seven seconds each on the build
+  # machine, and a Windows 10 PC has four to switch off. The cmdlets, one at a time, are the fallback. A capability
+  # removed a moment ago can take a feature with it (the 2009 Media Player is both), so what is still enabled is
+  # checked first, in one read of the class; DISM by name is the fallback there too.
+  $todo = @()
+  if (@($plan.feats).Count) {
+    $fstate = $null
+    try { $fstate = @{}; foreach ($o in @(Get-CimInstance -ClassName Win32_OptionalFeature -OperationTimeoutSec 60 -ErrorAction Stop)) { $fstate["$($o.Name)"] = [int]$o.InstallState } } catch { $fstate = $null }
+    foreach ($f in $plan.feats) {
+      $on = $false
+      if ($null -ne $fstate) { $on = ($fstate.ContainsKey($f.name) -and $fstate[$f.name] -eq 1) }
+      else { $still = $null; try { $still = Get-WindowsOptionalFeature -Online -FeatureName $f.name -ErrorAction Stop } catch { }; $on = [bool]($still -and $still.State -eq 'Enabled') }
+      if ($on) { $todo += $f } else { Did ("already gone: {0}" -f $f.what) }
+    }
+  }
+  $fbatched = $false
+  if ($todo.Count -ge 1) {
+    $fargs = @('/online', '/Disable-Feature') + @($todo | ForEach-Object { "/FeatureName:$($_.name)" }) + @('/NoRestart', '/Quiet')
+    $fsw = [System.Diagnostics.Stopwatch]::StartNew()
+    & dism.exe @fargs *>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0 -or $LASTEXITCODE -eq 3010) { $fbatched = $true; foreach ($f in $todo) { Record @{ type = 'feature'; name = $f.name }; Did ("off: {0}" -f $f.what) }; Say ("  ({0} features in one DISM session, {1} s)" -f $todo.Count, [int]$fsw.Elapsed.TotalSeconds) }
+    else { Say ("  (DISM would not take the features together, exit {0}; one at a time)" -f $LASTEXITCODE) }
+  }
+  foreach ($f in $(if ($fbatched) { @() } else { $todo })) {
+    # A batch that stopped part way may have taken this one already.
     $still = $null; try { $still = Get-WindowsOptionalFeature -Online -FeatureName $f.name -ErrorAction Stop } catch { }
-    if (-not $still -or $still.State -ne 'Enabled') { Did ("already gone: {0}" -f $f.what); continue }
+    if (-not $still -or $still.State -ne 'Enabled') { Record @{ type = 'feature'; name = $f.name }; Did ("off: {0}" -f $f.what); continue }
     # The cmdlet warns "Restart is suppressed because NoRestart is specified" on every call; the run's own Done line says restart.
     try { Disable-WindowsOptionalFeature -Online -FeatureName $f.name -NoRestart -WarningAction SilentlyContinue -ErrorAction Stop | Out-Null; Record @{ type = 'feature'; name = $f.name }; Did ("off: {0}" -f $f.what) } catch { Warn ("Could not switch off {0} ({1})." -f $f.what, $_.Exception.Message) }
   }
