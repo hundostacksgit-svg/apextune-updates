@@ -3,34 +3,34 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Terms, privacy and money — OmniDx Tune</title>
-<meta name="description" content="What you buy, what it costs, why every sale is final, what leaves your PC and where it is kept, and what OmniDx Tune does to a PC. Plain words, one page.">
+<title>Undervolt, not overclock — OmniDx Tune</title>
+<meta name="description" content="How to undervolt an NVIDIA or AMD graphics card and a Ryzen or Intel CPU, set a frame cap that stays smooth, and test it properly. Cooler, quieter, the same frames or more held for longer. No overclocking.">
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="../assets/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="../assets/icons/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
-<link rel="canonical" href="https://omnidx.net/studio/terms/">
-<meta property="og:url" content="https://omnidx.net/studio/terms/">
+<link rel="canonical" href="https://omnidx.net/studio/undervolt/">
+<meta property="og:url" content="https://omnidx.net/studio/undervolt/">
 <meta property="og:image" content="https://omnidx.net/studio/assets/og-card.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="OmniDx: the eagle mark and the OMNIDX wordmark in purple on black, and the line: one command, Windows cut down to what your games need.">
 <meta name="twitter:image" content="https://omnidx.net/studio/assets/og-card.jpg">
-<meta name="twitter:title" content="Terms, privacy and money — OmniDx Tune">
-<meta name="twitter:description" content="What you buy, why every sale is final, what leaves your PC and where it is kept. Plain words, one page.">
+<meta name="twitter:title" content="Undervolt, not overclock — OmniDx Tune">
+<meta name="twitter:description" content="Undervolt your GPU and CPU the safe way, set a smooth frame cap, and test it. Cooler, quieter, same frames.">
 <meta property="og:site_name" content="OmniDx Tune">
-<meta property="og:title" content="Terms, privacy and money — OmniDx Tune">
-<meta property="og:description" content="What you buy, why every sale is final, what leaves your PC and where it is kept. Plain words, one page.">
+<meta property="og:title" content="Undervolt, not overclock — OmniDx Tune">
+<meta property="og:description" content="Undervolt your GPU and CPU the safe way, set a smooth frame cap, and test it. Cooler, quieter, same frames.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preload" as="image" href="../assets/logo/omnidx-logo-800.webp" type="image/webp">
 <link rel="stylesheet" href="../assets/studio.css">
-<style>.terms-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr))}</style>
 <script>
 (function(){try{var t=localStorage.getItem('omnidx.theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
 </script>
 </head>
 <body>
+<div class="aurora" aria-hidden="true"><div class="grid"></div></div>
 <!-- chrome:nav -->
 <nav class="nav">
   <div class="wrap">
@@ -127,154 +127,73 @@
   </div>
 </div>
 <!-- /chrome:nav -->
+
 <header class="hero" style="padding:64px 0 30px">
   <div class="wrap center">
-    <div class="eyebrow"><span class="pulse"></span>Last changed 24 September 2026</div>
-    <h1 style="font-size:clamp(34px,5.6vw,58px)">Terms, privacy and money</h1>
+    <div class="eyebrow"><span class="pulse"></span>Nothing to buy on this page</div>
+    <h1 style="font-size:clamp(34px,5.6vw,58px)">Undervolt, not overclock.</h1>
     <p class="lede">
-      One page, in plain words, because a thing that asks for admin rights and a card number
-      owes you that. If anything here and the rest of the site disagree, this page wins.
+      A modern graphics card and CPU already boost as high as their heat and power limits allow. Give them less
+      voltage for the same clock and they run cooler, quieter, and hold that clock for longer. An overclock does the
+      opposite: more heat and more voltage for frames you cannot see. The tune never touches voltage; this is how you
+      do it yourself, and the tune's report says which parts apply to your PC.
     </p>
   </div>
 </header>
 
-<!-- ==================== buying ==================== -->
-<section id="buying" data-rail="What you buy">
+<section id="gpu-nvidia" data-rail="NVIDIA">
   <div class="wrap">
-    <div class="section-head reveal">
-      <h2>What you are buying</h2>
-      <p>A key, not a program. The script is public; the key is what makes it run on your PC.</p>
-    </div>
-    <div class="grid grid-2 terms-grid">
-      <div class="card reveal">
-        <div class="card-icon">🔑</div>
-        <h3>One key, one PC</h3>
-        <p>OmniDx Tune is $19.99, paid once, for a key that runs the tune on one PC for as long as you own it: as many times as you like, after every Windows update, free. Squad is $39.99, paid once, for three keys, one PC each: one for you, two to give away. A key locks to the first PC that runs it; a second PC on the same key is refused.</p>
-      </div>
-      <div class="card reveal d1">
-        <div class="card-icon">🙅</div>
-        <h3>What a key is not</h3>
-        <p>Not for resale, not for a shop of "PC optimisation" clients, not for sharing beyond the PCs it covers. A key from an order that Square refunds or charges back stops working; the settings it made stay until you undo them. The script itself is readable by anyone, on purpose, and reading it needs no key.</p>
-      </div>
-      <div class="card reveal d2">
-        <div class="card-icon">🖥️</div>
-        <h3>Where it runs</h3>
-        <p>Windows 10 and Windows 11, on a PC you own or are allowed to administer. Not a work laptop somebody else manages, not a school machine, not a PC where a game's or a tournament's rules forbid changing system settings. It changes only Windows' own settings and never a game's files, but the rules you play under are yours to keep.</p>
-      </div>
-      <div class="card reveal d3">
-        <div class="card-icon">🧑</div>
-        <h3>Who you are dealing with</h3>
-        <p>OmniDx is one person, named on the <a href="../trust/#who">trust page</a>, selling through Square. The support address is at the bottom of every page and in the key email; replies come from the same person who wrote the script.</p>
-      </div>
+    <div class="section-head reveal"><h2>An NVIDIA card: flatten the curve.</h2>
+      <p>Twenty minutes, with MSI Afterburner (free). Every step is undone by the reset button.</p></div>
+    <div class="grid grid-2">
+      <div class="card reveal"><h3>1. Find the clock it holds</h3><p>Play a demanding game for ten minutes with Afterburner's overlay or graph open. Note the core clock the card settles at under load.</p></div>
+      <div class="card reveal d1"><h3>2. Open the curve</h3><p>In Afterburner press <span class="mono">Ctrl+F</span>. Each point is a voltage and the clock the card runs at that voltage.</p></div>
+      <div class="card reveal d2"><h3>3. Pick a lower voltage</h3><p>Take a point around 0.90 V on a 30 or 40 series card (0.95 V on older ones). Drag it up to the clock from step 1. Select every point to its right and pull them level with it (hold Shift and drag, then press L on the point to lock it on newer versions). Apply.</p></div>
+      <div class="card reveal d3"><h3>4. Test, and step back once</h3><p>Twenty minutes of the heaviest game you play. A crash, a driver reset or artefacts mean that clock needs more voltage: drop the point by a step and test again. Save it as a profile and tick "apply at startup".</p></div>
     </div>
   </div>
 </section>
 
-<!-- ==================== money ==================== -->
-<section id="money" data-rail="Money">
+<section id="gpu-amd" data-rail="AMD and Intel">
   <div class="wrap">
-    <div class="section-head reveal">
-      <h2>Money: paid once, and every sale is final</h2>
-      <p>Paid once through Square. Nothing renews. There is no account to close. There is no refund, and here is why that is fair.</p>
-    </div>
-    <div class="grid grid-2 terms-grid">
-      <div class="card reveal">
-        <div class="card-icon">💳</div>
-        <h3>Paying</h3>
-        <p>Square takes the payment; the card details go to Square and never to us. The moment Square confirms the payment the key is issued and shown on the page Square sends you to; when emailing is switched on it also goes to the email you typed at checkout. Prices are in US dollars; your bank sets any conversion.</p>
-      </div>
-      <div class="card reveal d1">
-        <div class="card-icon">🔒</div>
-        <h3>All sales are final</h3>
-        <p>The key is delivered on the page the moment you pay and it is yours for as long as you own the PC, so there is nothing to send back and no refund for changing your mind. Look before you buy: the <a href="../download/#report">free report mode</a> runs the same script on your PC, lists every change it would make and makes none of them, with no key and nothing to pay. A refund or chargeback that reaches Square anyway switches the order's keys off; a tuned PC keeps its settings and its undo either way.</p>
-      </div>
-      <div class="card reveal d2">
-        <div class="card-icon">📦</div>
-        <h3>If something is wrong</h3>
-        <p>Write to the support address. A key that will not take on your PC is fixed, moved or reissued until it works; a PC that the tune broke and undo did not put right is helped the same day, with the undo file and the run's log. What is fixed is the key and the PC, not the price: "I got fewer frames than I hoped" is a conversation, and usually the BIOS checklist, because frame rates are never promised.</p>
-      </div>
-      <div class="card reveal d3">
-        <div class="card-icon">🔁</div>
-        <h3>A new PC</h3>
-        <p>A key moves to a new PC from the <a href="../activate/">key page</a> by yourself, with your order or receipt number, at a sensible interval; more often than that is a support email, answered the same day. A new board or a fresh Windows on the same board counts as the same PC.</p>
-      </div>
+    <div class="section-head reveal"><h2>An AMD or Intel card: voltage down in small steps.</h2></div>
+    <div class="grid grid-2">
+      <div class="card reveal"><h3>AMD Radeon</h3><p><b>AMD Software &rsaquo; Performance &rsaquo; Tuning &rsaquo; Custom</b>, turn on GPU Tuning and Advanced Control. Lower the voltage in small steps, twenty minutes of a game each, and stop one step above the first crash. On RDNA 3 and 4 cards the power-limit slider can also go to its maximum without adding voltage.</p></div>
+      <div class="card reveal d1"><h3>Intel Arc</h3><p><b>Intel Graphics Software &rsaquo; Performance</b>: a small voltage offset is where Arc gains, tested the same way. The frame limiter is in the same panel.</p></div>
     </div>
   </div>
 </section>
 
-<!-- ==================== privacy ==================== -->
-<section id="privacy" data-rail="Privacy">
+<section id="cpu" data-rail="The CPU">
   <div class="wrap">
-    <div class="section-head reveal">
-      <h2>What leaves your PC, and where it is kept</h2>
-      <p>The full list. There is no analytics script on this site and no tracking cookie.</p>
-    </div>
-    <div class="grid grid-2 terms-grid">
-      <div class="card reveal">
-        <div class="card-icon">🧾</div>
-        <h3>From the purchase</h3>
-        <p>Square passes us the order id, the short receipt number, the email address you typed at checkout and the amount. That is how the key is issued, found again from your receipt, and emailed when emailing is on. We never see the card.</p>
-      </div>
-      <div class="card reveal d1">
-        <div class="card-icon">🖥️</div>
-        <h3>From the key check</h3>
-        <p>When the script runs it sends the key and a fingerprint of the PC: a hash of the board serial, the system id and the CPU id, which identifies the machine without describing it. With it go the CPU and GPU names, the Windows build and the script version, so your own machines can be told apart on the key page. Nothing else leaves the PC: the report, the logs, the backups and the undo stay in <span class="mono">C:\OmniDx</span>.</p>
-      </div>
-      <div class="card reveal d2">
-        <div class="card-icon">🌐</div>
-        <h3>From the site</h3>
-        <p>Your key, once issued, is remembered in your own browser so the key page can show it again, and so is the light-or-dark choice; both are on your device, not ours. The star rating at the foot of the page, if you use it, sends the stars, your note and a random id for the device so one device counts once. No analytics, no advertising pixels, no cookies from anyone else.</p>
-      </div>
-      <div class="card reveal d3">
-        <div class="card-icon">🗄️</div>
-        <h3>Where it lives, for how long</h3>
-        <p>The licence table (keys, orders, the checkout email, the machine fingerprints) is a Cloudflare database; the site is on GitHub Pages; when emailing is switched on, the key emails go through the owner's Gmail or Resend. The licence row is kept for as long as the key is meant to work, which is as long as you own the PC. Ask and it is deleted, which switches the key off. Support emails are kept while they are needed to help you and then no longer.</p>
-      </div>
-    </div>
-    <p class="small muted reveal" style="margin-top:18px;max-width:70ch">Your rights, without the form: ask what is held against your order or key and it is sent to you; ask for it to be deleted and it is; ask for the key to be moved or the email on file changed and it is. The support address does all three.</p>
-  </div>
-</section>
-
-<!-- ==================== the PC ==================== -->
-<section id="pc" data-rail="Your PC">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <h2>What it does to your PC, and what we promise</h2>
-      <p>It changes settings. That is the product. Here is the shape of the responsibility.</p>
-    </div>
-    <div class="grid grid-2 terms-grid">
-      <div class="card reveal">
-        <div class="card-icon">🛠️</div>
-        <h3>What it changes</h3>
-        <p>Startup apps, services, scheduled tasks, preinstalled apps, telemetry switches, the power plan, network and scheduler settings, visual effects, and per-game profiles, every one listed with its reason on the <a href="../what-it-touches/">what-it-touches page</a>. It runs as administrator because those settings need it. It makes a System Restore point and an undo file first, and it never touches Defender, the firewall, Secure Boot, your drivers or your files.</p>
-      </div>
-      <div class="card reveal d1">
-        <div class="card-icon">🤝</div>
-        <h3>What we promise</h3>
-        <p>That the script does what this site says and nothing more; that every change has an undo; that the copy your command fetches is the exact one that passed the published checks; that a key you paid for is made to work on your PC, moved or reissued by support until it does. Frame rates are not promised: they depend on the game, the hardware and the BIOS, and the report is honest about that.</p>
-      </div>
-      <div class="card reveal d2">
-        <div class="card-icon">📋</div>
-        <h3>What is yours</h3>
-        <p>Backing up what matters before changing a PC, reading the report, doing the BIOS checklist or not, and deciding whether Extreme is for you. The tune asks before anything that costs a convenience, and undo puts it all back, but you are the administrator of your own machine.</p>
-      </div>
-      <div class="card reveal d3">
-        <div class="card-icon">⚖️</div>
-        <h3>The legal sentence</h3>
-        <p>OmniDx Tune is provided as described on this site; our liability for any loss arising from its use is limited to the amount you paid, as far as the law where you live allows, and nothing here takes away rights that law gives you. If a court finds one part of this page unenforceable, the rest stands.</p>
-      </div>
+    <div class="section-head reveal"><h2>The CPU: in the BIOS, once.</h2></div>
+    <div class="grid grid-2">
+      <div class="card reveal"><h3>Ryzen: Curve Optimizer</h3><p><b>BIOS &rsaquo; Precision Boost Overdrive &rsaquo; Curve Optimizer &rsaquo; All Cores, Negative</b>. Start at 15 and go further in steps of 5 while it stays stable; every chip is different. An hour of a game and a stress test after each change; any crash, reboot or odd error means one step back. Lower temperature, higher sustained boost.</p></div>
+      <div class="card reveal d1"><h3>Intel 13th and 14th gen: the BIOS first</h3><p>Install the newest BIOS for your board before anything else: it carries the microcode that stops these chips degrading. Then leave the voltage to the board's default profile unless it offers a negative offset; a small one is the same idea as Curve Optimizer.</p></div>
     </div>
   </div>
 </section>
 
-<!-- ==================== changes ==================== -->
-<section id="changes" data-rail="Changes">
+<section id="cap" data-rail="Frame cap">
   <div class="wrap">
-    <div class="section-head reveal">
-      <h2>Changes to this page</h2>
-      <p>The date at the top moves when it changes, and the <a href="../changelog/">changelog</a> says what changed. A change never reaches back to alter the terms you paid under.</p>
+    <div class="section-head reveal"><h2>The frame cap that stays smooth.</h2>
+      <p>With a variable-refresh monitor (G-Sync or FreeSync), cap the frame rate a little under the refresh rate so it never leaves the range the monitor smooths.</p></div>
+    <div class="grid grid-2">
+      <div class="card reveal"><h3>NVIDIA</h3><p><b>NVIDIA app or Control Panel &rsaquo; Manage 3D settings &rsaquo; Max Frame Rate</b>: three below the refresh rate. G-Sync on, V-Sync on in the driver and off in the game.</p></div>
+      <div class="card reveal d1"><h3>AMD</h3><p><b>AMD Software &rsaquo; Gaming &rsaquo; Radeon Chill</b> on, with the minimum and maximum both three below the refresh rate, and FreeSync on.</p></div>
     </div>
-    <p class="small reveal">Questions about any of it: <span class="foot-support" data-support="OmniDx Tune — a question about the terms"></span></p>
+  </div>
+</section>
+
+<section id="not" data-rail="What not to do">
+  <div class="wrap">
+    <div class="section-head reveal"><h2>What not to do.</h2></div>
+    <div class="grid grid-2">
+      <div class="card reveal"><h3>No overclock on top</h3><p>More voltage and more heat for frames you cannot see, and the first thing a crash points at.</p></div>
+      <div class="card reveal d1"><h3>No untested profile at startup</h3><p>Apply at startup only after it has survived a real session. An unstable profile at boot is a harder fix.</p></div>
+      <div class="card reveal d2"><h3>Not on a laptop's GPU without care</h3><p>Many laptops lock the curve; the maker's own performance mode is the safer lever there.</p></div>
+      <div class="card reveal d3"><h3>The tune does the rest</h3><p>Power plan, services, network, game files, and a BIOS checklist for your board; never voltage. <a href="../pricing/">What the tune does</a>.</p></div>
+    </div>
   </div>
 </section>
 

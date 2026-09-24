@@ -22,6 +22,10 @@ pieces fit and the short list of what still needs a human to switch on.
 | Support | `docs/TUNE-SUPPORT.md` | The replies, and where every file lives on the buyer's PC. |
 | Promotion | `docs/TUNE-PROMOTION.md` | Bios, hooks, rules, where to post. |
 | Transparency | `tools/tune-touches.py` → `studio/what-it-touches/` | The page listing every service, task, app and value, generated from the script. |
+| The fresh-install page | `studio/fresh/`, `studio/assets/fresh.js` | Makes `autounattend.xml` in the browser: local account, setup screens skipped, the free look on the desktop at first sign-in, never a disk named. Checked by the browser test (well-formed, three passes, names refused, markup escaped). |
+| The undervolt guide | `studio/undervolt/` | GPU and CPU undervolting and frame caps, step by step; nothing to buy. The report's undervolt notes point here. |
+| Custom builds, compared | `studio/builds/` | What stripped Windows builds turn off, what it costs, and where the tune stops. No names. |
+| The front-page tour | `studio/index.html#tour`, `studio/assets/tour.js` | Eight slides of what a buyer gets, from real artifacts: the published run log, `app.png`, `ci-card.png`. Checked by the browser test. |
 | The by-hand guide | `studio/guide/` | Everything the tune does, as a list a person can do themselves; nothing to buy on it. The one link that is fine to post in a help thread. |
 | The card | `C:\OmniDx\card-<date>.png` on the buyer's PC; `studio/assets/ci-card.png` from the build machine | The before and after on one picture, labelled as one PC's, for posting. Status mode writes one with the after-restart number. |
 | The roadmap | `docs/ROADMAP.md` | What was surveyed, what to build next in order, and what was looked at and left alone, with reasons. |

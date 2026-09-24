@@ -62,7 +62,7 @@ try {
   console.log('The site, in a browser');
 
   /* 1. Every page, two widths. */
-  for (const p of ['', 'pricing/', 'download/', 'trust/', 'changelog/', 'what-it-touches/', 'terms/', 'activate/', 'admin/', 'account/']) {
+  for (const p of ['', 'pricing/', 'download/', 'trust/', 'changelog/', 'what-it-touches/', 'terms/', 'activate/', 'admin/', 'account/', 'guide/', 'fresh/', 'undervolt/', 'builds/']) {
     for (const width of [1280, 390]) {
       const page = await openPage({ viewport: { width, height: 900 } });
       const errs = watch(page);
@@ -96,6 +96,54 @@ try {
     }
   }
 
+  /* 1a. The front page's tour moves on the arrows and the dots, keeps the slides off screen inert, and pauses. The
+     fresh-install page builds a well-formed answer file, refuses a name Windows keeps for itself, and never names a disk. */
+  {
+    const page = await openPage({ viewport: { width: 1280, height: 900 } });
+    const errs = watch(page);
+    await page.goto(`${base}/studio/`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('#tour-deck[data-ready]');
+    const on = () => page.evaluate(() => [...document.querySelectorAll('.tour-slide')].findIndex((s) => s.classList.contains('on')));
+    await page.click('#tour-deck [data-dir="1"]'); const a = await on();
+    await page.click('#tour-deck [data-go="6"]'); const b = await on();
+    const inert = await page.evaluate(() => [...document.querySelectorAll('.tour-slide')].filter((s) => s.inert && s.getAttribute('aria-hidden') === 'true').length);
+    await page.click('#tour-deck [data-tour-pause]');
+    const paused = await page.getAttribute('#tour-deck [data-tour-pause]', 'aria-pressed');
+    const run = await page.evaluate(() => document.querySelector('[data-tour-run]').textContent);
+    expect(a === 1 && b === 6 && inert === 7 && paused === 'true' && /== Reading this PC/.test(run) && !errs.length,
+      `front page tour: next goes to 2, a dot to 7, seven slides inert, pause holds, the run slide reads the published log${errs.length ? ' (' + errs.join('; ') + ')' : ''}`);
+    await page.close();
+  }
+  {
+    const page = await openPage({ viewport: { width: 1280, height: 900 } });
+    const errs = watch(page);
+    await page.goto(`${base}/studio/fresh/`, { waitUntil: 'networkidle' });
+    await page.waitForSelector('#fresh-form[data-ready]');
+    const parse = () => page.evaluate(() => {
+      const xml = document.querySelector('#fresh-xml').textContent;
+      const d = new DOMParser().parseFromString(xml, 'application/xml');
+      const ns = 'urn:schemas-microsoft-com:unattend';
+      return { ok: !d.querySelector('parsererror') && d.documentElement.localName === 'unattend',
+        name: d.getElementsByTagNameNS(ns, 'Name')[0]?.textContent, passes: [...d.getElementsByTagNameNS(ns, 'settings')].map((s) => s.getAttribute('pass')).join(','),
+        disk: /DiskConfiguration|InstallTo|DiskID|CreatePartition/.test(xml), cmd: d.getElementsByTagNameNS(ns, 'CommandLine')[0]?.textContent || '' };
+    });
+    const first = await parse();
+    await page.fill('#fresh-form input[name=account]', 'Ada & "Co"');
+    const bad = await page.evaluate(() => ({ shown: !document.querySelector('#fresh-errors').hidden, off: document.querySelector('#fresh-download').disabled }));
+    await page.fill('#fresh-form input[name=account]', 'Administrator');
+    const reserved = await page.evaluate(() => !document.querySelector('#fresh-errors').hidden);
+    await page.fill('#fresh-form input[name=account]', 'Ada <x>');
+    const bad2 = await page.evaluate(() => !document.querySelector('#fresh-errors').hidden);
+    await page.fill('#fresh-form input[name=account]', 'Ada');
+    await page.fill('#fresh-form input[name=password]', 'p<a>&ss');
+    const second = await parse();
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#fresh-download')]);
+    expect(first.ok && first.name === 'Player' && first.passes === 'windowsPE,specialize,oobeSystem' && !first.disk && /-EncodedCommand [A-Za-z0-9+/=]+$/.test(first.cmd)
+      && bad.shown && bad.off && reserved && bad2 && second.ok && second.name === 'Ada' && dl.suggestedFilename() === 'autounattend.xml' && !errs.length,
+      `fresh install: a well-formed answer file with three passes and no disk named, a bad or reserved name refused, a password with markup escaped, the download named autounattend.xml${errs.length ? ' (' + errs.join('; ') + ')' : ''}`);
+    await page.close();
+  }
+
   /* 1b. Accessibility: WCAG A and AA rules from axe-core over the same pages, at phone width. Skipped, and said so, when axe is not installed. */
   {
     const axePath = path.join(root, 'node_modules/axe-core/axe.min.js');
@@ -103,7 +151,7 @@ try {
     else {
       const axe = fs.readFileSync(axePath, 'utf8');
       // The published report of the build machine's run is a page every buyer opens; it is scanned too, once the check has published one.
-      const pages = ['', 'pricing/', 'download/', 'trust/', 'changelog/', 'what-it-touches/', 'terms/', 'activate/', 'admin/'];
+      const pages = ['', 'pricing/', 'download/', 'trust/', 'changelog/', 'what-it-touches/', 'terms/', 'activate/', 'admin/', 'guide/', 'fresh/', 'undervolt/', 'builds/'];
       if (fs.existsSync(path.join(root, 'studio/assets/ci-report.html'))) pages.push('assets/ci-report.html');
       // Every site page is scanned in both themes (the sun button switches the whole palette); the report has one look, so it is scanned once.
       for (const p of pages) {

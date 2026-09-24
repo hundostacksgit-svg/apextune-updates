@@ -36,6 +36,14 @@ at their process count.
   again. Undo removes it.
 - It writes a BIOS checklist for your exact board. The RAM speed line alone
   is worth the price on most PCs.
+- It writes V-Sync off, motion blur off and the shadows players use straight
+  into Fortnite's, Apex's and CS2's own settings files. Backed up. Undoable.
+- Your GPU is thermal-throttling at idle and nothing told you. The free report
+  does, in one line, from NVIDIA's own tool.
+- Custom Windows builds get their number by turning off Defender and the
+  things anti-cheat needs. This gets most of the way with all of it on.
+- Clean install? A free answer file skips every setup screen and leaves the
+  free report on the desktop. Genuine Windows, nothing modified.
 
 ## Bios
 
@@ -153,6 +161,11 @@ get more FPS" threads with the twenty-second check, not the link.
 - "Where's your privacy policy / refund policy" → omnidx.net/studio/terms/,
   one page in plain words: what leaves the PC and where it is kept,
   all sales final and why, what a key is. Link it, do not paraphrase it.
+- "Why not just use a custom Windows build" → omnidx.net/studio/builds/, the
+  table: what they turn off (Defender, updates, the anti-cheat requirements),
+  what the tune leaves on. Never name a build; describe what it does.
+- "Does it overclock?" → no, never touches voltage; the undervolt guide is
+  free at omnidx.net/studio/undervolt/ and the report points to it.
 - "Prove it did anything" → the report's before and after, the after-restart
   line, and the boot time in Windows' own figures (status shows the last
   start next to the one from before the tune). Numbers from a real PC are
@@ -182,4 +195,8 @@ recorded": thirty runs in a table, each with its count before and after,
 its seconds and its free-look timing, plus the median line above it. Nobody
 else in this category shows a run history at all; when someone says "one
 lucky run", that table is the reply. That is enough raw footage for the
-first twenty posts.
+first twenty posts. Newer footage worth having: the front page's tour
+(omnidx.net/studio/#tour) scrolled slide by slide; the free report on a PC with
+Fortnite installed, listing the settings it would write into the game's file;
+the answer-file page making autounattend.xml; a fresh install coming up with no
+account screens and the free look on the desktop.
