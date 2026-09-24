@@ -39,6 +39,7 @@ PAGES = {
     'download/index.html': '../',
     'account/index.html': '../',
     'trust/index.html': '../',
+    'guide/index.html': '../',
     'what-it-touches/index.html': '../',
     'changelog/index.html': '../',
     'terms/index.html': '../',
@@ -100,6 +101,7 @@ MENU = [
         'items': [
             ('💬', 'FAQ', 'Anti-cheat, laptops, money, new PC', '{s}pricing/#faq'),
             ('🛡️', 'Is this safe? Is it a scam?', 'The straight answer, and how to check', '{s}trust/'),
+            ('📘', 'Do it by hand', 'The honest list, nothing to buy', '{s}guide/'),
             ('🚫', "What it won't touch", 'Defender, firewall, Secure Boot, your drivers', '{s}trust/#cant'),
             ('🔓', 'Paid but no key?', 'Your receipt number gets it', '{s}activate/'),
             ('🗒️', 'Changelog', 'What changed in each version', '{s}changelog/'),
