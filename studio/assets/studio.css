@@ -31,7 +31,7 @@
   --line-soft:#1b1430;
   --text:#f1ecff;
   --text-2:#b3a8cf;
-  --text-3:#7d7199;
+  --text-3:#8a7ea6;
   --ok:#30d38a;
   --warn:#ffc247;
   --bad:#ff5d6c;
@@ -53,7 +53,7 @@
   --line-soft:#e8e1f6;
   --text:#14092b;
   --text-2:#524871;
-  --text-3:#83789f;
+  --text-3:#6b6187;
   --blue-2:#7c3aed;
   --glow:rgba(139,92,246,.26);
   --shadow:0 20px 54px rgba(60,30,120,.14);
@@ -75,6 +75,8 @@ body{
 }
 img,svg,video{max-width:100%;display:block}
 a{color:var(--blue-2);text-decoration:none}
+/* A link inside running text is told apart by more than its colour. */
+p a,li a,.note a,.act-note a,td a{text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px}
 button{font:inherit;color:inherit}
 .wrap{max-width:var(--max);margin:0 auto;padding:0 22px}
 .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}

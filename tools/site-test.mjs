@@ -87,6 +87,24 @@ try {
     }
   }
 
+  /* 1b. Accessibility: WCAG A and AA rules from axe-core over the same pages, at phone width. Skipped, and said so, when axe is not installed. */
+  {
+    const axePath = path.join(root, 'node_modules/axe-core/axe.min.js');
+    if (!fs.existsSync(axePath)) ok('axe-core is not installed here, so the accessibility pass is skipped (the publish check installs it)');
+    else {
+      const axe = fs.readFileSync(axePath, 'utf8');
+      for (const p of ['', 'pricing/', 'download/', 'trust/', 'changelog/', 'what-it-touches/', 'terms/', 'activate/', 'admin/']) {
+        const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+        await page.goto(`${base}/studio/${p}`, { waitUntil: 'networkidle' });
+        await page.addScriptTag({ content: axe });
+        const res = await page.evaluate(async () => await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa'] } }));
+        const found = res.violations.map((v) => `${v.id} x${v.nodes.length} (${v.nodes[0].target[0]})`);
+        expect(!found.length, `studio/${p || 'index'}: no WCAG A or AA violation${found.length ? ': ' + found.join('; ') : ''}`);
+        await page.close();
+      }
+    }
+  }
+
   /* 2. The buy buttons and the key desk. */
   const closedNow = async (page) => page.evaluate(() => [...document.querySelectorAll('[data-buy]')].map((a) => a.classList.contains('is-closed')));
   {

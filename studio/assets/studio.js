@@ -209,7 +209,7 @@ function initRail() {
     rail.innerHTML = sections.map((el) => {
       const label = el.dataset.rail || el.querySelector('h1,h2,h3')?.textContent?.trim().slice(0, 26)
         || el.id.replace(/-/g, ' ');
-      return `<a href="#${esc(el.id)}" data-rail-to="${esc(el.id)}">
+      return `<a href="#${esc(el.id)}" data-rail-to="${esc(el.id)}" aria-label="${esc(label)}">
         <span class="lbl">${esc(label)}</span><span class="dot"></span></a>`;
     }).join('');
     document.body.appendChild(rail);
@@ -824,6 +824,9 @@ function initTune() {
       logs.forEach((el) => { el.textContent = t.trim(); el.hidden = false; const wrap = el.closest('[data-ci-log-wrap]'); if (wrap) wrap.hidden = false; });
     }).catch(() => {});
   }
+
+  // A box that scrolls sideways (a command, the comparison table, the build log) can take keyboard focus, so it can be scrolled without a mouse.
+  $$('.cmd code, .cmp-wrap, .ci-log, code[data-cmd]').forEach((el) => { if (!el.hasAttribute('tabindex')) el.tabIndex = 0; });
 
   // The last build-machine report, as a buyer sees it: linked where a page asks for it, and only once the check has published one.
   const reports = $$('[data-ci-report]');
