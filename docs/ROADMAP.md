@@ -125,8 +125,10 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   the build machine; the stop is requested and the run moves on, the count
   at the end already allowing for services still unwinding. The keep task
   still waits. Measured: 4.4 s, from 6.5 to 8.6 s over the five runs before,
-  same two processes gone. 1.68.0 puts the in-process cmdlet before the one
-  sc.exe process per service that was most of the rest.
+  same two processes gone. 1.68.0 put the in-process cmdlet before the one
+  sc.exe process per service, expecting the rest to fall: it did not (4.4 s
+  again), so the phase's floor is the service-control calls themselves and
+  the cmdlet-first order stays only because it is one process fewer.
 - **A history of every verified run** (1.68.0): the check appends each run's
   record to `studio/assets/ci-history.json` (thirty kept, seeded from the
   branch's history) and the trust page shows it as a table. One sample of
