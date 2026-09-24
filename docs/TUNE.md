@@ -507,8 +507,9 @@ Two guards in the full-tune step exist because of regressions the logs
 caught: the output must show a per-user template service being configured
 (`WpnUserService -> manual`), and the run must not record more than six
 fewer changes than the last published `ci-run.json`. A legitimate drop
-(say, an image that ships without a service) means adjusting the guard,
-never removing it. Diffing `studio/assets/ci-log.txt` between two CI
+(say, an image that ships without a service, or a rule that now leaves
+something alone, as 1.42.0's "a disabled service stays disabled" did)
+means adjusting the guard, never removing it. Diffing `studio/assets/ci-log.txt` between two CI
 commits (`git show <prev>:studio/assets/ci-log.txt`) is the quickest way
 to see what a change stopped doing.
 

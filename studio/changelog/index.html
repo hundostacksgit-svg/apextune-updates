@@ -129,6 +129,17 @@
 <section style="padding-top:26px">
   <div class="wrap" style="max-width:820px">
     <div class="card reveal">
+      <div class="eyebrow" style="margin-bottom:12px">v1.42.0 · September 2026</div>
+      <h3>Read from the build machine's own report</h3>
+      <ul class="tick">
+        <li>A service somebody already disabled stays disabled. The tune sets a few services to manual rather than off (search indexing, Superfetch, the diagnostic policy); on a PC where one of those was already disabled, manual would have been a step back on, and the build machine's report showed search indexing returning with eight processes exactly that way</li>
+        <li>The undo section of the report only names a System Restore point when one was made; when Windows refused (the warnings say so), it says the undo script is the way back</li>
+        <li>The report's big "processes before" number, its before-and-after table and the Done line now read one snapshot, so they agree to the process</li>
+        <li>A heading with nothing done under it (the key check, a skipped phase) stays out of the report's "What was done"</li>
+        <li>Small things the second run's log showed: the cache cmdlet's own "Deleting..." lines and the feature cmdlet's "Restart is suppressed" warning no longer leak into the log; a run with nothing to clear says so instead of "about 0 MB back"; a run that stopped no services no longer blames unwinding services for the count; a display reporting 1 Hz reads as "refresh unknown"; an empty "Keeps:" line reads "nothing extra"; Status says "1 change", and its "Last run in place" line skips a run that was undone</li>
+      </ul>
+    </div>
+    <div class="card reveal d1" style="margin-top:16px">
       <div class="eyebrow" style="margin-bottom:12px">v1.41.0 · September 2026</div>
       <h3>Read from the build machine's own log</h3>
       <ul class="tick">

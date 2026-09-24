@@ -89,13 +89,14 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.41.0'
+$script:Version = '1.42.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
 $script:Log = New-Object System.Collections.ArrayList
 $script:Warnings = New-Object System.Collections.ArrayList
 $script:Kept = New-Object System.Collections.ArrayList
+$script:RestorePointMade = $false
 $script:GamesFound = New-Object System.Collections.ArrayList
 $script:ExtremeDeclined = $false
 $script:Timer = [System.Diagnostics.Stopwatch]::StartNew()
@@ -307,6 +308,9 @@ function Set-ServiceStart([string]$name, [string]$start, [string]$why = '') {
   $want = switch ($start) { 'Disabled' { 'Disabled' } 'Manual' { 'Manual' } default { 'Automatic' } }
   if ($prev -eq 'Auto') { $prev = 'Automatic' }
   if ($prev -eq $want) { return }
+  # A service somebody already disabled is further off than manual. Moving it to manual would let the next
+  # thing that asks start it again: on the build machine, search indexing came back with eight processes that way.
+  if ($prev -eq 'Disabled' -and $want -eq 'Manual') { Did ("{0} already disabled; left that way" -f $name); return }
   $scStart = switch ($want) { 'Disabled' { 'disabled' } 'Manual' { 'demand' } default { 'auto' } }
   $out = & sc.exe config $name start= $scStart 2>&1
   if ($LASTEXITCODE -ne 0) {
@@ -403,7 +407,7 @@ $featsBack = New-Object System.Collections.ArrayList
 foreach ($rec in $files) {
 $changes = @(Get-Content $rec -Raw | ConvertFrom-Json | ForEach-Object { $_ })
 [array]::Reverse($changes)
-Write-Host ("Putting back {0} changes from {1}" -f $changes.Count, $rec)
+Write-Host ("Putting back {0} from {1}" -f $(if ($changes.Count -eq 1) { '1 change' } else { "$($changes.Count) changes" }), $rec)
 foreach ($c in $changes) {
   try {
     $deferred = $false
@@ -510,7 +514,8 @@ function Get-Machine {
   $ramGb = [math]::Round($cs.TotalPhysicalMemory / 1GB)
   $build = [int]$os.BuildNumber
   $win = if ($build -ge 22000) { 11 } else { 10 }
-  $refresh = ($gpus | ForEach-Object { $_.CurrentRefreshRate } | Where-Object { $_ -gt 0 } | Measure-Object -Maximum).Maximum
+  # A virtual display reports 1 Hz; anything under 24 is not a refresh rate a person set, so it reads as unknown.
+  $refresh = ($gpus | ForEach-Object { $_.CurrentRefreshRate } | Where-Object { $_ -ge 24 } | Measure-Object -Maximum).Maximum
   & $lap 'cim'
   $printers = @(Get-Printer -ErrorAction SilentlyContinue | Where-Object { $_.Name -notmatch 'Microsoft|OneNote|Fax|XPS|PDF' })
   & $lap 'printers'
@@ -589,10 +594,11 @@ function Show-Machine($m) {
   Say ("  RAM   {0} GB{1}{2}" -f $m.ramGb, $(if ($m.sticks) { ", $($m.sticks) stick$(if ($m.sticks -ne 1) { 's' })" } else { '' }), $(if ($m.ramNow) { ", $($m.ramNow) MT/s$(if ($m.ramRated -and $m.ramRated -ne $m.ramNow) { " of $($m.ramRated) rated" })" } else { '' }))
   Say ("  Board {0}  |  BIOS {1}" -f $m.board, $m.bios)
   Say ("  {0}{1}{2}, {3}" -f $(if ($m.laptop) { 'Laptop' } else { 'Desktop' }), $(if ($m.allSsd) { ', all SSD' } else { ', has a hard disk' }), $(if ($m.nvme) { ', NVMe' } else { '' }), $(if ($m.refresh) { "$($m.refresh) Hz" } else { 'refresh unknown' }))
-  Say ("  Keeps: {0}" -f (@(
+  $keeps = @(
     $(if ($m.printers) { "printer" }), $(if ($m.btDevices) { "Bluetooth ($($m.btDevices) paired)" }), $(if ($m.wifi) { "Wi-Fi" }),
     $(if ($m.touch) { "touch" }), $(if ($m.biometric) { "Windows Hello" }), $(if ($m.vpn) { "VPN" }), $(if ($m.xboxUsed -and -not $CutXbox) { "Xbox / Game Pass" }), $(if ($m.xboxPad -and -not $CutXbox) { "Xbox controller" }), $(if ($m.laptop) { "battery, hibernate" })
-  ) | Where-Object { $_ }) -join ', ')
+  ) | Where-Object { $_ }
+  Say ("  Keeps: {0}" -f $(if ($keeps.Count) { $keeps -join ', ' } else { 'nothing extra' }))
   Say ("  UEFI {0}, Secure Boot {1}, TPM {2}, memory integrity {3}" -f $m.uefi, $m.secureBoot, $m.tpm, $(if ($m.vbs) { 'on' } else { 'off' }))
 }
 
@@ -937,7 +943,7 @@ function Show-Status {
   }
   foreach ($f in $files) {
     $n = 0; try { $n = @(Get-Content $f.FullName -Raw | ConvertFrom-Json | ForEach-Object { $_ }).Count } catch { }
-    Say ("  Run {0}: {1} changes recorded" -f ($f.BaseName -replace '^changes-', ''), $n)
+    Say ("  Run {0}: {1} recorded" -f ($f.BaseName -replace '^changes-', ''), (Plural $n 'change' 'changes'))
   }
   if ($undone.Count) { Say ("  Runs in place: {0} ({1} undone earlier, in undo\done)." -f $files.Count, $undone.Count) }
   $r = Get-Drift -Files @($files | ForEach-Object { $_.FullName })
@@ -955,8 +961,10 @@ function Show-Status {
   else { Say "  Keep task: not set. Run the tune again and answer yes to keep it cut, or leave it; the tune holds until a big update either way." }
   $ar = Join-Path $script:Root 'after-restart.txt'
   if (Test-Path $ar) { $l = @(Get-Content $ar -ErrorAction SilentlyContinue) | Select-Object -Last 1; if ($l) { Say ("  After restart: {0}" -f $l) 'White' } }
-  $sum = Get-ChildItem $script:Root -Filter 'summary-*.json' -ErrorAction SilentlyContinue | Sort-Object Name -Descending | Select-Object -First 1
-  if ($sum) { try { $s = Get-Content $sum.FullName -Raw | ConvertFrom-Json; Say ("  Last run: {0} -> {1} processes, target about {2} after a restart" -f $s.before, $s.after, $s.target) } catch { } }
+  # The newest run still in place (its record is not in undo\done), so an undone Extreme does not speak for the tune.
+  $stamps = @($files | ForEach-Object { $_.BaseName -replace '^changes-', '' })
+  $sum = Get-ChildItem $script:Root -Filter 'summary-*.json' -ErrorAction SilentlyContinue | Where-Object { $stamps -contains ($_.BaseName -replace '^summary-', '') } | Sort-Object Name -Descending | Select-Object -First 1
+  if ($sum) { try { $s = Get-Content $sum.FullName -Raw | ConvertFrom-Json; Say ("  Last run in place: {0} -> {1} processes, target about {2} after a restart" -f $s.before, $s.after, $s.target) } catch { } }
   $bootNow = Get-BootSeconds
   if ($bootNow -ne $null) {
     $was = $null; if ($sum) { try { $was = (Get-Content $sum.FullName -Raw | ConvertFrom-Json).bootBefore } catch { } }
@@ -1080,6 +1088,7 @@ function New-Safety {
       Set-Reg 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore' 'SystemRestorePointCreationFrequency' 0
       Say "  Making a restore point (this can take a minute)..."
       Checkpoint-Computer -Description ("OmniDx Tune " + $script:Stamp) -RestorePointType MODIFY_SETTINGS -ErrorAction Stop
+      $script:RestorePointMade = $true
       Did "Restore point made. Windows can go back to this moment from Recovery."
     } catch {
       Warn ("Could not make a restore point ({0}). The undo script still records everything." -f $_.Exception.Message)
@@ -1487,7 +1496,8 @@ function Debloat($m) {
     # A capability removed a moment ago can take the feature with it (the 2009 Media Player is both); look again before touching it.
     $still = $null; try { $still = Get-WindowsOptionalFeature -Online -FeatureName $f.name -ErrorAction Stop } catch { }
     if (-not $still -or $still.State -ne 'Enabled') { Did ("already gone: {0}" -f $f.what); continue }
-    try { Disable-WindowsOptionalFeature -Online -FeatureName $f.name -NoRestart -ErrorAction Stop | Out-Null; Record @{ type = 'feature'; name = $f.name }; Did ("off: {0}" -f $f.what) } catch { Warn ("Could not switch off {0} ({1})." -f $f.what, $_.Exception.Message) }
+    # The cmdlet warns "Restart is suppressed because NoRestart is specified" on every call; the run's own Done line says restart.
+    try { Disable-WindowsOptionalFeature -Online -FeatureName $f.name -NoRestart -WarningAction SilentlyContinue -ErrorAction Stop | Out-Null; Record @{ type = 'feature'; name = $f.name }; Did ("off: {0}" -f $f.what) } catch { Warn ("Could not switch off {0} ({1})." -f $f.what, $_.Exception.Message) }
   }
   # Edge's add-ons: shopping, recommendations, Spotlight, feedback and reporting. Your tabs and settings are untouched.
   $edge = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge'
@@ -1529,10 +1539,12 @@ function Clear-Junk {
     Stop-Service wuauserv -Force -ErrorAction SilentlyContinue; Stop-Service bits -Force -ErrorAction SilentlyContinue
     Get-ChildItem "$env:SystemRoot\SoftwareDistribution\Download" -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
   } finally { Start-Service bits -ErrorAction SilentlyContinue; Start-Service wuauserv -ErrorAction SilentlyContinue }
-  try { Delete-DeliveryOptimizationCache -Force -ErrorAction Stop | Out-Null } catch { }
+  # The cmdlet narrates ("Deleting...", "Successfully deleted") on the information stream; every stream goes quiet.
+  try { Delete-DeliveryOptimizationCache -Force -ErrorAction Stop *> $null } catch { }
   $free1 = 0; try { $free1 = (Get-PSDrive -Name $drive -ErrorAction Stop).Free } catch { }
   $mb = [math]::Max(0, [math]::Round(($free1 - $free0) / 1MB))
-  Did ("Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about {0} MB back." -f $mb)
+  if ($mb -ge 1) { Did ("Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about {0} MB back." -f $mb) }
+  else { Did "Temp files, the Windows Update download cache and the peer-to-peer update cache checked: nothing older than a day to clear." }
   Say "  Windows.old (a previous Windows, up to 20 GB) is left alone; Settings > System > Storage > Cleanup recommendations removes it when you are sure."
 }
 
@@ -2611,6 +2623,17 @@ function Show-Gui {
 # ---------------------------------------------------------------------------
 function Get-ProcessCount { (Get-Process -ErrorAction SilentlyContinue | Measure-Object).Count }
 
+# The log's headings and done lines for the reports, without a heading that has nothing done under it (the key check, a skipped phase).
+function Get-DoneLines {
+  $lines = @($script:Log | Where-Object { $_ -match '^(==|  \+)' })
+  $out = @()
+  for ($i = 0; $i -lt $lines.Count; $i++) {
+    if ($lines[$i] -match '^== ') { if ($i + 1 -lt $lines.Count -and $lines[$i + 1] -match '^  \+') { $out += $lines[$i] } }
+    else { $out += $lines[$i] }
+  }
+  return ,$out
+}
+
 <# The numbers that say whether it worked, beyond the process count: memory
    in use, threads and handles alive, and three seconds of idle CPU and DPC
    time. Taken before, taken after, and taken again by the after-restart
@@ -2679,14 +2702,14 @@ function Write-Report($m, $before, $after, $changesFile) {
     "NEXT STEPS", @($i = 0; Get-NextSteps $m | ForEach-Object { $i++; "  {0}. {1}" -f $i, $_ }), "",
     "STILL RUNNING (most instances)", @($top), "",
     "KEPT, AND WHY", @($(if ($script:Kept.Count) { $script:Kept | Sort-Object -Unique | ForEach-Object { "  $_" } } else { "  nothing needed keeping" })), "",
-    "WHAT WAS DONE", @($script:Log | Where-Object { $_ -match '^(==|  \+)' }), "",
+    "WHAT WAS DONE", @(Get-DoneLines), "",
     "WARNINGS ($($script:Warnings.Count))", @($(if ($script:Warnings.Count) { $script:Warnings | ForEach-Object { "  ! $_" } } else { "  none" })), "",
     "GPU CONTROL PANEL", @(Get-GpuNotes $m | ForEach-Object { "  - $_" }), "",
     "LAUNCHERS, OVERLAYS AND HELPER APPS", @(Get-LauncherNotes $m | ForEach-Object { "  - $_" }), "",
     "LEFT BY OTHER TOOLS (the tune changes none of these)", @(Get-LeftoverNotes $m | ForEach-Object { "  - $_" }), "",
     "PER GAME", @($gameLines), "",
     "BIOS", @(Get-BiosChecklist $m | ForEach-Object { "  $_" }), "",
-    "UNDO", "  Administrator PowerShell:  powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1", "  Or Windows Recovery > System Restore > the point named 'OmniDx Tune $($script:Stamp)'.", "  Changes recorded in: $changesFile", "",
+    "UNDO", "  Administrator PowerShell:  powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1", $(if ($script:RestorePointMade) { "  Or Windows Recovery > System Restore > the point named 'OmniDx Tune $($script:Stamp)'." } else { "  (No restore point was made on this run; the undo script is the way back.)" }), "  Changes recorded in: $changesFile", "",
     "STATUS, ANY TIME", "  What is still in place, what an update put back, the keep task, the after-restart count:", "  `$env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex", "  Files: README.txt next to this report says what each file here is."
   )
   $flat = @(); foreach ($l in $lines) { if ($l -is [array]) { $flat += $l } elseif ($l -ne $null) { $flat += $l } }
@@ -2718,7 +2741,7 @@ function Write-HtmlReport($m, $before, $after, $target, $found, $changesFile) {
   foreach ($g in $script:Games) { if ($found -contains $g.name) { $games += "<h3>$(& $h $g.name) <span class='tag'>installed</span></h3>" + (& $list $g.notes) } }
   $others = @($script:Games | Where-Object { $found -notcontains $_.name } | ForEach-Object { $_.name })
   if ($others.Count) { $games += "<p class='muted'>Not found on this PC (the same profile applies if you install them): $(& $h ($others -join ', '))</p>" }
-  $done = @($script:Log | Where-Object { $_ -match '^(==|  \+)' } | ForEach-Object { if ($_ -match '^== ') { "<h4>$(& $h ($_ -replace '^== ', ''))</h4>" } else { "<div class='did'>$(& $h ($_ -replace '^  \+ ', ''))</div>" } }) -join ''
+  $done = @(Get-DoneLines | ForEach-Object { if ($_ -match '^== ') { "<h4>$(& $h ($_ -replace '^== ', ''))</h4>" } else { "<div class='did'>$(& $h ($_ -replace '^  \+ ', ''))</div>" } }) -join ''
   # The full process lists, folded away: name, how many, memory; taken before and after.
   $procTables = ''
   foreach ($tag in 'before', 'after') {
@@ -2762,7 +2785,7 @@ $procTables
 <h2>Left by other tools</h2><p class="muted">The tune changes none of these; it names them, with the way back.</p>$(& $list (Get-LeftoverNotes $m))
 <h2>Per game</h2>$games
 <h2>What was done</h2>$done
-<h2>Undo</h2><p>Administrator PowerShell: <code>powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1</code><br>Or Windows Recovery &rsaquo; System Restore &rsaquo; the point named <code>OmniDx Tune $(& $h $script:Stamp)</code>.<br>Changes recorded in <code>$(& $h $changesFile)</code>.</p>
+<h2>Undo</h2><p>Administrator PowerShell: <code>powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1</code><br>$(if ($script:RestorePointMade) { "Or Windows Recovery &rsaquo; System Restore &rsaquo; the point named <code>OmniDx Tune $(& $h $script:Stamp)</code>." } else { "No restore point was made on this run (see the warnings); the undo script is the way back." })<br>Changes recorded in <code>$(& $h $changesFile)</code>.</p>
 <h2>Status, any time</h2><p>What is still in place, what an update put back, the keep task and the after-restart count: <code>`$env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex</code><br><span class="muted">README.txt in C:\OmniDx says what each file there is.</span></p>
 <p class="muted" style="margin-top:40px">omnidx.net &middot; one payment, one PC, undo in one line.</p>
 </main></body></html>
@@ -2977,6 +3000,8 @@ function Main {
     Head "Before the cut"
     Save-ProcessList 'before'
     $snapBefore = Get-Snapshot
+    # The report's big number, its table and the Done line all read this one snapshot, so they agree to the process.
+    $before = [int]$snapBefore.processes
     Say ("  Before: {0}" -f (Format-Snapshot $snapBefore))
     New-Safety
     & $run 'startup'   { Cut-Startup }
@@ -3006,15 +3031,16 @@ function Main {
       $ssw = [System.Diagnostics.Stopwatch]::StartNew()
       while ($ssw.Elapsed.TotalSeconds -lt 20 -and @(Get-Service -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq 'StopPending' }).Count) { Start-Sleep -Seconds 2 }
     }
-    $after = Get-ProcessCount
     Save-ProcessList 'after'
     $snapAfter = Get-Snapshot
+    $after = [int]$snapAfter.processes
     Say ("  After:  {0}" -f (Format-Snapshot $snapAfter))
     $gone = Get-GoneProcesses
     if ($gone.Count) { Say ("  Gone:   {0}" -f ($gone -join ', ')) }
     $script:Snapshots = @{ before = $snapBefore; after = $snapAfter }
     $rep = Write-Report $m $before $after $changesFile
-    Say ("  Processes: {0} -> {1} now, in {2} seconds. Restart for the real number: the services that were told to stop are still unwinding." -f $before, $after, [int]$script:Timer.Elapsed.TotalSeconds) 'Green'
+    $stoppedAny = @($script:Changes | Where-Object { $_.type -eq 'service' }).Count -gt 0
+    Say ("  Processes: {0} -> {1} now, in {2} seconds. Restart for the real number{3}" -f $before, $after, [int]$script:Timer.Elapsed.TotalSeconds, $(if ($stoppedAny) { ': the services that were told to stop are still unwinding.' } else { '.' })) 'Green'
     if ($script:Phases.Count) { Say ("  Where the time went: " + (($script:Phases.GetEnumerator() | Sort-Object Value -Descending | Select-Object -First 6 | ForEach-Object { "{0} {1} s" -f $_.Key, $_.Value }) -join ', ')) }
     Say ("  Report, BIOS checklist, launcher notes and per-game settings: {0}" -f $rep) 'White'
     Say "  Undo, any time: powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1" 'White'

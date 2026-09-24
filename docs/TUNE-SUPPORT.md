@@ -225,6 +225,15 @@ one, or for a key issued by hand, the command is in docs/TUNE.md > Refunds.
 > with Defender or updates off is not one to game on, whatever the frame
 > counter says.
 
+## "The log says 'already disabled; left that way' / 'already capped'"
+
+> The tune only ever turns things down. A service it would set to manual
+> (search indexing, Superfetch, the diagnostic policy) that something else
+> had already disabled stays disabled, because manual would be a step back
+> on. The same for Defender's scan cap: if yours was already under 25%,
+> it keeps your figure. Both are printed so the report is honest about
+> what it did not touch.
+
 ## "Is this a virus / it wants admin"
 
 > It needs administrator rights because stopping a service and changing a
