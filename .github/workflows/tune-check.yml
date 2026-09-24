@@ -101,8 +101,19 @@ jobs:
 
       - name: Run the tune in report mode (changes nothing)
         run: |
-          & .\tune\omnidx.ps1 -Report
+          $lsw = [System.Diagnostics.Stopwatch]::StartNew()
+          $out = & .\tune\omnidx.ps1 -Report *>&1 | Out-String -Width 4000
+          $lookTotal = [math]::Round($lsw.Elapsed.TotalSeconds, 1)
+          Write-Host $out
           if (-not (Test-Path 'C:\OmniDx')) { Write-Host 'no C:\OmniDx folder was made'; exit 1 }
+          # The free look's own timing line and the machine read's, for the published record; the whole
+          # command's wall time too. A look that gets much slower than the last published run fails below.
+          $look = -1; if ($out -match 'Looked in ([0-9.]+) s') { $look = [double]$Matches[1] }
+          $read = -1; if ($out -match 'Read in ([0-9.]+) s') { $read = [double]$Matches[1] }
+          Write-Host ("free look: {0} s of looking, {1} s of reading the machine, {2} s wall" -f $look, $read, $lookTotal)
+          Set-Content C:\OmniDx\ci-look.txt -Value ("{0} {1} {2}" -f $look, $read, $lookTotal)
+          $last = $null; try { $last = Get-Content studio\assets\ci-run.json -Raw | ConvertFrom-Json } catch { }
+          if ($last -and ($null -ne $last.look) -and ([double]$last.look -ge 0) -and $look -ge 0 -and ($look -gt ([double]$last.look + 20))) { Write-Host ("the free look took {0} s; the last published run took {1} s" -f $look, $last.look); exit 1 }
           Get-ChildItem C:\OmniDx | ForEach-Object { Write-Host $_.Name }
           $preview = Get-ChildItem C:\OmniDx -Filter 'report-preview-*.txt' | Select-Object -First 1
           if (-not $preview) { Write-Host 'no preview report was written'; exit 1 }
@@ -261,7 +272,7 @@ jobs:
           Set-Content C:\OmniDx\ci-left-alone.txt $leftAlone
           if ($last -and $last.changes -and (($now.changes + $leftAlone) -lt ($last.changes - 6))) { Write-Host ("this run recorded {0} changes and left {1} alone on purpose, the last published run recorded {2}: something is no longer being done; compare the logs" -f $now.changes, $leftAlone, $last.changes); exit 1 }
           # The run, word for word, for the site: the phase headers, what was done, the numbers.
-          $log = @($out -split "`r?`n" | Where-Object { $_ -match '^(== |  \+ |  ! |  Processes|  Before:|  After:|  Gone:|  Target|  Looked|  Key accepted|  \(debloat|  \([0-9]+ pieces|  [0-9]+ )' -and $_ -notmatch 'Under 100' } | Select-Object -First 200)
+          $log = @($out -split "`r?`n" | Where-Object { $_ -match '^(== |  \+ |  ! |  Processes|  Before:|  After:|  Gone:|  Target|  Looked|  Read in|  Key accepted|  \(debloat|  \([0-9]+ pieces|  [0-9]+ )' -and $_ -notmatch 'Under 100' } | Select-Object -First 200)
           Set-Content studio\assets\ci-log.txt -Value $log -Encoding UTF8
           Write-Host ("{0} log lines kept for the site" -f $log.Count)
           Get-Content C:\OmniDx\ci-summary.json
@@ -440,9 +451,11 @@ jobs:
           $second = -1; if (Test-Path C:\OmniDx\ci-second.txt) { $second = [int](Get-Content C:\OmniDx\ci-second.txt) }
           $extreme = -1; if (Test-Path C:\OmniDx\ci-extreme.txt) { $extreme = [int](Get-Content C:\OmniDx\ci-extreme.txt) }
           $leftAlone = 0; if (Test-Path C:\OmniDx\ci-left-alone.txt) { $leftAlone = [int](Get-Content C:\OmniDx\ci-left-alone.txt) }
+          $look = -1; $read = -1; $lookTotal = -1
+          if (Test-Path C:\OmniDx\ci-look.txt) { $lk = (Get-Content C:\OmniDx\ci-look.txt) -split ' '; if ($lk.Count -ge 3) { $look = [double]$lk[0]; $read = [double]$lk[1]; $lookTotal = [double]$lk[2] } }
           # Two runs are left after the undo-last step above; the third is already in done.
           if (([regex]::Matches($out, 'Putting back \d+ changes?')).Count -ne 2) { Write-Host 'undo should have walked back the two remaining runs'; exit 1 }
-          $ci = [ordered]@{ version = $s.version; when = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'); os = $s.os; cpu = $s.cpu; before = $s.before; after = $s.after; target = $s.target; changes = $s.changes; warnings = $s.warnings; seconds = $s.seconds; undone = $undone; kept = $kept; second = $second; extreme = $extreme; leftAlone = $leftAlone; runs = 3; gone = @($s.gone).Count; phases = $s.phases; sha = $env:GITHUB_SHA.Substring(0, 7) }
+          $ci = [ordered]@{ version = $s.version; when = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'); os = $s.os; cpu = $s.cpu; before = $s.before; after = $s.after; target = $s.target; changes = $s.changes; warnings = $s.warnings; seconds = $s.seconds; undone = $undone; kept = $kept; second = $second; extreme = $extreme; leftAlone = $leftAlone; runs = 3; gone = @($s.gone).Count; phases = $s.phases; sha = $env:GITHUB_SHA.Substring(0, 7); look = $look; read = $read; lookTotal = $lookTotal }
           $out = & .\tune\omnidx.ps1 -Status *>&1 | Out-String -Width 4000
           & .\tools\ci-red.ps1 -Text $out -Step 'Status after undo'
           Write-Host $out

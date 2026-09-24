@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.57.0'
+$script:Version = '1.58.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -629,6 +629,12 @@ function Show-Machine($m) {
   ) | Where-Object { $_ }
   Say ("  Keeps: {0}" -f $(if ($keeps.Count) { $keeps -join ', ' } else { 'nothing extra' }))
   Say ("  UEFI {0}, Secure Boot {1}, TPM {2}, memory integrity {3}, IOMMU {4}" -f $m.uefi, $m.secureBoot, $m.tpm, $(if ($m.vbs) { 'on' } else { 'off' }), $(if ($m.iommu) { 'on' } else { 'off' }))
+  # Where the read spent its time, in seconds, largest first: a slow PC (or a slow build machine) says so on its own line.
+  if ($m.timings -and $m.timings.Count) {
+    $total = 0; foreach ($v in $m.timings.Values) { $total += [int]$v }
+    $parts = @($m.timings.GetEnumerator() | Sort-Object Value -Descending | Select-Object -First 4 | ForEach-Object { "{0} {1:0.0}" -f $_.Key, ([int]$_.Value / 1000) })
+    Say ("  Read in {0:0.0} s ({1})" -f ($total / 1000), ($parts -join ', '))
+  }
 }
 
 <# Things worth more than any tweak, said once, up front. Nothing here changes

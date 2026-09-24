@@ -813,6 +813,7 @@ function initTune() {
           + `; <b>${esc(c.undone)}</b> put back by undo${c.runs > 1 ? ` across ${esc(c.runs)} runs` : ''}`
           + (c.kept ? `; <b>${esc(c.kept)}</b> settings turned back on by hand and put back by the keep task` : '')
           + (typeof c.red === 'number' ? `; <b>${esc(c.red)}</b> lines of error text on screen across every run` : '')
+          + (c.look >= 0 ? `; the free look took <b>${esc(c.look)} s</b>${c.read >= 0 ? ` (${esc(c.read)} s of it reading the machine)` : ''}` : '')
           + ` — the whole tune, run and undone on a fresh Windows build machine${when ? ` on ${esc(when)}` : ''} (script v${esc(c.version)}). Not a gaming PC: a bare server image, so its numbers are lower than yours will be.`;
       });
     }).catch(() => {});
