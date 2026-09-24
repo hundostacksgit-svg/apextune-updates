@@ -164,6 +164,14 @@ run record (`studio/assets/ci-run.json`) or from a named source.
 - **Two idle samples; the update cache cleared only when there is one**
   (1.74.0): from 1.73.0's step timings, the counts before and after (3.7 s
   and 3.1 s) and the re-run's cleanup (3.7 s with nothing to clear).
+  Measured: the re-run's cleanup 0.2 s, the count after 2.1 s, the count
+  before 3.0 s (the rest of that step is the process list, kept). Same 386
+  and 382. What is left of a re-run is the read (4 to 6 s cold), the
+  debloat look (3 to 4 s, the class read that proves the pieces are gone),
+  the two counts and the key: every one of them is a truthful step, and the
+  build machine has no more seconds to give that are not variance. The
+  next evidence has to come from a real PC: the "Where the time went" and
+  "Outside the phases" lines of a run there.
 - **The moving background**: one canvas behind every page, hard black,
   purple shades and small purple objects at different depths that drift,
   slide with the scroll and lean toward the pointer; still under reduced
