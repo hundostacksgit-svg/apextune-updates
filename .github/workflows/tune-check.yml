@@ -133,11 +133,6 @@ jobs:
           if ($out -match 'PIECES MISMATCH') { exit 1 }
           if ($out -notmatch 'PIECES MATCH') { Write-Host 'the pieces comparison did not run'; exit 1 }
 
-      # Discovery, prints only: the six feature names under the packages' Updates keys, before the run.
-      - name: Where the feature states are recorded (before the run)
-        run: |
-          & .\tools\ci-pieces.ps1 -Quick *>&1 | Out-String -Width 4000 | Write-Host
-
       # The bootstrapper, end to end: a copy of the site's tune files is served
       # from the build machine (LF bytes, as the site serves them), go.ps1 must
       # fetch the verified copy, match its hash and run the report through it;
@@ -295,10 +290,6 @@ jobs:
           Write-Host ("{0} log lines kept for the site" -f $log.Count)
           Get-Content C:\OmniDx\ci-summary.json
           exit 0
-
-      - name: Where the feature states are recorded (after the run)
-        run: |
-          & .\tools\ci-pieces.ps1 -Quick *>&1 | Out-String -Width 4000 | Write-Host
 
       # The support zip: on the desktop, with the logs in it and no key in them.
       - name: The support bundle zips the logs with the key masked

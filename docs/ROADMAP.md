@@ -108,6 +108,11 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   that is the optional-feature class starting the servicing stack cold. The
   next discovery step asks whether the six feature states are in the
   component store's registry too.
+- **The pieces read in a runspace** (1.65.0): the optional-feature class
+  and the package list start in a runspace before the machine read and are
+  collected by the debloat plan, which reads them itself if the runspace
+  fails or runs past a minute. The last cold cost in the look (eight to ten
+  seconds) now overlaps the read.
 - **The moving background**: one canvas behind every page, hard black,
   purple shades and small purple objects at different depths that drift,
   slide with the scroll and lean toward the pointer; still under reduced
@@ -148,6 +153,13 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   not worth a launcher that refuses to open.
 - **Firefox (row 12).** Its maintenance service is manual already and its
   prefetch settings are a bandwidth matter, not a frame-time one.
+- **Feature states from the registry.** The capability packages are in the
+  component store's registry (1.63.0 reads them there), so the six optional
+  features were looked for under the packages' Updates keys: a walk of the
+  570 feature-owning packages cost a quarter of a second per key on the
+  build machine (the unbounded walk ran past thirty minutes) and found none
+  of the six names in the 383 it reached. The optional-feature class stays;
+  its only cost is the cold start.
 - **Removing the Windows pieces in the background** while the rest of the
   run goes on: it would overlap the 34 s of DISM with about fifteen seconds
   of other phases, but the Store-app removals and the update-cache cleanup
