@@ -353,7 +353,11 @@ jobs:
           $summary = Get-ChildItem C:\OmniDx -Filter 'summary-*.json' | Sort-Object Name -Descending | Select-Object -First 1
           $s = Get-Content $summary.FullName | ConvertFrom-Json
           Write-Host ("extreme run recorded {0} changes" -f $s.changes)
-          if ($s.changes -lt 20) { Write-Host 'Extreme recorded too little to have done anything'; exit 1 }
+          # Judged against the last published Extreme count, like the main run's gate: the build image already has three of
+          # Extreme's services disabled (left alone since 1.42.0), so a fixed twenty sat one change from a false failure.
+          $lastRec = $null; try { $lastRec = Get-Content studio\assets\ci-run.json -Raw | ConvertFrom-Json } catch { }
+          $floor = 12; if ($lastRec -and [int]$lastRec.extreme -gt 0) { $floor = [math]::Max(12, [int]$lastRec.extreme - 6) }
+          if ($s.changes -lt $floor) { Write-Host ("Extreme recorded {0} changes; the last published run recorded {1}: too little to have done its work" -f $s.changes, $(if ($lastRec) { $lastRec.extreme } else { 'none' })); exit 1 }
           if (-not $s.extreme) { Write-Host 'the summary does not say it was extreme'; exit 1 }
           Set-Content C:\OmniDx\ci-extreme.txt $s.changes
           $st = & .\tune\omnidx.ps1 -Status *>&1 | Out-String -Width 4000
