@@ -124,11 +124,14 @@ jobs:
           Get-Content $preview.FullName
           exit 0
 
-      # Discovery, prints only: what the component store's registry, the optional-feature class and the
-      # files say about the Windows pieces, next to DISM's answer and its cost, before and after the run.
-      - name: Where the Windows pieces are recorded outside DISM (before the run)
+      # DISM's own answer about every Windows piece, with the cost of asking, next to the component store's
+      # registry and the optional-feature class (which the look reads instead). The look's count must match.
+      - name: The free look's Windows pieces match DISM's answer
         run: |
-          & .\tools\ci-pieces.ps1 *>&1 | Out-String -Width 4000 | Write-Host
+          $out = & .\tools\ci-pieces.ps1 -Compare *>&1 | Out-String -Width 4000
+          Write-Host $out
+          if ($out -match 'PIECES MISMATCH') { exit 1 }
+          if ($out -notmatch 'PIECES MATCH') { Write-Host 'the pieces comparison did not run'; exit 1 }
 
       # The bootstrapper, end to end: a copy of the site's tune files is served
       # from the build machine (LF bytes, as the site serves them), go.ps1 must
@@ -288,7 +291,7 @@ jobs:
           Get-Content C:\OmniDx\ci-summary.json
           exit 0
 
-      - name: Where the Windows pieces are recorded outside DISM (after the run)
+      - name: DISM's answer about the Windows pieces after the run
         run: |
           & .\tools\ci-pieces.ps1 *>&1 | Out-String -Width 4000 | Write-Host
 

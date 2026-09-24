@@ -78,6 +78,16 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   core helper). Same 386 changes and 382 undone. The look's split says the
   free look is fifteen of its nineteen seconds cold DISM (the Windows pieces
   by name); that is the next thing to look at.
+- **The free look reads the component store** (1.63.0): the check's
+  discovery step measured every DISM name query at half a second warm and a
+  second cold, fifteen of them in the look, against a registry listing of all
+  7,844 packages in 0.9 s and the optional-feature class in 1.2 to 3.9 s,
+  both agreeing with DISM before and after the run. Three capability
+  package names are verified on the build machine and decided by state; a
+  piece the store never mentions is skipped; the rest (Math Input Panel
+  until its package name is verified, Fax and Scan where a fax package
+  exists) still go to DISM. The check compares the look's count with DISM's
+  answer every run.
 - **The moving background**: one canvas behind every page, hard black,
   purple shades and small purple objects at different depths that drift,
   slide with the scroll and lean toward the pointer; still under reduced
