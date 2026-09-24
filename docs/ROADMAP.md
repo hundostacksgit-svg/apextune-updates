@@ -37,10 +37,10 @@ run record (`studio/assets/ci-run.json`) or from a named source.
 | 6 | **The after-restart card writes itself**: the keep task draws card-after-restart.png at every sign-in with that start's count, so "still tuned after the update" is a post as well | Same as 4, a month later | keep.ps1 carries the card code the way it carries Get-Drift; the check requires the file | **1.57.0** |
 | 7 | **Monitor on the wrong port**: when a discrete GPU exists but the display is driven by the integrated one, say so in the free report | A common mistake on new builds; no tweak matches plugging the cable into the card | `Win32_VideoController` current mode on the iGPU while the dGPU shows none; phrase as "seems" | **1.52.0** |
 | 8 | **Free space on C:** under 10%: warn | Games stutter and shader caches fail on a full drive | `Get-PSDrive` | **1.52.0** |
-| 9 | **Windows Update active hours** set around the user's usual play hours so a restart never lands mid-match | Safe, reversible, gamer-relevant | `WindowsUpdate\UX\Settings` | maybe |
-| 10 | **AMD GPU extras** to match the NVIDIA telemetry cut (the user-experience program tasks) | Parity; small | AMD Software task names | maybe |
-| 11 | **Steam, Epic, EA background services** to manual (`Steam Client Service`, `EpicOnlineServices`, `EABackgroundService`) | A few processes each; they start on demand | Service names | maybe |
-| 12 | **Firefox** background updater and prefetch like Chrome and Edge | Parity for Firefox users | `MozillaMaintenance`; `user.js` | maybe |
+| 9 | **Windows Update active hours** set around the user's usual play hours so a restart never lands mid-match | Safe, reversible, gamer-relevant | `WindowsUpdate\UX\Settings` | left alone (below) |
+| 10 | **AMD GPU extras** to match the NVIDIA telemetry cut (the user-experience program tasks) | Parity; small | AMD Software task names | left alone (below) |
+| 11 | **Steam, Epic, EA background services** to manual (`Steam Client Service`, `EpicOnlineServices`, `EABackgroundService`) | A few processes each; they start on demand | Service names | left alone (below) |
+| 12 | **Firefox** background updater and prefetch like Chrome and Edge | Parity for Firefox users | `MozillaMaintenance`; `user.js` | left alone (below) |
 
 ## Done outside the table
 
@@ -97,6 +97,27 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   that did.
 - **FPS numbers on the site.** The rule stands: nothing on screen that was
   not counted on the reader's PC.
+- **Active hours (row 9).** Windows 11 adjusts them from use by default and
+  already avoids a restart while a game is running; fixed hours set by a
+  script are wrong for the next person's schedule.
+- **AMD's user-experience tasks (row 10).** The program is opt-in at install
+  and its task names change between Adrenalin releases; the NVIDIA cut names
+  five tasks the check can verify, and there is no AMD card on the build
+  machine to verify a list against. The report's AMD notes cover the overlay
+  and metrics instead.
+- **Launcher services (row 11).** Steam's and Epic's services are manual by
+  default and start with the launcher; EA's background service is one the
+  EA app requires to be running, and nothing on the build machine can verify
+  that a manual start type brings it back at launch. A few processes are
+  not worth a launcher that refuses to open.
+- **Firefox (row 12).** Its maintenance service is manual already and its
+  prefetch settings are a bandwidth matter, not a frame-time one.
+- **Removing the Windows pieces in the background** while the rest of the
+  run goes on: it would overlap the 34 s of DISM with about fifteen seconds
+  of other phases, but the Store-app removals and the update-cache cleanup
+  both touch the servicing stack, and "another servicing operation is in
+  progress" is exactly the error that would only show on some PCs. One
+  DISM session at a time stays.
 
 ## The buy path and the server
 
