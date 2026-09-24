@@ -144,8 +144,9 @@ get more FPS" threads with the twenty-second check, not the link.
   BIOS checklist, not magic FPS.
 - "I can do this by hand" → yes, the landing page says so and has the table.
   It is an afternoon and a record; that is what $19.99 buys.
-- "Does it break VALORANT" → never touches Vanguard; needs Secure Boot and
-  TPM on Windows 11, which the report checks.
+- "Does it break VALORANT / FACEIT" → never touches Vanguard or FACEIT's
+  anti-cheat; both now need Secure Boot, TPM 2.0, IOMMU and memory integrity
+  on, which the report checks and the tune never turns off.
 - "Where's your privacy policy / refund policy" → omnidx.net/studio/terms/,
   one page in plain words: what leaves the PC and where it is kept,
   all sales final and why, what a key is. Link it, do not paraphrase it.

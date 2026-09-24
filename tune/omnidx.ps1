@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.49.0'
+$script:Version = '1.50.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -571,7 +571,15 @@ function Get-Machine {
   $secureBoot = $false; try { $secureBoot = Confirm-SecureBootUEFI -ErrorAction Stop } catch { }
   $tpm = $false; try { $tpm = (Get-Tpm -ErrorAction Stop).TpmPresent } catch { }
   & $lap 'software'
-  $vbsOn = $false; try { $dg = Get-CimInstance -Namespace root\Microsoft\Windows\DeviceGuard -ClassName Win32_DeviceGuard -ErrorAction Stop; $vbsOn = ($dg.VirtualizationBasedSecurityStatus -eq 2) -or ($dg.SecurityServicesRunning -contains 2) } catch { }
+  $vbsOn = $false; $dg = $null; try { $dg = Get-CimInstance -Namespace root\Microsoft\Windows\DeviceGuard -ClassName Win32_DeviceGuard -ErrorAction Stop; $vbsOn = ($dg.VirtualizationBasedSecurityStatus -eq 2) -or ($dg.SecurityServicesRunning -contains 2) } catch { }
+  # IOMMU (VT-d / AMD-Vi): Windows lists "DMA protection" among the security properties available only when the IOMMU is on.
+  # VALORANT's Vanguard and FACEIT require it, with memory integrity, since 2026; the tune reports it and never turns it off.
+  $iommu = $false; $hvci = $false
+  try { if ($dg) { $iommu = @($dg.AvailableSecurityProperties) -contains 3; $hvci = @($dg.SecurityServicesRunning) -contains 2 } } catch { }
+  $riot = Test-Path (Join-Path $env:ProgramData 'Riot Games')
+  $faceit = (Test-Path (Join-Path $env:ProgramFiles 'FACEIT AC')) -or ($null -ne (Get-Service -Name 'FACEIT' -ErrorAction SilentlyContinue))
+  # A dual-CCD X3D (7900X3D, 7950X3D, 9900X3D, 9950X3D): AMD's driver steers games onto the cache half, and spots them through Game Mode and Game Bar.
+  $x3dDual = [bool]($cpu.Name -match '(7900|7950|9900|9950)X3D')
   @{
     os = "$($os.Caption) $($os.Version) (build $build)"; win = $win; build = $build
     cpu = $cpu.Name.Trim(); cpuVendor = $(if ($cpu.Manufacturer -match 'AMD') { 'AMD' } else { 'Intel' }); cores = $cpu.NumberOfCores; threads = $cpu.NumberOfLogicalProcessors
@@ -579,7 +587,8 @@ function Get-Machine {
     board = ("{0} {1}" -f $bb.Manufacturer, $bb.Product).Trim(); boardVendor = $bb.Manufacturer; bios = ("{0} {1}" -f $bios.Manufacturer, $bios.SMBIOSBIOSVersion).Trim(); biosDate = $bios.ReleaseDate
     laptop = $laptop; allSsd = $allSsd; nvme = $nvme; refresh = $refresh
     printers = $printers.Count; btDevices = $bt.Count; btRadio = $btRadio; wifi = $wifi; touch = $touch; biometric = $bio; vpn = $vpn; xboxUsed = $xboxUsed
-    uefi = $uefi; secureBoot = $secureBoot; tpm = $tpm; vbs = $vbsOn
+    uefi = $uefi; secureBoot = $secureBoot; tpm = $tpm; vbs = $vbsOn; iommu = $iommu; hvci = $hvci
+    riot = $riot; faceit = $faceit; x3dDual = $x3dDual
     name = $cs.Name
     xboxPad = $xboxPad; wifiLive = $wifiLive; vm = $vm; domain = $domain
     driverVer = $driverVer; driverDate = $driverDate
@@ -603,7 +612,7 @@ function Show-Machine($m) {
     $(if ($m.touch) { "touch" }), $(if ($m.biometric) { "Windows Hello" }), $(if ($m.vpn) { "VPN" }), $(if ($m.xboxUsed -and -not $CutXbox) { "Xbox / Game Pass" }), $(if ($m.xboxPad -and -not $CutXbox) { "Xbox controller" }), $(if ($m.laptop) { "battery, hibernate" })
   ) | Where-Object { $_ }
   Say ("  Keeps: {0}" -f $(if ($keeps.Count) { $keeps -join ', ' } else { 'nothing extra' }))
-  Say ("  UEFI {0}, Secure Boot {1}, TPM {2}, memory integrity {3}" -f $m.uefi, $m.secureBoot, $m.tpm, $(if ($m.vbs) { 'on' } else { 'off' }))
+  Say ("  UEFI {0}, Secure Boot {1}, TPM {2}, memory integrity {3}, IOMMU {4}" -f $m.uefi, $m.secureBoot, $m.tpm, $(if ($m.vbs) { 'on' } else { 'off' }), $(if ($m.iommu) { 'on' } else { 'off' }))
 }
 
 <# Things worth more than any tweak, said once, up front. Nothing here changes
@@ -623,6 +632,20 @@ function Show-Advice($m) {
   if ($m.oem.Count) { Say ("  OEM extras found: {0}. Not touched; remove any you do not use from Settings > Apps." -f ($m.oem -join ', ')) }
   if ($m.otherAv.Count) { Say ("  Antivirus: {0}. Not touched." -f ($m.otherAv -join ', ')) }
   if ($m.vm) { Warn "This looks like a virtual machine. The tune will run, but the numbers mean little here." }
+  # The 2026 anti-cheat rules: FACEIT (all players by mid-2026) and Vanguard On-Demand (Windows 11 25H2) want Secure Boot,
+  # TPM 2.0, IOMMU and memory integrity on. Said here, once, because turning any of them off is the one "tweak" that ends a game.
+  if ($m.riot -or $m.faceit) {
+    $who = @($(if ($m.riot) { 'VALORANT (Vanguard)' }), $(if ($m.faceit) { 'FACEIT' })) | Where-Object { $_ }
+    $missing = @($(if (-not $m.secureBoot) { 'Secure Boot' }), $(if (-not $m.tpm) { 'TPM 2.0' }), $(if (-not $m.iommu) { 'IOMMU' }), $(if (-not $m.vbs) { 'memory integrity' })) | Where-Object { $_ }
+    if ($missing.Count) { Warn ("{0} found. Since 2026 it requires Secure Boot, TPM 2.0, IOMMU and memory integrity on, and {1} {2} off on this PC. The BIOS checklist (items 4, 5 and 12) says where; the tune never turns any of them off." -f ($who -join ' and '), ($missing -join ', '), $(if ($missing.Count -eq 1) { 'is' } else { 'are' })) }
+    else { Say ("  {0} found: Secure Boot, TPM, IOMMU and memory integrity are on, which is what its anti-cheat wants. The tune leaves all four alone." -f ($who -join ' and ')) }
+  }
+  if ($m.x3dDual) {
+    $vc = Get-Service -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -match '3D V-Cache' } | Select-Object -First 1
+    if (-not $vc) { Warn "Dual-CCD X3D CPU without the AMD 3D V-Cache Performance Optimizer service: games can land on the half without the big cache. Install the AMD chipset driver from amd.com." }
+    elseif ("$($vc.StartType)" -eq 'Disabled' -or "$($vc.Status)" -ne 'Running') { Warn "The AMD 3D V-Cache Performance Optimizer service is not running: games can land on the half of the CPU without the big cache. Services > set it to Automatic and start it." }
+    else { Say "  Dual-CCD X3D CPU: AMD's optimizer is running, and Game Mode and Game Bar stay on because it spots games through them." }
+  }
   # What another tool left switched off: said here as well as in the report, since the console is where most people look.
   foreach ($n in @(Get-LeftoverNotes $m)) { if ($n -notmatch '^Nothing found') { Say ("  ! Left by another tool: " + $n) 'Yellow' } }
 }
@@ -652,7 +675,7 @@ function Get-SafeBar($m) {
    used by the cut and by the free report, so the two never disagree. #>
 <# Whether the Xbox pieces go: when asked (-CutXbox), or under -Extreme when
    nothing on this PC uses them. #>
-function Test-CutXbox($m) { return [bool]($CutXbox -or ($Extreme -and -not $m.xboxUsed -and -not $m.xboxPad)) }
+function Test-CutXbox($m) { return [bool]($CutXbox -or ($Extreme -and -not $m.xboxUsed -and -not $m.xboxPad -and -not $m.x3dDual)) }
 
 function Get-KeepList($m) {
   $k = @{}
@@ -1780,6 +1803,8 @@ function New-PowerPlan($m) {
   & $set $sub.proc 'ea062031-0e34-4ff1-9b6d-eb1059334028' 100      # core parking max cores
   & $set $sub.proc '94d3a615-a899-4ac5-ae2b-e4d8f634367f' 1        # system cooling: active
   & $set $sub.proc '45bcc044-d885-43e2-8605-ee0ec6e96b59' 100      # boost policy
+  & $set $sub.proc '36687f9e-e3a5-4dbf-b1dc-15eb381c6863' 0        # energy performance preference: performance. The value a CPPC / HWP CPU reads to pick its clocks (Balanced says 25%).
+  & $set $sub.proc '36687f9e-e3a5-4dbf-b1dc-15eb381c6864' 0        # the same for the efficiency cores, where the CPU has them
   if (-not $m.laptop) { & $set $sub.proc '3b04d4fd-1cc7-4f23-ab1c-d1337819c4bb' 0 }  # throttle states: off (desktop; hardware thermal protection is separate)
   & $set $sub.wifi '12bbebe6-58d6-4636-95bb-3217ef867c1a' 0        # wireless adapter power saving: maximum performance (the cause of most Wi-Fi ping spikes)
   # Buses and disks never sleep on mains.
@@ -1802,7 +1827,7 @@ function New-PowerPlan($m) {
   if ($created -or ($prevActive -ne $guid)) {
     & powercfg /setactive $guid | Out-Null
     Record @{ type = 'power'; prev = $prevActive; created = $created }
-    Did "OmniDx plan created and active: CPU 100/100, boost aggressive, no core parking, no throttle states on a desktop, PCIe, USB and Wi-Fi power saving off, no sleep on mains."
+    Did "OmniDx plan created and active: CPU 100/100, boost aggressive, energy preference on performance, no core parking, no throttle states on a desktop, PCIe, USB and Wi-Fi power saving off, no sleep on mains."
   } else { Did "OmniDx plan already active; its settings checked and re-applied." }
   # Hibernation off frees the hiberfile and ends Fast Startup for good - on a desktop.
   if (-not $m.laptop) {
@@ -2146,6 +2171,7 @@ function Set-Extreme($m) {
 function Set-Vbs($m) {
   if (-not $Aggressive -or -not $m.vbs) { return }
   Head "Memory integrity (VBS / HVCI)"
+  if ($m.riot -or $m.faceit) { Say "  Left on. VALORANT's Vanguard and FACEIT require memory integrity (with IOMMU) since 2026, and switching it off would stop them. Nothing changed." 'Yellow'; return }
   Say "  Memory integrity is on. Turning it off is worth 5-15% in CPU-bound games and removes a layer of kernel protection." 'Yellow'
   Say "  Microsoft offers this same switch under Windows Security > Core isolation. It is your call." 'Yellow'
   if (-not (Ask "Turn memory integrity off?")) { Say "  Left on."; return }
@@ -2192,7 +2218,7 @@ function Get-BiosChecklist($m) {
     $(if ($m.laptop) { "9. Fans: the BIOS rarely offers a curve on a laptop; the maker's app does (Armoury Crate, Legion Vantage, Omen Gaming Hub, Predator Sense, Dragon Center): set the performance or turbo fan mode for games, and raise the back of the laptop so the intakes breathe. Sustained boost needs airflow more than anything." } else { "9. Fan curves: set the CPU fan to reach 100% by 80 C and the case fans to a steady ramp. Sustained boost needs airflow more than anything." }),
     $(if ($m.laptop) { "10. The GPU switch: in the maker's app (or the BIOS as Hybrid / Discrete / MUX), set Discrete or Ultimate for games so the display is driven by the $($m.gpu) directly rather than through the integrated one; Hybrid is for battery life. Windows > Settings > System > Display > Graphics: set each game to High performance." } elseif ($m.wifiLive) { "10. Onboard devices you do not use: serial port, onboard audio if you use USB audio, RGB controllers. Keep Wi-Fi and Bluetooth on: Wi-Fi is your connection." } else { "10. Onboard devices you do not use: serial port, Wi-Fi/Bluetooth if wired, onboard audio if you use USB audio, RGB controllers. Each one removed is an interrupt source gone." }),
     "11. HPET: leave at default. The 'disable HPET' tweak is from 2013 and hurts more than it helps on modern Windows.",
-    "12. Virtualisation (SVM / VT-x): leave on if you use WSL, Docker, an emulator, or if VALORANT runs on Windows 11 for you; otherwise off saves a little scheduling overhead.",
+    $(if ($m.riot -or $m.faceit) { "12. Virtualisation (SVM / VT-x) and IOMMU (AMD-Vi / VT-d): both Enabled. VALORANT's Vanguard and FACEIT require IOMMU with memory integrity since 2026" + $(if ($m.iommu) { "; IOMMU is on here already, so leave it." } else { "; IOMMU is OFF on this PC, and this is the line that matters." }) + " AMD boards: SVM under CPU Configuration, IOMMU under AMD CBS > NBIO. Intel boards: VT-x under CPU Configuration, VT-d under System Agent Configuration." } else { "12. Virtualisation (SVM / VT-x): leave on if you use WSL, Docker, an emulator, or play VALORANT or on FACEIT (their anti-cheat needs it, with IOMMU); otherwise off saves a little scheduling overhead." }),
     $(if ($Extreme) { "" } else { $null }),
     $(if ($Extreme) { "EXTREME - only with a cooler you trust and a memory test to hand. Each of these is what the people tuning for a living set after the list above; none of them is free." } else { $null }),
     $(if ($Extreme) { "  E1. Global C-states: Disabled. Steadier 1% lows on some boards; more idle heat and power. Try it, measure it, keep it only if the lows improve." } else { $null }),
@@ -2270,7 +2296,8 @@ function Get-LauncherNotes($m) {
   }
   if (& $has (Join-Path $env:ProgramData 'Epic\EpicGamesLauncher')) { $notes += 'Epic Games Launcher: Settings > "Run when my computer starts" off, "Enable notifications" off; leave "Throttle downloads" off. The overlay is off by default; keep it so.' }
   if ((& $has (Join-Path $env:ProgramData 'Battle.net')) -or (& $has (Join-Path $pf86 'Battle.net'))) { $notes += 'Battle.net: Settings > General > "Launch Battle.net when I start my computer" off, "On game launch: exit Battle.net completely" (the client is a browser), "Use browser hardware acceleration" on. Streaming off.' }
-  if (& $has (Join-Path $env:ProgramData 'Riot Games')) { $notes += 'Riot Client: Settings > General > "Open Riot Client on startup" off. Vanguard stays: VALORANT will not run without it, and on Windows 11 it wants Secure Boot and TPM on (see BIOS).' }
+  if (& $has (Join-Path $env:ProgramData 'Riot Games')) { $notes += 'Riot Client: Settings > General > "Open Riot Client on startup" off. Vanguard stays: VALORANT will not run without it, and Vanguard On-Demand (Windows 11 25H2) needs Secure Boot, TPM 2.0, IOMMU and memory integrity on; the tune leaves all four alone (BIOS items 4, 5 and 12 say where).' }
+  if ($m.faceit) { $notes += 'FACEIT: its anti-cheat needs TPM 2.0, Secure Boot, IOMMU and memory integrity on, and Windows 11 from October 2026. The tune leaves all of them alone; the BIOS checklist says where each one is.' }
   if ((& $has (Join-Path $pf 'Electronic Arts\EA Desktop')) -or (& $has (Join-Path $pf86 'Origin'))) { $notes += 'EA app: Settings > Application > "Automatically launch EA app on startup" off; "In-game overlay" off.' }
   if (& $has (Join-Path $pf86 'Ubisoft\Ubisoft Game Launcher')) { $notes += 'Ubisoft Connect: Settings > General > "Launch at startup" off, "Enable in-game overlay" off, "Display notifications" off.' }
   if ((& $has (Join-Path $pf86 'GOG Galaxy')) -or (& $has (Join-Path $pf 'GOG Galaxy'))) { $notes += 'GOG Galaxy: Settings > General > "Launch at startup" off; Game features > overlay off.' }

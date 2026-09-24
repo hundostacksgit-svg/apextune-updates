@@ -181,9 +181,11 @@ Log it: every "kept because" rule lives in `Get-KeepList` in the script.
 ## "Does it work with VALORANT / Fortnite / CS2"
 
 > Yes. It never touches Vanguard, Easy Anti-Cheat, BattlEye or Ricochet, and
-> never any game file. VALORANT on Windows 11 also needs Secure Boot and TPM
-> on; the report says whether yours are, and the BIOS checklist says how to
-> turn them on. The tune never turns them off.
+> never any game file. VALORANT (Vanguard On-Demand) and FACEIT now require
+> Secure Boot, TPM 2.0, IOMMU and memory integrity on; the report says
+> whether yours are, the BIOS checklist says where each one is, and the tune
+> never turns any of them off (it refuses the optional memory-integrity
+> switch on a PC with either installed).
 
 ## One friend's share of a Squad
 
