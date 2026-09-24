@@ -408,10 +408,13 @@ jobs:
           if ($out -notmatch 'already been put back') { Write-Host "a second undo should say there is nothing left:`n$out"; exit 1 }
           # The red error text a buyer would see, across every run of the script above, counted with context,
           # into the record the site and the repository keep, and into this run's Summary tab.
+          $last = $null; try { $last = Get-Content studio\assets\ci-run.json -Raw | ConvertFrom-Json } catch { }
           $rl = @(); if (Test-Path C:\OmniDx\ci-red-lines.txt) { $rl = @(Get-Content C:\OmniDx\ci-red-lines.txt) }
           $ci.red = $rl.Count; $ci.redLines = @($rl | Select-Object -First 30)
           Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ("## Red error text across every run of the script: {0}" -f $rl.Count)
           if ($rl.Count) { Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ('```'); Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ($rl | Select-Object -First 40); Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ('```') }
+          # More red text than the last published run is a regression in what a buyer sees; the lines above say where.
+          if ($last -and ($null -ne $last.red) -and ($rl.Count -gt [int]$last.red)) { Write-Host ("red error text rose from {0} to {1}:" -f $last.red, $rl.Count); $rl | ForEach-Object { Write-Host ("  " + $_) }; exit 1 }
           $ci | ConvertTo-Json | Set-Content studio\assets\ci-run.json -Encoding UTF8
           Get-Content studio\assets\ci-run.json
           exit 0
