@@ -22,6 +22,18 @@ const worker = (await import(pathToFileURL(path.join(root, 'server/worker.js')).
 const arg = (name, fallback) => { const i = process.argv.indexOf(name); return i > 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback; };
 const port = Number(arg('--port', '8787'));
 const keyFile = arg('--key-file', '');
+// Started detached by the Windows check (a redirected child dies with the step that started it), so it keeps
+// its own log when asked, and the check prints that log if the server never answers.
+const logFile = arg('--log', '');
+if (logFile) {
+  const tee = (kind) => (...a) => { try { fs.appendFileSync(logFile, `${new Date().toISOString()} ${kind} ${a.map(String).join(' ')}\n`); } catch { /* the console still has it */ } };
+  const log = tee('log'); const err = tee('error');
+  const origLog = console.log.bind(console); const origErr = console.error.bind(console);
+  console.log = (...a) => { origLog(...a); log(...a); };
+  console.error = (...a) => { origErr(...a); err(...a); };
+  process.on('uncaughtException', (e) => { console.error('uncaught', e && e.stack || e); process.exit(1); });
+  process.on('unhandledRejection', (e) => { console.error('unhandled', e && e.stack || e); process.exit(1); });
+}
 
 installFetch({ strict: false });
 // The two-secret setup: Square on, no mailer, no webhook, no owner token.
