@@ -185,7 +185,10 @@ finds your Cloudflare account and makes the database itself.
    settings ask for a refund policy, paste "All sales are final. The key is
    delivered on the page the moment you pay; the free report mode at
    omnidx.net shows every change first." and give
-   `https://omnidx.net/studio/terms/` as the terms link.
+   `https://omnidx.net/studio/terms/` as the terms link. Pictures, where a
+   link or the store profile asks for one: the square logo is
+   `https://omnidx.net/studio/assets/logo/pfp-800.jpg` and the wide one is
+   `https://omnidx.net/studio/assets/logo/banner-1500x500.jpg`.
 6. **Test**: buy the $19.99 link with your own card. The key is on the page
    you land on. Refund yourself in Square (the one refund you will ever do);
    within the hour the key stops working (the key page says the order was
