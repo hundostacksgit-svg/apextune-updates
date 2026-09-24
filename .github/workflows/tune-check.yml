@@ -135,6 +135,12 @@ jobs:
           if ($mj) { $rec = Get-Content $mj.FullName -Raw | ConvertFrom-Json; Write-Host ("machine record {0}: streamer = [{1}]" -f $mj.Name, (@($rec.streamer) -join ', ')) }
           $keeps = @($out -split "`r?`n" | Where-Object { $_ -match '^  Keeps: ' })
           Write-Host $keeps
+          # What the list construct 1.75.0 replaced does in this PowerShell, for the record.
+          $tm = @{ streamer = @('x'); printers = 0; laptop = $false }
+          $tk = @(@(
+            $(if ($tm.printers) { 'printer' }), $(if ($tm.streamer.Count) { 'streaming (' + ($tm.streamer -join ', ') + ')' }), $(if ($tm.laptop) { 'battery' })
+          ) | Where-Object { $_ })
+          Write-Host ("old construct in PowerShell {0}: {1} item(s) [{2}]" -f $PSVersionTable.PSVersion, $tk.Count, ($tk -join '|'))
           if (-not ($keeps -match 'streaming \(asked for with -Streamer\)')) { Write-Host '-Streamer did not reach the keep list'; exit 1 }
           if ($out -notmatch 'Streaming software found') { Write-Host 'the advice did not name the streamer profile'; exit 1 }
           exit 0

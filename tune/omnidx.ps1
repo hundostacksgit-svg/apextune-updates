@@ -780,12 +780,19 @@ function Show-Machine($m) {
   Say ("  RAM   {0} GB{1}{2}" -f $m.ramGb, $(if ($m.sticks) { ", $($m.sticks) stick$(if ($m.sticks -ne 1) { 's' })" } else { '' }), $(if ($m.ramNow) { ", $($m.ramNow) MT/s$(if ($m.ramRated -and $m.ramRated -ne $m.ramNow) { " of $($m.ramRated) rated" })" } else { '' }))
   Say ("  Board {0}  |  BIOS {1}" -f $m.board, $m.bios)
   Say ("  {0}{1}{2}, {3}" -f $(if ($m.laptop) { 'Laptop' } else { 'Desktop' }), $(if ($m.allSsd) { ', all SSD' } else { ', has a hard disk' }), $(if ($m.nvme) { ', NVMe' } else { '' }), $(if ($m.refresh) { "$($m.refresh) Hz" } else { 'refresh unknown' }))
-  # Wrapped twice: one survivor from Where-Object is a bare string, and Windows PowerShell 5.1 gives a pipeline's lone
-  # string no count, so a PC with exactly one reason to keep something read "nothing extra" (found by 1.75.0's check).
-  $keeps = @(@(
-    $(if ($m.printers) { "printer" }), $(if ($m.btDevices) { "Bluetooth ($($m.btDevices) paired)" }), $(if ($m.wifi) { "Wi-Fi" }),
-    $(if ($m.touch) { "touch" }), $(if ($m.biometric) { "Windows Hello" }), $(if ($m.vpn) { "VPN" }), $(if ($m.xboxUsed -and -not $CutXbox) { "Xbox / Game Pass" }), $(if ($m.xboxPad -and -not $CutXbox) { "Xbox controller" }), $(if ($m.streamer.Count) { "streaming (" + ($m.streamer -join ', ') + ")" }), $(if ($m.laptop) { "battery, hibernate" })
-  ) | Where-Object { $_ })
+  # One add per reason, into a list: the long comma-separated array of subexpressions this replaced came back empty
+  # under Windows PowerShell 5.1 on the build machine even with a reason set (1.75.0's -Streamer check).
+  $keeps = New-Object System.Collections.ArrayList
+  if ($m.printers) { [void]$keeps.Add('printer') }
+  if ($m.btDevices) { [void]$keeps.Add("Bluetooth ($($m.btDevices) paired)") }
+  if ($m.wifi) { [void]$keeps.Add('Wi-Fi') }
+  if ($m.touch) { [void]$keeps.Add('touch') }
+  if ($m.biometric) { [void]$keeps.Add('Windows Hello') }
+  if ($m.vpn) { [void]$keeps.Add('VPN') }
+  if ($m.xboxUsed -and -not $CutXbox) { [void]$keeps.Add('Xbox / Game Pass') }
+  if ($m.xboxPad -and -not $CutXbox) { [void]$keeps.Add('Xbox controller') }
+  if (@($m.streamer).Count) { [void]$keeps.Add('streaming (' + (@($m.streamer) -join ', ') + ')') }
+  if ($m.laptop) { [void]$keeps.Add('battery, hibernate') }
   Say ("  Keeps: {0}" -f $(if ($keeps.Count) { $keeps -join ', ' } else { 'nothing extra' }))
   Say ("  UEFI {0}, Secure Boot {1}, TPM {2}, memory integrity {3}, IOMMU {4}" -f $m.uefi, $m.secureBoot, $m.tpm, $(if ($m.vbs) { 'on' } else { 'off' }), $(if ($m.iommu) { 'on' } else { 'off' }))
   # Where the read spent its time, in seconds, largest first: a slow PC (or a slow build machine) says so on its own line.
