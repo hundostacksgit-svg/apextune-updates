@@ -505,8 +505,11 @@ model fails the run, so a new query needs a line there.
 
 Two guards in the full-tune step exist because of regressions the logs
 caught: the output must show a per-user template service being configured
-(`WpnUserService -> manual`), and the run must not record more than six
-fewer changes than the last published `ci-run.json`. A legitimate drop
+(`WpnUserService -> manual`), and the run's recorded changes plus the
+settings it left alone on purpose (the `already disabled; left that way`
+and `already capped` lines) must not fall more than six below the last
+published `ci-run.json`'s count; the left-alone count is published as
+`leftAlone` and the proof line shows it. A legitimate drop
 (say, an image that ships without a service, or a rule that now leaves
 something alone, as 1.42.0's "a disabled service stays disabled" did)
 means adjusting the guard, never removing it. Diffing `studio/assets/ci-log.txt` between two CI

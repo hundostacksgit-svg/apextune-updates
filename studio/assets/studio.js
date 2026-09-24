@@ -808,6 +808,7 @@ function initTune() {
         el.innerHTML = `${procs}, <b>${esc(c.changes)}</b> changes recorded in ${esc(c.seconds)} s`
           + (c.second >= 0 ? `; run again, <b>${esc(c.second)}</b> new` : '')
           + (c.extreme >= 0 ? `; Extreme on top, <b>${esc(c.extreme)}</b> more` : '')
+          + (c.leftAlone ? `; <b>${esc(c.leftAlone)}</b> already off on that machine, left alone` : '')
           + `; <b>${esc(c.undone)}</b> put back by undo${c.runs > 1 ? ` across ${esc(c.runs)} runs` : ''}`
           + (c.kept ? `; <b>${esc(c.kept)}</b> settings turned back on by hand and put back by the keep task` : '')
           + (typeof c.red === 'number' ? `; <b>${esc(c.red)}</b> lines of error text on screen across every run` : '')
