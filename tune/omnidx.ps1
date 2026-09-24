@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.63.0'
+$script:Version = '1.64.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -528,11 +528,17 @@ function Get-Machine {
   # A virtual display reports 1 Hz; anything under 24 is not a refresh rate a person set, so it reads as unknown.
   $refresh = ($gpus | ForEach-Object { $_.CurrentRefreshRate } | Where-Object { $_ -ge 24 } | Measure-Object -Maximum).Maximum
   & $lap 'cim'
-  $printers = @(Get-Printer -ErrorAction SilentlyContinue | Where-Object { $_.Name -notmatch 'Microsoft|OneNote|Fax|XPS|PDF' })
+  # The printer list from its class (Get-Printer loads a module for one field: 2.3 s cold on 1.63.0's read line); the cmdlet is the fallback.
+  $printers = @()
+  try { $printers = @(Get-CimInstance -Namespace root/StandardCimv2 -ClassName MSFT_Printer -ErrorAction Stop | Where-Object { $_.Name -notmatch 'Microsoft|OneNote|Fax|XPS|PDF' }) }
+  catch { $printers = @(Get-Printer -ErrorAction SilentlyContinue | Where-Object { $_.Name -notmatch 'Microsoft|OneNote|Fax|XPS|PDF' }) }
   & $lap 'printers'
   # One device listing for the five classes that matter, filtered in memory: 1.58.0's read line showed the
   # five class-by-class queries costing 2.2 s on the build machine, each one walking the whole bus.
-  $devs = @(Get-PnpDevice -Class HIDClass, XboxComposite, XnaComposite, Bluetooth, Biometric -Status OK -ErrorAction SilentlyContinue)
+  # The same class the cmdlet wraps, asked directly (no module load); the cmdlet is the fallback.
+  $devs = @()
+  try { $devs = @(Get-CimInstance -ClassName Win32_PnPEntity -Filter "Status = 'OK' AND (PNPClass = 'HIDClass' OR PNPClass = 'XboxComposite' OR PNPClass = 'XnaComposite' OR PNPClass = 'Bluetooth' OR PNPClass = 'Biometric')" -ErrorAction Stop | ForEach-Object { [pscustomobject]@{ Class = $_.PNPClass; FriendlyName = $_.Name } }) }
+  catch { $devs = @(Get-PnpDevice -Class HIDClass, XboxComposite, XnaComposite, Bluetooth, Biometric -Status OK -ErrorAction SilentlyContinue) }
   $btAll = @($devs | Where-Object { $_.Class -eq 'Bluetooth' })
   $bt = @($btAll | Where-Object { $_.FriendlyName -notmatch 'Adapter|Enumerator|Radio|Microsoft|Generic|RFCOMM|LE Generic|Service' })
   $btRadio = $btAll.Count -gt 0
@@ -600,7 +606,10 @@ function Get-Machine {
   $optimizers = @($installed | Where-Object { $_ -match 'Advanced SystemCare|Razer Cortex|CCleaner|Driver Booster|Wise Care|Glary|PC Optimizer|Smart Game Booster|Outbyte|Restoro|Reimage|Booster' } | Sort-Object -Unique)
   $oem = @($installed | Where-Object { $_ -match 'SupportAssist|HP Support Assistant|HP Analytics|HP Wolf|Lenovo Vantage|Lenovo System Update|Armoury Crate|MyASUS|Dragon Center|MSI Center|Acer Care|Predator Sense|Alienware Command|Omen Gaming Hub|Aura Sync|LiveDash|McAfee|Norton' } | Sort-Object -Unique)
   $uefi = $env:firmware_type -eq 'UEFI'
-  $secureBoot = $false; try { $secureBoot = Confirm-SecureBootUEFI -ErrorAction Stop } catch { }
+  # Secure Boot from the flag Windows records at boot (the cmdlet loads a module to read the same state); the cmdlet is the fallback.
+  $secureBoot = $false
+  try { $sbv = (Get-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Control\SecureBoot\State' -ErrorAction Stop).GetValue('UEFISecureBootEnabled'); if ($null -eq $sbv) { throw 'no flag' }; $secureBoot = ([int]$sbv -eq 1) }
+  catch { try { $secureBoot = Confirm-SecureBootUEFI -ErrorAction Stop } catch { } }
   # The TPM from its own class (Get-Tpm loads a module to read one field); the cmdlet is the fallback when the class is missing.
   $tpm = $false
   try { $tpm = @(Get-CimInstance -Namespace root/CIMV2/Security/MicrosoftTpm -ClassName Win32_Tpm -ErrorAction Stop).Count -gt 0 }
@@ -1518,18 +1527,26 @@ $script:CapabilityIds = @{
 # The component store's record of each capability, by package name. A name verified on the build machine
 # (the check's discovery step, 1.62.0) decides by state without DISM; a hint says whether the store mentions
 # the piece at all, and a piece it never mentions is not on the PC. Anything else is asked of DISM by name.
+# Steps Recorder, Math Input Panel, Internet Explorer and the Server name of the old Media Player were verified
+# by the check on the build machine; the client Media Player name, WordPad and Fax and Scan are the names the
+# feature-on-demand packages ship under (build 17763 onward). A name that matches nothing goes to DISM.
 $script:CapabilityPackages = @{
-  'App.StepsRecorder' = 'Microsoft-Windows-StepsRecorder-Package~31bf3856ad364e35~amd64~~'
-  'Media.WindowsMediaPlayer' = 'Microsoft-Windows-MediaPlayer-Opt-Package~31bf3856ad364e35~amd64~~'
-  'Browser.InternetExplorer' = 'Microsoft-Windows-InternetExplorer-Optional-Package~31bf3856ad364e35~amd64~~'
+  'App.StepsRecorder' = @('Microsoft-Windows-StepsRecorder-Package~31bf3856ad364e35~amd64~~')
+  'Media.WindowsMediaPlayer' = @('Microsoft-Windows-MediaPlayer-Opt-Package~31bf3856ad364e35~amd64~~', 'Microsoft-Windows-MediaPlayer-Package~31bf3856ad364e35~amd64~~')
+  'Microsoft.Windows.WordPad' = @('Microsoft-Windows-WordPad-FoD-Package~31bf3856ad364e35~amd64~~')
+  'MathRecognizer' = @('Microsoft-Windows-TabletPCMath-Package~31bf3856ad364e35~amd64~~')
+  'Browser.InternetExplorer' = @('Microsoft-Windows-InternetExplorer-Optional-Package~31bf3856ad364e35~amd64~~')
+  'Print.Fax.Scan' = @('Microsoft-Windows-Printing-WFS-FoD-Package~31bf3856ad364e35~amd64~~')
 }
+# Hello Face ships as Microsoft-Windows-Hello-Face-Package, but its capability id carries a build number the
+# package name does not, so when the store mentions it DISM is asked which id is installed.
 $script:CapabilityHints = @{
   'App.StepsRecorder' = 'StepsRecorder'
-  'Media.WindowsMediaPlayer' = 'MediaPlayer-Opt'
+  'Media.WindowsMediaPlayer' = 'MediaPlayer'
   'Microsoft.Windows.WordPad' = 'WordPad'
   'MathRecognizer' = 'Math|TabletPC'
   'Browser.InternetExplorer' = 'InternetExplorer-Optional'
-  'Print.Fax.Scan' = 'Fax|WFS'
+  'Print.Fax.Scan' = 'WFS|Fax-Client'
   'Hello.Face' = 'Hello'
 }
 $script:Features = @(
@@ -1590,10 +1607,10 @@ function Get-DebloatPlan($m) {
       # Nothing in the component store mentions the piece: it is not on this PC, and DISM need not be asked.
       $cands = @($pkgs | Where-Object { $_ -match $script:CapabilityHints[$c[0]] })
       if (-not $cands.Count) { continue }
-      # A package name verified on the build machine decides by its state; any other name is left to DISM.
-      $prefix = $script:CapabilityPackages[$c[0]]
-      if ($prefix) {
-        $mine = @($cands | Where-Object { $_.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase) })
+      # A known package name decides by its state; any other name is left to DISM.
+      $prefixes = @(); if ($script:CapabilityPackages.ContainsKey($c[0])) { $prefixes = @($script:CapabilityPackages[$c[0]]) }
+      if ($prefixes.Count) {
+        $mine = @($cands | Where-Object { $n = $_; @($prefixes | Where-Object { $n.StartsWith($_, [System.StringComparison]::OrdinalIgnoreCase) }).Count -gt 0 })
         if ($mine.Count) {
           $decided = $true
           foreach ($n in $mine) {

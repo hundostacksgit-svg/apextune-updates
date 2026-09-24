@@ -31,7 +31,7 @@ $pk = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing
 $names = @()
 try { $names = @(Get-ChildItem -Path $pk -Name -ErrorAction Stop) } catch { Write-Host ("  cannot list: {0}" -f $_.Exception.Message) }
 Write-Host ("  {0} packages listed in {1:0.0} s" -f $names.Count, $sw.Elapsed.TotalSeconds); $sw.Restart()
-foreach ($n in @($names | Where-Object { $_ -match 'StepsRecorder|MediaPlayer-Opt-Package|InternetExplorer-Optional-Package|WordPad|Math|TabletPC|WFS|Fax-Client|Hello' })) {
+foreach ($n in @($names | Where-Object { $_ -match 'StepsRecorder|MediaPlayer|InternetExplorer-Optional-Package|WordPad|TabletPCMath|WFS|Fax|Hello' })) {
   $st = $null; $vis = $null
   try { $k = Get-Item -Path (Join-Path $pk $n) -ErrorAction Stop; $st = $k.GetValue('CurrentState'); $vis = $k.GetValue('Visibility') } catch { }
   Write-Host ("  {0}  CurrentState={1} Visibility={2}" -f $n, $st, $vis)

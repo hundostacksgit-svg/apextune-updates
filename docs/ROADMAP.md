@@ -87,7 +87,22 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   piece the store never mentions is skipped; the rest (Math Input Panel
   until its package name is verified, Fax and Scan where a fax package
   exists) still go to DISM. The check compares the look's count with DISM's
-  answer every run.
+  answer every run. Measured: the run's debloat look 7.6 s to 3.9 s; the
+  free look's pieces lap 15.2 s to 13.1 s cold, because the two names still
+  asked of DISM carry its whole cold start; the gate matched at five. The
+  discovery step also named Math Input Panel's package
+  (`Microsoft-Windows-TabletPCMath-Package`, verified), and showed the
+  cold read's slowest lap is now the printer listing (2.3 s, a module load
+  for one class).
+- **Every piece from the component store** (1.64.0): the two names 1.63.0
+  still asked of DISM carried its whole cold start. Math Input Panel's
+  package name came from the discovery step; WordPad, Fax and Scan and the
+  client name of the old Media Player (`Microsoft-Windows-MediaPlayer-Package`,
+  where the build machine has `MediaPlayer-Opt-Package`) from the names the
+  feature-on-demand packages ship under; the hint for the Media Player is
+  now the bare word, because the 1.63.0 hint would have skipped it on a
+  Windows 11 PC. The printer, device and Secure Boot reads lost their
+  module loads the same way as 1.62.0's.
 - **The moving background**: one canvas behind every page, hard black,
   purple shades and small purple objects at different depths that drift,
   slide with the scroll and lean toward the pointer; still under reduced

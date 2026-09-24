@@ -291,10 +291,6 @@ jobs:
           Get-Content C:\OmniDx\ci-summary.json
           exit 0
 
-      - name: DISM's answer about the Windows pieces after the run
-        run: |
-          & .\tools\ci-pieces.ps1 *>&1 | Out-String -Width 4000 | Write-Host
-
       # The support zip: on the desktop, with the logs in it and no key in them.
       - name: The support bundle zips the logs with the key masked
         run: |

@@ -139,12 +139,20 @@
       </ul>
     </div>
     <div class="card reveal d1" style="margin-top:16px">
+      <div class="eyebrow" style="margin-bottom:12px">v1.64.0 · September 2026</div>
+      <h3>Every Windows piece decided from the component store, and three fewer module loads in the read</h3>
+      <ul class="tick">
+        <li>1.63.0 still asked DISM about two names on the build machine, and those two carried its whole cold start (13.1 s of the look). Math Input Panel's package name came out of the check's discovery step; WordPad, Fax and Scan and the client name of the old Media Player are the names their feature-on-demand packages ship under. The old Media Player matters: its package is named differently on Windows 11 than on the build machine, and the previous hint would have skipped it on a buyer's PC. Anything the store mentions under an unknown name still goes to DISM</li>
+        <li>The printer list, the device listing and the Secure Boot flag are read from their classes and the boot-time flag instead of loading three modules; the cmdlets remain the fallback. The cold read's slowest lap was the printer listing at 2.3 s</li>
+      </ul>
+    </div>
+    <div class="card reveal d1" style="margin-top:16px">
       <div class="eyebrow" style="margin-bottom:12px">v1.63.0 · September 2026</div>
       <h3>The free look reads the component store instead of asking DISM fifteen times</h3>
       <ul class="tick">
         <li>The look's own split (recorded since 1.62.0) put fifteen of its nineteen cold seconds on the Windows pieces: each name asked of DISM costs half a second warm and a second cold. The component store's record in the registry lists every package in under a second and says which are installed; the optional-feature class answers every feature name at once</li>
         <li>Steps Recorder, the old Media Player and Internet Explorer are decided from that record by package names the check verified; a piece the store never mentions is not on the PC and is not asked about; anything else is still asked of DISM by name, so the answer is never a guess</li>
-        <li>The Windows check now holds the look's count against DISM's own answer on every run and fails on a mismatch</li>
+        <li>The Windows check now holds the look's count against DISM's own answer on every run and fails on a mismatch. Measured on the build machine: the run's debloat look 7.6 s to 3.9 s; the free look's pieces lap 15.2 s to 13.1 s cold, with the two names still asked of DISM carrying its whole cold start</li>
       </ul>
     </div>
     <div class="card reveal d1" style="margin-top:16px">
