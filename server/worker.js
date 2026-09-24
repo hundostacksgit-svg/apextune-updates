@@ -16,7 +16,8 @@
  * runs when you call it.
  */
 
-import Anthropic from '@anthropic-ai/sdk';
+// The AI planner's SDK is loaded only when the planner is asked, so the tests, the browser test and the
+// Windows check can run this file under Node without the package installed (only the deploy bundles it).
 
 /* Kept in step with studio/assets/config.js. If you change the split there,
    change it here too — the server is the side that decides. */
@@ -1501,6 +1502,7 @@ RULES
   would normally include it.`
 
 async function askClaude(env, prompt, body) {
+  const { default: Anthropic } = await import('@anthropic-ai/sdk');
   const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
 
   const request = {

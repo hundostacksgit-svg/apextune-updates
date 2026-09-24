@@ -40,7 +40,7 @@ jobs:
 
   # Forty minutes of Windows for a change to the licence server or the site
   # proves nothing the static job did not; the Windows job runs when the
-  # script, the bootstrapper, the stand-in licence server or this workflow
+  # script, the bootstrapper, the licence server it runs against or this workflow
   # changed, and always on the button.
   changes:
     if: github.event_name != 'pull_request'
@@ -63,7 +63,7 @@ jobs:
             changed="$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo tune/omnidx.ps1)"
           fi
           echo "$changed"
-          if echo "$changed" | grep -Eq '^(tune/|go\.ps1$|tools/ci-licence\.ps1$|tools/ci-red\.ps1$|tools/make-tune-key\.py$|\.github/workflows/tune-check\.yml$)'; then
+          if echo "$changed" | grep -Eq '^(tune/|go\.ps1$|server/worker\.js$|tools/worker-serve\.mjs$|tools/worker-standin\.mjs$|tools/ci-red\.ps1$|tools/make-tune-key\.py$|\.github/workflows/tune-check\.yml$)'; then
             echo "windows=true" >> "$GITHUB_OUTPUT"; echo "the tune changed: the Windows job runs"
           else
             echo "windows=false" >> "$GITHUB_OUTPUT"; echo "nothing the Windows job tests changed: skipped"
@@ -195,17 +195,24 @@ jobs:
           if ($out -match '== Done') { Write-Host 'the tune ran with a server that does not exist'; exit 1 }
           if ($out -notmatch 'Nothing has changed on this PC') { Write-Host 'no refusal was printed'; exit 1 }
           if (Test-Path C:\OmniDx\undo\changes-latest.json) { Write-Host 'a change record was written without a licence check'; exit 1 }
-          Start-Process powershell -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File tools\ci-licence.ps1' -WindowStyle Hidden
-          Start-Sleep -Seconds 3
-          $h = Invoke-RestMethod http://127.0.0.1:8787/v1/health
-          if (-not $h.mock) { Write-Host 'the stand-in licence server did not start'; exit 1 }
-          Write-Host 'stand-in licence server up'
+          # The licence server for the rest of the check is the real Worker code (server/worker.js under Node, with the
+          # tests' stand-in database and Square), on the loopback address. It issues one key for a stand-in order at
+          # start, the way the key page does after a payment, and writes it to a file for the steps below.
+          $keyFile = Join-Path $env:RUNNER_TEMP 'ci-key.txt'
+          Remove-Item $keyFile -Force -ErrorAction SilentlyContinue
+          Start-Process node -ArgumentList 'tools\worker-serve.mjs', '--port', '8787', '--key-file', $keyFile -WindowStyle Hidden
+          $h = $null
+          foreach ($i in 1..40) { Start-Sleep -Milliseconds 500; try { $h = Invoke-RestMethod http://127.0.0.1:8787/v1/health -TimeoutSec 5; break } catch { } }
+          if (-not $h -or -not $h.ok -or -not $h.square) { Write-Host 'the licence server (the real Worker code under Node) did not start'; exit 1 }
+          if (-not (Test-Path $keyFile)) { Write-Host 'the licence server wrote no key'; exit 1 }
+          Write-Host ("licence server up: the real Worker code, mail {0}, refunds {1}; one key issued for the check" -f $h.mail, $h.refunds)
           exit 0
 
       - name: Run the whole tune with a real key
         timeout-minutes: 20
         run: |
-          $key = (& python tools\make-tune-key.py | Select-Object -First 1).Trim()
+          # The key the licence server issued at start: a key that was really issued, as a buyer's is.
+          $key = (Get-Content (Join-Path $env:RUNNER_TEMP 'ci-key.txt') -Raw).Trim()
           # -Width: Out-String wraps at the console width otherwise, and the site shows these lines whole.
           $out = & .\tune\omnidx.ps1 -Key $key -Api http://127.0.0.1:8787 -Yes -NoRestart -NoAfterCount *>&1 | Out-String -Width 4000
           & .\tools\ci-red.ps1 -Text $out -Step 'Run the whole tune with a real key'
