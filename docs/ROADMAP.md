@@ -120,6 +120,11 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   look 17.8 s, whole 25.4 s. The pieces lap has ranged from 8.2 to 15.2 s
   across identical code, so single samples of the look are worth little;
   the read's laps are steadier.
+- **Services told to stop, not waited for** (1.67.0): the services phase
+  waited for each of some forty stops to complete, six to ten seconds on
+  the build machine; the stop is requested and the run moves on, the count
+  at the end already allowing for services still unwinding. The keep task
+  still waits. Measured below once the check has run.
 - **The moving background**: one canvas behind every page, hard black,
   purple shades and small purple objects at different depths that drift,
   slide with the scroll and lean toward the pointer; still under reduced

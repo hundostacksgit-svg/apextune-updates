@@ -139,6 +139,14 @@
       </ul>
     </div>
     <div class="card reveal d1" style="margin-top:16px">
+      <div class="eyebrow" style="margin-bottom:12px">v1.67.0 · September 2026</div>
+      <h3>Services are told to stop and the run moves on</h3>
+      <ul class="tick">
+        <li>The services phase waited for each of some forty services to finish stopping, six to ten seconds on the build machine. The stop is now requested and the run carries on; the count at the end already allows for services still unwinding and says so. The keep task, which runs unattended at sign-in, still waits</li>
+        <li>The site's moving background draws thirty frames a second instead of sixty (the drift is too slow for the eye to tell) and the glowing motes come from one pre-rendered sprite: measured in the browser, half the script cost per second</li>
+      </ul>
+    </div>
+    <div class="card reveal d1" style="margin-top:16px">
       <div class="eyebrow" style="margin-bottom:12px">v1.66.0 · September 2026</div>
       <h3>1.65.0's background read comes out: measured, it made the look slower</h3>
       <ul class="tick">
