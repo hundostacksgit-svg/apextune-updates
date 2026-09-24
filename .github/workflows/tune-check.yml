@@ -285,7 +285,7 @@ jobs:
           Set-Content C:\OmniDx\ci-left-alone.txt $leftAlone
           if ($last -and $last.changes -and (($now.changes + $leftAlone) -lt ($last.changes - 6))) { Write-Host ("this run recorded {0} changes and left {1} alone on purpose, the last published run recorded {2}: something is no longer being done; compare the logs" -f $now.changes, $leftAlone, $last.changes); exit 1 }
           # The run, word for word, for the site: the phase headers, what was done, the numbers.
-          $log = @($out -split "`r?`n" | Where-Object { $_ -match '^(== |  \+ |  ! |  Processes|  Before:|  After:|  Gone:|  Target|  Looked|  Read in|  Removing|  Key accepted|  \(debloat|  \([0-9]+ (pieces|features?)|  [0-9]+ )' -and $_ -notmatch 'Under 100' } | Select-Object -First 200)
+          $log = @($out -split "`r?`n" | Where-Object { $_ -match '^(== |  \+ |  ! |  Processes|  Before:|  After:|  Gone:|  Target|  Looked|  Read in|  Removing|  Key accepted|  \(debloat|  \([0-9]+ (pieces|features?)|  Where the time|  Outside the|  [0-9]+ )' -and $_ -notmatch 'Under 100' } | Select-Object -First 200)
           Set-Content studio\assets\ci-log.txt -Value $log -Encoding UTF8
           Write-Host ("{0} log lines kept for the site" -f $log.Count)
           Get-Content C:\OmniDx\ci-summary.json
@@ -396,6 +396,7 @@ jobs:
           Set-Content C:\OmniDx\ci-second.txt ("{0} {1}" -f $s.changes, $s.seconds)
           # The second run's phases too, so its half minute can be read the way the first run's is.
           Set-Content C:\OmniDx\ci-second-phases.json ($s.phases | ConvertTo-Json -Compress)
+          if ($s.steps) { Set-Content C:\OmniDx\ci-second-steps.json ($s.steps | ConvertTo-Json -Compress) }
           exit 0
 
       # Extreme, on top: it must ask nothing under -Yes, record its extra changes,
@@ -471,9 +472,10 @@ jobs:
           if (Test-Path C:\OmniDx\ci-look.txt) { $lk = (Get-Content C:\OmniDx\ci-look.txt) -split ' '; if ($lk.Count -ge 3) { $look = [double]$lk[0]; $read = [double]$lk[1]; $lookTotal = [double]$lk[2] }; if ($lk.Count -ge 8) { $lookParts = [ordered]@{ startup = [double]$lk[3]; services = [double]$lk[4]; tasks = [double]$lk[5]; apps = [double]$lk[6]; pieces = [double]$lk[7] } } }
           if (Test-Path C:\OmniDx\ci-read.txt) { $readParts = "$(Get-Content C:\OmniDx\ci-read.txt)".Trim() }
           $secondPhases = $null; if (Test-Path C:\OmniDx\ci-second-phases.json) { try { $secondPhases = Get-Content C:\OmniDx\ci-second-phases.json -Raw | ConvertFrom-Json } catch { $secondPhases = $null } }
+          $secondSteps = $null; if (Test-Path C:\OmniDx\ci-second-steps.json) { try { $secondSteps = Get-Content C:\OmniDx\ci-second-steps.json -Raw | ConvertFrom-Json } catch { $secondSteps = $null } }
           # Two runs are left after the undo-last step above; the third is already in done.
           if (([regex]::Matches($out, 'Putting back \d+ changes?')).Count -ne 2) { Write-Host 'undo should have walked back the two remaining runs'; exit 1 }
-          $ci = [ordered]@{ version = $s.version; when = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'); os = $s.os; cpu = $s.cpu; before = $s.before; after = $s.after; target = $s.target; changes = $s.changes; warnings = $s.warnings; seconds = $s.seconds; undone = $undone; kept = $kept; second = $second; secondSeconds = $secondSeconds; extreme = $extreme; leftAlone = $leftAlone; runs = 3; gone = @($s.gone).Count; phases = $s.phases; sha = $env:GITHUB_SHA.Substring(0, 7); look = $look; read = $read; lookTotal = $lookTotal; lookParts = $lookParts; readParts = $readParts; secondPhases = $secondPhases }
+          $ci = [ordered]@{ version = $s.version; when = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'); os = $s.os; cpu = $s.cpu; before = $s.before; after = $s.after; target = $s.target; changes = $s.changes; warnings = $s.warnings; seconds = $s.seconds; undone = $undone; kept = $kept; second = $second; secondSeconds = $secondSeconds; extreme = $extreme; leftAlone = $leftAlone; runs = 3; gone = @($s.gone).Count; phases = $s.phases; sha = $env:GITHUB_SHA.Substring(0, 7); look = $look; read = $read; lookTotal = $lookTotal; lookParts = $lookParts; readParts = $readParts; secondPhases = $secondPhases; steps = $s.steps; secondSteps = $secondSteps }
           $out = & .\tune\omnidx.ps1 -Status *>&1 | Out-String -Width 4000
           & .\tools\ci-red.ps1 -Text $out -Step 'Status after undo'
           Write-Host $out

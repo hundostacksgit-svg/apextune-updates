@@ -150,6 +150,11 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   which the fallback covers. Measured: one feature, one session, 6 s (the
   step 7.5 s with the class read); same 386 and 382. 1.72.0 records the
   second run's phases (30 to 33 s for one change) so that time can be read.
+  Measured (1.72.0): the second run's phases add up to 13 s of its 29 s; the
+  rest is outside the phases (the read, the idle-CPU samples before and
+  after, the backup, the key check), timed next: 1.73.0 marks each of those
+  steps by name in the summary and the record, for both runs, and prints
+  the ones over a second under the phases line.
 - **The moving background**: one canvas behind every page, hard black,
   purple shades and small purple objects at different depths that drift,
   slide with the scroll and lean toward the pointer; still under reduced
