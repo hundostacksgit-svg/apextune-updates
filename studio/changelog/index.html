@@ -139,6 +139,17 @@
       </ul>
     </div>
     <div class="card reveal d1" style="margin-top:16px">
+      <div class="eyebrow" style="margin-bottom:12px">v1.76.0 · September 2026</div>
+      <h3>Competitive settings written into the games' own files, and the PC maker's software in Extreme</h3>
+      <ul class="tick">
+        <li>For Fortnite, Marvel Rivals, Apex Legends, Counter-Strike 2, Rocket League, Rainbow Six Siege and Minecraft, the tune writes V-Sync off, motion blur off and the shadow and post-processing settings players use into each game's own settings file. It asks first, backs up each file, skips a game that is running, and undo puts every value back</li>
+        <li>Only a line already in the file changes, and only when its value has the shape the game uses: a setting a game renames is left alone, never added. The file keeps its own encoding. VALORANT, Overwatch 2 and League of Legends keep their settings in the account, so their files are left alone and the report still lists their settings</li>
+        <li>The free look lists what it would write, game by game, before anything changes; the app has its own checkbox for it</li>
+        <li>Extreme now removes the PC maker's support agents and promotion apps (Dell, HP, Lenovo, ASUS, Acer) and switches off their telemetry services. The hubs that run the fans, the battery limit and the hotkeys go only on a desktop; on a laptop they stay, with their services</li>
+        <li>The Windows check plants four games' files (one in UTF-16), proves the twelve edits, the four backups, a wrong-shaped value and a missing setting left alone, and after the undo compares every file byte for byte</li>
+      </ul>
+    </div>
+    <div class="card reveal d1" style="margin-top:16px">
       <div class="eyebrow" style="margin-bottom:12px">v1.75.0 · September 2026</div>
       <h3>GPU health, thermal zones, the network as numbers, and a streamer profile</h3>
       <ul class="tick">
@@ -147,7 +158,7 @@
         <li>The network as numbers: five pings to the router and five to the internet's edge, median, jitter and loss. A slow or jittery link to the router is named as Wi-Fi or a bad cable; loss is named as the line, which no tweak fixes</li>
         <li>Streamer profile: with OBS Studio, Streamlabs Desktop or XSplit installed (or -Streamer), the camera frame server and Windows Graphics Capture stay, in Extreme too, and the report carries the encoder and capture notes</li>
         <li>The report gains "Undervolt, not overclock, and a frame cap": the voltage curve on NVIDIA, the voltage steps on AMD, Curve Optimizer on Ryzen, the BIOS microcode on 13th and 14th gen Intel, and a frame cap three below the refresh rate with adaptive sync. Words only; the tune never touches voltage</li>
-        <li>Fixed, found by this version's own check: in Windows PowerShell a list that filters down to one item stops being a list, and two places counted it. A PC with exactly one reason to keep something (only Wi-Fi, say) was told "Keeps: nothing extra"; worse, a PC with VALORANT or FACEIT missing exactly one of Secure Boot, TPM 2.0, IOMMU and memory integrity was told all four were on. Both now count properly, and so does the Spotify settings rewrite, which could have joined two lines into one</li>
+        <li>Fixed, found by this version's own check: under Windows PowerShell 5.1 the free look's "Keeps" line came back as "nothing extra" even when the PC had a reason to keep something, because of how that line was assembled (the same construct run on its own behaves, so the exact cause is not pinned down). It is now built one reason at a time, and the check proves it by running the free look with -Streamer. Two other lists that filter down to one item are wrapped the same way as a precaution</li>
       </ul>
     </div>
     <div class="card reveal d1" style="margin-top:16px">

@@ -99,6 +99,28 @@ jobs:
             Write-Host "$f parses ($($tokens.Count) tokens)"
           }
 
+      # Four games' own settings files for the tune to find, in their own encodings: values it should change, a value of
+      # the wrong shape it must leave, a missing setting it must not add, and a setting it does not list.
+      - name: Plant four games' settings files
+        run: |
+          $fx = 'C:\OmniDx-ci\fixtures'; New-Item -ItemType Directory -Path $fx -Force | Out-Null
+          $u16 = New-Object System.Text.UnicodeEncoding($false, $true); $u8 = New-Object System.Text.UTF8Encoding($false)
+          $docs = [Environment]::GetFolderPath('MyDocuments')
+          $files = @(
+            @{ path = (Join-Path $env:LOCALAPPDATA 'FortniteGame\Saved\Config\WindowsClient\GameUserSettings.ini'); enc = $u16; text = "[/Script/FortniteGame.FortGameUserSettings]`r`nbUseVSync=True`r`nbMotionBlur=True`r`nFrameRateLimit=60.000000`r`n`r`n[ScalabilityGroups]`r`nsg.ResolutionQuality=100.000000`r`nsg.ShadowQuality=3`r`nsg.PostProcessQuality=3`r`n" },
+            @{ path = (Join-Path $env:USERPROFILE 'Saved Games\Respawn\Apex\local\videoconfig.txt'); enc = $u8; text = "`"VideoConfig`"`n{`n`t`"setting.mat_vsync_mode`"`t`t`"1`"`n`t`"setting.csm_enabled`"`t`t`"1`"`n`t`"setting.shadow_enable`"`t`t`"1`"`n`t`"setting.dvs_enable`"`t`t`"auto`"`n}`n" },
+            @{ path = (Join-Path $env:APPDATA '.minecraft\options.txt'); enc = $u8; text = "version:3955`nenableVsync:true`nrenderClouds:`"true`"`nmaxFps:120`n" },
+            @{ path = (Join-Path $docs 'My Games\Rocket League\TAGame\Config\TASystemSettings.ini'); enc = $u8; text = "[SystemSettings]`r`nUseVsync=True`r`nMotionBlur=True`r`nDynamicShadows=True`r`nDepthOfField=True`r`nBloom=True`r`n" }
+          )
+          $i = 0
+          foreach ($f in $files) {
+            New-Item -ItemType Directory -Path (Split-Path $f.path) -Force | Out-Null
+            [IO.File]::WriteAllText($f.path, $f.text, $f.enc); $i++
+            Copy-Item $f.path (Join-Path $fx ("{0}.orig" -f $i)) -Force
+            Add-Content (Join-Path $fx 'list.txt') $f.path
+            Write-Host ("planted {0}" -f $f.path)
+          }
+
       - name: Run the tune in report mode (changes nothing)
         run: |
           $lsw = [System.Diagnostics.Stopwatch]::StartNew()
@@ -119,6 +141,7 @@ jobs:
           $last = $null; try { $last = Get-Content studio\assets\ci-run.json -Raw | ConvertFrom-Json } catch { }
           if ($last -and ($null -ne $last.look) -and ([double]$last.look -ge 0) -and $look -ge 0 -and ($look -gt ([double]$last.look + 20))) { Write-Host ("the free look took {0} s; the last published run took {1} s" -f $look, $last.look); exit 1 }
           if ($out -notmatch '(?m)^  Network: ') { Write-Host 'the free look printed no network line'; exit 1 }
+          if ($out -notmatch "Settings it would write into your games' own files: 12") { Write-Host 'the free look did not find the twelve game settings planted for it'; exit 1 }
           Get-ChildItem C:\OmniDx | ForEach-Object { Write-Host $_.Name }
           $preview = Get-ChildItem C:\OmniDx -Filter 'report-preview-*.txt' | Select-Object -First 1
           if (-not $preview) { Write-Host 'no preview report was written'; exit 1 }
@@ -311,6 +334,29 @@ jobs:
           Set-Content studio\assets\ci-log.txt -Value $log -Encoding UTF8
           Write-Host ("{0} log lines kept for the site" -f $log.Count)
           Get-Content C:\OmniDx\ci-summary.json
+          exit 0
+
+      - name: The games' own settings files were written, backed up, and left alone where they should be
+        run: |
+          $list = @(Get-Content C:\OmniDx-ci\fixtures\list.txt)
+          $b = [IO.File]::ReadAllBytes($list[0]); if ($b[0] -ne 0xFF -or $b[1] -ne 0xFE) { Write-Host 'the Fortnite file lost its UTF-16 mark'; exit 1 }
+          $fn = [IO.File]::ReadAllText($list[0], [Text.Encoding]::Unicode)
+          Write-Host $fn
+          if ($fn -notmatch '(?m)^bUseVSync=False\r?$' -or $fn -notmatch '(?m)^sg\.ShadowQuality=0\r?$' -or $fn -notmatch '(?m)^FrameRateLimit=60\.000000\r?$') { Write-Host 'Fortnite: not written as expected'; exit 1 }
+          $ap = Get-Content $list[1] -Raw; Write-Host $ap
+          if ($ap -notmatch '"setting\.csm_enabled"\t\t"0"') { Write-Host 'Apex: sun shadows not written'; exit 1 }
+          if ($ap -notmatch '"setting\.dvs_enable"\t\t"auto"') { Write-Host 'Apex: a value of the wrong shape was changed'; exit 1 }
+          $mc = Get-Content $list[2] -Raw; Write-Host $mc
+          if ($mc -notmatch '(?m)^enableVsync:false') { Write-Host 'Minecraft: V-Sync not written'; exit 1 }
+          if ($mc -match 'entityShadows') { Write-Host 'Minecraft: a setting the file did not have was added'; exit 1 }
+          $rl = Get-Content $list[3] -Raw; Write-Host $rl
+          if ($rl -notmatch '(?m)^UseVsync=False' -or $rl -notmatch '(?m)^DepthOfField=False') { Write-Host 'Rocket League: not written'; exit 1 }
+          if ($rl -notmatch '(?m)^Bloom=True') { Write-Host 'Rocket League: a setting the tune does not list was changed'; exit 1 }
+          $bk = @(Get-ChildItem C:\OmniDx\backup -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Directory.Name -eq 'games' })
+          if ($bk.Count -ne 4) { Write-Host ("expected four game file backups, found {0}" -f $bk.Count); exit 1 }
+          $rec = @(Get-Content C:\OmniDx\undo\changes-latest.json -Raw | ConvertFrom-Json | ForEach-Object { $_ } | Where-Object { $_.type -eq 'gamefile' })
+          if ($rec.Count -ne 12) { Write-Host ("expected twelve game settings recorded, found {0}" -f $rec.Count); exit 1 }
+          Write-Host 'four files, twelve settings, four backups; the wrong-shaped value, the missing setting and the unlisted one left alone'
           exit 0
 
       # The support zip: on the desktop, with the logs in it and no key in them.
@@ -516,6 +562,17 @@ jobs:
           if ($last -and ($null -ne $last.red) -and ($rl.Count -gt [int]$last.red)) { Write-Host ("red error text rose from {0} to {1}:" -f $last.red, $rl.Count); $rl | ForEach-Object { Write-Host ("  " + $_) }; exit 1 }
           $ci | ConvertTo-Json | Set-Content studio\assets\ci-run.json -Encoding UTF8
           Get-Content studio\assets\ci-run.json
+          exit 0
+
+      - name: After the undo, the games' settings files are back byte for byte
+        run: |
+          $list = @(Get-Content C:\OmniDx-ci\fixtures\list.txt)
+          for ($i = 0; $i -lt $list.Count; $i++) {
+            $now = (Get-FileHash $list[$i] -Algorithm SHA256).Hash
+            $was = (Get-FileHash (Join-Path 'C:\OmniDx-ci\fixtures' ("{0}.orig" -f ($i + 1))) -Algorithm SHA256).Hash
+            if ($now -ne $was) { Write-Host ("{0} is not back as it was" -f $list[$i]); Get-Content $list[$i]; exit 1 }
+          }
+          Write-Host 'all four game files are byte for byte as planted'
           exit 0
 
       - name: The key check refuses a bad key

@@ -51,8 +51,8 @@ Asked for after the first table closed. Ranked, with what each takes.
 | 1 | GPU health from the NVIDIA tool (temperature, power limit against maximum, throttle reasons), thermal zones, the network as numbers | **1.75.0** |
 | 2 | Streamer profile: OBS, Streamlabs, XSplit detected; the camera frame server and Windows Graphics Capture kept; encoder notes | **1.75.0** |
 | 3 | Undervolt-not-overclock and frame-cap notes per vendor in the report, and a guide page | **1.75.0** (report); page with the site round |
-| 4 | Per-game settings files with backup and undo, asked first; the check plants fixtures and proves the edits and the undo | next |
-| 5 | PC-maker hubs and support agents removed in Extreme, kept on laptops, reinstall notes in the undo | next |
+| 4 | Per-game settings files with backup and undo, asked first; the check plants fixtures and proves the edits and the undo | **1.76.0** |
+| 5 | PC-maker hubs and support agents removed in Extreme, kept on laptops, reinstall notes in the undo | **1.76.0** |
 | 6 | A fresh-install answer file made in the browser: local account, OOBE screens skipped, telemetry minimal, the free look at first sign-in | site round |
 | 7 | A page on what custom Windows builds change and where the tune stops, without names | site round |
 | 8 | The front page shows what a buyer gets as a slideshow, and every new feature is advertised | site round |

@@ -46,6 +46,7 @@ KEEPS = [
     ('A hard disk is present', 'SysMain (prefetch)'),
     ('Game Pass, the Xbox app or Minecraft is installed', 'XblAuthManager, XblGameSave, XboxNetApiSvc, XboxGipSvc (unless -CutXbox)'),
     ('An Xbox controller is connected', 'XboxGipSvc (unless -CutXbox)'),
+    ('Laptop, in Extreme', "HPAppHelperCap, HPDiagsCap, HPNetworkCap, HPSysInfoCap, LenovoVantageService, ImControllerService, AsusAppService, ArmouryCrateService, ASUSOptimization; the PC maker's hub apps (Vantage, MyASUS, Armoury Crate, myHP, My Dell, Acer Care Center)"),
     ('Streaming software is installed (OBS Studio, Streamlabs Desktop, XSplit), or -Streamer', 'FrameServer (camera frame server), CaptureService (Windows Graphics Capture)'),
     ('Always', 'Themes; Microsoft Defender, the firewall, SmartScreen, UAC, Windows Update, audio, networking, every anti-cheat, every driver'),
 ]
@@ -126,6 +127,18 @@ def page(text: str) -> str:
         for n, why in extreme)
     yours = strings(re.search(r"\$yours = @\(([^\n]*)\)", text).group(1))
     yours_items = ''.join(f'<li class="mono">{e(y)}</li>' for y in yours)
+    oem = re.findall(r"@\('([^']+)',\s*'([^']+)',\s*'(any|desktop)'\)", block(text, 'OemApps'))
+    oem_rows = ''.join(f'<tr><td class="mono">{e(pat)}</td><td>{e(what)}</td><td>{"every PC" if when == "any" else "desktops only"}</td></tr>' for pat, what, when in oem)
+    gf_block = block(text, 'GameFiles')
+    gfiles = []
+    for chunk in gf_block.split('@{ game = ')[1:]:
+        name = re.match(r"'([^']+)'", chunk).group(1)
+        where = re.search(r"where = '([^']+)'", chunk).group(1)
+        sets = re.findall(r"@\('([^']+)',\s*'([^']+)',\s*'([^']+)'\)", chunk[chunk.index('set = @('):])
+        gfiles.append((name, where, sets))
+    gf_rows = ''.join(
+        f'<tr><td>{e(n)}</td><td class="mono">{e(w)}</td><td>' + '<br>'.join(f'<span class="mono">{e(k)}={e(v)}</span> ({e(what)})' for k, v, what in sets) + '</td></tr>'
+        for n, w, sets in gfiles)
     games_block = text[text.index('$script:Games = @('):text.index('function Get-GameRoots')]
     games = [(m.group(1), strings(m.group(2))) for m in re.finditer(r"@\{ name = '([^']+)'; exes = @\(([^)]*)\)", games_block)]
     game_rows = ''.join(f'<tr><td>{e(n)}</td><td class="mono">{e(", ".join(x))}</td></tr>' for n, x in games)
@@ -269,6 +282,26 @@ def page(text: str) -> str:
       <p>By the game's own executable name, so it applies wherever the game is installed: CPU priority high, I/O and memory priority raised, the high-performance GPU, fullscreen optimisations off. The report adds each game's competitive in-game settings. Vanguard, Easy Anti-Cheat, BattlEye, Ricochet and every game file are never touched.</p>
     </div>
     <div class="cmp-wrap"><table class="cmp" style="min-width:0"><thead><tr><th>Game</th><th>Executables</th></tr></thead><tbody>{game_rows}</tbody></table></div>
+  </div>
+</section>
+
+<section id="gamefiles">
+  <div class="wrap touch">
+    <div class="section-head reveal">
+      <h2>Settings inside the games' own files ({len(gfiles)} games)</h2>
+      <p>Only a line already in the file changes, and only when its value has the shape the game uses; a setting a game has renamed is left alone, never added. Each file is backed up first, a running game is skipped, and undo puts back each value it replaced. VALORANT, Overwatch 2 and League of Legends keep their settings in the account, so their files are left alone.</p>
+    </div>
+    <div class="cmp-wrap"><table class="cmp" style="min-width:0"><thead><tr><th>Game</th><th>File</th><th>What it writes</th></tr></thead><tbody>{gf_rows}</tbody></table></div>
+  </div>
+</section>
+
+<section id="oem">
+  <div class="wrap touch">
+    <div class="section-head reveal">
+      <h2>The PC maker's own apps, in Extreme only ({len(oem)})</h2>
+      <p>Support agents and promotions go on every PC. The hubs that run the fans, the battery limit and the hotkeys go only on a desktop and stay on a laptop. Undo lists every one; each is in the Microsoft Store or on the maker's site.</p>
+    </div>
+    <div class="cmp-wrap"><table class="cmp" style="min-width:0"><thead><tr><th>Package</th><th>What it is</th><th>Removed on</th></tr></thead><tbody>{oem_rows}</tbody></table></div>
   </div>
 </section>
 
