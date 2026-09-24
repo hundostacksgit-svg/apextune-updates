@@ -467,7 +467,9 @@ jobs:
       # change that fails this check never reaches anyone. A push made with
       # the workflow token starts no workflow, so Pages is asked to publish.
       - name: Commit the screenshot, the run's numbers and the verified script to the branch
-        if: github.event_name == 'push'
+        # On a push, and on the button: a manual run is how a stale verified copy is refreshed (two runs finishing out of order
+        # once left an older script as the verified one). A pull-request run never commits.
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
