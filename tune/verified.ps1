@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.55.0'
+$script:Version = '1.56.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -2075,15 +2075,21 @@ function Set-GameProfiles {
   $roots = Get-GameRoots
   # One walk of the game folders, four levels deep, then every game is a lookup;
   # walking Program Files once per game would take minutes.
+  # A terabyte of Steam libraries is a lot of folders to walk; the walk stops after twenty-five seconds
+  # and says so. The CPU-priority profile is by exe name and needs no path, so a game in a folder not
+  # reached still gets it; only its GPU preference and fullscreen setting wait for the next run.
   $index = @{}
+  $walk = [System.Diagnostics.Stopwatch]::StartNew(); $walked = 0; $capped = $false
   foreach ($root in $roots) {
+    if ($walk.Elapsed.TotalSeconds -gt 25) { $capped = $true; break }
+    $walked++
     foreach ($f in Get-ChildItem -Path $root -Filter '*.exe' -Recurse -Depth 4 -File -ErrorAction SilentlyContinue) {
       $k = $f.Name.ToLower()
       if (-not $index.ContainsKey($k)) { $index[$k] = New-Object System.Collections.ArrayList }
       [void]$index[$k].Add($f.FullName)
     }
   }
-  Say ("  Looked in {0} game folders" -f $roots.Count)
+  Say ("  Looked in {0} game folders in {1} s{2}" -f $walked, [math]::Round($walk.Elapsed.TotalSeconds, 1), $(if ($capped) { " (stopped there; {0} more folders wait for the next run, and every listed game has its CPU profile by name regardless)" -f ($roots.Count - $walked) } else { '' }))
   foreach ($g in $script:Games) {
     foreach ($exe in $g.exes) {
       # Where the game is installed, if it is: the exe by name inside the launchers' own folders.

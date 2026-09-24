@@ -1,15 +1,15 @@
 ﻿== Reading this PC
   ! The GPU driver dates from Jun 2006. A current driver is worth more than most tweaks.
   ! This looks like a virtual machine. The tune will run, but the numbers mean little here.
-  Processes running now: 151
+  Processes running now: 153
   Target for this PC after the tune and a restart: about 70
 == Your key
   Key accepted. PC 1 of 1 on this key.
 == Before the cut
-  Before: 151 processes, 1629 threads, 52441 handles, 2963 MB in use, idle CPU 7.1%, DPC 0%
+  Before: 153 processes, 1562 threads, 52454 handles, 2839 MB in use, idle CPU 1.6%, DPC 0%
 == Safety first
   ! Could not make a restore point (This functionality is not supported on this operating system.). The undo script still records everything.
-  + Registry and service list backed up to C:\OmniDx\backup\2026-09-24_08-20-48
+  + Registry and service list backed up to C:\OmniDx\backup\2026-09-24_08-35-32
   + undo.ps1 written to C:\OmniDx\undo
 == Startup apps
   2 things start with Windows:
@@ -87,7 +87,7 @@
   + off: Work Folders (corporate sync)
   + Edge: shopping assistant, recommendations, Spotlight, feedback prompts and reporting off
   + Kept gone: consumer features, suggested apps, account nags and the 'finish setting up' screen are off by policy
-  (debloat, where the time went: look 6.5 s, pieces 21.8 s, features 6.2 s)
+  (debloat, where the time went: look 7.4 s, pieces 22 s, features 7.3 s)
 == Telemetry, background activity, the shell
   + Telemetry, the advertising id, activity history, suggestions, Bing in Start, Recall and Edge's reporting off; background apps off; widgets, news, Copilot and Cortana off; Game DVR off, Game Mode on; the classic right-click menu on 11
 == System tuning
@@ -100,18 +100,17 @@
 == Network
   + TCP: autotuning normal, ECN and timestamps off, receive-side scaling on, segment coalescing off, CTCP.
   + Ethernet 3: Nagle off, power saving off
-  + Ethernet 4: Nagle off, power saving off
 == Discord, Spotify, browsers
   + Chrome: no background mode, hardware acceleration on
   + Edge: no startup boost, no background mode, hardware acceleration on
 == Game profiles
-  Looked in 16 game folders
+  Looked in 16 game folders in 2.1 s
   + No listed game found on the usual drives; the CPU-priority profiles are in place for when one is installed.
 == Cleanup
   + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 374 MB back.
 == Keeping it cut
   + Task 'OmniDx keep' runs three minutes after sign-in, puts back whatever an update turned on, and notes that start's boot time. Log: C:\OmniDx\keep-log.txt. Undo removes it.
 == Done
-  After:  136 processes, 1494 threads, 47601 handles, 3025 MB in use, idle CPU 1.2%, DPC 0%
-  Gone:   MoUsoCoreWorker, spoolsv, sppsvc
-  Processes: 151 -> 136 now, in 83 seconds. Restart for the real number: the services that were told to stop are still unwinding.
+  After:  137 processes, 1465 threads, 47321 handles, 2932 MB in use, idle CPU 1.6%, DPC 0%
+  Gone:   MoUsoCoreWorker, spoolsv, sppsvc, WMIADAP
+  Processes: 153 -> 137 now, in 85 seconds. Restart for the real number: the services that were told to stop are still unwinding.
