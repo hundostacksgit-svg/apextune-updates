@@ -176,5 +176,10 @@ screen (`$env:OMNIDX_MODE='status'`) showing "All still in place"; the
 after-restart.txt file; undo walking back every run; the BIOS checklist
 open in a browser on a phone next to the BIOS screen. And one screen
 recording of omnidx.net/studio/download/ scrolling to "The last run, word
-for word": the log the build machine committed, which nobody typed. That is
-enough raw footage for the first twenty posts.
+for word": the log the build machine committed, which nobody typed. And one
+of omnidx.net/studio/trust/ opening "Every verified run the site has
+recorded": thirty runs in a table, each with its count before and after,
+its seconds and its free-look timing, plus the median line above it. Nobody
+else in this category shows a run history at all; when someone says "one
+lucky run", that table is the reply. That is enough raw footage for the
+first twenty posts.
