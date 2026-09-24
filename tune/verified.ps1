@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.51.0'
+$script:Version = '1.52.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -571,6 +571,21 @@ function Get-Machine {
   $secureBoot = $false; try { $secureBoot = Confirm-SecureBootUEFI -ErrorAction Stop } catch { }
   $tpm = $false; try { $tpm = (Get-Tpm -ErrorAction Stop).TpmPresent } catch { }
   & $lap 'software'
+  # A desktop with a graphics card whose monitor is plugged into the motherboard: the integrated chip reports a
+  # display mode and the card reports none. Laptops route the screen through the integrated chip by design.
+  $displayOnIgpu = $false; $igpuName = ''
+  try {
+    $discrete = @($gpus | Where-Object { $_.Name -match 'NVIDIA|GeForce|RTX|GTX|Radeon RX|Radeon Pro|Arc' })
+    $integrated = @($gpus | Where-Object { $_.Name -match 'Intel\(R\) (UHD|HD|Iris)|AMD Radeon\(TM\) Graphics|Radeon Graphics$|Radeon\(TM\) Vega' -and $_.Name -notmatch 'RX' })
+    if (-not $laptop -and $discrete.Count -and $integrated.Count) {
+      $cardDrives = @($discrete | Where-Object { $_.CurrentHorizontalResolution -gt 0 }).Count -gt 0
+      $chipDrives = @($integrated | Where-Object { $_.CurrentHorizontalResolution -gt 0 }).Count -gt 0
+      if ($chipDrives -and -not $cardDrives) { $displayOnIgpu = $true; $igpuName = ($integrated | Select-Object -First 1).Name }
+    }
+  } catch { }
+  # Room on the system drive: games stutter and shader caches fail when it is nearly full.
+  $sysFreeGb = -1; $sysPct = -1
+  try { $sd = Get-PSDrive -Name $env:SystemDrive.Substring(0, 1) -ErrorAction Stop; if ($sd.Used -ne $null) { $sysFreeGb = [math]::Round($sd.Free / 1GB); $sysPct = [math]::Round(100 * $sd.Free / ($sd.Free + $sd.Used)) } } catch { }
   $vbsOn = $false; $dg = $null; try { $dg = Get-CimInstance -Namespace root\Microsoft\Windows\DeviceGuard -ClassName Win32_DeviceGuard -ErrorAction Stop; $vbsOn = ($dg.VirtualizationBasedSecurityStatus -eq 2) -or ($dg.SecurityServicesRunning -contains 2) } catch { }
   # IOMMU (VT-d / AMD-Vi): Windows lists "DMA protection" among the security properties available only when the IOMMU is on.
   # VALORANT's Vanguard and FACEIT require it, with memory integrity, since 2026; the tune reports it and never turns it off.
@@ -589,6 +604,7 @@ function Get-Machine {
     printers = $printers.Count; btDevices = $bt.Count; btRadio = $btRadio; wifi = $wifi; touch = $touch; biometric = $bio; vpn = $vpn; xboxUsed = $xboxUsed
     uefi = $uefi; secureBoot = $secureBoot; tpm = $tpm; vbs = $vbsOn; iommu = $iommu; hvci = $hvci
     riot = $riot; faceit = $faceit; x3dDual = $x3dDual
+    displayOnIgpu = $displayOnIgpu; igpuName = $igpuName; sysFreeGb = $sysFreeGb; sysPct = $sysPct
     name = $cs.Name
     xboxPad = $xboxPad; wifiLive = $wifiLive; vm = $vm; domain = $domain
     driverVer = $driverVer; driverDate = $driverDate
@@ -624,6 +640,8 @@ function Show-Advice($m) {
   if ($m.maxRefresh -and $m.refresh -and $m.refresh -ge 24 -and ($m.maxRefresh -gt ($m.refresh + 1))) { Warn ("Your display can do {0} Hz but Windows is set to {1} Hz. Settings > System > Display > Advanced display." -f $m.maxRefresh, $m.refresh) }
   if ($m.driverDate -and ($m.driverDate -lt (Get-Date).AddMonths(-12))) { Warn ("The GPU driver dates from {0}. A current driver is worth more than most tweaks." -f $m.driverDate.ToString('MMM yyyy')) }
   if ($m.noPageFile) { Warn "No page file. Some games crash without one: System > Advanced > Performance > Virtual memory > System managed." }
+  if ($m.displayOnIgpu) { Warn ("The display seems to be driven by the integrated graphics ({0}) while a {1} is installed. Check the monitor cable is in the graphics card's ports, not the motherboard's; no tweak comes close to that." -f $m.igpuName, $m.gpu) }
+  if ($m.sysFreeGb -ge 0 -and ($m.sysFreeGb -lt 20 -or $m.sysPct -lt 10)) { Warn ("{0} has {1} GB free ({2}%). Games stutter and shader caches fail on a full drive: Settings > System > Storage > Temporary files, or move a game to another drive." -f $env:SystemDrive, $m.sysFreeGb, $m.sysPct) }
   if ($m.sysHdd) { Warn "Windows is on a hard disk. An SSD is the biggest upgrade this PC can get; no tweak comes close." }
   if ($m.ramGb -lt 16) { Warn ("{0} GB of RAM. 16 GB is the floor for current games; the tune helps, but it cannot make memory." -f $m.ramGb) }
   if ($m.win -eq 10 -and $m.build -lt 19045) { Warn "Windows 10 is not on 22H2. Update it: the last builds fixed things no tweak can." }
@@ -2820,9 +2838,10 @@ function Write-Card($m, [int]$before, [int]$after, [string]$when) {
     $g.DrawString($cpu, $fLine, $text, 80, 640)
     $g.DrawString($gpu, $fLine, $text, 80, 690)
     $fSmall = & $font 27 $false
-    $g.DrawString('An example run on one PC. Yours will differ; the free report shows what it would find on yours.', $fSmall, $muted, 80, 770)
+    $g.DrawString('An example run on one PC. Yours will differ.', $fSmall, $muted, 80, 766)
+    $g.DrawString('The free report shows what it would find on yours, and changes nothing.', $fSmall, $muted, 80, 804)
     $dot = [string][char]0x00B7
-    $g.DrawString(("OmniDx Tune v{0} {1} {2}" -f $script:Version, $dot, (Get-Date).ToString('d MMMM yyyy')), $fSmall, $muted, 80, 812)
+    $g.DrawString(("OmniDx Tune v{0} {1} {2}" -f $script:Version, $dot, (Get-Date).ToString('d MMMM yyyy')), $fSmall, $muted, 80, 850)
     $g.DrawString('omnidx.net', (& $font 44 $true), $purple, 80, 930)
     $g.DrawString('One command. Undo in one line. Nothing installed.', $fSmall, $muted, 80, 996)
     $path = Join-Path $script:Root ("card-{0}.png" -f $script:Stamp)
