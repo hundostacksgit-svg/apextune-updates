@@ -139,6 +139,17 @@
       </ul>
     </div>
     <div class="card reveal d1" style="margin-top:16px">
+      <div class="eyebrow" style="margin-bottom:12px">v1.75.0 · September 2026</div>
+      <h3>GPU health, thermal zones, the network as numbers, and a streamer profile</h3>
+      <ul class="tick">
+        <li>On an NVIDIA card the free look reads the driver's own tool: temperature at idle, the power limit against the card's maximum, fan, and the throttle reasons that are active (thermal, power cap, power brake). It warns when the card is throttling or hot at idle and says when the power limit sits under the card's maximum. AMD and Intel ship no equivalent tool, and the look says nothing rather than guess</li>
+        <li>The ACPI thermal zones where the board exposes them, with the passive limit that means the CPU is being held back by heat right now</li>
+        <li>The network as numbers: five pings to the router and five to the internet's edge, median, jitter and loss. A slow or jittery link to the router is named as Wi-Fi or a bad cable; loss is named as the line, which no tweak fixes</li>
+        <li>Streamer profile: with OBS Studio, Streamlabs Desktop or XSplit installed (or -Streamer), the camera frame server and Windows Graphics Capture stay, in Extreme too, and the report carries the encoder and capture notes</li>
+        <li>The report gains "Undervolt, not overclock, and a frame cap": the voltage curve on NVIDIA, the voltage steps on AMD, Curve Optimizer on Ryzen, the BIOS microcode on 13th and 14th gen Intel, and a frame cap three below the refresh rate with adaptive sync. Words only; the tune never touches voltage</li>
+      </ul>
+    </div>
+    <div class="card reveal d1" style="margin-top:16px">
       <div class="eyebrow" style="margin-bottom:12px">v1.74.0 · September 2026</div>
       <h3>Two idle samples, and no update-service restart for an empty cache</h3>
       <ul class="tick">

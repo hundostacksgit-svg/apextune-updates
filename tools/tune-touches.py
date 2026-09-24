@@ -46,6 +46,7 @@ KEEPS = [
     ('A hard disk is present', 'SysMain (prefetch)'),
     ('Game Pass, the Xbox app or Minecraft is installed', 'XblAuthManager, XblGameSave, XboxNetApiSvc, XboxGipSvc (unless -CutXbox)'),
     ('An Xbox controller is connected', 'XboxGipSvc (unless -CutXbox)'),
+    ('Streaming software is installed (OBS Studio, Streamlabs Desktop, XSplit), or -Streamer', 'FrameServer (camera frame server), CaptureService (Windows Graphics Capture)'),
     ('Always', 'Themes; Microsoft Defender, the firewall, SmartScreen, UAC, Windows Update, audio, networking, every anti-cheat, every driver'),
 ]
 

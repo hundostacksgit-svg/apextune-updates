@@ -42,6 +42,21 @@ run record (`studio/assets/ci-run.json`) or from a named source.
 | 11 | **Steam, Epic, EA background services** to manual (`Steam Client Service`, `EpicOnlineServices`, `EABackgroundService`) | A few processes each; they start on demand | Service names | left alone (below) |
 | 12 | **Firefox** background updater and prefetch like Chrome and Edge | Parity for Firefox users | `MozillaMaintenance`; `user.js` | left alone (below) |
 
+## The second list: borrowed from the custom-build and overlay scenes
+
+Asked for after the first table closed. Ranked, with what each takes.
+
+| # | What | Status |
+|---|---|---|
+| 1 | GPU health from the NVIDIA tool (temperature, power limit against maximum, throttle reasons), thermal zones, the network as numbers | **1.75.0** |
+| 2 | Streamer profile: OBS, Streamlabs, XSplit detected; the camera frame server and Windows Graphics Capture kept; encoder notes | **1.75.0** |
+| 3 | Undervolt-not-overclock and frame-cap notes per vendor in the report, and a guide page | **1.75.0** (report); page with the site round |
+| 4 | Per-game settings files with backup and undo, asked first; the check plants fixtures and proves the edits and the undo | next |
+| 5 | PC-maker hubs and support agents removed in Extreme, kept on laptops, reinstall notes in the undo | next |
+| 6 | A fresh-install answer file made in the browser: local account, OOBE screens skipped, telemetry minimal, the free look at first sign-in | site round |
+| 7 | A page on what custom Windows builds change and where the tune stops, without names | site round |
+| 8 | The front page shows what a buyer gets as a slideshow, and every new feature is advertised | site round |
+
 ## Done outside the table
 
 - **The owner's logo everywhere** (the eagle over OMNIDX): nav and footer

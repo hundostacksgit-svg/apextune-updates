@@ -118,10 +118,22 @@ jobs:
           Set-Content C:\OmniDx\ci-read.txt -Value $readParts
           $last = $null; try { $last = Get-Content studio\assets\ci-run.json -Raw | ConvertFrom-Json } catch { }
           if ($last -and ($null -ne $last.look) -and ([double]$last.look -ge 0) -and $look -ge 0 -and ($look -gt ([double]$last.look + 20))) { Write-Host ("the free look took {0} s; the last published run took {1} s" -f $look, $last.look); exit 1 }
+          if ($out -notmatch '(?m)^  Network: ') { Write-Host 'the free look printed no network line'; exit 1 }
           Get-ChildItem C:\OmniDx | ForEach-Object { Write-Host $_.Name }
           $preview = Get-ChildItem C:\OmniDx -Filter 'report-preview-*.txt' | Select-Object -First 1
           if (-not $preview) { Write-Host 'no preview report was written'; exit 1 }
           Get-Content $preview.FullName
+          exit 0
+
+      # The streamer profile: -Streamer must reach the machine's keep list without streaming software installed.
+      - name: The streamer profile keeps what streaming needs
+        run: |
+          $out = & .\tune\omnidx.ps1 -Report -Streamer *>&1 | Out-String -Width 4000
+          & .\tools\ci-red.ps1 -Text $out -Step 'The streamer profile keeps what streaming needs'
+          $keeps = @($out -split "`r?`n" | Where-Object { $_ -match '^  Keeps: ' })
+          Write-Host $keeps
+          if (-not ($keeps -match 'streaming \(asked for with -Streamer\)')) { Write-Host '-Streamer did not reach the keep list'; exit 1 }
+          if ($out -notmatch 'Streaming software found') { Write-Host 'the advice did not name the streamer profile'; exit 1 }
           exit 0
 
       # DISM's own answer about every Windows piece, with the cost of asking, next to the component store's
@@ -270,6 +282,7 @@ jobs:
           # Its card image is renamed to the one the site commits next to it.
           Set-Content C:\OmniDx\ci-report.html -Value ((Get-Content $html.FullName -Raw) -replace 'card-[0-9_\-]+\.png', 'ci-card.png') -Encoding UTF8 -NoNewline
           # Its "What was done" must be a list of headings and lines, not one blob: 1.42.0 drew every line into a single heading and nothing caught it.
+          if ((Get-Content $html.FullName -Raw) -notmatch '<h2>Undervolt, not overclock, and a frame cap</h2>') { Write-Host 'the HTML report has no undervolt section'; exit 1 }
           $h4 = ([regex]::Matches((Get-Content $html.FullName -Raw), '<h4>')).Count
           if ($h4 -lt 8) { Write-Host ("the HTML report's What was done has {0} headings; expected one per phase" -f $h4); exit 1 }
           if (-not (Test-Path C:\OmniDx\undo\changes-latest.json)) { Write-Host 'no change record'; exit 1 }
