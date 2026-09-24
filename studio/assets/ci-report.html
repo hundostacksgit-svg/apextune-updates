@@ -1,5 +1,5 @@
 ﻿<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OmniDx Tune report - 2026-09-24_04-17</title>
+<title>OmniDx Tune report - 2026-09-24_04-43-58</title>
 <style>
 body{margin:0;background:#050308;color:#f1ecff;font:15px/1.6 -apple-system,'Segoe UI',Roboto,system-ui,sans-serif}
 main{max-width:860px;margin:0 auto;padding:36px 20px 80px}
@@ -17,16 +17,16 @@ details{margin:10px 0;background:#0e0a17;border:1px solid #2a1f45;border-radius:
 details pre{font:12.5px/1.5 ui-monospace,Consolas,monospace;color:#b3a8cf;overflow:auto;max-height:420px;margin:10px 0 4px}
 .bios ul{list-style:none;padding-left:2px}.bios li{margin:8px 0;color:#f1ecff}.bios{background:#0e0a17;border:1px solid #2a1f45;border-radius:14px;padding:6px 18px}
 </style></head><body><main>
-<h1>OmniDx Tune <span class="muted" style="font-size:16px">v1.48.0</span></h1>
-<p class="sub">Thursday, September 24, 2026 4:19 AM &middot; AMD EPYC 7763 64-Core Processor &middot; Microsoft Hyper-V Video &middot; 16 GB &middot; Microsoft Corporation Virtual Machine</p>
-<div class="big"><div><b>148</b><span>processes before</span></div><div><b>139</b><span>now, before a restart</span></div><div><b>~70</b><span>target for this PC after a restart</span></div></div>
+<h1>OmniDx Tune <span class="muted" style="font-size:16px">v1.49.0</span></h1>
+<p class="sub">Thursday, September 24, 2026 4:45 AM &middot; AMD EPYC 7763 64-Core Processor &middot; Microsoft Hyper-V Video &middot; 16 GB &middot; Microsoft Corporation Virtual Machine</p>
+<div class="big"><div><b>148</b><span>processes before</span></div><div><b>136</b><span>now, before a restart</span></div><div><b>~70</b><span>target for this PC after a restart</span></div></div>
 <p class="muted">Many of the "now" processes are only waiting to be stopped. The number after a restart is the one that counts; <code>C:\OmniDx\after-restart.txt</code> gets it at your next sign-in. Kept cut: a task at each sign-in puts back what a Windows update turns on; undo removes it.</p>
 <h2>Next steps</h2><ol><li>Restart. The services told to stop are still unwinding until you do, and the after-restart count lands in C:\OmniDx\after-restart.txt at your next sign-in, with the boot time of that start next to the one from before the tune.</li><li>BIOS: items 1 to 3 (memory profile, Re-Size BAR, CSM). Ten minutes, and the memory profile alone is the biggest free gain any PC has.</li><li>GPU control panel: low latency mode, power management and V-Sync, from the list below. Two minutes.</li><li>Launchers and overlays: the list below names the one or two settings in each that matter; the overlays are the usual cause of a stutter that &quot;came from nowhere&quot;.</li><li>Any time: $env:OMNIDX_MODE=&#39;status&#39;; irm omnidx.net/go.ps1 | iex shows what is still in place; undo is one line, and it is in this report.</li></ol>
-<h2>Before and after</h2><table><tr><th></th><th>Before</th><th>Now</th></tr><tr><td>Processes</td><td>148</td><td>139</td></tr><tr><td>Threads</td><td>1519</td><td>1445</td></tr><tr><td>Handles</td><td>50097</td><td>47158</td></tr><tr><td>Memory in use</td><td>2851 MB</td><td>2995 MB</td></tr><tr><td>Idle CPU</td><td>1.1%</td><td>1%</td></tr><tr><td>DPC time</td><td>0.13%</td><td>0%</td></tr></table>
+<h2>Before and after</h2><table><tr><th></th><th>Before</th><th>Now</th></tr><tr><td>Processes</td><td>148</td><td>136</td></tr><tr><td>Threads</td><td>1430</td><td>1462</td></tr><tr><td>Handles</td><td>49667</td><td>46612</td></tr><tr><td>Memory in use</td><td>2859 MB</td><td>2965 MB</td></tr><tr><td>Idle CPU</td><td>1.3%</td><td>1.2%</td></tr><tr><td>DPC time</td><td>0.26%</td><td>0%</td></tr></table>
 <h2>Gone, by name</h2><p class='muted'>Running before, not running now: spoolsv</p>
-<details><summary>Every process, before (56 names)</summary><pre>svchost                                  x82     1,241 MB
-conhost                                  x4         33 MB
-taskhostw                                x3         61 MB
+<details><summary>Every process, before (56 names)</summary><pre>svchost                                  x82     1,239 MB
+conhost                                  x4         34 MB
+taskhostw                                x3         54 MB
 WmiPrvSE                                 x3         60 MB
 csrss                                    x2         14 MB
 fontdrvhost                              x2         11 MB
@@ -38,27 +38,27 @@ DefenderSessionHelper                    x1          6 MB
 dockerd                                  x1         46 MB
 dwm                                      x1         76 MB
 explorer                                 x1        159 MB
-hosted-compute-agent                     x1         21 MB
+hosted-compute-agent                     x1         20 MB
 Idle                                     x1          0 MB
 LsaIso                                   x1          4 MB
 lsass                                    x1         31 MB
-MpDefenderCoreService                    x1         30 MB
+MpDefenderCoreService                    x1         29 MB
 mqsvc                                    x1         19 MB
 msdtc                                    x1         14 MB
-MsMpEng                                  x1        201 MB
-node                                     x1         41 MB
+MsMpEng                                  x1        151 MB
+node                                     x1         39 MB
 OpenConsole                              x1         14 MB
-powershell                               x1        203 MB
-provjobd.exe3917794569                   x1         36 MB
-Registry                                 x1         22 MB
-Runner.Listener                          x1         71 MB
-Runner.Worker                            x1        101 MB
-RuntimeBroker                            x1         49 MB
-SearchHost                               x1        113 MB
+powershell                               x1        213 MB
+provjobd.exe4090877468                   x1         36 MB
+Registry                                 x1         43 MB
+Runner.Listener                          x1         70 MB
+Runner.Worker                            x1         99 MB
+RuntimeBroker                            x1         47 MB
+SearchHost                               x1        109 MB
 Secure System                            x1         52 MB
 SecurityHealthService                    x1         12 MB
 ServiceFabricLocalClusterManager         x1         36 MB
-services                                 x1         11 MB
+services                                 x1         12 MB
 ShellHost                                x1         42 MB
 sihost                                   x1         42 MB
 smartscreen                              x1         12 MB
@@ -66,58 +66,58 @@ smss                                     x1          2 MB
 spoolsv                                  x1         22 MB
 sqlwriter                                x1         11 MB
 sshd                                     x1          9 MB
-StartMenuExperienceHost                  x1        133 MB
+StartMenuExperienceHost                  x1        130 MB
 System                                   x1          0 MB
-TiWorker                                 x1         28 MB
+TiWorker                                 x1         27 MB
 TrustedInstaller                         x1         10 MB
 UserOOBEBroker                           x1         11 MB
-vmcompute                                x1         11 MB
+vmcompute                                x1         10 MB
 vmms                                     x1         34 MB
-WaAppAgent                               x1         84 MB
+WaAppAgent                               x1         86 MB
 WaSecAgentProv                           x1          5 MB
-WindowsAzureGuestAgent                   x1         65 MB
+WindowsAzureGuestAgent                   x1         70 MB
 WindowsTerminal                          x1         85 MB
 wininit                                  x1          9 MB
 winlogon                                 x1         13 MB
-wslservice                               x1         28 MB</pre></details><details><summary>Every process, after (57 names)</summary><pre>svchost                                  x72     1,086 MB
+wslservice                               x1         28 MB</pre></details><details><summary>Every process, after (56 names)</summary><pre>svchost                                  x70     1,067 MB
 conhost                                  x4         33 MB
-taskhostw                                x3         56 MB
+taskhostw                                x3         66 MB
 WmiPrvSE                                 x3         67 MB
 csrss                                    x2         14 MB
 fontdrvhost                              x2         11 MB
 notepad                                  x2         59 MB
 SMSvcHost                                x2         50 MB
 AzureArcSysTray                          x1         19 MB
-ctfmon                                   x1         25 MB
+ctfmon                                   x1         31 MB
 DefenderSessionHelper                    x1          6 MB
 dllhost                                  x1         13 MB
 dockerd                                  x1         46 MB
 dwm                                      x1         76 MB
-explorer                                 x1        159 MB
-hosted-compute-agent                     x1         21 MB
+explorer                                 x1        158 MB
+hosted-compute-agent                     x1         18 MB
 Idle                                     x1          0 MB
 LsaIso                                   x1          4 MB
 lsass                                    x1         31 MB
-MpDefenderCoreService                    x1         30 MB
+MpDefenderCoreService                    x1         29 MB
 mqsvc                                    x1         19 MB
 msdtc                                    x1         14 MB
-MsMpEng                                  x1        184 MB
-node                                     x1         41 MB
+MsMpEng                                  x1        101 MB
+node                                     x1         39 MB
 OpenConsole                              x1         14 MB
-powershell                               x1        245 MB
-provjobd.exe3917794569                   x1         35 MB
-Registry                                 x1         79 MB
-Runner.Listener                          x1         69 MB
-Runner.Worker                            x1        101 MB
+powershell                               x1        244 MB
+provjobd.exe4090877468                   x1         27 MB
+Registry                                 x1         65 MB
+Runner.Listener                          x1         67 MB
+Runner.Worker                            x1         99 MB
 RuntimeBroker                            x1         47 MB
 SearchHost                               x1        109 MB
 Secure System                            x1         52 MB
 SecurityHealthService                    x1         12 MB
 ServiceFabricLocalClusterManager         x1         36 MB
-services                                 x1         11 MB
+services                                 x1         12 MB
 ShellHost                                x1         42 MB
-sihost                                   x1         42 MB
-smartscreen                              x1         12 MB
+sihost                                   x1         43 MB
+smartscreen                              x1         13 MB
 smss                                     x1          2 MB
 sqlwriter                                x1         11 MB
 sshd                                     x1          9 MB
@@ -128,13 +128,12 @@ TrustedInstaller                         x1         10 MB
 UserOOBEBroker                           x1         11 MB
 vmcompute                                x1         11 MB
 vmms                                     x1         34 MB
-WaAppAgent                               x1         84 MB
+WaAppAgent                               x1         86 MB
 WaSecAgentProv                           x1          5 MB
-WindowsAzureGuestAgent                   x1         65 MB
+WindowsAzureGuestAgent                   x1         70 MB
 WindowsTerminal                          x1         85 MB
 wininit                                  x1          9 MB
 winlogon                                 x1         13 MB
-WMIADAP                                  x1         11 MB
 wslservice                               x1         29 MB</pre></details>
 <h2>Kept, and why</h2><ul><li>Defender, the firewall, Windows Update, audio, networking: always</li><li>Themes: Windows 10 falls back to the classic look without it</li><li>vmicguestinterface: this is a virtual machine</li><li>vmicheartbeat: this is a virtual machine</li><li>vmickvpexchange: this is a virtual machine</li><li>vmicrdv: this is a virtual machine</li><li>vmicshutdown: this is a virtual machine</li><li>vmictimesync: this is a virtual machine</li><li>vmicvmsession: this is a virtual machine</li><li>vmicvss: this is a virtual machine</li></ul>
 <h2>Warnings (3)</h2><div class="warn"><ul><li>The GPU driver dates from Jun 2006. A current driver is worth more than most tweaks.</li><li>This looks like a virtual machine. The tune will run, but the numbers mean little here.</li><li>Could not make a restore point (This functionality is not supported on this operating system.). The undo script still records everything.</li></ul></div>
@@ -143,8 +142,8 @@ wslservice                               x1         29 MB</pre></details>
 <h2>Launchers, overlays and helper apps</h2><ul><li>None of the usual launchers, overlays or peripheral suites found. The same notes apply the day you install one; run the command again and they appear here.</li></ul>
 <h2>Left by other tools</h2><p class="muted">The tune changes none of these; it names them, with the way back.</p><ul><li>Nothing found: no other tool has left Defender, Windows Update, SmartScreen, User Account Control or the CPU mitigations switched off on this PC.</li></ul>
 <h2>Per game</h2><p class='muted'>Not found on this PC (the same profile applies if you install them): Fortnite, VALORANT, Counter-Strike 2, Marvel Rivals, Apex Legends, Call of Duty (Warzone / MW), Overwatch 2, Rainbow Six Siege, Rocket League, Minecraft, Roblox, League of Legends, GTA V / Online, Rust, Escape from Tarkov, PUBG, The Finals, Dota 2, Battlefield 6, Deadlock, Delta Force, ARC Raiders, Helldivers 2, Warframe, Destiny 2, Halo Infinite, Dead by Daylight, Hunt: Showdown 1896, War Thunder, World of Warcraft, Squad, Battlefield 2042, EA Sports FC 26, NBA 2K26, Palworld, Path of Exile 2, Diablo IV, Monster Hunter Wilds, Elden Ring / Nightreign, Cyberpunk 2077, Baldur&#39;s Gate 3, Star Citizen, DayZ, Arma Reforger, Hell Let Loose, Genshin Impact, Ready or Not, Final Fantasy XIV, STALKER 2, Sea of Thieves</p>
-<h2>What was done</h2><h4>Safety first</h4><div class='did'>Registry and service list backed up to C:\OmniDx\backup\2026-09-24_04-17</div><div class='did'>undo.ps1 written to C:\OmniDx\undo</div><h4>Startup apps</h4><div class='did'>off: AzureArcSetup</div><div class='did'>off: Service Fabric Local Cluster Manager (Startup folder)</div><h4>Services</h4><div class='did'>dmwappushservice -&gt; disabled  (telemetry push)</div><div class='did'>WerSvc -&gt; disabled  (error reporting)</div><div class='did'>wercplsupport -&gt; disabled  (error reporting)</div><div class='did'>PcaSvc -&gt; disabled  (compatibility assistant)</div><div class='did'>lfsvc -&gt; disabled  (geolocation)</div><div class='did'>RemoteRegistry -&gt; disabled  (remote registry)</div><div class='did'>WMPNetworkSvc -&gt; disabled  (media sharing)</div><div class='did'>TrkWks -&gt; disabled  (link tracking)</div><div class='did'>WalletService -&gt; disabled  (wallet)</div><div class='did'>wisvc -&gt; disabled  (insider program)</div><div class='did'>SEMgrSvc -&gt; disabled  (payments and NFC)</div><div class='did'>TapiSrv -&gt; disabled  (telephony)</div><div class='did'>SharedAccess -&gt; disabled  (internet connection sharing)</div><div class='did'>edgeupdate -&gt; manual  (Edge updater (runs on demand))</div><div class='did'>WbioSrvc -&gt; disabled  (biometrics)</div><div class='did'>SysMain already disabled; left that way</div><div class='did'>WSearch already disabled; left that way</div><div class='did'>Spooler -&gt; disabled  (print spooler)</div><div class='did'>bthserv -&gt; disabled  (bluetooth)</div><div class='did'>WlanSvc -&gt; disabled  (wi-fi)</div><div class='did'>CDPSvc -&gt; manual  (connected devices)</div><div class='did'>CDPUserSvc already disabled; left that way</div><div class='did'>OneSyncSvc already disabled; left that way</div><div class='did'>PimIndexMaintenanceSvc already disabled; left that way</div><div class='did'>UnistoreSvc already disabled; left that way</div><div class='did'>UserDataSvc already disabled; left that way</div><div class='did'>SSDPSRV already disabled; left that way</div><div class='did'>upnphost already disabled; left that way</div><div class='did'>DPS -&gt; manual  (diagnostic policy)</div><div class='did'>SCardSvr -&gt; disabled  (smart card)</div><div class='did'>ScDeviceEnum -&gt; disabled  (smart card)</div><div class='did'>CertPropSvc -&gt; disabled  (smart card)</div><div class='did'>iphlpsvc -&gt; manual  (ipv6 tunnels)</div><div class='did'>cbdhsvc -&gt; manual  (clipboard history)</div><div class='did'>WpnService -&gt; manual  (push notifications)</div><div class='did'>WpnUserService -&gt; manual  (push notifications)</div><div class='did'>SNMPTRAP -&gt; disabled  (SNMP traps)</div><div class='did'>workfolderssvc -&gt; disabled  (Work Folders sync)</div><h4>Scheduled tasks</h4><div class='did'>PcaPatchDbTask</div><div class='did'>CreateObjectTask</div><div class='did'>Device</div><div class='did'>Device User</div><div class='did'>LoginCheck</div><div class='did'>WindowsActionDialog</div><div class='did'>OobeDiscovery</div><div class='did'>Diagnostics</div><div class='did'>UsageDataFlushing</div><div class='did'>UsageDataReporting</div><div class='did'>Registration</div><div class='did'>IndexerAutomaticMaintenance</div><div class='did'>Storage Tiers Management Initialization</div><div class='did'>UPnPHostConfig</div><div class='did'>ResolutionHost</div><div class='did'>UpdateLibrary</div><div class='did'>Work Folders Logon Synchronization</div><div class='did'>Work Folders Maintenance Work</div><h4>Preinstalled apps</h4><div class='did'>Microsoft.WindowsFeedbackHub</div><h4>Debloat</h4><div class='did'>removed Steps Recorder (screenshots every click, retired by Microsoft)</div><div class='did'>removed the 2009 Windows Media Player (the Store one stays)</div><div class='did'>removed Math Input Panel</div><div class='did'>removed Internet Explorer 11</div><div class='did'>off: Work Folders (corporate sync)</div><div class='did'>Edge: shopping assistant, recommendations, Spotlight, feedback prompts and reporting off</div><div class='did'>Kept gone: consumer features, suggested apps, account nags and the &#39;finish setting up&#39; screen are off by policy</div><h4>Telemetry, background activity, the shell</h4><div class='did'>Telemetry, the advertising id, activity history, suggestions, Bing in Start, Recall and Edge&#39;s reporting off; background apps off; widgets, news, Copilot and Cortana off; Game DVR off, Game Mode on; the classic right-click menu on 11</div><h4>System tuning</h4><div class='did'>NTFS last-access stamps off</div><div class='did'>NTFS allowed more memory for its cache</div><div class='did'>Defender&#39;s scheduled scans already capped at 5% of the CPU, lower than the tune&#39;s 25%: left as it is</div><h4>The OmniDx power plan</h4><div class='did'>2 plan setting(s) this PC does not have were skipped.</div><div class='did'>OmniDx plan created and active: CPU 100/100, boost aggressive, no core parking, no throttle states on a desktop, PCIe, USB and Wi-Fi power saving off, no sleep on mains.</div><h4>Network</h4><div class='did'>TCP: autotuning normal, ECN and timestamps off, receive-side scaling on, segment coalescing off, CTCP.</div><div class='did'>Ethernet 4: Interrupt Moderation off</div><div class='did'>Ethernet 4: Nagle off, power saving off</div><div class='did'>Ethernet 3: Nagle off, power saving off</div><h4>Discord, Spotify, browsers</h4><div class='did'>Chrome: no background mode, hardware acceleration on</div><div class='did'>Edge: no startup boost, no background mode, hardware acceleration on</div><h4>Game profiles</h4><div class='did'>No listed game found on the usual drives; the CPU-priority profiles are in place for when one is installed.</div><h4>Cleanup</h4><div class='did'>Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 374 MB back.</div><h4>Keeping it cut</h4><div class='did'>Task &#39;OmniDx keep&#39; runs three minutes after sign-in, puts back whatever an update turned on, and notes that start&#39;s boot time. Log: C:\OmniDx\keep-log.txt. Undo removes it.</div>
-<h2>Undo</h2><p>Administrator PowerShell: <code>powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1</code><br>No restore point was made on this run (see the warnings); the undo script is the way back.<br>Changes recorded in <code>C:\OmniDx\undo\changes-2026-09-24_04-17.json</code>.</p>
+<h2>What was done</h2><h4>Safety first</h4><div class='did'>Registry and service list backed up to C:\OmniDx\backup\2026-09-24_04-43-58</div><div class='did'>undo.ps1 written to C:\OmniDx\undo</div><h4>Startup apps</h4><div class='did'>off: AzureArcSetup</div><div class='did'>off: Service Fabric Local Cluster Manager (Startup folder)</div><h4>Services</h4><div class='did'>dmwappushservice -&gt; disabled  (telemetry push)</div><div class='did'>WerSvc -&gt; disabled  (error reporting)</div><div class='did'>wercplsupport -&gt; disabled  (error reporting)</div><div class='did'>PcaSvc -&gt; disabled  (compatibility assistant)</div><div class='did'>lfsvc -&gt; disabled  (geolocation)</div><div class='did'>RemoteRegistry -&gt; disabled  (remote registry)</div><div class='did'>WMPNetworkSvc -&gt; disabled  (media sharing)</div><div class='did'>TrkWks -&gt; disabled  (link tracking)</div><div class='did'>WalletService -&gt; disabled  (wallet)</div><div class='did'>wisvc -&gt; disabled  (insider program)</div><div class='did'>SEMgrSvc -&gt; disabled  (payments and NFC)</div><div class='did'>TapiSrv -&gt; disabled  (telephony)</div><div class='did'>SharedAccess -&gt; disabled  (internet connection sharing)</div><div class='did'>edgeupdate -&gt; manual  (Edge updater (runs on demand))</div><div class='did'>WbioSrvc -&gt; disabled  (biometrics)</div><div class='did'>SysMain already disabled; left that way</div><div class='did'>WSearch already disabled; left that way</div><div class='did'>Spooler -&gt; disabled  (print spooler)</div><div class='did'>bthserv -&gt; disabled  (bluetooth)</div><div class='did'>WlanSvc -&gt; disabled  (wi-fi)</div><div class='did'>CDPSvc -&gt; manual  (connected devices)</div><div class='did'>CDPUserSvc already disabled; left that way</div><div class='did'>OneSyncSvc already disabled; left that way</div><div class='did'>PimIndexMaintenanceSvc already disabled; left that way</div><div class='did'>UnistoreSvc already disabled; left that way</div><div class='did'>UserDataSvc already disabled; left that way</div><div class='did'>SSDPSRV already disabled; left that way</div><div class='did'>upnphost already disabled; left that way</div><div class='did'>DPS -&gt; manual  (diagnostic policy)</div><div class='did'>SCardSvr -&gt; disabled  (smart card)</div><div class='did'>ScDeviceEnum -&gt; disabled  (smart card)</div><div class='did'>CertPropSvc -&gt; disabled  (smart card)</div><div class='did'>iphlpsvc -&gt; manual  (ipv6 tunnels)</div><div class='did'>cbdhsvc -&gt; manual  (clipboard history)</div><div class='did'>WpnService -&gt; manual  (push notifications)</div><div class='did'>WpnUserService -&gt; manual  (push notifications)</div><div class='did'>SNMPTRAP -&gt; disabled  (SNMP traps)</div><div class='did'>workfolderssvc -&gt; disabled  (Work Folders sync)</div><h4>Scheduled tasks</h4><div class='did'>PcaPatchDbTask</div><div class='did'>CreateObjectTask</div><div class='did'>Device</div><div class='did'>Device User</div><div class='did'>LoginCheck</div><div class='did'>WindowsActionDialog</div><div class='did'>OobeDiscovery</div><div class='did'>Diagnostics</div><div class='did'>UsageDataFlushing</div><div class='did'>UsageDataReporting</div><div class='did'>Registration</div><div class='did'>IndexerAutomaticMaintenance</div><div class='did'>Storage Tiers Management Initialization</div><div class='did'>UPnPHostConfig</div><div class='did'>ResolutionHost</div><div class='did'>UpdateLibrary</div><div class='did'>Work Folders Logon Synchronization</div><div class='did'>Work Folders Maintenance Work</div><h4>Preinstalled apps</h4><div class='did'>Microsoft.WindowsFeedbackHub</div><h4>Debloat</h4><div class='did'>removed Steps Recorder (screenshots every click, retired by Microsoft)</div><div class='did'>removed the 2009 Windows Media Player (the Store one stays)</div><div class='did'>removed Math Input Panel</div><div class='did'>removed Internet Explorer 11</div><div class='did'>off: Work Folders (corporate sync)</div><div class='did'>Edge: shopping assistant, recommendations, Spotlight, feedback prompts and reporting off</div><div class='did'>Kept gone: consumer features, suggested apps, account nags and the &#39;finish setting up&#39; screen are off by policy</div><h4>Telemetry, background activity, the shell</h4><div class='did'>Telemetry, the advertising id, activity history, suggestions, Bing in Start, Recall and Edge&#39;s reporting off; background apps off; widgets, news, Copilot and Cortana off; Game DVR off, Game Mode on; the classic right-click menu on 11</div><h4>System tuning</h4><div class='did'>NTFS last-access stamps off</div><div class='did'>NTFS allowed more memory for its cache</div><div class='did'>Defender&#39;s scheduled scans already capped at 5% of the CPU, lower than the tune&#39;s 25%: left as it is</div><h4>The OmniDx power plan</h4><div class='did'>2 plan setting(s) this PC does not have were skipped.</div><div class='did'>OmniDx plan created and active: CPU 100/100, boost aggressive, no core parking, no throttle states on a desktop, PCIe, USB and Wi-Fi power saving off, no sleep on mains.</div><h4>Network</h4><div class='did'>TCP: autotuning normal, ECN and timestamps off, receive-side scaling on, segment coalescing off, CTCP.</div><div class='did'>Ethernet 3: Nagle off, power saving off</div><div class='did'>Ethernet 4: Interrupt Moderation off</div><div class='did'>Ethernet 4: Nagle off, power saving off</div><h4>Discord, Spotify, browsers</h4><div class='did'>Chrome: no background mode, hardware acceleration on</div><div class='did'>Edge: no startup boost, no background mode, hardware acceleration on</div><h4>Game profiles</h4><div class='did'>No listed game found on the usual drives; the CPU-priority profiles are in place for when one is installed.</div><h4>Cleanup</h4><div class='did'>Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 374 MB back.</div><h4>Keeping it cut</h4><div class='did'>Task &#39;OmniDx keep&#39; runs three minutes after sign-in, puts back whatever an update turned on, and notes that start&#39;s boot time. Log: C:\OmniDx\keep-log.txt. Undo removes it.</div>
+<h2>Undo</h2><p>Administrator PowerShell: <code>powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1</code><br>No restore point was made on this run (see the warnings); the undo script is the way back.<br>Changes recorded in <code>C:\OmniDx\undo\changes-2026-09-24_04-43-58.json</code>.</p>
 <h2>Status, any time</h2><p>What is still in place, what an update put back, the keep task and the after-restart count: <code>$env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex</code><br><span class="muted">README.txt in C:\OmniDx says what each file there is.</span></p>
 <p class="muted" style="margin-top:40px">omnidx.net &middot; one payment, one PC, undo in one line.</p>
 </main></body></html>
