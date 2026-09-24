@@ -53,6 +53,12 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   the run says how many folders wait for the next run; every listed game
   keeps its CPU profile by name regardless. Found by reading the published
   phase timings (games 7.7 s on a machine with no games at all).
+- **The read and the free look are timed, recorded and gated** (1.58.0):
+  the machine read prints its time and slowest parts; the check writes the
+  free look's time into the run record, shows it on the trust page, and fails
+  a look more than twenty seconds slower than the last published one.
+  Found by reading the job's step timings (the free look took 62 s of wall
+  time on the build machine and nothing published the number).
 - **The moving background**: one canvas behind every page, hard black,
   purple shades and small purple objects at different depths that drift,
   slide with the scroll and lean toward the pointer; still under reduced
