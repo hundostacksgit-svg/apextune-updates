@@ -240,7 +240,12 @@ async function start() {
   if (!(await api())) { box.innerHTML = '<p class="small muted">Tickets start working once the licence server is switched on.</p>'; return; }
   let me = null;
   try { me = await kept(); } catch { /* no IndexedDB here */ }
-  if (!me || !me.id) return drawNone();
+  if (!me || !me.id) {
+    // Registering needs the owner token on the server; say so before the button fails.
+    let h = null;
+    try { h = await (await fetch(`${await api()}/v1/health`, { cache: 'no-store' })).json(); } catch { /* the button will say */ }
+    return drawNone(h && h.owner === false ? 'The server has no owner token yet, so no browser can become the support device. Add the TUNE_ADMIN_TOKEN repository secret (any long password), run "Deploy the Worker" in GitHub Actions, then come back and press the button with that password.' : '');
+  }
   const r = await signed({ action: 'status' });
   if (r.status !== 200) return trouble(r);
   if (r.data.status === 'pending') return drawPending(r.data.code);
