@@ -1,14 +1,14 @@
 ﻿== Reading this PC
   ! The GPU driver dates from Jun 2006. A current driver is worth more than most tweaks.
   ! This looks like a virtual machine. The tune will run, but the numbers mean little here.
-  Processes running now: 144
+  Processes running now: 139
   Target for this PC after the tune and a restart: about 70
 == Your key
 == Before the cut
-  Before: 144 processes, 1495 threads, 49463 handles, 2809 MB in use, idle CPU 0.8%, DPC 0%
+  Before: 139 processes, 1280 threads, 47826 handles, 3290 MB in use, idle CPU 1.1%, DPC 0.13%
 == Safety first
   ! Could not make a restore point (This functionality is not supported on this operating system.). The undo script still records everything.
-  + Registry and service list backed up to C:\OmniDx\backup\2026-09-24_03-22
+  + Registry and service list backed up to C:\OmniDx\backup\2026-09-24_03-31
   + undo.ps1 written to C:\OmniDx\undo
 == Startup apps
   2 things start with Windows:
@@ -82,9 +82,11 @@
   + removed the 2009 Windows Media Player (the Store one stays)
   + removed Math Input Panel
   + removed Internet Explorer 11
+  (4 pieces in one DISM session, 17 s)
   + off: Work Folders (corporate sync)
   + Edge: shopping assistant, recommendations, Spotlight, feedback prompts and reporting off
   + Kept gone: consumer features, suggested apps, account nags and the 'finish setting up' screen are off by policy
+  (debloat, where the time went: look 86.4 s, pieces 17.2 s, features 7.3 s)
 == Telemetry, background activity, the shell
   + Telemetry, the advertising id, activity history, suggestions, Bing in Start, Recall and Edge's reporting off; background apps off; widgets, news, Copilot and Cortana off; Game DVR off, Game Mode on; the classic right-click menu on 11
 == System tuning
@@ -110,6 +112,6 @@
 == Keeping it cut
   + Task 'OmniDx keep' runs three minutes after sign-in, puts back whatever an update turned on, and notes that start's boot time. Log: C:\OmniDx\keep-log.txt. Undo removes it.
 == Done
-  After:  135 processes, 1343 threads, 46034 handles, 2975 MB in use, idle CPU 1.1%, DPC 0.13%
+  After:  131 processes, 1267 threads, 45202 handles, 3372 MB in use, idle CPU 0.9%, DPC 0.13%
   Gone:   spoolsv
-  Processes: 144 -> 135 now, in 156 seconds. Restart for the real number: the services that were told to stop are still unwinding.
+  Processes: 139 -> 131 now, in 155 seconds. Restart for the real number: the services that were told to stop are still unwinding.
