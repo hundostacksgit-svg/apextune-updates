@@ -1,0 +1,112 @@
+#!/usr/bin/env python3
+"""
+The Peregrine badge: OmniDx Tune's animal mark, the way a Mustang carries the
+Coyote and a Hellcat its cat. A peregrine falcon in the stoop (the dive that
+makes it the fastest animal alive), in chrome, with the brand purple as the
+falcon's dark hood and the bolt from the main mark down its back.
+
+Writes the SVGs into studio/assets/logo/:
+  peregrine.svg          the falcon alone, transparent
+  peregrine-plate.svg    the falcon on a chrome-edged shield with the name
+  peregrine-lockup.svg   falcon + PEREGRINE + OmniDx Tune, horizontal
+  peregrine-pfp.svg      profile picture: the falcon on the brand disc
+  peregrine-banner.svg   1500x500 banner
+
+Then render the PNGs:  node tools/logo/render.mjs  (see that file).
+The bird is drawn as its right half and mirrored, so the two wings match.
+"""
+import os
+OUT = os.path.join(os.path.dirname(__file__), '..', '..', 'studio', 'assets', 'logo')
+TIP = (256, 446)
+right = [
+ ('C', 270,440, 280,424, 280,408),
+ ('C', 280,394, 276,384, 270,378),
+ ('C', 282,364, 302,340, 324,306),
+ ('C', 352,236, 378,160, 398,90),
+ ('L', 348,176), ('L', 358,142),
+ ('L', 318,214), ('L', 324,190),
+ ('L', 294,236),
+ ('C', 286,214, 280,200, 276,190),
+ ('L', 272,150), ('L', 278,114), ('L', 256,134),
+]
+def m(x): return 512 - x
+def bird_path():
+    out = [f"M {TIP[0]} {TIP[1]}"]
+    for s in right: out.append(s[0] + ' ' + ' '.join(str(v) for v in s[1:]))
+    pts = [TIP] + [(s[-2], s[-1]) for s in right]
+    for i in range(len(right)-1, -1, -1):
+        s = right[i]; prev = pts[i]
+        if s[0] == 'L': out.append(f"L {m(prev[0])} {prev[1]}")
+        else: out.append(f"C {m(s[3])} {s[4]} {m(s[1])} {s[2]} {m(prev[0])} {prev[1]}")
+    out.append('Z'); return ' '.join(out)
+
+DEFS = '''<defs>
+    <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".40" stop-color="#d9dce3"/><stop offset=".52" stop-color="#8d94a4"/><stop offset=".62" stop-color="#f1f2f5"/><stop offset="1" stop-color="#5a5f6e"/></linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a8090"/><stop offset="1" stop-color="#0e1015"/></linearGradient>
+    <linearGradient id="purple" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6d28d9"/><stop offset=".5" stop-color="#a855f7"/><stop offset="1" stop-color="#e879f9"/></linearGradient>
+    <linearGradient id="brand" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5b21b6"/><stop offset=".5" stop-color="#8b5cf6"/><stop offset="1" stop-color="#d946ef"/></linearGradient>
+    <linearGradient id="tune" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#a78bfa"/><stop offset="1" stop-color="#e879f9"/></linearGradient>
+    <linearGradient id="plate" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b1526"/><stop offset="1" stop-color="#07050c"/></linearGradient>
+    <radialGradient id="sheen" cx=".3" cy=".2" r=".9"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".6" stop-color="#fff" stop-opacity="0"/></radialGradient>
+    <filter id="drop" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#000" flood-opacity=".65"/></filter>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="6" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="pglow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="14" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <clipPath id="birdclip"><use href="#bird"/></clipPath>
+  </defs>'''
+
+def falcon(angle=-38, cx=256, cy=262):
+    return f'''<g transform="rotate({angle} {cx} {cy})">
+    <g filter="url(#drop)"><path id="bird" d="{bird_path()}" fill="url(#chrome)" stroke="url(#edge)" stroke-width="7" stroke-linejoin="round"/></g>
+    <g clip-path="url(#birdclip)">
+      <path d="M 256 446 L 232 408 L 242 378 L 188 306 L 114 90 L 218 236 L 256 300 Z" fill="#000" fill-opacity=".18"/>
+      <path d="M 256 446 L 280 408 L 270 378 L 324 306 L 398 90 L 294 236 L 256 300 Z" fill="#fff" fill-opacity=".16"/>
+      <path d="M 218 236 L 256 300 L 294 236 L 276 190 L 256 134 L 236 190 Z" fill="#000" fill-opacity=".10"/>
+    </g>
+    <g fill="none" stroke="#0e1015" stroke-opacity=".35" stroke-width="2" stroke-linejoin="round"><polyline points="218,236 256,300 294,236"/><line x1="256" y1="300" x2="256" y2="378"/></g>
+    <path d="M 245 380 L 267 380 L 277 406 L 256 430 L 235 406 Z" fill="url(#purple)" stroke="#14161c" stroke-width="3" stroke-linejoin="round" filter="url(#glow)"/>
+    <path d="M 270 286 L 240 344 L 256 344 L 244 382 L 276 326 L 260 326 Z" fill="url(#purple)" stroke="#14161c" stroke-width="3" stroke-linejoin="round" filter="url(#glow)"/>
+    <ellipse cx="240" cy="396" rx="4" ry="8" fill="#0b0712" transform="rotate(-12 240 396)"/>
+    <ellipse cx="272" cy="396" rx="4" ry="8" fill="#0b0712" transform="rotate(12 272 396)"/>
+    <path d="M 256 446 L 256 428" stroke="#14161c" stroke-width="4" stroke-linecap="round"/>
+  </g>'''
+
+FONT = "'Liberation Sans','Segoe UI',Inter,Roboto,Arial,sans-serif"
+def svg(vb_w, vb_h, inner, label):
+    return f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {vb_w} {vb_h}" width="{vb_w}" height="{vb_h}" role="img" aria-label="{label}">\n  {DEFS}\n  {inner}\n</svg>\n'
+
+# 1. the falcon alone
+open(os.path.join(OUT, 'peregrine.svg'),'w').write(svg(512,512, falcon(), 'OmniDx Tune Peregrine badge'))
+
+# 2. the plate: a chrome-edged shield with the falcon and the name
+plate_inner = f'''<path d="M 256 22 L 458 84 L 440 330 L 256 492 L 72 330 L 54 84 Z" fill="url(#chrome)" stroke="url(#edge)" stroke-width="6" stroke-linejoin="round"/>
+  <path d="M 256 44 L 436 100 L 420 320 L 256 466 L 92 320 L 76 100 Z" fill="url(#plate)" stroke="#2a2438" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M 256 44 L 436 100 L 420 320 L 256 466 L 92 320 L 76 100 Z" fill="url(#sheen)"/>
+  <g transform="translate(256 226) scale(.66) translate(-256 -262)">{falcon()}</g>
+  <text x="256" y="404" text-anchor="middle" font-family="{FONT}" font-size="44" font-weight="900" font-style="italic" letter-spacing="7" fill="url(#chrome)" stroke="#0e1015" stroke-width="1.5">PEREGRINE</text>
+  <text x="256" y="434" text-anchor="middle" font-family="{FONT}" font-size="17" font-weight="700" letter-spacing="6" fill="#c4b5fd">OMNIDX TUNE</text>'''
+open(os.path.join(OUT, 'peregrine-plate.svg'),'w').write(svg(512,512, plate_inner, 'OmniDx Tune Peregrine plate'))
+
+# 3. the lockup: falcon left, PEREGRINE and OmniDx Tune right
+lock_inner = f'''<g transform="translate(0 0)">{falcon()}</g>
+  <text x="520" y="268" font-family="{FONT}" font-size="132" font-weight="900" font-style="italic" letter-spacing="3" fill="url(#chrome)" stroke="#0e1015" stroke-width="3" paint-order="stroke">PEREGRINE</text>
+  <text x="526" y="346" font-family="{FONT}" font-size="60" font-weight="800" letter-spacing="-1" fill="#f1ecff">OmniDx <tspan fill="url(#tune)">Tune</tspan></text>
+  <text x="528" y="398" font-family="{FONT}" font-size="24" font-weight="700" letter-spacing="9" fill="#7d7199">200 PROCESSES. UNDER 100. ONE COMMAND.</text>'''
+open(os.path.join(OUT, 'peregrine-lockup.svg'),'w').write(svg(1440,512, lock_inner, 'OmniDx Tune Peregrine'))
+
+# 4. profile picture: brand gradient disc, chrome ring, the falcon
+pfp_inner = f'''<circle cx="256" cy="256" r="248" fill="url(#brand)"/>
+  <circle cx="256" cy="256" r="248" fill="url(#sheen)"/>
+  <circle cx="256" cy="256" r="236" fill="none" stroke="#fff" stroke-opacity=".16" stroke-width="2"/>
+  <g transform="translate(256 256) scale(.86) translate(-256 -262)">{falcon()}</g>'''
+open(os.path.join(OUT, 'peregrine-pfp.svg'),'w').write(svg(512,512, pfp_inner, 'OmniDx Tune'))
+
+# 5. banner 1500x500
+ban_inner = f'''<rect width="1500" height="500" fill="#07050c"/>
+  <circle cx="1180" cy="250" r="420" fill="url(#brand)" opacity=".18" filter="url(#pglow)"/>
+  <g transform="translate(120 -6) scale(1.0)">{falcon()}</g>
+  <text x="640" y="238" font-family="{FONT}" font-size="116" font-weight="900" font-style="italic" letter-spacing="3" fill="url(#chrome)" stroke="#0e1015" stroke-width="3" paint-order="stroke">PEREGRINE</text>
+  <text x="646" y="316" font-family="{FONT}" font-size="58" font-weight="800" letter-spacing="-1" fill="#f1ecff">OmniDx <tspan fill="url(#tune)">Tune</tspan></text>
+  <text x="648" y="366" font-family="{FONT}" font-size="22" font-weight="700" letter-spacing="6" fill="#7d7199">200 PROCESSES. UNDER 100. ONE COMMAND.</text>
+  <text x="648" y="412" font-family="{FONT}" font-size="26" font-weight="700" fill="#a78bfa">omnidx.net</text>'''
+open(os.path.join(OUT, 'peregrine-banner.svg'),'w').write(svg(1500,500, ban_inner, 'OmniDx Tune banner'))
+print('wrote 5 SVGs into', os.path.normpath(OUT))

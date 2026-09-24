@@ -64,6 +64,29 @@ your disk. Nothing installed, nothing left running, security never lowered.
 $19.99 once, locked to one PC. The whole script is public, and the free
 report mode shows what it would do before you pay. omnidx.net
 
+## The badge: Peregrine
+
+The animal mark, the way a Mustang carries the Coyote and a Hellcat its cat.
+A peregrine falcon in the stoop, the dive that makes it the fastest animal
+alive, in chrome, with the brand purple as the falcon's dark hood and the
+bolt from the main mark down its back. Files, all in `studio/assets/logo/`
+(and at `omnidx.net/studio/assets/logo/<name>`):
+
+| File | Use |
+|---|---|
+| `peregrine-plate-1024.png` | The badge: falcon on a chrome shield with the name. Stickers, thumbnails, the end card of a video |
+| `peregrine-pfp-800.png` | Profile picture on every platform (round crop safe) |
+| `peregrine-banner-1500x500.png` | X, TikTok and Discord banner |
+| `peregrine-lockup-2880.png` | Falcon + PEREGRINE + OmniDx Tune, for video title cards and the top of a Reddit profile |
+| `peregrine-1024.png` | The falcon alone, transparent, to drop on anything |
+| `peregrine*.svg` | The vectors; rebuild with `python3 tools/logo/peregrine.py` then `node tools/logo/render.mjs` |
+
+The rule for the badge: the falcon is the fastest *animal*; never let a
+caption turn that into a number about the product. "Named for the fastest
+animal alive" is fine. "The fastest PC tuner" is not (nothing measures it).
+The main mark (three bars and the bolt) stays the app icon and the favicon;
+Peregrine is the badge on top, not a replacement.
+
 ## Handles to try
 
 omnidxtune, omnidx.tune, omnidx_tune, tune.omnidx. Keep "OmniDx" the display
