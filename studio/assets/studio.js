@@ -6,7 +6,10 @@
  */
 
 import { EDITIONS, priceOf, buyUrl, PAY, DEVICE_LIMIT, SEATS, DOWNLOADS, downloadUrl, TUNE, tuneBuyUrl, tunePrice } from './config.js';
-import * as auth from './auth.js';
+// The account module (the Studio era's sign-in, devices and recovery) is 43 KB that the Tune
+// pages never use: it is fetched only where a page has an account link or the account screen.
+let authModule = null;
+const loadAuth = async () => authModule || (authModule = await import('./auth.js'));
 import { mountRating } from './rate.js';
 
 export const $  = (s, r = document) => r.querySelector(s);
@@ -856,6 +859,7 @@ async function initNavAccount() {
   const links = $$('.nav-login');
   if (!links.length) return;
 
+  const auth = await loadAuth();
   try { await auth.resumeRemembered(); } catch { /* no session to resume */ }
   const session = auth.session();
   if (!session?.email && !session?.name) return;
@@ -884,6 +888,7 @@ async function initAccount() {
   const root = $('#account');
   if (!root) return;
 
+  const auth = await loadAuth();
   await auth.resumeRemembered();
 
   const params = new URLSearchParams(location.search);

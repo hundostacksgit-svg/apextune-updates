@@ -53,7 +53,7 @@ try {
   console.log('The site, in a browser');
 
   /* 1. Every page, two widths. */
-  for (const p of ['', 'pricing/', 'download/', 'trust/', 'changelog/', 'what-it-touches/', 'terms/', 'activate/', 'admin/']) {
+  for (const p of ['', 'pricing/', 'download/', 'trust/', 'changelog/', 'what-it-touches/', 'terms/', 'activate/', 'admin/', 'account/']) {
     for (const width of [1280, 390]) {
       const page = await browser.newPage({ viewport: { width, height: 900 } });
       const errs = watch(page);
