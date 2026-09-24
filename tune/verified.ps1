@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.60.0'
+$script:Version = '1.61.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -557,11 +557,18 @@ function Get-Machine {
   $pf = @(Get-CimInstance Win32_PageFileUsage -ErrorAction SilentlyContinue)
   $noPageFile = ($pf.Count -eq 0) -and (-not $cs.AutomaticManagedPagefile)
   $onBattery = $false; if ($battery) { $onBattery = (($battery | Select-Object -First 1).BatteryStatus -eq 1) }
+  # Which disk Windows lives on, from the partition class (Get-Partition and Get-Disk load the Storage module,
+  # which 1.60.0's read line showed moving 1.6 s from one lap to another rather than away); the cmdlets are the fallback.
   $sysHdd = $false
   try {
-    $dn = (Get-Partition -DriveLetter ($env:SystemDrive.Substring(0, 1)) -ErrorAction Stop | Get-Disk -ErrorAction Stop).Number
-    $pd = $disks | Where-Object { [int]$_.DeviceId -eq [int]$dn } | Select-Object -First 1
-    if ($pd -and $pd.MediaType -eq 'HDD') { $sysHdd = $true }
+    $letter = $env:SystemDrive.Substring(0, 1)
+    $dn = $null
+    try { $dn = (Get-CimInstance -Namespace root/Microsoft/Windows/Storage -ClassName MSFT_Partition -ErrorAction Stop | Where-Object { "$($_.DriveLetter)" -eq $letter } | Select-Object -First 1).DiskNumber }
+    catch { $dn = (Get-Partition -DriveLetter $letter -ErrorAction Stop | Get-Disk -ErrorAction Stop).Number }
+    if ($null -ne $dn) {
+      $pd = $disks | Where-Object { [int]$_.DeviceId -eq [int]$dn } | Select-Object -First 1
+      if ($pd -and $pd.MediaType -eq 'HDD') { $sysHdd = $true }
+    }
   } catch { }
   & $lap 'memory'
   # Every display mode the driver knows, which some drivers take a long time to list: ten seconds, then it is left out.
