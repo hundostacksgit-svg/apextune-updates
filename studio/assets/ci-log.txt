@@ -1,16 +1,16 @@
 ﻿== Reading this PC
-  Read in 3.5 s (cim 1.2, pnp 1.0, software 0.5, security 0.5)
+  Read in 6.0 s (net 2.8, cim 1.2, pnp 0.9, software 0.5)
   ! The GPU driver dates from Jun 2006. A current driver is worth more than most tweaks.
   ! This looks like a virtual machine. The tune will run, but the numbers mean little here.
-  Processes running now: 146
+  Processes running now: 149
   Target for this PC after the tune and a restart: about 70
 == Your key
   Key accepted. PC 1 of 1 on this key.
 == Before the cut
-  Before: 146 processes, 1457 threads, 48904 handles, 2793 MB in use, idle CPU 0.7%, DPC 0%
+  Before: 148 processes, 1463 threads, 49856 handles, 2830 MB in use, idle CPU 0.7%, DPC 0%
 == Safety first
   ! Could not make a restore point (This functionality is not supported on this operating system.). The undo script still records everything.
-  + Registry and service list backed up to C:\OmniDx\backup\2026-09-24_12-45-56
+  + Registry and service list backed up to C:\OmniDx\backup\2026-09-24_21-05-59
   + undo.ps1 written to C:\OmniDx\undo
 == Startup apps
   2 things start with Windows:
@@ -85,12 +85,12 @@
   + removed the 2009 Windows Media Player (the Store one stays)
   + removed Math Input Panel
   + removed Internet Explorer 11
-  (4 pieces in one DISM session, 23 s)
+  (4 pieces in one DISM session, 22 s)
   + off: Work Folders (corporate sync)
-  (1 feature in one DISM session, 7 s)
+  (1 feature in one DISM session, 6 s)
   + Edge: shopping assistant, recommendations, Spotlight, feedback prompts and reporting off
   + Kept gone: consumer features, suggested apps, account nags and the 'finish setting up' screen are off by policy
-  (debloat, where the time went: look 4.4 s, pieces 23 s, features 7.8 s)
+  (debloat, where the time went: look 3.9 s, pieces 22 s, features 7.3 s)
 == Telemetry, background activity, the shell
   + Telemetry, the advertising id, activity history, suggestions, Bing in Start, Recall and Edge's reporting off; background apps off; widgets, news, Copilot and Cortana off; Game DVR off, Game Mode on; the classic right-click menu on 11
 == System tuning
@@ -116,8 +116,8 @@
 == Keeping it cut
   + Task 'OmniDx keep' runs three minutes after sign-in, puts back whatever an update turned on, notes that start's boot time and writes card-after-restart.png with that start's count. Log: C:\OmniDx\keep-log.txt. Undo removes it.
 == Done
-  After:  135 processes, 1454 threads, 46277 handles, 2909 MB in use, idle CPU 1.5%, DPC 0%
-  Gone:   smartscreen, spoolsv
-  Processes: 146 -> 135 now, in 73 seconds. Restart for the real number: the services that were told to stop are still unwinding.
-  Where the time went: debloat 35.3 s, games 7.3 s, services 4.2 s, apps 3.8 s, cleanup 2.8 s, network 2.2 s
-  Outside the phases: read 4 s, key 1.2 s, before 3 s, after 2.1 s, report 1 s
+  After:  138 processes, 1486 threads, 47125 handles, 2940 MB in use, idle CPU 1.1%, DPC 0.2%
+  Gone:   spoolsv
+  Processes: 148 -> 138 now, in 71 seconds. Restart for the real number: the services that were told to stop are still unwinding.
+  Where the time went: debloat 33.2 s, games 7.3 s, services 3.8 s, apps 3.4 s, cleanup 2.9 s, network 1.9 s
+  Outside the phases: read 6.5 s, key 1.2 s, before 2.8 s, after 2.1 s, report 1 s

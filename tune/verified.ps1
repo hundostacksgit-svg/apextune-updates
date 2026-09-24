@@ -60,6 +60,8 @@ param(
   [switch]$UndoLast,
   # Read the machine and count the processes. Change nothing.
   [switch]$Report,
+  # Keep the camera frame server and screen capture as if OBS were installed (it is detected on its own).
+  [switch]$Streamer,
   # Check a key's format and checksum, then stop. Nothing is read or bound.
   [switch]$CheckKey,
   # Say what is still in place from earlier runs, what Windows has put back and when the keep task last ran. Changes nothing.
@@ -89,7 +91,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.74.0'
+$script:Version = '1.75.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -511,6 +513,62 @@ Write-Host ("Done: {0} put back{1}{2}. Restart to finish." -f $done, $(if ($fail
 # ---------------------------------------------------------------------------
 # the machine
 # ---------------------------------------------------------------------------
+<# An external program with a time limit: its output, or $null when it did not finish in time or did not start. #>
+function Invoke-External([string]$exe, [string[]]$argv, [int]$ms) {
+  try {
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = $exe; $psi.Arguments = (($argv | ForEach-Object { if ($_ -match '\s') { '"' + $_ + '"' } else { $_ } }) -join ' ')
+    $psi.UseShellExecute = $false; $psi.RedirectStandardOutput = $true; $psi.RedirectStandardError = $true; $psi.CreateNoWindow = $true
+    $p = [System.Diagnostics.Process]::Start($psi)
+    $reading = $p.StandardOutput.ReadToEndAsync(); $errors = $p.StandardError.ReadToEndAsync()
+    if (-not $p.WaitForExit($ms)) { try { $p.Kill() } catch { }; return $null }
+    [void]$errors.Wait(1000)
+    return $reading.Result
+  } catch { return $null }
+}
+
+<# One line of the NVIDIA tool's CSV, as numbers and the throttle reasons that are active. Every driver ships the
+   tool; laptops and older cards answer [N/A] for what they cannot report, and that stays $null. #>
+function Read-GpuHealth([string]$csv) {
+  if (-not $csv) { return $null }
+  $line = @($csv -split "`r?`n" | Where-Object { $_.Trim() }) | Select-Object -First 1
+  if (-not $line) { return $null }
+  $f = @($line -split ',\s*' | ForEach-Object { $_.Trim() })
+  if ($f.Count -lt 13) { return $null }
+  $num = { param($v) if ($v -match '^-?[0-9]+(\.[0-9]+)?$') { return [double]$v }; return $null }
+  $throttle = @()
+  if ($f[8] -eq 'Active' -or $f[9] -eq 'Active') { $throttle += 'thermal' }
+  if ($f[10] -eq 'Active') { $throttle += 'power cap' }
+  if ($f[11] -eq 'Active') { $throttle += 'power brake' }
+  if ($f[12] -eq 'Active') { $throttle += 'hardware slowdown' }
+  return @{ tempC = (& $num $f[0]); powerW = (& $num $f[1]); limitW = (& $num $f[2]); maxW = (& $num $f[3]); clockMhz = (& $num $f[4]); clockMaxMhz = (& $num $f[5]); fanPct = (& $num $f[6]); pstate = $f[7]; throttle = $throttle }
+}
+
+<# The link to the router and to the internet's edge as numbers: the median round trip, the jitter (mean deviation)
+   and the loss over five pings each. A router that does not answer pings reads as no reply, not as a fault. #>
+function Read-Network {
+  $r = @{ gatewayMs = $null; gatewayJitter = $null; gatewayLoss = $null; edgeMs = $null; edgeJitter = $null; edgeLoss = $null; edge = $null; gateway = $null }
+  $gw = $null
+  try { $gw = @(Get-CimInstance Win32_NetworkAdapterConfiguration -Filter 'IPEnabled = TRUE' -ErrorAction Stop | ForEach-Object { $_.DefaultIPGateway } | Where-Object { $_ -and $_ -match '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' } | Select-Object -First 1)[0] } catch { }
+  $probe = { param($target)
+    $ping = New-Object System.Net.NetworkInformation.Ping; $rtts = @(); $lost = 0
+    for ($i = 0; $i -lt 5; $i++) {
+      try { $rep = $ping.Send($target, 300); if ($rep.Status -eq 'Success') { $rtts += [double]$rep.RoundtripTime } else { $lost++ } } catch { $lost++ }
+      if ($i -eq 1 -and -not $rtts.Count) { break }
+      Start-Sleep -Milliseconds 40
+    }
+    $ping.Dispose()
+    if (-not $rtts.Count) { return @{ ms = $null; jitter = $null; loss = 100 } }
+    $sorted = @($rtts | Sort-Object); $med = $sorted[[math]::Floor(($sorted.Count - 1) / 2)]
+    $mean = ($rtts | Measure-Object -Average).Average
+    $jit = [math]::Round((($rtts | ForEach-Object { [math]::Abs($_ - $mean) }) | Measure-Object -Average).Average, 1)
+    return @{ ms = [math]::Round($med, 1); jitter = $jit; loss = [int](100 * $lost / ($rtts.Count + $lost)) }
+  }
+  if ($gw) { $r.gateway = $gw; $g = & $probe $gw; $r.gatewayMs = $g.ms; $r.gatewayJitter = $g.jitter; $r.gatewayLoss = $g.loss }
+  foreach ($edge in '1.1.1.1', '8.8.8.8') { $e = & $probe $edge; if ($null -ne $e.ms) { $r.edgeMs = $e.ms; $r.edgeJitter = $e.jitter; $r.edgeLoss = $e.loss; $r.edge = $edge; break } }
+  return $r
+}
+
 function Get-Machine {
   # How long each slow read takes, kept in the machine record and the probe, so a
   # slow PC (or a slow build machine) says where the seconds went.
@@ -650,6 +708,38 @@ function Get-Machine {
   $faceit = (Test-Path (Join-Path $env:ProgramFiles 'FACEIT AC')) -or ($null -ne (Get-Service -Name 'FACEIT' -ErrorAction SilentlyContinue))
   # A dual-CCD X3D (7900X3D, 7950X3D, 9900X3D, 9950X3D): AMD's driver steers games onto the cache half, and spots them through Game Mode and Game Bar.
   $x3dDual = [bool]($cpu.Name -match '(7900|7950|9900|9950)X3D')
+  & $lap 'security'
+  # GPU health from the driver's own tool: temperature, the power limit against the card's maximum, the throttle
+  # reasons, as a labelled measurement. NVIDIA ships the tool with every driver; AMD and Intel ship no equivalent.
+  $gpuHealth = $null
+  if ($vendor -eq 'NVIDIA') {
+    $smi = @("$env:SystemRoot\System32\nvidia-smi.exe", "$env:ProgramFiles\NVIDIA Corporation\NVSMI\nvidia-smi.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
+    if ($smi) {
+      $q = 'temperature.gpu,power.draw,power.limit,power.max_limit,clocks.sm,clocks.max.sm,fan.speed,pstate,clocks_throttle_reasons.hw_thermal_slowdown,clocks_throttle_reasons.sw_thermal_slowdown,clocks_throttle_reasons.sw_power_cap,clocks_throttle_reasons.hw_power_brake_slowdown,clocks_throttle_reasons.hw_slowdown'
+      $gpuHealth = Read-GpuHealth (Invoke-External $smi @("--query-gpu=$q", '--format=csv,noheader,nounits') 8000)
+    }
+  }
+  & $lap 'gpu'
+  # The ACPI thermal zones, where the board exposes them (many desktops do not, and some report a fixed figure):
+  # the hottest one, and the passive limit that says the CPU is being held back by heat right now.
+  $cpuTempC = $null; $passivePct = $null
+  try {
+    $zones = @(Get-CimInstance -Namespace root/wmi -ClassName MSAcpi_ThermalZoneTemperature -ErrorAction Stop | ForEach-Object { [math]::Round($_.CurrentTemperature / 10 - 273.15, 1) } | Where-Object { $_ -gt 5 -and $_ -lt 125 })
+    if ($zones.Count) { $cpuTempC = ($zones | Measure-Object -Maximum).Maximum }
+  } catch { }
+  if ($null -ne $cpuTempC) {
+    try { $pl = Get-Counter -Counter '\Thermal Zone Information(*)\% Passive Limit' -MaxSamples 1 -ErrorAction Stop; $passivePct = [int](($pl.CounterSamples | Measure-Object CookedValue -Maximum).Maximum) } catch { }
+  }
+  & $lap 'thermal'
+  # The network as numbers: five pings to the router and five to the internet's edge.
+  $net = Read-Network
+  & $lap 'net'
+  # Streaming software. What it needs from Windows (the camera frame server, Windows Graphics Capture) stays.
+  $streamApps = @()
+  if ((Test-Path (Join-Path $env:ProgramFiles 'obs-studio\bin\64bit\obs64.exe')) -or (Test-Path 'HKLM:\SOFTWARE\OBS Studio') -or ($null -ne (Get-Process obs64 -ErrorAction SilentlyContinue))) { $streamApps += 'OBS Studio' }
+  if ((Test-Path (Join-Path $env:ProgramFiles 'Streamlabs Desktop')) -or (Test-Path (Join-Path $env:ProgramFiles 'Streamlabs OBS')) -or (Test-Path (Join-Path $script:LocalAppData 'Programs\Streamlabs Desktop'))) { $streamApps += 'Streamlabs Desktop' }
+  if (Test-Path (Join-Path ${env:ProgramFiles(x86)} 'SplitmediaLabs')) { $streamApps += 'XSplit' }
+  if ($Streamer -and -not $streamApps.Count) { $streamApps += 'asked for with -Streamer' }
   @{
     os = "$($os.Caption) $($os.Version) (build $build)"; win = $win; build = $build
     cpu = $cpu.Name.Trim(); cpuVendor = $(if ($cpu.Manufacturer -match 'AMD') { 'AMD' } else { 'Intel' }); cores = $cpu.NumberOfCores; threads = $cpu.NumberOfLogicalProcessors
@@ -666,7 +756,8 @@ function Get-Machine {
     sticks = $sticks; ramRated = $ramRated; ramNow = $ramNow; ramSlow = $ramSlow
     noPageFile = $noPageFile; onBattery = $onBattery; sysHdd = $sysHdd; maxRefresh = $maxRefresh
     otherAv = $otherAv; optimizers = $optimizers; oem = $oem
-    timings = $(& $lap 'security'; $tm)
+    gpuHealth = $gpuHealth; cpuTempC = $cpuTempC; passivePct = $passivePct; net = $net; streamer = $streamApps
+    timings = $tm
   }
 }
 
@@ -675,13 +766,33 @@ function Show-Machine($m) {
   Say ("  CPU   {0}  ({1} cores / {2} threads)" -f $m.cpu, $m.cores, $m.threads)
   Say ("  GPU   {0}" -f $m.gpu)
   if ($m.driverVer) { Say ("  Driver {0}{1}" -f $m.driverVer, $(if ($m.driverDate) { " ({0})" -f $m.driverDate.ToString('MMM yyyy') } else { '' })) }
+  if ($m.gpuHealth) {
+    $g = $m.gpuHealth
+    Say ("  GPU now {0}{1}{2}{3} (NVIDIA's own tool, at idle)" -f $(if ($null -ne $g.tempC) { "$($g.tempC) C" } else { 'temperature not reported' }), $(if ($g.limitW -and $g.maxW) { ", power limit $($g.limitW) W of $($g.maxW) W" } elseif ($g.limitW) { ", power limit $($g.limitW) W" } else { '' }), $(if ($null -ne $g.fanPct) { ", fan $($g.fanPct)%" } else { '' }), $(if ($g.throttle.Count) { ", throttling: " + ($g.throttle -join ', ') } else { ', no throttling' }))
+  }
+  if ($null -ne $m.cpuTempC) { Say ("  Thermal zone {0} C (ACPI: a board sensor as often as the CPU){1}" -f $m.cpuTempC, $(if ($m.passivePct -gt 0) { ", passive limit $($m.passivePct)%" } else { '' })) }
+  if ($m.net) {
+    $n = $m.net
+    $rt = $(if ($null -ne $n.gatewayMs) { "router $($n.gatewayMs) ms (jitter $($n.gatewayJitter), loss $($n.gatewayLoss)%)" } elseif ($n.gateway) { 'router does not answer pings' } else { 'no router found' })
+    $ed = $(if ($null -ne $n.edgeMs) { "internet edge $($n.edgeMs) ms (jitter $($n.edgeJitter), loss $($n.edgeLoss)%, via $($n.edge))" } else { 'internet edge did not answer' })
+    Say ("  Network: {0}; {1}. Five pings each." -f $rt, $ed)
+  }
   Say ("  RAM   {0} GB{1}{2}" -f $m.ramGb, $(if ($m.sticks) { ", $($m.sticks) stick$(if ($m.sticks -ne 1) { 's' })" } else { '' }), $(if ($m.ramNow) { ", $($m.ramNow) MT/s$(if ($m.ramRated -and $m.ramRated -ne $m.ramNow) { " of $($m.ramRated) rated" })" } else { '' }))
   Say ("  Board {0}  |  BIOS {1}" -f $m.board, $m.bios)
   Say ("  {0}{1}{2}, {3}" -f $(if ($m.laptop) { 'Laptop' } else { 'Desktop' }), $(if ($m.allSsd) { ', all SSD' } else { ', has a hard disk' }), $(if ($m.nvme) { ', NVMe' } else { '' }), $(if ($m.refresh) { "$($m.refresh) Hz" } else { 'refresh unknown' }))
-  $keeps = @(
-    $(if ($m.printers) { "printer" }), $(if ($m.btDevices) { "Bluetooth ($($m.btDevices) paired)" }), $(if ($m.wifi) { "Wi-Fi" }),
-    $(if ($m.touch) { "touch" }), $(if ($m.biometric) { "Windows Hello" }), $(if ($m.vpn) { "VPN" }), $(if ($m.xboxUsed -and -not $CutXbox) { "Xbox / Game Pass" }), $(if ($m.xboxPad -and -not $CutXbox) { "Xbox controller" }), $(if ($m.laptop) { "battery, hibernate" })
-  ) | Where-Object { $_ }
+  # One add per reason, into a list: the long comma-separated array of subexpressions this replaced came back empty
+  # under Windows PowerShell 5.1 on the build machine even with a reason set (1.75.0's -Streamer check).
+  $keeps = New-Object System.Collections.ArrayList
+  if ($m.printers) { [void]$keeps.Add('printer') }
+  if ($m.btDevices) { [void]$keeps.Add("Bluetooth ($($m.btDevices) paired)") }
+  if ($m.wifi) { [void]$keeps.Add('Wi-Fi') }
+  if ($m.touch) { [void]$keeps.Add('touch') }
+  if ($m.biometric) { [void]$keeps.Add('Windows Hello') }
+  if ($m.vpn) { [void]$keeps.Add('VPN') }
+  if ($m.xboxUsed -and -not $CutXbox) { [void]$keeps.Add('Xbox / Game Pass') }
+  if ($m.xboxPad -and -not $CutXbox) { [void]$keeps.Add('Xbox controller') }
+  if (@($m.streamer).Count) { [void]$keeps.Add('streaming (' + (@($m.streamer) -join ', ') + ')') }
+  if ($m.laptop) { [void]$keeps.Add('battery, hibernate') }
   Say ("  Keeps: {0}" -f $(if ($keeps.Count) { $keeps -join ', ' } else { 'nothing extra' }))
   Say ("  UEFI {0}, Secure Boot {1}, TPM {2}, memory integrity {3}, IOMMU {4}" -f $m.uefi, $m.secureBoot, $m.tpm, $(if ($m.vbs) { 'on' } else { 'off' }), $(if ($m.iommu) { 'on' } else { 'off' }))
   # Where the read spent its time, in seconds, largest first: a slow PC (or a slow build machine) says so on its own line.
@@ -711,11 +822,27 @@ function Show-Advice($m) {
   if ($m.oem.Count) { Say ("  OEM extras found: {0}. Not touched; remove any you do not use from Settings > Apps." -f ($m.oem -join ', ')) }
   if ($m.otherAv.Count) { Say ("  Antivirus: {0}. Not touched." -f ($m.otherAv -join ', ')) }
   if ($m.vm) { Warn "This looks like a virtual machine. The tune will run, but the numbers mean little here." }
+  if ($m.gpuHealth) {
+    $g = $m.gpuHealth
+    if ($g.throttle -contains 'thermal') { Warn ("The GPU is thermally throttling at idle ({0} C): dust, a stopped fan or a dead thermal pad. No tweak matters until that is fixed." -f $g.tempC) }
+    elseif ($null -ne $g.tempC -and $g.tempC -ge 65) { Warn ("GPU at {0} C at idle. Under load that becomes a throttle: clean the fans and the case filters, and check the fan curve." -f $g.tempC) }
+    if ($g.throttle -contains 'power brake') { Warn "The GPU reports a hardware power brake: the power supply or the power connector is pulling it back. Check the cable seating and the supply's rating." }
+    if ($g.limitW -and $g.maxW -and ($g.limitW -lt ($g.maxW * 0.9))) { Say ("  GPU power limit is {0} W of a possible {1} W: a laptop mode, an app's slider or the card's own default. The undervolt notes in the report are the safe way to more clock at the same limit." -f $g.limitW, $g.maxW) }
+  }
+  if ($m.passivePct -gt 0) { Warn ("A thermal zone reports a passive limit of {0}%: the CPU is being held back by heat right now, at idle. Cooling first; no tweak beats that." -f $m.passivePct) }
+  elseif ($null -ne $m.cpuTempC -and $m.cpuTempC -ge 90) { Warn ("A thermal zone reads {0} C at idle. If that is the CPU, cooling is the whole problem." -f $m.cpuTempC) }
+  if ($m.net) {
+    $n = $m.net
+    if ($null -ne $n.gatewayMs -and ($n.gatewayMs -ge 5 -or $n.gatewayJitter -ge 3 -or $n.gatewayLoss -gt 0)) { Warn ("The link to your router is {0} ms with {1} ms of jitter and {2}% loss over five pings. {3}" -f $n.gatewayMs, $n.gatewayJitter, $n.gatewayLoss, $(if ($m.wifiLive) { 'That is the Wi-Fi: a cable to the router beats every network tweak there is.' } else { 'On a cable that points at the cable itself, the port or the router.' })) }
+    if ($null -ne $n.edgeMs -and $n.edgeLoss -gt 0) { Warn ("Packet loss to the internet edge ({0}% of five pings). That is the line or the router, and no tweak fixes loss." -f $n.edgeLoss) }
+    elseif ($null -ne $n.edgeMs -and $n.edgeJitter -ge 10) { Say ("  Internet edge jitter is {0} ms: variable, which games feel as rubber-banding. Worth a word with the ISP if it stays." -f $n.edgeJitter) }
+  }
+  if ($m.streamer.Count) { Say ("  Streaming software found ({0}): the camera frame server and Windows Graphics Capture stay, in Extreme too. The report has the encoder and capture notes." -f ($m.streamer -join ', ')) }
   # The 2026 anti-cheat rules: FACEIT (all players by mid-2026) and Vanguard On-Demand (Windows 11 25H2) want Secure Boot,
   # TPM 2.0, IOMMU and memory integrity on. Said here, once, because turning any of them off is the one "tweak" that ends a game.
   if ($m.riot -or $m.faceit) {
-    $who = @($(if ($m.riot) { 'VALORANT (Vanguard)' }), $(if ($m.faceit) { 'FACEIT' })) | Where-Object { $_ }
-    $missing = @($(if (-not $m.secureBoot) { 'Secure Boot' }), $(if (-not $m.tpm) { 'TPM 2.0' }), $(if (-not $m.iommu) { 'IOMMU' }), $(if (-not $m.vbs) { 'memory integrity' })) | Where-Object { $_ }
+    $who = @(@($(if ($m.riot) { 'VALORANT (Vanguard)' }), $(if ($m.faceit) { 'FACEIT' })) | Where-Object { $_ })
+    $missing = @(@($(if (-not $m.secureBoot) { 'Secure Boot' }), $(if (-not $m.tpm) { 'TPM 2.0' }), $(if (-not $m.iommu) { 'IOMMU' }), $(if (-not $m.vbs) { 'memory integrity' })) | Where-Object { $_ })
     if ($missing.Count) { Warn ("{0} found. Since 2026 it requires Secure Boot, TPM 2.0, IOMMU and memory integrity on, and {1} {2} off on this PC. The BIOS checklist (items 4, 5 and 12) says where; the tune never turns any of them off." -f ($who -join ' and '), ($missing -join ', '), $(if ($missing.Count -eq 1) { 'is' } else { 'are' })) }
     else { Say ("  {0} found: Secure Boot, TPM, IOMMU and memory integrity are on, which is what its anti-cheat wants. The tune leaves all four alone." -f ($who -join ' and ')) }
     # FACEIT's own timetable: Windows 11 for every player from October 2026 (its security FAQ). Said in the console, not only in the report.
@@ -773,6 +900,7 @@ function Get-KeepList($m) {
   if (-not $m.allSsd) { $k['SysMain'] = 'a hard disk benefits from prefetch' }
   if ($m.xboxUsed -and -not (Test-CutXbox $m)) { foreach ($n in 'XblAuthManager', 'XblGameSave', 'XboxNetApiSvc', 'XboxGipSvc') { $k[$n] = 'Game Pass, the Xbox app or Minecraft is installed' } }
   if ($m.xboxPad -and -not (Test-CutXbox $m)) { $k['XboxGipSvc'] = 'an Xbox controller is connected' }
+  if ($m.streamer.Count) { $k['FrameServer'] = 'streaming software uses the camera frame server'; $k['CaptureService'] = 'streaming software uses Windows Graphics Capture' }
   $k['Themes'] = 'Windows 10 falls back to the classic look without it'
   return $k
 }
@@ -2127,7 +2255,7 @@ function Tune-Apps($m) {
     if (-not (Test-Path $pf)) { continue }
     if (Get-Process -Name Spotify -ErrorAction SilentlyContinue) { Warn "Spotify is running, so its settings were left alone. Close it and run again."; break }
     $bk = Join-Path $script:Root ("backup\{0}\spotify-prefs.bak" -f $script:Stamp); Copy-Item $pf $bk -Force; Record @{ type = 'file'; path = $pf; backup = $bk }
-    $lines = @(Get-Content $pf) | Where-Object { $_ -notmatch '^(ui\.hardware_acceleration|app\.autostart-mode|app\.autostart-configured|ui\.show_friend_feed|audio\.normalize_v2)=' }
+    $lines = @(@(Get-Content $pf) | Where-Object { $_ -notmatch '^(ui\.hardware_acceleration|app\.autostart-mode|app\.autostart-configured|ui\.show_friend_feed|audio\.normalize_v2)=' })
     $lines += 'ui.hardware_acceleration=true', 'app.autostart-mode="off"', 'app.autostart-configured=true', 'ui.show_friend_feed=false'
     Set-Content -Path $pf -Value $lines -Encoding UTF8
     Did "Spotify: hardware acceleration on, no auto-start, friend feed off"
@@ -2474,6 +2602,24 @@ function Get-GpuNotes($m) {
    updates rather than frames. The tune changes none of them; it names them
    with the way back, so nobody blames the tune for a hole another tool made,
    and nobody keeps a hole they never knew about. #>
+<# The safe way to more clock: an undervolt, not an overclock, and a frame cap under the refresh rate. Words, not
+   changes: voltage lives in the vendor's tools and the BIOS, and the tune never touches either. #>
+function Get-UndervoltNotes($m) {
+  $n = @()
+  switch ($m.gpuVendor) {
+    'NVIDIA' { $n += 'GPU undervolt: MSI Afterburner > Ctrl+F opens the voltage/frequency curve. Pick a point at about 0.900 V, drag it up to the clock the card already holds under load (typically 1,900 to 2,000 MHz on 30 and 40 series), flatten everything to its right, apply. Same frames, less heat and fan noise, no thermal throttling. Test with twenty minutes of a demanding game; a crash means the clock at that voltage is too high, drop it 30 MHz.'
+               $n += 'Frame cap: NVIDIA app or Control Panel > Manage 3D settings > Max Frame Rate, three below the refresh rate (141 on 144 Hz, 237 on 240 Hz), with G-Sync on and V-Sync on in the driver and off in the game. Smoothest input you can get without a tearing line.' }
+    'AMD' { $n += 'GPU undervolt: AMD Software > Performance > Tuning > Custom > Voltage: lower it in 25 mV steps, twenty minutes of a game each step, stop one step above the first crash. On RDNA 3 and 4 the power limit slider can also go to its maximum without extra voltage.'
+            $n += 'Frame cap: AMD Software > Gaming > Radeon Chill on, min and max both three below the refresh rate, with FreeSync on. Chill is a frame cap with a power saver name.' }
+    'Intel' { $n += 'GPU: Intel Graphics Software > Performance: a modest voltage offset is where Arc gains; the frame limiter is in the same panel, three below the refresh rate.' }
+    default { $n += 'GPU: the vendor tool has a frame limiter; set it three below the refresh rate with adaptive sync on.' }
+  }
+  if ($m.cpuVendor -eq 'AMD') { $n += 'CPU undervolt (Ryzen): BIOS > PBO > Curve Optimizer > all cores, negative 15 to start (negative 30 on most 7000 and 9000 chips), then an hour of a game and a stress test; one step back on any crash or reboot. Lower temperature, higher sustained boost, nothing else changes.' }
+  else { $n += 'CPU (Intel): on 13th and 14th gen, install the latest BIOS first (the microcode that stops the degradation), and leave the voltage alone unless the board exposes an offset; on a K chip a small negative offset is the same idea as Ryzen''s Curve Optimizer.' }
+  $n += 'Never an overclock: it is more heat and more voltage for frames you cannot see, and it is the first thing a crash report points at.'
+  return $n
+}
+
 function Get-LeftoverNotes($m) {
   $notes = @()
   $v = { param($path, $name) try { return (Get-ItemProperty -Path $path -Name $name -ErrorAction Stop).$name } catch { return $null } }
@@ -2491,6 +2637,7 @@ function Get-LeftoverNotes($m) {
 
 function Get-LauncherNotes($m) {
   $notes = @()
+  if ($m.streamer.Count) { $notes += 'OBS Studio / Streamlabs: Settings > Output > Encoder: NVIDIA NVENC, AMD AMF or Intel QSV, never x264 on the gaming PC; Settings > Advanced > Process priority: Above normal; capture the game with Game Capture, not Display Capture; Video > Output resolution at the stream size, not the monitor. The tune keeps the camera frame server and Windows Graphics Capture running for it.' }
   $pf = "$env:ProgramFiles"; $pf86 = "${env:ProgramFiles(x86)}"
   $has = { param($p) return [bool]($p -and (Test-Path $p)) }
   $steam = $null; foreach ($k in 'HKLM:\SOFTWARE\WOW6432Node\Valve\Steam', 'HKLM:\SOFTWARE\Valve\Steam') { try { $steam = (Get-ItemProperty $k -ErrorAction Stop).InstallPath; if ($steam) { break } } catch { } }
@@ -3076,6 +3223,7 @@ function Write-Report($m, $before, $after, $changesFile) {
     "WHAT WAS DONE", @(Get-DoneLines), "",
     "WARNINGS ($($script:Warnings.Count))", @($(if ($script:Warnings.Count) { $script:Warnings | ForEach-Object { "  ! $_" } } else { "  none" })), "",
     "GPU CONTROL PANEL", @(Get-GpuNotes $m | ForEach-Object { "  - $_" }), "",
+    "UNDERVOLT, NOT OVERCLOCK, AND A FRAME CAP", @(Get-UndervoltNotes $m | ForEach-Object { "  - $_" }), "",
     "LAUNCHERS, OVERLAYS AND HELPER APPS", @(Get-LauncherNotes $m | ForEach-Object { "  - $_" }), "",
     "LEFT BY OTHER TOOLS (the tune changes none of these)", @(Get-LeftoverNotes $m | ForEach-Object { "  - $_" }), "",
     "PER GAME", @($gameLines), "",
@@ -3153,6 +3301,7 @@ $procTables
 <h2>Warnings ($($script:Warnings.Count))</h2><div class="warn">$(& $list $script:Warnings)</div>
 <h2>BIOS checklist for $(& $h $m.board)</h2><div class="bios"><ul>$((Get-BiosChecklist $m | Select-Object -Skip 3 | Where-Object { $_ } | ForEach-Object { '<li>' + (& $h $_) + '</li>' }) -join '')</ul></div>
 <h2>GPU control panel</h2>$(& $list (Get-GpuNotes $m))
+<h2>Undervolt, not overclock, and a frame cap</h2>$(& $list (Get-UndervoltNotes $m))
 <h2>Launchers, overlays and helper apps</h2>$(& $list (Get-LauncherNotes $m))
 <h2>Left by other tools</h2><p class="muted">The tune changes none of these; it names them, with the way back.</p>$(& $list (Get-LeftoverNotes $m))
 <h2>Per game</h2>$games
