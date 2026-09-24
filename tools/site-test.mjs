@@ -40,6 +40,15 @@ const { makeKey, pretty } = await import(pathToFileURL(path.join(root, 'studio/a
 // A machine with its own Chromium (the build machine's, or a dev box) names it in PW_CHROMIUM; otherwise Playwright's own.
 const browser = await chromium.launch({ args: ['--no-sandbox'], ...(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {}) });
 
+// Every page opens with the site's config routed to "no licence server": the test must never reach the live
+// server (a real address in tune/config.json once had the page sweep call it from the test's origin and trip
+// its origin rule). Scenarios that need a server route config.json again themselves, which takes precedence.
+async function openPage(options) {
+  const page = await browser.newPage(options);
+  await page.route('**/tune/config.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ api: '', version: '0', sha256: 'x' }) }));
+  return page;
+}
+
 function watch(page) {
   const errs = [];
   page.on('pageerror', (e) => errs.push('pageerror: ' + String(e).slice(0, 160)));
@@ -55,7 +64,7 @@ try {
   /* 1. Every page, two widths. */
   for (const p of ['', 'pricing/', 'download/', 'trust/', 'changelog/', 'what-it-touches/', 'terms/', 'activate/', 'admin/', 'account/']) {
     for (const width of [1280, 390]) {
-      const page = await browser.newPage({ viewport: { width, height: 900 } });
+      const page = await openPage({ viewport: { width, height: 900 } });
       const errs = watch(page);
       const resp = await page.goto(`${base}/studio/${p}`, { waitUntil: 'networkidle' });
       await page.waitForTimeout(300);
@@ -99,7 +108,7 @@ try {
       // Every site page is scanned in both themes (the sun button switches the whole palette); the report has one look, so it is scanned once.
       for (const p of pages) {
         for (const theme of p.startsWith('assets/') ? ['dark'] : ['dark', 'light']) {
-          const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+          const page = await openPage({ viewport: { width: 390, height: 844 } });
           await page.goto(`${base}/studio/${p}`, { waitUntil: 'networkidle' });
           if (theme === 'light') {
             // The page fades between palettes; the fade is switched off first so the scan sees the finished light colours, not a blend.
@@ -119,7 +128,7 @@ try {
   /* 2. The buy buttons and the key desk. */
   const closedNow = async (page) => page.evaluate(() => [...document.querySelectorAll('[data-buy]')].map((a) => a.classList.contains('is-closed')));
   {
-    const page = await browser.newPage(); const errs = watch(page);
+    const page = await openPage(); const errs = watch(page);
     await page.goto(`${base}/studio/pricing/`, { waitUntil: 'networkidle' }); await page.waitForTimeout(400);
     const cfg = await (await fetch(`${base}/tune/config.json`)).json();
     const c = await closedNow(page);
@@ -144,7 +153,7 @@ try {
   /* 3. The key page. */
   {
     const keys = [1, 2, 3].map(() => pretty(makeKey('tune')));
-    const page = await browser.newPage({ viewport: { width: 390, height: 900 } }); const errs = watch(page);
+    const page = await openPage({ viewport: { width: 390, height: 900 } }); const errs = watch(page);
     await page.route('**/tune/config.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ api: `${base}/fakeapi`, version: '0', sha256: 'x' }) }));
     await page.route('**/fakeapi/v1/health', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, square: true, mail: true }) }));
     await page.route('**/fakeapi/v1/tune/check', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, product: 'squad', seats: 1, used: 0 }) }));
@@ -191,7 +200,7 @@ try {
     // The two-secret setup the guide describes: Square on, no mailer, no webhook.
     const env = makeEnv({ GMAIL_USER: undefined, GMAIL_APP_PASSWORD: undefined, __connect: undefined, SQUARE_WEBHOOK_SIGNATURE_KEY: undefined, SQUARE_WEBHOOK_URL: undefined });
     payments['ORDER-LIVE-1'] = { cents: 1999, email: 'live@example.test' };
-    const page = await browser.newPage({ viewport: { width: 390, height: 900 } }); const errs = watch(page);
+    const page = await openPage({ viewport: { width: 390, height: 900 } }); const errs = watch(page);
     await page.route('**/tune/config.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ api: `${base}/liveapi`, version: '0', sha256: 'x' }) }));
     await page.route('**/liveapi/**', async (r) => {
       const q = r.request();
@@ -234,7 +243,7 @@ try {
 
   /* 4. The owner page. */
   {
-    const page = await browser.newPage({ viewport: { width: 390, height: 900 } }); const errs = watch(page);
+    const page = await openPage({ viewport: { width: 390, height: 900 } }); const errs = watch(page);
     await page.route('**/tune/config.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ api: '', version: '0', sha256: 'x' }) }));
     await page.goto(`${base}/studio/admin/`, { waitUntil: 'networkidle' }); await page.waitForTimeout(400);
     expect(await page.evaluate(() => /not switched on/.test(document.querySelector('#own-health')?.textContent || '')), 'the owner page says the licence server is not switched on');
