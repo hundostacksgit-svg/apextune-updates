@@ -16,19 +16,25 @@ if ($Quick) {
   # before and after the run so a cheap read can be judged against DISM's answer above.
   $pk = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\Packages'
   $names = @(); try { $names = @(Get-ChildItem -Path $pk -Name -ErrorAction Stop) } catch { }
-  Write-Host ("== Feature names under the packages' Updates keys ({0} packages)" -f $names.Count)
-  $hits = 0
-  foreach ($n in $names) {
+  # Only the packages that own features (a walk of all 7,844 ran past thirty minutes), and a time budget.
+  $own = @($names | Where-Object { $_ -match 'Foundation|Features|ServerCore|Client-Desktop|Client-Language|Editions' })
+  Write-Host ("== Feature names under the Updates keys of {0} feature-owning packages (of {1})" -f $own.Count, $names.Count)
+  $hits = 0; $walked = 0
+  foreach ($n in $own) {
+    if ($sw.Elapsed.TotalSeconds -gt 90) { Write-Host '  (stopped at the ninety-second budget)'; break }
+    $walked++
     $u = Join-Path (Join-Path $pk $n) 'Updates'
-    $subs = @(); try { $subs = @(Get-ChildItem -Path $u -Name -ErrorAction Stop) } catch { continue }
+    if (-not (Test-Path -Path $u)) { continue }
+    $subs = @(Get-ChildItem -Path $u -Name -ErrorAction SilentlyContinue)
+    Write-Host ("  {0}: {1} updates" -f $n, $subs.Count)
     foreach ($f in $feats) {
       if ($subs -contains $f) {
         $st = $null; try { $st = (Get-Item -Path (Join-Path $u $f) -ErrorAction Stop).GetValue('CurrentState') } catch { }
-        Write-Host ("  {0}  in {1}  CurrentState={2}" -f $f, $n, $st); $hits++
+        Write-Host ("    {0}  CurrentState={1}" -f $f, $st); $hits++
       }
     }
   }
-  Write-Host ("  {0} hits in {1:0.0} s" -f $hits, $sw.Elapsed.TotalSeconds); $sw.Restart()
+  Write-Host ("  {0} hits in {1} packages, {2:0.0} s" -f $hits, $walked, $sw.Elapsed.TotalSeconds); $sw.Restart()
   Write-Host "== Win32_OptionalFeature"
   try { $of = @(Get-CimInstance Win32_OptionalFeature -OperationTimeoutSec 90 -ErrorAction Stop); Write-Host ("  {0} features in {1:0.0} s" -f $of.Count, $sw.Elapsed.TotalSeconds); foreach ($f in $feats) { $h = $of | Where-Object { $_.Name -eq $f } | Select-Object -First 1; Write-Host ("  {0}: {1}" -f $f, $(if ($h) { $h.InstallState } else { 'not listed' })) } } catch { Write-Host ("  error: {0}" -f $_.Exception.Message) }
   return
