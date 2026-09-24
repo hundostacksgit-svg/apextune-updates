@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.42.0'
+$script:Version = '1.43.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -479,15 +479,17 @@ else {
   Remove-Item (Join-Path $dir 'changes-latest.json') -Force -ErrorAction SilentlyContinue
   try { Unregister-ScheduledTask -TaskName 'OmniDx keep' -Confirm:$false -ErrorAction Stop; Write-Host "keep task removed" -ForegroundColor DarkGray } catch { }
 }
-$n = Restore-Dism '/Add-Capability' '/CapabilityName' @($capsBack) 'capability'; $done += $n; $failed += (@($capsBack).Count - $n)
-$n = Restore-Dism '/Enable-Feature' '/FeatureName' @($featsBack) 'feature'; $done += $n; $failed += (@($featsBack).Count - $n)
+# A legacy piece that did not come back is not a failure of the undo: Settings > Apps > Optional features adds it later, and the line says so.
+$left = 0
+$n = Restore-Dism '/Add-Capability' '/CapabilityName' @($capsBack) 'capability'; $done += $n; $left += (@($capsBack).Count - $n)
+$n = Restore-Dism '/Enable-Feature' '/FeatureName' @($featsBack) 'feature'; $done += $n; $left += (@($featsBack).Count - $n)
 if ($removedApps.Count) {
   Write-Host ""
   Write-Host "These Store apps were removed. Reinstall any you want from the Microsoft Store (search the name):" -ForegroundColor Yellow
   $removedApps | Sort-Object -Unique | ForEach-Object { Write-Host ("  " + $_) }
 }
 Write-Host ""
-Write-Host ("Done: {0} put back{1}. Restart to finish." -f $done, $(if ($failed) { ", $failed could not be" } else { '' })) -ForegroundColor Green
+Write-Host ("Done: {0} put back{1}{2}. Restart to finish." -f $done, $(if ($failed) { ", $failed could not be" } else { '' }), $(if ($left) { ", $left left for Settings > Apps > Optional features" } else { '' })) -ForegroundColor Green
 '@
 
 # ---------------------------------------------------------------------------
@@ -2808,11 +2810,17 @@ function Write-Preview($m, $before) {
   $startup = @(Get-StartupEntries | Where-Object { $_.on -and -not (Test-Keep $_.name) })
   & $lap 'startup'
   $svcOff = @(); $svcKeep = @()
+  # The service list once, not once per name; and the same rule the run applies: a service already at the
+  # mode the tune would set, or already disabled, is not a change, so it is not counted as one here.
+  $allSvc = @(Get-Service -ErrorAction SilentlyContinue)
   foreach ($pair in $script:ServiceOff) {
     $name = $pair[0]
-    $svc = @(Get-Service -ErrorAction SilentlyContinue | Where-Object { ($_.Name -eq $name -or $_.Name -like ($name + '_*')) -and $_.StartType -ne 'Disabled' })
+    $want = if ($script:ManualOnly -contains $name) { 'Manual' } else { 'Disabled' }
+    $svc = @($allSvc | Where-Object { ($_.Name -eq $name -or $_.Name -like ($name + '_*')) -and "$($_.StartType)" -ne 'Disabled' })
     if (-not $svc.Count) { continue }
-    if ($keep.ContainsKey($name)) { $svcKeep += ("{0} ({1})" -f $name, $keep[$name]) } else { $svcOff += ("{0} ({1})" -f $name, $pair[1]) }
+    if ($keep.ContainsKey($name)) { $svcKeep += ("{0} ({1})" -f $name, $keep[$name]); continue }
+    if (-not @($svc | Where-Object { "$($_.StartType)" -ne $want }).Count) { continue }
+    $svcOff += ("{0} ({1})" -f $name, $pair[1])
   }
   & $lap 'services'
   $idx = Get-TaskIndex
