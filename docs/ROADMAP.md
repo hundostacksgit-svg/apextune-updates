@@ -67,11 +67,17 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   out of the top four; what is left is the device listing, the base CIM
   reads, the software list and the security reads).
 - **The registry helper opens a key once** (1.62.0): one open says whether
-  the key exists and what the value is, where a probe plus a thrown error for
-  every value not yet there cost the game-profile phase five of its six
-  seconds (three values on each of 146 game exes). The Xbox-app and TPM
-  reads lost their module loads the same way, with the cmdlets as fallback,
-  and the check now records the free look's split and its read line.
+  the key exists and what the value is, instead of a probe plus a thrown
+  error for every value not yet there. The Xbox-app and TPM reads lost
+  their module loads the same way, with the cmdlets as fallback, and the
+  check now records the free look's split and its read line. Measured: the
+  read 5.2 s to 4.4 s (device lap 1.9 to 1.3); the game-profile phase, which
+  I expected to give back five seconds, gave back about half a second
+  outside its folder walk (the rest is the provider cmdlets themselves, at
+  roughly ten milliseconds a write, and not worth a raw registry API in the
+  core helper). Same 386 changes and 382 undone. The look's split says the
+  free look is fifteen of its nineteen seconds cold DISM (the Windows pieces
+  by name); that is the next thing to look at.
 - **The moving background**: one canvas behind every page, hard black,
   purple shades and small purple objects at different depths that drift,
   slide with the scroll and lean toward the pointer; still under reduced
