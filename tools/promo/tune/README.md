@@ -44,3 +44,24 @@ part that has not changed.
   written out under the player on the site.
 - The house rules in `docs/TUNE-PROMOTION.md` apply: no frame-rate figure, no
   competitor, no "AI".
+
+## The TikTok cuts
+
+Seven 9:16 edits of the same footage, for TikTok, Reels and Shorts. What to
+post with each is in `docs/TUNE-TIKTOK.md`.
+
+| File | What it is |
+|---|---|
+| `shorts.js` | The seven cuts: which tutorial moment each shot plays and how fast, the camera, the hook, captions, rings, keycaps and cards. 120 BPM; cuts land on beats. |
+| `short.html`, `short.js` | The vertical picture. The desktop is the tutorial's own (`tutorial.html?mode=short` in an iframe, framed by the cut's camera); the editor's layer is drawn on top. |
+| `short-score.html`, `short-score.js` | The sound: the tutorial's instruments (`synth.js`) at 120 BPM, and the tutorial's keys and clicks moved to wherever each cut plays them. |
+| `render-shorts.mjs` | Renders them to `$OUT` (default `$WORK/tiktok`): `NN-name.mp4` and `NN-name-cover.jpg`. Never into git. |
+
+```
+node tools/promo/tune/render-shorts.mjs                        all seven
+node tools/promo/tune/render-shorts.mjs --only ram-speed       one
+node tools/promo/tune/render-shorts.mjs --stills ram-speed:1,5 stills to check a change
+```
+
+The Task Manager window the first two cuts open is part of the tutorial's
+desktop (hidden in the tutorial itself), drawn with the example PC's numbers.

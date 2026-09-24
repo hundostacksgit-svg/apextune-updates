@@ -107,7 +107,7 @@ name everywhere and "Tune" the word after it.
 
 ## Where, and how each place works
 
-**TikTok / Reels / Shorts (the main channel).** Screen recordings, 15 to 40
+**TikTok / Reels / Shorts (the main channel).** Seven finished cuts, with a caption, a pinned comment, a cover and a voiceover script for each, are in `docs/TUNE-TIKTOK.md`; post those first. Screen recordings, 15 to 40
 seconds, the console running, the count falling on the right. Captions on.
 Post the same clip to all three. Six formats that work, rotate them:
 

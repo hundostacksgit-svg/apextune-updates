@@ -145,13 +145,16 @@ function build() {
 // ---------------------------------------------------------------------------
 const R = {};
 function measure() {
-  const hidden = ['#w-term', '#w-admin', '#w-app', '#w-note', '#w-web', '#start', '#results', '#uacwrap'].map((s) => $(s)).filter((el) => el.classList.contains('hide'));
+  const hidden = ['#w-term', '#w-admin', '#w-app', '#w-note', '#w-web', '#w-tm', '#tm-mem', '#start', '#results', '#uacwrap'].map((s) => $(s)).filter((el) => el.classList.contains('hide'));
   hidden.forEach((el) => el.classList.remove('hide'));
   $('#startup').innerHTML = T.STARTUP.map((n, i) => cbHtml(n, true, `su-${i}`)).join('');
   const world = $('#world'); world.style.transform = 'none';
   const rect = (sel) => { const b = $(sel).getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height, cx: b.left + b.width / 2, cy: b.top + b.height / 2 }; };
-  for (const [k, s] of Object.entries({ start: '#tb-start', best: '#best', yes: '#uac-yes', term: '#w-term', admin: '#w-admin', app: '#w-app', pc: '#c-pc', tune: '#c-tune', key: '#c-key', kbox: '#a-key', run: '#b-run', undo: '#b-undo', log: '#c-log', note: '#w-note', web: '#w-web', discord: `#su-${T.STARTUP.indexOf(T.UNTICKED)}`, count: '#a-count', biosH: '#bios-h', page: '#w-web .page' })) R[k] = rect(s);
+  for (const [k, s] of Object.entries({ start: '#tb-start', best: '#best', yes: '#uac-yes', term: '#w-term', admin: '#w-admin', app: '#w-app', pc: '#c-pc', tune: '#c-tune', key: '#c-key', kbox: '#a-key', run: '#b-run', undo: '#b-undo', log: '#c-log', note: '#w-note', web: '#w-web', discord: `#su-${T.STARTUP.indexOf(T.UNTICKED)}`, count: '#a-count', biosH: '#bios-h', page: '#w-web .page', tm: '#w-tm', tmProcs: '#tm-procs-box', tmSpeed: '#tm-speed', tmNavPerf: '#tm-nav-performance', tmTileMem: '#tm-t-mem', mtSec: '#a-mt', foot: '.foot' })) R[k] = rect(s);
   R.biosTop = $('#bios-h').offsetTop;
+  // The checklist items where they sit once the report has scrolled to them.
+  R.bios = [...document.querySelectorAll('#report .bios li')].map((li) => { const r = rect(`li[data-bios="${li.dataset.bios}"]`); const dy = R.biosTop - 18; return { ...r, y: r.y - dy, cy: r.cy - dy }; });
+  R.mt = [...document.querySelectorAll('#a-mt')].map(() => rect('#a-mt'))[0];
   // The terminal's character cell, for aiming at the prompt.
   const probe = document.createElement('span'); probe.textContent = 'M'.repeat(40); probe.style.cssText = 'font-family:var(--mono);font-size:14px;position:absolute;visibility:hidden;white-space:pre';
   document.body.appendChild(probe); R.ch = probe.getBoundingClientRect().width / 40; probe.remove();
@@ -165,6 +168,8 @@ function plans() {
   const at = (r, s, ox = 0, oy = 0) => ({ cx: r.cx + ox, cy: r.cy + oy, s });
   const promptY = R.term.y + 40 + 10 + 5 * 19 + 9, promptX = R.term.x + 14;
   const verifyY = R.admin.y + 40 + 10 + 5 * 19 + 9;
+  R.prompt = { cx: promptX + 230, cy: promptY, x: promptX, y: promptY - 10 };
+  R.verify = { cx: R.admin.x + 14 + 500, cy: verifyY, x: R.admin.x + 14, y: verifyY - 10 };
   CAM = [
     { set: CUE.desk, to: { cx: 960, cy: 566, s: 1.12 } },
     { a: CUE.desk, b: CUE.desk + 1.0, to: { cx: 960, cy: 540, s: 1.0 }, e: E.out },
@@ -260,20 +265,27 @@ function setHTML(el, v) { if (el.innerHTML !== v) el.innerHTML = v; }
 function blink(t, since) { return t - since < 0.5 || Math.floor((t - since) / 0.53) % 2 === 0; }
 function clockAt(t) { return t < 40 ? '8:14 PM' : t < CUE.done ? '8:15 PM' : t < CUE.step8 + 2 ? '8:16 PM' : '8:17 PM'; }
 
-function seek(t) {
-  const desk = t >= CUE.desk - 0.01 && t < CUE.outro + 0.2;
+// Short mode: the TikTok cuts load this page at 1080 x 1920 and drive the camera themselves (short.js).
+const SHORT = new URLSearchParams(location.search).get('mode') === 'short';
+const FW = SHORT ? 1080 : 1920, FH = SHORT ? 1920 : 1080;
+
+function seek(t, opts = {}) {
+  const desk = SHORT || (t >= CUE.desk - 0.01 && t < CUE.outro + 0.2);
   show($('#cam'), desk);
 
   // ---- camera, whips and the motion blur they earn
-  const c = camAt(t), c0 = camAt(t - 1 / 60), wx = whipAt(t), wx0 = whipAt(t - 1 / 60);
-  $('#world').style.transform = `translate(${(960 - c.cx * c.s + wx).toFixed(2)}px, ${(540 - c.cy * c.s).toFixed(2)}px) scale(${c.s.toFixed(5)})`;
+  const own = !!opts.cam;
+  const c = own ? opts.cam : camAt(t), c0 = own ? (opts.cam0 || opts.cam) : camAt(t - 1 / 60);
+  const wx = own ? (c.ox || 0) : whipAt(t), wx0 = own ? (c0.ox || 0) : whipAt(t - 1 / 60);
+  const wy = own ? (c.oy || 0) : 0, wy0 = own ? (c0.oy || 0) : 0;
+  $('#world').style.transform = `translate(${(FW / 2 - c.cx * c.s + wx).toFixed(2)}px, ${(FH / 2 - c.cy * c.s + wy).toFixed(2)}px) scale(${c.s.toFixed(5)})`;
   // A 90-degree shutter: the blur is the distance the picture moves in 1/120 s. Camera moves stay nearly
   // sharp so the words on screen stay readable; the whips smear, as a whip should.
-  const cvx = (c0.cx - c.cx) * c.s / 2, cvy = (c0.cy - c.cy) * c.s / 2, wv = (wx - wx0) / 2;
-  const zoomOut = t >= CUE.outro - 0.45 && t < CUE.outro + 0.1 ? Math.abs(c.s - c0.s) / c.s * 900 : 0;
-  let bx = Math.abs(cvx) / 3 + Math.abs(wv) / 2.2 + zoomOut, by = Math.abs(cvy) / 3 + zoomOut;
+  const cvx = (c0.cx - c.cx) * c.s / 2, cvy = (c0.cy - c.cy) * c.s / 2, wv = (wx - wx0) / 2, wvy = (wy - wy0) / 2;
+  const zoomOut = !own && t >= CUE.outro - 0.45 && t < CUE.outro + 0.1 ? Math.abs(c.s - c0.s) / c.s * 900 : own ? Math.abs(c.s - c0.s) / c.s * (opts.zoomBlur || 0) : 0;
+  let bx = Math.abs(cvx) / 3 + Math.abs(wv) / 2.2 + zoomOut, by = Math.abs(cvy) / 3 + Math.abs(wvy) / 2.2 + zoomOut;
   if (Math.max(bx, by) < 1.4) { bx = 0; by = 0; }
-  bx = Math.min(80, bx); by = Math.min(40, by);
+  bx = Math.min(80, bx); by = Math.min(80, by);
   $('#mbg').setAttribute('stdDeviation', `${bx.toFixed(2)} ${by.toFixed(2)}`);
   $('#cam').style.filter = bx || by ? 'url(#mb)' : 'none';
 
@@ -358,7 +370,7 @@ function seek(t) {
   let press = 0;
   for (const ck of T.CLICKS) if (t >= ck - 0.04 && t < ck + 0.09) press = 1;
   $('#pointer').style.transform = `translate(${(pt.x - 1.5).toFixed(2)}px, ${(pt.y - 1.5).toFixed(2)}px) scale(${press ? 0.88 : 1})`;
-  show($('#pointer'), t >= CUE.desk);
+  show($('#pointer'), (SHORT || t >= CUE.desk) && opts.pointer !== false);
   for (const [sel, r] of HOVER) { const el = $(sel); if (el) el.classList.toggle('hover', pt.x >= r.x && pt.x <= r.x + r.w && pt.y >= r.y && pt.y <= r.y + r.h); }
   let ring = '';
   for (const ck of T.CLICKS) {
@@ -371,7 +383,8 @@ function seek(t) {
   $('#b-undo').classList.toggle('press', (t >= CUE.undoArm - 0.03 && t < CUE.undoArm + 0.12) || (t >= CUE.undoClick - 0.03 && t < CUE.undoClick + 0.12));
   $('#uac-yes').classList.toggle('hover', t >= CUE.uacYes - 0.3);
 
-  seekOverlays(t);
+  seekTM(t, opts.tm);
+  if (!SHORT) seekOverlays(t);
 }
 
 function seekApp(t) {
@@ -387,8 +400,8 @@ function seekApp(t) {
   const busy = (run && !done) || (undoing && !undone);
 
   // THIS PC
-  setText($('#a-mt'), read ? [T.PC.os, `CPU  ${T.PC.cpu}`, `GPU  ${T.PC.gpu}`, `RAM  ${T.PC.ram}`, `Board  ${T.PC.board}`, T.PC.kind, T.PC.sec, T.PC.keeps].join('\n') : 'Reading...');
-  $('#a-mt').style.whiteSpace = 'pre-line';
+  // One line per element, so the TikTok cuts can point at a single line (the security one, say).
+  setHTML($('#a-mt'), read ? [T.PC.os, `CPU  ${T.PC.cpu}`, `GPU  ${T.PC.gpu}`, `RAM  ${T.PC.ram}`, `Board  ${T.PC.board}`, T.PC.kind, T.PC.sec, T.PC.keeps].map((l, i) => `<div data-mt="${i}">${esc(l)}</div>`).join('') : 'Reading...');
   setText($('#a-count'), done ? String(T.PC.after) : read ? String(T.PC.before) : '-');
   setText($('#a-tgt'), read ? `target after the tune and a restart: about ${T.PC.target}` : '');
   setText($('#a-adv'), read ? `! ${T.PC.warn}` : '');
@@ -596,6 +609,50 @@ function seekOverlays(t) {
 }
 
 // ---------------------------------------------------------------------------
+// Task Manager (the TikTok cuts only): opts.tm = { open: seconds since it opened, tab: 'cpu' | 'mem', clock: seconds for the graphs }
+function tmPath(seed, n, w, h, base, jitter, clock, fill) {
+  const pts = [];
+  for (let i = 0; i <= n; i++) {
+    const k = Math.floor(clock * 1) + i, r = T.rng(seed * 1000 + k)();
+    const v = base + (r - 0.5) * jitter + (r > 0.93 ? jitter * 1.8 : 0);
+    pts.push([(i - (clock % 1)) / n * w, h - Math.max(0.5, Math.min(h - 1, v * h))]);
+  }
+  const d = 'M' + pts.map((p) => p.map((x) => x.toFixed(1)).join(',')).join(' L');
+  return fill ? `${d} L${w},${h} L0,${h} Z` : d;
+}
+function seekTM(t, tm) {
+  const w = $('#w-tm');
+  show(w, !!tm);
+  if (!tm) return;
+  w.style.zIndex = 8;
+  const p = E.out(prog(tm.open ?? 1, 0, 0.22));
+  w.style.transform = `scale(${lerp(0.955, 1, p).toFixed(4)})`; w.style.opacity = p.toFixed(3);
+  const mem = tm.tab === 'mem', clock = tm.clock ?? t;
+  show($('#tm-cpu'), !mem); show($('#tm-mem'), mem);
+  $('#tm-t-cpu').classList.toggle('sel', !mem); $('#tm-t-mem').classList.toggle('sel', mem);
+  const grid = (w2, h2) => { let g = ''; for (let i = 1; i < 10; i++) g += `<path d="M0 ${(h2 * i / 10).toFixed(1)}H${w2}" stroke="rgba(255,255,255,.07)"/>`; for (let i = 1; i < 20; i++) g += `<path d="M${(w2 * i / 20).toFixed(1)} 0V${h2}" stroke="rgba(255,255,255,.07)"/>`; return g; };
+  if (!mem) {
+    $('#tm-g-cpu').innerHTML = grid(560, 250) + `<path d="${tmPath(3, 60, 560, 250, 0.04, 0.05, clock, true)}" fill="rgba(58,150,221,.18)"/><path d="${tmPath(3, 60, 560, 250, 0.04, 0.05, clock)}" fill="none" stroke="#3a96dd" stroke-width="1.6"/>`;
+    const u = Math.max(1, Math.round(3 + (T.rng(Math.floor(clock))() - 0.5) * 4));
+    setText($('#tm-util'), `${u}%`); setText($('#tm-cpu-s'), `${u}%\u00a0\u00a03.70 GHz`);
+    const up = 2 * 3600 + 13 * 60 + 40 + Math.floor(clock);
+    setText($('#tm-up'), `0:${String(Math.floor(up / 3600)).padStart(2, '0')}:${String(Math.floor(up / 60) % 60).padStart(2, '0')}:${String(up % 60).padStart(2, '0')}`);
+  } else {
+    $('#tm-g-mem').innerHTML = grid(560, 250) + `<path d="${tmPath(5, 60, 560, 250, 0.32, 0.006, clock, true)}" fill="rgba(168,107,219,.22)"/><path d="${tmPath(5, 60, 560, 250, 0.32, 0.006, clock)}" fill="none" stroke="#a86bdb" stroke-width="1.6"/>`;
+  }
+  $('#tm-m-cpu').innerHTML = `<path d="${tmPath(3, 20, 70, 46, 0.05, 0.06, clock, true)}" fill="rgba(58,150,221,.35)"/>`;
+  $('#tm-m-mem').innerHTML = `<path d="${tmPath(5, 20, 70, 46, 0.32, 0.01, clock, true)}" fill="rgba(168,107,219,.4)"/>`;
+}
+
+// Where an element is on screen right now (after the last seek), for the TikTok cuts' pointers and circles.
+window.rectOf = (sel) => { const el = document.querySelector(sel); if (!el) return null; const b = el.getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height }; };
+window.worldRect = (key) => R[key];
+window.rectOfText = (sel, text) => {
+  for (const el of document.querySelectorAll(sel)) if (el.textContent.includes(text) && el.offsetParent !== null) { const b = el.getBoundingClientRect(); return { x: b.left, y: b.top, w: b.width, h: b.height }; }
+  return null;
+};
+
+// ---------------------------------------------------------------------------
 async function init() {
   drawGrain();
   $('#wall').style.backgroundImage = `url(${drawWall()})`;
@@ -608,6 +665,10 @@ async function init() {
   build();
   await document.fonts.ready;
   await Promise.all([...document.images].map((im) => (im.complete ? 0 : new Promise((r) => { im.onload = im.onerror = r; }))));
+  if (SHORT) {
+    document.documentElement.classList.add('short');
+    $('#frame').style.backgroundImage = `url(${glow})`;
+  }
   measure(); plans();
   seek(0);
   window.ready = true;

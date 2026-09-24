@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>OmniDx Tune - TikTok cut (composition)</title>
+<!--
+  One TikTok cut, 1080 x 1920: short.html?id=<id from shorts.js>.
+  The desktop is the tutorial's own (tutorial.html in short mode, in the
+  iframe), framed by this page's camera; everything the editor adds on top
+  (hook, captions, rings, cards) is drawn here. window.seek(t) sets a frame.
+-->
+<style>
+@font-face { font-family: 'Inter'; src: url('/fonts/InterVariable.ttf') format('truetype'); font-weight: 100 900; }
+@font-face { font-family: 'JetBrains Mono'; src: url('/fonts/JetBrainsMono-Regular.ttf') format('truetype'); font-weight: 400; }
+@font-face { font-family: 'JetBrains Mono'; src: url('/fonts/JetBrainsMono-Bold.ttf') format('truetype'); font-weight: 700; }
+:root { --ink: #F1ECFF; --ink2: #C9BFE6; --lilac: #C084FC; --hi: #D8B4FE; --ui: 'Inter', system-ui, sans-serif; --mono: 'JetBrains Mono', Consolas, monospace; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; background: #050308; }
+body { font-family: var(--ui); color: var(--ink); -webkit-font-smoothing: antialiased; }
+.hide { display: none !important; }
+.layer { position: absolute; inset: 0; pointer-events: none; }
+#screen { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; border: 0; }
+#dim { background: #050308; opacity: 0; }
+#topscrim { background: linear-gradient(180deg, rgba(5,3,8,.95) 0%, rgba(5,3,8,.86) 28%, rgba(5,3,8,.35) 38%, rgba(5,3,8,0) 46%); opacity: 0; }
+#botscrim { background: linear-gradient(0deg, rgba(5,3,8,.9) 0%, rgba(5,3,8,.6) 24%, rgba(5,3,8,0) 46%); opacity: 0; }
+
+/* Text the editor sets: heavy, outlined so it reads on anything, one colour for the words that matter. */
+.t { font-weight: 800; letter-spacing: -.02em; text-align: center; paint-order: stroke fill; -webkit-text-stroke: 9px rgba(8,5,16,.92); text-shadow: 0 6px 26px rgba(0,0,0,.55); }
+.t .h { color: var(--hi); }
+.w { display: inline-block; white-space: pre; }
+#hook { position: absolute; left: 50px; right: 50px; top: 300px; font-size: 84px; line-height: 1.07; }
+#hook .ln { display: block; }
+#cap { position: absolute; left: 70px; right: 110px; top: 1165px; font-size: 62px; line-height: 1.13; }
+
+/* Rings around what matters on screen */
+.ring { position: absolute; border: 6px solid #C084FC; border-radius: 22px; box-shadow: 0 0 0 3px rgba(8,5,16,.7), 0 0 34px rgba(192,132,252,.55), inset 0 0 22px rgba(192,132,252,.18); }
+.ring .lb { position: absolute; left: -6px; top: -54px; height: 44px; padding: 0 16px; border-radius: 12px; background: #C084FC; color: #12081f; font-size: 25px; font-weight: 800; display: flex; align-items: center; white-space: nowrap; }
+
+/* Keycaps */
+#keys { position: absolute; left: 0; right: 0; top: 930px; display: flex; justify-content: center; gap: 18px; align-items: center; }
+.key { min-width: 120px; height: 112px; padding: 0 30px; border-radius: 20px; background: linear-gradient(#2d2640, #1a1526); border: 2px solid rgba(255,255,255,.16); box-shadow: 0 10px 0 #0b0911, 0 22px 50px rgba(0,0,0,.6); display: grid; place-items: center; font-size: 44px; font-weight: 700; color: #fff; }
+.key.dn { transform: translateY(8px); box-shadow: 0 2px 0 #0b0911, 0 12px 30px rgba(0,0,0,.6); background: linear-gradient(#3b2f5a, #241c36); border-color: rgba(192,132,252,.7); }
+.plus { font-size: 44px; color: var(--ink2); font-weight: 700; }
+
+/* Chips, top left, under TikTok's own tabs */
+#chips { position: absolute; left: 44px; top: 190px; display: flex; gap: 12px; }
+.chip { height: 50px; padding: 0 20px; border-radius: 25px; display: flex; align-items: center; gap: 11px; background: rgba(10,7,17,.8); border: 1.5px solid rgba(192,132,252,.35); font-size: 23px; font-weight: 700; }
+.chip .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--lilac); box-shadow: 0 0 12px var(--lilac); }
+
+/* Cards */
+.card { position: absolute; left: 60px; right: 60px; }
+.panel { background: rgba(14,10,23,.94); border: 2px solid rgba(192,132,252,.32); border-radius: 36px; box-shadow: 0 50px 140px rgba(0,0,0,.6); }
+.card[data-type="count"] { top: 560px; padding: 58px 60px 54px; }
+.card[data-type="count"] .k { font-size: 27px; font-weight: 800; letter-spacing: .2em; color: var(--lilac); }
+.card[data-type="count"] .row { display: flex; align-items: baseline; gap: 26px; margin: 18px 0 10px; }
+.card[data-type="count"] .was { font-size: 92px; font-weight: 700; color: #6f6689; font-variant-numeric: tabular-nums; position: relative; }
+.card[data-type="count"] .was i { position: absolute; left: -6px; right: -6px; top: 50%; height: 7px; background: #6f6689; transform-origin: 0 50%; }
+.card[data-type="count"] .arrow { font-size: 64px; color: #8d82ad; }
+.card[data-type="count"] .now { font-size: 250px; line-height: .95; font-weight: 850; letter-spacing: -.05em; font-variant-numeric: tabular-nums; background: linear-gradient(115deg, #8b5cf6, #c084fc 45%, #e879f9); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.card[data-type="count"] .sm { font-size: 31px; line-height: 1.35; color: var(--ink2); }
+.card[data-type="count"] .sm b { color: #fff; }
+
+.card[data-type="list"] { top: 560px; text-align: center; }
+.card[data-type="list"] .n { font-size: 30px; font-weight: 800; letter-spacing: .22em; color: var(--lilac); }
+.card[data-type="list"] .name { font-size: 128px; line-height: 1; font-weight: 850; letter-spacing: -.04em; margin: 26px 0 18px; }
+.card[data-type="list"] .id { display: inline-block; font-family: var(--mono); font-size: 36px; color: #e9ddff; background: rgba(139,92,246,.2); border: 2px solid rgba(192,132,252,.45); border-radius: 14px; padding: 8px 20px; }
+.card[data-type="list"] .why { font-size: 46px; line-height: 1.2; color: var(--ink2); font-weight: 600; margin-top: 30px; }
+.card[data-type="list"] .stamp { display: inline-block; margin-top: 44px; font-size: 44px; font-weight: 850; letter-spacing: .06em; color: #06140d; background: #30D38A; border-radius: 16px; padding: 12px 30px; transform-origin: 50% 50%; }
+
+.card[data-type="ram"] { top: 520px; padding: 50px 56px; }
+.card[data-type="ram"] .stick { position: relative; height: 170px; border-radius: 14px; background: linear-gradient(180deg, #1b1428, #0f0b18); border: 2px solid #3a2c60; overflow: hidden; }
+.card[data-type="ram"] .stick .fin { position: absolute; top: 0; bottom: 48px; width: 100%; background: repeating-linear-gradient(90deg, rgba(192,132,252,.08) 0 14px, transparent 14px 30px); }
+.card[data-type="ram"] .stick .lbl { position: absolute; left: 34px; top: 34px; background: #e9ddff; color: #12081f; font-weight: 850; font-size: 34px; padding: 8px 18px; border-radius: 8px; letter-spacing: .02em; }
+.card[data-type="ram"] .stick .pins { position: absolute; left: 20px; right: 20px; bottom: 0; height: 40px; background: repeating-linear-gradient(90deg, #d4a33d 0 10px, #0f0b18 10px 16px); }
+.card[data-type="ram"] .bars { margin-top: 46px; display: grid; gap: 26px; }
+.card[data-type="ram"] .bar { font-size: 32px; font-weight: 700; }
+.card[data-type="ram"] .bar .tr { height: 34px; border-radius: 17px; background: #1d1530; margin-top: 12px; overflow: hidden; }
+.card[data-type="ram"] .bar .fl { height: 100%; border-radius: 17px; background: linear-gradient(90deg, #6d28d9, #c084fc); }
+.card[data-type="ram"] .bar.slow .fl { background: linear-gradient(90deg, #b45309, #ffc247); }
+.card[data-type="ram"] .bar span { float: right; font-variant-numeric: tabular-nums; }
+
+.card[data-type="cmd"] { top: 640px; text-align: center; }
+.card[data-type="cmd"] .ti { font-size: 34px; font-weight: 800; letter-spacing: .16em; color: var(--lilac); text-transform: uppercase; }
+.card[data-type="cmd"] .box { margin-top: 30px; padding: 40px 30px; text-align: left; font-family: var(--mono); font-size: 40px; line-height: 1.5; color: #fff; }
+.card[data-type="cmd"] .box .ps { color: #8d82ad; }
+.card[data-type="cmd"] .note { margin-top: 26px; font-size: 32px; color: var(--ink2); }
+
+.card[data-type="code"] { top: 290px; height: 850px; overflow: hidden; }
+.card[data-type="code"] .hd { height: 84px; display: flex; align-items: center; gap: 16px; padding: 0 34px; border-bottom: 1px solid rgba(255,255,255,.08); font-size: 27px; color: var(--ink2); }
+.card[data-type="code"] .hd b { color: #fff; font-family: var(--mono); font-weight: 700; }
+.card[data-type="code"] .body { position: absolute; left: 0; right: 0; top: 84px; bottom: 0; overflow: hidden; }
+.card[data-type="code"] pre { position: absolute; left: 34px; right: 20px; top: 0; font-family: var(--mono); font-size: 25px; line-height: 38px; color: #cdbff0; white-space: pre; font-variant-ligatures: none; }
+.card[data-type="code"] pre .c { color: #7d7199; }
+.card[data-type="code"] pre .s { color: #e9b5ff; }
+.card[data-type="code"] .fade { position: absolute; left: 0; right: 0; bottom: 0; height: 180px; background: linear-gradient(0deg, rgba(14,10,23,1), rgba(14,10,23,0)); }
+
+.card[data-type="games"] { top: 520px; display: flex; flex-wrap: wrap; justify-content: center; gap: 22px; }
+.card[data-type="games"] .g { font-size: 48px; font-weight: 800; padding: 20px 34px; border-radius: 24px; background: rgba(14,10,23,.92); border: 2px solid rgba(192,132,252,.4); box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+
+.card[data-type="names"] { top: 0; bottom: 0; left: 0; right: 0; }
+.card[data-type="names"] .nm { position: absolute; font-size: 54px; font-weight: 800; padding: 12px 26px; border-radius: 18px; background: rgba(14,10,23,.92); border: 2px solid rgba(192,132,252,.4); white-space: nowrap; }
+.card[data-type="names"] .nm i { position: absolute; left: 14px; right: 14px; top: 50%; height: 6px; background: #ff5d6c; transform-origin: 0 50%; border-radius: 3px; }
+
+.card[data-type="quote"] { top: 470px; padding: 48px 52px; }
+.card[data-type="quote"] .qk { font-size: 26px; font-weight: 800; letter-spacing: .16em; color: var(--lilac); text-transform: uppercase; }
+.card[data-type="quote"] .qt { margin-top: 24px; font-size: 50px; line-height: 1.28; font-weight: 700; color: #f1ecff; letter-spacing: -.01em; }
+.card[data-type="quote"] .qt .h { color: #ffc247; }
+.card[data-type="end"] { top: 420px; text-align: center; }
+.card[data-type="end"] img { width: 560px; display: block; margin: 0 auto 40px; }
+.card[data-type="end"] .l1 { font-size: 90px; line-height: 1.05; font-weight: 850; letter-spacing: -.03em; }
+.card[data-type="end"] .l2 { font-size: 46px; font-weight: 700; color: var(--ink2); margin-top: 26px; }
+.card[data-type="end"] .l3 { font-size: 40px; font-weight: 700; color: var(--ink2); margin-top: 60px; }
+.card[data-type="end"] .h, .card[data-type="cmd"] .h { color: var(--hi); }
+
+#grain { mix-blend-mode: overlay; opacity: .07; background-repeat: repeat; }
+#vig { background: radial-gradient(ellipse 80% 70% at 50% 48%, rgba(0,0,0,0) 60%, rgba(0,0,0,.4) 100%); }
+#flash { background: #fff; opacity: 0; }
+</style>
+</head>
+<body>
+<iframe id="screen" src="tutorial.html?mode=short" title="desktop"></iframe>
+<div class="layer" id="dim"></div>
+<div class="layer" id="topscrim"></div>
+<div class="layer" id="botscrim"></div>
+<div class="layer" id="rings"></div>
+<div class="layer" id="cards"></div>
+<div id="keys"></div>
+<div id="chips"><div class="chip" id="chip-ex"><span class="dot"></span>Example run</div><div class="chip" id="chip-ff"><svg width="26" height="18" viewBox="0 0 20 14"><path d="M1 1l8 6-8 6zM10 1l8 6-8 6z" fill="#F1ECFF"/></svg>Sped up</div></div>
+<div class="t" id="hook"></div>
+<div class="t" id="cap"></div>
+<div class="layer" id="grain"></div>
+<div class="layer" id="vig"></div>
+<div class="layer" id="flash"></div>
+<script type="module" src="./short.js"></script>
+</body>
+</html>
