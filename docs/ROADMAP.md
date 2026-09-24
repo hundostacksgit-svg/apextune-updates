@@ -134,6 +134,10 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   branch's history) and the trust page shows it as a table. One sample of
   the look has swung from 8.6 to 18.9 s on identical code; the table shows
   the trend and the swings instead of one number.
+- **The slow step announced, the median stated** (1.69.0): the DISM removal
+  says it is the slow part before it starts (a quiet half minute read as a
+  hang is a support question); the trust page states medians across the
+  recorded runs beside the latest run's numbers.
 - **The moving background**: one canvas behind every page, hard black,
   purple shades and small purple objects at different depths that drift,
   slide with the scroll and lean toward the pointer; still under reduced

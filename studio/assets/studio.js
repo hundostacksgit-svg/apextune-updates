@@ -829,6 +829,15 @@ function initTune() {
       const day = (w) => { try { return new Date(w).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }); } catch { return ''; } };
       const html = rows.map((c) => `<tr><td>v${esc(c.version)}</td><td>${esc(day(c.when))}</td><td>${esc(c.before)} → <b>${esc(c.after)}</b></td><td>${esc(c.changes)}</td><td>${esc(c.seconds)} s</td><td>${c.look >= 0 ? esc(c.look) + ' s' : '–'}${c.read >= 0 ? ` (read ${esc(c.read)} s)` : ''}</td><td>${typeof c.red === 'number' ? esc(c.red) : '–'}</td></tr>`).join('');
       history.forEach((el) => { const body = el.querySelector('[data-ci-history-rows]'); if (body) { body.innerHTML = html; el.hidden = false; } });
+      // One run's numbers swing with the build machine; the median across the recorded runs is the steadier claim.
+      const med = (k) => { const v = rows.map((c) => Number(c[k])).filter((n) => Number.isFinite(n) && n >= 0).sort((a, b) => a - b); return v.length ? v[Math.floor((v.length - 1) / 2)] : null; };
+      const mb = med('before'), ma = med('after'), ms = med('seconds'), ml = med('look');
+      if (rows.length >= 3 && mb !== null && ma !== null) {
+        $$('[data-ci-median]').forEach((el) => {
+          el.innerHTML = `Across the last <b>${esc(rows.length)}</b> recorded runs, the median: <b>${esc(mb)} → ${esc(ma)}</b> processes before a restart` + (ms !== null ? `, <b>${esc(ms)} s</b> for the whole tune` : '') + (ml !== null ? `, the free look <b>${esc(ml)} s</b>` : '') + '. The table below has every run.';
+          el.hidden = false;
+        });
+      }
     }).catch(() => {});
   }
 
