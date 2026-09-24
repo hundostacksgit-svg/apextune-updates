@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.46.0'
+$script:Version = '1.47.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -1469,7 +1469,11 @@ function Get-DebloatPlan($m) {
 
 function Debloat($m) {
   Head "Debloat"
+  # Where this phase's time goes, on one line at the end: it has ranged from 36 to 115 seconds on the build machine
+  # and the batch line alone (about 20 s) did not explain it. The look, the pieces and the features are timed apart.
+  $dt = [System.Diagnostics.Stopwatch]::StartNew(); $dtimes = [ordered]@{}
   $plan = Get-DebloatPlan $m
+  $dtimes['look'] = [math]::Round($dt.Elapsed.TotalSeconds, 1); $dt.Restart()
   # OneDrive: gone if nobody is signed in to it. Signed in means in use; it then only loses its auto-start.
   if ($plan.oneInstalled) {
     if ($plan.oneSignedIn) { Keep 'OneDrive' 'you are signed in to it; it just no longer starts with Windows'; Did "OneDrive kept: signed in" }
@@ -1502,6 +1506,7 @@ function Debloat($m) {
       try { Remove-WindowsCapability -Online -Name $c.name -ErrorAction Stop | Out-Null; Record @{ type = 'capability'; name = $c.name }; Did ("removed {0}" -f $c.what) } catch { Warn ("Could not remove {0} ({1})." -f $c.what, $_.Exception.Message) }
     }
   }
+  $dtimes['pieces'] = [math]::Round($dt.Elapsed.TotalSeconds, 1); $dt.Restart()
   foreach ($f in $plan.feats) {
     # A capability removed a moment ago can take the feature with it (the 2009 Media Player is both); look again before touching it.
     $still = $null; try { $still = Get-WindowsOptionalFeature -Online -FeatureName $f.name -ErrorAction Stop } catch { }
@@ -1509,6 +1514,7 @@ function Debloat($m) {
     # The cmdlet warns "Restart is suppressed because NoRestart is specified" on every call; the run's own Done line says restart.
     try { Disable-WindowsOptionalFeature -Online -FeatureName $f.name -NoRestart -WarningAction SilentlyContinue -ErrorAction Stop | Out-Null; Record @{ type = 'feature'; name = $f.name }; Did ("off: {0}" -f $f.what) } catch { Warn ("Could not switch off {0} ({1})." -f $f.what, $_.Exception.Message) }
   }
+  $dtimes['features'] = [math]::Round($dt.Elapsed.TotalSeconds, 1); $dt.Restart()
   # Edge's add-ons: shopping, recommendations, Spotlight, feedback and reporting. Your tabs and settings are untouched.
   $edge = 'HKLM:\SOFTWARE\Policies\Microsoft\Edge'
   Set-Reg $edge 'EdgeShoppingAssistantEnabled' 0
@@ -1532,6 +1538,7 @@ function Debloat($m) {
   Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\UserProfileEngagement' 'ScoobeSystemSettingEnabled' 0
   Did "Kept gone: consumer features, suggested apps, account nags and the 'finish setting up' screen are off by policy"
   Say "  Feature updates can re-provision a few Microsoft apps (Outlook, Teams, Copilot). Run the command again after one; same key, same PC, free."
+  Say ("  (debloat, where the time went: look {0} s, pieces {1} s, features {2} s)" -f $dtimes['look'], $dtimes['pieces'], $dtimes['features'])
 }
 
 <# Caches and temp files that Windows never clears itself. Not undoable,
