@@ -1,6 +1,6 @@
 {
   "api": "https://omnidx-studio-api.omnidx-tune.workers.dev",
-  "version": "1.55.0",
+  "version": "1.56.0",
   "note": "api: the deployed Worker URL (e.g. https://omnidx-studio-api.you.workers.dev). Empty means keys are checked and locked on the PC itself. The site's activate page and go.ps1 both read this file.",
-  "sha256": "625e86195e97b629cc80b9fd3a678fdffde75c566674f6c12c02b5c79bfd1cf0"
+  "sha256": "6cc8e82141d3a2ee80fede56094a133a4d8c570f9e041fd297bbf22b51d2b7a1"
 }
