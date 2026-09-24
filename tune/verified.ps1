@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.52.0'
+$script:Version = '1.53.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -2793,16 +2793,27 @@ function Write-Card($m, [int]$before, [int]$after, [string]$when) {
     $pgb.CenterColor = [System.Drawing.Color]::FromArgb(120, 139, 92, 246)
     $pgb.SurroundColors = [System.Drawing.Color[]]@([System.Drawing.Color]::FromArgb(0, 5, 3, 8))
     $g.FillPath($pgb, $gp)
-    # The mark: the three bars and the bolt, top left.
-    $mr = New-Object System.Drawing.Rectangle 80, 80, 150, 150
-    $lgb = New-Object System.Drawing.Drawing2D.LinearGradientBrush $mr, ([System.Drawing.ColorTranslator]::FromHtml('#5b21b6')), ([System.Drawing.ColorTranslator]::FromHtml('#d946ef')), 45
-    $g.FillPath($lgb, (New-RoundedPath 80 80 150 150 34))
+    # The mark, top left: the eagle from the site (one small download, five seconds at most); the
+    # three bars and the bolt are drawn instead when the PC is offline or the site is not there.
     $white = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml('#ffffff'))
-    $g.FillPath($white, (New-RoundedPath 107 119 69 14 7))
-    $g.FillPath((New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(184, 255, 255, 255))), (New-RoundedPath 107 148 47 14 7))
-    $g.FillPath((New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(118, 255, 255, 255))), (New-RoundedPath 107 177 26 14 7))
-    $bolt = [System.Drawing.PointF[]]@((New-Object System.Drawing.PointF 190, 107), (New-Object System.Drawing.PointF 166, 156), (New-Object System.Drawing.PointF 184, 156), (New-Object System.Drawing.PointF 174, 203), (New-Object System.Drawing.PointF 205, 143), (New-Object System.Drawing.PointF 187, 143))
-    $g.FillPolygon($white, $bolt)
+    $eagle = $null
+    try {
+      $req = [System.Net.WebRequest]::Create('https://omnidx.net/studio/assets/icons/icon-192.png'); $req.Timeout = 5000
+      $resp = $req.GetResponse(); $ms = New-Object System.IO.MemoryStream; $resp.GetResponseStream().CopyTo($ms); $resp.Close()
+      $ms.Position = 0; $eagle = [System.Drawing.Image]::FromStream($ms)
+    } catch { $eagle = $null }
+    if ($eagle) {
+      $g.DrawImage($eagle, (New-Object System.Drawing.Rectangle 62, 74, 172, 172))
+    } else {
+      $mr = New-Object System.Drawing.Rectangle 80, 80, 150, 150
+      $lgb = New-Object System.Drawing.Drawing2D.LinearGradientBrush $mr, ([System.Drawing.ColorTranslator]::FromHtml('#5b21b6')), ([System.Drawing.ColorTranslator]::FromHtml('#d946ef')), 45
+      $g.FillPath($lgb, (New-RoundedPath 80 80 150 150 34))
+      $g.FillPath($white, (New-RoundedPath 107 119 69 14 7))
+      $g.FillPath((New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(184, 255, 255, 255))), (New-RoundedPath 107 148 47 14 7))
+      $g.FillPath((New-Object System.Drawing.SolidBrush ([System.Drawing.Color]::FromArgb(118, 255, 255, 255))), (New-RoundedPath 107 177 26 14 7))
+      $bolt = [System.Drawing.PointF[]]@((New-Object System.Drawing.PointF 190, 107), (New-Object System.Drawing.PointF 166, 156), (New-Object System.Drawing.PointF 184, 156), (New-Object System.Drawing.PointF 174, 203), (New-Object System.Drawing.PointF 205, 143), (New-Object System.Drawing.PointF 187, 143))
+      $g.FillPolygon($white, $bolt)
+    }
     $text = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml('#f1ecff'))
     $muted = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml('#b3a8cf'))
     $purple = New-Object System.Drawing.SolidBrush ([System.Drawing.ColorTranslator]::FromHtml('#c084fc'))
