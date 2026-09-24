@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.38.0'
+$script:Version = '1.39.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -1613,7 +1613,7 @@ function Cut-Telemetry($m) {
   Set-Reg 'HKLM:\SOFTWARE\Microsoft\Windows\Windows Error Reporting' 'Disabled' 1
   # The classic right-click menu on 11: one click fewer, every time.
   if ($m.win -eq 11) { Set-Reg 'HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32' '(default)' '' 'String' }
-  Say "  Telemetry off, background apps off, widgets/news/Copilot/Cortana off, Game DVR off, Game Mode on."
+  Did "Telemetry, the advertising id, activity history, suggestions, Bing in Start, Recall and Edge's reporting off; background apps off; widgets, news, Copilot and Cortana off; Game DVR off, Game Mode on; the classic right-click menu on 11"
 }
 
 # ---------------------------------------------------------------------------
@@ -2741,7 +2741,7 @@ ul{padding-left:20px;color:#b3a8cf}li{margin:4px 0}.did{color:#b3a8cf;font-size:
 code{font-family:ui-monospace,Consolas,monospace;background:#150f22;padding:2px 6px;border-radius:6px;color:#f1ecff;font-size:13px}
 details{margin:10px 0;background:#0e0a17;border:1px solid #2a1f45;border-radius:12px;padding:10px 16px}summary{cursor:pointer;color:#c084fc;font-weight:600}
 details pre{font:12.5px/1.5 ui-monospace,Consolas,monospace;color:#b3a8cf;overflow:auto;max-height:420px;margin:10px 0 4px}
-.bios li{margin:8px 0;color:#f1ecff}.bios{background:#0e0a17;border:1px solid #2a1f45;border-radius:14px;padding:6px 18px}
+.bios ul{list-style:none;padding-left:2px}.bios li{margin:8px 0;color:#f1ecff}.bios{background:#0e0a17;border:1px solid #2a1f45;border-radius:14px;padding:6px 18px}
 </style></head><body><main>
 <h1>OmniDx Tune <span class="muted" style="font-size:16px">v$(& $h $script:Version)</span></h1>
 <p class="sub">$(& $h ((Get-Date).ToString('f'))) &middot; $(& $h $m.cpu) &middot; $(& $h $m.gpu) &middot; $(& $h $m.ramGb) GB &middot; $(& $h $m.board)</p>
