@@ -49,6 +49,10 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   profile picture; the card the script writes and the app window fetch the
   head from the site and fall back to the drawn mark offline (1.53.0,
   1.54.0).
+- **The game-folder walk has a limit** (1.56.0): twenty-five seconds, then
+  the run says how many folders wait for the next run; every listed game
+  keeps its CPU profile by name regardless. Found by reading the published
+  phase timings (games 7.7 s on a machine with no games at all).
 - **The moving background**: one canvas behind every page, hard black,
   purple shades and small purple objects at different depths that drift,
   slide with the scroll and lean toward the pointer; still under reduced
