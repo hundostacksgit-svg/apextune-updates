@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.53.0'
+$script:Version = '1.54.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -2438,7 +2438,8 @@ $script:Xaml = @'
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="190"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
     <DockPanel Grid.Row="0" Margin="2,0,2,14">
       <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-        <Border Width="34" Height="34" CornerRadius="9" Background="{StaticResource Grad}">
+        <Image x:Name="LogoImage" Height="40" Margin="0,0,4,0" VerticalAlignment="Center" Visibility="Collapsed" RenderOptions.BitmapScalingMode="HighQuality"/>
+        <Border x:Name="MarkDrawn" Width="34" Height="34" CornerRadius="9" Background="{StaticResource Grad}">
           <Canvas Width="34" Height="34">
             <Rectangle Canvas.Left="7" Canvas.Top="9" Width="15" Height="3" RadiusX="1.5" RadiusY="1.5" Fill="White" Opacity="0.95"/>
             <Rectangle Canvas.Left="7" Canvas.Top="15.5" Width="10" Height="3" RadiusX="1.5" RadiusY="1.5" Fill="White" Opacity="0.7"/>
@@ -2446,8 +2447,8 @@ $script:Xaml = @'
             <Path Data="M25,6 L19.5,17 L23.5,17 L21.5,28 L28.5,15 L24.5,15 Z" Fill="White"/>
           </Canvas>
         </Border>
-        <TextBlock Text="OmniDx" FontSize="21" FontWeight="Bold" Margin="11,0,5,0" VerticalAlignment="Center"/>
-        <TextBlock Text="TUNE" FontSize="11" FontWeight="Bold" Foreground="#7D7199" VerticalAlignment="Center" Margin="0,2,0,0"/>
+        <TextBlock x:Name="WordDrawn" Text="OmniDx" FontSize="21" FontWeight="Bold" Margin="11,0,5,0" VerticalAlignment="Center"/>
+        <TextBlock x:Name="TuneDrawn" Text="TUNE" FontSize="11" FontWeight="Bold" Foreground="#7D7199" VerticalAlignment="Center" Margin="0,2,0,0"/>
         <TextBlock x:Name="VersionText" FontSize="11" Foreground="#7D7199" VerticalAlignment="Center" Margin="10,2,0,0"/>
       </StackPanel>
       <TextBlock x:Name="StatusText" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#B3A8CF" Text="Reading this PC..."/>
@@ -2533,11 +2534,20 @@ function Show-Gui {
 
   $w = [System.Windows.Markup.XamlReader]::Parse($script:Xaml)
   $ui = @{}
-  foreach ($n in 'VersionText', 'StatusText', 'MachineText', 'CountText', 'TargetText', 'AdviceText', 'StartupPanel', 'KeyBox', 'KeyNote', 'BtnRun', 'BtnReport', 'BtnUndo', 'BtnStatus', 'BtnFolder', 'BtnRestart', 'BtnOpenReport', 'ResultText', 'LogBox', 'Progress', 'FootText',
+  foreach ($n in 'LogoImage', 'MarkDrawn', 'WordDrawn', 'TuneDrawn', 'VersionText', 'StatusText', 'MachineText', 'CountText', 'TargetText', 'AdviceText', 'StartupPanel', 'KeyBox', 'KeyNote', 'BtnRun', 'BtnReport', 'BtnUndo', 'BtnStatus', 'BtnFolder', 'BtnRestart', 'BtnOpenReport', 'ResultText', 'LogBox', 'Progress', 'FootText',
                   'ChkStartup', 'ChkServices', 'ChkTasks', 'ChkApps', 'ChkDebloat', 'ChkTelemetry', 'ChkSystem', 'ChkPower', 'ChkNetwork', 'ChkPrograms', 'ChkGames', 'ChkNvidia', 'ChkCleanup', 'ChkAfterCount', 'ChkKeep', 'ChkXbox', 'ChkDns', 'ChkVbs', 'ChkExtreme') {
     $ui[$n] = $w.FindName($n)
   }
   $ui.VersionText.Text = "v$($script:Version)"
+  # The eagle, fetched by WPF itself in the background; the drawn mark stays until it lands, and for good when it does not.
+  try {
+    $bmp = New-Object System.Windows.Media.Imaging.BitmapImage
+    $bmp.BeginInit(); $bmp.UriSource = [Uri]'https://omnidx.net/studio/assets/logo/omnidx-logo-480.png'; $bmp.CacheOption = [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad; $bmp.EndInit()
+    $showLogo = { $ui.LogoImage.Visibility = 'Visible'; $ui.MarkDrawn.Visibility = 'Collapsed'; $ui.WordDrawn.Visibility = 'Collapsed'; $ui.TuneDrawn.Visibility = 'Collapsed' }
+    $bmp.add_DownloadCompleted([System.EventHandler]$showLogo)
+    $ui.LogoImage.Source = $bmp
+    if (-not $bmp.IsDownloading) { & $showLogo }
+  } catch { }
   if ($Key) { $ui.KeyBox.Text = $Key }
   if ($Extreme) { $ui.ChkExtreme.IsChecked = $true }
   $phases = @{ startup = 'ChkStartup'; services = 'ChkServices'; tasks = 'ChkTasks'; apps = 'ChkApps'; debloat = 'ChkDebloat'; telemetry = 'ChkTelemetry'; system = 'ChkSystem'; power = 'ChkPower'; network = 'ChkNetwork'; programs = 'ChkPrograms'; games = 'ChkGames'; nvidia = 'ChkNvidia'; cleanup = 'ChkCleanup' }
@@ -2952,7 +2962,7 @@ details{margin:10px 0;background:#0e0a17;border:1px solid #2a1f45;border-radius:
 details pre{font:12.5px/1.5 ui-monospace,Consolas,monospace;color:#b3a8cf;overflow:auto;max-height:420px;margin:10px 0 4px}
 .bios ul{list-style:none;padding-left:2px}.bios li{margin:8px 0;color:#f1ecff}.bios{background:#0e0a17;border:1px solid #2a1f45;border-radius:14px;padding:6px 18px}
 </style></head><body><main>
-<h1>OmniDx Tune <span class="muted" style="font-size:16px">v$(& $h $script:Version)</span></h1>
+<h1><img src="https://omnidx.net/studio/assets/icons/icon-192.png" alt="" width="44" height="44" style="vertical-align:middle;margin-right:10px" onerror="this.remove()">OmniDx Tune <span class="muted" style="font-size:16px">v$(& $h $script:Version)</span></h1>
 <p class="sub">$(& $h ((Get-Date).ToString('f'))) &middot; $(& $h $m.cpu) &middot; $(& $h $m.gpu) &middot; $(& $h $m.ramGb) GB &middot; $(& $h $m.board)</p>
 <div class="big"><div><b>$before</b><span>processes before</span></div><div><b>$after</b><span>now, before a restart</span></div><div><b>~$target</b><span>target for this PC after a restart</span></div>$(if ($script:BootBefore -ne $null) { "<div><b>$($script:BootBefore) s</b><span>last start, before the tune</span></div>" })</div>
 $(if ($script:Card) { "<p class='muted'>The card, for posting (the same numbers, on one picture): <code>$(& $h (Split-Path $script:Card -Leaf))</code></p><img src='$(& $h (Split-Path $script:Card -Leaf))' alt='Before and after, on a card' style='max-width:340px;width:100%;border-radius:14px;border:1px solid #2a1f45'>" })
