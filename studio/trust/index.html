@@ -23,6 +23,7 @@
 <meta property="og:description" content="A straight answer, three things you can check yourself before paying, and everything it will not touch.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="preload" as="image" href="../assets/logo/omnidx-logo-800.webp" type="image/webp">
 <link rel="stylesheet" href="../assets/studio.css">
 <script>
 (function(){try{var t=localStorage.getItem('omnidx.theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
@@ -157,6 +158,7 @@
         <p>Every change to the script is parsed by PowerShell on a Windows build machine, run in report mode, then run for real with a key, then undone, before the site publishes it. The last run:</p>
         <p class="small" data-ci-run hidden style="margin-top:10px"></p>
         <p class="small" data-ci-report hidden style="margin-top:8px"></p>
+        <figure class="small" data-ci-card hidden style="margin:12px 0 0"></figure>
         <details style="margin-top:12px"><summary class="small">What that check proves, every push</summary>
           <ul class="tick small" style="margin-top:8px">
             <li>Both scripts parse; the free report reads the machine and changes nothing; the app window draws</li>
