@@ -1,14 +1,14 @@
 ﻿== Reading this PC
   ! The GPU driver dates from Jun 2006. A current driver is worth more than most tweaks.
   ! This looks like a virtual machine. The tune will run, but the numbers mean little here.
-  Processes running now: 152
+  Processes running now: 144
   Target for this PC after the tune and a restart: about 70
 == Your key
 == Before the cut
-  Before: 152 processes, 1615 threads, 52665 handles, 2927 MB in use, idle CPU 0.5%, DPC 0%
+  Before: 144 processes, 1397 threads, 48997 handles, 2868 MB in use, idle CPU 1.7%, DPC 0.13%
 == Safety first
   ! Could not make a restore point (This functionality is not supported on this operating system.). The undo script still records everything.
-  + Registry and service list backed up to C:\OmniDx\backup\2026-09-24_02-12
+  + Registry and service list backed up to C:\OmniDx\backup\2026-09-24_02-28
   + undo.ps1 written to C:\OmniDx\undo
 == Startup apps
   2 things start with Windows:
@@ -31,19 +31,19 @@
   + SharedAccess -> disabled  (internet connection sharing)
   + edgeupdate -> manual  (Edge updater (runs on demand))
   + WbioSrvc -> disabled  (biometrics)
-  + SysMain -> manual  (superfetch)
-  + WSearch -> manual  (search indexing)
+  + SysMain already disabled; left that way
+  + WSearch already disabled; left that way
   + Spooler -> disabled  (print spooler)
   + bthserv -> disabled  (bluetooth)
   + WlanSvc -> disabled  (wi-fi)
   + CDPSvc -> manual  (connected devices)
-  + CDPUserSvc -> manual  (connected devices)
-  + OneSyncSvc -> manual  (mail/contacts sync)
-  + PimIndexMaintenanceSvc -> manual  (contacts index)
-  + UnistoreSvc -> manual  (user data storage)
-  + UserDataSvc -> manual  (user data)
-  + SSDPSRV -> manual  (ssdp discovery)
-  + upnphost -> manual  (upnp)
+  + CDPUserSvc already disabled; left that way
+  + OneSyncSvc already disabled; left that way
+  + PimIndexMaintenanceSvc already disabled; left that way
+  + UnistoreSvc already disabled; left that way
+  + UserDataSvc already disabled; left that way
+  + SSDPSRV already disabled; left that way
+  + upnphost already disabled; left that way
   + DPS -> manual  (diagnostic policy)
   + SCardSvr -> disabled  (smart card)
   + ScDeviceEnum -> disabled  (smart card)
@@ -106,10 +106,10 @@
   Looked in 16 game folders
   + No listed game found on the usual drives; the CPU-priority profiles are in place for when one is installed.
 == Cleanup
-  + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 374 MB back.
+  + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 305 MB back.
 == Keeping it cut
   + Task 'OmniDx keep' runs three minutes after sign-in, puts back whatever an update turned on, and notes that start's boot time. Log: C:\OmniDx\keep-log.txt. Undo removes it.
 == Done
-  After:  146 processes, 1575 threads, 50956 handles, 3064 MB in use, idle CPU 1.6%, DPC 0%
-  Gone:   MoUsoCoreWorker, spoolsv, sppsvc
-  Processes: 152 -> 146 now, in 85 seconds. Restart for the real number: the services that were told to stop are still unwinding.
+  After:  135 processes, 1349 threads, 45976 handles, 2929 MB in use, idle CPU 0.8%, DPC 0%
+  Gone:   spoolsv
+  Processes: 144 -> 135 now, in 136 seconds. Restart for the real number: the services that were told to stop are still unwinding.
