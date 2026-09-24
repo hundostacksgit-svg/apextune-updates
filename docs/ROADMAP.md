@@ -154,7 +154,16 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   rest is outside the phases (the read, the idle-CPU samples before and
   after, the backup, the key check), timed next: 1.73.0 marks each of those
   steps by name in the summary and the record, for both runs, and prints
-  the ones over a second under the phases line.
+  the ones over a second under the phases line. Measured: a re-run of 28 s
+  is read 4.9, key 1.1, the count before 3.8 and after 3.1 (the idle-CPU
+  samples), phases 13.2 (of which the debloat look 3.7 and the cleanup 3.7
+  with nothing to clear), keep 0.6, report about 1. The first run's safety
+  step is 0.4 s on the build machine because it cannot make a restore
+  point; on a real PC that step is the restore point, ten seconds to a
+  minute, and stays.
+- **Two idle samples; the update cache cleared only when there is one**
+  (1.74.0): from 1.73.0's step timings, the counts before and after (3.7 s
+  and 3.1 s) and the re-run's cleanup (3.7 s with nothing to clear).
 - **The moving background**: one canvas behind every page, hard black,
   purple shades and small purple objects at different depths that drift,
   slide with the scroll and lean toward the pointer; still under reduced

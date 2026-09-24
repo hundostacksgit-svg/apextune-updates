@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.73.0'
+$script:Version = '1.74.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -1768,10 +1768,16 @@ function Clear-Junk {
     if (-not $dir -or -not (Test-Path $dir)) { continue }
     Get-ChildItem $dir -Force -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-1) } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
   }
-  try {
-    Stop-Service wuauserv -Force -ErrorAction SilentlyContinue; Stop-Service bits -Force -ErrorAction SilentlyContinue
-    Get-ChildItem "$env:SystemRoot\SoftwareDistribution\Download" -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-  } finally { Start-Service bits -ErrorAction SilentlyContinue; Start-Service wuauserv -ErrorAction SilentlyContinue }
+  # The update download cache is cleared only when there is something in it: stopping and starting the two update
+  # services for an empty folder was most of a re-run's 3.7 s cleanup (1.73.0's record).
+  $dl = "$env:SystemRoot\SoftwareDistribution\Download"
+  $dlMb = 0; try { $dlMb = [math]::Round(((Get-ChildItem $dl -Recurse -File -Force -ErrorAction SilentlyContinue | Measure-Object Length -Sum).Sum) / 1MB) } catch { }
+  if ($dlMb -ge 1) {
+    try {
+      Stop-Service wuauserv -Force -ErrorAction SilentlyContinue; Stop-Service bits -Force -ErrorAction SilentlyContinue
+      Get-ChildItem $dl -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+    } finally { Start-Service bits -ErrorAction SilentlyContinue; Start-Service wuauserv -ErrorAction SilentlyContinue }
+  }
   # The cmdlet narrates ("Deleting...", "Successfully deleted") on the information stream; every stream goes quiet.
   try { Delete-DeliveryOptimizationCache -Force -ErrorAction Stop *> $null } catch { }
   $free1 = 0; try { $free1 = (Get-PSDrive -Name $drive -ErrorAction Stop).Free } catch { }
@@ -2907,7 +2913,9 @@ function Get-Snapshot {
     cpuPct = $null; dpcPct = $null
   }
   try {
-    $c = Get-Counter -Counter '\Processor(_Total)\% Processor Time', '\Processor(_Total)\% DPC Time' -SampleInterval 1 -MaxSamples 3 -ErrorAction Stop
+    # Two one-second samples, not three: the count before and after cost 3.7 s and 3.1 s each on the build machine
+    # (1.73.0's step timings), most of it this wait, and the average of two says as much about an idle desktop.
+    $c = Get-Counter -Counter '\Processor(_Total)\% Processor Time', '\Processor(_Total)\% DPC Time' -SampleInterval 1 -MaxSamples 2 -ErrorAction Stop
     $snap.cpuPct = [math]::Round(($c.CounterSamples | Where-Object { $_.Path -like '*Processor Time' } | Measure-Object CookedValue -Average).Average, 1)
     $snap.dpcPct = [math]::Round(($c.CounterSamples | Where-Object { $_.Path -like '*DPC Time' } | Measure-Object CookedValue -Average).Average, 2)
   } catch { }
