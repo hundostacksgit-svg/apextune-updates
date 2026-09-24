@@ -63,7 +63,15 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   listing instead of five, the disks and the system drive from the storage
   classes instead of module-loading cmdlets, the display-mode listing in an
   in-process runspace instead of a second PowerShell. Build machine: 7.7 s,
-  7.2 s, 6.6 s, and the next line says what 1.61.0 took.
+  7.2 s, 6.6 s, 5.2 s (1.61.0: the partition lookup dropped the memory lap
+  out of the top four; what is left is the device listing, the base CIM
+  reads, the software list and the security reads).
+- **The registry helper opens a key once** (1.62.0): one open says whether
+  the key exists and what the value is, where a probe plus a thrown error for
+  every value not yet there cost the game-profile phase five of its six
+  seconds (three values on each of 146 game exes). The Xbox-app and TPM
+  reads lost their module loads the same way, with the cmdlets as fallback,
+  and the check now records the free look's split and its read line.
 - **The moving background**: one canvas behind every page, hard black,
   purple shades and small purple objects at different depths that drift,
   slide with the scroll and lean toward the pointer; still under reduced

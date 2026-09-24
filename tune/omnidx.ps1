@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.61.0'
+$script:Version = '1.62.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -264,16 +264,19 @@ function Resolve-Hive([string]$p) {
 
 function Set-Reg([string]$path, [string]$name, $value, [string]$kind = 'DWord') {
   $path = Resolve-Hive $path
-  $existed = Test-Path $path
+  # One open of the key says whether it exists and what the value is now. A probe plus a thrown error for
+  # every value not yet there cost the game-profile phase five of its six seconds on the build machine (1.61.0).
+  $key = $null; try { $key = @(Get-Item -Path $path -ErrorAction SilentlyContinue)[0] } catch { }
+  $existed = $null -ne $key
   if (-not $existed) {
     try { New-Item -Path $path -Force -ErrorAction Stop | Out-Null }
     catch { Warn ("Could not create {0} (Windows protects it): {1} left as it is." -f $path, $name); return }
   }
   $prev = $null; $had = $false
-  try {
-    $item = Get-ItemProperty -Path $path -Name $name -ErrorAction Stop
-    $prev = $item.$name; $had = $true
-  } catch { }
+  if ($existed) {
+    $vn = if ($name -eq '(default)') { '' } else { $name }
+    try { if (@($key.GetValueNames()) -contains $vn) { $prev = $key.GetValue($vn); $had = $true } } catch { }
+  }
   if ($had -and ($prev -is [byte[]]) -and ($value -is [byte[]])) {
     if ([System.Linq.Enumerable]::SequenceEqual([byte[]]$prev, [byte[]]$value)) { return }
   } elseif ($had -and $kind -eq 'DWord' -and ($prev -is [int] -or $prev -is [int64] -or $prev -is [uint32]) -and ($value -is [int] -or $value -is [int64] -or $value -is [uint32])) {
@@ -541,7 +544,15 @@ function Get-Machine {
   $physical = @(Get-NetAdapter -Physical -ErrorAction SilentlyContinue)
   $wifi = @($physical | Where-Object { $_.PhysicalMediaType -match '802.11|Native' -or $_.Name -match 'Wi-?Fi|Wireless' }).Count -gt 0
   $vpn = @(Get-NetAdapter -ErrorAction SilentlyContinue | Where-Object { $_.InterfaceDescription -match 'TAP|Wintun|WireGuard|VPN|NordLynx|Proton|Mullvad|Cloudflare WARP' }).Count -gt 0
-  $xboxUsed = (Get-AppxPackage -Name Microsoft.GamingApp -ErrorAction SilentlyContinue) -ne $null -or (Test-Path (Join-Path $script:AppData '.minecraft')) -or (Get-AppxPackage -Name Microsoft.MinecraftUWP -ErrorAction SilentlyContinue) -ne $null
+  # Game Pass, the Xbox app or Minecraft: the package repository in the registry names every staged Store package by its
+  # full name, and reading it costs nothing where loading the Appx module for two lookups was part of the 1.9 s device
+  # lap on 1.61.0's read line. The cmdlets are the fallback when the key is missing.
+  $xboxUsed = Test-Path (Join-Path $script:AppData '.minecraft')
+  if (-not $xboxUsed) {
+    $repo = 'HKLM:\SOFTWARE\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\PackageRepository\Packages'
+    if (Test-Path $repo) { $xboxUsed = @(Get-ChildItem -Path $repo -Name -ErrorAction SilentlyContinue | Where-Object { $_ -match '^Microsoft\.(GamingApp|MinecraftUWP)_' }).Count -gt 0 }
+    else { $xboxUsed = ((Get-AppxPackage -Name Microsoft.GamingApp -ErrorAction SilentlyContinue) -ne $null) -or ((Get-AppxPackage -Name Microsoft.MinecraftUWP -ErrorAction SilentlyContinue) -ne $null) }
+  }
   & $lap 'pnp'
   $live = @($physical | Where-Object { $_.Status -eq 'Up' })
   $wifiLive = @($live | Where-Object { $_.PhysicalMediaType -match '802.11|Native' -or $_.Name -match 'Wi-?Fi|Wireless' }).Count -gt 0
@@ -590,7 +601,10 @@ function Get-Machine {
   $oem = @($installed | Where-Object { $_ -match 'SupportAssist|HP Support Assistant|HP Analytics|HP Wolf|Lenovo Vantage|Lenovo System Update|Armoury Crate|MyASUS|Dragon Center|MSI Center|Acer Care|Predator Sense|Alienware Command|Omen Gaming Hub|Aura Sync|LiveDash|McAfee|Norton' } | Sort-Object -Unique)
   $uefi = $env:firmware_type -eq 'UEFI'
   $secureBoot = $false; try { $secureBoot = Confirm-SecureBootUEFI -ErrorAction Stop } catch { }
-  $tpm = $false; try { $tpm = (Get-Tpm -ErrorAction Stop).TpmPresent } catch { }
+  # The TPM from its own class (Get-Tpm loads a module to read one field); the cmdlet is the fallback when the class is missing.
+  $tpm = $false
+  try { $tpm = @(Get-CimInstance -Namespace root/CIMV2/Security/MicrosoftTpm -ClassName Win32_Tpm -ErrorAction Stop).Count -gt 0 }
+  catch { try { $tpm = (Get-Tpm -ErrorAction Stop).TpmPresent } catch { } }
   & $lap 'software'
   # A desktop with a graphics card whose monitor is plugged into the motherboard: the integrated chip reports a
   # display mode and the card reports none. Laptops route the screen through the integrated chip by design.

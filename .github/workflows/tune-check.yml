@@ -110,8 +110,12 @@ jobs:
           # command's wall time too. A look that gets much slower than the last published run fails below.
           $look = -1; if ($out -match 'Looked in ([0-9.]+) s') { $look = [double]$Matches[1] }
           $read = -1; if ($out -match 'Read in ([0-9.]+) s') { $read = [double]$Matches[1] }
+          # The look's split and the read's slowest laps too, so a slower look says where.
+          $parts = ''; if ($out -match 'Looked in [0-9.]+ s: startup ([0-9.]+), services ([0-9.]+), tasks ([0-9.]+), apps ([0-9.]+), Windows pieces ([0-9.]+)') { $parts = "{0} {1} {2} {3} {4}" -f $Matches[1], $Matches[2], $Matches[3], $Matches[4], $Matches[5] }
+          $readParts = ''; if ($out -match 'Read in [0-9.]+ s \(([^)]+)\)') { $readParts = $Matches[1] }
           Write-Host ("free look: {0} s of looking, {1} s of reading the machine, {2} s wall" -f $look, $read, $lookTotal)
-          Set-Content C:\OmniDx\ci-look.txt -Value ("{0} {1} {2}" -f $look, $read, $lookTotal)
+          Set-Content C:\OmniDx\ci-look.txt -Value ("{0} {1} {2} {3}" -f $look, $read, $lookTotal, $parts).Trim()
+          Set-Content C:\OmniDx\ci-read.txt -Value $readParts
           $last = $null; try { $last = Get-Content studio\assets\ci-run.json -Raw | ConvertFrom-Json } catch { }
           if ($last -and ($null -ne $last.look) -and ([double]$last.look -ge 0) -and $look -ge 0 -and ($look -gt ([double]$last.look + 20))) { Write-Host ("the free look took {0} s; the last published run took {1} s" -f $look, $last.look); exit 1 }
           Get-ChildItem C:\OmniDx | ForEach-Object { Write-Host $_.Name }
@@ -451,11 +455,12 @@ jobs:
           $second = -1; if (Test-Path C:\OmniDx\ci-second.txt) { $second = [int](Get-Content C:\OmniDx\ci-second.txt) }
           $extreme = -1; if (Test-Path C:\OmniDx\ci-extreme.txt) { $extreme = [int](Get-Content C:\OmniDx\ci-extreme.txt) }
           $leftAlone = 0; if (Test-Path C:\OmniDx\ci-left-alone.txt) { $leftAlone = [int](Get-Content C:\OmniDx\ci-left-alone.txt) }
-          $look = -1; $read = -1; $lookTotal = -1
-          if (Test-Path C:\OmniDx\ci-look.txt) { $lk = (Get-Content C:\OmniDx\ci-look.txt) -split ' '; if ($lk.Count -ge 3) { $look = [double]$lk[0]; $read = [double]$lk[1]; $lookTotal = [double]$lk[2] } }
+          $look = -1; $read = -1; $lookTotal = -1; $lookParts = $null; $readParts = ''
+          if (Test-Path C:\OmniDx\ci-look.txt) { $lk = (Get-Content C:\OmniDx\ci-look.txt) -split ' '; if ($lk.Count -ge 3) { $look = [double]$lk[0]; $read = [double]$lk[1]; $lookTotal = [double]$lk[2] }; if ($lk.Count -ge 8) { $lookParts = [ordered]@{ startup = [double]$lk[3]; services = [double]$lk[4]; tasks = [double]$lk[5]; apps = [double]$lk[6]; pieces = [double]$lk[7] } } }
+          if (Test-Path C:\OmniDx\ci-read.txt) { $readParts = "$(Get-Content C:\OmniDx\ci-read.txt)".Trim() }
           # Two runs are left after the undo-last step above; the third is already in done.
           if (([regex]::Matches($out, 'Putting back \d+ changes?')).Count -ne 2) { Write-Host 'undo should have walked back the two remaining runs'; exit 1 }
-          $ci = [ordered]@{ version = $s.version; when = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'); os = $s.os; cpu = $s.cpu; before = $s.before; after = $s.after; target = $s.target; changes = $s.changes; warnings = $s.warnings; seconds = $s.seconds; undone = $undone; kept = $kept; second = $second; extreme = $extreme; leftAlone = $leftAlone; runs = 3; gone = @($s.gone).Count; phases = $s.phases; sha = $env:GITHUB_SHA.Substring(0, 7); look = $look; read = $read; lookTotal = $lookTotal }
+          $ci = [ordered]@{ version = $s.version; when = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'); os = $s.os; cpu = $s.cpu; before = $s.before; after = $s.after; target = $s.target; changes = $s.changes; warnings = $s.warnings; seconds = $s.seconds; undone = $undone; kept = $kept; second = $second; extreme = $extreme; leftAlone = $leftAlone; runs = 3; gone = @($s.gone).Count; phases = $s.phases; sha = $env:GITHUB_SHA.Substring(0, 7); look = $look; read = $read; lookTotal = $lookTotal; lookParts = $lookParts; readParts = $readParts }
           $out = & .\tune\omnidx.ps1 -Status *>&1 | Out-String -Width 4000
           & .\tools\ci-red.ps1 -Text $out -Step 'Status after undo'
           Write-Host $out

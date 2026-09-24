@@ -139,6 +139,15 @@
       </ul>
     </div>
     <div class="card reveal d1" style="margin-top:16px">
+      <div class="eyebrow" style="margin-bottom:12px">v1.62.0 · September 2026</div>
+      <h3>The registry helper opens a key once</h3>
+      <ul class="tick">
+        <li>Every registry change used to probe the key, then ask for the value and catch the error when it was not there yet. The game-profile phase does that for three values on each of 146 game exes, and the build machine spent five of that phase's six seconds on it. One open of the key now answers both questions</li>
+        <li>The Xbox-app and Minecraft check reads the package repository in the registry instead of loading the Store-app module twice; the TPM check reads its class instead of loading a module for one field. The cmdlets remain the fallback when a key or class is missing</li>
+        <li>The Windows check records the free look's split (startup, services, tasks, apps, Windows pieces) and the look's own read line in the run record, so a slower look says where</li>
+      </ul>
+    </div>
+    <div class="card reveal d1" style="margin-top:16px">
       <div class="eyebrow" style="margin-bottom:12px">v1.61.0 · September 2026</div>
       <h3>The read no longer loads the Storage module at all</h3>
       <ul class="tick">
