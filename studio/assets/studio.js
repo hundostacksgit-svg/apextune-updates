@@ -27,7 +27,7 @@ export function applyTheme(t) {
   const theme = t || localStorage.getItem(THEME_KEY) || 'dark';
   document.documentElement.setAttribute('data-theme', theme);
   document.querySelector('meta[name="theme-color"]')
-    ?.setAttribute('content', theme === 'light' ? '#f7f4fe' : '#050308');
+    ?.setAttribute('content', theme === 'light' ? '#f7f4fe' : '#000000');
   try { localStorage.setItem(THEME_KEY, theme); } catch { /* private mode */ }
   try { document.documentElement.dispatchEvent(new Event('omnidx:theme')); } catch { /* old browser */ }
   return theme;
