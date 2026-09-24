@@ -140,7 +140,14 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   recorded runs beside the latest run's numbers.
 - **FACEIT's Windows 11 date in the console** (1.70.0), on Windows 10 with
   FACEIT installed; the second run's seconds recorded and shown; the
-  published log keeps the slow-part line.
+  published log keeps the slow-part line. Measured: the second run made one
+  change in 33 s; the first run 81 s, of which the DISM removal 31 s.
+- **Features in one DISM session** (1.71.0): one session per feature cost
+  about seven seconds each; a Windows 10 PC has four. One session, the
+  cmdlets one at a time as the fallback; the still-enabled check is one
+  read of the class. The build machine has one feature to switch off, so it
+  verifies the call and the exit-code handling, not the multi-name form,
+  which the fallback covers.
 - **The moving background**: one canvas behind every page, hard black,
   purple shades and small purple objects at different depths that drift,
   slide with the scroll and lean toward the pointer; still under reduced
