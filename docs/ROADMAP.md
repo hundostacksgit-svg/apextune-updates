@@ -147,7 +147,9 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   cmdlets one at a time as the fallback; the still-enabled check is one
   read of the class. The build machine has one feature to switch off, so it
   verifies the call and the exit-code handling, not the multi-name form,
-  which the fallback covers.
+  which the fallback covers. Measured: one feature, one session, 6 s (the
+  step 7.5 s with the class read); same 386 and 382. 1.72.0 records the
+  second run's phases (30 to 33 s for one change) so that time can be read.
 - **The moving background**: one canvas behind every page, hard black,
   purple shades and small purple objects at different depths that drift,
   slide with the scroll and lean toward the pointer; still under reduced
