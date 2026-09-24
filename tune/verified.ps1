@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.65.0'
+$script:Version = '1.66.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -1587,38 +1587,6 @@ function Cut-Apps($m) {
 # ---------------------------------------------------------------------------
 # debloat: gone, and kept gone
 # ---------------------------------------------------------------------------
-<# The optional-feature class starts the servicing stack cold (about seven seconds on the build machine, 1.64.0's
-   look split) and the component store's package list takes another second. Asked in a runspace inside this process
-   while the machine is read, both answers are ready by the time the debloat plan needs them. #>
-function Start-PieceRead {
-  $script:PieceRead = $null
-  try {
-    $ps = [PowerShell]::Create()
-    [void]$ps.AddScript(@'
-$r = @{ features = $null; packages = $null }
-try { $f = @{}; foreach ($o in @(Get-CimInstance -ClassName Win32_OptionalFeature -OperationTimeoutSec 60 -ErrorAction Stop)) { $f["$($o.Name)"] = [int]$o.InstallState }; $r.features = $f } catch { }
-try { $r.packages = @(Get-ChildItem -Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\Packages' -Name -ErrorAction Stop) } catch { }
-$r
-'@)
-    $script:PieceRead = @{ ps = $ps; handle = $ps.BeginInvoke() }
-  } catch { $script:PieceRead = $null }
-}
-
-# The runspace's answer, waited for up to a minute; a $null part means read it here instead.
-function Get-PieceRead {
-  $pr = $script:PieceRead; $script:PieceRead = $null
-  $out = @{ features = $null; packages = $null }
-  if (-not $pr) { return $out }
-  try {
-    if ($pr.handle.AsyncWaitHandle.WaitOne(60000)) {
-      $r = $pr.ps.EndInvoke($pr.handle)
-      if ($r -and $r.Count) { $h = $r[$r.Count - 1]; if ($null -ne $h.features) { $out.features = $h.features }; if ($null -ne $h.packages) { $out.packages = @($h.packages) } }
-    } else { try { $pr.ps.Stop() } catch { } }
-    $pr.ps.Dispose()
-  } catch { }
-  return $out
-}
-
 function Get-DebloatPlan($m) {
   # What is actually on this PC from the two lists above, with the keep rules applied.
   $caps = @(); $feats = @()
@@ -1630,9 +1598,7 @@ function Get-DebloatPlan($m) {
   # and then 0), and the optional-feature class answers every feature name at once in one to four seconds.
   # A listing through DISM itself is the one thing never done: 77 to 90 seconds (1.44.0 to 1.47.0).
   $pk = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\Packages'
-  $ahead = Get-PieceRead
-  $pkgs = $ahead.packages
-  if ($null -eq $pkgs) { try { $pkgs = @(Get-ChildItem -Path $pk -Name -ErrorAction Stop) } catch { $pkgs = $null } }
+  $pkgs = $null; try { $pkgs = @(Get-ChildItem -Path $pk -Name -ErrorAction Stop) } catch { $pkgs = $null }
   foreach ($c in $script:Capabilities) {
     if ($c[0] -eq 'Print.Fax.Scan' -and $m.printers) { continue }
     if ($c[0] -eq 'Hello.Face' -and $m.biometric) { continue }
@@ -1660,8 +1626,11 @@ function Get-DebloatPlan($m) {
     }
   }
   # Every optional feature's state in one read (1 is enabled); DISM by name is the fallback when the class fails.
-  $featState = $ahead.features
-  if ($null -eq $featState) { try { $featState = @{}; foreach ($o in @(Get-CimInstance -ClassName Win32_OptionalFeature -OperationTimeoutSec 60 -ErrorAction Stop)) { $featState["$($o.Name)"] = [int]$o.InstallState } } catch { $featState = $null } }
+  # Its cost is the servicing stack's cold start, six to ten seconds on the build machine, and that cost stays
+  # here: read in a runspace alongside the machine read (1.65.0) it doubled the read's own WMI laps and the whole
+  # look came out five seconds slower on two samples.
+  $featState = $null
+  try { $featState = @{}; foreach ($o in @(Get-CimInstance -ClassName Win32_OptionalFeature -OperationTimeoutSec 60 -ErrorAction Stop)) { $featState["$($o.Name)"] = [int]$o.InstallState } } catch { $featState = $null }
   foreach ($f in $script:Features) {
     # The old Media Player is a capability and a feature on newer builds; removing the capability takes the feature with it, so it is one item, not two.
     if ($f[0] -eq 'WindowsMediaPlayer' -and ($caps | Where-Object { $_.name -like 'Media.WindowsMediaPlayer*' })) { continue }
@@ -3295,7 +3264,6 @@ function Main {
     Resolve-User
 
     Head "Reading this PC"
-    Start-PieceRead
     $m = Get-Machine
     # Windows Server is refused: it is not what this is for. The one exception is
     # the check that runs on a Windows Server build machine, in report mode.
