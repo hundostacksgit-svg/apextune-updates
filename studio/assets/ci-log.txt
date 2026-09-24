@@ -1,14 +1,14 @@
 ﻿== Reading this PC
   ! The GPU driver dates from Jun 2006. A current driver is worth more than most tweaks.
   ! This looks like a virtual machine. The tune will run, but the numbers mean little here.
-  Processes running now: 151
+  Processes running now: 147
   Target for this PC after the tune and a restart: about 70
 == Your key
 == Before the cut
-  Before: 151 processes, 1451 threads, 51453 handles, 2940 MB in use, idle CPU 0.6%, DPC 0%
+  Before: 147 processes, 1521 threads, 50055 handles, 2857 MB in use, idle CPU 0.6%, DPC 0%
 == Safety first
   ! Could not make a restore point (This functionality is not supported on this operating system.). The undo script still records everything.
-  + Registry and service list backed up to C:\OmniDx\backup\2026-09-24_03-37
+  + Registry and service list backed up to C:\OmniDx\backup\2026-09-24_04-07
   + undo.ps1 written to C:\OmniDx\undo
 == Startup apps
   2 things start with Windows:
@@ -82,11 +82,11 @@
   + removed the 2009 Windows Media Player (the Store one stays)
   + removed Math Input Panel
   + removed Internet Explorer 11
-  (4 pieces in one DISM session, 19 s)
+  (4 pieces in one DISM session, 26 s)
   + off: Work Folders (corporate sync)
   + Edge: shopping assistant, recommendations, Spotlight, feedback prompts and reporting off
   + Kept gone: consumer features, suggested apps, account nags and the 'finish setting up' screen are off by policy
-  (debloat, where the time went: look 6.7 s, pieces 18.8 s, features 5.3 s)
+  (debloat, where the time went: look 7.4 s, pieces 26 s, features 7.1 s)
 == Telemetry, background activity, the shell
   + Telemetry, the advertising id, activity history, suggestions, Bing in Start, Recall and Edge's reporting off; background apps off; widgets, news, Copilot and Cortana off; Game DVR off, Game Mode on; the classic right-click menu on 11
 == System tuning
@@ -98,8 +98,9 @@
   + OmniDx plan created and active: CPU 100/100, boost aggressive, no core parking, no throttle states on a desktop, PCIe, USB and Wi-Fi power saving off, no sleep on mains.
 == Network
   + TCP: autotuning normal, ECN and timestamps off, receive-side scaling on, segment coalescing off, CTCP.
-  + Ethernet 3: Nagle off, power saving off
+  + Ethernet 4: Interrupt Moderation off
   + Ethernet 4: Nagle off, power saving off
+  + Ethernet 3: Nagle off, power saving off
 == Discord, Spotify, browsers
   + Chrome: no background mode, hardware acceleration on
   + Edge: no startup boost, no background mode, hardware acceleration on
@@ -111,6 +112,6 @@
 == Keeping it cut
   + Task 'OmniDx keep' runs three minutes after sign-in, puts back whatever an update turned on, and notes that start's boot time. Log: C:\OmniDx\keep-log.txt. Undo removes it.
 == Done
-  After:  144 processes, 1582 threads, 50195 handles, 3121 MB in use, idle CPU 1.3%, DPC 0%
+  After:  137 processes, 1446 threads, 47048 handles, 2981 MB in use, idle CPU 0.6%, DPC 0%
   Gone:   spoolsv
-  Processes: 151 -> 144 now, in 73 seconds. Restart for the real number: the services that were told to stop are still unwinding.
+  Processes: 147 -> 137 now, in 86 seconds. Restart for the real number: the services that were told to stop are still unwinding.
