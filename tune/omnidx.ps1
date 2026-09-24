@@ -89,9 +89,11 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.48.0'
+$script:Version = '1.49.0'
 $script:Root = 'C:\OmniDx'
-$script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
+# To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
+# record would have overwritten the first's, taking its undo with it.
+$script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss'
 $script:Changes = New-Object System.Collections.ArrayList
 $script:Log = New-Object System.Collections.ArrayList
 $script:Warnings = New-Object System.Collections.ArrayList

@@ -333,7 +333,6 @@ jobs:
       - name: A second run is accepted and records nearly nothing new
         timeout-minutes: 15
         run: |
-          Start-Sleep -Seconds 61
           # A startup entry the first run switched off, turned back on by hand (as Task Manager would): the second run must leave it on.
           $rec = @(Get-Content C:\OmniDx\undo\changes-latest.json -Raw | ConvertFrom-Json | ForEach-Object { $_ })
           $entry = @($rec | Where-Object { $_.type -eq 'reg' -and $_.path -like '*StartupApproved\Run*' -and $_.kind -eq 'Binary' } | Select-Object -First 1)[0]
@@ -366,7 +365,6 @@ jobs:
       - name: A third run, Extreme, records its extras and leaves status clean
         timeout-minutes: 15
         run: |
-          Start-Sleep -Seconds 61
           $out = & .\tune\omnidx.ps1 -Api http://127.0.0.1:8787 -Extreme -Yes -NoRestart -NoAfterCount -NoKeep *>&1 | Out-String -Width 4000
           & .\tools\ci-red.ps1 -Text $out -Step 'A third run, Extreme, records its extras and leaves status clean'
           Write-Host $out

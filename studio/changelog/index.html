@@ -129,6 +129,13 @@
 <section style="padding-top:26px">
   <div class="wrap" style="max-width:820px">
     <div class="card reveal">
+      <div class="eyebrow" style="margin-bottom:12px">v1.49.0 · September 2026</div>
+      <h3>Two runs in one minute keep two records</h3>
+      <ul class="tick">
+        <li>A run's record, log and report were named to the minute, so a second run started inside the same minute (a refusal, then a retry) would have written over the first run's record and taken its undo with it. They are named to the second now. The Windows check had been waiting a minute between its runs to avoid exactly that; it no longer needs to, and is two minutes shorter</li>
+      </ul>
+    </div>
+    <div class="card reveal d1" style="margin-top:16px">
       <div class="eyebrow" style="margin-bottom:12px">v1.48.0 · September 2026</div>
       <h3>The slow part, found and removed</h3>
       <ul class="tick">
