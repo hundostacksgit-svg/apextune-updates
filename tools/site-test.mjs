@@ -146,6 +146,7 @@ try {
     const keys = [1, 2, 3].map(() => pretty(makeKey('tune')));
     const page = await browser.newPage({ viewport: { width: 390, height: 900 } }); const errs = watch(page);
     await page.route('**/tune/config.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ api: `${base}/fakeapi`, version: '0', sha256: 'x' }) }));
+    await page.route('**/fakeapi/v1/health', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, square: true, mail: true }) }));
     await page.route('**/fakeapi/v1/tune/check', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true, product: 'squad', seats: 1, used: 0 }) }));
     let asked = [];
     await page.route('**/fakeapi/v1/tune/issue', async (r) => { const b = r.request().postDataJSON(); asked.push(b); r.fulfill({ contentType: 'application/json', body: JSON.stringify({ key: keys[0], keys, product: 'squad', seats: 1, verified: true, emailed: true, ...(b.resend ? { resent: true, sentTo: 'b***@example.test' } : {}) }) }); });

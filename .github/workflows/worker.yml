@@ -6,18 +6,17 @@ name: Deploy the Worker
 # anyone. The schema is additive (every statement is IF NOT EXISTS), so
 # re-running it is always safe.
 #
-# Going live is three repository secrets and this button:
+# Going live is two repository secrets and this button:
 #   CLOUDFLARE_API_TOKEN   a token from the "Edit Cloudflare Workers" template with D1:Edit added;
 #                          the account is read off the token and the database is made if it is missing
 #   SQUARE_ACCESS_TOKEN    confirms Square orders; keys are not issued without it; refunds are checked with it hourly
-#   GMAIL_USER and GMAIL_APP_PASSWORD
-#                          the owner's Gmail address and an app password: the keys go to buyers from it,
-#                          and the owner page's token is made from it and sent to it
-# Everything else is optional and the Summary tab says so:
-#   CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_D1_ID   only to pin an account or database by hand
+# The key shows on the page the buyer lands on after paying. Everything else is optional and the Summary tab says so:
+#   TUNE_ADMIN_TOKEN                          any long password you make up: unlocks the owner page (omnidx.net/studio/admin/)
+#   GMAIL_USER and GMAIL_APP_PASSWORD         only if the keys should also be emailed: the owner's Gmail and an app password;
+#                                             with these and no TUNE_ADMIN_TOKEN, an owner token is made and emailed to that Gmail
 #   SQUARE_WEBHOOK_SIGNATURE_KEY              refunds reach the keys in seconds instead of within the hour
 #   RESEND_API_KEY                            Resend instead of Gmail (a verified domain)
-#   TUNE_ADMIN_TOKEN                          your own owner-page token instead of the one made for you
+#   CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_D1_ID   only to pin an account or database by hand
 # After a deploy the Worker's URL is written into tune/config.json (the site
 # and go.ps1 read `api` from there) and Pages is asked to publish. One
 # optional variable:
@@ -76,14 +75,14 @@ jobs:
             echo "| Secret | Set | What it is for |"
             echo "| --- | --- | --- |"
             for pair in "CLOUDFLARE_API_TOKEN|**needed**: the deploy itself (the account and the database are found or made from it)" \
-                        "SQUARE_ACCESS_TOKEN|**needed to sell**: confirms each order and checks refunds hourly; the buy buttons stay shut without it" \
-                        "GMAIL_USER|**needed to email keys**: your Gmail address; the keys go to buyers from it" \
-                        "GMAIL_APP_PASSWORD|**needed to email keys**: an app password for that Gmail (Google Account > Security > 2-Step Verification > App passwords)" \
-                        "CLOUDFLARE_ACCOUNT_ID|optional: only to pin an account when the token can see more than one" \
-                        "CLOUDFLARE_D1_ID|optional: only to pin a database; otherwise omnidx-studio is found or made" \
+                        "SQUARE_ACCESS_TOKEN|**needed to sell**: confirms each order and checks refunds hourly; the buy buttons stay shut without it. The key shows on the page after paying" \
+                        "TUNE_ADMIN_TOKEN|optional: any long password you make up; unlocks the owner page for support from a phone" \
+                        "GMAIL_USER|optional: only if the keys should also be emailed; your Gmail address" \
+                        "GMAIL_APP_PASSWORD|optional, with GMAIL_USER: an app password for that Gmail (Google Account > Security > 2-Step Verification > App passwords); without TUNE_ADMIN_TOKEN an owner token is made from it and emailed to you" \
                         "SQUARE_WEBHOOK_SIGNATURE_KEY|optional: refunds reach the keys in seconds instead of within the hour" \
                         "RESEND_API_KEY|optional: Resend instead of Gmail (needs a verified domain)" \
-                        "TUNE_ADMIN_TOKEN|optional: your own owner-page token; otherwise one is made from the app password and emailed to you"; do
+                        "CLOUDFLARE_ACCOUNT_ID|optional: only to pin an account when the token can see more than one" \
+                        "CLOUDFLARE_D1_ID|optional: only to pin a database; otherwise omnidx-studio is found or made"; do
               name="${pair%%|*}"; why="${pair#*|}"
               if [ -n "${!name}" ]; then echo "| $name | yes | $why |"; else echo "| $name | no | $why |"; fi
             done
@@ -229,7 +228,7 @@ jobs:
             token="$(python3 -c 'import hmac,hashlib,base64,os; print(base64.b32encode(hmac.new(os.environ["GMAIL_APP_PASSWORD"].encode(), b"omnidx-owner-token", hashlib.sha256).digest()).decode().rstrip("=").lower()[:32])')"
             made=true
           fi
-          if [ -z "$token" ]; then echo "no owner token: set TUNE_ADMIN_TOKEN, or GMAIL_APP_PASSWORD so one can be made"; echo "have=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ -z "$token" ]; then echo "no owner token: the owner page stays off (keys, the key page and refunds work without it). Set TUNE_ADMIN_TOKEN to any long password to switch it on."; echo "have=false" >> "$GITHUB_OUTPUT"; exit 0; fi
           first=true
           if npx wrangler secret list 2>/dev/null | grep -q '"TUNE_ADMIN_TOKEN"'; then first=false; fi
           echo "::add-mask::$token"
@@ -355,7 +354,7 @@ jobs:
                   echo
                   echo '```'; echo "$h"; echo '```'
                   echo
-                  echo "square: orders are confirmed. mail: keys are emailed. refunds: how a refund switches keys off. owner: the owner page works. A false one names the secret still to add."
+                  echo "square: orders are confirmed (needed to sell). refunds: how a refund switches keys off. mail: keys are also emailed (optional). owner: the owner page works (optional). A false one names the secret still to add."
                 } >> "$GITHUB_STEP_SUMMARY"
                 exit 0
               fi

@@ -27,16 +27,16 @@ of their files) and opens Explorer on it. It answers most questions.
 
 ## "I paid and did not get a key"
 
-> The keys went to the email you typed at Square's checkout the moment the
-> payment cleared; check spam and promotions. Square also sent you back to
-> omnidx.net/studio/activate/ with them on screen, and that page shows them
-> again any time: the receipt number from Square's email (#AB12 or so) plus
+> Square sent you back to omnidx.net/studio/activate/ with the key on
+> screen the moment the payment cleared, and that page shows it again any
+> time: the receipt number from Square's receipt email (#AB12 or so) plus
 > the email you paid with, or the long order id from the address bar. Send
-> me the receipt if that fails and I will send them again.
+> me the receipt if that fails and I will look the order up.
 
 By hand: the owner page (omnidx.net/studio/admin/): look the order up by
-order reference, receipt number or key, then "Send the keys again". Nothing
-else makes a buyer's key; keys exist only in the server's table.
+order reference, receipt number or key; the keys are on the answer, and
+"Send the keys again" works when emailing is switched on. Nothing else
+makes a buyer's key; keys exist only in the server's table.
 
 ## "I lost my key"
 
@@ -245,7 +245,7 @@ one, or for a key issued by hand, the command is in docs/TUNE.md > Refunds.
 ## "Can I get it for a friend / a second PC"
 
 > Yes: buy a second key and give them the key, it locks to their PC. For
-> three PCs, Squad is three keys for $39.99: one email, three keys, each
+> three PCs, Squad is three keys for $39.99: three keys on the page, each
 > locks to its own PC.
 
 Every reply below that needs a look at an order is done from
@@ -255,15 +255,16 @@ off or on. No terminal needed.
 
 ## "I paid but no email came"
 
-> The keys go to the email address typed at Square's checkout the moment the
-> payment completes, from the OmniDx Tune Gmail address; check spam and
-> promotions first.
-> They are also on the page Square sent you to after paying, and that page
-> shows them again any time: omnidx.net/studio/activate/, with the short
-> receipt number from Square's email (#AB12 or so) and the email you paid
-> with. Under the keys there is "Send it again", which sends them to your
-> checkout address once more. If neither has them, send the receipt and
-> I will look the order up and send the keys by hand.
+> The key is not sent by email; it is on the page Square sent you to after
+> paying, and that page shows it again any time: omnidx.net/studio/activate/
+> with the short receipt number from Square's receipt email (#AB12 or so)
+> and the email you paid with. The page has buttons to copy it, email it to
+> yourself, save it as a file or print it. If it is not there either, send
+> the receipt and I will look the order up.
+
+(When emailing is switched on, the keys also go to the checkout address and
+the page's "Send it again" button sends them once more; the reply above
+still stands, the page is the copy that never gets lost.)
 
 ## "It says too many tries"
 

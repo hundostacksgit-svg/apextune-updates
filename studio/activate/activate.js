@@ -64,6 +64,14 @@ async function api() {
   return apiBase;
 }
 
+/** The server's health line, once: it says whether the shop emails keys at all. */
+let healthCache = null;
+async function serverHealth(base) {
+  if (healthCache) return healthCache;
+  try { const r = await fetch(`${base}/v1/health`, { cache: 'no-store' }); healthCache = r.ok ? await r.json() : {}; } catch { healthCache = {}; }
+  return healthCache;
+}
+
 class Refused extends Error { constructor(message, status) { super(message); this.status = status; } }
 
 /**
@@ -150,7 +158,7 @@ function renderKey(info, { again = false } = {}) {
       <a class="btn btn-sm btn-ghost" href="${mail}">${many ? 'Email them to myself' : 'Email it to myself'}</a>
       <a class="btn btn-sm btn-ghost" href="${save}" download="omnidx-tune-key.txt">Save as a file</a>
       <button class="btn btn-sm btn-ghost" type="button" onclick="print()">Print</button></div>
-    <p class="tiny" id="act-mail" style="text-align:center;margin:8px 0 0;color:var(--ok,#35d07f)">${info.emailed ? 'Also sent to the email you gave at checkout. ' : ''}<button class="btn btn-sm btn-ghost" type="button" id="act-resend">${info.emailed ? 'Not there? Send it again' : (many ? 'Send them to my checkout email' : 'Send it to my checkout email')}</button></p>
+    <p class="tiny" id="act-mail" style="text-align:center;margin:8px 0 0;color:var(--ok,#35d07f)" hidden>${info.emailed ? 'Also sent to the email you gave at checkout. ' : ''}<button class="btn btn-sm btn-ghost" type="button" id="act-resend">${info.emailed ? 'Not there? Send it again' : (many ? 'Send them to my checkout email' : 'Send it to my checkout email')}</button></p>
     <p class="tiny" id="act-mail-out" style="text-align:center;margin:6px 0 0" aria-live="polite" hidden></p>
     <p class="tiny muted" style="text-align:center;margin:8px 0 0">Letters only look like this: no I, O, 0 or 1 in a key, and capitals do not matter.</p>
     <p class="tiny muted" id="act-seats" style="text-align:center;margin:6px 0 0" hidden></p>
@@ -278,6 +286,8 @@ async function wireExtras(info) {
       if (bits.length && seats) { seats.hidden = false; seats.textContent = bits.join(' · ') + '.'; }
     } catch { /* the server is optional */ }
   }
+  // The email line appears only when the shop emails keys at all; otherwise the key is the page, and the buttons above keep it.
+  if (base) serverHealth(base).then((h) => { const m = $('#act-mail'); if (m && h && h.mail) m.hidden = false; });
   // The keys to the checkout address again: the server sends to the address on file and nowhere else.
   $('#act-resend')?.addEventListener('click', async () => {
     const out = $('#act-mail-out');

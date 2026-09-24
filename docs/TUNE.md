@@ -108,11 +108,10 @@ it works from a phone.
 1. **Rename the $39.99 link** (`https://square.link/u/sxi62gva`) to
    "OmniDx Tune Squad — three keys". Description: "Three keys, one per PC:
    yours and two to give away. Paid once. The keys appear on the page after
-   you pay and go to your email. Undo in one line."
+   you pay. Undo in one line."
 2. **Rename the $19.99 link** (`https://square.link/u/xm9VtiGc`) to
    "OmniDx Tune — one PC". Description: "One command tunes your Windows PC
-   for games. Paid once. Your key appears on the page after you pay and goes
-   to your email; it locks to the first PC that runs it. Undo in one line."
+   for games. Paid once. Your key appears on the page after you pay; it locks to the first PC that runs it. Undo in one line."
 3. **Delete the $69.99 link** (`https://square.link/u/i8zrHwkn`). Nothing
    sells at that price now.
 4. **Check each link's redirect URL** ("After payment, send the customer
@@ -154,10 +153,10 @@ change a price: change it in Square, change it there, commit.
 ## What to switch on
 
 ### Going live from a phone: the checklist
-Three things to copy, one button, and Square's own pages. No terminal, no DNS
-records, no webhook. The deploy finds your Cloudflare account and makes the
-database itself; the keys go out through your Gmail; the owner token is made
-for you and emailed to you.
+Two things to copy, one button, and Square's own pages. No terminal, no DNS
+records, no webhook, no mail service. The key shows on the page the buyer
+lands on after paying, and the key page shows it again any time. The deploy
+finds your Cloudflare account and makes the database itself.
 
 1. **Cloudflare** (dash.cloudflare.com, the free plan): profile icon > My
    Profile > API Tokens > Create Token > the "Edit Cloudflare Workers"
@@ -165,44 +164,40 @@ for you and emailed to you.
    Create Token. Copy it.
 2. **Square** (developer.squareup.com > your application > Production):
    copy the **Access token**.
-3. **Gmail**: myaccount.google.com > Security > 2-Step Verification (turn it
-   on if it is off) > App passwords > name it OmniDx > Create. Copy the
-   sixteen letters.
-4. **GitHub** (the repository > Settings > Secrets and variables > Actions
-   > New repository secret), four secrets, names exactly:
-   `CLOUDFLARE_API_TOKEN` (step 1), `SQUARE_ACCESS_TOKEN` (step 2),
-   `GMAIL_USER` (the Gmail address) and `GMAIL_APP_PASSWORD` (step 3).
-5. **Deploy**: Actions > "Deploy the Worker" > Run workflow on the branch.
-   The run's Summary tab lists every secret, and ends with the server's
+3. **GitHub** (the repository > Settings > Secrets and variables > Actions
+   > New repository secret), two secrets, names exactly:
+   `CLOUDFLARE_API_TOKEN` (step 1) and `SQUARE_ACCESS_TOKEN` (step 2).
+   A third, `TUNE_ADMIN_TOKEN`, is any long password you make up; it
+   unlocks the owner page (lost keys, moving a key, switching an order off
+   from a phone). Optional: everything a buyer needs works without it.
+4. **Deploy**: Actions > "Deploy the Worker" > Run workflow on the branch.
+   The run's Summary tab lists every secret and ends with the server's
    health line. The workflow finds the account, makes the `omnidx-studio`
    database if there is none, pushes the secrets, writes the server's
-   address into `tune/config.json` and publishes the site. The first time,
-   an email lands in that Gmail with the owner-page token and what is left.
-6. **Square payment links** (squareup.com > Online > Payment links): rename
+   address into `tune/config.json` and publishes the site.
+5. **Square payment links** (squareup.com > Online > Payment links): rename
    the $39.99 link "OmniDx Tune Squad — three keys" and the $19.99 link
    "OmniDx Tune — one PC"; delete the $69.99 link; check the redirects end in
    `?e=creator` ($19.99) and `?e=studio` ($39.99). Where Square's checkout
    settings ask for a refund policy or terms link, give
    `https://omnidx.net/studio/terms/`.
-7. **Check**: open omnidx.net/studio/admin/ on the phone; the status line
-   should read Licence server on, Square on, Refunds checked hourly, Mail
-   through Gmail, Owner token on. Paste the token from the email and press
-   **Send a test email**: it lands in the same inbox within a minute.
-8. **Test**: buy the $19.99 link with your own card and email. The key is on
-   the page you land on and in your inbox within a minute. Refund yourself in
-   Square; within the hour the key stops working and a second email says so.
+6. **Test**: buy the $19.99 link with your own card. The key is on the page
+   you land on. Refund yourself in Square; within the hour the key stops
+   working (the key page says the order was refunded).
 
-Until step 5 is done nobody can buy: the buy buttons say the key desk is
+Until step 4 is done nobody can buy: the buy buttons say the key desk is
 not open, and the key page says the same. Without `SQUARE_ACCESS_TOKEN` the
 deploy still runs, and the health line says `square: false`.
 
-Optional, only if you want them: `SQUARE_WEBHOOK_SIGNATURE_KEY` (a webhook
+Optional, only if you want them: `GMAIL_USER` and `GMAIL_APP_PASSWORD`
+(the keys also go to the buyer's checkout email, from your Gmail, and a
+"Send it again" button appears on the key page; with these and no
+`TUNE_ADMIN_TOKEN`, an owner token is made from the app password and
+emailed to that Gmail), `SQUARE_WEBHOOK_SIGNATURE_KEY` (a webhook
 subscription in Square's developer dashboard at the Worker's address plus
 `/v1/webhooks/square`, events `payment.*` and `refund.*`; refunds then reach
-the keys in seconds rather than within the hour, and the deploy tells the
-Worker its own address), `RESEND_API_KEY` (Resend instead of Gmail; needs
-the domain verified with three DNS records), `TUNE_ADMIN_TOKEN` (your own
-owner token instead of the one made from the app password),
+the keys in seconds rather than within the hour), `RESEND_API_KEY` (Resend
+instead of Gmail; needs the domain verified with three DNS records),
 `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_D1_ID` (to pin an account or a
 database when the token can see several).
 
@@ -242,10 +237,10 @@ button) does the rest, so the whole setup is done from a browser:
 | --- | --- | --- |
 | `CLOUDFLARE_API_TOKEN` | Cloudflare dashboard > My Profile > API Tokens > Create > "Edit Cloudflare Workers" template, plus D1: Edit | lets the workflow deploy; the account is read off it and the `omnidx-studio` database is found or made |
 | `SQUARE_ACCESS_TOKEN` | Square developer dashboard > Production access token | confirms orders; asks Square about refunds on the hour and at every key check |
-| `GMAIL_USER`, `GMAIL_APP_PASSWORD` | the owner's Gmail address and an app password (Google Account > Security > 2-Step Verification > App passwords) | sends the keys to buyers, from the owner's own address; the owner token is made from the app password |
+| `TUNE_ADMIN_TOKEN` (optional) | any long password you make up | unlocks the owner page; without it the owner page stays off and everything a buyer needs still works |
+| `GMAIL_USER`, `GMAIL_APP_PASSWORD` (optional) | the owner's Gmail address and an app password (Google Account > Security > 2-Step Verification > App passwords) | also emails the keys to buyers, from the owner's own address; with no `TUNE_ADMIN_TOKEN`, an owner token is made from the app password and emailed |
 | `SQUARE_WEBHOOK_SIGNATURE_KEY` (optional) | Square developer dashboard > Webhooks > the subscription | refunds reach the keys in seconds instead of within the hour |
 | `RESEND_API_KEY` (optional) | resend.com > API Keys, after verifying omnidx.net (three DNS records it shows you) | Resend instead of Gmail |
-| `TUNE_ADMIN_TOKEN` (optional) | any long random string you make up | your own owner-page token instead of the made one |
 | `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_D1_ID` (optional) | the Cloudflare dashboard | pin an account or database by hand |
 
 After a deploy the workflow finds the Worker's URL, writes it into
