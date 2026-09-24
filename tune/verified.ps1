@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.59.0'
+$script:Version = '1.60.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -512,7 +512,11 @@ function Get-Machine {
   $vendor = if ($gpu.Name -match 'NVIDIA|GeForce|RTX|GTX') { 'NVIDIA' } elseif ($gpu.Name -match 'AMD|Radeon') { 'AMD' } elseif ($gpu.Name -match 'Intel|Arc') { 'Intel' } else { 'Unknown' }
   $battery = Get-CimInstance Win32_Battery -ErrorAction SilentlyContinue
   $laptop = ($battery -ne $null) -or ($cs.PCSystemType -eq 2) -or ($cs.PCSystemTypeEx -eq 2)
-  $disks = @(Get-PhysicalDisk -ErrorAction SilentlyContinue)
+  # The disks straight from the storage class (Get-PhysicalDisk loads the whole Storage module for three fields).
+  # MediaType 3 is a hard disk, 4 an SSD; BusType 17 is NVMe. The cmdlet is the fallback when the class is missing.
+  $disks = @()
+  try { $disks = @(Get-CimInstance -Namespace root/Microsoft/Windows/Storage -ClassName MSFT_PhysicalDisk -ErrorAction Stop | ForEach-Object { [pscustomobject]@{ DeviceId = $_.DeviceId; MediaType = $(if ($_.MediaType -eq 3) { 'HDD' } elseif ($_.MediaType -eq 4) { 'SSD' } else { 'Unspecified' }); BusType = $(if ($_.BusType -eq 17) { 'NVMe' } else { "$($_.BusType)" }) } }) }
+  catch { $disks = @(Get-PhysicalDisk -ErrorAction SilentlyContinue) }
   $allSsd = $disks.Count -gt 0 -and -not ($disks | Where-Object { $_.MediaType -eq 'HDD' })
   $nvme = ($disks | Where-Object { $_.BusType -eq 'NVMe' }).Count -gt 0
   $ramGb = [math]::Round($cs.TotalPhysicalMemory / 1GB)
@@ -561,11 +565,15 @@ function Get-Machine {
   } catch { }
   & $lap 'memory'
   # Every display mode the driver knows, which some drivers take a long time to list: ten seconds, then it is left out.
+  # In a runspace inside this process (a second PowerShell process, as before 1.60.0, cost a second on its own).
   $maxRefresh = 0
   try {
-    $job = Start-Job { (Get-CimInstance CIM_VideoControllerResolution -ErrorAction Stop | ForEach-Object { $_.RefreshRate } | Where-Object { $_ } | Measure-Object -Maximum).Maximum }
-    if (Wait-Job $job -Timeout 10) { $maxRefresh = [int](Receive-Job $job -ErrorAction SilentlyContinue | Select-Object -Last 1) } else { Stop-Job $job -ErrorAction SilentlyContinue }
-    Remove-Job $job -Force -ErrorAction SilentlyContinue
+    $ps = [PowerShell]::Create()
+    [void]$ps.AddScript('(Get-CimInstance CIM_VideoControllerResolution -ErrorAction Stop | ForEach-Object { $_.RefreshRate } | Where-Object { $_ } | Measure-Object -Maximum).Maximum')
+    $h = $ps.BeginInvoke()
+    if ($h.AsyncWaitHandle.WaitOne(10000)) { $r = $ps.EndInvoke($h); if ($r -and $r.Count) { $maxRefresh = [int]$r[$r.Count - 1] } }
+    else { try { $ps.Stop() } catch { } }
+    $ps.Dispose()
   } catch { }
   & $lap 'modes'
   $otherAv = @(); try { $otherAv = @(Get-CimInstance -Namespace root\SecurityCenter2 -ClassName AntiVirusProduct -ErrorAction Stop | ForEach-Object { $_.displayName } | Where-Object { $_ -and $_ -notmatch 'Defender' } | Sort-Object -Unique) } catch { }
