@@ -218,6 +218,9 @@ jobs:
           if (-not $html) { Write-Host 'no HTML report'; exit 1 }
           # The report of this run, as it opened on the build machine, for the site: a buyer can see the real thing before paying.
           Copy-Item $html.FullName C:\OmniDx\ci-report.html -Force
+          # Its "What was done" must be a list of headings and lines, not one blob: 1.42.0 drew every line into a single heading and nothing caught it.
+          $h4 = ([regex]::Matches((Get-Content $html.FullName -Raw), '<h4>')).Count
+          if ($h4 -lt 8) { Write-Host ("the HTML report's What was done has {0} headings; expected one per phase" -f $h4); exit 1 }
           if (-not (Test-Path C:\OmniDx\undo\changes-latest.json)) { Write-Host 'no change record'; exit 1 }
           if (-not (Test-Path C:\OmniDx\README.txt)) { Write-Host 'no README.txt'; exit 1 }
           $summary = Get-ChildItem C:\OmniDx -Filter 'summary-*.json' | Sort-Object LastWriteTime -Descending | Select-Object -First 1
