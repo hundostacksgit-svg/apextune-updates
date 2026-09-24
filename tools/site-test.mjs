@@ -16,7 +16,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let failed = 0;
@@ -36,7 +36,7 @@ const server = spawn('python3', ['-m', 'http.server', String(port), '--bind', '1
 for (let i = 0; i < 50; i++) { try { const r = await fetch(`${base}/studio/`); if (r.ok) break; } catch { /* not yet */ } await new Promise((r) => setTimeout(r, 200)); }
 
 const { chromium } = await loadPlaywright();
-const { makeKey, pretty } = await import(path.join(root, 'studio/assets/tunekey.js'));
+const { makeKey, pretty } = await import(pathToFileURL(path.join(root, 'studio/assets/tunekey.js')).href);
 // A machine with its own Chromium (the build machine's, or a dev box) names it in PW_CHROMIUM; otherwise Playwright's own.
 const browser = await chromium.launch({ args: ['--no-sandbox'], ...(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {}) });
 
@@ -184,8 +184,8 @@ try {
   /* 3b. The buyer's path against the real licence server code: the Worker runs in this process, with the
         stand-in Square and Gmail the offline test uses, and the page is the real page. Nothing here is a fake answer. */
   {
-    const { db, mails, payments, refunds, fakeConnect, installFetch, makeEnv } = await import(path.join(root, 'tools/worker-standin.mjs'));
-    const worker = (await import(path.join(root, 'server/worker.js'))).default;
+    const { db, mails, payments, refunds, fakeConnect, installFetch, makeEnv } = await import(pathToFileURL(path.join(root, 'tools/worker-standin.mjs')).href);
+    const worker = (await import(pathToFileURL(path.join(root, 'server/worker.js')).href)).default;
     const nodeFetch = globalThis.fetch;
     installFetch({ strict: false });
     // The two-secret setup the guide describes: Square on, no mailer, no webhook.

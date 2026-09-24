@@ -200,10 +200,15 @@ jobs:
           # start, the way the key page does after a payment, and writes it to a file for the steps below.
           $keyFile = Join-Path $env:RUNNER_TEMP 'ci-key.txt'
           Remove-Item $keyFile -Force -ErrorAction SilentlyContinue
-          Start-Process node -ArgumentList 'tools\worker-serve.mjs', '--port', '8787', '--key-file', $keyFile -WindowStyle Hidden
+          $serveOut = Join-Path $env:RUNNER_TEMP 'worker-serve.out.txt'; $serveErr = Join-Path $env:RUNNER_TEMP 'worker-serve.err.txt'
+          Start-Process node -ArgumentList 'tools\worker-serve.mjs', '--port', '8787', '--key-file', $keyFile -WindowStyle Hidden -RedirectStandardOutput $serveOut -RedirectStandardError $serveErr
           $h = $null
           foreach ($i in 1..40) { Start-Sleep -Milliseconds 500; try { $h = Invoke-RestMethod http://127.0.0.1:8787/v1/health -TimeoutSec 5; break } catch { } }
-          if (-not $h -or -not $h.ok -or -not $h.square) { Write-Host 'the licence server (the real Worker code under Node) did not start'; exit 1 }
+          if (-not $h -or -not $h.ok -or -not $h.square) {
+            Write-Host 'the licence server (the real Worker code under Node) did not start; its output:'
+            foreach ($f in $serveOut, $serveErr) { if (Test-Path $f) { Get-Content $f | Select-Object -First 40 | ForEach-Object { Write-Host ("  " + $_) } } }
+            exit 1
+          }
           if (-not (Test-Path $keyFile)) { Write-Host 'the licence server wrote no key'; exit 1 }
           Write-Host ("licence server up: the real Worker code, mail {0}, refunds {1}; one key issued for the check" -f $h.mail, $h.refunds)
           exit 0

@@ -13,11 +13,11 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const { payments, installFetch, makeEnv } = await import(path.join(root, 'tools/worker-standin.mjs'));
-const worker = (await import(path.join(root, 'server/worker.js'))).default;
+const { payments, installFetch, makeEnv } = await import(pathToFileURL(path.join(root, 'tools/worker-standin.mjs')).href);
+const worker = (await import(pathToFileURL(path.join(root, 'server/worker.js')).href)).default;
 
 const arg = (name, fallback) => { const i = process.argv.indexOf(name); return i > 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback; };
 const port = Number(arg('--port', '8787'));

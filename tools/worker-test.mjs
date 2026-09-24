@@ -14,10 +14,10 @@
  *   node tools/worker-test.mjs
  */
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const worker = (await import(path.join(root, 'server/worker.js'))).default;
+const worker = (await import(pathToFileURL(path.join(root, 'server/worker.js')).href)).default;
 
 let failed = 0;
 const ok = (m) => console.log('  ok  ' + m);
