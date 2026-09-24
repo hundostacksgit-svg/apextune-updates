@@ -130,6 +130,9 @@ jobs:
         run: |
           $out = & .\tune\omnidx.ps1 -Report -Streamer *>&1 | Out-String -Width 4000
           & .\tools\ci-red.ps1 -Text $out -Step 'The streamer profile keeps what streaming needs'
+          Write-Host $out
+          $mj = Get-ChildItem C:\OmniDx -Filter 'machine-*.json' | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if ($mj) { $rec = Get-Content $mj.FullName -Raw | ConvertFrom-Json; Write-Host ("machine record {0}: streamer = [{1}]" -f $mj.Name, (@($rec.streamer) -join ', ')) }
           $keeps = @($out -split "`r?`n" | Where-Object { $_ -match '^  Keeps: ' })
           Write-Host $keeps
           if (-not ($keeps -match 'streaming \(asked for with -Streamer\)')) { Write-Host '-Streamer did not reach the keep list'; exit 1 }
