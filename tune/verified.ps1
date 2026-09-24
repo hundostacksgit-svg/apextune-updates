@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.44.0'
+$script:Version = '1.46.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -1439,10 +1439,11 @@ function Get-DebloatPlan($m) {
   # What is actually on this PC from the two lists above, with the keep rules applied.
   $caps = @(); $feats = @()
   $dismLog = Join-Path $env:TEMP 'omnidx-dism.log'
-  # One DISM listing each, not one query per piece: the per-piece way cost the free look fifteen of its
-  # seventeen seconds on the build machine. If a listing fails, the per-piece query is the fallback.
+  # Capabilities are asked for one by one: the full listing (hundreds of language packs and fonts that are
+  # not even present) took the build machine 77 seconds cold against 15 for the seven names, and made the
+  # paid run's debloat phase 90 seconds instead of 38. Features are a short list, so one listing, with
+  # the per-name query as the fallback if it fails.
   $capState = $null; $featState = $null
-  try { $capState = @{}; foreach ($x in @(Get-WindowsCapability -Online -LogPath $dismLog -ErrorAction Stop)) { $capState[$x.Name] = "$($x.State)" } } catch { $capState = $null }
   try { $featState = @{}; foreach ($x in @(Get-WindowsOptionalFeature -Online -LogPath $dismLog -ErrorAction Stop)) { $featState[$x.FeatureName] = "$($x.State)" } } catch { $featState = $null }
   foreach ($c in $script:Capabilities) {
     if ($c[0] -eq 'Print.Fax.Scan' -and $m.printers) { continue }
@@ -2640,7 +2641,9 @@ function Get-DoneLines {
     if ($lines[$i] -match '^== ') { if ($i + 1 -lt $lines.Count -and $lines[$i + 1] -match '^  \+') { $out += $lines[$i] } }
     else { $out += $lines[$i] }
   }
-  return ,$out
+  # Plain return, so a pipeline gets one line at a time: wrapped as one object, the HTML report's
+  # ForEach-Object saw the whole list at once and drew every line into a single heading (1.42.0, 1.43.0).
+  return $out
 }
 
 <# The numbers that say whether it worked, beyond the process count: memory
