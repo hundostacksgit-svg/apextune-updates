@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.40.0'
+$script:Version = '1.41.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -1706,10 +1706,13 @@ function Limit-Defender($m) {
   try {
     $pref = Get-MpPreference -ErrorAction Stop
     $was = [int]$pref.ScanAvgCPULoadFactor
-    if ($was -ne 25) {
+    # A cap is only ever lowered: a PC that already holds its scans under 25% (0 means no cap at all) keeps its own figure.
+    if ($was -eq 0 -or $was -gt 25) {
       Set-MpPreference -ScanAvgCPULoadFactor 25 -ErrorAction Stop
       Record @{ type = 'mppref'; name = 'ScanAvgCPULoadFactor'; prev = $was }
-      Did ("Defender's scheduled scans capped at 25% of the CPU (was {0}%); real-time protection untouched" -f $(if ($was) { $was } else { 'no cap' }))
+      Did ("Defender's scheduled scans capped at 25% of the CPU (was {0}); real-time protection untouched" -f $(if ($was) { "$was%" } else { 'no cap' }))
+    } elseif ($was -lt 25) {
+      Did ("Defender's scheduled scans already capped at {0}% of the CPU, lower than the tune's 25%: left as it is" -f $was)
     }
   } catch { }
 }
@@ -2971,6 +2974,7 @@ function Main {
       & $block
       $script:Phases[$name] = [math]::Round($psw.Elapsed.TotalSeconds, 1)
     }
+    Head "Before the cut"
     Save-ProcessList 'before'
     $snapBefore = Get-Snapshot
     Say ("  Before: {0}" -f (Format-Snapshot $snapBefore))
@@ -2994,6 +2998,7 @@ function Main {
     if ($skip -contains 'keep') { Head "keep (skipped)"; Remove-KeepTask '-Skip keep' } else { Register-Keep }
 
     $changesFile = Save-Changes
+    Head "Done"
     # The services told to stop take a few seconds to go; the count is taken once they have, up to twenty seconds.
     $stopping = @(Get-Service -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq 'StopPending' })
     if ($stopping.Count) {
@@ -3009,8 +3014,6 @@ function Main {
     if ($gone.Count) { Say ("  Gone:   {0}" -f ($gone -join ', ')) }
     $script:Snapshots = @{ before = $snapBefore; after = $snapAfter }
     $rep = Write-Report $m $before $after $changesFile
-
-    Head "Done"
     Say ("  Processes: {0} -> {1} now, in {2} seconds. Restart for the real number: the services that were told to stop are still unwinding." -f $before, $after, [int]$script:Timer.Elapsed.TotalSeconds) 'Green'
     if ($script:Phases.Count) { Say ("  Where the time went: " + (($script:Phases.GetEnumerator() | Sort-Object Value -Descending | Select-Object -First 6 | ForEach-Object { "{0} {1} s" -f $_.Key, $_.Value }) -join ', ')) }
     Say ("  Report, BIOS checklist, launcher notes and per-game settings: {0}" -f $rep) 'White'

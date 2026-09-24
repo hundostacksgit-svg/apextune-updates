@@ -1,13 +1,14 @@
 ﻿== Reading this PC
   ! The GPU driver dates from Jun 2006. A current driver is worth more than most tweaks.
   ! This looks like a virtual machine. The tune will run, but the numbers mean little here.
-  Processes running now: 149
+  Processes running now: 152
   Target for this PC after the tune and a restart: about 70
 == Your key
-  Before: 148 processes, 1450 threads, 50184 handles, 2859 MB in use, idle CPU 0.5%, DPC 0%
+== Before the cut
+  Before: 152 processes, 1615 threads, 52665 handles, 2927 MB in use, idle CPU 0.5%, DPC 0%
 == Safety first
   ! Could not make a restore point (This functionality is not supported on this operating system.). The undo script still records everything.
-  + Registry and service list backed up to C:\OmniDx\backup\2026-09-24_01-53
+  + Registry and service list backed up to C:\OmniDx\backup\2026-09-24_02-12
   + undo.ps1 written to C:\OmniDx\undo
 == Startup apps
   2 things start with Windows:
@@ -89,7 +90,7 @@
 == System tuning
   + NTFS last-access stamps off
   + NTFS allowed more memory for its cache
-  + Defender's scheduled scans capped at 25% of the CPU (was 5%); real-time protection untouched
+  + Defender's scheduled scans already capped at 5% of the CPU, lower than the tune's 25%: left as it is
 == The OmniDx power plan
   + 2 plan setting(s) this PC does not have were skipped.
   + OmniDx plan created and active: CPU 100/100, boost aggressive, no core parking, no throttle states on a desktop, PCIe, USB and Wi-Fi power saving off, no sleep on mains.
@@ -108,7 +109,7 @@
   + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 374 MB back.
 == Keeping it cut
   + Task 'OmniDx keep' runs three minutes after sign-in, puts back whatever an update turned on, and notes that start's boot time. Log: C:\OmniDx\keep-log.txt. Undo removes it.
-  After:  149 processes, 1630 threads, 52014 handles, 3100 MB in use, idle CPU 1.6%, DPC 0%
-  Gone:   spoolsv
 == Done
-  Processes: 149 -> 149 now, in 85 seconds. Restart for the real number: the services that were told to stop are still unwinding.
+  After:  146 processes, 1575 threads, 50956 handles, 3064 MB in use, idle CPU 1.6%, DPC 0%
+  Gone:   MoUsoCoreWorker, spoolsv, sppsvc
+  Processes: 152 -> 146 now, in 85 seconds. Restart for the real number: the services that were told to stop are still unwinding.
