@@ -59,6 +59,11 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   a look more than twenty seconds slower than the last published one.
   Found by reading the job's step timings (the free look took 62 s of wall
   time on the build machine and nothing published the number).
+- **The machine read, cut by its own line** (1.59.0 to 1.61.0): one device
+  listing instead of five, the disks and the system drive from the storage
+  classes instead of module-loading cmdlets, the display-mode listing in an
+  in-process runspace instead of a second PowerShell. Build machine: 7.7 s,
+  7.2 s, 6.6 s, and the next line says what 1.61.0 took.
 - **The moving background**: one canvas behind every page, hard black,
   purple shades and small purple objects at different depths that drift,
   slide with the scroll and lean toward the pointer; still under reduced
