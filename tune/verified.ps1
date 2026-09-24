@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.54.0'
+$script:Version = '1.55.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -2539,14 +2539,16 @@ function Show-Gui {
     $ui[$n] = $w.FindName($n)
   }
   $ui.VersionText.Text = "v$($script:Version)"
-  # The eagle, fetched by WPF itself in the background; the drawn mark stays until it lands, and for good when it does not.
+  # The eagle, fetched before the window shows (three seconds at most, usually well under one);
+  # the drawn mark and the words stay on a PC that is offline. Fetched here rather than left to
+  # WPF's own background download, which never lands in the headless draw the check takes.
   try {
+    $req = [System.Net.WebRequest]::Create('https://omnidx.net/studio/assets/logo/omnidx-logo-480.png'); $req.Timeout = 3000
+    $resp = $req.GetResponse(); $ms = New-Object System.IO.MemoryStream; $resp.GetResponseStream().CopyTo($ms); $resp.Close(); $ms.Position = 0
     $bmp = New-Object System.Windows.Media.Imaging.BitmapImage
-    $bmp.BeginInit(); $bmp.UriSource = [Uri]'https://omnidx.net/studio/assets/logo/omnidx-logo-480.png'; $bmp.CacheOption = [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad; $bmp.EndInit()
-    $showLogo = { $ui.LogoImage.Visibility = 'Visible'; $ui.MarkDrawn.Visibility = 'Collapsed'; $ui.WordDrawn.Visibility = 'Collapsed'; $ui.TuneDrawn.Visibility = 'Collapsed' }
-    $bmp.add_DownloadCompleted([System.EventHandler]$showLogo)
+    $bmp.BeginInit(); $bmp.StreamSource = $ms; $bmp.CacheOption = [System.Windows.Media.Imaging.BitmapCacheOption]::OnLoad; $bmp.EndInit(); $bmp.Freeze()
     $ui.LogoImage.Source = $bmp
-    if (-not $bmp.IsDownloading) { & $showLogo }
+    $ui.LogoImage.Visibility = 'Visible'; $ui.MarkDrawn.Visibility = 'Collapsed'; $ui.WordDrawn.Visibility = 'Collapsed'; $ui.TuneDrawn.Visibility = 'Collapsed'
   } catch { }
   if ($Key) { $ui.KeyBox.Text = $Key }
   if ($Extreme) { $ui.ChkExtreme.IsChecked = $true }

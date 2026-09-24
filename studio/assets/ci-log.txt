@@ -1,15 +1,15 @@
 ﻿== Reading this PC
   ! The GPU driver dates from Jun 2006. A current driver is worth more than most tweaks.
   ! This looks like a virtual machine. The tune will run, but the numbers mean little here.
-  Processes running now: 148
+  Processes running now: 151
   Target for this PC after the tune and a restart: about 70
 == Your key
   Key accepted. PC 1 of 1 on this key.
 == Before the cut
-  Before: 148 processes, 1515 threads, 49699 handles, 2867 MB in use, idle CPU 0.8%, DPC 0%
+  Before: 151 processes, 1629 threads, 52441 handles, 2963 MB in use, idle CPU 7.1%, DPC 0%
 == Safety first
   ! Could not make a restore point (This functionality is not supported on this operating system.). The undo script still records everything.
-  + Registry and service list backed up to C:\OmniDx\backup\2026-09-24_08-09-39
+  + Registry and service list backed up to C:\OmniDx\backup\2026-09-24_08-20-48
   + undo.ps1 written to C:\OmniDx\undo
 == Startup apps
   2 things start with Windows:
@@ -83,11 +83,11 @@
   + removed the 2009 Windows Media Player (the Store one stays)
   + removed Math Input Panel
   + removed Internet Explorer 11
-  (4 pieces in one DISM session, 29 s)
+  (4 pieces in one DISM session, 22 s)
   + off: Work Folders (corporate sync)
   + Edge: shopping assistant, recommendations, Spotlight, feedback prompts and reporting off
   + Kept gone: consumer features, suggested apps, account nags and the 'finish setting up' screen are off by policy
-  (debloat, where the time went: look 7.3 s, pieces 29 s, features 7.3 s)
+  (debloat, where the time went: look 6.5 s, pieces 21.8 s, features 6.2 s)
 == Telemetry, background activity, the shell
   + Telemetry, the advertising id, activity history, suggestions, Bing in Start, Recall and Edge's reporting off; background apps off; widgets, news, Copilot and Cortana off; Game DVR off, Game Mode on; the classic right-click menu on 11
 == System tuning
@@ -99,9 +99,8 @@
   + OmniDx plan created and active: CPU 100/100, boost aggressive, energy preference on performance, no core parking, no throttle states on a desktop, PCIe, USB and Wi-Fi power saving off, no sleep on mains.
 == Network
   + TCP: autotuning normal, ECN and timestamps off, receive-side scaling on, segment coalescing off, CTCP.
-  + Ethernet 4: Interrupt Moderation off
-  + Ethernet 4: Nagle off, power saving off
   + Ethernet 3: Nagle off, power saving off
+  + Ethernet 4: Nagle off, power saving off
 == Discord, Spotify, browsers
   + Chrome: no background mode, hardware acceleration on
   + Edge: no startup boost, no background mode, hardware acceleration on
@@ -109,10 +108,10 @@
   Looked in 16 game folders
   + No listed game found on the usual drives; the CPU-priority profiles are in place for when one is installed.
 == Cleanup
-  + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 305 MB back.
+  + Temp files, the Windows Update download cache and the peer-to-peer update cache cleared: about 374 MB back.
 == Keeping it cut
   + Task 'OmniDx keep' runs three minutes after sign-in, puts back whatever an update turned on, and notes that start's boot time. Log: C:\OmniDx\keep-log.txt. Undo removes it.
 == Done
-  After:  139 processes, 1472 threads, 47427 handles, 2974 MB in use, idle CPU 1.4%, DPC 0.13%
-  Gone:   spoolsv
-  Processes: 148 -> 139 now, in 92 seconds. Restart for the real number: the services that were told to stop are still unwinding.
+  After:  136 processes, 1494 threads, 47601 handles, 3025 MB in use, idle CPU 1.2%, DPC 0%
+  Gone:   MoUsoCoreWorker, spoolsv, sppsvc
+  Processes: 151 -> 136 now, in 83 seconds. Restart for the real number: the services that were told to stop are still unwinding.
