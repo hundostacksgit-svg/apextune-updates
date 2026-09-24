@@ -121,7 +121,10 @@ including the warnings, then the after-restart number, then the BIOS
 checklist done on camera and what changed. Title it with the numbers of that
 machine, not the headline. Pin the trust page in the description.
 
-**Reddit.** Do not post links. Answer questions in r/pcgaming, r/buildapc,
+**Reddit.** Do not post links to the product. The one link that is fine is
+the by-hand guide (omnidx.net/studio/guide/): nothing to buy on it, every
+fix with its settings path, and it answers "just do it yourself" for them.
+Otherwise: do not post links. Answer questions in r/pcgaming, r/buildapc,
 r/FortNiteBR, r/VALORANT, r/GlobalOffensive with the actual fix (the XMP
 line, the power plan, the Nagle setting) and let the profile bio carry the
 link. Once you have a real before/after from a buyer with their permission,
