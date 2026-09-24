@@ -63,7 +63,7 @@ jobs:
             changed="$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo tune/omnidx.ps1)"
           fi
           echo "$changed"
-          if echo "$changed" | grep -Eq '^(tune/|go\.ps1$|server/worker\.js$|tools/worker-serve\.mjs$|tools/worker-standin\.mjs$|tools/ci-red\.ps1$|tools/make-tune-key\.py$|\.github/workflows/tune-check\.yml$)'; then
+          if echo "$changed" | grep -Eq '^(tune/|go\.ps1$|server/worker\.js$|tools/worker-serve\.mjs$|tools/worker-standin\.mjs$|tools/ci-red\.ps1$|tools/ci-pieces\.ps1$|tools/make-tune-key\.py$|\.github/workflows/tune-check\.yml$)'; then
             echo "windows=true" >> "$GITHUB_OUTPUT"; echo "the tune changed: the Windows job runs"
           else
             echo "windows=false" >> "$GITHUB_OUTPUT"; echo "nothing the Windows job tests changed: skipped"
