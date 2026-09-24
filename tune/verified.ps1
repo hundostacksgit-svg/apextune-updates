@@ -91,7 +91,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.76.0'
+$script:Version = '1.76.1'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -2864,7 +2864,7 @@ function Get-Probe {
     laptop = $m.laptop; nvme = $m.nvme; allSsd = $m.allSsd; refresh = $m.refresh; driverVer = $m.driverVer
     win = $m.win; build = $m.build; gpuVendor = $m.gpuVendor; sticks = $m.sticks; ramNow = $m.ramNow; ramRated = $m.ramRated
     uefi = $m.uefi; secureBoot = $m.secureBoot; tpm = $m.tpm; vbs = $m.vbs; server = [bool]($m.os -match 'Server')
-    keeps = @(@($(if ($m.printers) { 'printer' }), $(if ($m.btDevices) { 'Bluetooth' }), $(if ($m.wifi) { 'Wi-Fi' }), $(if ($m.touch) { 'touch' }), $(if ($m.biometric) { 'Windows Hello' }), $(if ($m.vpn) { 'VPN' }), $(if ($m.xboxUsed) { 'Xbox / Game Pass' }), $(if ($m.xboxPad) { 'Xbox controller' })) | Where-Object { $_ })
+    keeps = @(@($(if ($m.printers) { 'printer' }), $(if ($m.btDevices) { 'Bluetooth' }), $(if ($m.wifi) { 'Wi-Fi' }), $(if ($m.touch) { 'touch' }), $(if ($m.biometric) { 'Windows Hello' }), $(if ($m.vpn) { 'VPN' }), $(if ($m.xboxUsed) { 'Xbox / Game Pass' }), $(if ($m.xboxPad) { 'Xbox controller' }), $(if (@($m.streamer).Count) { 'streaming' })) | Where-Object { $_ })
     warnings = @($script:Warnings)
     startup = @($entries | ForEach-Object { @{ name = $_.name; label = $_.label; wasCut = [bool]$_.wasCut } })
     before = (Get-ProcessCount)
@@ -2979,7 +2979,7 @@ $script:Xaml = @'
               <CheckBox x:Name="ChkNetwork" IsChecked="True" Content="Network latency"/>
               <CheckBox x:Name="ChkPrograms" IsChecked="True" Content="Discord, Spotify, browsers"/>
               <CheckBox x:Name="ChkGames" IsChecked="True" Content="Game profiles"/>
-              <CheckBox x:Name="ChkGameFiles" IsChecked="True" Content="Settings in your games' own files (backed up)"/>
+              <CheckBox x:Name="ChkGameFiles" IsChecked="True" Content="Settings inside your games' files"/>
               <CheckBox x:Name="ChkNvidia" IsChecked="True" Content="NVIDIA telemetry off"/>
               <CheckBox x:Name="ChkCleanup" IsChecked="True" Content="Clear update caches, temp files"/>
               <CheckBox x:Name="ChkAfterCount" IsChecked="True" Content="Write the after-restart count"/>
