@@ -93,7 +93,10 @@ try {
     if (!fs.existsSync(axePath)) ok('axe-core is not installed here, so the accessibility pass is skipped (the publish check installs it)');
     else {
       const axe = fs.readFileSync(axePath, 'utf8');
-      for (const p of ['', 'pricing/', 'download/', 'trust/', 'changelog/', 'what-it-touches/', 'terms/', 'activate/', 'admin/']) {
+      // The published report of the build machine's run is a page every buyer opens; it is scanned too, once the check has published one.
+      const pages = ['', 'pricing/', 'download/', 'trust/', 'changelog/', 'what-it-touches/', 'terms/', 'activate/', 'admin/'];
+      if (fs.existsSync(path.join(root, 'studio/assets/ci-report.html'))) pages.push('assets/ci-report.html');
+      for (const p of pages) {
         const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
         await page.goto(`${base}/studio/${p}`, { waitUntil: 'networkidle' });
         await page.addScriptTag({ content: axe });
