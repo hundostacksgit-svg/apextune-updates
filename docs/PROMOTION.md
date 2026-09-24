@@ -78,7 +78,7 @@ too good? Check all three yourself in a minute", pointing at
 | "One payment. There is no subscription at all." | Structurally true, no expiry |
 | "Every update free, forever. No version 2." | A commitment, not a delivery rate |
 | "340 effects, 107 transitions, 176 styles" | Counted from the code, on the pricing table |
-| "14 days, no questions" | A policy you control |
+| "All sales are final; the free report shows every change first" | A policy you control, said up front |
 | "Paid through Square — your card never touches me" | Real processor, real chargeback rights |
 | "Here is everything it can't do: [link]" | Nobody fake writes this |
 
@@ -193,7 +193,8 @@ Replies that work:
 
 > "Reasonable question. It's one person, not a company, and I say so on the
 > site. Payment goes through Square so your card never touches me and you can
-> charge it back. 14-day refund, no questions."
+> charge it back. No refunds, and the site says so before you pay: run the
+> free report first, it shows every change and makes none."
 
 > "Here's the page listing everything it can't do: omnidx.net/studio/trust/ —
 > including that captions don't type the words for you yet. I'd rather you know

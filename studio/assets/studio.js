@@ -345,8 +345,8 @@ function initPricing() {
       ${cta}
       <p class="tiny muted" style="margin:12px 0 0;text-align:center">
         ${id === 'free' ? 'Nothing to cancel, because there is nothing to renew.'
-          : SEATS[id] > 1 ? `${SEATS[id]} people · ${DEVICE_LIMIT[id]} devices · 14-day refund`
-          : `Up to ${DEVICE_LIMIT[id]} devices · 14-day refund, no questions`}
+          : SEATS[id] > 1 ? `${SEATS[id]} people · ${DEVICE_LIMIT[id]} devices · all sales final`
+          : `Up to ${DEVICE_LIMIT[id]} devices · all sales final`}
       </p>
     </div>`;
   }

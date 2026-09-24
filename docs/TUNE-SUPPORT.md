@@ -185,24 +185,31 @@ Log it: every "kept because" rule lives in `Get-KeepList` in the script.
 > on; the report says whether yours are, and the BIOS checklist says how to
 > turn them on. The tune never turns them off.
 
-## One friend's share of a Squad refunded
+## One friend's share of a Squad
 
-Refund the share in Square as normal (a third of $39.99, or whatever was
-agreed). A partial refund switches nothing off by itself; the Worker
-emails you once with the amounts and the order reference. Owner page:
-paste the order, "Look up", then type that friend's key and "Switch off
-this key only". The other two keys stay on.
+The Squad is sold as three keys for one price, and all sales are final,
+so a friend who drops out is between the friends: the spare key moves to
+whoever they give it to (the key page moves it). If a partial refund ever
+reaches Square anyway (a dispute the bank decides), it switches nothing off
+by itself; the Worker emails you once with the amounts and the order
+reference. Owner page: paste the order, "Look up", then type that friend's
+key and "Switch off this key only". The other two keys stay on.
 
 ## "Refund"
 
-> Done. You will see it from Square within a few days. If you would like the
-> settings back, undo is in C:\OmniDx\undo. No hard feelings, and if you can
-> tell me what it did not do, that is worth more to me than the money.
+> All sales are final, as the pricing page, the key page and your key email
+> say: the key was delivered the moment you paid and it is yours for as long
+> as you own the PC, and the free report mode was there to look first. What
+> I can do is make it work: if the key would not take, send the order number
+> and the line the script showed and I will fix, move or reissue it today;
+> if the tune did something you did not want, undo is in C:\OmniDx\undo
+> and puts every change back. Tell me what it did not do and I will help
+> with that.
 
-Then, in Square: refund the order. That is all: Square tells the licence
-server, the keys from that order stop working, and the buyer gets a short
-email saying so. A partial refund leaves the keys alone on purpose; for that
-one, or for a key issued by hand, the command is in docs/TUNE.md > Refunds.
+Do not refund. If a bank chargeback or a Square dispute lands anyway, the
+licence server sees the refund within the hour and the keys from that order
+stop working on their own; the buyer gets a short email saying so. For a
+key issued by hand, the command is in docs/TUNE.md > Refunds.
 
 ## "My antivirus / SmartScreen blocked it"
 

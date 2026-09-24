@@ -16,7 +16,9 @@ at their process count.
 - Never "AI". There is none in it, and the word makes people trust it less.
 - Never hide the honest parts: one PC per key, the script is public, the
   after-restart task, the opt-in VBS trade. Saying them first is the pitch.
-- The refund line is real: fourteen days, no questions. Say it.
+- No refunds, and say so before anyone asks: the key is on screen the moment
+  they pay, and the free report mode is the "try before you buy". Lead with
+  the report, never hide the policy.
 
 ## The hook, in one line each
 
@@ -123,7 +125,7 @@ get more FPS" threads with the twenty-second check, not the link.
   TPM on Windows 11, which the report checks.
 - "Where's your privacy policy / refund policy" → omnidx.net/studio/terms/,
   one page in plain words: what leaves the PC and where it is kept,
-  fourteen days no questions, what a key is. Link it, do not paraphrase it.
+  all sales final and why, what a key is. Link it, do not paraphrase it.
 - "Prove it did anything" → the report's before and after, the after-restart
   line, and the boot time in Windows' own figures (status shows the last
   start next to the one from before the tune). Numbers from a real PC are

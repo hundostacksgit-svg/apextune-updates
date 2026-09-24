@@ -30,7 +30,7 @@ irm omnidx.net/go.ps1 | iex
   from repository secrets, so the whole setup is done from a browser.
 - `studio/admin/` is the owner's page (support from a phone: look an order
   up, send the keys again, switch off, move, totals, a test email);
-  `studio/terms/` is the terms, privacy and refunds page.
+  `studio/terms/` is the terms, privacy and all-sales-final page.
 - `docs/TUNE.md` is the manual (what it does, the money path, the exact
   Square steps, refunds, moving a key, the checks); `docs/TUNE-SUPPORT.md`
   has the replies to every question buyers ask.

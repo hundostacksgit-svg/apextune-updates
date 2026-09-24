@@ -15,7 +15,7 @@ pieces fit and the short list of what still needs a human to switch on.
 | On the buyer's PC | `C:\OmniDx\README.txt`, `undo\undo.ps1`, `undo\keep.ps1`, `undo\changes-*.json`; `keep-log.txt`, `after-restart.txt`, `report-*.html`, `summary-*.json` | Written by the script. README.txt explains the folder; undo walks back every record; keep.ps1 is what the sign-in task runs; the log has one line per sign-in. |
 | Keys in the browser | `studio/assets/tunekey.js`, `studio/activate/` | The key page: shows the keys the server issued for an order (from Square's redirect, or the receipt number plus the checkout email), sends them again, moves a key. `tunekey.js` only reads a key's checksum, for typos. |
 | The owner's page | `studio/admin/`, `POST /v1/tune/admin` | Support from a phone: look up, send again, switch off or on, free a key, totals, a test email, every unsent order. Needs `TUNE_ADMIN_TOKEN`. |
-| Terms | `studio/terms/` | Terms, privacy and refunds in plain words; linked from every footer and the key email. |
+| Terms | `studio/terms/` | Terms, privacy and the all-sales-final policy in plain words; linked from every footer and the key email. |
 | The checks | `tools/tune-check.mjs`, `tools/worker-test.mjs`, `tools/site-test.mjs`; `.github/workflows/tune-check.yml`, `pages.yml`, `worker.yml` | Static checks, the licence server offline, the site in a browser (every page, both widths, every link), and the whole tune on a Windows machine; only a copy that passed is what the command fetches. |
 | Keys on the server | `server/worker.js` (`/v1/tune/*`), `server/schema.sql` (`tune_keys`, `tune_machines`) | Issues keys against Square orders, binds them to PCs, refuses the rest, moves them on request. |
 | Keys by hand | `tools/make-tune-key.py` | Make or check a key; print the D1 insert. |
@@ -179,11 +179,14 @@ finds your Cloudflare account and makes the database itself.
    the $39.99 link "OmniDx Tune Squad — three keys" and the $19.99 link
    "OmniDx Tune — one PC"; delete the $69.99 link; check the redirects end in
    `?e=creator` ($19.99) and `?e=studio` ($39.99). Where Square's checkout
-   settings ask for a refund policy or terms link, give
-   `https://omnidx.net/studio/terms/`.
+   settings ask for a refund policy, paste "All sales are final. The key is
+   delivered on the page the moment you pay; the free report mode at
+   omnidx.net shows every change first." and give
+   `https://omnidx.net/studio/terms/` as the terms link.
 6. **Test**: buy the $19.99 link with your own card. The key is on the page
-   you land on. Refund yourself in Square; within the hour the key stops
-   working (the key page says the order was refunded).
+   you land on. Refund yourself in Square (the one refund you will ever do);
+   within the hour the key stops working (the key page says the order was
+   refunded).
 
 Until step 4 is done nobody can buy: the buy buttons say the key desk is
 not open, and the key page says the same. Without `SQUARE_ACCESS_TOKEN` the
@@ -291,7 +294,12 @@ trigger, `[triggers]` in `wrangler.toml`). All of it is
 shut when no token is set (503); the offline test covers each action.
 
 ### Refunds
-Refund in Square as normal; that is the whole job. A partial refund (one
+The policy is no refunds: the terms page, the pricing page, the key page
+and the key email all say all sales are final, and point at the free report
+mode as the way to look first. The machinery below stays because Square can
+still refund an order without you choosing to (a chargeback or a dispute the
+bank decides), and a refunded order's keys must stop working. If you ever
+do refund by hand, refund in Square as normal; that is the whole job. A partial refund (one
 friend's share of a Squad, say) switches nothing off; the Worker emails
 you once, with the amounts and the order reference, and "Switch off this
 key only" on the owner page is the usual answer. On the buyer's PC,

@@ -185,7 +185,7 @@ function renderKey(info, { again = false } = {}) {
     ${info.order ? `<div class="act-row"><span>Square order</span><b class="mono" style="font-size:12px">${esc(info.order)}</b></div>` : ''}
     <div class="act-row"><span>Payment</span><b>${info.verified ? 'Confirmed with Square' : 'From Square\u2019s redirect'}</b></div>
     <div class="act-row"><span>Renews</span><b>Never — there is no subscription</b></div>
-    <div class="act-row"><span>Refunds</span><b><a href="../terms/#money">Fourteen days, no questions</a></b></div>
+    <div class="act-row"><span>Refunds</span><b><a href="../terms/#money">None; all sales are final</a></b></div>
 
     <div class="act-actions">
       <a class="btn btn-ghost" href="../download/">Everything the command does, screen by screen</a>

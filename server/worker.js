@@ -1852,9 +1852,9 @@ async function emailTuneKeys(env, email, product, keys, order, receiptUrl, recei
     receiptNumber ? `Receipt number: #${receiptNumber} (that, with this email address, shows the keys again on that page)` : null,
     receiptUrl ? `Square receipt: ${receiptUrl}` : null,
     'What it does, screen by screen: https://omnidx.net/studio/download/',
-    'Terms, privacy and refunds, one page: https://omnidx.net/studio/terms/',
+    'Terms and privacy, one page: https://omnidx.net/studio/terms/',
     '',
-    'Nothing renews and there is no account. Fourteen days to change your mind: reply to this email with the order number.',
+    'Nothing renews and there is no account. All sales are final: the key was delivered the moment you paid and is yours for as long as you own the PC. If it will not take on your PC, reply to this email with the order number and it is fixed.',
   ].filter((l) => l !== null);
   const r = await sendMail(env, { to: email, subject: three ? 'Your three OmniDx Tune keys' : 'Your OmniDx Tune key', text: lines.join('\n') });
   return r.ok;
