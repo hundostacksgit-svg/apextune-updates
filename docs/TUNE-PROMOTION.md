@@ -134,7 +134,7 @@ that is a post: their numbers, their PC, what it kept.
 first, link only when asked. A free report screenshot is a good answer to
 "why is my PC slow".
 
-**X / Twitter.** The post image (studio/assets/logo/post-1080.png) with the
+**X / Twitter.** The post image (studio/assets/logo/post-1080.jpg) with the
 one-liner, then reply to yourself with the trust page. Reply to "how do I
 get more FPS" threads with the twenty-second check, not the link.
 

@@ -42,6 +42,18 @@ run record (`studio/assets/ci-run.json`) or from a named source.
 | 11 | **Steam, Epic, EA background services** to manual (`Steam Client Service`, `EpicOnlineServices`, `EABackgroundService`) | A few processes each; they start on demand | Service names | maybe |
 | 12 | **Firefox** background updater and prefetch like Chrome and Edge | Parity for Firefox users | `MozillaMaintenance`; `user.js` | maybe |
 
+## Done outside the table
+
+- **The owner's logo everywhere** (the eagle over OMNIDX): nav and footer
+  on every page, favicons and app icons, the social card, banners and the
+  profile picture; the card the script writes and the app window fetch the
+  head from the site and fall back to the drawn mark offline (1.53.0,
+  1.54.0).
+- **The moving background**: one canvas behind every page, hard black,
+  purple shades and small purple objects at different depths that drift,
+  slide with the scroll and lean toward the pointer; still under reduced
+  motion, paused in a hidden tab, lavender in the light theme.
+
 ## Looked at and left alone, with the reason
 
 - **HAGS off on 8 GB cards.** The guides say it can stutter on small VRAM;
