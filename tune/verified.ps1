@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.43.0'
+$script:Version = '1.44.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -1439,16 +1439,23 @@ function Get-DebloatPlan($m) {
   # What is actually on this PC from the two lists above, with the keep rules applied.
   $caps = @(); $feats = @()
   $dismLog = Join-Path $env:TEMP 'omnidx-dism.log'
+  # One DISM listing each, not one query per piece: the per-piece way cost the free look fifteen of its
+  # seventeen seconds on the build machine. If a listing fails, the per-piece query is the fallback.
+  $capState = $null; $featState = $null
+  try { $capState = @{}; foreach ($x in @(Get-WindowsCapability -Online -LogPath $dismLog -ErrorAction Stop)) { $capState[$x.Name] = "$($x.State)" } } catch { $capState = $null }
+  try { $featState = @{}; foreach ($x in @(Get-WindowsOptionalFeature -Online -LogPath $dismLog -ErrorAction Stop)) { $featState[$x.FeatureName] = "$($x.State)" } } catch { $featState = $null }
   foreach ($c in $script:Capabilities) {
     if ($c[0] -eq 'Print.Fax.Scan' -and $m.printers) { continue }
     if ($c[0] -eq 'Hello.Face' -and $m.biometric) { continue }
     foreach ($id in $script:CapabilityIds[$c[0]]) {
+      if ($capState -ne $null) { if ($capState[$id] -eq 'Installed') { $caps += @{ name = $id; what = $c[1] }; break }; continue }
       try { $hit = Get-WindowsCapability -Online -Name $id -LogPath $dismLog -ErrorAction Stop; if ($hit -and $hit.State -eq 'Installed') { $caps += @{ name = $hit.Name; what = $c[1] }; break } } catch { }
     }
   }
   foreach ($f in $script:Features) {
     # The old Media Player is a capability and a feature on newer builds; removing the capability takes the feature with it, so it is one item, not two.
     if ($f[0] -eq 'WindowsMediaPlayer' -and ($caps | Where-Object { $_.name -like 'Media.WindowsMediaPlayer*' })) { continue }
+    if ($featState -ne $null) { if ($featState[$f[0]] -eq 'Enabled') { $feats += @{ name = $f[0]; what = $f[1] } }; continue }
     # A name this build does not have is an error here, and simply not on the list.
     try { $hit = Get-WindowsOptionalFeature -Online -FeatureName $f[0] -LogPath $dismLog -ErrorAction Stop; if ($hit -and $hit.State -eq 'Enabled') { $feats += @{ name = $hit.FeatureName; what = $f[1] } } } catch { }
   }
