@@ -138,6 +138,9 @@ run record (`studio/assets/ci-run.json`) or from a named source.
   says it is the slow part before it starts (a quiet half minute read as a
   hang is a support question); the trust page states medians across the
   recorded runs beside the latest run's numbers.
+- **FACEIT's Windows 11 date in the console** (1.70.0), on Windows 10 with
+  FACEIT installed; the second run's seconds recorded and shown; the
+  published log keeps the slow-part line.
 - **The moving background**: one canvas behind every page, hard black,
   purple shades and small purple objects at different depths that drift,
   slide with the scroll and lean toward the pointer; still under reduced

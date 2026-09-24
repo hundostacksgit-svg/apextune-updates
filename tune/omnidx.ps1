@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.69.0'
+$script:Version = '1.70.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -714,6 +714,8 @@ function Show-Advice($m) {
     $missing = @($(if (-not $m.secureBoot) { 'Secure Boot' }), $(if (-not $m.tpm) { 'TPM 2.0' }), $(if (-not $m.iommu) { 'IOMMU' }), $(if (-not $m.vbs) { 'memory integrity' })) | Where-Object { $_ }
     if ($missing.Count) { Warn ("{0} found. Since 2026 it requires Secure Boot, TPM 2.0, IOMMU and memory integrity on, and {1} {2} off on this PC. The BIOS checklist (items 4, 5 and 12) says where; the tune never turns any of them off." -f ($who -join ' and '), ($missing -join ', '), $(if ($missing.Count -eq 1) { 'is' } else { 'are' })) }
     else { Say ("  {0} found: Secure Boot, TPM, IOMMU and memory integrity are on, which is what its anti-cheat wants. The tune leaves all four alone." -f ($who -join ' and ')) }
+    # FACEIT's own timetable: Windows 11 for every player from October 2026 (its security FAQ). Said in the console, not only in the report.
+    if ($m.faceit -and $m.win -eq 10) { Warn "FACEIT requires Windows 11 from October 2026, and this PC runs Windows 10. The tune changes nothing about that; plan the upgrade before then." }
   }
   if ($m.x3dDual) {
     $vc = Get-Service -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -match '3D V-Cache' } | Select-Object -First 1
