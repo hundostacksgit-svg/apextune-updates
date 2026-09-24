@@ -89,7 +89,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.39.0'
+$script:Version = '1.40.0'
 $script:Root = 'C:\OmniDx'
 $script:Stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm'
 $script:Changes = New-Object System.Collections.ArrayList
@@ -2731,12 +2731,12 @@ body{margin:0;background:#050308;color:#f1ecff;font:15px/1.6 -apple-system,'Sego
 main{max-width:860px;margin:0 auto;padding:36px 20px 80px}
 h1{font-size:30px;letter-spacing:-.02em;margin:0 0 4px}h2{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#c084fc;margin:36px 0 12px}
 h3{font-size:17px;margin:18px 0 6px}h4{font-size:13px;color:#c084fc;margin:16px 0 4px}
-.sub{color:#b3a8cf;margin:0 0 24px}.muted{color:#7d7199}.tag{font-size:11px;color:#30d38a;margin-left:8px;font-weight:600}
+.sub{color:#b3a8cf;margin:0 0 24px}.muted{color:#8a7ea6}.tag{font-size:11px;color:#30d38a;margin-left:8px;font-weight:600}
 .big{display:flex;gap:28px;flex-wrap:wrap;margin:18px 0}.big div{background:#0e0a17;border:1px solid #2a1f45;border-radius:14px;padding:16px 20px;min-width:150px}
 .big b{display:block;font-size:40px;font-weight:700;letter-spacing:-.03em;background:linear-gradient(115deg,#8b5cf6,#c084fc 45%,#d946ef);-webkit-background-clip:text;background-clip:text;color:transparent}
-.big span{font-size:12px;color:#7d7199}
+.big span{font-size:12px;color:#8a7ea6}
 table{width:100%;border-collapse:collapse;background:#0e0a17;border:1px solid #2a1f45;border-radius:12px;overflow:hidden}
-td,th{padding:9px 14px;border-bottom:1px solid #1b1430;text-align:left;font-size:14px}th{color:#7d7199;font-size:11.5px;text-transform:uppercase;letter-spacing:.08em}
+td,th{padding:9px 14px;border-bottom:1px solid #1b1430;text-align:left;font-size:14px}th{color:#8a7ea6;font-size:11.5px;text-transform:uppercase;letter-spacing:.08em}
 ul{padding-left:20px;color:#b3a8cf}li{margin:4px 0}.did{color:#b3a8cf;font-size:13.5px;padding-left:14px}.warn li{color:#ffc247}
 code{font-family:ui-monospace,Consolas,monospace;background:#150f22;padding:2px 6px;border-radius:6px;color:#f1ecff;font-size:13px}
 details{margin:10px 0;background:#0e0a17;border:1px solid #2a1f45;border-radius:12px;padding:10px 16px}summary{cursor:pointer;color:#c084fc;font-weight:600}
