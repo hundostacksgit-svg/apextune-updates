@@ -91,7 +91,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.76.1'
+$script:Version = '1.77.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -1410,6 +1410,13 @@ function Test-Keep([string]$name) {
   return $false
 }
 
+# An app the person chose to leave starting with Windows: its own "open at startup"
+# setting stays as it is too, or the app would take itself off the list at its next start.
+function Test-KeepApp([string]$app) {
+  foreach ($k in $script:StartupKeep) { if ($k -and (($k -like "*$app*") -or ($app -like "*$k*"))) { return $true } }
+  return $false
+}
+
 <# Everything that starts with Windows for the signed-in person: the Run keys,
    the Startup folders and the Store apps that register themselves separately.
    Each entry knows the switch that turns it off. #>
@@ -2274,6 +2281,7 @@ function Tune-Apps($m) {
       if (Ask "Discord is running. Close it now so it can be tuned?") { Get-Process -Name Discord -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 3 }
     }
     if (Get-Process -Name Discord -ErrorAction SilentlyContinue) { Warn "Discord is running, so its settings were left alone. Close it and run again to tune it." }
+    elseif (Test-KeepApp 'Discord') { Set-JsonFile $disc @{ enableHardwareAcceleration = $true }; Did "Discord: hardware acceleration on; it still starts with Windows, as you chose" }
     else { Set-JsonFile $disc @{ enableHardwareAcceleration = $true; OPEN_ON_STARTUP = $false; MINIMIZE_TO_TRAY = $true; START_MINIMIZED = $false }; Did "Discord: hardware acceleration on, no auto-start" }
   }
   # Spotify (desktop and Store): hardware acceleration on, no auto-start. Its prefs file is key=value lines.
@@ -2287,10 +2295,14 @@ function Tune-Apps($m) {
     if (-not (Test-Path $pf)) { continue }
     if (Get-Process -Name Spotify -ErrorAction SilentlyContinue) { Warn "Spotify is running, so its settings were left alone. Close it and run again."; break }
     $bk = Join-Path $script:Root ("backup\{0}\spotify-prefs.bak" -f $script:Stamp); Copy-Item $pf $bk -Force; Record @{ type = 'file'; path = $pf; backup = $bk }
-    $lines = @(@(Get-Content $pf) | Where-Object { $_ -notmatch '^(ui\.hardware_acceleration|app\.autostart-mode|app\.autostart-configured|ui\.show_friend_feed|audio\.normalize_v2)=' })
-    $lines += 'ui.hardware_acceleration=true', 'app.autostart-mode="off"', 'app.autostart-configured=true', 'ui.show_friend_feed=false'
+    $keepSp = Test-KeepApp 'Spotify'
+    $drop = if ($keepSp) { '^(ui\.hardware_acceleration|ui\.show_friend_feed|audio\.normalize_v2)=' } else { '^(ui\.hardware_acceleration|app\.autostart-mode|app\.autostart-configured|ui\.show_friend_feed|audio\.normalize_v2)=' }
+    $lines = @(@(Get-Content $pf) | Where-Object { $_ -notmatch $drop })
+    $lines += 'ui.hardware_acceleration=true'
+    if (-not $keepSp) { $lines += 'app.autostart-mode="off"', 'app.autostart-configured=true' }
+    $lines += 'ui.show_friend_feed=false'
     Set-Content -Path $pf -Value $lines -Encoding UTF8
-    Did "Spotify: hardware acceleration on, no auto-start, friend feed off"
+    Did $(if ($keepSp) { "Spotify: hardware acceleration on, friend feed off; it still starts with Windows, as you chose" } else { "Spotify: hardware acceleration on, no auto-start, friend feed off" })
   }
   # Chrome / Brave: stop running in the background after the window closes; keep GPU acceleration on.
   foreach ($pol in @('HKLM:\SOFTWARE\Policies\Google\Chrome', 'HKLM:\SOFTWARE\Policies\BraveSoftware\Brave')) {
