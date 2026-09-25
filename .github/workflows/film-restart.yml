@@ -1,0 +1,66 @@
+# Films the tune on a clean Windows 11 PC through a real restart: Task
+# Manager before, the one line, the app, Run, the report, "Restart now", the
+# boot, and Task Manager after the restart. The PC is a virtual machine on
+# this Linux runner (tools/promo/film/vm/run.sh); a hosted Windows runner
+# cannot restart in the middle of a job.
+#
+# The footage is promotion material, not a site file: it leaves as a
+# pre-release on this repository (tag restart-take-*), and the next run
+# deletes the old ones. Nothing is committed.
+name: Film a real restart
+on:
+  workflow_dispatch:
+    inputs:
+      extreme:
+        description: Tick Extreme in the app before Run
+        type: boolean
+        default: false
+  push:
+    branches: ["claude/omnidx-editing-platform-9phdcc"]
+    paths: ["tools/promo/film/vm/**", ".github/workflows/film-restart.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: film-restart
+  cancel-in-progress: true
+
+jobs:
+  film:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Room for the PC
+        run: sudo mkdir -p /mnt/film/iso && sudo chown -R "$(id -u):$(id -g)" /mnt/film
+      # The Windows image (about 6 GB) is fetched from Microsoft once and kept, not on every take.
+      - uses: actions/cache@v4
+        with:
+          path: /mnt/film/iso
+          key: win11-enterprise-eval-2334167
+      - name: Film
+        timeout-minutes: 165
+        run: bash tools/promo/film/vm/run.sh "$RUNNER_TEMP/film" ${{ inputs.extreme && '--extreme' || '' }} || echo "run.sh exited $?"
+      - name: Clear old footage
+        if: always()
+        run: |
+          for t in $(gh release list --limit 50 --json tagName --jq '.[].tagName' | grep '^restart-take-' || true); do
+            gh release delete "$t" --yes --cleanup-tag && echo "deleted $t"
+          done
+      - name: Hand the footage over as a pre-release
+        if: always()
+        run: |
+          cd "$RUNNER_TEMP/film" || exit 0
+          # The screenshots taken while Windows installs go in one zip.
+          ls install-*.png settle-*.png >/dev/null 2>&1 && zip -q setup-shots.zip install-*.png settle-*.png && rm -f install-*.png settle-*.png
+          [ -d guest ] && (cd guest && zip -q ../guest-files.zip ./*) && rm -rf guest
+          files=$(find . -maxdepth 1 -type f -size +0 | sort)
+          tag="restart-take-${{ github.run_id }}"
+          gh release create "$tag" --prerelease --target "$GITHUB_SHA" --title "Restart footage $tag" --notes "Raw footage for a promotion video; deleted by the next run." $files
+          echo "released $tag with $(echo $files | wc -w) files"
