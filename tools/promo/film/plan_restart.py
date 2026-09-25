@@ -54,10 +54,12 @@ def main():
 
     segs = []
     def stretch(a, b, speed=1):
-        if speed == 1:
-            for s0, s1 in skips:
-                if a < s0 < b:
-                    segs.append([a, s0, 1]); a = max(a, s1)
+        # A skip is cut wherever it falls, a sped-up stretch too (Windows reopening Start for a second after
+        # the administrator prompt); a stretch that starts inside one starts at its end.
+        for s0, s1 in skips:
+            if s0 <= a < s1: a = s1
+            elif a < s0 < b:
+                segs.append([a, s0, speed]); a = max(a, s1)
         if b > a: segs.append([a, b, speed])
 
     def sped(a, b, seconds):
