@@ -22,7 +22,7 @@ none of it is on omnidx.net until it is linked on purpose.
 |---|---|
 | **Look** | The site's black-and-violet background with the eagle as the wallpaper and the lock screen, dark theme with the OmniDx violet on Start and the taskbar, the eagle as the account picture, "OmniDx Edition" as the PC maker in Settings > About, no system sounds. |
 | **Taskbar** | On the left, next to Start. Pinned: OmniDx Search, OmniDx Browser, File Explorer, OmniDx Hub, Terminal. No search box, no widgets, no Task View, no Copilot. End task on right-click. |
-| **OmniDx Search** | Windows + S (setup frees it from Windows' search), or its taskbar button. Apps, games (Steam, Epic, Riot, Battle.net, EA, Ubisoft, Roblox), 55 Settings pages and Windows tools by the words people use, your files (its own list, so it works with Windows Search indexing off), sums (`12*7+3`), web addresses and web search, commands (`>cmd`), and actions: Game Boost, Free up memory, Restart, Sleep, Lock, Flush DNS, Restart Explorer. Stays in memory (about 20 MB) so it opens instantly. |
+| **OmniDx Search** | Windows + S (setup frees it from Windows' search), or its taskbar button. Starts at every sign-in from its own task. Apps, games (Steam, Epic, Riot, Battle.net, EA, Ubisoft, Roblox), 55 Settings pages and Windows tools by the words people use, your files (its own list, so it works with Windows Search indexing off), sums (`12*7+3`), web addresses and web search, commands (`>cmd`), and actions: Game Boost, Free up memory, Restart, Sleep, Lock, Flush DNS, Restart Explorer. Stays in memory (about 20 MB) so it opens instantly. |
 | **Game Boost** | On by itself when a game fills the screen, off 20 seconds after. Holds a finer system timer (1 ms Competitive, 0.5 ms Insane), switches to the performance power plan, puts the browser's tabs to sleep (the open one too, unless it plays sound), and on Insane empties the standby list. |
 | **OmniDx Browser** | The Edge engine already in Windows (WebView2) in its own window: tabs in the title bar, one address bar, nothing else. Trackers blocked at Strict, tabs asleep after five minutes out of sight and at once during Game Boost, last session's tabs come back asleep, a new tab page that is a file on the PC (loads nothing). Ctrl+T/W/L/Tab/Shift+T, F11, Ctrl+1 to 9. |
 | **OmniDx Hub** | Live processes, CPU, memory, system timer, ping and uptime; Game Boost and auto Boost; the presets; your games with their Steam art; the tune (run, Extreme, free look, status, undo); the keys; remove the Edition. |
@@ -62,12 +62,32 @@ stay until its undo is run.
 | `make-usb.ps1`, `usb/autounattend.xml`, `first-logon.cmd` | The install stick. |
 | `ci/shots.ps1` | The Windows check (`.github/workflows/edition.yml`): builds, opens and pictures each app, applies and restores the presets, runs setup and undo. |
 
+## What a clean install taught it
+
+The VM run (`.github/workflows/edition-vm.yml`) installs Windows 11 from
+Microsoft's image, lets the Edition set itself up at the first sign-in with the
+tune in Extreme, and looks round after the restart. The first run found:
+
+- The tune tidies the Run list, so OmniDx Search is started by a sign-in task
+  of its own (`\OmniDx\Edition Search`, at normal priority; a task's default
+  is below normal), and setup tells the tune to keep it.
+- A RunOnce entry fired while the tune was still running. The welcome is now
+  shown by Search, once, on the first sign-in after setup's restart.
+- Windows 11 draws its own silhouette for an account without a picture;
+  setup sets the policy that uses the account pictures it installs.
+- Windows applies a taskbar layout file only when it is set as locked; on
+  Windows 11 that locks the pins only (Start keeps its own), so it is set
+  there and left out on Windows 10, where it would lock Start's tiles.
+- The tune's sign-in tasks flashed an empty PowerShell window that took the
+  focus; tune 1.77.1 starts them with no window on Windows 11.
+
 ## Before it goes on the site
 
-- The taskbar pins use Windows' layout policy; check they stay user-editable
-  on Home and Pro, and that the lock screen picture applies on Home.
+- Check the pins and the lock screen picture on Home and Pro (the VM is
+  Enterprise), and whether users want the pins locked at all.
 - The default-browser file is read at sign-in on Pro and Enterprise; Home may
   ask the user in Settings instead.
-- Pin the WebView2 SDK version in `build.ps1` to the one the check last built.
+- The WebView2 SDK is pinned to 1.0.2903.40, the version the check builds, and
+  used only when Windows confirms each file is signed by Microsoft.
 - Price and naming: "OmniDx Edition" (never "OmniDx Windows"); Windows is
   Microsoft's trademark and the Hub's About page says so.
