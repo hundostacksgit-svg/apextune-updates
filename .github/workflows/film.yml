@@ -1,0 +1,41 @@
+# Films the real tune on a real Windows machine: the screen, recorded while a
+# script drives the mouse and keyboard, for promotion videos. The footage is
+# promotion material, not a site file: it leaves as a pre-release on this
+# repository (tag film-*), is downloaded and edited elsewhere, and the
+# release is deleted by the next run. Nothing is committed.
+name: Film a real run
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/omnidx-editing-platform-9phdcc"]
+    paths: ["tools/promo/film/**", ".github/workflows/film.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  film:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-11-arm, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: powershell
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe the machine
+        run: |
+          & .\tools\promo\film\probe.ps1 -Out (Join-Path $env:RUNNER_TEMP 'film') 2>&1 | Tee-Object (Join-Path $env:RUNNER_TEMP 'film-probe.txt')
+          Copy-Item (Join-Path $env:RUNNER_TEMP 'film-probe.txt') (Join-Path $env:RUNNER_TEMP 'film\probe.txt')
+      - name: Hand the files over as a pre-release
+        if: always()
+        run: |
+          $tag = "film-${{ github.run_id }}-${{ matrix.os }}"
+          $files = Get-ChildItem (Join-Path $env:RUNNER_TEMP 'film') -File | ForEach-Object FullName
+          gh release create $tag --prerelease --target $env:GITHUB_SHA --title "Film footage $tag" --notes "Raw footage for a promotion video; deleted after download." $files
+          Write-Host "released $tag with $($files.Count) files"
