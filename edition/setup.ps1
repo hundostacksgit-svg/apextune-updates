@@ -302,6 +302,13 @@ foreach ($ev in Get-ChildItem 'HKCU:\AppEvents\Schemes\Apps' -ErrorAction Silent
 }
 Set-Reg 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Authentication\LogonUI\BootAnimation' 'DisableStartupSound' 1
 Note 'No system sounds' 'Green'
+# Windows Update restarts only outside 8 am to 2 am, the longest day Windows allows, so never mid-session in the
+# evening. Updates still install; only the restart waits.
+$wu = 'HKLM:\SOFTWARE\Microsoft\WindowsUpdate\UX\Settings'
+Set-Reg $wu 'SmartActiveHoursState' 0
+Set-Reg $wu 'ActiveHoursStart' 8
+Set-Reg $wu 'ActiveHoursEnd' 2
+Note 'Update restarts kept outside 8 am to 2 am' 'Green'
 
 Head '3. The taskbar, Start and search'
 $adv = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced'
