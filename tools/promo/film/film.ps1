@@ -122,6 +122,14 @@ $watch = Start-Job -ArgumentList $watchLog {
 }
 function Tidy { Get-Process wsl -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue }
 Tidy
+# A notice this image shows at sign-in (a temporary paging file): read and closed with its own OK button.
+foreach ($i in 1..3) {
+  $sp = Win 'System Properties' 2
+  if (-not $sp) { break }
+  $ok = Find $sp -name 'OK' -sec 2
+  if ($ok -and (Invoke $ok)) { Note 'closed the System Properties notice' } else { [void][Human]::ShowWindow((Hwnd $sp), 0); Note 'hid the System Properties notice' }
+  Start-Sleep 1
+}
 # The GitHub agent's own console: minimized, not closed (closing it would end this job).
 foreach ($w in Tops) {
   try { $n = $w.Current.Name } catch { continue }
@@ -186,6 +194,7 @@ Note ("signed in {0:0} s ago; wsl prompts closed so far: {1}" -f ((Get-Date) - $
 Tidy
 [Human]::Press(0x1B); Start-Sleep -Milliseconds 400; [Human]::Press(0x1B); Start-Sleep 2
 $clock = [Diagnostics.Stopwatch]::StartNew()
+[Human]::StartTrack()
 Note "recording $raw"
 Start-Sleep 2
 
@@ -265,7 +274,18 @@ try {
   Mark 'done' @{ result = $done }
   if ($result) { $p = Mid $result 0.35 0.5; [Human]::MoveTo($p[0], $p[1]); [Human]::Drift(4000) }
 
-  # ------------------------------------------------------------ 5. the number after, in Task Manager
+  # ------------------------------------------------------------ 5. the report it opens by itself, read, then closed
+  $edge = Win '*OmniDx Tune report*' 25
+  if ($edge) {
+    [void](Front $edge); Pause 1500 2000
+    Mark 'report'
+    $p = Mid $edge 0.45 0.45; [Human]::MoveTo($p[0], $p[1]); [Human]::Drift(3500)
+    [Human]::Wheel(-3); Pause 1400 1800; [Human]::Wheel(-3); [Human]::Drift(2500)
+    [Human]::Press(0x12, 0x73)   # Alt+F4, as anyone closes a browser window
+    Pause 900 1300
+  } else { Note 'no report window' }
+
+  # ------------------------------------------------------------ 6. the number after, in Task Manager
   Pause 800 1200
   Mark 'task-manager-again'
   [Human]::Press(0x11, 0x10, 0x1B)
@@ -290,6 +310,7 @@ try {
   try { $rec.StandardInput.Write('q'); $rec.StandardInput.Flush() } catch { }
   if (-not $rec.WaitForExit(90000)) { $rec.Kill() }
   Note ("ffmpeg: " + (($errTask.Result -split "`n" | Select-Object -Last 5) -join ' | '))
+  Set-Content (Join-Path $Out 'cursor.csv') -Value ("t,x,y,shown`n" + [Human]::StopTrack()) -Encoding ASCII
   $events | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $Out 'events.json') -Encoding UTF8
   try { Stop-Job $watch; Remove-Job $watch -Force } catch { }
   foreach ($pat in 'summary-*.json', 'report-*.html', 'report-*.txt', 'log-*.txt', 'card-*.png') {

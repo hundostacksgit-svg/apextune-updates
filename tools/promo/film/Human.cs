@@ -13,7 +13,10 @@ public static class Human {
   [StructLayout(LayoutKind.Sequential)] struct INPUT { public uint type; public INPUTUNION u; }
   [StructLayout(LayoutKind.Sequential)] public struct POINT { public int X, Y; }
   [DllImport("user32.dll", SetLastError = true)] static extern uint SendInput(uint n, INPUT[] inputs, int size);
-  [DllImport("user32.dll")] static extern bool SetCursorPos(int x, int y);
+  [DllImport("user32.dll", EntryPoint = "SetCursorPos")] static extern bool SetCursorPosApi(int x, int y);
+  [DllImport("user32.dll")] static extern int GetSystemMetrics(int i);
+  [StructLayout(LayoutKind.Sequential)] struct CURSORINFO { public int cbSize, flags; public IntPtr hCursor; public POINT pt; }
+  [DllImport("user32.dll")] static extern bool GetCursorInfo(ref CURSORINFO ci);
   [DllImport("user32.dll")] static extern bool GetCursorPos(out POINT p);
   [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
   [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr h, int x, int y, int w, int hgt, bool repaint);
@@ -21,7 +24,34 @@ public static class Human {
   [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
 
   static readonly Random R = new Random(20260925);
-  const uint MOVE = 0x0001, LDOWN = 0x0002, LUP = 0x0004, WHEEL = 0x0800, KEYUP = 0x0002, UNICODE = 0x0004;
+  const uint MOVE = 0x0001, LDOWN = 0x0002, LUP = 0x0004, WHEEL = 0x0800, ABSOLUTE = 0x8000, KEYUP = 0x0002, UNICODE = 0x0004;
+
+  /// The pointer to (x, y) as mouse input, the way a mouse moves it (absolute, like a tablet or a remote desktop):
+  /// Windows treats it as a mouse being used, and draws the pointer, which it hides on a machine with no mouse.
+  static void SetCursorPos(int x, int y) {
+    int w = Math.Max(2, GetSystemMetrics(0)), h = Math.Max(2, GetSystemMetrics(1));
+    var inp = new INPUT[1]; inp[0].type = 0;
+    inp[0].u.mi.dx = (int)Math.Round(x * 65535.0 / (w - 1)); inp[0].u.mi.dy = (int)Math.Round(y * 65535.0 / (h - 1));
+    inp[0].u.mi.dwFlags = MOVE | ABSOLUTE;
+    SendInput(1, inp, Marshal.SizeOf(typeof(INPUT)));
+  }
+
+  // Where the pointer was, 60 times a second, and whether Windows drew it: for the edit, which puts the pointer
+  // back where it really was if the recording did not show it.
+  static Thread tracker; static volatile bool tracking; static System.Text.StringBuilder track = new System.Text.StringBuilder();
+  public static void StartTrack() {
+    tracking = true; track.Clear();
+    var sw = System.Diagnostics.Stopwatch.StartNew();
+    tracker = new Thread(() => {
+      while (tracking) {
+        var ci = new CURSORINFO(); ci.cbSize = Marshal.SizeOf(typeof(CURSORINFO)); GetCursorInfo(ref ci);
+        lock (track) track.AppendFormat("{0:0.000},{1},{2},{3}\n", sw.Elapsed.TotalSeconds, ci.pt.X, ci.pt.Y, ci.flags);
+        Thread.Sleep(16);
+      }
+    });
+    tracker.IsBackground = true; tracker.Start();
+  }
+  public static string StopTrack() { tracking = false; if (tracker != null) tracker.Join(500); lock (track) return track.ToString(); }
 
   public static POINT Where() { POINT p; GetCursorPos(out p); return p; }
   static double Gauss() { double u = 1 - R.NextDouble(), v = R.NextDouble(); return Math.Sqrt(-2 * Math.Log(u)) * Math.Cos(2 * Math.PI * v); }
