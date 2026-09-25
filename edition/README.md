@@ -27,7 +27,7 @@ none of it is on omnidx.net until it is linked on purpose.
 | **OmniDx Browser** | The Edge engine already in Windows (WebView2) in its own window: tabs in the title bar, one address bar, nothing else. Trackers blocked at Strict, tabs asleep after five minutes out of sight and at once during Game Boost, last session's tabs come back asleep, a new tab page that is a file on the PC (loads nothing). Ctrl+T/W/L/Tab/Shift+T, F11, Ctrl+1 to 9. |
 | **OmniDx Hub** | Live processes, CPU, memory, system timer, ping and uptime; Game Boost and auto Boost; the presets; your games with their Steam art; the tune (run, Extreme, free look, status, undo); the keys; remove the Edition. |
 | **Presets** | **Balanced** (Windows' own scheduling and power), **Competitive** (the default: foreground-first CPU slices, network throttling off, games get GPU and I/O priority, the performance plan, 1 ms Boost timer), **Insane** (Competitive, plus the OmniDx Insane power plan with no core parking or USB/PCIe power saving, fixed short CPU slices, network cards' interrupt moderation off, fastest key repeat, no animations or toasts, kernel kept in RAM on 16 GB+, 0.5 ms Boost timer). Each asks for administrator rights, records what it changes; Restore Windows defaults puts it back. |
-| **The tune** | With a key, setup runs the OmniDx tune in Extreme as its last step (restore point first, its own undo), and it restarts the PC. Without one, it is a click in the Hub. |
+| **The tune** | With a key, setup runs the OmniDx tune in Extreme as its last step (restore point first, its own undo), and it restarts the PC. If Windows Update is waiting for a restart (a fresh install usually is), setup restarts first and the tune runs by itself at the next sign-in; the welcome waits for it. Without a key, it is a click in the Hub. |
 
 Security stays as Windows ships it: Defender, Windows Update, SmartScreen,
 Secure Boot, TPM and memory integrity are not touched, so anti-cheat
@@ -80,6 +80,20 @@ tune in Extreme, and looks round after the restart. The first run found:
   there and left out on Windows 10, where it would lock Start's tiles.
 - The tune's sign-in tasks flashed an empty PowerShell window that took the
   focus; tune 1.77.1 starts them with no window on Windows 11.
+
+The third run found:
+
+- Windows had installed updates by the first sign-in and wanted a restart, and
+  the tune does not change services under a pending update, so it restarted
+  and never ran. Setup now checks first: with an update waiting, it keeps the
+  key in a file only administrators can read, restarts, and a one-time sign-in
+  task (`\OmniDx\Edition Tune`) runs the tune after it (up to three restarts if
+  the update asks again), then deletes the key and the task.
+- Ctrl+T, Ctrl+W and Ctrl+L did nothing while a web page had the keys (WebView2
+  keeps them from the window). A small script in each page passes those keys
+  up, only real presses, tagged with a secret made at each start; and a new tab
+  now takes the typing at once, before its engine has started. Only the new tab
+  page may ask the browser to open an address.
 
 ## Before it goes on the site
 

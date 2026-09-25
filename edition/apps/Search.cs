@@ -523,6 +523,12 @@ namespace OmniDx
             if (State.Get("Welcomed", "") != "" || !DateTime.TryParse(State.Get("Installed", ""), out installed)) return;
             DateTime boot = DateTime.Now - TimeSpan.FromMilliseconds(Native.GetTickCount64());
             if (installed > boot) return;
+            // The tune was put off until after Windows Update's restart ("1"), or runs in this session (the boot it
+            // started in) and restarts the PC when done: the welcome waits for the sign-in after that.
+            string tune = State.Get("TunePending", "");
+            DateTime tuneBoot;
+            if (tune == "1") return;
+            if (DateTime.TryParse(tune, out tuneBoot) && Math.Abs((tuneBoot - boot).TotalMinutes) < 2) return;
             State.Set("Welcomed", DateTime.Now.ToString("s"));
             var t = new System.Windows.Forms.Timer { Interval = 4000 };
             t.Tick += (s, e) => { t.Stop(); t.Dispose(); Edition.Start(Edition.Exe("OmniHub"), "--welcome"); };

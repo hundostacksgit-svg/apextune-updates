@@ -552,8 +552,19 @@ def edition():
         if time.time() - start > 70 * 60: raise RuntimeError('no restart within 70 minutes')
     mark('restarted')
     POS[0], POS[1] = W // 2, H // 2
+    # When Windows Update was waiting for a restart, setup put the tune off to this sign-in: it runs now and
+    # restarts the PC again (and an update can ask for up to two more restarts first). The tour starts at the
+    # sign-in where the Edition's welcome opens.
+    boot = AG.boot; wait0 = time.time(); i = 0
+    while not win('OmniDx Hub', 20):
+        b = AG.wait_boot(not_this=boot, timeout=40)
+        if b: boot = b; mark('restarted again'); continue
+        i += 1; shot(f'after-{i:03d}.png'); nudge()
+        if time.time() - wait0 > 75 * 60: note('no welcome within 75 minutes; looking round as it is'); break
+    mark('welcome')
     si = time.monotonic()
-    while time.monotonic() - si < A.settle_after: time.sleep(2)
+    while time.monotonic() - si < A.settle_after:
+        time.sleep(20); nudge()
 
     def page(name, wait=2.5): pause(wait, wait + 0.6); shot(name); mark(name.split('.')[0])
 
@@ -595,7 +606,7 @@ def edition():
     b = win('*OmniDx Browser*', 30)
     page('e13-browser-newtab.png', 5.0)
     type_text('omnidx.net'); press('ret'); page('e14-browser-omnidx.png', 8.0)
-    press('ctrl', 't'); pause(1.0, 1.4); type_text('youtube.com'); press('ret'); page('e15-browser-youtube.png', 10.0)
+    press('ctrl', 't'); pause(1.2, 1.6); type_text('youtube.com'); press('ret'); page('e15-browser-youtube.png', 10.0)
     close_foreground()
     # The Hub with Game Boost on.
     press('meta_l', 's'); pause(1.0, 1.3); type_text('omnidx hub'); pause(0.8, 1.0); press('ret')
@@ -607,13 +618,15 @@ def edition():
     close('Task Manager')
     # Settings > About: OmniDx as the PC's maker.
     press('meta_l', 's'); pause(1.0, 1.3); type_text('about this pc'); pause(0.8, 1.0); press('ret')
-    page('e18-settings-about.png', 5.0)
+    page('e18-settings-about.png', 9.0)
     close('Settings', '*About*')
-    # The lock screen and the sign-in picture.
+    # The lock screen and the sign-in picture. A click lifts the lock screen; the password box is clicked before
+    # typing (a key press left the keys on the network button last time, and the password went nowhere).
     press('meta_l', 'l'); page('e19-lock.png', 4.0)
-    press('spc'); page('e20-sign-in.png', 3.0)
-    pause(1.5, 2.0); type_text('film'); pause(0.4, 0.6); press('ret')
-    pause(8, 10); page('e21-back.png', 2.0)
+    click_at(W // 2, int(H * 0.35)); page('e20-sign-in.png', 3.0)
+    for _ in range(2): click_at(W // 2, int(H * 0.555)); pause(0.7, 0.9)
+    type_text('film'); pause(0.4, 0.6); press('ret')
+    pause(10, 12); page('e21-back.png', 2.0)
 
 
 def main():

@@ -163,11 +163,22 @@ namespace OmniDx
         // ---------------------------------------------------------------- tabs
         async Task<Tab> NewTab(string url, bool activate)
         {
-            var t = new Tab { Url = url };
+            var t = new Tab { Url = url, Title = url == NewTabUrl ? "New tab" : Pretty(url) };
             int at = active == null ? tabs.Count : tabs.IndexOf(active) + 1;
             tabs.Insert(Math.Min(at, tabs.Count), t);
+            if (activate)
+            {
+                // The new tab is the open one at once, so what is typed next lands in its address bar, not in the
+                // page before it, while its engine is still starting.
+                Hide(active);
+                active = t;
+                Text = t.Title + " - OmniDx Browser";
+                ShowAddress(); Buttons();
+                if (url == NewTabUrl) address.Focus();
+            }
+            Invalidate();
             await Wake(t, url);
-            if (activate) Activate(t);
+            if (activate && active == t) Show1(t);
             Invalidate();
             return t;
         }
@@ -220,22 +231,55 @@ namespace OmniDx
             };
             c.WebMessageReceived += (s, e) =>
             {
-                // The new tab page asks for a search or an address.
                 string msg = null; try { msg = e.TryGetWebMessageAsString(); } catch { }
-                if (!string.IsNullOrEmpty(msg)) Go(msg);
+                if (string.IsNullOrEmpty(msg)) return;
+                // A shortcut pressed while the page had the keys.
+                if (msg.StartsWith(KeyTag)) { int kv; if (t == active && int.TryParse(msg.Substring(KeyTag.Length), out kv)) Shortcut((Keys)kv, true); return; }
+                // The new tab page asks for a search or an address; no other page may.
+                string from = ""; try { from = e.Source ?? ""; } catch { }
+                if (from.StartsWith("https://newtab.omnidx/")) Go(msg);
             };
+            try { await c.AddScriptToExecuteOnDocumentCreatedAsync(KeyScript); } catch { }
             t.Asleep = false;
-            c.Navigate(url);
+            // An address asked for while the engine was starting wins over the one the tab was opened with.
+            string go = t.Pending ?? url; t.Pending = null;
+            c.Navigate(go);
         }
+
+        // WebView2 keeps the keys a page has focus on, so Ctrl+T and the rest are caught in the page and passed up. The
+        // script is added to every page before its own scripts run; the tag is made fresh each start and kept in the
+        // script's closure, and only real key presses (isTrusted) are passed, so a page cannot press them itself.
+        static readonly string KeyTag = "\u0001" + Guid.NewGuid().ToString("N") + ":";
+        static readonly string KeyScript = @"(function(){
+var w=window.chrome&&window.chrome.webview;if(!w||window.__omnidxKeys)return;
+Object.defineProperty(window,'__omnidxKeys',{value:1});
+var post=w.postMessage.bind(w),tag=" + "'" + KeyTag.Replace("\u0001", "\\u0001") + "'" + @";
+addEventListener('keydown',function(e){
+if(!e.isTrusted)return;
+var c=e.keyCode,ctrl=e.ctrlKey&&!e.altKey&&!e.metaKey,bare=!e.ctrlKey&&!e.altKey&&!e.metaKey;
+var m=(e.shiftKey?0x10000:0)|(e.ctrlKey?0x20000:0)|(e.altKey?0x40000:0);
+if(bare&&c==27&&!e.shiftKey){post(tag+c);return;}
+var ours=(ctrl&&(c==84||c==87||c==76||c==9||c==115||(c>=49&&c<=57)))||(bare&&!e.shiftKey&&(c==122||c==117))||(e.altKey&&!e.ctrlKey&&!e.shiftKey&&c==68);
+if(!ours)return;
+e.preventDefault();e.stopImmediatePropagation();
+post(tag+(c|m));
+},true);
+})();";
 
         void Activate(Tab t)
         {
             if (t == null) return;
             var old = active;
             active = t;
-            if (old != null && old != t && old.View != null) { old.View.Visible = false; old.HiddenAt = DateTime.Now; try { old.View.CoreWebView2.MemoryUsageTargetLevel = CoreWebView2MemoryUsageTargetLevel.Low; } catch { } }
+            if (old != t) Hide(old);
             if (t.View == null) { var u = t.Pending ?? t.Url; t.Pending = null; var task = Wake(t, u); task.ContinueWith(_ => { try { BeginInvoke(new Action(() => Show1(t))); } catch { } }); return; }
             Show1(t);
+        }
+        void Hide(Tab old)
+        {
+            if (old == null || old.View == null) return;
+            old.View.Visible = false; old.HiddenAt = DateTime.Now;
+            try { old.View.CoreWebView2.MemoryUsageTargetLevel = CoreWebView2MemoryUsageTargetLevel.Low; } catch { }
         }
         void Show1(Tab t)
         {
@@ -244,8 +288,10 @@ namespace OmniDx
             t.Asleep = false;
             t.View.Visible = true; t.View.BringToFront();
             Text = t.Title + " - OmniDx Browser";
-            ShowAddress(); Buttons(); Invalidate();
-            if (t.Url == NewTabUrl) address.Focus(); else t.View.Focus();
+            // What is being typed in the address bar stays.
+            if (!address.Focused) ShowAddress();
+            Buttons(); Invalidate();
+            if (t.Url == NewTabUrl) address.Focus(); else if (!address.Focused) t.View.Focus();
         }
         void CloseTab(Tab t)
         {
@@ -341,6 +387,8 @@ namespace OmniDx
             string url = Fix(s);
             if (active == null) { var t = NewTab(url, true); return; }
             if (active.View == null) { active.Pending = url; Activate(active); return; }
+            // The tab's engine is still starting: it goes there as soon as it can.
+            if (active.View.CoreWebView2 == null) { active.Pending = url; active.Url = url; active.View.Focus(); return; }
             active.View.CoreWebView2.Navigate(url);
             active.View.Focus();
         }
@@ -382,6 +430,20 @@ namespace OmniDx
         // ---------------------------------------------------------------- keys
         protected override bool ProcessCmdKey(ref Message msg, Keys k)
         {
+            return Shortcut(k, false) || base.ProcessCmdKey(ref msg, k);
+        }
+        // A key can reach here from the window and from the page both, if WebView2 also hands it to the window: the
+        // second of the pair, within 400 ms, is dropped. Held keys repeat from one side and are all kept.
+        Keys lastKey; bool lastFromPage; DateTime lastKeyAt;
+        bool Shortcut(Keys k, bool fromPage)
+        {
+            if (k == lastKey && fromPage != lastFromPage && (DateTime.Now - lastKeyAt).TotalMilliseconds < 400) return true;
+            if (!Do(k)) return false;
+            lastKey = k; lastFromPage = fromPage; lastKeyAt = DateTime.Now;
+            return true;
+        }
+        bool Do(Keys k)
+        {
             switch (k)
             {
                 case Keys.Control | Keys.T: var t = NewTab(NewTabUrl, true); return true;
@@ -398,7 +460,7 @@ namespace OmniDx
             }
             int n = (int)(k & Keys.KeyCode) - (int)Keys.D1;
             if ((k & Keys.Modifiers) == Keys.Control && n >= 0 && n <= 8 && tabs.Count > 0) { Activate(n == 8 ? tabs[tabs.Count - 1] : tabs[Math.Min(n, tabs.Count - 1)]); return true; }
-            return base.ProcessCmdKey(ref msg, k);
+            return false;
         }
         void Cycle(int d) { if (tabs.Count == 0) return; int i = (tabs.IndexOf(active) + d + tabs.Count) % tabs.Count; Activate(tabs[i]); }
 

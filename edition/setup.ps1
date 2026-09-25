@@ -24,7 +24,9 @@ param(
   [switch]$NoExtreme,
   [switch]$KeepBrowser,
   [switch]$NoRestart,
-  [switch]$Undo
+  [switch]$Undo,
+  # The tune, at the sign-in after a restart that Windows Update was waiting for (setup's own task runs this).
+  [switch]$TuneOnly
 )
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
@@ -35,6 +37,8 @@ $Dest = Join-Path $env:ProgramFiles 'OmniDx\Edition'
 $Data = Join-Path $env:ProgramData 'OmniDx\Edition'
 $Menu = Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\OmniDx'
 $UndoFile = Join-Path $Data 'undo-setup.tsv'
+$TuneFile = Join-Path $Data 'tune-waiting.json'
+$EdKey = 'HKCU:\Software\OmniDx\Edition'
 New-Item -ItemType Directory -Force -Path $Data | Out-Null
 $LogFile = Join-Path $Data 'setup-log.txt'
 
@@ -144,8 +148,44 @@ function Drop-File([string]$path) {
   Remove-Item $path -Force -ErrorAction SilentlyContinue
 }
 
+# ---------------------------------------------------------------- the tune
+# The tune will not change services while Windows Update waits for a restart (it restarts the PC instead, and the tune
+# never runs). So setup checks first, and when an update is waiting it restarts and runs the tune at the next sign-in.
+function Test-UpdateRestart {
+  (Test-Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending') -or
+  (Test-Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired')
+}
+function Get-BootTime { try { (Get-CimInstance Win32_OperatingSystem -ErrorAction Stop).LastBootUpTime.ToString('s') } catch { '' } }
+# The tune, as a buyer runs it, in this window. With -Yes it restarts the PC itself when it is done.
+function Invoke-Tune([string]$key, [bool]$extreme) {
+  $base = 'https://omnidx.net'
+  if ("$env:OMNIDX_BASE" -match '^http://(127\.0\.0\.1|localhost)(:\d+)?$') { $base = "$env:OMNIDX_BASE" }
+  $env:OMNIDX_KEY = $key
+  $env:OMNIDX_MODE = 'console'
+  $env:OMNIDX_FLAGS = $(if ($extreme) { '-Extreme -Yes' } else { '-Yes' })
+  $env:OMNIDX_KEEP = 'OmniDx Search'
+  try { Invoke-Expression ((New-Object System.Net.WebClient).DownloadString("$base/go.ps1")) }
+  catch { Note ("The tune stopped: {0}" -f $_.Exception.Message) 'Yellow' }
+  $env:OMNIDX_KEY = ''
+}
+# The key waits in a file only the system and administrators can read, and is deleted before the tune runs.
+function Save-TuneJob($job) {
+  if (-not (Test-Path $TuneFile)) {
+    New-Item -ItemType File -Path $TuneFile -Force | Out-Null
+    $acl = New-Object System.Security.AccessControl.FileSecurity
+    $acl.SetSecurityDescriptorSddlForm('O:BAG:SYD:PAI(A;;FA;;;SY)(A;;FA;;;BA)')
+    Set-Acl -Path $TuneFile -AclObject $acl
+  }
+  $job | ConvertTo-Json | Set-Content -Path $TuneFile -Encoding UTF8
+}
+function Clear-TuneJob {
+  Unregister-ScheduledTask -TaskName 'Edition Tune' -TaskPath '\OmniDx\' -Confirm:$false -ErrorAction SilentlyContinue
+  Remove-Item $TuneFile -Force -ErrorAction SilentlyContinue
+}
+
 # ---------------------------------------------------------------- undo
 if ($Undo) {
+  Clear-TuneJob
   Head 'Removing OmniDx Edition'
   foreach ($n in 'OmniSearch', 'OmniBrowser', 'OmniHub') { Get-Process -Name $n -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue }
   $hub = Join-Path $Dest 'OmniHub.exe'
@@ -191,6 +231,41 @@ if ($Undo) {
   Remove-Item $Dest -Recurse -Force -ErrorAction SilentlyContinue
   Note 'OmniDx Edition removed. The tune''s own changes stay (undo them from its report or with $env:OMNIDX_MODE=''undo''; irm omnidx.net/go.ps1 | iex).' 'Green'
   Note 'Restart to see the taskbar and the sign-in screen as they were.' 'Green'
+  return
+}
+
+# ---------------------------------------------------------------- the tune, after an update restart
+if ($TuneOnly) {
+  Write-Host ''
+  Write-Host '  OmniDx Edition: the tune' -ForegroundColor Magenta
+  $job = $null
+  try { $job = Get-Content $TuneFile -Raw -ErrorAction Stop | ConvertFrom-Json } catch { }
+  if (-not $job -or -not $job.key) { Note 'No tune waiting.'; Clear-TuneJob; Remove-ItemProperty $EdKey -Name TunePending -ErrorAction SilentlyContinue; return }
+  if (Test-UpdateRestart) {
+    # Some updates take more than one restart. Three in a row, and the tune is left for the Hub.
+    $job.tries = [int]$job.tries + 1
+    if ($job.tries -lt 3) {
+      Save-TuneJob $job
+      Note ("Windows Update still wants a restart (restart {0} of up to 3). The tune runs at the sign-in after it." -f ($job.tries + 1)) 'Yellow'
+      if (-not $NoRestart) { & shutdown.exe /r /t 20 /c 'Windows Update needs one more restart. The OmniDx tune runs after it.' }
+      return
+    }
+    Clear-TuneJob; Remove-ItemProperty $EdKey -Name TunePending -ErrorAction SilentlyContinue
+    Note 'Windows Update has asked for a restart three times running. The tune is left for later: OmniDx Hub > Tune, when Windows Update is done.' 'Yellow'
+    Start-Process (Join-Path $Dest 'OmniHub.exe') -ArgumentList '--welcome'
+    return
+  }
+  $key = [string]$job.key; $extreme = [bool]$job.extreme
+  Clear-TuneJob
+  # The tune restarts the PC when it is done; the welcome waits for that restart (OmniDx Search reads this).
+  Set-ItemProperty -Path $EdKey -Name TunePending -Value (Get-BootTime) -Type String
+  Note ('The OmniDx tune' + $(if ($extreme) { ' (Extreme)' } else { '' }) + ': it reads the PC, makes a restore point, cuts what is not used and restarts the PC when it is done.')
+  Invoke-Tune $key $extreme
+  $key = ''
+  # Still here: the tune stopped without restarting. The welcome now, not after a restart that is not coming.
+  Remove-ItemProperty $EdKey -Name TunePending -ErrorAction SilentlyContinue
+  Set-ItemProperty -Path $EdKey -Name Welcomed -Value (Get-Date -Format s) -Type String
+  Start-Process (Join-Path $Dest 'OmniHub.exe') -ArgumentList '--welcome'
   return
 }
 
@@ -453,23 +528,39 @@ if (-not $Key) {
     if (Test-Path $kf) { $Key = (Get-Content $kf -Raw).Trim(); Note "Key found on $($d.Root)"; break }
   }
 }
+$deferred = $false
 if ($Key -and -not $NoTune) {
   Head ('7. The OmniDx tune' + $(if ($NoExtreme) { '' } else { ' (Extreme)' }))
-  Note 'The tune reads the PC, makes a restore point, cuts what is not used and restarts the PC when it is done.'
-  $base = 'https://omnidx.net'
-  if ("$env:OMNIDX_BASE" -match '^http://(127\.0\.0\.1|localhost)(:\d+)?$') { $base = "$env:OMNIDX_BASE" }
-  $env:OMNIDX_KEY = $Key
-  $env:OMNIDX_MODE = 'console'
-  $env:OMNIDX_FLAGS = $(if ($NoExtreme) { '-Yes' } else { '-Extreme -Yes' })
-  $env:OMNIDX_KEEP = 'OmniDx Search'
-  try { Invoke-Expression ((New-Object System.Net.WebClient).DownloadString("$base/go.ps1")) }
-  catch { Note ("The tune stopped: {0}" -f $_.Exception.Message) 'Yellow' }
-  $env:OMNIDX_KEY = ''
+  if (Test-UpdateRestart) {
+    # A fresh Windows has usually installed updates by its first sign-in, and they want a restart first.
+    try {
+      Save-TuneJob ([pscustomobject]@{ key = $Key; extreme = (-not $NoExtreme); tries = 0; saved = (Get-Date -Format s) })
+      $me = "$env:USERDOMAIN\$env:USERNAME"
+      $act = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -ExecutionPolicy Bypass -File "' + (Join-Path $Dest 'setup.ps1') + '" -TuneOnly')
+      $trig = New-ScheduledTaskTrigger -AtLogOn -User $me
+      $trig.Delay = 'PT15S'
+      $prin = New-ScheduledTaskPrincipal -UserId $me -LogonType Interactive -RunLevel Highest
+      $set = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::FromHours(2)) -MultipleInstances IgnoreNew
+      $set.Priority = 4
+      Register-ScheduledTask -TaskName 'Edition Tune' -TaskPath '\OmniDx\' -Action $act -Trigger $trig -Principal $prin -Settings $set -Force | Out-Null
+      Remember @('task', 'Edition Tune') 'task|Edition Tune'
+      Set-Reg $EdKey 'TunePending' '1' 'String'
+      $deferred = $true
+      Note 'Windows Update is waiting for a restart, and the tune does not change services under a pending update. It runs by itself at the next sign-in, after the restart.' 'Yellow'
+    } catch {
+      Note ("Could not put the tune off until after the restart ({0}); run it from OmniDx Hub > Tune after the restart." -f $_.Exception.Message) 'Yellow'
+      Remove-Item $TuneFile -Force -ErrorAction SilentlyContinue
+    }
+  }
+  else {
+    Note 'The tune reads the PC, makes a restore point, cuts what is not used and restarts the PC when it is done.'
+    Invoke-Tune $Key (-not $NoExtreme)
+  }
 }
 elseif (-not $NoTune) { Note 'No key given: the tune is one click in OmniDx Hub > Tune when you want it.' }
 
 Note 'OmniDx Edition is set up.' 'Green'
 if (-not $NoRestart) {
-  Note 'Restarting in 15 seconds so Windows loads the new taskbar, search key and sign-in picture.'
+  Note ('Restarting in 15 seconds so Windows loads the new taskbar, search key and sign-in picture' + $(if ($deferred) { ', and finishes its update; the tune runs after it.' } else { '.' }))
   & shutdown.exe /r /t 15 /c 'OmniDx Edition is set up. Restarting in 15 seconds.'
 }

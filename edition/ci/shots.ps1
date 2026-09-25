@@ -52,6 +52,10 @@ function Snap([string]$name) {
   Note "shot $name ($($b.Width)x$($b.Height))"
 }
 function Type-Text([string]$t) { [Windows.Forms.SendKeys]::SendWait($t); Start-Sleep -Milliseconds 400 }
+# What must hold: a miss is written down and fails the job at the end, after every picture is taken.
+$script:Failed = @()
+function Check([bool]$ok, [string]$what) { if ($ok) { Note "ok: $what" } else { Note "CHECK FAILED: $what"; $script:Failed += $what } }
+function Browser-Title { $p = Get-Process OmniBrowser -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowHandle -ne 0 } | Select-Object -First 1; if ($p) { $p.MainWindowTitle } else { '' } }
 function Stop-Apps { foreach ($n in 'OmniSearch', 'OmniHub', 'OmniBrowser') { Get-Process $n -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue }; Start-Sleep 1 }
 
 Note ("Windows {0} build {1}; screen {2}" -f (Get-CimInstance Win32_OperatingSystem).Caption, [Environment]::OSVersion.Version.Build, [Shot]::Resize(1920, 1080))
@@ -114,17 +118,49 @@ Note "free memory (standby list) -> exit $($r.ExitCode)"
 Start-Process (Join-Path $bin 'OmniBrowser.exe')
 Start-Sleep 10
 Snap '20-browser-newtab'
-Start-Process (Join-Path $bin 'OmniBrowser.exe') -ArgumentList 'https://omnidx.net'
+# Typed into the new tab's address bar, as a person would; the page then has the keys.
+Type-Text 'omnidx.net{ENTER}'
 Start-Sleep 10
 Snap '21-browser-omnidx'
+# Ctrl+T while the page has the keys (WebView2 keeps them from the window): a new tab opens at once and takes the
+# typing that follows, even while its engine is still starting.
+[Shot]::Keys(0x11, 0x54)
+Start-Sleep -Milliseconds 800
+$t1 = Browser-Title
+Type-Text 'en.wikipedia.org/wiki/Esports{ENTER}'
+Start-Sleep 9
+Snap '22-browser-ctrl-t'
+$t2 = Browser-Title
+Check ($t1 -like 'New tab*') "Ctrl+T from the page opened a new tab (title then: '$t1')"
+Check ($t2 -like '*Esports*') "the typing after Ctrl+T went to the new tab (title now: '$t2')"
+# Ctrl+W from the page closes it, back to omnidx.net.
+[Shot]::Keys(0x11, 0x57)
+Start-Sleep 2
+$t3 = Browser-Title
+Check ($t3 -and $t3 -notlike '*Esports*') "Ctrl+W from the page closed the tab (title now: '$t3')"
 Start-Process (Join-Path $bin 'OmniBrowser.exe') -ArgumentList 'https://en.wikipedia.org/wiki/Esports'
 Start-Sleep 9
-Snap '22-browser-three-tabs'
+Snap '23-browser-tabs'
 Stop-Apps
 
 # ---------------------------------------------------------------- setup, then undo
-Note 'setup.ps1 -NoTune -NoRestart'
-& powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $here 'setup.ps1') -NoTune -NoRestart *>&1 | ForEach-Object { Note "setup: $_" }
+# With a key, while Windows Update waits for a restart (made to look so here, the way a fresh install usually is at
+# its first sign-in): the tune must be put off until the sign-in after the restart, not run and not lost. Nothing
+# reaches omnidx.net: the tune's address is a closed port on this machine.
+$env:OMNIDX_BASE = 'http://127.0.0.1:9'
+$wu = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired'
+$realWait = (Test-Path $wu) -or (Test-Path 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending')
+if (-not (Test-Path $wu)) { New-Item $wu -Force | Out-Null }
+$tf = Join-Path $env:ProgramData 'OmniDx\Edition\tune-waiting.json'
+$ek = 'HKCU:\Software\OmniDx\Edition'
+function Tune-Task { Get-ScheduledTask -TaskName 'Edition Tune' -TaskPath '\OmniDx\' -ErrorAction SilentlyContinue }
+Note 'setup.ps1 -Key (a test key) -NoRestart, with an update restart waiting'
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $here 'setup.ps1') -Key 'TUNE-TEST-TEST-TEST-TEST' -NoRestart *>&1 | ForEach-Object { Note "setup: $_" }
+$task = Tune-Task
+$who = if (Test-Path $tf) { @((Get-Acl $tf).Access | ForEach-Object { $_.IdentityReference.Value }) } else { @() }
+Check ([bool]$task -and "$($task.Principal.RunLevel)" -eq 'Highest') "the tune is put off to a sign-in task that runs as administrator ($(if ($task) { $task.Principal.RunLevel } else { 'no task' }))"
+Check ($who.Count -gt 0 -and -not ($who | Where-Object { $_ -notmatch 'SYSTEM$|Administrators$' })) "the waiting key is readable by the system and administrators only ($($who -join ', '))"
+Check ((Get-ItemProperty $ek -Name TunePending -ErrorAction SilentlyContinue).TunePending -eq '1') 'the welcome is told to wait for the tune'
 Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue   # Explorer restarts with the new taskbar
 Start-Sleep 12
 Stop-Apps
@@ -140,6 +176,27 @@ Start-Process (Join-Path $env:ProgramFiles 'OmniDx\Edition\OmniHub.exe') -Argume
 Start-Sleep 5
 Snap '32-welcome-after-setup'
 Stop-Apps
+# The sign-in after the restart, as the task runs it. Windows Update still waiting: put off again, key kept.
+$edSetup = Join-Path $env:ProgramFiles 'OmniDx\Edition\setup.ps1'
+Note 'setup.ps1 -TuneOnly -NoRestart, the update restart still waiting'
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $edSetup -TuneOnly -NoRestart *>&1 | ForEach-Object { Note "tune-only: $_" }
+$job = $null; try { $job = Get-Content $tf -Raw | ConvertFrom-Json } catch { }
+Check ($job -and [int]$job.tries -eq 1 -and [bool](Tune-Task)) "still waiting: put off again, key and task kept (tries: $(if ($job) { $job.tries } else { 'no file' }))"
+if ($realWait) { Note 'this machine really has an update restart waiting: the tune-only run is not checked' }
+else {
+  Remove-Item $wu -Force
+  # The update is done: the tune runs (and stops at once here, its address being closed), then the welcome shows.
+  Note 'setup.ps1 -TuneOnly -NoRestart, no update waiting'
+  & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $edSetup -TuneOnly -NoRestart *>&1 | ForEach-Object { Note "tune-only: $_" }
+  Start-Sleep 5
+  Snap '34-welcome-after-tune'
+  Check (-not (Test-Path $tf)) 'the waiting key is deleted once the tune has it'
+  Check (-not (Tune-Task)) 'the sign-in task is gone'
+  Check ($null -eq (Get-ItemProperty $ek -Name TunePending -ErrorAction SilentlyContinue)) 'the tune stopped without a restart, so the welcome waits no longer'
+  Check ([bool](Get-Process OmniHub -ErrorAction SilentlyContinue)) 'the welcome opened'
+  Stop-Apps
+}
+Remove-Item Env:\OMNIDX_BASE -ErrorAction SilentlyContinue
 Note 'setup.ps1 -Undo'
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $env:ProgramFiles 'OmniDx\Edition\setup.ps1') -Undo *>&1 | ForEach-Object { Note "undo: $_" }
 Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
@@ -150,4 +207,6 @@ foreach ($f in (Join-Path $env:LOCALAPPDATA 'OmniDx\edition-log.txt'), (Join-Pat
   if (Test-Path $f) { Copy-Item $f $Out -Force }
 }
 Get-ChildItem (Join-Path $env:ProgramData 'OmniDx\Edition') -Filter '*.done' -ErrorAction SilentlyContinue | Copy-Item -Destination $Out -Force
+Check (-not (Tune-Task) -and -not (Test-Path $tf)) 'undo leaves no tune task and no key behind'
+if ($script:Failed.Count) { Note ("{0} check(s) failed: {1}" -f $script:Failed.Count, ($script:Failed -join ' | ')); exit 1 }
 Note 'done'
