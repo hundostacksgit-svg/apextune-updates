@@ -46,7 +46,11 @@ def main():
     boxes = take.get('boxes', {})
     skips = sorted(take.get('skip', []))
     before, after = take['before'], take['after']
-    report = float(take.get('report', V('done')))
+    # The run's end: when the app shows its result line ("done"), and when the report it opens by itself covers
+    # the screen ("report"). The report is not shown: it carries the app's estimate for after a restart, and
+    # the video shows the real number instead.
+    done_at = float(take.get('done', V('done')))
+    report = float(take.get('report', done_at + 1.0))
 
     segs = []
     def stretch(a, b, speed=1):
@@ -65,8 +69,8 @@ def main():
     stretch(V('command-entered') + 0.6, V('uac-yes') + 1.0)                          # 3 the prompt, Yes
     sped(V('uac-yes') + 1.0, V('app-read'), 3.5)                                     # 4 the app reads the PC
     stretch(V('app-read'), V('run') + 1.0)                                           # 5 the key, Run
-    sped(V('run') + 1.0, report - 2.0, float(take.get('run_seconds', 8)))            # 6 the run
-    stretch(report - 2.0, report + 4.0)                                              # 7 done, the report
+    sped(V('run') + 1.0, done_at - 1.5, float(take.get('run_seconds', 8)))           # 6 the run
+    stretch(done_at - 1.5, report - 0.1)                                             # 7 done, the app's own line
     stretch(V('restart-asked') - 2.5, V('restart') + 1.0)                            # 8 Restart now, twice
     sped(V('restart') + 1.0, V('signed-in') + 2.0, 4.0)                              # 9 the boot and sign-in
     sped(V('signed-in') + 2.0, V('three-minutes'), 3.0)                              # 10 three minutes of Windows starting
@@ -119,14 +123,12 @@ def main():
     say(V('key-pasted') - 1.4, V('run') + 1.0, 'Key in. Run.')
 
     # 6. The run.
-    hold(FULL, V('run') + 1.0, report - 2.0)
-    say(V('run') + 1.0, report - 2.0, 'Restore point first. Then it cuts\nwhat this PC does not use', 58)
+    hold(FULL, V('run') + 1.0, done_at - 1.5)
+    say(V('run') + 1.0, done_at - 1.5, 'Restore point first. Then it cuts\nwhat this PC does not use', 58)
 
-    # 7. Done, the report.
-    say(report - 2.0, report, 'Done.')
-    hold(FULL, report - 2.0, report + 0.4)
-    if 'report' in boxes: hold(fit(boxes['report'], take.get('report_zoom', 1300)), report + 1.0, report + 4.0)
-    say(report, report + 4.0, 'Its own report', 62)
+    # 7. Done: the app's own line, before any restart.
+    if 'result' in boxes: hold(fit(boxes['result'], take.get('result_zoom', 900)), done_at - 1.0, report - 0.1)
+    say(done_at - 1.5, report - 0.1, 'Done. Now it asks for a restart', 60)
 
     # 8. Restart now.
     whoosh.append(round(O(V('restart-asked') - 2.5), 2))
