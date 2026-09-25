@@ -38,8 +38,8 @@ public class Desk {
 [void][Desk]::SetProcessDPIAware()
 $A = [System.Windows.Automation.AutomationElement]
 $Scope = [System.Windows.Automation.TreeScope]
-$W = [Desk]::GetSystemMetrics(0); $H = [Desk]::GetSystemMetrics(1)
-Note "screen ${W}x${H}"
+$ScrW = [Desk]::GetSystemMetrics(0); $ScrH = [Desk]::GetSystemMetrics(1)
+Note "screen ${ScrW}x${ScrH}"
 
 # ---------------------------------------------------------------- helpers
 function Tops { try { return @($A::RootElement.FindAll($Scope::Children, [System.Windows.Automation.Condition]::TrueCondition)) } catch { return @() } }
@@ -126,9 +126,8 @@ function Get-Ffmpeg([string]$arch) {
   Note "ffmpeg $arch : $v"
   if ($v -match 'ffmpeg version') { return $f } else { return $null }
 }
-$ff = $null
-if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { $ff = Get-Ffmpeg 'winarm64' }
-if (-not $ff) { $ff = Get-Ffmpeg 'win64' }   # on ARM, through Windows' own x64 emulation
+# The x64 build, on ARM too (through Windows' own emulation): BtbN's ARM build does not start on this machine.
+$ff = Get-Ffmpeg 'win64'
 if (-not $ff) { Note 'no working ffmpeg'; exit 1 }
 $raw = Join-Path $Out 'screen.mkv'
 $psi = New-Object System.Diagnostics.ProcessStartInfo $ff
@@ -142,7 +141,7 @@ Start-Sleep 2
 
 try {
   # ------------------------------------------------------------ 1. the number before, in Task Manager
-  [Human]::MoveTo([int]($W * 0.58), [int]($H * 0.52), 700); Pause 1200 1600
+  [Human]::MoveTo([int]($ScrW * 0.58), [int]($ScrH * 0.52), 700); Pause 1200 1600
   Mark 'task-manager-open'
   [Human]::Press(0x11, 0x10, 0x1B)   # Ctrl+Shift+Esc
   $tm = Win 'Task Manager' 15
