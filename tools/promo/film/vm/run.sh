@@ -86,9 +86,11 @@ rm -f "$WORK/win.qcow2"; qemu-img create -q -f qcow2 "$WORK/win.qcow2" 80G
 Xvfb :99 -screen 0 3200x1800x24 -nolisten tcp > "$OUT/xvfb.txt" 2>&1 &
 sleep 2
 rm -f "$WORK/qmp.sock"
-# The clock: the PC keeps local time, US Eastern, like a PC set up there.
+# The clock: the PC keeps local time, US Eastern, like a PC set up there. The CPU is the host's without its own
+# virtualization extensions: with them, Windows 11 starts its hypervisor for memory integrity, and on some Intel
+# hosts that nested start kills the machine ("KVM: entry failed"). Memory integrity is then simply unavailable.
 DISPLAY=:99 TZ=America/New_York qemu-system-x86_64 -name 'Windows 11' \
-  -enable-kvm -machine q35,smm=on -cpu host -smp 4 -m 8G \
+  -enable-kvm -machine q35,smm=on -cpu host,-vmx,-svm -smp 4 -m 8G \
   -global driver=cfi.pflash01,property=secure,value=on \
   -drive if=pflash,format=raw,unit=0,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.secboot.fd \
   -drive if=pflash,format=raw,unit=1,file="$WORK/vars.fd" \
@@ -133,8 +135,9 @@ cp "$TPM/swtpm.log" "$OUT/swtpm.txt" 2>/dev/null || true
   sudo modprobe nbd max_part=8
   sudo qemu-nbd --read-only -c /dev/nbd0 "$WORK/win.qcow2" && sleep 3
   sudo mkdir -p /mnt/win
-  part=$(lsblk -lnbo NAME,SIZE /dev/nbd0 | sort -k2 -n | tail -1 | cut -d' ' -f1)
-  sudo ntfs-3g -o ro,remove_hiberfile "/dev/$part" /mnt/win 2>/dev/null || sudo mount -t ntfs3 -o ro,force "/dev/$part" /mnt/win
+  part=$(lsblk -lnbo NAME,SIZE,TYPE /dev/nbd0 | awk '$3 == "part"' | sort -k2 -n | tail -1 | cut -d' ' -f1)
+  echo "Windows partition: $part"
+  sudo ntfs-3g -o ro,remove_hiberfile "/dev/$part" /mnt/win || sudo ntfs-3g -o ro,force "/dev/$part" /mnt/win
   mkdir -p "$OUT/disk"
   for f in film/agent-log.txt film/setup-log.txt film/first-logon.txt Windows/Panther/UnattendGC/setupact.log Windows/Panther/UnattendGC/setuperr.log Windows/Panther/setuperr.log Windows/System32/Tasks/FilmAgent Windows/System32/Tasks/FilmAgentUser; do
     [ -f "/mnt/win/$f" ] && sudo cp "/mnt/win/$f" "$OUT/disk/$(echo "$f" | tr '/' '_')"

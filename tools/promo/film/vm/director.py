@@ -432,6 +432,14 @@ def performance():
     # 3. Windows asks for administrator rights; Yes.
     uac_yes(os.path.join(A.out, 'before-prompt.png'), 40)
     mark('uac-yes')
+    # Coming back from the prompt, Windows sometimes opens Start; Esc, as anyone would.
+    for _ in range(3):
+        time.sleep(1.2)
+        fg = (AG.ask('fg') or {}).get('title', '')
+        if fg in ('Start', 'Search'):
+            press('esc'); note(f'closed {fg} after the prompt')
+        else:
+            break
 
     # 4. The app.
     app = win('OmniDx Tune', 180)
