@@ -1,22 +1,23 @@
-# Films the real tune on this Windows machine, the way a person would run it:
-# Task Manager first (the number before), then an administrator PowerShell,
-# the one line, the app, the key, Run, the live log, the result, and Task
-# Manager again (the number after). No security setting is changed to film
-# it: the PowerShell window is opened with the rights this job already has. The screen is
-# recorded the whole time; the input is real Windows input (SendInput), sent
-# by Human.cs along human paths and rhythms. Writes the recording, a list of
-# timed events and the run's own files to $Out.
+# Films the real tune on this Windows 11 machine, the way a person runs it:
+# Task Manager first (the number before), then Start, "powershell", the one
+# line, the app, the key, Run, the live log, the result, and Task Manager
+# again (the number after). The screen is recorded the whole time; the input
+# is real Windows input (SendInput) along human paths and rhythms (Human.cs).
+# Writes the recording, the timed events and the run's own files to $Out.
 #
-# The one thing staged: the licence check. The typed command is the real one
-# and fetches the real go.ps1 from omnidx.net; go.ps1 is pointed (by
+# No security setting is changed. This machine already elevates an
+# administrator without a prompt, so the one line gets its rights the way it
+# does anywhere: it asks, and Windows says yes.
+#
+# The one thing staged is the licence check. The typed command is the real
+# one and fetches the real go.ps1 from omnidx.net; go.ps1 is pointed (by
 # OMNIDX_BASE, which it honours for 127.0.0.1 only) at a copy of the site on
 # this machine, whose config names a licence server also on this machine: the
 # real Worker code under Node, which issues the key the way the key page does
 # after a payment. Everything the tune does to the PC is the real thing.
 param(
   [string]$Out = (Join-Path $env:RUNNER_TEMP 'film'),
-  [string]$Repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path,
-  [int]$Width = 1920, [int]$Height = 1080
+  [string]$Repo = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
 )
 $ErrorActionPreference = 'Continue'
 New-Item -ItemType Directory -Force $Out | Out-Null
@@ -27,43 +28,69 @@ Add-Type -AssemblyName System.Drawing, UIAutomationClient, UIAutomationTypes
 Add-Type -Path (Join-Path $PSScriptRoot 'Human.cs')
 Add-Type @"
 using System; using System.Runtime.InteropServices;
-public class Screen2 {
-  [StructLayout(LayoutKind.Sequential, CharSet=CharSet.Unicode)]
-  public struct DEVMODE {
-    [MarshalAs(UnmanagedType.ByValTStr, SizeConst=32)] public string dmDeviceName;
-    public short dmSpecVersion, dmDriverVersion, dmSize, dmDriverExtra; public int dmFields;
-    public int dmPositionX, dmPositionY, dmDisplayOrientation, dmDisplayFixedOutput;
-    public short dmColor, dmDuplex, dmYResolution, dmTTOption, dmCollate;
-    [MarshalAs(UnmanagedType.ByValTStr, SizeConst=32)] public string dmFormName;
-    public short dmLogPixels; public int dmBitsPerPel, dmPelsWidth, dmPelsHeight, dmDisplayFlags, dmDisplayFrequency;
-    public int dmICMMethod, dmICMIntent, dmMediaType, dmDitherType, dmReserved1, dmReserved2, dmPanningWidth, dmPanningHeight;
-  }
-  [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool EnumDisplaySettingsW(string d, int m, ref DEVMODE dm);
-  [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int ChangeDisplaySettingsExW(string d, ref DEVMODE dm, IntPtr h, int f, IntPtr p);
+public class Desk {
   [DllImport("user32.dll")] public static extern int GetSystemMetrics(int i);
   [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
   [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool SystemParametersInfoW(int a, int b, string c, int d);
   [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr SendMessageTimeoutW(IntPtr h, int m, IntPtr w, string l, int f, int t, out IntPtr r);
 }
 "@
-[void][Screen2]::SetProcessDPIAware()
+[void][Desk]::SetProcessDPIAware()
 $A = [System.Windows.Automation.AutomationElement]
-function Size { "{0}x{1}" -f [Screen2]::GetSystemMetrics(0), [Screen2]::GetSystemMetrics(1) }
+$Scope = [System.Windows.Automation.TreeScope]
+$W = [Desk]::GetSystemMetrics(0); $H = [Desk]::GetSystemMetrics(1)
+Note "screen ${W}x${H}"
 
-# ---------------------------------------------------------------- the stage
-Note "screen as found: $(Size)"
-$cur = New-Object Screen2+DEVMODE; $cur.dmSize = [System.Runtime.InteropServices.Marshal]::SizeOf($cur)
-[void][Screen2]::EnumDisplaySettingsW($null, -1, [ref]$cur)
-$cur.dmPelsWidth = $Width; $cur.dmPelsHeight = $Height; $cur.dmFields = 0x80000 -bor 0x100000
-Note ("resolution {0}x{1}: {2}" -f $Width, $Height, [Screen2]::ChangeDisplaySettingsExW($null, [ref]$cur, [IntPtr]::Zero, 0x01, [IntPtr]::Zero))
-Start-Sleep 2
-Note "screen now: $(Size)"
-$W = [Screen2]::GetSystemMetrics(0); $H = [Screen2]::GetSystemMetrics(1)
-
-# Windows 11's own wallpaper, as a PC out of the box has it.
-foreach ($wp in 'C:\Windows\Web\Wallpaper\Windows\img19.jpg', 'C:\Windows\Web\Wallpaper\Windows\img0.jpg') {
-  if (Test-Path $wp) { [void][Screen2]::SystemParametersInfoW(20, 0, $wp, 3); Note "wallpaper $wp"; break }
+# ---------------------------------------------------------------- helpers
+function Tops { try { return @($A::RootElement.FindAll($Scope::Children, [System.Windows.Automation.Condition]::TrueCondition)) } catch { return @() } }
+function Win([string]$like, [int]$sec = 30) {
+  $t = [Diagnostics.Stopwatch]::StartNew()
+  while ($t.Elapsed.TotalSeconds -lt $sec) {
+    foreach ($w in Tops) { try { if ($w.Current.Name -like $like) { return $w } } catch { } }
+    Start-Sleep -Milliseconds 250
+  }
+  return $null
 }
+function Find($root, [string]$id = '', [string]$name = '', [int]$sec = 10) {
+  $prop = if ($id) { $A::AutomationIdProperty } else { $A::NameProperty }
+  $c = New-Object System.Windows.Automation.PropertyCondition($prop, $(if ($id) { $id } else { $name }))
+  $t = [Diagnostics.Stopwatch]::StartNew()
+  while ($t.Elapsed.TotalSeconds -lt $sec) { try { $e = $root.FindFirst($Scope::Descendants, $c); if ($e) { return $e } } catch { }; Start-Sleep -Milliseconds 250 }
+  return $null
+}
+function FindAll($root, [string]$name) {
+  $c = New-Object System.Windows.Automation.PropertyCondition($A::NameProperty, $name)
+  try { return @($root.FindAll($Scope::Descendants, $c)) } catch { return @() }
+}
+function Mid($e, [double]$fx = 0.5, [double]$fy = 0.5) { $b = $e.Current.BoundingRectangle; return @([int]($b.X + $b.Width * $fx), [int]($b.Y + $b.Height * $fy)) }
+function Hwnd($e) { return [IntPtr]$e.Current.NativeWindowHandle }
+function Invoke($e) { try { $e.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke(); return $true } catch { return $false } }
+function Pause([int]$a, [int]$b) { Start-Sleep -Milliseconds (Get-Random -Minimum $a -Maximum $b) }
+$events = New-Object System.Collections.ArrayList
+$clock = $null
+function Mark([string]$name, $extra = $null) {
+  $t = if ($clock) { [math]::Round($clock.Elapsed.TotalSeconds, 2) } else { 0 }
+  $e = [ordered]@{ t = $t; what = $name; processes = (Get-Process).Count }
+  if ($extra) { foreach ($k in $extra.Keys) { $e[$k] = $extra[$k] } }
+  [void]$events.Add($e); Note ("[{0,7:0.00}] {1} processes {2} {3}" -f $t, $name, $e.processes, $(if ($extra) { $extra | ConvertTo-Json -Compress } else { '' }))
+}
+# Maximize a window the way a person does: a double-click on its title bar.
+function Maximize($e) { $b = $e.Current.BoundingRectangle; [Human]::DoubleClickAt([int]($b.X + $b.Width * 0.42), [int]($b.Y + 14)); Pause 700 1000 }
+
+# ---------------------------------------------------------------- the desk, before the camera rolls
+# The first-sign-in privacy page this machine opens with: accepted as it stands, as anyone setting up a PC does.
+foreach ($i in 1..3) {
+  $next = $null; foreach ($w in Tops) { foreach ($n in 'Next', 'Accept') { $b = Find $w -name $n -sec 1; if ($b) { $next = $b; break } }; if ($next) { break } }
+  if (-not $next) { break }
+  Note "first-sign-in page: $($next.Current.Name)"; if (-not (Invoke $next)) { $p = Mid $next; [Human]::ClickAt($p[0], $p[1]) }; Start-Sleep 3
+}
+# The GitHub agent's own console: minimized, not closed (closing it would end this job).
+foreach ($w in Tops) {
+  try { $n = $w.Current.Name } catch { continue }
+  if ($n -like '*GitHub*' -or $n -like '*hosted-compute*' -or $n -like '*Runner*') { [void][Human]::ShowWindow((Hwnd $w), 6); Note "minimized: $n" }
+}
+foreach ($wp in 'C:\Windows\Web\Wallpaper\Windows\img0.jpg') { if (Test-Path $wp) { [void][Desk]::SystemParametersInfoW(20, 0, $wp, 3); Note "wallpaper $wp" } }
+
 # A copy of the site on this machine, whose config names the licence server on this machine.
 $site = Join-Path $env:RUNNER_TEMP 'site'
 New-Item -ItemType Directory -Force (Join-Path $site 'tune') | Out-Null
@@ -73,63 +100,39 @@ $cfgPath = Join-Path $site 'tune\config.json'
 $cfg = Get-Content $cfgPath -Raw | ConvertFrom-Json
 $cfg.api = 'http://127.0.0.1:8787'
 [IO.File]::WriteAllText($cfgPath, ($cfg | ConvertTo-Json -Depth 5), (New-Object System.Text.UTF8Encoding($false)))
-Start-Process python -ArgumentList '-m', 'http.server', '8090', '--bind', '127.0.0.1', '--directory', $site -WindowStyle Hidden
+Start-Process python -ArgumentList '-m', 'http.server', '8090', '--bind', '127.0.0.1', '--directory', "`"$site`"" -WindowStyle Hidden
 $keyFile = Join-Path $env:RUNNER_TEMP 'film-key.txt'
-Start-Process node -ArgumentList (Join-Path $Repo 'tools\worker-serve.mjs'), '--port', '8787', '--key-file', $keyFile, '--log', (Join-Path $Out 'worker-serve.txt') -WindowStyle Hidden -WorkingDirectory $Repo
+Start-Process node -ArgumentList "`"$(Join-Path $Repo 'tools\worker-serve.mjs')`"", '--port', '8787', '--key-file', "`"$keyFile`"", '--log', "`"$(Join-Path $Out 'worker-serve.txt')`"" -WindowStyle Hidden -WorkingDirectory $Repo
 $ok = $false
 foreach ($i in 1..60) { Start-Sleep -Milliseconds 500; try { $h = Invoke-RestMethod http://127.0.0.1:8787/v1/health -TimeoutSec 3; $s = Invoke-WebRequest http://127.0.0.1:8090/go.ps1 -UseBasicParsing -TimeoutSec 3; if ($h.ok -and $s.StatusCode -eq 200 -and (Test-Path $keyFile)) { $ok = $true; break } } catch { } }
 if (-not $ok) { Note 'the local site or licence server did not start'; exit 1 }
 $key = (Get-Content $keyFile -Raw).Trim()
 Note "licence server up; key issued ($($key.Substring(0, 9))...)"
-# go.ps1 reads OMNIDX_BASE; the PowerShell window below is started from this process and inherits it.
-$env:OMNIDX_BASE = 'http://127.0.0.1:8090'
+# go.ps1 reads OMNIDX_BASE. A window opened from Start inherits it once Explorer hears the environment changed.
+[Environment]::SetEnvironmentVariable('OMNIDX_BASE', 'http://127.0.0.1:8090', 'User')
+$r = [IntPtr]::Zero; [void][Desk]::SendMessageTimeoutW([IntPtr]0xffff, 0x1A, [IntPtr]::Zero, 'Environment', 2, 5000, [ref]$r)
 Set-Clipboard -Value $key
-
-# ---------------------------------------------------------------- helpers
-function Win([string]$like, [int]$sec = 30) {
-  $t = [Diagnostics.Stopwatch]::StartNew()
-  while ($t.Elapsed.TotalSeconds -lt $sec) {
-    foreach ($w in $A::RootElement.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)) {
-      try { if ($w.Current.Name -like $like) { return $w } } catch { }
-    }
-    Start-Sleep -Milliseconds 250
-  }
-  return $null
-}
-function Find($root, [string]$id = '', [string]$name = '', [int]$sec = 10) {
-  $prop = if ($id) { $A::AutomationIdProperty } else { $A::NameProperty }
-  $c = New-Object System.Windows.Automation.PropertyCondition($prop, $(if ($id) { $id } else { $name }))
-  $t = [Diagnostics.Stopwatch]::StartNew()
-  while ($t.Elapsed.TotalSeconds -lt $sec) { try { $e = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $c); if ($e) { return $e } } catch { }; Start-Sleep -Milliseconds 250 }
-  return $null
-}
-function FindAll($root, [string]$name) {
-  $c = New-Object System.Windows.Automation.PropertyCondition($A::NameProperty, $name)
-  try { return @($root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $c)) } catch { return @() }
-}
-function Mid($e, [double]$fx = 0.5, [double]$fy = 0.5) { $b = $e.Current.BoundingRectangle; return @([int]($b.X + $b.Width * $fx), [int]($b.Y + $b.Height * $fy)) }
-function Hwnd($e) { return [IntPtr]$e.Current.NativeWindowHandle }
-function Place($e, [int]$x, [int]$y, [int]$w, [int]$h) { $hw = Hwnd $e; if ($hw -ne [IntPtr]::Zero) { [void][Human]::MoveWindow($hw, $x, $y, $w, $h, $true) } }
-$events = New-Object System.Collections.ArrayList
-$clock = $null
-function Mark([string]$name, $extra = $null) {
-  $t = if ($clock) { [math]::Round($clock.Elapsed.TotalSeconds, 2) } else { 0 }
-  $e = [ordered]@{ t = $t; what = $name; processes = (Get-Process).Count }
-  if ($extra) { foreach ($k in $extra.Keys) { $e[$k] = $extra[$k] } }
-  [void]$events.Add($e); Note ("[{0,7:0.00}] {1} {2}" -f $t, $name, (($extra | ConvertTo-Json -Compress) -as [string]))
-}
-function Pause([int]$a, [int]$b) { Start-Sleep -Milliseconds (Get-Random -Minimum $a -Maximum $b) }
+Start-Sleep 2
 
 # ---------------------------------------------------------------- the recording
-$arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { 'winarm64' } else { 'win64' }
-$ffDir = Join-Path $env:RUNNER_TEMP 'ffmpeg'
-Invoke-WebRequest "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-$arch-gpl.zip" -OutFile "$ffDir.zip" -UseBasicParsing
-Expand-Archive "$ffDir.zip" -DestinationPath $ffDir -Force
-$ff = Get-ChildItem $ffDir -Recurse -Filter ffmpeg.exe | Select-Object -First 1 -ExpandProperty FullName
+function Get-Ffmpeg([string]$arch) {
+  $dir = Join-Path $env:RUNNER_TEMP "ffmpeg-$arch"
+  if (-not (Test-Path $dir)) {
+    Invoke-WebRequest "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-$arch-gpl.zip" -OutFile "$dir.zip" -UseBasicParsing
+    Expand-Archive "$dir.zip" -DestinationPath $dir -Force
+  }
+  $f = Get-ChildItem $dir -Recurse -Filter ffmpeg.exe | Select-Object -First 1 -ExpandProperty FullName
+  $v = (& $f -hide_banner -version 2>&1 | Select-Object -First 1) -join ''
+  Note "ffmpeg $arch : $v"
+  if ($v -match 'ffmpeg version') { return $f } else { return $null }
+}
+$ff = $null
+if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64') { $ff = Get-Ffmpeg 'winarm64' }
+if (-not $ff) { $ff = Get-Ffmpeg 'win64' }   # on ARM, through Windows' own x64 emulation
+if (-not $ff) { Note 'no working ffmpeg'; exit 1 }
 $raw = Join-Path $Out 'screen.mkv'
-$grab = if ($env:FILM_GRAB -eq 'ddagrab') { "-f lavfi -i ddagrab=framerate=30:draw_mouse=1,hwdownload,format=bgra" } else { "-f gdigrab -framerate 30 -draw_mouse 1 -i desktop" }
 $psi = New-Object System.Diagnostics.ProcessStartInfo $ff
-$psi.Arguments = "-hide_banner -loglevel warning $grab -c:v libx264 -preset ultrafast -crf 16 -pix_fmt yuv420p -y `"$raw`""
+$psi.Arguments = "-hide_banner -loglevel warning -f gdigrab -framerate 30 -draw_mouse 1 -i desktop -c:v libx264 -preset ultrafast -crf 14 -pix_fmt yuv420p -y `"$raw`""
 $psi.UseShellExecute = $false; $psi.RedirectStandardInput = $true; $psi.RedirectStandardError = $true; $psi.CreateNoWindow = $true
 $rec = [System.Diagnostics.Process]::Start($psi)
 $errTask = $rec.StandardError.ReadToEndAsync()
@@ -139,103 +142,92 @@ Start-Sleep 2
 
 try {
   # ------------------------------------------------------------ 1. the number before, in Task Manager
-  [Human]::MoveTo([int]($W * 0.62), [int]($H * 0.55), 700); Pause 900 1400
+  [Human]::MoveTo([int]($W * 0.58), [int]($H * 0.52), 700); Pause 1200 1600
   Mark 'task-manager-open'
   [Human]::Press(0x11, 0x10, 0x1B)   # Ctrl+Shift+Esc
   $tm = Win 'Task Manager' 15
   if ($tm) {
-    Place $tm ([int]($W * 0.5 - 520)) ([int]($H * 0.5 - 360)) 1040 720; Pause 1100 1500
+    Pause 900 1300
+    Maximize $tm
     $perf = Find $tm -name 'Performance' -sec 8
     if ($perf) { $p = Mid $perf; [Human]::ClickAt($p[0], $p[1]) } else { Note 'no Performance item' }
-    Pause 1500 2000
+    Pause 1600 2100
     $label = @(FindAll $tm 'Processes' | Sort-Object { $_.Current.BoundingRectangle.X } -Descending) | Select-Object -First 1
-    if ($label) { $p = Mid $label; [Human]::MoveTo($p[0] + 10, $p[1] + 34) }
+    if ($label) { $p = Mid $label; [Human]::MoveTo($p[0] + 8, $p[1] + 30) }
     Mark 'before-count'
-    [Human]::Drift(2600)
-    $b = $tm.Current.BoundingRectangle; [Human]::ClickAt([int]($b.Right - 24), [int]($b.Top + 18))   # close
-    Pause 700 1000
+    [Human]::Drift(3000)
+    [Human]::Press(0x12, 0x73)   # Alt+F4
+    Pause 800 1100
   } else { Note 'Task Manager did not open' }
 
-  # ------------------------------------------------------------ 2. PowerShell (administrator) and the one line
-  # Opened from this process, which already has administrator rights, so Windows asks nothing and no security
-  # setting is changed to film it. The edit cuts to the window as it opens.
-  Mark 'powershell'
-  Start-Process powershell.exe -WorkingDirectory $env:USERPROFILE
-  $ps = Win '*PowerShell*' 20
+  # ------------------------------------------------------------ 2. Start, "powershell", the one line
+  Mark 'start-menu'
+  [Human]::Press(0x5B); Pause 900 1200
+  [Human]::Type('powershell', 1.1); Pause 1100 1500
+  [Human]::Press(0x0D)
+  $ps = Win '*PowerShell*' 15
+  if (-not $ps) { Note 'no PowerShell from Start; Win+R instead'; [Human]::Press(0x1B); Pause 400 600; [Human]::Press(0x5B, 0x52); Pause 800 1000; [Human]::Type('powershell'); [Human]::Press(0x0D); $ps = Win '*PowerShell*' 15 }
   if (-not $ps) { throw 'PowerShell did not open' }
-  Place $ps ([int]($W * 0.5 - 560)) ([int]($H * 0.5 - 330)) 1120 620; Pause 1500 1900
-  $p = Mid $ps 0.5 0.55; [Human]::MoveTo($p[0], $p[1]); Pause 500 800
+  Pause 1400 1800
+  $p = Mid $ps 0.5 0.6; [Human]::MoveTo($p[0], $p[1]); Pause 500 800
   Mark 'type-command'
   [Human]::Type('irm omnidx.net/go.ps1 | iex', 1.0, 'omnidx.ne')
-  Pause 500 800
+  Pause 600 900
   [Human]::Press(0x0D)
   Mark 'command-entered'
 
-  # ------------------------------------------------------------ 4. the app
-  $app = Win 'OmniDx Tune' 120
+  # ------------------------------------------------------------ 3. the app
+  $app = Win 'OmniDx Tune' 150
   if (-not $app) { throw 'the app window did not open' }
   Mark 'app-open'
-  Place $app ([int]($W * 0.5 - 560)) ([int]($H * 0.5 - 380)) 1120 760
+  Pause 1200 1600
+  Maximize $app
   $run = Find $app -id 'BtnRun' -sec 20
   $t = [Diagnostics.Stopwatch]::StartNew()
   while ($t.Elapsed.TotalSeconds -lt 240) { try { if ($run.Current.IsEnabled) { break } } catch { }; Start-Sleep -Milliseconds 300 }
   $count = Find $app -id 'CountText' -sec 5
   Mark 'app-read' @{ count = $(try { $count.Current.Name } catch { '' }) }
-  if ($count) { $p = Mid $count; [Human]::MoveTo($p[0] + 6, $p[1] + 4); [Human]::Drift(2200) }
+  if ($count) { $p = Mid $count; [Human]::MoveTo($p[0] + 6, $p[1] + 4); [Human]::Drift(2400) }
   $keyBox = Find $app -id 'KeyBox' -sec 5
-  $p = Mid $keyBox 0.3 0.5; [Human]::ClickAt($p[0], $p[1]); Pause 500 800
+  $p = Mid $keyBox 0.3 0.5; [Human]::ClickAt($p[0], $p[1]); Pause 600 900
   [Human]::Press(0x11, 0x56)   # Ctrl+V
-  Mark 'key-pasted'; Pause 900 1300
+  Mark 'key-pasted'; Pause 1000 1400
   $p = Mid $run; [Human]::ClickAt($p[0], $p[1])
   Mark 'run'
 
-  # ------------------------------------------------------------ 5. the run, watched
+  # ------------------------------------------------------------ 4. the run, watched
   $result = Find $app -id 'ResultText' -sec 5
   $logBox = Find $app -id 'LogBox' -sec 5
-  $t = [Diagnostics.Stopwatch]::StartNew(); $nextLook = 6
+  $t = [Diagnostics.Stopwatch]::StartNew(); $nextLook = 6; $done = ''
   while ($t.Elapsed.TotalMinutes -lt 30) {
-    $done = ''; try { $done = $result.Current.Name } catch { }
+    try { $done = $result.Current.Name } catch { }
     if ($done) { break }
-    if ($t.Elapsed.TotalSeconds -gt $nextLook) {
+    if ($t.Elapsed.TotalSeconds -gt $nextLook -and $logBox) {
       # Eyes on the log: the pointer wanders to where the reading is, and rests.
       $lb = $logBox.Current.BoundingRectangle
-      [Human]::MoveTo([int]($lb.X + $lb.Width * (0.35 + 0.3 * (Get-Random -Maximum 1.0))), [int]($lb.Y + $lb.Height * (0.45 + 0.4 * (Get-Random -Maximum 1.0))))
+      [Human]::MoveTo([int]($lb.X + $lb.Width * (0.3 + 0.4 * (Get-Random -Maximum 1.0))), [int]($lb.Y + $lb.Height * (0.35 + 0.5 * (Get-Random -Maximum 1.0))))
       [Human]::Drift(1500); $nextLook = $t.Elapsed.TotalSeconds + (Get-Random -Minimum 7 -Maximum 16)
     }
     Start-Sleep -Milliseconds 400
   }
   Mark 'done' @{ result = $done }
-  $p = Mid $result 0.4 0.5; [Human]::MoveTo($p[0], $p[1]); [Human]::Drift(3500)
+  if ($result) { $p = Mid $result 0.35 0.5; [Human]::MoveTo($p[0], $p[1]); [Human]::Drift(4000) }
 
-  # ------------------------------------------------------------ 6. the report
-  $open = Find $app -id 'BtnOpenReport' -sec 5
-  if ($open -and $open.Current.IsEnabled -and $env:FILM_REPORT -eq '1') {
-    $p = Mid $open; [Human]::ClickAt($p[0], $p[1])
-    $edge = Win '*Edge*' 25
-    if ($edge) {
-      Mark 'report'
-      Place $edge ([int]($W * 0.5 - 700)) ([int]($H * 0.5 - 450)) 1400 900; Pause 2500 3200
-      [Human]::MoveTo([int]($W * 0.5), [int]($H * 0.55)); Pause 600 900
-      for ($i = 0; $i -lt 6; $i++) { [Human]::Wheel(-3); Pause 1100 1700 }
-      [Human]::Drift(1500)
-    } else { Note 'no browser window with the report' }
-  }
-
-  # ------------------------------------------------------------ 7. the number after, in Task Manager
+  # ------------------------------------------------------------ 5. the number after, in Task Manager
   Pause 800 1200
   Mark 'task-manager-again'
   [Human]::Press(0x11, 0x10, 0x1B)
   $tm = Win 'Task Manager' 15
   if ($tm) {
-    Place $tm ([int]($W * 0.5 - 520)) ([int]($H * 0.5 - 360)) 1040 720; Pause 1400 1800
+    Pause 1500 1900
     $label = @(FindAll $tm 'Processes' | Sort-Object { $_.Current.BoundingRectangle.X } -Descending) | Select-Object -First 1
-    if (-not $label -or $label.Current.BoundingRectangle.X -lt $tm.Current.BoundingRectangle.X + 300) {
-      $perf = Find $tm -name 'Performance' -sec 5; if ($perf) { $p = Mid $perf; [Human]::ClickAt($p[0], $p[1]); Pause 1500 1900 }
+    if (-not $label -or $label.Current.BoundingRectangle.X -lt $tm.Current.BoundingRectangle.X + 250) {
+      $perf = Find $tm -name 'Performance' -sec 5; if ($perf) { $p = Mid $perf; [Human]::ClickAt($p[0], $p[1]); Pause 1600 2000 }
       $label = @(FindAll $tm 'Processes' | Sort-Object { $_.Current.BoundingRectangle.X } -Descending) | Select-Object -First 1
     }
-    if ($label) { $p = Mid $label; [Human]::MoveTo($p[0] + 10, $p[1] + 34) }
+    if ($label) { $p = Mid $label; [Human]::MoveTo($p[0] + 8, $p[1] + 30) }
     Mark 'after-count'
-    [Human]::Drift(4000)
+    [Human]::Drift(4500)
   }
   Pause 1500 2000
 } catch {
@@ -243,8 +235,8 @@ try {
 } finally {
   Mark 'end'
   try { $rec.StandardInput.Write('q'); $rec.StandardInput.Flush() } catch { }
-  if (-not $rec.WaitForExit(60000)) { $rec.Kill() }
-  Note ("ffmpeg: " + ($errTask.Result -split "`n" | Select-Object -Last 5) -join ' | ')
+  if (-not $rec.WaitForExit(90000)) { $rec.Kill() }
+  Note ("ffmpeg: " + (($errTask.Result -split "`n" | Select-Object -Last 5) -join ' | '))
   $events | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $Out 'events.json') -Encoding UTF8
   foreach ($pat in 'summary-*.json', 'report-*.html', 'report-*.txt', 'log-*.txt', 'card-*.png') {
     Get-ChildItem C:\OmniDx -Filter $pat -ErrorAction SilentlyContinue | Copy-Item -Destination $Out -ErrorAction SilentlyContinue

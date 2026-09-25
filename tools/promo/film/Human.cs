@@ -67,6 +67,7 @@ public static class Human {
   }
   public static void Click() { Mouse(LDOWN); Thread.Sleep(55 + R.Next(0, 60)); Mouse(LUP); }
   public static void ClickAt(int x, int y) { MoveTo(x, y); Thread.Sleep(90 + R.Next(0, 140)); Click(); }
+  public static void DoubleClickAt(int x, int y) { MoveTo(x, y); Thread.Sleep(120 + R.Next(0, 120)); Click(); Thread.Sleep(70 + R.Next(0, 40)); Click(); }
   public static void Wheel(int notches) { for (int i = 0; i < Math.Abs(notches); i++) { Mouse(WHEEL, (uint)(notches < 0 ? -120 : 120)); Thread.Sleep(45 + R.Next(0, 60)); } }
 
   static void Key(ushort vk, bool up) {

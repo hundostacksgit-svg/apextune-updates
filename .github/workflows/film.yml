@@ -1,8 +1,10 @@
-# Films the real tune on a real Windows machine: the screen, recorded while a
-# script drives the mouse and keyboard, for promotion videos. The footage is
-# promotion material, not a site file: it leaves as a pre-release on this
-# repository (tag film-*), is downloaded and edited elsewhere, and the
-# release is deleted by the next run. Nothing is committed.
+# Films the real tune on a real Windows 11 machine: the screen, recorded while
+# tools/promo/film/film.ps1 drives the mouse and keyboard the way a person
+# does, for promotion videos. The footage is promotion material, not a site
+# file: it leaves as a pre-release on this repository (tag film-*), is
+# downloaded and edited elsewhere, and the next run deletes the old ones.
+# Nothing is committed. tools/promo/film/probe.ps1 is the survey that chose
+# this machine (1024x768, fixed; administrator rights without a prompt).
 name: Film a real run
 on:
   workflow_dispatch:
@@ -15,11 +17,7 @@ permissions:
 
 jobs:
   film:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-11-arm, windows-2025]
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-11-arm
     timeout-minutes: 60
     defaults:
       run:
@@ -28,14 +26,20 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
-      - name: Probe the machine
+      - name: Clear old footage
         run: |
-          & .\tools\promo\film\probe.ps1 -Out (Join-Path $env:RUNNER_TEMP 'film') 2>&1 | Tee-Object (Join-Path $env:RUNNER_TEMP 'film-probe.txt')
-          Copy-Item (Join-Path $env:RUNNER_TEMP 'film-probe.txt') (Join-Path $env:RUNNER_TEMP 'film\probe.txt')
-      - name: Hand the files over as a pre-release
+          $old = gh release list --limit 50 --json tagName --jq '.[].tagName' | Where-Object { $_ -like 'film-*' }
+          foreach ($t in $old) { gh release delete $t --yes --cleanup-tag; Write-Host "deleted $t" }
+          exit 0
+      - name: Film the run
+        timeout-minutes: 45
+        run: |
+          & .\tools\promo\film\film.ps1 -Out (Join-Path $env:RUNNER_TEMP 'film')
+          exit 0
+      - name: Hand the footage over as a pre-release
         if: always()
         run: |
-          $tag = "film-${{ github.run_id }}-${{ matrix.os }}"
+          $tag = "film-${{ github.run_id }}"
           $files = Get-ChildItem (Join-Path $env:RUNNER_TEMP 'film') -File | Where-Object Length -gt 0 | ForEach-Object FullName
-          gh release create $tag --prerelease --target $env:GITHUB_SHA --title "Film footage $tag" --notes "Raw footage for a promotion video; deleted after download." $files
+          gh release create $tag --prerelease --target $env:GITHUB_SHA --title "Film footage $tag" --notes "Raw footage for a promotion video; deleted by the next run." $files
           Write-Host "released $tag with $($files.Count) files"
