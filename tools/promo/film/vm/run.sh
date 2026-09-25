@@ -32,6 +32,9 @@ df -h / /mnt 2>&1 | tee -a "$OUT/run-log.txt" || true
 # ---------------------------------------------------------------- the machine
 echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules >/dev/null
 sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+sleep 2
+[ -e /dev/kvm ] && [ ! -w /dev/kvm ] && sudo chmod 666 /dev/kvm
+log "kvm: $(ls -l /dev/kvm 2>&1); cpu: $(lscpu | grep -i -E 'virtualization|model name' | tr -s ' ' | tr '\n' ';')"
 [ -w /dev/kvm ] || { log 'no KVM on this machine'; exit 1; }
 sudo apt-get update -qq
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq qemu-system-x86 qemu-system-gui qemu-utils ovmf swtpm swtpm-tools genisoimage xvfb x11-utils xdotool ffmpeg python3-pil ntfs-3g >/dev/null
