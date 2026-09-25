@@ -464,7 +464,8 @@ jobs:
           }
           $t = Get-ScheduledTask -TaskName 'OmniDx keep'
           $before = (Get-Item C:\OmniDx\keep-log.txt).LastWriteTime
-          $start = Get-Date
+          # Task Scheduler keeps the last run to the whole second: the mark is a second early so a run in this second counts.
+          $start = (Get-Date).AddSeconds(-1)
           Start-ScheduledTask -InputObject $t
           $end = (Get-Date).AddMinutes(5)
           do { Start-Sleep -Seconds 3; $i = Get-ScheduledTaskInfo -InputObject $t; $s = (Get-ScheduledTask -TaskName 'OmniDx keep').State } while ((Get-Date) -lt $end -and ($s -eq 'Running' -or $i.LastRunTime -lt $start))
