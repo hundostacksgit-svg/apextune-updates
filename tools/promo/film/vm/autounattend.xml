@@ -94,6 +94,15 @@
         <Password><Value>film</Value><PlainText>true</PlainText></Password>
         <LogonCount>9999</LogonCount>
       </AutoLogon>
+      <!-- A second way in for the helper, at the first sign-in (the account exists by then): a sign-in task of
+           this account's own, run at once. agent.ps1 lets only one copy of itself run. -->
+      <FirstLogonCommands>
+        <SynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <CommandLine>cmd.exe /c C:\film\first-logon.cmd</CommandLine>
+          <Description>Filming helper</Description>
+        </SynchronousCommand>
+      </FirstLogonCommands>
     </component>
   </settings>
 </unattend>

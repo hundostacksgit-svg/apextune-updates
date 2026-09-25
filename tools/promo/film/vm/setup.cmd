@@ -11,5 +11,6 @@ netsh interface portproxy add v4tov4 listenaddress=127.0.0.1 listenport=8787 con
 rem 2. Edge's first-run welcome would open over the tune's report; the report is what is filmed.
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v HideFirstRunExperience /t REG_DWORD /d 1 /f
 rem 3. The helper that tells the filming machine where things are on screen, at every sign-in.
-schtasks /create /tn FilmAgent /xml C:\film\agent-task.xml /f
+schtasks /create /tn FilmAgent /xml C:\film\agent-task.xml /f > C:\film\setup-log.txt 2>&1
+netsh interface portproxy show all >> C:\film\setup-log.txt 2>&1
 exit /b 0

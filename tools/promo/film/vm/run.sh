@@ -34,7 +34,7 @@ echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sud
 sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
 [ -w /dev/kvm ] || { log 'no KVM on this machine'; exit 1; }
 sudo apt-get update -qq
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq qemu-system-x86 qemu-system-gui qemu-utils ovmf swtpm swtpm-tools genisoimage xvfb x11-utils ffmpeg python3-pil >/dev/null
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq qemu-system-x86 qemu-system-gui qemu-utils ovmf swtpm swtpm-tools genisoimage xvfb x11-utils ffmpeg python3-pil ntfs-3g >/dev/null
 log "qemu $(qemu-system-x86_64 --version | head -1)"
 
 if [ ! -s "$ISO" ]; then
@@ -47,6 +47,7 @@ log "image $(du -h "$ISO" | cut -f1) $(sha256sum "$ISO" | cut -c1-16)"
 ANS=$WORK/answer; rm -rf "$ANS"; mkdir -p "$ANS/film"
 cp "$HERE/autounattend.xml" "$ANS/"
 sed 's/$/\r/' "$HERE/setup.cmd" > "$ANS/film/setup.cmd"
+sed 's/$/\r/' "$HERE/first-logon.cmd" > "$ANS/film/first-logon.cmd"
 cp "$HERE/agent.ps1" "$ANS/film/"
 { printf '\xff\xfe'; iconv -f UTF-8 -t UTF-16LE "$HERE/agent-task.xml"; } > "$ANS/film/agent-task.xml"
 genisoimage -quiet -J -r -V ANSWERS -o "$WORK/answer.iso" "$ANS"
@@ -100,8 +101,45 @@ DISPLAY=:99 TZ=America/New_York qemu-system-x86_64 -name 'Windows 11' \
 QEMU=$!
 log "PC started (pid $QEMU)"
 
+# While it runs: the newest screenshot and the logs, every five minutes, on a pre-release of their own,
+# so a take can be looked at before it ends.
+if [ -n "${GITHUB_REPOSITORY:-}" ] && [ -n "${GH_TOKEN:-}" ]; then
+  (
+    tag="restart-progress-${GITHUB_RUN_ID:-local}"
+    gh release create "$tag" --repo "$GITHUB_REPOSITORY" --prerelease --title "Restart take in progress" --notes "Progress of a filming run; deleted by the next run." >/dev/null 2>&1 || true
+    while kill -0 "$QEMU" 2>/dev/null; do
+      sleep 300
+      latest=$(ls -t "$OUT"/*.png 2>/dev/null | head -1)
+      [ -n "$latest" ] && cp "$latest" "$WORK/progress.png"
+      gh release upload "$tag" --repo "$GITHUB_REPOSITORY" --clobber "$OUT/director-log.txt" "$OUT/run-log.txt" ${latest:+"$WORK/progress.png"} >/dev/null 2>&1 || true
+    done
+  ) &
+fi
+
 DISPLAY=:99 python3 "$HERE/director.py" --qmp "$WORK/qmp.sock" --out "$OUT" --key "$(cat "$WORK/key.txt")" --display :99 --boot-keys 30 "$@" || log "director exited $?"
+# The director quits the PC when it is done; when it gave up instead, the PC is stopped here.
+for i in $(seq 30); do kill -0 "$QEMU" 2>/dev/null || break; sleep 1; done
+kill "$QEMU" 2>/dev/null || true
 wait "$QEMU" 2>/dev/null || true
 cp "$TPM/swtpm.log" "$OUT/swtpm.txt" 2>/dev/null || true
+
+# The PC's own logs, read from its disk (read-only) once it is off: the helper's, Windows Setup's, the tune's.
+(
+  set +e
+  sudo modprobe nbd max_part=8
+  sudo qemu-nbd --read-only -c /dev/nbd0 "$WORK/win.qcow2" && sleep 3
+  sudo mkdir -p /mnt/win
+  part=$(lsblk -lnbo NAME,SIZE /dev/nbd0 | sort -k2 -n | tail -1 | cut -d' ' -f1)
+  sudo ntfs-3g -o ro,remove_hiberfile "/dev/$part" /mnt/win 2>/dev/null || sudo mount -t ntfs3 -o ro,force "/dev/$part" /mnt/win
+  mkdir -p "$OUT/disk"
+  for f in film/agent-log.txt film/setup-log.txt film/first-logon.txt Windows/Panther/UnattendGC/setupact.log Windows/Panther/UnattendGC/setuperr.log Windows/Panther/setuperr.log Windows/System32/Tasks/FilmAgent Windows/System32/Tasks/FilmAgentUser; do
+    [ -f "/mnt/win/$f" ] && sudo cp "/mnt/win/$f" "$OUT/disk/$(echo "$f" | tr '/' '_')"
+  done
+  [ -d /mnt/win/OmniDx ] && sudo find /mnt/win/OmniDx -maxdepth 1 -type f \( -name '*.txt' -o -name '*.json' -o -name '*.html' \) -exec cp {} "$OUT/disk/" \;
+  sudo ls /mnt/win/film > "$OUT/disk/film-folder.txt" 2>&1
+  sudo chown -R "$(id -u):$(id -g)" "$OUT/disk"
+  sudo umount /mnt/win; sudo qemu-nbd -d /dev/nbd0
+) >> "$OUT/run-log.txt" 2>&1
+log "read the PC's disk: $(ls "$OUT/disk" 2>/dev/null | tr '\n' ' ')"
 log 'done'
 ls -la "$OUT" | tee -a "$OUT/run-log.txt"

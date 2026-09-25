@@ -50,7 +50,7 @@ jobs:
       - name: Clear old footage
         if: always()
         run: |
-          for t in $(gh release list --repo "$GITHUB_REPOSITORY" --limit 50 --json tagName --jq '.[].tagName' | grep '^restart-take-' || true); do
+          for t in $(gh release list --repo "$GITHUB_REPOSITORY" --limit 50 --json tagName --jq '.[].tagName' | grep -E '^restart-(take|progress)-' | grep -v "${{ github.run_id }}" || true); do
             gh release delete "$t" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag && echo "deleted $t"
           done
       - name: Hand the footage over as a pre-release
@@ -58,8 +58,9 @@ jobs:
         run: |
           cd "$RUNNER_TEMP/film" || exit 0
           # The screenshots taken while Windows installs go in one zip.
-          ls install-*.png settle-*.png >/dev/null 2>&1 && zip -q setup-shots.zip install-*.png settle-*.png && rm -f install-*.png settle-*.png
-          [ -d guest ] && (cd guest && zip -q ../guest-files.zip ./*) && rm -rf guest
+          shots=$(ls install-*.png settle-*.png 2>/dev/null || true)
+          [ -n "$shots" ] && python3 -m zipfile -c setup-shots.zip $shots && rm -f $shots
+          for d in guest disk; do [ -d "$d" ] && python3 -m zipfile -c "$d-files.zip" "$d" && rm -rf "$d"; done
           files=$(find . -maxdepth 1 -type f -size +0 | sort)
           tag="restart-take-${{ github.run_id }}"
           # A failed take still hands over what it has, and the job stays green so the Windows image is kept.

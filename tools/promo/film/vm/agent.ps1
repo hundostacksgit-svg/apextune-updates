@@ -8,6 +8,12 @@ $ErrorActionPreference = 'Continue'
 $Base = 'http://10.0.2.2:8099'
 $Log = 'C:\film\agent-log.txt'
 function Note([string]$t) { try { Add-Content $Log ("{0:HH:mm:ss.fff} {1}" -f (Get-Date), $t) } catch { } }
+$elevated = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+Note "starting: user $env:USERNAME, elevated $elevated, pid $PID"
+# One copy at a time: it is started more than one way at the first sign-in.
+$one = New-Object System.Threading.Mutex($false, 'Global\OmniDxFilmAgent')
+if (-not $one.WaitOne(0)) { Note 'another copy is running; leaving'; exit 0 }
+trap { Note "error: $_"; continue }
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
 Add-Type @"
 using System; using System.Runtime.InteropServices; using System.Text;
@@ -87,10 +93,11 @@ function Answer($q) {
 
 $boot = (Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToString('o')
 Note "agent up; boot $boot; user $env:USERNAME"
-$last = 0
+$last = 0; $fails = 0
 while ($true) {
   $q = $null
-  try { $q = Invoke-RestMethod ("$Base/next?after=$last&boot=" + [uri]::EscapeDataString($boot)) -TimeoutSec 40 } catch { Start-Sleep -Milliseconds 700; continue }
+  try { $q = Invoke-RestMethod ("$Base/next?after=$last&boot=" + [uri]::EscapeDataString($boot)) -TimeoutSec 40; $fails = 0 }
+  catch { $fails++; if ($fails -le 3 -or $fails % 60 -eq 0) { Note "no answer from $Base ($fails): $_" }; Start-Sleep -Milliseconds 700; continue }
   if (-not $q -or -not $q.id) { continue }
   $last = [int]$q.id
   $res = $null

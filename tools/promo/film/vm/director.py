@@ -103,6 +103,12 @@ def move_to(x, y, ms=0):
     set_pos(x, y)
 
 
+def nudge():
+    """A pixel there and back: enough for Windows to count the PC as in use, and keep the screen on."""
+    x, y = POS
+    set_pos(x + 1, y); time.sleep(0.05); set_pos(x, y)
+
+
 def drift(sec):
     """The hand resting on the mouse while reading: a few pixels of wander."""
     ax, ay = POS; px = py = 0.0
@@ -506,11 +512,14 @@ def main():
     while time.time() < end:
         press('spc'); time.sleep(0.5)
     note('QMP connected; waiting for Windows to install and sign in')
-    # Setup, watched: a screenshot every minute until the first sign-in.
-    i = 0
-    while AG.wait_boot(timeout=60) is None:
-        i += 1; shot(f'install-{i:03d}.png')
-        if i > 100: note('no sign-in after 100 minutes'); sys.exit(1)
+    # Setup, watched: a screenshot every minute until the first sign-in. The pointer is nudged by a
+    # pixel now and then, so the screen does not switch itself off while nobody is at the PC.
+    i = 0; started = time.time()
+    while AG.wait_boot(timeout=20) is None:
+        nudge()
+        if time.time() - started > 60 * (i + 1):
+            i += 1; shot(f'install-{i:03d}.png')
+        if time.time() - started > 55 * 60: note('no sign-in after 55 minutes'); shot('gave-up.png'); sys.exit(1)
     first = time.monotonic()
     for dev in A.eject.split(','):
         try: Q.cmd('eject', id=dev, force=True); note(f'ejected {dev}')
@@ -523,11 +532,12 @@ def main():
     # open by themselves at first sign-in are closed before the camera rolls.
     k = 0
     while time.monotonic() - first < A.settle_before:
-        time.sleep(30); k += 1; shot(f'settle-{k:02d}.png')
+        time.sleep(30); nudge(); k += 1; shot(f'settle-{k:02d}.png')
         note(f'settling: processes {procs()}')
     wins = AG.ask('wins') or []
     note('windows before filming: ' + ' | '.join(f"{w.get('name')}" for w in wins if isinstance(w, dict)))
     AG.ask('ps', code="Get-Process | Where-Object { $_.MainWindowHandle -ne 0 -and $_.ProcessName -notin 'explorer','powershell','conhost' } | ForEach-Object { [void]$_.CloseMainWindow() }")
+    press('esc'); time.sleep(0.5); press('esc')   # Start is open at the first sign-in
     time.sleep(3)
     AG.ask('clip', text=A.key)
     record_start()
