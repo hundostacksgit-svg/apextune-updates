@@ -112,7 +112,8 @@ namespace OmniDx
                 var apps = new List<Item>(); var games = new List<Item>(); var files = new List<Item>();
                 try { apps = FindApps(); } catch (Exception e) { Edition.Log("apps: " + e.Message); }
                 try { games = global::OmniDx.Games.Find().Select(ToItem).ToList(); } catch (Exception e) { Edition.Log("games: " + e.Message); }
-                var settings = SettingsList();
+                var appNames = new HashSet<string>(apps.Select(x => x.Title), StringComparer.OrdinalIgnoreCase);
+                var settings = SettingsList().Where(x => x.Kind != "Tool" || !appNames.Contains(x.Title)).ToList();
                 var actions = ActionsList();
                 foreach (var i in apps.Concat(games).Concat(settings).Concat(actions)) i.Prepare();
                 ui(() => { Apps = apps; Games = games; Settings = settings; Actions = actions; if (Ready != null) Ready(); });
@@ -721,6 +722,7 @@ namespace OmniDx
             foreach (var n in new[] { "Free up memory", "Presets (Balanced, Competitive, Insane)", "Lock", "Restart", "Shut down" })
             { var it = index.Actions.FirstOrDefault(a => a.Title == n); if (it != null) quick.Add(it); }
             s.Add(new KeyValuePair<string, List<Item>>("Quick actions", quick));
+            s.Add(new KeyValuePair<string, List<Item>>("Tips", new List<Item>()));
             return s;
         }
 
@@ -870,6 +872,19 @@ namespace OmniDx
             {
                 Theme.Draw(g, s.Key, Theme.Semi(9f), new Rectangle(Theme.S(14), y, Width, Theme.S(24)), Theme.Text2);
                 y += Theme.S(30);
+                if (s.Key == "Tips")
+                {
+                    var tips = new[] { new[] { "12*7+3", "a sum: Enter copies the answer" }, new[] { "> cmd", "runs a command, as Windows + R does" }, new[] { "youtube.com", "opens the site in OmniDx Browser" } };
+                    foreach (var tip in tips)
+                    {
+                        var kr = new Rectangle(Theme.S(14), y, Theme.S(116), Theme.S(26));
+                        Theme.Fill(g, kr, Theme.S(6), Theme.Surface);
+                        Theme.Draw(g, tip[0], Theme.Mono(9f), kr, Theme.Accent2, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                        Theme.Draw(g, tip[1], Theme.UI(9f), new Rectangle(kr.Right + Theme.S(12), y, Width - kr.Right - Theme.S(24), kr.Height), Theme.Text3);
+                        y += Theme.S(32);
+                    }
+                    continue;
+                }
                 bool chips = s.Key == "Quick actions";
                 if (chips)
                 {

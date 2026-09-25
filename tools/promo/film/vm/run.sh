@@ -19,6 +19,9 @@ set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 REPO=$(cd "$HERE/../../../.." && pwd)
 OUT=$(realpath -m "$1"); shift
+# --edition: the PC installs OmniDx Edition from the answer disc at its first sign-in (edition/, with a key for the tune).
+EDITION=0; for a in "$@"; do [ "$a" = "--edition" ] && EDITION=1; done
+PREFIX=${PREFIX:-restart}
 WORK=${WORK:-/mnt/film}
 ISO=${ISO:-$WORK/iso/win11-enterprise-eval.iso}
 ISO_URL='https://go.microsoft.com/fwlink/?linkid=2334167&clcid=0x409&culture=en-us&country=us'
@@ -46,15 +49,6 @@ if [ ! -s "$ISO" ]; then
 fi
 log "image $(du -h "$ISO" | cut -f1) $(sha256sum "$ISO" | cut -c1-16)"
 
-# The answers disc: autounattend.xml at its root, the helpers in film\.
-ANS=$WORK/answer; rm -rf "$ANS"; mkdir -p "$ANS/film"
-cp "$HERE/autounattend.xml" "$ANS/"
-sed 's/$/\r/' "$HERE/setup.cmd" > "$ANS/film/setup.cmd"
-sed 's/$/\r/' "$HERE/first-logon.cmd" > "$ANS/film/first-logon.cmd"
-cp "$HERE/agent.ps1" "$ANS/film/"
-{ printf '\xff\xfe'; iconv -f UTF-8 -t UTF-16LE "$HERE/agent-task.xml"; } > "$ANS/film/agent-task.xml"
-genisoimage -quiet -J -r -V ANSWERS -o "$WORK/answer.iso" "$ANS"
-
 # ---------------------------------------------------------------- the site copy and the licence server
 SITE=$WORK/site; rm -rf "$SITE"; mkdir -p "$SITE/tune"
 cp "$REPO/go.ps1" "$SITE/"; cp -r "$REPO/tune/." "$SITE/tune/"
@@ -71,6 +65,25 @@ for i in $(seq 60); do
 done
 [ -s "$WORK/key.txt" ] || { log 'the site copy or licence server did not start'; exit 1; }
 log "licence server up; key issued ($(cut -c1-9 "$WORK/key.txt")...)"
+
+# The answers disc: autounattend.xml at its root, the helpers in film\. With --edition, also OmniDx Edition in
+# omnidx\edition (what the USB stick carries) and the key in omnidx\key.txt, and the first sign-in starts its setup.
+ANS=$WORK/answer; rm -rf "$ANS"; mkdir -p "$ANS/film"
+cp "$HERE/autounattend.xml" "$ANS/"
+tr -d '\r' < "$HERE/setup.cmd" | sed 's/$/\r/' > "$ANS/film/setup.cmd"
+{ grep -v '^exit /b 0' "$HERE/first-logon.cmd"
+  [ "$EDITION" = 1 ] && echo 'for %%d in (D E F G H I J K L M) do if exist %%d:\omnidx\edition\first-logon.cmd call %%d:\omnidx\edition\first-logon.cmd'
+  echo 'exit /b 0'; } | tr -d '\r' | sed 's/$/\r/' > "$ANS/film/first-logon.cmd"
+cp "$HERE/agent.ps1" "$ANS/film/"
+{ printf '\xff\xfe'; iconv -f UTF-8 -t UTF-16LE "$HERE/agent-task.xml"; } > "$ANS/film/agent-task.xml"
+if [ "$EDITION" = 1 ]; then
+  mkdir -p "$ANS/omnidx/edition"
+  (cd "$REPO/edition" && git ls-files | grep -v '^ci/' | while read -r f; do mkdir -p "$ANS/omnidx/edition/$(dirname "$f")"; cp "$f" "$ANS/omnidx/edition/$f"; done)
+  sed -i 's/\r*$/\r/' "$ANS/omnidx/edition/first-logon.cmd"
+  cp "$WORK/key.txt" "$ANS/omnidx/key.txt"
+  log "OmniDx Edition on the answer disc: $(find "$ANS/omnidx" -type f | wc -l) files"
+fi
+genisoimage -quiet -J -r -V ANSWERS -o "$WORK/answer.iso" "$ANS"
 
 # ---------------------------------------------------------------- the PC
 # The TPM: swtpm keeps its state where Ubuntu's AppArmor profile for it lets it write (libvirt's per-user folder).
@@ -111,8 +124,8 @@ log "PC started (pid $QEMU)"
 # so a take can be looked at before it ends.
 if [ -n "${GITHUB_REPOSITORY:-}" ] && [ -n "${GH_TOKEN:-}" ]; then
   (
-    tag="restart-progress-${GITHUB_RUN_ID:-local}"
-    gh release create "$tag" --repo "$GITHUB_REPOSITORY" --prerelease --title "Restart take in progress" --notes "Progress of a filming run; deleted by the next run." >/dev/null 2>&1 || true
+    tag="$PREFIX-progress-${GITHUB_RUN_ID:-local}"
+    gh release create "$tag" --repo "$GITHUB_REPOSITORY" --prerelease --title "$PREFIX take in progress" --notes "Progress of a filming run; deleted by the next run." >/dev/null 2>&1 || true
     while kill -0 "$QEMU" 2>/dev/null; do
       sleep 300
       latest=$(ls -t "$OUT"/*.png 2>/dev/null | head -1)
@@ -139,7 +152,7 @@ cp "$TPM/swtpm.log" "$OUT/swtpm.txt" 2>/dev/null || true
   echo "Windows partition: $part"
   sudo ntfs-3g -o ro,remove_hiberfile "/dev/$part" /mnt/win || sudo ntfs-3g -o ro,force "/dev/$part" /mnt/win
   mkdir -p "$OUT/disk"
-  for f in film/agent-log.txt film/setup-log.txt film/first-logon.txt Windows/Panther/UnattendGC/setupact.log Windows/Panther/UnattendGC/setuperr.log Windows/Panther/setuperr.log Windows/System32/Tasks/FilmAgent Windows/System32/Tasks/FilmAgentUser; do
+  for f in film/agent-log.txt film/setup-log.txt film/first-logon.txt Windows/Panther/UnattendGC/setupact.log Windows/Panther/UnattendGC/setuperr.log Windows/Panther/setuperr.log Windows/System32/Tasks/FilmAgent Windows/System32/Tasks/FilmAgentUser ProgramData/OmniDx/Edition/setup-log.txt ProgramData/OmniDx/Edition/first-logon.txt ProgramData/OmniDx/Edition/undo-setup.tsv ProgramData/OmniDx/Edition/presets-undo.tsv ProgramData/OmniDx/Edition/edition.json Users/User/AppData/Local/OmniDx/edition-log.txt; do
     [ -f "/mnt/win/$f" ] && sudo cp "/mnt/win/$f" "$OUT/disk/$(echo "$f" | tr '/' '_')"
   done
   [ -d /mnt/win/OmniDx ] && sudo find /mnt/win/OmniDx -maxdepth 1 -type f \( -name '*.txt' -o -name '*.json' -o -name '*.html' \) -exec cp {} "$OUT/disk/" \;

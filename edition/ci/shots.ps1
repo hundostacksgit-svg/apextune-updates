@@ -82,7 +82,7 @@ Start-Process (Join-Path $bin 'OmniSearch.exe')
 Start-Sleep 5
 Snap '01-search-home'
 Type-Text 'disp'; Start-Sleep 1; Snap '02-search-display'
-Type-Text '{ESC}'; Type-Text '12*7+3'; Start-Sleep 1; Snap '03-search-sum'
+Type-Text '{ESC}'; Type-Text '12*7{+}3'; Start-Sleep 1; Snap '03-search-sum'
 Type-Text '{ESC}'; Type-Text 'task'; Start-Sleep 1; Snap '04-search-task'
 Type-Text '{ESC}'; Type-Text 'omnidx.net'; Start-Sleep 1; Snap '05-search-web'
 Type-Text '{ESC}'; Type-Text '{ESC}'; Start-Sleep 1

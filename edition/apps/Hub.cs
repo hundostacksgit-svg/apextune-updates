@@ -338,6 +338,13 @@ namespace OmniDx
             Invalidate();
         }
         protected override void OnSignal(int what) { if (current != null) current.Refresh1(); Invalidate(); }
+        // Ctrl + 1 to 5: the pages, from the keyboard.
+        protected override bool ProcessCmdKey(ref Message msg, Keys k)
+        {
+            int n = (int)(k & Keys.KeyCode) - (int)Keys.D1;
+            if ((k & Keys.Modifiers) == Keys.Control && n >= 0 && n < pages.Length) { Go(pages[n]); return true; }
+            return base.ProcessCmdKey(ref msg, k);
+        }
 
         Rectangle NavItem(int i) { return new Rectangle(Theme.S(12), Caption + Theme.S(18) + i * Theme.S(46), NavW - Theme.S(24), Theme.S(40)); }
         protected override bool IsCaption(Point p) { return p.Y < Caption; }

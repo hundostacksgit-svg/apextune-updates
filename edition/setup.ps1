@@ -177,7 +177,7 @@ if ($Undo) {
           'sounds' {
             foreach ($ev in Get-ChildItem 'HKCU:\AppEvents\Schemes\Apps' -ErrorAction SilentlyContinue | Get-ChildItem -ErrorAction SilentlyContinue) {
               $def = Join-Path $ev.PSPath '.Default'; $cur = Join-Path $ev.PSPath '.Current'
-              if (Test-Path $def) { if (-not (Test-Path $cur)) { New-Item $cur -Force | Out-Null }; Set-Item -Path $cur -Value ((Get-Item $def).GetValue('')) }
+              if (Test-Path $def) { $v = (Get-Item $def).GetValue(''); if ($null -eq $v) { $v = '' }; if (-not (Test-Path $cur)) { New-Item $cur -Force | Out-Null }; Set-Item -Path $cur -Value $v -ErrorAction SilentlyContinue }
             }
           }
         }
@@ -265,12 +265,13 @@ Set-Reg $pers 'AppsUseLightTheme' 0
 Set-Reg $pers 'SystemUsesLightTheme' 0
 Set-Reg $pers 'ColorPrevalence' 1
 Set-Reg 'HKCU:\Control Panel\Desktop' 'AutoColorization' 0
-# Eight shades, lightest to darkest, the fourth the accent itself (#8B5CF6).
-$palette = [byte[]](0xE9, 0xD5, 0xFF, 0, 0xD8, 0xB4, 0xFE, 0, 0xC0, 0x84, 0xFC, 0, 0x8B, 0x5C, 0xF6, 0, 0x6D, 0x28, 0xD9, 0, 0x5B, 0x21, 0xB6, 0, 0x3B, 0x07, 0x64, 0, 0x2E, 0x10, 0x65, 0)
+# Eight shades, lightest to darkest, the fourth the accent itself (#8B5CF6). The dark ones colour the taskbar and
+# Start: a deep violet, close to the site's black, rather than the bright accent.
+$palette = [byte[]](0xE9, 0xD5, 0xFF, 0, 0xD8, 0xB4, 0xFE, 0, 0xC0, 0x84, 0xFC, 0, 0x8B, 0x5C, 0xF6, 0, 0x4C, 0x1D, 0x95, 0, 0x2A, 0x0E, 0x5C, 0, 0x1A, 0x08, 0x3A, 0, 0x12, 0x06, 0x26, 0)
 $acc = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Accent'
 Set-Reg $acc 'AccentPalette' $palette 'Binary'
 Set-Reg $acc 'AccentColorMenu' 0xFFF65C8B
-Set-Reg $acc 'StartColorMenu' 0xFFB6215B
+Set-Reg $acc 'StartColorMenu' 0xFF5C0E2A
 $dwm = 'HKCU:\Software\Microsoft\Windows\DWM'
 Set-Reg $dwm 'AccentColor' 0xFFF65C8B
 Set-Reg $dwm 'ColorizationColor' 0xC48B5CF6

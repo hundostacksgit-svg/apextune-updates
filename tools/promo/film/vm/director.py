@@ -149,7 +149,7 @@ def press(*codes):
 
 
 PLAIN = {' ': 'spc', '.': 'dot', '/': 'slash', '-': 'minus', '=': 'equal', ';': 'semicolon', "'": 'apostrophe', ',': 'comma', '\\': 'backslash'}
-SHIFTED = {'|': 'backslash', ':': 'semicolon', '_': 'minus', '$': '4', '"': 'apostrophe', '?': 'slash', '!': '1'}
+SHIFTED = {'|': 'backslash', ':': 'semicolon', '_': 'minus', '$': '4', '"': 'apostrophe', '?': 'slash', '!': '1', '*': '8', '+': 'equal', '(': '9', ')': '0', '>': 'dot'}
 
 
 def char(c):
@@ -538,12 +538,84 @@ def performance():
     pause(1.0, 1.5)
 
 
+# ------------------------------------------------------------------ OmniDx Edition
+def edition():
+    """OmniDx Edition from a clean install: its setup at the first sign-in (with the tune in Extreme), the restart
+    it ends with, then a look round as a new owner would: the welcome, the Hub, the desktop, Start, Windows + S,
+    OmniDx Browser, Task Manager, Settings > About, Game Boost, the lock screen and the sign-in picture."""
+    first_boot = AG.boot
+    mark('setup-running')
+    start = time.time(); i = 0
+    while True:
+        if AG.wait_boot(not_this=first_boot, timeout=60): break
+        i += 1; shot(f'setup-{i:03d}.png'); nudge()
+        if time.time() - start > 70 * 60: raise RuntimeError('no restart within 70 minutes')
+    mark('restarted')
+    POS[0], POS[1] = W // 2, H // 2
+    si = time.monotonic()
+    while time.monotonic() - si < A.settle_after: time.sleep(2)
+
+    def page(name, wait=2.5): pause(wait, wait + 0.6); shot(name); mark(name.split('.')[0])
+
+    # The welcome the Hub shows once, at the first sign-in after setup.
+    hub = win('OmniDx Hub', 30)
+    page('e01-welcome.png')
+    if hub:
+        move_to(*mid(hub, 0.5, 0.62)); drift(2.0)
+        go = find('OmniDx Hub', name='Start playing', timeout=6)
+        if go: click_at(*mid(go))
+        else: press('ctrl', '2')
+        page('e02-hub-home.png', 4.0)
+        for k, n in (('2', 'e03-hub-presets.png'), ('3', 'e04-hub-games.png'), ('4', 'e05-hub-tune.png'), ('5', 'e06-hub-about.png')):
+            hub = win('OmniDx Hub', 5) or hub
+            # The rail on the left: clicked where a person would, the keys as the fallback.
+            y = hub['y'] + 44 + 18 + (int(k) - 1) * 46 + 20
+            click_at(hub['x'] + 8 + 110, y)
+            page(n, 2.0)
+        close_foreground()
+    # The desktop and Start.
+    move_to(int(W * 0.55), int(H * 0.45)); pause(1.0, 1.4)
+    page('e07-desktop.png', 1.0)
+    press('meta_l'); page('e08-start.png', 1.6)
+    press('esc'); pause(0.8, 1.0)
+    # Windows + S: OmniDx Search.
+    press('meta_l', 's'); page('e09-search.png', 1.4)
+    type_text('disp'); page('e10-search-display.png', 1.0)
+    press('esc'); type_text('12*7+3'); page('e11-search-sum.png', 1.0)
+    press('esc'); type_text('boost'); pause(0.8, 1.0); press('ret'); page('e12-search-boost.png', 1.2)
+    press('esc'); type_text('omnidx browser'); pause(0.8, 1.2); press('ret')
+    # OmniDx Browser: the new tab page, then two sites.
+    b = win('*OmniDx Browser*', 30)
+    page('e13-browser-newtab.png', 5.0)
+    type_text('omnidx.net'); press('ret'); page('e14-browser-omnidx.png', 8.0)
+    press('ctrl', 't'); pause(1.0, 1.4); type_text('youtube.com'); press('ret'); page('e15-browser-youtube.png', 10.0)
+    close_foreground()
+    # The Hub with Game Boost on.
+    press('meta_l', 's'); pause(1.0, 1.3); type_text('omnidx hub'); pause(0.8, 1.0); press('ret')
+    win('OmniDx Hub', 20); page('e16-hub-boost.png', 4.0)
+    close_foreground()
+    press('meta_l', 's'); pause(1.0, 1.3); type_text('boost'); pause(0.7, 0.9); press('ret'); pause(0.8, 1.0); press('esc'); press('esc')
+    # Task Manager: the count on OmniDx Edition.
+    task_manager('edition-count'); shot('e17-task-manager.png')
+    close_foreground()
+    # Settings > About: OmniDx as the PC's maker.
+    press('meta_l', 's'); pause(1.0, 1.3); type_text('about this pc'); pause(0.8, 1.0); press('ret')
+    page('e18-settings-about.png', 5.0)
+    close_foreground()
+    # The lock screen and the sign-in picture.
+    press('meta_l', 'l'); page('e19-lock.png', 4.0)
+    press('spc'); page('e20-sign-in.png', 3.0)
+    type_text('film'); press('ret')
+    pause(8, 10); page('e21-back.png', 2.0)
+
+
 def main():
     global A, LOG, Q, W, H
     ap = argparse.ArgumentParser()
     ap.add_argument('--qmp', required=True); ap.add_argument('--out', required=True); ap.add_argument('--key', required=True)
     ap.add_argument('--display', default=':99'); ap.add_argument('--port', type=int, default=8099)
     ap.add_argument('--extreme', action='store_true')
+    ap.add_argument('--edition', action='store_true', help='OmniDx Edition: its setup runs at the first sign-in; film it and look round after its restart')
     ap.add_argument('--settle-before', type=float, default=300, help='seconds after the first sign-in before filming')
     ap.add_argument('--settle-after', type=float, default=180, help='seconds after the sign-in that follows the restart')
     ap.add_argument('--eject', default='cdrom0,cdrom1')
@@ -574,6 +646,23 @@ def main():
     W, H = int(s.get('w', 1920)), int(s.get('h', 1080))
     note(f'screen {W}x{H}; processes {procs()}')
     AG.ask('clip', text=A.key)
+    if A.edition:
+        record_start()
+        try:
+            edition()
+        except Exception as ex:
+            note(f'stopped: {ex}'); shot('stopped.png')
+        finally:
+            mark('end'); time.sleep(1); record_stop()
+            for d in (r'C:\ProgramData\OmniDx\Edition', r'C:\OmniDx', r'C:\film'):
+                try: AG.ask('upload', dir=d, timeout=120)
+                except Exception as ex: note(f'collect {d}: {ex}')
+            try: AG.ask('ps', code=r"Copy-Item $env:LOCALAPPDATA\OmniDx\edition-log.txt C:\film\ -ErrorAction SilentlyContinue; Get-ChildItem C:\film | Out-String", timeout=20); AG.ask('upload', dir=r'C:\film', timeout=60)
+            except Exception: pass
+            json.dump(EVENTS, open(os.path.join(A.out, 'events.json'), 'w'), indent=1)
+            try: Q.cmd('quit')
+            except Exception: pass
+        return
     # First sign-in: let the new PC settle, as it would have long before anyone films it. Windows that
     # open by themselves at first sign-in are closed before the camera rolls.
     k = 0

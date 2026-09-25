@@ -514,7 +514,9 @@ namespace OmniDx
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw | ControlStyles.SupportsTransparentBackColor, true);
             Cursor = Cursors.Hand; Font = Theme.Semi(9.5f); Height = Theme.S(36);
             BackColor = Color.Transparent;
+            AccessibleRole = AccessibleRole.PushButton; AccessibleName = text;
         }
+        protected override void OnTextChanged(EventArgs e) { AccessibleName = Text; Invalidate(); base.OnTextChanged(e); }
         public int Natural { get { return Theme.Measure(Text, Font) + Theme.S(32) + (Glyph != null || Shield ? Theme.S(22) : 0); } }
         protected override void OnMouseEnter(EventArgs e) { hover = true; Invalidate(); base.OnMouseEnter(e); }
         protected override void OnMouseLeave(EventArgs e) { hover = down = false; Invalidate(); base.OnMouseLeave(e); }

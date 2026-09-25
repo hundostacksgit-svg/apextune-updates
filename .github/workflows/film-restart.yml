@@ -17,7 +17,9 @@ on:
         default: false
   push:
     branches: ["claude/omnidx-editing-platform-9phdcc"]
-    paths: ["tools/promo/film/vm/**", ".github/workflows/film-restart.yml"]
+    # Only this file: the rig (tools/promo/film/vm) also films OmniDx Edition (edition-vm.yml), and a change
+    # for that should not start a restart take.
+    paths: [".github/workflows/film-restart.yml"]
 
 permissions:
   contents: write
