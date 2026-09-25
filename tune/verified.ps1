@@ -91,7 +91,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.77.0'
+$script:Version = '1.77.1'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -968,13 +968,28 @@ function Get-GoneProcesses {
    keyboard to read it then. One task, run once at the next sign-in, writes it
    to a text file and removes itself. Disclosed in the report; -NoAfterCount
    skips it; undo removes it. #>
+<# A sign-in task's PowerShell with no window at all. -WindowStyle Hidden hides the console only once PowerShell has
+   started, so for a moment (seconds, on a busy sign-in) an empty blue window sits on the desktop and takes the
+   focus. Windows 11's console host starts it headless instead; Windows 10 keeps the hidden style. #>
+function New-QuietAction([string]$file) {
+  $ps = '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "' + $file + '"'
+  if ([Environment]::OSVersion.Version.Build -ge 22000 -and (Test-Path (Join-Path $env:WINDIR 'System32\conhost.exe'))) {
+    return New-ScheduledTaskAction -Execute 'conhost.exe' -Argument ('--headless powershell.exe ' + $ps)
+  }
+  return New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $ps
+}
+
 function Register-AfterCount {
   if ($NoAfterCount) { return }
   try {
     $name = 'OmniDx after-restart count'
     $out = Join-Path $script:Root 'after-restart.txt'
     $cmd = "Start-Sleep -Seconds 120; `$p = @(Get-Process); `$o = Get-CimInstance Win32_OperatingSystem; `$m = [math]::Round((`$o.TotalVisibleMemorySize - `$o.FreePhysicalMemory) / 1024); `$c = ''; try { `$s = Get-Counter -Counter '\Processor(_Total)\% Processor Time', '\Processor(_Total)\% DPC Time' -SampleInterval 1 -MaxSamples 3 -ErrorAction Stop; `$c = ', idle CPU ' + [math]::Round((`$s.CounterSamples | Where-Object { `$_.Path -like '*Processor Time' } | Measure-Object CookedValue -Average).Average, 1) + '%, DPC ' + [math]::Round((`$s.CounterSamples | Where-Object { `$_.Path -like '*DPC Time' } | Measure-Object CookedValue -Average).Average, 2) + '%' } catch { }; `$b = ''; for (`$i = 0; `$i -lt 7 -and -not `$b; `$i++) { try { `$e = Get-WinEvent -FilterHashtable @{ LogName = 'Microsoft-Windows-Diagnostics-Performance/Operational'; Id = 100 } -MaxEvents 1 -ErrorAction Stop; if (`$e.TimeCreated -gt `$o.LastBootUpTime) { `$t = (([xml]`$e.ToXml()).Event.EventData.Data | Where-Object { `$_.Name -eq 'BootTime' } | Select-Object -First 1).'#text'; if (`$t) { `$b = ', boot ' + [math]::Round([double]`$t / 1000, 1) + ' s' } } } catch { }; if (-not `$b -and `$i -lt 6) { Start-Sleep -Seconds 30 } }; Add-Content -Path '$out' -Value ((Get-Date -Format s) + '  after restart: ' + `$p.Count + ' processes, ' + ((`$p | ForEach-Object { `$_.Threads.Count } | Measure-Object -Sum).Sum) + ' threads, ' + ((`$p | Measure-Object HandleCount -Sum).Sum) + ' handles, ' + `$m + ' MB in use' + `$c + `$b); Unregister-ScheduledTask -TaskName '$name' -Confirm:`$false"
-    $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "' + $cmd + '"')
+    # The command goes in a file next to the undo script, so the task's line is only a path.
+    $file = Join-Path $script:Root 'undo\after-count.ps1'
+    New-Item -ItemType Directory -Force -Path (Split-Path $file) | Out-Null
+    Set-Content -Path $file -Value $cmd -Encoding UTF8
+    $action = New-QuietAction $file
     $trigger = New-ScheduledTaskTrigger -AtLogOn
     Unregister-ScheduledTask -TaskName $name -Confirm:$false -ErrorAction SilentlyContinue
     Register-ScheduledTask -TaskName $name -Action $action -Trigger $trigger -RunLevel Highest -Force -ErrorAction Stop | Out-Null
@@ -1164,7 +1179,7 @@ function Register-Keep {
     Set-Content -Path $keep -Value ($script:KeepScript.Replace('__DRIFT__', ("function Get-Drift {" + ${function:Get-Drift}.ToString() + "}")).Replace('__CARD__', $card)) -Encoding UTF8
     $name = 'OmniDx keep'
     $who = "$env:USERDOMAIN\$env:USERNAME"
-    $action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument ('-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "' + $keep + '"')
+    $action = New-QuietAction $keep
     $trigger = New-ScheduledTaskTrigger -AtLogOn -User $who
     $trigger.Delay = 'PT3M'
     $principal = New-ScheduledTaskPrincipal -UserId $who -LogonType Interactive -RunLevel Highest
