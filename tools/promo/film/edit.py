@@ -185,8 +185,9 @@ def main():
         if note:
             pill(img, note, OW / 2, OH - 150, 28, fill=(0, 0, 0, 150), color='#d8d2e8', anchor='ct')
         writer.stdin.write(img.tobytes())
-        if i % 150 == 0: print(f'  frame {i}/{n}')
-    writer.stdin.close(); writer.wait(); reader.wait()
+        if i % 150 == 0 or i == n - 1: print(f'  frame {i + 1}/{n}')
+    writer.stdin.close(); writer.wait()
+    reader.stdout.close(); reader.kill(); reader.wait()  # it may hold a frame or two past the end; it is not waited on for them
     print(out)
 
 

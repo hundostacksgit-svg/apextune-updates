@@ -33,6 +33,12 @@ public class Desk {
   [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
   [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern bool SystemParametersInfoW(int a, int b, string c, int d);
   [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern IntPtr SendMessageTimeoutW(IntPtr h, int m, IntPtr w, string l, int f, int t, out IntPtr r);
+  [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
+  [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r);
+  [DllImport("user32.dll")] public static extern IntPtr GetDC(IntPtr h);
+  [DllImport("user32.dll")] public static extern int ReleaseDC(IntPtr h, IntPtr dc);
+  [DllImport("gdi32.dll")] public static extern uint GetPixel(IntPtr dc, int x, int y);
+  public static int[] Pixel(int x, int y) { IntPtr dc = GetDC(IntPtr.Zero); uint c = GetPixel(dc, x, y); ReleaseDC(IntPtr.Zero, dc); return new int[] { (int)(c & 0xFF), (int)((c >> 8) & 0xFF), (int)((c >> 16) & 0xFF) }; }
 }
 "@
 [void][Desk]::SetProcessDPIAware()
@@ -62,7 +68,18 @@ function FindAll($root, [string]$name) {
   $c = New-Object System.Windows.Automation.PropertyCondition($A::NameProperty, $name)
   try { return @($root.FindAll($Scope::Descendants, $c)) } catch { return @() }
 }
-function Mid($e, [double]$fx = 0.5, [double]$fy = 0.5) { $b = $e.Current.BoundingRectangle; return @([int]($b.X + $b.Width * $fx), [int]($b.Y + $b.Height * $fy)) }
+# Where an element is on screen. A window's rectangle comes from Windows itself; an element's from UI Automation,
+# which can answer "nowhere yet" (NaN) for a moment after it appears, so that is asked again.
+function Box($e) {
+  $hw = [IntPtr]0; try { if ($e.Current.ControlType -eq [System.Windows.Automation.ControlType]::Window) { $hw = [IntPtr]$e.Current.NativeWindowHandle } } catch { }
+  if ($hw -ne [IntPtr]::Zero) { $r = New-Object Desk+RECT; if ([Desk]::GetWindowRect($hw, [ref]$r)) { return @($r.Left, $r.Top, ($r.Right - $r.Left), ($r.Bottom - $r.Top)) } }
+  for ($i = 0; $i -lt 20; $i++) {
+    try { $b = $e.Current.BoundingRectangle; if (-not [double]::IsNaN($b.X) -and -not [double]::IsInfinity($b.X) -and $b.Width -gt 0) { return @($b.X, $b.Y, $b.Width, $b.Height) } } catch { }
+    Start-Sleep -Milliseconds 250
+  }
+  throw "no position for $(try { $e.Current.Name } catch { '?' })"
+}
+function Mid($e, [double]$fx = 0.5, [double]$fy = 0.5) { $b = Box $e; return @([int]($b[0] + $b[2] * $fx), [int]($b[1] + $b[3] * $fy)) }
 function Hwnd($e) { return [IntPtr]$e.Current.NativeWindowHandle }
 function Invoke($e) { try { $e.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke(); return $true } catch { return $false } }
 function Pause([int]$a, [int]$b) { Start-Sleep -Milliseconds (Get-Random -Minimum $a -Maximum $b) }
@@ -75,14 +92,17 @@ function Mark([string]$name, $extra = $null) {
   [void]$events.Add($e); Note ("[{0,7:0.00}] {1} processes {2} {3}" -f $t, $name, $e.processes, $(if ($extra) { $extra | ConvertTo-Json -Compress } else { '' }))
 }
 # Maximize a window the way a person does: a double-click on its title bar.
-function Maximize($e) { $b = $e.Current.BoundingRectangle; [Human]::DoubleClickAt([int]($b.X + $b.Width * 0.42), [int]($b.Y + 14)); Pause 700 1000 }
+function Maximize($e) { $b = Box $e; [Human]::DoubleClickAt([int]($b[0] + $b[2] * 0.42), [int]($b[1] + 14)); Pause 700 1000 }
 
 # ---------------------------------------------------------------- the desk, before the camera rolls
-# The first-sign-in privacy page this machine opens with: accepted as it stands, as anyone setting up a PC does.
-foreach ($i in 1..3) {
-  $next = $null; foreach ($w in Tops) { foreach ($n in 'Next', 'Accept') { $b = Find $w -name $n -sec 1; if ($b) { $next = $b; break } }; if ($next) { break } }
-  if (-not $next) { break }
-  Note "first-sign-in page: $($next.Current.Name)"; if (-not (Invoke $next)) { $p = Mid $next; [Human]::ClickAt($p[0], $p[1]) }; Start-Sleep 3
+# The first-sign-in privacy page this machine opens with, full screen and on top of everything: Next, then
+# Accept, as anyone setting up a PC does. Its button is where Windows always puts it, and blue while it is there.
+for ($i = 0; $i -lt 4; $i++) {
+  $bx = [int]($ScrW * 0.846); $by = [int]($ScrH * 0.854)
+  $c = [Desk]::Pixel($bx, $by)
+  if (-not ($c[2] -gt 150 -and $c[0] -lt 80)) { break }
+  Note "first-sign-in privacy page: pressing its button (page $($i + 1))"
+  [Human]::ClickAt($bx, $by); Start-Sleep 4
 }
 # The GitHub agent's own console: minimized, not closed (closing it would end this job).
 foreach ($w in Tops) {
@@ -151,7 +171,7 @@ try {
     $perf = Find $tm -name 'Performance' -sec 8
     if ($perf) { $p = Mid $perf; [Human]::ClickAt($p[0], $p[1]) } else { Note 'no Performance item' }
     Pause 1600 2100
-    $label = @(FindAll $tm 'Processes' | Sort-Object { $_.Current.BoundingRectangle.X } -Descending) | Select-Object -First 1
+    $label = @(FindAll $tm 'Processes' | Sort-Object { try { (Box $_)[0] } catch { 0 } } -Descending) | Select-Object -First 1
     if ($label) { $p = Mid $label; [Human]::MoveTo($p[0] + 8, $p[1] + 30) }
     Mark 'before-count'
     [Human]::Drift(3000)
@@ -203,8 +223,8 @@ try {
     if ($done) { break }
     if ($t.Elapsed.TotalSeconds -gt $nextLook -and $logBox) {
       # Eyes on the log: the pointer wanders to where the reading is, and rests.
-      $lb = $logBox.Current.BoundingRectangle
-      [Human]::MoveTo([int]($lb.X + $lb.Width * (0.3 + 0.4 * (Get-Random -Maximum 1.0))), [int]($lb.Y + $lb.Height * (0.35 + 0.5 * (Get-Random -Maximum 1.0))))
+      $p = Mid $logBox (0.3 + 0.4 * (Get-Random -Maximum 1.0)) (0.35 + 0.5 * (Get-Random -Maximum 1.0))
+      [Human]::MoveTo($p[0], $p[1])
       [Human]::Drift(1500); $nextLook = $t.Elapsed.TotalSeconds + (Get-Random -Minimum 7 -Maximum 16)
     }
     Start-Sleep -Milliseconds 400
@@ -219,10 +239,10 @@ try {
   $tm = Win 'Task Manager' 15
   if ($tm) {
     Pause 1500 1900
-    $label = @(FindAll $tm 'Processes' | Sort-Object { $_.Current.BoundingRectangle.X } -Descending) | Select-Object -First 1
-    if (-not $label -or $label.Current.BoundingRectangle.X -lt $tm.Current.BoundingRectangle.X + 250) {
+    $label = @(FindAll $tm 'Processes' | Sort-Object { try { (Box $_)[0] } catch { 0 } } -Descending) | Select-Object -First 1
+    if (-not $label -or (Box $label)[0] -lt (Box $tm)[0] + 250) {
       $perf = Find $tm -name 'Performance' -sec 5; if ($perf) { $p = Mid $perf; [Human]::ClickAt($p[0], $p[1]); Pause 1600 2000 }
-      $label = @(FindAll $tm 'Processes' | Sort-Object { $_.Current.BoundingRectangle.X } -Descending) | Select-Object -First 1
+      $label = @(FindAll $tm 'Processes' | Sort-Object { try { (Box $_)[0] } catch { 0 } } -Descending) | Select-Object -First 1
     }
     if ($label) { $p = Mid $label; [Human]::MoveTo($p[0] + 8, $p[1] + 30) }
     Mark 'after-count'
