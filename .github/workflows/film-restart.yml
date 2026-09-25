@@ -50,8 +50,8 @@ jobs:
       - name: Clear old footage
         if: always()
         run: |
-          for t in $(gh release list --limit 50 --json tagName --jq '.[].tagName' | grep '^restart-take-' || true); do
-            gh release delete "$t" --yes --cleanup-tag && echo "deleted $t"
+          for t in $(gh release list --repo "$GITHUB_REPOSITORY" --limit 50 --json tagName --jq '.[].tagName' | grep '^restart-take-' || true); do
+            gh release delete "$t" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag && echo "deleted $t"
           done
       - name: Hand the footage over as a pre-release
         if: always()
@@ -62,5 +62,6 @@ jobs:
           [ -d guest ] && (cd guest && zip -q ../guest-files.zip ./*) && rm -rf guest
           files=$(find . -maxdepth 1 -type f -size +0 | sort)
           tag="restart-take-${{ github.run_id }}"
-          gh release create "$tag" --prerelease --target "$GITHUB_SHA" --title "Restart footage $tag" --notes "Raw footage for a promotion video; deleted by the next run." $files
-          echo "released $tag with $(echo $files | wc -w) files"
+          # A failed take still hands over what it has, and the job stays green so the Windows image is kept.
+          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --prerelease --target "$GITHUB_SHA" --title "Restart footage $tag" --notes "Raw footage for a promotion video; deleted by the next run." $files \
+            && echo "released $tag with $(echo $files | wc -w) files" || echo "release failed"

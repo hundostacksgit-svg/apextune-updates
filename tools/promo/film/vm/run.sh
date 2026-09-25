@@ -24,6 +24,7 @@ ISO=${ISO:-$WORK/iso/win11-enterprise-eval.iso}
 ISO_URL='https://go.microsoft.com/fwlink/?linkid=2334167&clcid=0x409&culture=en-us&country=us'
 mkdir -p "$OUT"
 log() { echo "$(date +%H:%M:%S) $*" | tee -a "$OUT/run-log.txt"; }
+trap 'log "stopped at line $LINENO: $BASH_COMMAND"' ERR
 sudo mkdir -p "$WORK" && sudo chown "$(id -u):$(id -g)" "$WORK"
 mkdir -p "$(dirname "$ISO")"
 df -h / /mnt 2>&1 | tee -a "$OUT/run-log.txt" || true
@@ -68,8 +69,13 @@ done
 log "licence server up; key issued ($(cut -c1-9 "$WORK/key.txt")...)"
 
 # ---------------------------------------------------------------- the PC
-mkdir -p "$WORK/tpm"
-swtpm socket --tpm2 --tpmstate dir="$WORK/tpm" --ctrl type=unixio,path="$WORK/tpm/sock" --daemon --log file="$OUT/swtpm.txt"
+# The TPM: swtpm keeps its state where Ubuntu's AppArmor profile for it lets it write (libvirt's per-user folder).
+TPM=$HOME/.local/share/libvirt/swtpm/film
+rm -rf "$TPM"; mkdir -p "$TPM"
+swtpm socket --tpm2 --tpmstate dir="$TPM" --ctrl type=unixio,path="$TPM/sock" --daemon --log file="$TPM/swtpm.log",level=1 \
+  || { log 'swtpm did not start'; cat "$TPM/swtpm.log" 2>/dev/null | tail -5; sudo dmesg | grep -i 'apparmor.*swtpm' | tail -5; exit 1; }
+for i in $(seq 20); do [ -S "$TPM/sock" ] && break; sleep 0.25; done
+log "TPM up"
 cp /usr/share/OVMF/OVMF_VARS_4M.ms.fd "$WORK/vars.fd"
 rm -f "$WORK/win.qcow2"; qemu-img create -q -f qcow2 "$WORK/win.qcow2" 80G
 Xvfb :99 -screen 0 1920x1080x24 -nolisten tcp > "$OUT/xvfb.txt" 2>&1 &
@@ -81,7 +87,7 @@ DISPLAY=:99 TZ=America/New_York qemu-system-x86_64 -name 'Windows 11' \
   -global driver=cfi.pflash01,property=secure,value=on \
   -drive if=pflash,format=raw,unit=0,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.secboot.fd \
   -drive if=pflash,format=raw,unit=1,file="$WORK/vars.fd" \
-  -chardev socket,id=chrtpm,path="$WORK/tpm/sock" -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-crb,tpmdev=tpm0 \
+  -chardev socket,id=chrtpm,path="$TPM/sock" -tpmdev emulator,id=tpm0,chardev=chrtpm -device tpm-crb,tpmdev=tpm0 \
   -drive if=none,id=disk0,file="$WORK/win.qcow2",format=qcow2,cache=unsafe,discard=unmap -device nvme,serial=OMNIDX0001,drive=disk0,bootindex=1 \
   -drive if=none,id=cd0,media=cdrom,readonly=on,file="$ISO" -device ide-cd,id=cdrom0,drive=cd0,bus=ide.0,bootindex=0 \
   -drive if=none,id=cd1,media=cdrom,readonly=on,file="$WORK/answer.iso" -device ide-cd,id=cdrom1,drive=cd1,bus=ide.1 \
@@ -96,5 +102,6 @@ log "PC started (pid $QEMU)"
 
 DISPLAY=:99 python3 "$HERE/director.py" --qmp "$WORK/qmp.sock" --out "$OUT" --key "$(cat "$WORK/key.txt")" --display :99 --boot-keys 30 "$@" || log "director exited $?"
 wait "$QEMU" 2>/dev/null || true
+cp "$TPM/swtpm.log" "$OUT/swtpm.txt" 2>/dev/null || true
 log 'done'
 ls -la "$OUT" | tee -a "$OUT/run-log.txt"

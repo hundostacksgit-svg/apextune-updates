@@ -5,8 +5,8 @@ TikTok, Reels and Shorts, from an edit list:
     python3 tools/promo/film/edit.py edl.json screen.mkv out.mp4
 
 The edit list names the source segments and their speed (a sped-up segment
-is labelled with its speed on screen), the camera (a 4:3 window onto the
-1024 x 768 screen, eased between keyframes), and the words. Everything is
+is labelled with its speed on screen), the camera (a window of the screen's
+own shape onto it, eased between keyframes), and the words. Everything is
 the recording itself: nothing on the screen is drawn over or replaced; the
 words sit around it.
 
@@ -34,8 +34,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 FFMPEG = os.environ.get('FFMPEG', 'ffmpeg')
 FONTS = os.environ.get('FONTS', '')
 OW, OH, FPS = 1080, 1920, 30
-SW, SH = 1024, 768
-BOX = (0, 540, 1080, 810)  # where the screen sits: x, y, w, h
+SW, SH = 1024, 768          # the recorded screen; "screen": [w, h] in the edit list for another size
+BOX = (0, 540, 1080, 810)  # where the screen sits: x, y, w, h (full width, its own shape)
 
 
 @lru_cache(maxsize=64)
@@ -171,8 +171,12 @@ def build_cut(edl, src, cut):
 
 
 def main():
+    global SW, SH, BOX
     edl_path, src, out = sys.argv[1:4]
     edl = json.load(open(edl_path))
+    if edl.get('screen'):
+        SW, SH = (int(v) for v in edl['screen'])
+        BOX = (0, 540, OW, int(round(OW * SH / SW)))
     work = os.path.dirname(os.path.abspath(out))
     cut = os.path.join(work, 'cut.mp4')
     spans, dur = build_cut(edl, src, cut)
