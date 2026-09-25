@@ -1,9 +1,11 @@
-# OmniDx Tune on TikTok: the seven cuts and how to post them
+# OmniDx Tune on TikTok: the eight cuts and how to post them
 
 Seven 9:16 videos cut from the site's tutorial, each built around one hook a
-stranger scrolling past would stop for. They are made from code
-(`node tools/promo/tune/render-shorts.mjs`, see `tools/promo/tune/README.md`)
-and are promotion material: the MP4s never go into git.
+stranger scrolling past would stop for, and an eighth that is a screen
+recording of a real run. They are made from code
+(`node tools/promo/tune/render-shorts.mjs`, see `tools/promo/tune/README.md`;
+the eighth from `tools/promo/film/`) and are promotion material: the MP4s
+never go into git.
 
 Nobody can promise views. What these are built on is what the feed rewards:
 a reason to stop in the first second, a caption that finishes the thought,
@@ -20,13 +22,18 @@ something to comment ("what's your number?"), and an ending that loops.
 | 5 | `05-undo-first.mp4` | 0:24 | "Scared to run a PC optimizer?" | Save |
 | 6 | `06-pov-one-line.mp4` | 0:26 | "POV: you paste one line into PowerShell" | Watch again |
 | 7 | `07-valorant-safe.mp4` | 0:20 | "Some 'FPS boost' tweaks turn off what VALORANT needs." | Comment, share to a VALORANT friend |
+| 8 | `08-real-test.mp4` | 1:05 | "Testing a $20 Windows optimizer on a Windows 11 PC" | Watch to the end, comment your number |
 
 Each has a cover image next to it (`NN-name-cover.jpg`, the hook on screen).
 In TikTok: Edit cover, pick the frame about a second and a half in, or upload
 the cover image.
 
-Every number on screen is the site's example PC, and the video says "Example
-run" whenever one is shown; the run is shown sped up and says so. Keep it
+Every number on screen in 1 to 7 is the site's example PC, and the video
+says "Example run" whenever one is shown; the run is shown sped up and says
+so. Number 8 is a real run, recorded as it happened on a Windows 11 test PC
+in the cloud (a GitHub-hosted machine): the typing, the key, Task Manager
+before and after are real time with the waits cut out, and the two long
+waits (reading the PC, the run) are sped up with their speed on screen. Keep it
 that way in the captions: never promise a number, never a frame rate.
 
 ## What to post with each
@@ -141,9 +148,23 @@ at about 40% under it.
    memory integrity. This one reads them first and leaves them on. It never
    touches the anti-cheat."
 
+**8. The real test (screen recording)**
+
+> Tested it on a Windows 11 PC, start to finish. Task Manager before, one line
+> in PowerShell, Task Manager after. No restart yet. Try it on yours: omnidx.net
+> #pcgaming #windows11 #pctips #gamingpc #techtok
+
+Pinned comment: *Real run on a Windows 11 test PC in the cloud, recorded as
+it happened; only the two waits are sped up, and the video says so. The
+number drops further after a restart, when the services it switched off stop
+starting. The free report shows what it would do on your PC and changes
+nothing.*
+
+Cover: the last frame (Task Manager, the before and after numbers).
+
 ## Posting
 
-- **Order:** 1, 2, 4, 3, 7, 5, 6. One a day. The first two ask for a comment,
+- **Order:** 1, 8, 2, 4, 3, 7, 5, 6. One a day. The first two ask for a comment,
   which is what gets a new account shown to more people.
 - **When:** early evening in your viewers' time zone (6 to 9 pm); after a
   week, TikTok's Analytics > Followers shows when yours are on.
@@ -177,6 +198,9 @@ at about 40% under it.
   anti-cheat, and Secure Boot, TPM and memory integrity stay on."
 - **"Why pay?"**: "$19.99 once, no subscription, locked to your PC, undo
   included. The free report is free forever."
+- **"That's a virtual machine"**: "Yes, a test PC in the cloud, and the
+  video says so. A home PC with launchers, RGB and PC-maker apps has more to
+  cut. Run the free report on yours; it changes nothing."
 - **"My number is X"**: thank them, and if it's high, reply with the
   what-it-cuts video (number 3).
 

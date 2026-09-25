@@ -66,13 +66,22 @@ def camera_at(cam, t):
 
 
 def wrap(draw, text, f, width):
-    words, lines, line = text.split(' '), [], ''
-    for w in words:
-        test = (line + ' ' + w).strip()
-        if draw.textlength(test, font=f) <= width or not line: line = test
-        else: lines.append(line); line = w
-    if line: lines.append(line)
-    return lines
+    """Lines no wider than width, as even as the same number of lines allows (no lone last word)."""
+    def greedy(wd):
+        lines, line = [], ''
+        for w in text.split(' '):
+            test = (line + ' ' + w).strip()
+            if draw.textlength(test, font=f) <= wd or not line: line = test
+            else: lines.append(line); line = w
+        if line: lines.append(line)
+        return lines
+    lines = greedy(width)
+    lo, hi = max(draw.textlength(w, font=f) for w in text.split(' ')), width
+    while hi - lo > 4:
+        mid = (lo + hi) / 2
+        if len(greedy(mid)) <= len(lines): hi = mid
+        else: lo = mid
+    return greedy(hi)
 
 
 @lru_cache(maxsize=256)
@@ -80,7 +89,7 @@ def caption_layer(text, size, color, stroke, weight, pop_q):
     """The words drawn once onto a transparent strip, cached per animation step."""
     f = font(int(size * (0.86 + 0.14 * pop_q / 8)), weight)
     probe = ImageDraw.Draw(Image.new('RGBA', (8, 8)))
-    lines = wrap(probe, text, f, OW - 120)
+    lines = [ln for part in text.split('\n') for ln in wrap(probe, part, f, OW - 120)]  # a \n in the words forces a line
     lh = int(f.size * 1.16)
     layer = Image.new('RGBA', (OW, lh * len(lines) + stroke * 2 + 20), (0, 0, 0, 0))
     d = ImageDraw.Draw(layer)
@@ -182,7 +191,7 @@ def main():
     reader = subprocess.Popen([FFMPEG, '-nostdin', '-loglevel', 'error', '-i', cut, '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'], stdout=subprocess.PIPE)
     writer = subprocess.Popen([FFMPEG, '-y', '-loglevel', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', f'{OW}x{OH}', '-r', str(FPS), '-i', '-',
                                '-i', bed, '-map', '0:v', '-map', '1:a', '-c:v', 'libx264', '-preset', 'medium', '-crf', '17', '-profile:v', 'high',
-                               '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-af', 'loudnorm=I=-14:TP=-1.2:LRA=8', '-shortest',
+                               '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '192k', '-af', 'loudnorm=I=-14:TP=-1.2:LRA=8', '-ar', '48000', '-shortest',
                                '-movflags', '+faststart', out], stdin=subprocess.PIPE)
     bx, by, bw, bh = BOX
     mask = Image.new('L', (bw, bh), 0); ImageDraw.Draw(mask).rounded_rectangle([0, 0, bw - 1, bh - 1], radius=26, fill=255)

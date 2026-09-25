@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
   push:
     branches: ["claude/omnidx-editing-platform-9phdcc"]
-    paths: ["tools/promo/film/**", ".github/workflows/film.yml"]
+    paths: ["tools/promo/film/film.ps1", "tools/promo/film/Human.cs", ".github/workflows/film.yml"]
 
 permissions:
   contents: write

@@ -112,21 +112,21 @@ def main():
 
     # 5. The run (sped up).
     hold(FULL, V('run') + 1.0, run_end)
-    say(V('run') + 1.0, run_end, 'Restore point first. Then it cuts what this PC does not use', 58)
+    say(V('run') + 1.0, run_end, 'Restore point first. Then it cuts\nwhat this PC does not use', 58)
 
     # 6. Done, and the report it opens by itself.
     say(run_end, report, 'Done.')
     hold(FULL, run_end, report + 0.4)
     if 'report' in boxes:
         hold(fit(boxes['report'], 700), report + 1.0, report + 3.6)
-    say(report, V('task-manager-again') - 0.6, 'Its own report, straight after the run', 60)
+    say(report, V('task-manager-again') - 0.6, 'Its own report, right after the run', 60)
 
     # 7. Task Manager again, the number after.
     a0, a1 = after['at']
     whoosh.append(round(O(V('task-manager-again') - 0.3), 2))
     hold(FULL, report + 4.2, a0 - 0.6)
     hold(fit(boxes['tm_count'], 380), a0, a1)
-    say(V('task-manager-again') - 0.3, a1, 'Task Manager, after. No restart yet', 60)
+    say(V('task-manager-again') - 0.3, a1, 'Task Manager, after\nNo restart yet', 62)
     big(a0, a1, f"{before['n']} → {after['n']}", 'processes', '#35d07f')
     pops.append(round(O(a0), 2))
 
