@@ -514,6 +514,19 @@ namespace OmniDx
             Signal.Listen(Handle);
             Hotkeys();
             index.Build(a => { try { BeginInvoke(a); } catch { } });
+            Welcome();
+        }
+        // The Hub's welcome, once: at the first sign-in after setup's restart (not while setup is still running).
+        void Welcome()
+        {
+            DateTime installed;
+            if (State.Get("Welcomed", "") != "" || !DateTime.TryParse(State.Get("Installed", ""), out installed)) return;
+            DateTime boot = DateTime.Now - TimeSpan.FromMilliseconds(Native.GetTickCount64());
+            if (installed > boot) return;
+            State.Set("Welcomed", DateTime.Now.ToString("s"));
+            var t = new System.Windows.Forms.Timer { Interval = 4000 };
+            t.Tick += (s, e) => { t.Stop(); t.Dispose(); Edition.Start(Edition.Exe("OmniHub"), "--welcome"); };
+            t.Start();
         }
         // Windows + S, which setup frees from Windows' own search (Explorer lets go of it when it next starts). Until
         // then, Alt + Space. Asked again each time the taskbar starts, so a restarted Explorer hands Windows + S over.

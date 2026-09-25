@@ -290,6 +290,8 @@ Set-Reg $oem 'Manufacturer' 'OmniDx' 'String'
 Set-Reg $oem 'Model' "OmniDx Edition $Version" 'String'
 Set-Reg $oem 'SupportURL' 'https://omnidx.net' 'String'
 Set-Reg $oem 'Logo' (Join-Path $Data 'oem.bmp') 'String'
+# Windows 11 draws its own silhouette for an account without a picture; this policy makes it use the pictures above.
+Set-Reg 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer' 'UseDefaultTile' 1
 Note 'Account picture and the OmniDx line in Settings > About' 'Green'
 
 # Quiet: no Windows sounds for every little thing, no start-up sound.
@@ -351,8 +353,12 @@ $layout = Join-Path $Data 'taskbar.xml'
   </CustomTaskbarLayoutCollection>
 </LayoutModificationTemplate>
 "@ | Set-Content -Path $layout -Encoding UTF8
-Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer' 'StartLayoutFile' $layout 'ExpandString'
-Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer' 'LockedStartLayout' 0
+# Windows applies a layout file only when it is set as locked. On Windows 11 that covers the taskbar alone (Start keeps
+# its own pins); on Windows 10 it would lock Start's tiles too, so there the taskbar is left to the user.
+if ($win11) {
+  Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer' 'StartLayoutFile' $layout 'ExpandString'
+  Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer' 'LockedStartLayout' 1
+}
 # Edge's desktop shortcut goes (Edge stays: Windows needs it, and it is one search away).
 foreach ($d in (Join-Path $env:PUBLIC 'Desktop\Microsoft Edge.lnk'), (Join-Path ([Environment]::GetFolderPath('Desktop')) 'Microsoft Edge.lnk')) {
   if (Test-Path $d) { Drop-File $d }
@@ -401,9 +407,20 @@ if ($hasBrowser) {
 }
 
 Head '5. Running in the background, and the first sign-in'
-$run = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
-Set-Reg $run 'OmniDx Search' "`"$(Join-Path $Dest 'OmniSearch.exe')`" --background" 'String'
-Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce' 'OmniDx Welcome' "`"$(Join-Path $Dest 'OmniHub.exe')`" --welcome" 'String'
+# OmniDx Search starts with every sign-in from a task of its own (at normal priority: a task's default is below
+# normal), not from the Run list, which the tune tidies. It shows the Hub's welcome once, after the restart.
+try {
+  $me = "$env:USERDOMAIN\$env:USERNAME"
+  $act = New-ScheduledTaskAction -Execute (Join-Path $Dest 'OmniSearch.exe') -Argument '--background'
+  $trig = New-ScheduledTaskTrigger -AtLogOn -User $me
+  $prin = New-ScheduledTaskPrincipal -UserId $me -LogonType Interactive -RunLevel Limited
+  $set = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew
+  $set.Priority = 4
+  Register-ScheduledTask -TaskName 'Edition Search' -TaskPath '\OmniDx\' -Action $act -Trigger $trig -Principal $prin -Settings $set -Force | Out-Null
+  Remember @('task', 'Edition Search') 'task|Edition Search'
+  Note 'OmniDx Search starts at every sign-in' 'Green'
+} catch { Note ("OmniDx Search sign-in task: {0}" -f $_.Exception.Message) 'Yellow' }
+Set-Reg 'HKCU:\Software\OmniDx\Edition' 'Installed' (Get-Date -Format s) 'String'
 # Free up memory: the standby list needs an administrator, so a task that runs as the system does it on request.
 # Anyone signed in may start it; it does that one thing, with nothing passed in.
 try {
@@ -444,6 +461,7 @@ if ($Key -and -not $NoTune) {
   $env:OMNIDX_KEY = $Key
   $env:OMNIDX_MODE = 'console'
   $env:OMNIDX_FLAGS = $(if ($NoExtreme) { '-Yes' } else { '-Extreme -Yes' })
+  $env:OMNIDX_KEEP = 'OmniDx Search'
   try { Invoke-Expression ((New-Object System.Net.WebClient).DownloadString("$base/go.ps1")) }
   catch { Note ("The tune stopped: {0}" -f $_.Exception.Message) 'Yellow' }
   $env:OMNIDX_KEY = ''

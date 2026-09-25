@@ -45,7 +45,7 @@ jobs:
           key: win11-enterprise-eval-2334167
       - name: Install Windows, set up OmniDx Edition, look round
         timeout-minutes: 165
-        run: bash tools/promo/film/vm/run.sh "$RUNNER_TEMP/pc" --edition --eject cdrom0 --settle-before 0 --settle-after 100 || echo "run.sh exited $?"
+        run: bash tools/promo/film/vm/run.sh "$RUNNER_TEMP/pc" --edition --eject cdrom0 --settle-before 0 --settle-after 210 || echo "run.sh exited $?"
       - name: Clear old previews
         if: always()
         run: |

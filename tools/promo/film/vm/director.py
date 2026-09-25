@@ -557,6 +557,13 @@ def edition():
 
     def page(name, wait=2.5): pause(wait, wait + 0.6); shot(name); mark(name.split('.')[0])
 
+    def close(*likes):
+        """Alt+F4 only on a window the tour opened: on the bare desktop it would offer to shut the PC down."""
+        import fnmatch
+        title = ((AG.ask('fg') or {}).get('title') or '')
+        if any(fnmatch.fnmatch(title, l) for l in likes): press('alt', 'f4'); pause(0.8, 1.1)
+        else: note(f'not closing "{title}"'); press('esc'); pause(0.4, 0.6)
+
     # The welcome the Hub shows once, at the first sign-in after setup.
     hub = win('OmniDx Hub', 30)
     page('e01-welcome.png')
@@ -572,7 +579,7 @@ def edition():
             y = hub['y'] + 44 + 18 + (int(k) - 1) * 46 + 20
             click_at(hub['x'] + 8 + 110, y)
             page(n, 2.0)
-        close_foreground()
+        close('OmniDx Hub')
     # The desktop and Start.
     move_to(int(W * 0.55), int(H * 0.45)); pause(1.0, 1.4)
     page('e07-desktop.png', 1.0)
@@ -593,19 +600,19 @@ def edition():
     # The Hub with Game Boost on.
     press('meta_l', 's'); pause(1.0, 1.3); type_text('omnidx hub'); pause(0.8, 1.0); press('ret')
     win('OmniDx Hub', 20); page('e16-hub-boost.png', 4.0)
-    close_foreground()
+    close('OmniDx Hub')
     press('meta_l', 's'); pause(1.0, 1.3); type_text('boost'); pause(0.7, 0.9); press('ret'); pause(0.8, 1.0); press('esc'); press('esc')
     # Task Manager: the count on OmniDx Edition.
     task_manager('edition-count'); shot('e17-task-manager.png')
-    close_foreground()
+    close('Task Manager')
     # Settings > About: OmniDx as the PC's maker.
     press('meta_l', 's'); pause(1.0, 1.3); type_text('about this pc'); pause(0.8, 1.0); press('ret')
     page('e18-settings-about.png', 5.0)
-    close_foreground()
+    close('Settings', '*About*')
     # The lock screen and the sign-in picture.
     press('meta_l', 'l'); page('e19-lock.png', 4.0)
     press('spc'); page('e20-sign-in.png', 3.0)
-    type_text('film'); press('ret')
+    pause(1.5, 2.0); type_text('film'); pause(0.4, 0.6); press('ret')
     pause(8, 10); page('e21-back.png', 2.0)
 
 
