@@ -92,7 +92,8 @@ function Mark([string]$name, $extra = $null) {
   [void]$events.Add($e); Note ("[{0,7:0.00}] {1} processes {2} {3}" -f $t, $name, $e.processes, $(if ($extra) { $extra | ConvertTo-Json -Compress } else { '' }))
 }
 # Maximize a window the way a person does: a double-click on its title bar.
-function Maximize($e) { $b = Box $e; [Human]::DoubleClickAt([int]($b[0] + $b[2] * 0.42), [int]($b[1] + 14)); Pause 700 1000 }
+function Front($e) { $hw = Hwnd $e; if ($hw -ne [IntPtr]::Zero) { [void][Human]::SetForegroundWindow($hw) }; Start-Sleep -Milliseconds 300; return ([Human]::GetForegroundWindow() -eq $hw) }
+function Maximize($e) { $hw = Hwnd $e; [void](Front $e); if ($hw -ne [IntPtr]::Zero) { [void][Human]::ShowWindow($hw, 3) }; Pause 700 1000 }
 
 # ---------------------------------------------------------------- the desk, before the camera rolls
 # The first-sign-in privacy page this machine opens with, full screen and on top of everything: Next, then
@@ -104,6 +105,14 @@ for ($i = 0; $i -lt 6 -and (PrivacyButton); $i++) {
   [Human]::ClickAt([int]($ScrW * 0.846), [int]($ScrH * 0.854)); Start-Sleep 5
 }
 if (PrivacyButton) { Note 'the privacy page is still up'; exit 1 }
+# This image asks, a few minutes after sign-in, to update the Windows Subsystem for Linux, in a window that takes the
+# keyboard ("press any key"). The update is done here, quietly, first; any prompt already up is closed.
+try {
+  $wslJob = Start-Job { & wsl.exe --update 2>&1 | Out-String }
+  if (Wait-Job $wslJob -Timeout 240) { Note ("wsl --update: " + ((Receive-Job $wslJob) -replace '\s+', ' ').Trim()) } else { Note 'wsl --update still running; carrying on' }
+} catch { Note "wsl --update: $_" }
+function Tidy { Get-Process wsl -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue }
+Tidy
 # The GitHub agent's own console: minimized, not closed (closing it would end this job).
 foreach ($w in Tops) {
   try { $n = $w.Current.Name } catch { continue }
@@ -155,6 +164,8 @@ $psi.Arguments = "-hide_banner -loglevel warning -f gdigrab -framerate 30 -draw_
 $psi.UseShellExecute = $false; $psi.RedirectStandardInput = $true; $psi.RedirectStandardError = $true; $psi.CreateNoWindow = $true
 $rec = [System.Diagnostics.Process]::Start($psi)
 $errTask = $rec.StandardError.ReadToEndAsync()
+Tidy
+[Human]::Press(0x1B); Start-Sleep -Milliseconds 400; [Human]::Press(0x1B); Start-Sleep 2
 $clock = [Diagnostics.Stopwatch]::StartNew()
 Note "recording $raw"
 Start-Sleep 2
@@ -167,7 +178,7 @@ try {
   $tm = Win 'Task Manager' 15
   if ($tm) {
     Pause 900 1300
-    Maximize $tm
+    Tidy; [void](Front $tm)
     $perf = Find $tm -name 'Performance' -sec 8
     if ($perf) { $p = Mid $perf; [Human]::ClickAt($p[0], $p[1]) } else { Note 'no Performance item' }
     Pause 1600 2100
@@ -188,7 +199,10 @@ try {
   if (-not $ps) { Note 'no PowerShell from Start; Win+R instead'; [Human]::Press(0x1B); Pause 400 600; [Human]::Press(0x5B, 0x52); Pause 800 1000; [Human]::Type('powershell'); [Human]::Press(0x0D); $ps = Win '*PowerShell*' 15 }
   if (-not $ps) { throw 'PowerShell did not open' }
   Pause 1400 1800
-  $p = Mid $ps 0.5 0.6; [Human]::MoveTo($p[0], $p[1]); Pause 500 800
+  Tidy
+  $has = Front $ps
+  $p = Mid $ps 0.5 0.6; [Human]::ClickAt($p[0], $p[1]); Pause 500 800
+  if (-not $has -and ([Human]::GetForegroundWindow() -ne (Hwnd $ps))) { Note 'PowerShell does not have the keyboard'; throw 'PowerShell does not have the keyboard' }
   Mark 'type-command'
   [Human]::Type('irm omnidx.net/go.ps1 | iex', 1.0, 'omnidx.ne')
   Pause 600 900
@@ -239,6 +253,7 @@ try {
   $tm = Win 'Task Manager' 15
   if ($tm) {
     Pause 1500 1900
+    Tidy; [void](Front $tm)
     $label = @(FindAll $tm 'Processes' | Sort-Object { try { (Box $_)[0] } catch { 0 } } -Descending) | Select-Object -First 1
     if (-not $label -or (Box $label)[0] -lt (Box $tm)[0] + 250) {
       $perf = Find $tm -name 'Performance' -sec 5; if ($perf) { $p = Mid $perf; [Human]::ClickAt($p[0], $p[1]); Pause 1600 2000 }
