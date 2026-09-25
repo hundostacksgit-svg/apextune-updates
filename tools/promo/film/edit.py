@@ -16,8 +16,14 @@ edl.json:
    "top":      [{"from": 0, "to": 3.5, "text": "...", "size": 74}, ...],
    "bottom":   [{"from": 3, "to": 9, "text": "...", "big": "142", "color": "#ff5d6c"}, ...],
    "note": "Real run on a Windows 11 test PC",
-   "bed": {"pops": [3.1], "whoosh": [5.0]}}
+   "bed": {"pops": [3.1], "whoosh": [5.0]},
+   "cursor": {"csv": "cursor.csv", "video_offset": 2.5}}
 Times in "camera", "top" and "bottom" are output seconds.
+
+"cursor" is for a machine with no mouse attached, where Windows moves the
+pointer but does not draw it: the pointer is drawn where film.ps1's log says
+it was at that moment (the log's clock plus video_offset is the recording's
+time). Leave it out when the recording shows the pointer itself.
 """
 import json, subprocess, sys, os, math
 from functools import lru_cache
@@ -107,6 +113,37 @@ def pill(img, text, x, y, size=34, fill=(0, 0, 0, 170), color='#ffffff', anchor=
     img.alpha_composite(layer, (int(x), int(y)))
 
 
+def arrow(scale):
+    """The standard Windows arrow pointer, white with a black edge, its tip at (2, 2)."""
+    k = 4 * scale
+    pts = [(0, 0), (0, 17), (4, 13), (7, 20), (10, 19), (7, 12), (12, 12)]
+    big = Image.new('RGBA', (int(16 * k) + 8, int(24 * k) + 8), (0, 0, 0, 0))
+    d = ImageDraw.Draw(big)
+    d.polygon([(4 + x * k, 4 + y * k) for x, y in pts], fill=(255, 255, 255, 255), outline=(0, 0, 0, 255), width=max(2, int(k)))
+    return big.resize((big.width // 4, big.height // 4), Image.LANCZOS)
+
+
+class Pointer:
+    """Where the pointer was, from film.ps1's cursor log, in the cut's output time."""
+    def __init__(self, cfg, spans_src):
+        rows = [ln.split(',') for ln in open(cfg['csv'], encoding='utf-8-sig').read().split('\n')[1:] if ln.count(',') >= 2]
+        self.t = np.array([float(r[0]) for r in rows]); self.x = np.array([float(r[1]) for r in rows]); self.y = np.array([float(r[2]) for r in rows])
+        self.vo = float(cfg.get('video_offset', 0)); self.spans = spans_src; self.sprites = {}
+
+    def at(self, t):
+        for (a, z, sp, frm) in self.spans:
+            if a <= t < z:
+                clock = frm + (t - a) * sp - self.vo
+                if clock < self.t[0] or clock > self.t[-1]: return None
+                return float(np.interp(clock, self.t, self.x)), float(np.interp(clock, self.t, self.y))
+        return None
+
+    def sprite(self, zoom):
+        q = round(zoom * 4) / 4
+        if q not in self.sprites: self.sprites[q] = arrow(q)
+        return self.sprites[q]
+
+
 def build_cut(edl, src, cut):
     """The segments, at their speeds, as one 30 fps clip at the screen's size."""
     parts, labels = [], []
@@ -131,6 +168,10 @@ def main():
     cut = os.path.join(work, 'cut.mp4')
     spans, dur = build_cut(edl, src, cut)
     n = int(round(dur * FPS))
+    pointer = None
+    if edl.get('cursor'):
+        spans_src = [(a, z, sp, float(s['from'])) for (a, z, sp), s in zip(spans, edl['segments'])]
+        pointer = Pointer(edl['cursor'], spans_src)
     print(f'{len(spans)} segments, {dur:.1f} s, {n} frames')
 
     bed = os.path.join(work, 'bed.wav')
@@ -165,6 +206,14 @@ def main():
         # The screen, through the camera.
         cx, cy, cw, ch = camera_at(edl['camera'], t)
         view = frame.resize((bw, bh), Image.LANCZOS, box=(cx, cy, cx + cw, cy + ch))
+        if pointer:
+            p = pointer.at(t)
+            if p:
+                zoom = bw / cw
+                spr = pointer.sprite(zoom)
+                px, py = int((p[0] - cx) * zoom) - 1, int((p[1] - cy) * zoom) - 1
+                if -spr.width < px < bw and -spr.height < py < bh:
+                    view.paste(spr, (px, py), spr)
         img.paste(view, (bx, by), mask)
         # Speed, when it is not real time.
         for (a, z, sp) in spans:

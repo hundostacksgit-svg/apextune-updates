@@ -1,18 +1,29 @@
 """
 The edit list for one filmed run, from the run's own events (film.ps1's
-events.json): which stretches of the recording play, how fast, where the
-camera looks, and the words. Real time for everything a person does (the
-count before, the typing, the key, the result, the count after); the run
-itself sped up to fit, and labelled with its speed. Numbers on screen are
-the ones the run recorded.
+events.json) and a few facts read off the recording (take.json): which
+stretches of the recording play, how fast, where the camera looks, and the
+words.
 
-    python3 tools/promo/film/plan.py events.json edl.json [--offset 0.0] [--boxes boxes.json]
+Real time for everything a person does (the count before, the typing, the
+key, the result, the count after), with the waits between them cut out; the
+two long waits the machine does on its own (reading the PC, the run) sped up
+and labelled with their speed. A number in the words is only on screen while
+the recording shows that same number.
 
---offset: seconds between the script's clock and the recording's first frame.
---boxes: where things are on the 1024 x 768 screen, as found in the footage:
-  {"tm_count": [x, y, w, h], "app_count": [...], "log": [...], "result": [...], "ps": [...]}
+    python3 tools/promo/film/plan.py events.json take.json edl.json
+
+take.json, all times in seconds of the recording:
+  {"offset": 2.65,                       recording time = the script's clock + offset
+   "skip": [[14.0, 19.8], ...],          waits cut out (jump cuts), inside the real-time stretches
+   "before": {"n": 173, "at": [23.4, 25.3]},   Task Manager's count, and a stretch where it holds still
+   "after":  {"n": 156, "at": [298.7, 301.7]},
+   "report": 246.97,                     when the report window appears (else the "done" event)
+   "boxes": {"tm_count": [x, y, w, h], "ps": [...], "app_count": [...], "report": [...]},
+   "run_seconds": 9,                     how long the sped-up run lasts on screen
+   "cursor": "cursor.csv"}               only for a recording where Windows did not draw the pointer
+Boxes are on the 1024 x 768 screen, as found in the footage.
 """
-import json, argparse
+import json, sys
 
 FULL = [0, 0, 1024, 768]
 
@@ -27,91 +38,109 @@ def fit(box, zoom_w):
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument('events'); ap.add_argument('out')
-    ap.add_argument('--offset', type=float, default=0.0)
-    ap.add_argument('--boxes', default='')
-    ap.add_argument('--run-seconds', type=float, default=9.0, help='how long the sped-up run lasts on screen')
-    a = ap.parse_args()
+    events, take_path, out = sys.argv[1:4]
+    take = json.load(open(take_path))
     ev = {}
-    for e in json.load(open(a.events, encoding='utf-8-sig')):
+    for e in json.load(open(events, encoding='utf-8-sig')):
         ev.setdefault(e['what'], e)
-    T = lambda k: ev[k]['t'] - a.offset
-    boxes = json.load(open(a.boxes)) if a.boxes else {}
+    off = float(take.get('offset', 0))
+    V = lambda k: ev[k]['t'] + off
+    boxes = take.get('boxes', {})
+    skips = sorted(take.get('skip', []))
+    before, after = take['before'], take['after']
+    report = float(take.get('report', V('done')))
 
-    before = ev['before-count']['processes']
-    after = ev.get('after-count', ev.get('end'))['processes']
-    segs, cam, top, bottom, pops, whoosh = [], [], [], [], [], []
-    t = 0.0
+    # Segments in recording time; a real-time stretch loses the skipped waits inside it.
+    segs = []
+    def stretch(a, b, speed=1):
+        if speed == 1:
+            for s0, s1 in skips:
+                if a < s0 < b:
+                    segs.append([a, s0, 1]); a = max(a, s1)
+        segs.append([a, b, speed])
 
-    def seg(frm, to, speed=1.0):
-        nonlocal t
-        start = t
-        segs.append({'from': round(frm, 2), 'to': round(to, 2), 'speed': round(speed, 2)})
-        t += (to - frm) / speed
-        return start, t
+    run_end = report - 2.0
+    gap = V('app-read') - (V('command-entered') + 1.2)
+    run_len = run_end - (V('run') + 1.0)
+    stretch(V('task-manager-open') - 0.6, before['at'][1])
+    stretch(V('start-menu') - 0.3, V('command-entered') + 1.2)
+    stretch(V('command-entered') + 1.2, V('app-read'), max(2, round(gap / 3.8)))
+    stretch(V('app-read'), V('run') + 1.0)
+    stretch(V('run') + 1.0, run_end, max(2, round(run_len / float(take.get('run_seconds', 9)))))
+    stretch(run_end, after['at'][1])
 
-    # 1. Task Manager, the number before (real time).
-    s0, s1 = seg(T('task-manager-open') - 0.6, T('before-count') + 3.0)
-    cam.append({'t': 0, 'rect': FULL, 'hold': max(0.1, T('before-count') - T('task-manager-open') - 0.2)})
-    if 'tm_count' in boxes:
-        cam.append({'t': s1 - 3.2, 'rect': fit(boxes['tm_count'], 420), 'hold': 2.6})
+    # Output time for a recording time (a time inside a cut-out wait lands where the cut lands).
+    starts, t = [], 0.0
+    for a, b, sp in segs:
+        starts.append(t); t += (b - a) / sp
+    total = t
+    def O(v):
+        for (a, b, sp), s in zip(segs, starts):
+            if v < a: return s
+            if v <= b: return s + (v - a) / sp
+        return total
+
+    cam, top, bottom, pops, whoosh = [], [], [], [], []
+    def hold(rect, v0, v1): cam.append({'t': round(O(v0), 2), 'rect': rect, 'hold': round(max(0.05, O(v1) - O(v0)), 2)})
+    def say(v0, v1, text, size=64): top.append({'from': round(O(v0), 2), 'to': round(O(v1), 2), 'text': text, 'size': size})
+    def big(v0, v1, n, text, color): bottom.append({'from': round(O(v0), 2), 'to': round(O(v1), 2), 'big': n, 'text': text, 'color': color})
+
+    # 1. Task Manager, the number before.
+    b0, b1 = before['at']
+    hold(FULL, V('task-manager-open') - 0.6, b0 - 0.6)
+    hold(fit(boxes['tm_count'], 380), b0, b1)
     top.append({'from': 0, 'to': 3.6, 'text': 'Testing a $20 Windows optimizer on a Windows 11 PC', 'size': 68})
-    top.append({'from': s1 - 3.4, 'to': s1, 'text': 'Task Manager, before', 'size': 62})
-    bottom.append({'from': s1 - 3.2, 'to': s1, 'big': str(before), 'text': 'processes running', 'color': '#ff6b7a'})
-    pops.append(round(s1 - 3.2, 2))
+    say(b0 - 0.2, b1, 'Task Manager, before', 62)
+    big(b0, b1, str(before['n']), 'processes running', '#ff6b7a')
+    pops.append(round(O(b0), 2))
 
-    # 2. Start, "powershell", the line (real time: the typing is the point).
-    s0, s1 = seg(T('start-menu') - 0.3, T('command-entered') + 1.2)
-    whoosh.append(round(s0, 2))
-    cam.append({'t': s0, 'rect': FULL, 'hold': 0.1})
-    if 'ps' in boxes:
-        cam.append({'t': s0 + (T('type-command') - T('start-menu')) - 0.4, 'rect': fit(boxes['ps'], 640), 'hold': (T('command-entered') - T('type-command')) + 1.0})
-    top.append({'from': s0 + 0.2, 'to': s1, 'text': 'One line in PowerShell', 'size': 64})
+    # 2. Start, "powershell", the line.
+    s = V('start-menu') - 0.3
+    whoosh.append(round(O(s), 2))
+    hold(FULL, s, V('type-command') - 0.6)
+    hold(fit(boxes['ps'], 600), V('type-command'), V('command-entered') + 1.2)
+    say(s + 0.2, V('command-entered') + 1.2, 'One line in PowerShell')
 
     # 3. The script fetched, the app opens and reads the PC (sped up).
-    gap = T('app-read') - (T('command-entered') + 1.2)
-    sp = max(1.0, round(gap / 3.5, 1))
-    s0, s1 = seg(T('command-entered') + 1.2, T('app-read'), sp)
-    cam.append({'t': s0, 'rect': FULL, 'hold': s1 - s0})
-    top.append({'from': s0, 'to': s1 + 2.4, 'text': 'It reads the PC first', 'size': 64})
+    hold(FULL, V('command-entered') + 1.2, V('app-read'))
+    say(V('command-entered') + 1.2, V('app-read') + 2.6, 'It reads the PC first')
 
-    # 4. The count in the app, the key, Run (real time).
-    s0, s1 = seg(T('app-read'), T('run') + 1.0)
-    if 'app_count' in boxes:
-        cam.append({'t': s0, 'rect': fit(boxes['app_count'], 520), 'hold': 2.2})
-    cam.append({'t': s0 + 3.0, 'rect': FULL, 'hold': 0.1})
-    top.append({'from': s1 - (T('run') + 1.0 - T('key-pasted')) - 0.6, 'to': s1, 'text': 'Key in. Run.', 'size': 64})
+    # 4. The count in the app, the key, Run.
+    hold(fit(boxes['app_count'], 480), V('app-read'), V('app-read') + 2.4)
+    hold(FULL, V('app-read') + 3.0, V('run') + 1.0)
+    say(V('key-pasted') - 1.4, V('run') + 1.0, 'Key in. Run.')
 
-    # 5. The run, sped up to fit.
-    run_len = T('done') - (T('run') + 1.0)
-    sp = max(1.0, round(run_len / a.run_seconds))
-    s0, s1 = seg(T('run') + 1.0, T('done'), sp)
-    if 'log' in boxes:
-        cam.append({'t': s0 + 0.6, 'rect': fit(boxes['log'], 760), 'hold': max(0.1, s1 - s0 - 1.2)})
-    top.append({'from': s0, 'to': s1, 'text': 'Restore point first. Then it cuts what this PC does not use', 'size': 58})
+    # 5. The run (sped up).
+    hold(FULL, V('run') + 1.0, run_end)
+    say(V('run') + 1.0, run_end, 'Restore point first. Then it cuts what this PC does not use', 58)
 
-    # 6. The result line (real time).
-    s0, s1 = seg(T('done'), T('done') + 4.2)
-    if 'result' in boxes:
-        cam.append({'t': s0 + 0.3, 'rect': fit(boxes['result'], 560), 'hold': 3.4})
-    top.append({'from': s0, 'to': s1, 'text': 'Done. Its own count, right after the run', 'size': 60})
+    # 6. Done, and the report it opens by itself.
+    say(run_end, report, 'Done.')
+    hold(FULL, run_end, report + 0.4)
+    if 'report' in boxes:
+        hold(fit(boxes['report'], 700), report + 1.0, report + 3.6)
+    say(report, V('task-manager-again') - 0.6, 'Its own report, straight after the run', 60)
 
-    # 7. Task Manager again, the number after (real time).
-    s0, s1 = seg(T('task-manager-again') - 0.3, T('after-count') + 3.5)
-    whoosh.append(round(s0, 2))
-    cam.append({'t': s0, 'rect': FULL, 'hold': max(0.1, T('after-count') - T('task-manager-again'))})
-    if 'tm_count' in boxes:
-        cam.append({'t': s1 - 3.4, 'rect': fit(boxes['tm_count'], 420), 'hold': 3.0})
-    top.append({'from': s1 - 3.6, 'to': s1, 'text': 'Task Manager, after. No restart yet', 'size': 60})
-    bottom.append({'from': s1 - 3.4, 'to': s1, 'big': f'{before} → {after}', 'text': 'processes', 'color': '#35d07f'})
-    pops.append(round(s1 - 3.4, 2))
+    # 7. Task Manager again, the number after.
+    a0, a1 = after['at']
+    whoosh.append(round(O(V('task-manager-again') - 0.3), 2))
+    hold(FULL, report + 4.2, a0 - 0.6)
+    hold(fit(boxes['tm_count'], 380), a0, a1)
+    say(V('task-manager-again') - 0.3, a1, 'Task Manager, after. No restart yet', 60)
+    big(a0, a1, f"{before['n']} → {after['n']}", 'processes', '#35d07f')
+    pops.append(round(O(a0), 2))
 
-    edl = {'segments': segs, 'camera': cam, 'top': top, 'bottom': bottom,
+    cam.sort(key=lambda k: k['t'])
+    edl = {'segments': [{'from': round(a, 2), 'to': round(b, 2), 'speed': sp} for a, b, sp in segs],
+           'camera': cam, 'top': top, 'bottom': bottom,
            'note': 'Real run on a Windows 11 test PC · omnidx.net', 'bed': {'pops': pops, 'whoosh': whoosh},
-           'numbers': {'before': before, 'after': after}}
-    json.dump(edl, open(a.out, 'w'), indent=1)
-    print(f'{len(segs)} segments, {t:.1f} s; before {before}, after {after}')
+           'numbers': {'before': before['n'], 'after': after['n']}}
+    if take.get('cursor'):
+        edl['cursor'] = {'csv': take['cursor'], 'video_offset': off}
+    json.dump(edl, open(out, 'w'), indent=1)
+    print(f'{len(segs)} segments, {total:.1f} s; before {before["n"]}, after {after["n"]}')
+    for (a, b, sp), st in zip(segs, starts):
+        print(f'  {st:6.2f}  {a:7.2f} -> {b:7.2f}  x{sp:g}')
 
 
 if __name__ == '__main__':
