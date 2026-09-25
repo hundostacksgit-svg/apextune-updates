@@ -97,13 +97,13 @@ function Maximize($e) { $b = Box $e; [Human]::DoubleClickAt([int]($b[0] + $b[2] 
 # ---------------------------------------------------------------- the desk, before the camera rolls
 # The first-sign-in privacy page this machine opens with, full screen and on top of everything: Next, then
 # Accept, as anyone setting up a PC does. Its button is where Windows always puts it, and blue while it is there.
-for ($i = 0; $i -lt 4; $i++) {
-  $bx = [int]($ScrW * 0.846); $by = [int]($ScrH * 0.854)
-  $c = [Desk]::Pixel($bx, $by)
-  if (-not ($c[2] -gt 150 -and $c[0] -lt 80)) { break }
-  Note "first-sign-in privacy page: pressing its button (page $($i + 1))"
-  [Human]::ClickAt($bx, $by); Start-Sleep 4
+# Next is a bright blue, Accept a dark one; both are clearly blue against the page's near-white.
+function PrivacyButton { $c = [Desk]::Pixel([int]($ScrW * 0.846), [int]($ScrH * 0.854)); return ($c[2] -gt 90 -and ($c[2] - $c[0]) -gt 50 -and ($c[2] - $c[1]) -gt 15) }
+for ($i = 0; $i -lt 6 -and (PrivacyButton); $i++) {
+  Note "first-sign-in privacy page: pressing its button (press $($i + 1))"
+  [Human]::ClickAt([int]($ScrW * 0.846), [int]($ScrH * 0.854)); Start-Sleep 5
 }
+if (PrivacyButton) { Note 'the privacy page is still up'; exit 1 }
 # The GitHub agent's own console: minimized, not closed (closing it would end this job).
 foreach ($w in Tops) {
   try { $n = $w.Current.Name } catch { continue }

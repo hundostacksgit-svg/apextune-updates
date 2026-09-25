@@ -15,6 +15,11 @@ on:
 permissions:
   contents: write
 
+# One take at a time: each one clears the last one's footage.
+concurrency:
+  group: film
+  cancel-in-progress: false
+
 jobs:
   film:
     runs-on: windows-11-arm
@@ -26,6 +31,11 @@ jobs:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
+      # The x64 ffmpeg (about 200 MB) is fetched once and kept, not on every take.
+      - uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/ffmpeg-win64
+          key: ffmpeg-win64-${{ runner.os }}-2026-09
       - name: Clear old footage
         run: |
           $old = gh release list --limit 50 --json tagName --jq '.[].tagName' | Where-Object { $_ -like 'film-*' }
