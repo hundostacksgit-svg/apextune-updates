@@ -105,12 +105,21 @@ for ($i = 0; $i -lt 6 -and (PrivacyButton); $i++) {
   [Human]::ClickAt([int]($ScrW * 0.846), [int]($ScrH * 0.854)); Start-Sleep 5
 }
 if (PrivacyButton) { Note 'the privacy page is still up'; exit 1 }
-# This image asks, a few minutes after sign-in, to update the Windows Subsystem for Linux, in a window that takes the
-# keyboard ("press any key"). The update is done here, quietly, first; any prompt already up is closed.
-try {
-  $wslJob = Start-Job { & wsl.exe --update 2>&1 | Out-String }
-  if (Wait-Job $wslJob -Timeout 240) { Note ("wsl --update: " + ((Receive-Job $wslJob) -replace '\s+', ' ').Trim()) } else { Note 'wsl --update still running; carrying on' }
-} catch { Note "wsl --update: $_" }
+# A few minutes after sign-in, something on this image runs wsl.exe; WSL is not installed, so Windows opens its
+# "press any key to install" prompt in a terminal that takes the keyboard. A watcher closes it the moment it appears
+# (and notes what started it), and the filming waits until that moment has passed.
+$watchLog = Join-Path $Out 'wsl-watch.txt'
+$watch = Start-Job -ArgumentList $watchLog {
+  param($log)
+  while ($true) {
+    foreach ($w in @(Get-CimInstance Win32_Process -Filter "Name='wsl.exe' OR Name='wslhost.exe'" -ErrorAction SilentlyContinue)) {
+      $parent = Get-CimInstance Win32_Process -Filter "ProcessId=$($w.ParentProcessId)" -ErrorAction SilentlyContinue
+      Add-Content $log ("{0:HH:mm:ss.fff} closed {1} (pid {2}) started by {3}: {4}" -f (Get-Date), $w.Name, $w.ProcessId, $parent.Name, $parent.CommandLine)
+      Stop-Process -Id $w.ProcessId -Force -ErrorAction SilentlyContinue
+    }
+    Start-Sleep -Milliseconds 150
+  }
+}
 function Tidy { Get-Process wsl -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue }
 Tidy
 # The GitHub agent's own console: minimized, not closed (closing it would end this job).
@@ -164,6 +173,9 @@ $psi.Arguments = "-hide_banner -loglevel warning -f gdigrab -framerate 30 -draw_
 $psi.UseShellExecute = $false; $psi.RedirectStandardInput = $true; $psi.RedirectStandardError = $true; $psi.CreateNoWindow = $true
 $rec = [System.Diagnostics.Process]::Start($psi)
 $errTask = $rec.StandardError.ReadToEndAsync()
+$signedIn = (Get-Process explorer | Sort-Object StartTime | Select-Object -First 1).StartTime
+while (((Get-Date) - $signedIn).TotalSeconds -lt 330) { Start-Sleep 5 }
+Note ("signed in {0:0} s ago; wsl prompts closed so far: {1}" -f ((Get-Date) - $signedIn).TotalSeconds, $(if (Test-Path $watchLog) { @(Get-Content $watchLog).Count } else { 0 }))
 Tidy
 [Human]::Press(0x1B); Start-Sleep -Milliseconds 400; [Human]::Press(0x1B); Start-Sleep 2
 $clock = [Diagnostics.Stopwatch]::StartNew()
@@ -272,6 +284,7 @@ try {
   if (-not $rec.WaitForExit(90000)) { $rec.Kill() }
   Note ("ffmpeg: " + (($errTask.Result -split "`n" | Select-Object -Last 5) -join ' | '))
   $events | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $Out 'events.json') -Encoding UTF8
+  try { Stop-Job $watch; Remove-Job $watch -Force } catch { }
   foreach ($pat in 'summary-*.json', 'report-*.html', 'report-*.txt', 'log-*.txt', 'card-*.png') {
     Get-ChildItem C:\OmniDx -Filter $pat -ErrorAction SilentlyContinue | Copy-Item -Destination $Out -ErrorAction SilentlyContinue
   }
