@@ -100,10 +100,10 @@ while ($true) {
   $q = $null
   try { $q = Invoke-RestMethod ("$Base/next?after=$last&boot=" + [uri]::EscapeDataString($boot)) -TimeoutSec 40; $fails = 0 }
   catch { $fails++; if ($fails -le 3 -or $fails % 60 -eq 0) { Note "no answer from $Base ($fails): $_" }; Start-Sleep -Milliseconds 700; continue }
-  if (-not $q -or -not $q.id) { continue }
-  $last = [int]$q.id
+  if (-not $q -or -not $q.qid) { continue }
+  $last = [int]$q.qid
   $res = $null
   try { $res = Answer $q } catch { $res = @{ error = "$_" } }
-  $body = @{ id = $last; result = $res } | ConvertTo-Json -Depth 6 -Compress
+  $body = @{ qid = $last; result = $res } | ConvertTo-Json -Depth 6 -Compress
   try { Invoke-RestMethod -Method Post -Uri "$Base/done" -Body ([Text.Encoding]::UTF8.GetBytes($body)) -ContentType 'application/json' -TimeoutSec 15 | Out-Null } catch { Note "done $last : $_" }
 }

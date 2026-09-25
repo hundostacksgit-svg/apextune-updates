@@ -189,7 +189,7 @@ class Agent:
     def ask(self, op, timeout=25, **kw):
         with self.cv:
             i = self.next_id; self.next_id += 1
-            self.queue.append((i, dict(kw, id=i, op=op))); self.cv.notify_all()
+            self.queue.append((i, dict(kw, qid=i, op=op))); self.cv.notify_all()
             end = time.time() + timeout
             while i not in self.results:
                 left = end - time.time()
@@ -229,7 +229,7 @@ class Handler(BaseHTTPRequestHandler):
                 cmd = next((c for i, c in AG.queue if i > after), None)
                 if cmd or time.time() >= end: break
                 AG.cv.wait(end - time.time())
-            if cmd: AG.queue = [(i, c) for i, c in AG.queue if i != cmd['id']]
+            if cmd: AG.queue = [(i, c) for i, c in AG.queue if i != cmd['qid']]
         self._send(200, json.dumps(cmd or {}).encode())
 
     def do_POST(self):
@@ -237,7 +237,7 @@ class Handler(BaseHTTPRequestHandler):
         n = int(self.headers.get('Content-Length') or 0); body = self.rfile.read(n)
         if u.path == '/done':
             d = json.loads(body.decode('utf-8-sig'))
-            with AG.cv: AG.results[int(d['id'])] = d.get('result'); AG.cv.notify_all()
+            with AG.cv: AG.results[int(d['qid'])] = d.get('result'); AG.cv.notify_all()
             return self._send(200, b'{}')
         if u.path == '/upload':
             name = os.path.basename(q.get('name', ['file'])[0])
