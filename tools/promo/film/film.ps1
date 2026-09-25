@@ -134,6 +134,13 @@ $site = Join-Path $env:RUNNER_TEMP 'site'
 New-Item -ItemType Directory -Force (Join-Path $site 'tune') | Out-Null
 Copy-Item (Join-Path $Repo 'go.ps1') $site -Force
 Copy-Item (Join-Path $Repo 'tune\*') (Join-Path $site 'tune') -Recurse -Force
+# The same bytes the site serves: a Windows checkout turns LF into CRLF, and go.ps1 rightly refuses a script whose
+# bytes do not match the published hash. Latin-1 maps every byte to one character, so only the line ends change.
+$latin1 = [Text.Encoding]::GetEncoding(28591)
+foreach ($f in @(Get-Item (Join-Path $site 'go.ps1')) + @(Get-ChildItem (Join-Path $site 'tune') -Recurse -File)) {
+  $text = [IO.File]::ReadAllText($f.FullName, $latin1)
+  if ($text.Contains("`r`n")) { [IO.File]::WriteAllText($f.FullName, $text.Replace("`r`n", "`n"), $latin1) }
+}
 $cfgPath = Join-Path $site 'tune\config.json'
 $cfg = Get-Content $cfgPath -Raw | ConvertFrom-Json
 $cfg.api = 'http://127.0.0.1:8787'
