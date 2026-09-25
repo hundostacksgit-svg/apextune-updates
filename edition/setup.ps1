@@ -71,6 +71,7 @@ public static class EdNative {
 #   key <hive> <path>                                  a key the Edition made (removed on undo)
 #   file <path> <backup|->                             a file the Edition replaced (put back) or made (removed)
 #   task <name>                                        a scheduled task the Edition made
+#   svc <name> <start> <delayed>                       a service's start type, as it was (changed through sc.exe)
 $script:Seen = @{}
 if (Test-Path $UndoFile) { foreach ($l in Get-Content $UndoFile) { $p = $l -split "`t"; if ($p.Count -ge 3) { $script:Seen[($p[0..([Math]::Min(3, $p.Count - 1))] -join '|')] = $true } } }
 function Remember([string[]]$fields, [string]$id) {
@@ -214,6 +215,10 @@ if ($Undo) {
           'key' { Remove-Item -Path "$($p[1]):\$($p[2])" -Recurse -Force -ErrorAction SilentlyContinue }
           'file' { if ($p[2] -eq '-') { Remove-Item $p[1] -Recurse -Force -ErrorAction SilentlyContinue } else { Copy-Item $p[2] $p[1] -Force -ErrorAction SilentlyContinue } }
           'task' { Unregister-ScheduledTask -TaskName $p[1] -TaskPath '\OmniDx\' -Confirm:$false -ErrorAction SilentlyContinue }
+          'svc' {
+            $mode = switch ([int]$p[2]) { 2 { if ($p[3] -eq '1') { 'delayed-auto' } else { 'auto' } } 3 { 'demand' } 4 { 'disabled' } default { $null } }
+            if ($mode) { & sc.exe config "$($p[1])" start= $mode | Out-Null; if ([int]$p[2] -eq 2) { Start-Service -Name $p[1] -ErrorAction SilentlyContinue } }
+          }
           'sounds' {
             foreach ($ev in Get-ChildItem 'HKCU:\AppEvents\Schemes\Apps' -ErrorAction SilentlyContinue | Get-ChildItem -ErrorAction SilentlyContinue) {
               $def = Join-Path $ev.PSPath '.Default'; $cur = Join-Path $ev.PSPath '.Current'
@@ -517,13 +522,17 @@ Head '6. Lean: the fewest processes at sign-in'
 # counts them and the Hub shows the number). What goes here runs in the background for things a gaming PC does
 # without. Defender, SmartScreen, the firewall and Windows Update are not touched, nor are the graphics drivers'
 # own services; every change is written down for -Undo.
+# Through the Service Control Manager, not the registry: Windows guards some services' keys (link tracking's, for one).
 function Set-StartType([string]$svc, [int]$start) {
   $k = "HKLM:\SYSTEM\CurrentControlSet\Services\$svc"
   if (-not (Test-Path $k)) { return $false }
   $cur = (Get-ItemProperty $k -Name Start -ErrorAction SilentlyContinue).Start
   # Never a boot or system driver; never a disabled service switched back to manual.
   if ($null -eq $cur -or $cur -le 1 -or $cur -eq $start -or ($cur -eq 4 -and $start -eq 3)) { return $false }
-  Set-Reg $k 'Start' $start
+  $delayed = [int](Get-ItemProperty $k -Name DelayedAutostart -ErrorAction SilentlyContinue).DelayedAutostart
+  $out = & sc.exe config "$svc" start= $(@{ 2 = 'auto'; 3 = 'demand'; 4 = 'disabled' }[$start]) 2>&1
+  if ($LASTEXITCODE -ne 0) { Note ("{0}: left as it is ({1})" -f $svc, (($out | Out-String).Trim() -replace '\s+', ' ')) 'Yellow'; return $false }
+  Remember @('svc', $svc, "$cur", "$delayed") "svc|$svc|$cur|$delayed"
   if ($start -eq 4) { Stop-Service -Name $svc -Force -ErrorAction SilentlyContinue }
   return $true
 }
