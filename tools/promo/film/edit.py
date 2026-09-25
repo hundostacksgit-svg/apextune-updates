@@ -52,11 +52,14 @@ def ease(x):
 
 def camera_at(cam, t):
     """The camera rect at output time t: held at each keyframe for its "hold", eased to the next."""
+    cam = sorted(cam, key=lambda k: k['t'])
     keys = []
-    for k in cam:
+    for i, k in enumerate(cam):
         keys.append((k['t'], k['rect']))
-        if k.get('hold'): keys.append((k['t'] + k['hold'], k['rect']))
-    keys.sort(key=lambda k: k[0])
+        # A hold ends where the next keyframe starts at the latest: rounding (7.07 + 3.8 = 10.870000000000001)
+        # must not put its end after that keyframe, or the camera eases the wrong way across the whole gap.
+        nxt = cam[i + 1]['t'] if i + 1 < len(cam) else float('inf')
+        if k.get('hold'): keys.append((min(k['t'] + k['hold'], nxt), k['rect']))
     if t <= keys[0][0]: return keys[0][1]
     for (t0, r0), (t1, r1) in zip(keys, keys[1:]):
         if t0 <= t <= t1:

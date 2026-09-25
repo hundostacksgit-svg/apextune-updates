@@ -1,11 +1,11 @@
-# OmniDx Tune on TikTok: the eight cuts and how to post them
+# OmniDx Tune on TikTok: the nine cuts and how to post them
 
 Seven 9:16 videos cut from the site's tutorial, each built around one hook a
-stranger scrolling past would stop for, and an eighth that is a screen
-recording of a real run. They are made from code
+stranger scrolling past would stop for, and two that are screen recordings
+of real runs. They are made from code
 (`node tools/promo/tune/render-shorts.mjs`, see `tools/promo/tune/README.md`;
-the eighth from `tools/promo/film/`) and are promotion material: the MP4s
-never go into git.
+the eighth and ninth from `tools/promo/film/`) and are promotion material:
+the MP4s never go into git.
 
 Nobody can promise views. What these are built on is what the feed rewards:
 a reason to stop in the first second, a caption that finishes the thought,
@@ -23,6 +23,7 @@ something to comment ("what's your number?"), and an ending that loops.
 | 6 | `06-pov-one-line.mp4` | 0:26 | "POV: you paste one line into PowerShell" | Watch again |
 | 7 | `07-valorant-safe.mp4` | 0:20 | "Some 'FPS boost' tweaks turn off what VALORANT needs." | Comment, share to a VALORANT friend |
 | 8 | `08-real-test.mp4` | 1:05 | "Testing a $20 Windows optimizer on a Windows 11 PC" | Watch to the end, comment your number |
+| 9 | `09-restart-test.mp4` | 1:22 | "Testing a $20 Windows optimizer on a clean Windows 11 PC" | Watch to the end, comment your number |
 
 Each has a cover image next to it (`NN-name-cover.jpg`, the hook on screen).
 In TikTok: Edit cover, pick the frame about a second and a half in, or upload
@@ -33,8 +34,19 @@ says "Example run" whenever one is shown; the run is shown sped up and says
 so. Number 8 is a real run, recorded as it happened on a Windows 11 test PC
 in the cloud (a GitHub-hosted machine): the typing, the key, Task Manager
 before and after are real time with the waits cut out, and the two long
-waits (reading the PC, the run) are sped up with their speed on screen. Keep it
-that way in the captions: never promise a number, never a frame rate.
+waits (reading the PC, the run) are sped up with their speed on screen.
+
+Number 9 goes through the restart, which is where the number that counts is.
+The PC is a clean Windows 11 install (the Enterprise evaluation image from
+Microsoft, TPM and Secure Boot on) in a virtual machine, filmed from outside
+it so the recording runs on through the reboot (`tools/promo/film/vm/`). The
+mouse and keyboard are driven along human paths, the administrator prompt is
+answered Yes on screen, and Extreme is ticked in the app, on camera. The
+measured run: Task Manager 143 before; 85 three minutes after the sign-in
+that follows the restart, Task Manager's own Up time showing the fresh start.
+The same PC with the standard tune (no Extreme) went 145 to 118 after the
+restart, so the video says Extreme on screen, and so should the caption. Keep
+it that way in the captions: never promise a number, never a frame rate.
 
 ## What to post with each
 
@@ -162,9 +174,26 @@ nothing.*
 
 Cover: the last frame (Task Manager, the before and after numbers).
 
+**9. The restart test (screen recording)**
+
+> Clean Windows 11 PC, start to finish: Task Manager before, one line in
+> PowerShell, Extreme mode, restart, Task Manager after. 143 to 85 on this
+> test PC. Try it on yours: omnidx.net
+> #pcgaming #windows11 #pctips #gamingpc #techtok
+
+Pinned comment: *Real run on a clean Windows 11 test PC (a fresh install in a
+virtual machine), recorded as it happened through the restart; the waits are
+sped up and the video says by how much. Extreme is the app's opt-in tier:
+fewer conveniences (animations, the search box, notifications), and undo puts
+it all back. Without Extreme the same PC went 145 to 118. Your number depends
+on what your PC runs; the free report shows what it would do and changes
+nothing.*
+
+Cover: the last frame (Task Manager after the restart, 143 → 85).
+
 ## Posting
 
-- **Order:** 1, 8, 2, 4, 3, 7, 5, 6. One a day. The first two ask for a comment,
+- **Order:** 9, 1, 8, 2, 4, 3, 7, 5, 6. One a day. The first two ask for a comment,
   which is what gets a new account shown to more people.
 - **When:** early evening in your viewers' time zone (6 to 9 pm); after a
   week, TikTok's Analytics > Followers shows when yours are on.
@@ -198,6 +227,10 @@ Cover: the last frame (Task Manager, the before and after numbers).
   anti-cheat, and Secure Boot, TPM and memory integrity stay on."
 - **"Why pay?"**: "$19.99 once, no subscription, locked to your PC, undo
   included. The free report is free forever."
+- **"What's Extreme? Is it safe?"**: "It's a box in the app, off unless you
+  tick it: it also turns off animations, the search box, notifications and
+  the extra services. Security stays on. Undo the last run puts only Extreme
+  back."
 - **"That's a virtual machine"**: "Yes, a test PC in the cloud, and the
   video says so. A home PC with launchers, RGB and PC-maker apps has more to
   cut. Run the free report on yours; it changes nothing."
