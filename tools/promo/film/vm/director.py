@@ -298,8 +298,9 @@ def _luma_outside_middle(im):
 
 def uac_yes(baseline, timeout=25):
     """The administrator prompt, answered Yes with the mouse, as the person running the tune does.
-    Windows shows it with the screen dimmed behind it and Yes as its accent-coloured button: found
-    on a screenshot once the screen has dimmed (so the blue wallpaper is never taken for it), clicked."""
+    Windows shows it with the screen dimmed behind it; its accent-coloured (default) button is No, and
+    Yes is the plain button of the same size to its left. The accent button is found on a screenshot once
+    the screen has dimmed (so the blue wallpaper is never taken for it), and Yes clicked beside it."""
     from PIL import Image
     base = _luma_outside_middle(Image.open(baseline))
     end = time.time() + timeout; n = 0
@@ -320,11 +321,28 @@ def uac_yes(baseline, timeout=25):
                 if b > 150 and b - r > 90 and b - g > 40 and g > 60: xs.append(xx); ys.append(yy)
         note(f'prompt look {n}: brightness {dim:.0f} (before {base:.0f}), {len(xs)} accent pixels')
         if len(xs) > 300:
-            xs.sort(); ys.sort()
-            cx = box[0] + xs[len(xs) // 2] * 2; cy = box[1] + ys[len(ys) // 2] * 2
+            # The accent button (No) is the widest solid run of accent colour; the link and the icon above
+            # it are accent-coloured too, but thin. Its row, then its edges, back in screen pixels.
+            rows = {}
+            for xx, yy in zip(xs, ys): rows.setdefault(yy, []).append(xx)
+            yy = max(rows, key=lambda k: len(rows[k]))
+            run, best, prev = [], [], None
+            for xx in sorted(rows[yy]):
+                run = run + [xx] if prev is not None and xx - prev <= 2 else [xx]
+                if len(run) > len(best): best = run
+                prev = xx
+            left, right = box[0] + best[0] * 2, box[0] + best[-1] * 2
+            cy = box[1] + yy * 2
+            bw = right - left
+            yes_x = left - 12 - bw // 2
+            r, g, b = im.getpixel((yes_x, cy))
+            note(f'prompt: No spans {left}-{right} at y {cy}; Yes at {yes_x},{cy} (colour {r},{g},{b})')
+            if min(r, g, b) < 200:
+                note('prompt: the spot left of the accent button is not a light button; not clicking')
+                return False
             pause(0.8, 1.3)
-            click_at(cx, cy)
-            note(f'prompt: Yes at {cx},{cy}')
+            click_at(yes_x, cy)
+            note(f'prompt: Yes clicked at {yes_x},{cy}')
             return True
         time.sleep(0.5)
     note('prompt: not answered')
@@ -339,7 +357,11 @@ def record_start():
     """The PC's screen is QEMU's window on this machine's virtual display; recorded where that window is."""
     global REC, T0
     import re
-    geo = subprocess.run(['xwininfo', '-root', '-tree'], capture_output=True, text=True, env=dict(os.environ, DISPLAY=A.display)).stdout
+    env = dict(os.environ, DISPLAY=A.display)
+    # QEMU's window grows from where it first opened, centred at the firmware's small size: moved to the corner.
+    subprocess.run(['xdotool', 'search', '--name', 'QEMU', 'windowmove', '%@', '0', '0'], env=env, capture_output=True)
+    time.sleep(1)
+    geo = subprocess.run(['xwininfo', '-root', '-tree'], capture_output=True, text=True, env=env).stdout
     ox = oy = 0
     for line in geo.splitlines():
         m = re.search(r'(\d+)x(\d+)\+-?\d+\+-?\d+\s+\+(-?\d+)\+(-?\d+)', line)
@@ -369,11 +391,10 @@ def task_manager(what):
     tm = win('Task Manager', 20)
     if not tm: note('Task Manager did not open'); return
     pause(1.2, 1.6)
-    label = find('Task Manager', name='Processes', pick='rightmost', timeout=3)
-    if not label or label['x'] < tm['x'] + 250:
-        perf = find('Task Manager', name='Performance', timeout=8)
-        if perf: click_at(*mid(perf)); pause(1.6, 2.1)
-        label = find('Task Manager', name='Processes', pick='rightmost', timeout=8)
+    # Performance first (it opens on the process list, whose hundreds of rows make any search slow).
+    perf = find('Task Manager', name='Performance', timeout=8)
+    if perf: click_at(*mid(perf)); pause(1.6, 2.1)
+    label = find('Task Manager', name='Processes', pick='rightmost', timeout=8)
     if label:
         move_to(label['x'] + label['w'] // 2 + 8, label['y'] + label['h'] // 2 + 30)
     mark(what)

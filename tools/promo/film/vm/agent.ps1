@@ -56,6 +56,8 @@ function FindIn($root, $q) {
   if ($q.id) { $conds += New-Object System.Windows.Automation.PropertyCondition($A::AutomationIdProperty, "$($q.id)") }
   if ($q.name) { $conds += New-Object System.Windows.Automation.PropertyCondition($A::NameProperty, "$($q.name)") }
   $c = if ($conds.Count -eq 1) { $conds[0] } else { New-Object System.Windows.Automation.AndCondition($conds) }
+  # The first match is enough unless the question is which of several (FindAll walks the whole tree).
+  if (-not "$($q.pick)") { $e = $root.FindFirst($Scope::Descendants, $c); if ($e) { return (Describe $e) } else { return $null } }
   $all = @($root.FindAll($Scope::Descendants, $c))
   $found = @($all | ForEach-Object { Describe $_ } | Where-Object { $_ })
   if (-not $found.Count) { return $null }

@@ -34,7 +34,7 @@ echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sud
 sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
 [ -w /dev/kvm ] || { log 'no KVM on this machine'; exit 1; }
 sudo apt-get update -qq
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq qemu-system-x86 qemu-system-gui qemu-utils ovmf swtpm swtpm-tools genisoimage xvfb x11-utils ffmpeg python3-pil ntfs-3g >/dev/null
+sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq qemu-system-x86 qemu-system-gui qemu-utils ovmf swtpm swtpm-tools genisoimage xvfb x11-utils xdotool ffmpeg python3-pil ntfs-3g >/dev/null
 log "qemu $(qemu-system-x86_64 --version | head -1)"
 
 if [ ! -s "$ISO" ]; then
@@ -79,7 +79,8 @@ for i in $(seq 20); do [ -S "$TPM/sock" ] && break; sleep 0.25; done
 log "TPM up"
 cp /usr/share/OVMF/OVMF_VARS_4M.ms.fd "$WORK/vars.fd"
 rm -f "$WORK/win.qcow2"; qemu-img create -q -f qcow2 "$WORK/win.qcow2" 80G
-Xvfb :99 -screen 0 1920x1080x24 -nolisten tcp > "$OUT/xvfb.txt" 2>&1 &
+# Larger than the PC's screen: QEMU's window opens centred at the firmware's small size and grows from there.
+Xvfb :99 -screen 0 3200x1800x24 -nolisten tcp > "$OUT/xvfb.txt" 2>&1 &
 sleep 2
 rm -f "$WORK/qmp.sock"
 # The clock: the PC keeps local time, US Eastern, like a PC set up there.
