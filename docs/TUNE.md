@@ -15,7 +15,6 @@ pieces fit and the short list of what still needs a human to switch on.
 | On the buyer's PC | `C:\OmniDx\README.txt`, `undo\undo.ps1`, `undo\keep.ps1`, `undo\changes-*.json`; `keep-log.txt`, `after-restart.txt`, `report-*.html`, `summary-*.json` | Written by the script. README.txt explains the folder; undo walks back every record; keep.ps1 is what the sign-in task runs; the log has one line per sign-in. |
 | Keys in the browser | `studio/assets/tunekey.js`, `studio/activate/` | The key page: shows the keys the server issued for an order (from Square's redirect, or the receipt number plus the checkout email), sends them again, moves a key. `tunekey.js` only reads a key's checksum, for typos. |
 | The owner's page | `studio/admin/`, `POST /v1/tune/admin` | Support from a phone: look up, send again, switch off or on, free a key, totals, a test email, every unsent order. Needs `TUNE_ADMIN_TOKEN`. |
-| Support tickets | `studio/support/` (the Contact support button on every page), `studio/admin/tickets.js`, `POST /v1/support/*`, `support_*` tables | A private thread per customer: pick what it is about, read the quick answer, open a ticket. The customer reads it by a private link; the owner reads every ticket on a support device (a browser holding a signing key it cannot export). The owner token alone opens none. |
 | Terms | `studio/terms/` | Terms, privacy and the all-sales-final policy in plain words; linked from every footer and the key email. |
 | The checks | `tools/tune-check.mjs`, `tools/worker-test.mjs`, `tools/site-test.mjs`; `.github/workflows/tune-check.yml`, `pages.yml`, `worker.yml` | Static checks, the licence server offline, the site in a browser (every page, both widths, every link), and the whole tune on a Windows machine; only a copy that passed is what the command fetches. |
 | Keys on the server | `server/worker.js` (`/v1/tune/*`), `server/schema.sql` (`tune_keys`, `tune_machines`) | Issues keys against Square orders, binds them to PCs, refuses the rest, moves them on request. |
@@ -304,54 +303,6 @@ arrives by itself every Monday at 13:00 UTC from the Worker's cron
 trigger, `[triggers]` in `wrangler.toml`). All of it is
 `POST /v1/tune/admin` on the Worker, refused without the token (403) and
 shut when no token is set (503); the offline test covers each action.
-
-### Support tickets
-The **Contact support** button at the top of every page opens
-`studio/support/`: eight options (no key after paying, a key that will not
-take, a new PC, a run that went wrong, putting something back, a question
-before buying, payment, something else), each with the quick answer that
-settles most of them, then the ticket: the message, the receipt, order or
-key where that option needs one, and an optional email.
-
-Who can read a ticket, and how that is enforced:
-- **The customer**, by a private link, `omnidx.net/studio/support/#t=<id>.<secret>`.
-  The page keeps it in their browser and emails it when they gave an
-  address; the server keeps only a SHA-256 of each secret
-  (`support_keys`), so the database opens nothing. Each "support answered"
-  email carries a fresh link of its own. Thirty wrong links from one
-  connection shut the door for ten minutes.
-- **The owner, on a support device.** On the owner page, **Support
-  tickets**, type the owner token and press "Make this browser the
-  support device". The browser makes an ECDSA P-256 key pair; the private
-  half is created non-extractable and kept in IndexedDB (no page code,
-  this one included, can read it out), and the public half is registered
-  (`support_devices`). Every owner request (`POST /v1/support/owner`) is
-  signed by that key and carries the time; the server refuses a signature
-  it cannot verify, a time more than five minutes off, and any time not
-  newer than the device's last, so a copied request cannot be replayed.
-- **Nobody else.** The owner token alone reads no ticket. It registers the
-  first device only; every later one gets a pairing code, reads nothing,
-  and is emailed to you, until an active device approves the code under
-  **Devices** (codes last half an hour). The last device cannot be removed.
-  The owner's notice email says that a ticket needs you and never what it
-  says; the customer's says support answered and carries the link, not the
-  answer. One notice until the other side looks, so a busy thread is not a
-  busy inbox.
-
-Do this once, on the device you will answer from: omnidx.net/studio/admin/,
-the token, "Make this browser the support device". Then approve a second
-device (your phone) the same way, so clearing one browser's data never
-locks you out. Locked out anyway (every device lost): in Cloudflare, D1,
-`omnidx-studio`, Console, run `DELETE FROM support_devices;` and make a
-browser the device again; the tickets are untouched.
-
-The routes: `POST /v1/support/open`, `view`, `reply`, `close` (the
-customer's, by id and secret), `POST /v1/support/device` (register, owner
-token), `POST /v1/support/owner` (signed: `status`, `list`, `view`,
-`reply`, `close`, `reopen`, `delete`, `devices`, `approve`, `remove`). The
-offline test drives every one, including the refusals; the browser test
-opens a ticket from the top bar, answers it from a registered device,
-follows the emailed link, and pairs a second device.
 
 ### Refunds
 The policy is no refunds: the terms page, the pricing page, the key page

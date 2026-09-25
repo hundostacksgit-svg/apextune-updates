@@ -177,15 +177,6 @@ button{font:inherit;color:inherit}
 .nav-login:hover,.nav-key:hover{color:var(--text);background:var(--surface-2)}
 .nav-login.here,.nav-key.here{color:var(--text);background:var(--surface-2)}
 
-/* Contact support: always on the bar. Words where there is room, the icon alone where there is not. */
-.nav-help{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 13px;border-radius:10px;
-  border:1px solid var(--line);background:var(--surface);color:var(--text);font-size:14px;font-weight:620;
-  white-space:nowrap;transition:border-color .15s,transform .15s,background .15s}
-.nav-help:hover{border-color:var(--blue);transform:translateY(-1px)}
-.nav-help.here{border-color:var(--blue);background:var(--surface-2)}
-.nav-help svg{width:17px;height:17px;flex:none;fill:none;stroke:var(--text-2);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-@media(max-width:1240px){.nav-help{width:38px;padding:0;justify-content:center}.nav-help span{display:none}}
-
 /* how far down the page you are, drawn on the bottom edge of the bar */
 .nav-progress{position:absolute;left:0;bottom:-1px;height:2px;width:0;
   background:var(--grad);box-shadow:0 0 10px var(--glow);transition:width .1s linear}

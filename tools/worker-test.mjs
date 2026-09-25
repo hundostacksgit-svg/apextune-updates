@@ -8,9 +8,7 @@
  * gets one; a bad signature is refused; each key locks to one PC and a
  * second PC on it is refused; a payment below the price is ignored; a
  * Squad key moves with the plain order number; guessing receipt numbers, keys
- * or the owner token is shut off after a handful of tries; a support ticket
- * opens by its private link and on the owner's signed device, and nowhere
- * else. Anything the Worker asks the
+ * or the owner token is shut off after a handful of tries. Anything the Worker asks the
  * database that this file does not model fails the run, on purpose.
  *
  *   node tools/worker-test.mjs
@@ -26,8 +24,7 @@ const ok = (m) => console.log('  ok  ' + m);
 const bad = (m) => { failed++; console.log('  FAIL ' + m); };
 const expect = (cond, m) => (cond ? ok(m) : bad(m));
 
-import { db, mails, payments, refunds, counters, fakeConnect, DB, installFetch, makeEnv, supportDb } from './worker-standin.mjs';
-const randomHex32 = () => [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, '0')).join('');
+import { db, mails, payments, refunds, counters, fakeConnect, DB, installFetch, makeEnv } from './worker-standin.mjs';
 installFetch({ strict: true });
 const env = makeEnv();
 const enc = new TextEncoder();
@@ -360,139 +357,6 @@ env.GMAIL_USER = 'owner@gmail.test';
   const h2 = await (await worker.fetch(new Request('https://api.example.test/v1/health'), env)).json();
   expect(h2.refunds === 'hourly' && h2.squareWebhook === false, 'without a webhook it says refunds are checked hourly');
   env.SQUARE_WEBHOOK_SIGNATURE_KEY = savedSig;
-}
-
-/* 14. Support tickets: the customer by their private link, the owner only on a support device. */
-{
-  db.tune_hits = [];
-  const b64u = (buf) => Buffer.from(buf).toString('base64url');
-  const newDevice = async () => {
-    const pair = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign', 'verify']);
-    return { pair, jwk: await crypto.subtle.exportKey('jwk', pair.publicKey), id: null, ts: 0 };
-  };
-  const signed = async (d, body, { ts, as, tamper } = {}) => {
-    d.ts = Math.max(Date.now(), d.ts + 1);
-    const payload = JSON.stringify({ ts: ts ?? d.ts, ...body });
-    const sig = b64u(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, (as || d).pair.privateKey, enc.encode(payload)));
-    const req = { device: d.id, payload: tamper ? payload.replace(body.action, tamper) : payload, sig };
-    return { ...(await call('/v1/support/owner', req)), req };
-  };
-  const everywhere = (text) => ['support_tickets', 'support_messages', 'support_keys', 'support_devices'].some((t) => JSON.stringify(supportDb.prepare(`SELECT * FROM ${t}`).all()).includes(text));
-  const words = 'My key says it is already on another PC but this is the only PC I own.';
-
-  r = await call('/v1/support/open', { topic: 'nonsense', message: words });
-  expect(r.status === 400, 'a ticket needs one of the listed topics');
-  r = await call('/v1/support/open', { topic: 'key', message: 'help' });
-  expect(r.status === 400, 'and more than a word');
-  r = await call('/v1/support/open', { topic: 'key', message: words, website: 'http://spam.example' });
-  expect(r.status === 400, 'the field only bots fill in stops a ticket');
-  let n = mails.length;
-  r = await call('/v1/support/open', { topic: 'key', message: words, email: 'Buyer2@Example.test', ref: 'TUNE-ABCD-EFGH-JKLM-NPQR' });
-  const T = r.data;
-  expect(r.status === 200 && /^T-[A-Z2-9]{6}$/.test(T.id) && /^[0-9a-f]{32}$/.test(T.secret) && T.link.endsWith(`/studio/support/#t=${T.id}.${T.secret}`) && T.emailed === true, `a ticket opens and answers with its private link (${r.status} ${JSON.stringify(r.data).slice(0, 120)})`);
-  const toBuyer = mails.slice(n).find((m) => m.to[0] === 'buyer2@example.test');
-  const toOwner = mails.slice(n).find((m) => m.to[0] === 'owner@example.test');
-  expect(toBuyer && toBuyer.text.includes(T.link), 'the customer is emailed the link');
-  expect(toOwner && toOwner.subject.includes(T.id) && !toOwner.text.includes('only PC I own') && !toOwner.text.includes(T.secret) && toOwner.text.includes('/studio/admin/#support'), 'the owner is emailed that a ticket came in, without what it says or the link');
-  expect(!everywhere(T.secret), 'the database holds a hash of the link, never the link itself');
-
-  r = await call('/v1/support/view', { id: T.id, secret: T.secret });
-  expect(r.status === 200 && r.data.ticket.messages.length === 1 && r.data.ticket.messages[0].text === words && r.data.ticket.email === 'b***@example.test' && r.data.ticket.seen === false, 'the link opens the ticket; the email shows masked; not yet read by support');
-  r = await call('/v1/support/view', { id: T.id, secret: 'f'.repeat(32) });
-  expect(r.status === 404, 'a wrong secret opens nothing');
-  const other = (await call('/v1/support/open', { topic: 'other', message: 'A second ticket, from someone else entirely.' })).data;
-  r = await call('/v1/support/view', { id: T.id, secret: other.secret });
-  expect(r.status === 404, "another ticket's secret does not open this one");
-  for (let i = 0; i < 30; i++) await call('/v1/support/view', { id: T.id, secret: randomHex32() });
-  r = await call('/v1/support/view', { id: T.id, secret: T.secret });
-  expect(r.status === 429, 'thirty wrong links from one connection shut the door, right ones included, for ten minutes');
-  db.tune_hits = [];
-
-  n = mails.length;
-  r = await call('/v1/support/reply', { id: T.id, secret: T.secret, message: 'Also: I reinstalled Windows yesterday.' });
-  expect(r.status === 200 && r.data.ticket.messages.length === 2 && mails.length === n, 'the customer writes again; the owner, who has not looked yet, is not emailed a second time');
-
-  // The owner token alone reads no ticket.
-  r = await call('/v1/support/owner', { device: '0123456789abcdef', payload: JSON.stringify({ ts: Date.now(), action: 'list' }), sig: 'AAAA' });
-  expect(r.status === 403, 'no device, no tickets');
-  r = await admin({ action: 'tickets' });
-  expect(r.status === 400 && !JSON.stringify(r.data).includes(T.id), 'the owner page with the token has no way to tickets');
-
-  const A = await newDevice(); const B = await newDevice(); const X = await newDevice();
-  r = await call('/v1/support/device', { token: 'wrong', publicKey: A.jwk, label: 'Owner laptop' });
-  expect(r.status === 403, 'a device needs the owner token to register');
-  r = await call('/v1/support/device', { token: 'owner-token-test', publicKey: { kty: 'EC', crv: 'P-256', x: 'nope', y: 'nope' } });
-  expect(r.status === 400, 'and a real P-256 public key');
-  n = mails.length;
-  r = await call('/v1/support/device', { token: 'owner-token-test', publicKey: A.jwk, label: 'Owner laptop' });
-  A.id = r.data.device;
-  expect(r.status === 200 && r.data.status === 'active' && /^[0-9a-f]{16}$/.test(A.id) && mails.slice(n).some((m) => m.to[0] === 'owner@example.test' && /now your support device/.test(m.subject)), 'the first device is active at once, and the owner is told');
-  r = await call('/v1/support/device', { token: 'owner-token-test', publicKey: A.jwk, label: 'Owner laptop' });
-  expect(r.status === 200 && r.data.device === A.id && r.data.status === 'active', 'registering the same key again is the same device');
-
-  r = await signed(A, { action: 'list' });
-  expect(r.status === 200 && r.data.tickets.length === 2 && r.data.tickets.find((t) => t.id === T.id).unread === true && r.data.unread === 2, 'the device lists every ticket, unread marked');
-  r = await signed(A, { action: 'view', id: T.id });
-  expect(r.status === 200 && r.data.ticket.messages.length === 2 && r.data.ticket.email === 'buyer2@example.test' && r.data.ticket.ref === 'TUNE-ABCD-EFGH-JKLM-NPQR', 'and opens one in full');
-  const replay = await call('/v1/support/owner', r.req);
-  expect(replay.status === 409, 'the same signed request sent again is refused');
-  r = await signed(A, { action: 'list' }, { ts: Date.now() - 10 * 60_000 });
-  expect(r.status === 401, 'a request more than five minutes old is refused');
-  r = await signed(A, { action: 'list' }, { as: X });
-  expect(r.status === 403, "another key's signature on this device's name is refused");
-  r = await signed(A, { action: 'list' }, { tamper: 'view' });
-  expect(r.status === 403, 'a changed payload is refused');
-
-  n = mails.length;
-  r = await call('/v1/support/device', { token: 'owner-token-test', publicKey: B.jwk, label: 'Owner phone' });
-  B.id = r.data.device;
-  const code = r.data.code;
-  expect(r.status === 200 && r.data.status === 'pending' && /^[A-Z2-9]{6}$/.test(code) && mails.slice(n).some((m) => m.to[0] === 'owner@example.test' && m.subject.includes(code)), 'a second device waits with a pairing code, and the owner is emailed the code');
-  r = await signed(B, { action: 'list' });
-  expect(r.status === 200 && r.data.status === 'pending' && !r.data.tickets, 'a waiting device reads nothing');
-  const spare = [await newDevice(), await newDevice(), await newDevice()];
-  const waits = [];
-  for (const d of spare) waits.push((await call('/v1/support/device', { token: 'owner-token-test', publicKey: d.jwk })).status);
-  expect(waits.join() === '200,200,429', `three browsers can wait at once, not four (${waits.join()})`);
-  supportDb.prepare("DELETE FROM support_devices WHERE status = 'pending' AND id != ?").run(B.id);
-  r = await signed(A, { action: 'approve', code: 'ZZZZZZ' });
-  expect(r.status === 404, 'a wrong code approves nothing');
-  r = await signed(A, { action: 'approve', code: code.toLowerCase() });
-  expect(r.status === 200 && r.data.devices.length === 2 && r.data.devices.every((d) => d.status === 'active') && r.data.devices.find((d) => d.me).id === A.id, 'the support device approves the code');
-  r = await signed(B, { action: 'list' });
-  expect(r.status === 200 && r.data.tickets.length === 2, 'and the new device reads tickets');
-
-  n = mails.length;
-  r = await signed(A, { action: 'reply', id: T.id, message: 'Freed it from the old PC. Run the command again and it takes.' });
-  const fresh = mails.slice(n).find((m) => m.to[0] === 'buyer2@example.test');
-  const second = fresh && (/#t=(T-[A-Z2-9]{6})\.([0-9a-f]{32})/.exec(fresh.text) || []);
-  expect(r.status === 200 && r.data.ticket.status === 'answered' && r.data.emailed === true && fresh && !fresh.text.includes('Freed it') && second[1] === T.id && second[2] !== T.secret, 'the owner answers; the customer is emailed a fresh link, without the answer in it');
-  r = await call('/v1/support/view', { id: T.id, secret: second[2] });
-  expect(r.status === 200 && r.data.ticket.messages.at(-1).from === 'owner' && r.data.ticket.seen === true, "the emailed link opens the ticket, and says support read the customer's last message");
-  n = mails.length;
-  r = await signed(A, { action: 'reply', id: T.id, message: 'One more thing: undo is on the download page.' });
-  expect(r.status === 200 && r.data.emailed === true && mails.length === n + 1, 'after the customer looked, the next answer is emailed too');
-  r = await signed(A, { action: 'reply', id: T.id, message: 'And the key page moves a key once a month.' });
-  expect(r.status === 200 && r.data.emailed === false && mails.length === n + 1, 'but not a second email before they look');
-  n = mails.length;
-  r = await call('/v1/support/reply', { id: T.id, secret: T.secret, message: 'That worked, thank you.' });
-  expect(r.status === 200 && r.data.ticket.status === 'open' && mails.length === n + 1 && mails[n].to[0] === 'owner@example.test', 'the customer answers; the owner, who had looked, is emailed');
-  r = await call('/v1/support/close', { id: T.id, secret: T.secret });
-  expect(r.status === 200 && r.data.ticket.status === 'closed', 'the customer marks it solved');
-  r = await signed(B, { action: 'list' });
-  expect(r.data.tickets.find((t) => t.id === T.id).status === 'closed' && r.data.open === 1, 'and the owner sees it closed');
-
-  r = await signed(A, { action: 'remove', id: B.id });
-  expect(r.status === 200 && r.data.devices.length === 1, 'a device can be removed');
-  r = await signed(B, { action: 'list' });
-  expect(r.status === 403, 'and reads nothing after');
-  r = await signed(A, { action: 'remove', id: A.id });
-  expect(r.status === 400, 'the last support device cannot be removed');
-  r = await signed(A, { action: 'delete', id: other.id });
-  expect(r.status === 200, 'the owner deletes a ticket');
-  r = await call('/v1/support/view', { id: other.id, secret: other.secret });
-  expect(r.status === 404 && !everywhere(other.id), 'and its link opens nothing; nothing of it is left');
-  db.tune_hits = [];
 }
 
 r = await call('/v1/tune/admin', { token: 'owner-token-test', action: 'lookup', ref: 'ORDER-TUNE-1' });

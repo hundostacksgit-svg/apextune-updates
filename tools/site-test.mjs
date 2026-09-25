@@ -8,8 +8,7 @@
  * while the server says it cannot reach Square, and open when it can; the
  * key page shows three keys for a Squad order, one for a Tune order, shows
  * them again on a return visit, and takes the receipt number; the owner
- * page says when the server is not switched on; a support ticket opens from
- * the top bar and is read on the owner's signed device and by its customer only.
+ * page says when the server is not switched on.
  *
  *   node tools/site-test.mjs          (playwright resolved from node_modules,
  *                                      or PLAYWRIGHT_MODULE=/path/to/playwright/index.mjs)
@@ -63,7 +62,7 @@ try {
   console.log('The site, in a browser');
 
   /* 1. Every page, two widths. */
-  for (const p of ['', 'pricing/', 'download/', 'trust/', 'changelog/', 'what-it-touches/', 'terms/', 'activate/', 'admin/', 'account/', 'guide/', 'fresh/', 'undervolt/', 'builds/', 'support/']) {
+  for (const p of ['', 'pricing/', 'download/', 'trust/', 'changelog/', 'what-it-touches/', 'terms/', 'activate/', 'admin/', 'account/', 'guide/', 'fresh/', 'undervolt/', 'builds/']) {
     for (const width of [1280, 390]) {
       const page = await openPage({ viewport: { width, height: 900 } });
       const errs = watch(page);
@@ -172,7 +171,7 @@ try {
     else {
       const axe = fs.readFileSync(axePath, 'utf8');
       // The published report of the build machine's run is a page every buyer opens; it is scanned too, once the check has published one.
-      const pages = ['', 'pricing/', 'download/', 'trust/', 'changelog/', 'what-it-touches/', 'terms/', 'activate/', 'admin/', 'guide/', 'fresh/', 'undervolt/', 'builds/', 'support/'];
+      const pages = ['', 'pricing/', 'download/', 'trust/', 'changelog/', 'what-it-touches/', 'terms/', 'activate/', 'admin/', 'guide/', 'fresh/', 'undervolt/', 'builds/'];
       if (fs.existsSync(path.join(root, 'studio/assets/ci-report.html'))) pages.push('assets/ci-report.html');
       // Every site page is scanned in both themes (the sun button switches the whole palette); the report has one look, so it is scanned once.
       for (const p of pages) {
@@ -307,101 +306,6 @@ try {
     expect(await page.evaluate(() => /refunded/.test(document.querySelector('.note.bad')?.textContent || '') && document.querySelectorAll('.keybox').length === 0), 'after a refund the page shows no key and says the order was refunded');
     expect(mails.length === m + 1 && mails[m].to[0] === 'live@example.test' && /no longer work/.test(mails[m].text), 'and the buyer is emailed that the key no longer works');
     await page.close();
-    globalThis.fetch = nodeFetch;
-  }
-
-  /* 3c. Support tickets, both sides, against the real server code: a customer opens one from the Contact support
-        button, the owner makes a browser the support device and answers, the customer opens the emailed link, and a
-        second owner browser reads nothing until the first approves its code. */
-  {
-    const { mails, installFetch, makeEnv } = await import(pathToFileURL(path.join(root, 'tools/worker-standin.mjs')).href);
-    const worker = (await import(pathToFileURL(path.join(root, 'server/worker.js')).href)).default;
-    const nodeFetch = globalThis.fetch;
-    installFetch({ strict: false });
-    const env = makeEnv();
-    const live = async (page) => {
-      await page.route('**/tune/config.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ api: `${base}/liveapi`, version: '0', sha256: 'x' }) }));
-      await page.route('**/liveapi/**', async (r) => {
-        const q = r.request();
-        const u = new URL(q.url()); u.pathname = u.pathname.replace(/^\/liveapi/, '');
-        const init = { method: q.method(), headers: { 'content-type': 'application/json' } };
-        if (q.method() === 'POST') init.body = q.postData() || '';
-        const res = await worker.fetch(new Request(u.toString(), init), env);
-        const out = {}; res.headers.forEach((v, k) => { out[k] = v; });
-        await r.fulfill({ status: res.status, headers: out, body: await res.text() });
-      });
-    };
-    const text = (page, sel) => page.evaluate((s) => document.querySelector(s)?.textContent || '', sel);
-
-    // The customer, on a phone, from the button on the front page.
-    const cust = await openPage({ viewport: { width: 390, height: 900 } }); const custErrs = watch(cust);
-    await live(cust);
-    await cust.goto(`${base}/studio/`, { waitUntil: 'networkidle' });
-    const btn = await cust.evaluate(() => { const a = document.querySelector('.nav .nav-help'); const r = a?.getBoundingClientRect(); return a && r.width > 0 && r.top < 80 ? a.getAttribute('aria-label') : null; });
-    expect(btn === 'Contact support', 'the Contact support button sits in the top bar on a phone');
-    await cust.click('.nav .nav-help'); await cust.waitForLoadState('networkidle'); await cust.waitForTimeout(300);
-    expect(/\/studio\/support\/$/.test(cust.url()) && (await cust.evaluate(() => document.querySelectorAll('#sup-topics input[type=radio]').length)) === 8, 'it opens the support page with its eight options');
-    await cust.click('label.sup-topic:has(input[value="undo"])'); await cust.waitForTimeout(200);
-    expect(/OMNIDX_MODE='undo'/.test(await text(cust, '#sup-help')) && await cust.evaluate(() => document.querySelector('#sup-ref-field').hidden), 'picking an option shows its quick answer (undo: the three ways back) and only the fields it needs');
-    await cust.click('label.sup-topic:has(input[value="key"])'); await cust.waitForTimeout(200);
-    await cust.fill('#sup-msg', 'The window says the key is on another PC, but this is my only PC.');
-    await cust.fill('#sup-ref', 'TUNE-ABCD-EFGH-JKLM-NPQR');
-    await cust.fill('#sup-email', 'site-buyer@example.test');
-    let n = mails.length;
-    await cust.click('#sup-send'); await cust.waitForTimeout(900);
-    const link = await cust.evaluate(() => document.querySelector('#sup-link')?.value || '');
-    const id = (/#t=(T-[A-Z2-9]{6})\./.exec(link) || [])[1];
-    expect(id && /is open/.test(await text(cust, '#sup-thread')) && /Waiting for support/.test(await text(cust, '#sup-thread')), `the ticket opens and shows its thread and its private link (${id})`);
-    expect(mails.slice(n).some((m) => m.to[0] === 'site-buyer@example.test' && m.text.includes(link.split('#')[1])) && mails.slice(n).some((m) => m.to[0] === 'owner@example.test' && !m.text.includes('only PC')), 'the customer is emailed the link; the owner is told, without the message');
-    await cust.goto(`${base}/studio/support/`, { waitUntil: 'networkidle' }); await cust.waitForTimeout(700);
-    expect(new RegExp(id).test(await text(cust, '#sup-mine')) && /Waiting for support/.test(await text(cust, '#sup-mine')), 'back on the page later, the ticket is listed with where it stands');
-
-    // The owner's support device.
-    const own = await openPage({ viewport: { width: 390, height: 900 } }); const ownErrs = watch(own);
-    await live(own);
-    await own.goto(`${base}/studio/admin/#support`, { waitUntil: 'networkidle' }); await own.waitForTimeout(500);
-    expect(/Make this browser the support device/.test(await text(own, '#sup-owner')), 'the owner page offers to make this browser the support device, and shows no ticket');
-    await own.fill('#own-token', 'owner-token-test');
-    await own.click('#sup-make'); await own.waitForTimeout(1200);
-    expect(new RegExp(id).test(await text(own, '#sup-owner')) && /new/.test(await text(own, `[data-ticket="${id}"]`)), 'once it is, the ticket is listed as new');
-    await own.click(`[data-ticket="${id}"]`); await own.waitForTimeout(600);
-    expect(/only PC/.test(await text(own, '#sup-owner')) && /site-buyer@example\.test/.test(await text(own, '#sup-owner')), 'the device opens the whole ticket');
-    await own.fill('#sup-answer', 'Freed it from the old PC; run the command again.');
-    n = mails.length;
-    await own.click('[data-send]'); await own.waitForTimeout(900);
-    const note = mails.slice(n).find((m) => m.to[0] === 'site-buyer@example.test');
-    expect(/customer was emailed/.test(await text(own, '#sup-owner')) && note && !note.text.includes('Freed it'), 'the answer goes on the ticket, and the customer is emailed a link, not the answer');
-
-    // The customer follows the emailed link.
-    const emailed = (/(https:\/\/\S+#t=\S+)/.exec(note?.text || '') || [])[1] || '';
-    await cust.goto(`${base}/studio/support/${emailed.slice(emailed.indexOf('#'))}`, { waitUntil: 'networkidle' }); await cust.waitForTimeout(900);
-    expect(/Freed it from the old PC/.test(await text(cust, '#sup-thread')) && /Support answered/.test(await text(cust, '#sup-thread')) && !cust.url().includes('#t='), "the emailed link opens the thread with support's answer, and the secret leaves the address bar");
-    await cust.fill('#sup-reply-msg', 'That worked, thanks.'); await cust.click('#sup-reply [type=submit]'); await cust.waitForTimeout(700);
-    expect(/That worked, thanks\./.test(await text(cust, '#sup-thread')), 'the customer writes back on the ticket');
-
-    // A second owner browser: the token alone opens nothing.
-    const other = await openPage({ viewport: { width: 1280, height: 900 } }); const otherErrs = watch(other);
-    await live(other);
-    await other.goto(`${base}/studio/admin/`, { waitUntil: 'networkidle' }); await other.waitForTimeout(400);
-    await other.fill('#own-token', 'owner-token-test');
-    await other.click('#sup-make'); await other.waitForTimeout(1000);
-    const code = (await text(other, '#sup-owner')).match(/\b[A-Z2-9]{6}\b/)?.[0];
-    expect(code && /waiting to become a support device/.test(await text(other, '#sup-owner')) && !new RegExp(id).test(await text(other, '#sup-owner')), 'a second browser with the right token gets a pairing code and no tickets');
-    await own.click('[data-back]'); await own.waitForTimeout(600);
-    await own.click('.own-devices summary'); await own.waitForTimeout(600);
-    await own.fill('#sup-code', code || ''); await own.click('#sup-approve'); await own.waitForTimeout(600);
-    expect((await own.evaluate(() => document.querySelectorAll('#sup-devices [data-remove]').length)) === 2, 'the support device approves the code');
-    await other.click('#sup-check'); await other.waitForTimeout(900);
-    expect(new RegExp(id).test(await text(other, '#sup-owner')), 'and then the second browser reads the tickets');
-    const keyOut = await own.evaluate(async () => {
-      const db = await new Promise((res) => { const q = indexedDB.open('omnidx-support', 1); q.onsuccess = () => res(q.result); });
-      const me = await new Promise((res) => { const q = db.transaction('device').objectStore('device').get('me'); q.onsuccess = () => res(q.result); });
-      try { await crypto.subtle.exportKey('jwk', me.privateKey); return 'exported'; } catch { return me.privateKey.extractable === false ? 'kept' : 'unknown'; }
-    });
-    expect(keyOut === 'kept', "the device's private key cannot be read out of the browser, even by the page");
-    const allErrs = [...custErrs, ...ownErrs, ...otherErrs];
-    expect(!allErrs.length, `support pages: no errors${allErrs.length ? ': ' + allErrs.join(' | ') : ''}`);
-    await cust.close(); await own.close(); await other.close();
     globalThis.fetch = nodeFetch;
   }
 
