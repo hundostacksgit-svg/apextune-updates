@@ -36,6 +36,6 @@ jobs:
         if: always()
         run: |
           $tag = "film-${{ github.run_id }}-${{ matrix.os }}"
-          $files = Get-ChildItem (Join-Path $env:RUNNER_TEMP 'film') -File | ForEach-Object FullName
+          $files = Get-ChildItem (Join-Path $env:RUNNER_TEMP 'film') -File | Where-Object Length -gt 0 | ForEach-Object FullName
           gh release create $tag --prerelease --target $env:GITHUB_SHA --title "Film footage $tag" --notes "Raw footage for a promotion video; deleted after download." $files
           Write-Host "released $tag with $($files.Count) files"
