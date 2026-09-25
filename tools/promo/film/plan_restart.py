@@ -117,9 +117,14 @@ def main():
     say(V('uac-yes') + 1.0, V('app-read') + 2.4, 'It reads the PC first')
 
     # 5. The key, Run.
+    hold(FULL, V('app-read'), V('app-read') + 0.1)
     if 'app_count' in boxes:
         hold(fit(boxes['app_count'], take.get('app_zoom', 900)), V('app-read'), V('app-read') + 2.2)
-    hold(FULL, V('app-read') + 2.8, V('run') + 1.0)
+    if 'extreme-ticked' in ev:
+        # Extreme, ticked in the app as anyone can: the box and its warning, close up.
+        if 'extreme' in boxes: hold(fit(boxes['extreme'], take.get('extreme_zoom', 1100)), V('extreme-ticked') - 1.2, V('extreme-ticked') + 0.8)
+        say(V('extreme-ticked') - 1.6, V('key-pasted') - 1.4, 'Extreme mode on', 64)
+    hold(FULL, V('key-pasted') - 1.0, V('run') + 1.0)
     say(V('key-pasted') - 1.4, V('run') + 1.0, 'Key in. Run.')
 
     # 6. The run.
