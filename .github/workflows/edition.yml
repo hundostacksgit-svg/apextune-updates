@@ -1,0 +1,54 @@
+# OmniDx Edition, checked on Windows: the three apps built by the compiler
+# that comes with Windows, each one opened and pictured, the presets applied
+# and restored, then setup and undo run on the machine and the desktop
+# pictured after each (edition/ci/shots.ps1).
+#
+# The pictures are a preview for the owner, not a site file: they leave as a
+# pre-release on this repository (tag edition-preview-*), and the next run
+# deletes the old ones. Nothing is committed.
+name: OmniDx Edition check
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/omnidx-editing-platform-9phdcc"]
+    paths: ["edition/**", ".github/workflows/edition.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: edition-check
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-2025
+    timeout-minutes: 40
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: WebView2 SDK versions on nuget.org (the newest ten)
+        shell: pwsh
+        run: |
+          try { (Invoke-RestMethod https://api.nuget.org/v3-flatcontainer/microsoft.web.webview2/index.json).versions | Where-Object { $_ -notmatch '-' } | Select-Object -Last 10 } catch { "could not list: $_" }
+      - name: Build, open, picture; setup and undo
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File edition\ci\shots.ps1 -Out "$env:RUNNER_TEMP\edition-shots"
+      - name: Clear old previews
+        if: always()
+        shell: bash
+        run: |
+          for t in $(gh release list --repo "$GITHUB_REPOSITORY" --limit 50 --json tagName --jq '.[].tagName' | grep -E '^edition-preview-' | grep -v "${{ github.run_id }}" || true); do
+            gh release delete "$t" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag && echo "deleted $t"
+          done
+      - name: Hand the pictures over as a pre-release
+        if: always()
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/edition-shots" || exit 0
+          files=$(find . -maxdepth 1 -type f -size +0 | sort)
+          [ -n "$files" ] || exit 0
+          tag="edition-preview-${{ github.run_id }}"
+          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --prerelease --target "$GITHUB_SHA" --title "OmniDx Edition preview $tag" --notes "Pictures from the Windows check of OmniDx Edition; deleted by the next run." $files \
+            && echo "released $tag with $(echo $files | wc -w) files" || echo "release failed"
