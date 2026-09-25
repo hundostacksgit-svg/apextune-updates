@@ -109,6 +109,10 @@ foreach ($pre in 'Insane', 'Competitive') {
   Note "preset $pre -> exit $($r.ExitCode)"
 }
 Note ("after Competitive: Win32PrioritySeparation={0}, power plan: {1}" -f (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl').Win32PrioritySeparation, ((powercfg /getactivescheme) -join ' '))
+$gtr = (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\kernel' -Name GlobalTimerResolutionRequests -ErrorAction SilentlyContinue).GlobalTimerResolutionRequests
+$dx = (Get-ItemProperty 'HKCU:\Software\Microsoft\DirectX\UserGpuPreferences' -Name DirectXUserGlobalSettings -ErrorAction SilentlyContinue).DirectXUserGlobalSettings
+Check ($gtr -eq 1) "Competitive: Game Boost's timer reaches every app (GlobalTimerResolutionRequests=$gtr)"
+Check ("$dx" -match 'SwapEffectUpgradeEnable=1;') "Competitive: windowed games get the flip model (DirectXUserGlobalSettings='$dx')"
 $r = Start-Process (Join-Path $bin 'OmniHub.exe') -ArgumentList '--restore' -Wait -PassThru
 Note ("restore -> exit {0}; Win32PrioritySeparation={1}, power plan: {2}" -f $r.ExitCode, (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl').Win32PrioritySeparation, ((powercfg /getactivescheme) -join ' '))
 $r = Start-Process (Join-Path $bin 'OmniHub.exe') -ArgumentList '--purge' -Wait -PassThru
@@ -154,6 +158,12 @@ if (-not (Test-Path $wu)) { New-Item $wu -Force | Out-Null }
 $tf = Join-Path $env:ProgramData 'OmniDx\Edition\tune-waiting.json'
 $ek = 'HKCU:\Software\OmniDx\Edition'
 function Tune-Task { Get-ScheduledTask -TaskName 'Edition Tune' -TaskPath '\OmniDx\' -ErrorAction SilentlyContinue }
+# The lean stage's services, as they were: checked again after setup and after undo.
+function Start-Of([string]$svc) { (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\$svc" -Name Start -ErrorAction SilentlyContinue).Start }
+$leanBefore = @{}; foreach ($svc in 'DiagTrack', 'dmwappushservice', 'TrkWks', 'Spooler', 'WSearch') { $leanBefore[$svc] = Start-Of $svc }
+$sa = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run'
+$saBefore = (Get-ItemProperty $sa -Name SecurityHealth -ErrorAction SilentlyContinue).SecurityHealth
+Note ("before setup: " + (($leanBefore.Keys | Sort-Object | ForEach-Object { "$_=$($leanBefore[$_])" }) -join ', ') + "; SecurityHealth startup: " + $(if ($saBefore) { ($saBefore | ForEach-Object { '{0:X2}' -f $_ }) -join '' } else { 'none' }))
 Note 'setup.ps1 -Key (a test key) -NoRestart, with an update restart waiting'
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $here 'setup.ps1') -Key 'TUNE-TEST-TEST-TEST-TEST' -NoRestart *>&1 | ForEach-Object { Note "setup: $_" }
 $task = Tune-Task
@@ -161,6 +171,10 @@ $who = if (Test-Path $tf) { @((Get-Acl $tf).Access | ForEach-Object { $_.Identit
 Check ([bool]$task -and "$($task.Principal.RunLevel)" -eq 'Highest') "the tune is put off to a sign-in task that runs as administrator ($(if ($task) { $task.Principal.RunLevel } else { 'no task' }))"
 Check ($who.Count -gt 0 -and -not ($who | Where-Object { $_ -notmatch 'SYSTEM$|Administrators$' })) "the waiting key is readable by the system and administrators only ($($who -join ', '))"
 Check ((Get-ItemProperty $ek -Name TunePending -ErrorAction SilentlyContinue).TunePending -eq '1') 'the welcome is told to wait for the tune'
+# The lean stage: telemetry and link tracking off where this Windows has them; Store apps kept from the background.
+foreach ($svc in 'DiagTrack', 'dmwappushservice', 'TrkWks') { if ($null -ne $leanBefore[$svc]) { Check ((Start-Of $svc) -eq 4) "lean: $svc is off ($($leanBefore[$svc]) -> $(Start-Of $svc))" } }
+Check ((Get-ItemProperty 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy' -Name LetAppsRunInBackground -ErrorAction SilentlyContinue).LetAppsRunInBackground -eq 2) 'lean: Store apps only run while open'
+Note ("lean: Spooler {0} -> {1}, WSearch {2} -> {3}" -f $leanBefore['Spooler'], (Start-Of 'Spooler'), $leanBefore['WSearch'], (Start-Of 'WSearch'))
 Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue   # Explorer restarts with the new taskbar
 Start-Sleep 12
 Stop-Apps
@@ -202,6 +216,10 @@ Note 'setup.ps1 -Undo'
 Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
 Start-Sleep 12
 Snap '33-desktop-after-undo'
+foreach ($svc in $leanBefore.Keys) { Check ((Start-Of $svc) -eq $leanBefore[$svc]) "undo: $svc is back as it was ($($leanBefore[$svc]) -> $(Start-Of $svc))" }
+$saAfter = (Get-ItemProperty $sa -Name SecurityHealth -ErrorAction SilentlyContinue).SecurityHealth
+Check ("$saAfter" -eq "$saBefore") 'undo: the Windows Security tray icon starts as it did'
+Check ($null -eq (Get-ItemProperty 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy' -Name LetAppsRunInBackground -ErrorAction SilentlyContinue)) 'undo: the background-apps policy is gone'
 Note ("after undo: TaskbarAl={0}, Program Files folder there: {1}" -f (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' -Name TaskbarAl -ErrorAction SilentlyContinue).TaskbarAl, (Test-Path (Join-Path $env:ProgramFiles 'OmniDx\Edition')))
 foreach ($f in (Join-Path $env:LOCALAPPDATA 'OmniDx\edition-log.txt'), (Join-Path $env:ProgramData 'OmniDx\Edition\setup-log.txt'), (Join-Path $env:ProgramData 'OmniDx\Edition\undo-setup.tsv')) {
   if (Test-Path $f) { Copy-Item $f $Out -Force }

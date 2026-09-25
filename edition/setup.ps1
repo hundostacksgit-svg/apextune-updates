@@ -512,7 +512,87 @@ try {
   Note 'The Free up memory task' 'Green'
 } catch { Note ("Free up memory task: {0}" -f $_.Exception.Message) 'Yellow' }
 
-Head "6. The $Preset preset"
+Head '6. Lean: the fewest processes at sign-in'
+# The Edition's promise: 80 processes or fewer two minutes after sign-in, on a real PC with its drivers (OmniDx Search
+# counts them and the Hub shows the number). What goes here runs in the background for things a gaming PC does
+# without. Defender, SmartScreen, the firewall and Windows Update are not touched, nor are the graphics drivers'
+# own services; every change is written down for -Undo.
+function Set-StartType([string]$svc, [int]$start) {
+  $k = "HKLM:\SYSTEM\CurrentControlSet\Services\$svc"
+  if (-not (Test-Path $k)) { return $false }
+  $cur = (Get-ItemProperty $k -Name Start -ErrorAction SilentlyContinue).Start
+  # Never a boot or system driver; never a disabled service switched back to manual.
+  if ($null -eq $cur -or $cur -le 1 -or $cur -eq $start -or ($cur -eq 4 -and $start -eq 3)) { return $false }
+  Set-Reg $k 'Start' $start
+  if ($start -eq 4) { Stop-Service -Name $svc -Force -ErrorAction SilentlyContinue }
+  return $true
+}
+# A startup entry switched off the way Task Manager does it: the entry stays, Windows skips it.
+function Disable-Startup([string]$hive, [string]$name) {
+  $root = if ($hive -eq 'HKLM') { 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion' } else { 'HKCU:\Software\Microsoft\Windows\CurrentVersion' }
+  $v = (Get-ItemProperty "$root\Run" -Name $name -ErrorAction SilentlyContinue).$name
+  if (-not $v) { return $false }
+  Set-Reg "$root\Explorer\StartupApproved\Run" $name ([byte[]](3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)) 'Binary'
+  return $true
+}
+$lean = @()
+# Windows services for features a gaming PC does without. OmniDx Search keeps its own list of your files, so the
+# search indexer goes too.
+$off = @(@('DiagTrack', 'telemetry upload'), @('dmwappushservice', 'telemetry push routing'), @('WSearch', 'search indexing (OmniDx Search has its own list)'),
+  @('MapsBroker', 'offline maps'), @('RetailDemo', 'shop demo mode'), @('Fax', 'fax'), @('PcaSvc', 'compatibility pop-ups'), @('TrkWks', 'link tracking between PCs'))
+foreach ($s in $off) { if (Set-StartType $s[0] 4) { $lean += $s[1] } }
+# The print spooler (a process of its own) waits until a printer is added, when there is none but the built-in ones.
+$printers = @(Get-Printer -ErrorAction SilentlyContinue | Where-Object { $_.Name -notmatch 'PDF|XPS|OneNote|Fax' -and $_.PortName -notmatch '^(PORTPROMPT|nul|SHRFAX|FILE):' })
+if ($printers.Count -eq 0 -and (Set-StartType 'Spooler' 3)) { Stop-Service Spooler -Force -ErrorAction SilentlyContinue; $lean += 'print spooler until a printer is added' }
+# Helpers that come with some motherboards' drivers and do nothing for a game: they start when their own app asks.
+# Nahimic's audio effects are off outright (known to crash games).
+$vendor = @(@('NahimicService', 4, 'Nahimic audio effects'), @('jhi_service', 3, 'Intel DAL host'), @('LMS', 3, 'Intel ME local management'),
+  @('WMIRegistrationService', 3, 'Intel ME WMI provider'), @('igccservice', 3, 'Intel Graphics Command Center helper'), @('AUEPLauncher', 4, 'AMD experience program'),
+  @('Killer Analytics Service', 4, 'Killer network analytics'))
+foreach ($s in $vendor) { if (Set-StartType $s[0] $s[1]) { $lean += $s[2] } }
+# Windows' own background extras.
+Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\CrossDeviceResume\Configuration' 'IsResumeAllowed' 0
+$ai = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI'
+Set-Reg $ai 'AllowRecallEnablement' 0
+Set-Reg $ai 'DisableAIDataAnalysis' 1
+Set-Reg $ai 'DisableClickToDo' 1
+Set-Reg 'HKCU:\Software\Policies\Microsoft\Windows\WindowsAI' 'DisableClickToDo' 1
+Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot' 'TurnOffWindowsCopilot' 1
+$lean += 'Resume, Recall, Click to Do, Copilot'
+# Start's search: apps, settings and files on this PC, not the web (Windows + S is OmniDx Search, which has the web).
+Set-Reg 'HKCU:\Software\Policies\Microsoft\Windows\Explorer' 'DisableSearchBoxSuggestions' 1
+$ws = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search'
+Set-Reg $ws 'EnableDynamicContentInWSB' 0
+Set-Reg $ws 'ConnectedSearchUseWeb' 0
+Set-Reg $ws 'DisableWebSearch' 1
+Set-Reg $ws 'AllowCortana' 0
+$lean += "web results in Start's search"
+# Edge (kept: Windows needs it) stays closed when it is closed.
+Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Edge' 'StartupBoostEnabled' 0
+Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Edge' 'BackgroundModeEnabled' 0
+$lean += 'Edge in the background'
+# Store apps run only while open (Windows Security, Game Pass downloads and OmniDx's apps are not Store apps).
+Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy' 'LetAppsRunInBackground' 2
+$lean += 'Store apps in the background'
+# No suggested apps installed behind your back, no "finish setting up your PC" screens.
+Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent' 'DisableWindowsConsumerFeatures' 1
+Set-Reg $cdm 'SilentInstalledAppsEnabled' 0
+Set-Reg $cdm 'ContentDeliveryAllowed' 0
+Set-Reg 'HKCU:\Software\Microsoft\Windows\CurrentVersion\UserProfileEngagement' 'ScoobeSystemSettingEnabled' 0
+$lean += 'suggested apps and setup nags'
+# No background game recording; updates are not uploaded to other PCs from this one.
+Set-Reg 'HKCU:\System\GameConfigStore' 'GameDVR_Enabled' 0
+Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\GameDVR' 'AllowGameDVR' 0
+Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization' 'DODownloadMode' 0
+$lean += 'background game recording, update sharing with other PCs'
+# At sign-in: the Windows Security tray icon (Windows Security itself, and Defender, keep running) and OneDrive when
+# no one is signed in to it.
+if (Disable-Startup 'HKLM' 'SecurityHealth') { $lean += 'the Windows Security tray icon (Defender keeps running)' }
+$od = Get-ChildItem 'HKCU:\Software\Microsoft\OneDrive\Accounts' -ErrorAction SilentlyContinue | Where-Object { (Get-ItemProperty $_.PSPath -Name UserEmail -ErrorAction SilentlyContinue).UserEmail }
+if (-not $od -and (Disable-Startup 'HKCU' 'OneDrive')) { $lean += 'OneDrive at sign-in (no one is signed in to it)' }
+Note ('Off: ' + ($lean -join '; ')) 'Green'
+
+Head "7. The $Preset preset"
 if ($built) {
   $p = Start-Process (Join-Path $Dest 'OmniHub.exe') -ArgumentList '--apply', $Preset -Wait -PassThru
   Note ("{0} preset: {1}" -f $Preset, $(if ($p.ExitCode -eq 0) { 'applied' } else { "exit $($p.ExitCode)" })) $(if ($p.ExitCode -eq 0) { 'Green' } else { 'Yellow' })
@@ -530,7 +610,7 @@ if (-not $Key) {
 }
 $deferred = $false
 if ($Key -and -not $NoTune) {
-  Head ('7. The OmniDx tune' + $(if ($NoExtreme) { '' } else { ' (Extreme)' }))
+  Head ('8. The OmniDx tune' + $(if ($NoExtreme) { '' } else { ' (Extreme)' }))
   if (Test-UpdateRestart) {
     # A fresh Windows has usually installed updates by its first sign-in, and they want a restart first.
     try {

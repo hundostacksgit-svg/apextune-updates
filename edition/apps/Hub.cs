@@ -64,7 +64,7 @@ namespace OmniDx
             new Preset { Name = "Balanced", Tag = "Everyday", Blurb = "Windows' own scheduling and power, with the OmniDx look and the tune's cuts kept.",
                 Does = new[] { "Windows' Balanced power plan", "Windows' default CPU scheduling and multimedia reserve", "Animations as Windows chooses", "Game Mode on, mouse 1:1", "Game Boost: the performance plan and sleeping tabs, no timer change" } },
             new Preset { Name = "Competitive", Tag = "Recommended", Blurb = "Foreground first: the game gets the CPU, the network and the timer when it has the screen.",
-                Does = new[] { "The OmniDx power plan (or High performance)", "Short, foreground-boosted CPU slices", "Multimedia reserve at its minimum, network throttling off", "Games get the GPU and I/O priority Windows gives \"Pro Audio\"", "Background Store apps off, Game Mode on, mouse 1:1", "Game Boost holds a 1 ms timer" } },
+                Does = new[] { "The OmniDx power plan (or High performance)", "Short, foreground-boosted CPU slices", "Multimedia reserve at its minimum, network throttling off", "Games get the GPU and I/O priority Windows gives \"Pro Audio\"", "Windowed and borderless games presented like fullscreen (flip model)", "Background Store apps off, Game Mode on, mouse 1:1", "Game Boost holds a 1 ms timer, for every app (Windows 11 keeps it per app unless told)" } },
             new Preset { Name = "Insane", Tag = "Every last millisecond", Blurb = "Competitive, then everything that trades comfort, heat or power for latency. Undo is one button.",
                 Does = new[] { "OmniDx Insane power plan: cores never parked, 100% minimum, aggressive boost, no USB or PCIe power saving", "Fixed short CPU slices, strongest foreground boost", "Network cards: interrupt moderation and energy saving off", "Keyboard repeat at its fastest", "No animations, no transparency, no toasts", "Kernel kept in RAM (16 GB or more)", "Game Boost holds a 0.5 ms timer and empties the standby list" } },
         };
@@ -176,6 +176,12 @@ namespace OmniDx
                 Str("HKLM", MM + @"\Tasks\Games", "SFIO Priority", "High");
             }
             Dword("HKCU", @"Software\Microsoft\Windows\CurrentVersion\BackgroundAccessApplications", "GlobalUserDisabled", balanced ? 0 : 1);
+            // Windows 11 keeps a timer request to the app that made it; this makes Game Boost's timer every app's, the
+            // game's included (from the next restart).
+            Dword("HKLM", @"SYSTEM\CurrentControlSet\Control\Session Manager\kernel", "GlobalTimerResolutionRequests", balanced ? 0 : 1);
+            // Windowed and borderless games: the flip model fullscreen gets, for less delay and variable refresh
+            // (Settings > Display > Graphics: "Optimizations for windowed games").
+            if (!balanced) WindowedFlip();
 
             // Keyboard repeat: Windows' default delay is 1 (of 0 to 3).
             Str("HKCU", @"Control Panel\Keyboard", "KeyboardDelay", insane ? "0" : "1");
@@ -208,6 +214,17 @@ namespace OmniDx
             Edition.Log("preset " + p.Name + ": done");
             Signal.Send(Signal.Changed);
             return true;
+        }
+
+        static void WindowedFlip()
+        {
+            const string P = @"Software\Microsoft\DirectX\UserGpuPreferences";
+            string cur = "";
+            try { using (var k = Registry.CurrentUser.OpenSubKey(P)) { var v = k == null ? null : k.GetValue("DirectXUserGlobalSettings") as string; if (v != null) cur = v; } } catch { }
+            // The value holds other switches too (variable refresh, auto HDR): only this one is changed.
+            var parts = cur.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries).Where(x => !x.StartsWith("SwapEffectUpgradeEnable=")).ToList();
+            parts.Add("SwapEffectUpgradeEnable=1");
+            Str("HKCU", P, "DirectXUserGlobalSettings", string.Join(";", parts) + ";");
         }
 
         static void NetAdapters(bool off)
@@ -436,7 +453,7 @@ namespace OmniDx
     class HomePage : Page
     {
         readonly System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer { Interval = 1500 };
-        int procs, cpu, mem; double memUsed, memTotal, timerMs; long pingMs = -1;
+        int procs, cpu, mem, signIn; double memUsed, memTotal, timerMs; long pingMs = -1;
         string plan = "", gpu = "";
         readonly Toggle boost = new Toggle(), auto = new Toggle();
         readonly FlatButton change, free, search, browser, tune;
@@ -478,6 +495,7 @@ namespace OmniDx
         void Sample()
         {
             try { procs = Process.GetProcesses().Length; } catch { }
+            int.TryParse(State.Get("SignInCount", "0"), out signIn);
             cpu = Native.CpuLoad();
             mem = Native.MemoryLoad(out memUsed, out memTotal);
             timerMs = Native.TimerMs();
@@ -513,7 +531,7 @@ namespace OmniDx
 
             // The numbers.
             var stats = new[] {
-                new[] { G.Apps, "Processes", procs.ToString(), "running now" },
+                new[] { G.Apps, "Processes", procs.ToString(), signIn > 0 ? "running now \u00B7 " + signIn + " at sign-in (target 80)" : "running now" },
                 new[] { G.Cpu, "CPU", cpu + "%", "in use" },
                 new[] { G.Memory, "Memory", memUsed.ToString("0.0") + " GB", "of " + memTotal.ToString("0") + " GB (" + mem + "%)" },
                 new[] { G.Timer, "System timer", timerMs > 0 ? timerMs.ToString("0.##") + " ms" : "-", timerMs > 0 && timerMs < 1.1 ? "fine: Boost is holding it" : "Windows' default" },

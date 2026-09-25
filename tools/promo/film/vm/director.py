@@ -539,6 +539,18 @@ def performance():
 
 
 # ------------------------------------------------------------------ OmniDx Edition
+IDLE_DUMP = r"""
+$p = @(Get-CimInstance Win32_Process); $n = @{}; foreach ($x in $p) { $n[[int]$x.ProcessId] = $x.Name }
+$lines = foreach ($x in ($p | Sort-Object Name)) {
+  $c = ("$($x.CommandLine)" -replace '\s+', ' '); if ($c.Length -gt 200) { $c = $c.Substring(0, 200) }
+  '{0,-36} {1,6}  from {2,-30} {3}' -f $x.Name, $x.ProcessId, $n[[int]$x.ParentProcessId], $c
+}
+New-Item -ItemType Directory -Force -Path C:\film | Out-Null
+$lines | Set-Content C:\film\processes-at-rest.txt -Encoding UTF8
+tasklist /svc | Set-Content C:\film\services-at-rest.txt -Encoding UTF8
+"""
+
+
 def edition():
     """OmniDx Edition from a clean install: its setup at the first sign-in (with the tune in Extreme), the restart
     it ends with, then a look round as a new owner would: the welcome, the Hub, the desktop, Start, Windows + S,
@@ -565,6 +577,13 @@ def edition():
     si = time.monotonic()
     while time.monotonic() - si < A.settle_after:
         time.sleep(20); nudge()
+    # At rest: the count the Edition promises to keep at 80 or under, then every process with the one that started
+    # it and the services in each service host, so anything over is named. (This PC's own filming helper, a
+    # PowerShell and its console, is two of them.) The listing asks WMI, which starts a process of its own: counted first.
+    n = procs()
+    mark('at-rest', processes_at_rest=n)
+    note(f'at rest: {n} processes' + (' - OVER the 80 target' if n and n > 80 else ' - within the 80 target' if n else ''))
+    AG.ask('ps', code=IDLE_DUMP, timeout=90)
 
     def page(name, wait=2.5): pause(wait, wait + 0.6); shot(name); mark(name.split('.')[0])
 
@@ -677,7 +696,7 @@ def main():
             for d in (r'C:\ProgramData\OmniDx\Edition', r'C:\OmniDx', r'C:\film'):
                 try: AG.ask('upload', dir=d, timeout=120)
                 except Exception as ex: note(f'collect {d}: {ex}')
-            try: AG.ask('ps', code=r"Copy-Item $env:LOCALAPPDATA\OmniDx\edition-log.txt C:\film\ -ErrorAction SilentlyContinue; Get-ChildItem C:\film | Out-String", timeout=20); AG.ask('upload', dir=r'C:\film', timeout=60)
+            try: AG.ask('ps', code=r"Copy-Item $env:LOCALAPPDATA\OmniDx\edition-log.txt, $env:LOCALAPPDATA\OmniDx\signin-processes.txt C:\film\ -ErrorAction SilentlyContinue; Get-ChildItem C:\film | Out-String", timeout=20); AG.ask('upload', dir=r'C:\film', timeout=60)
             except Exception: pass
             json.dump(EVENTS, open(os.path.join(A.out, 'events.json'), 'w'), indent=1)
             try: Q.cmd('quit')

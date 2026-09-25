@@ -260,6 +260,9 @@ namespace OmniDx
             list.Add(new Item { Title = "Empty Recycle Bin", Sub = "Delete what is in the Recycle Bin", Kind = "Action", Glyph = G.Close, Keywords = "trash recycle", Confirm = true, Weight = 15, Run = () => Native.SHEmptyRecycleBin(IntPtr.Zero, null, 7) });
             list.Add(new Item { Title = "Flush DNS", Sub = "Clear the DNS cache (a site that will not load after a change)", Kind = "Action", Glyph = G.Network, Keywords = "dns network internet ipconfig", Weight = 15,
                 Run = () => { var p = new ProcessStartInfo("ipconfig.exe", "/flushdns") { CreateNoWindow = true, UseShellExecute = false }; try { Process.Start(p); } catch { } } });
+            // The Edition leaves the print spooler waiting when a PC has no printer; this starts it for good (as administrator).
+            list.Add(new Item { Title = "Turn printing on", Sub = "Start the print spooler, and keep it on (for a new printer)", Kind = "Action", Glyph = G.Settings, Keywords = "printer print spooler printing scanner", Weight = 15,
+                Run = () => { try { Process.Start(new ProcessStartInfo("powershell.exe", "-NoProfile -WindowStyle Hidden -Command \"Set-Service Spooler -StartupType Automatic; Start-Service Spooler\"") { Verb = "runas", UseShellExecute = true, WindowStyle = ProcessWindowStyle.Hidden }); } catch { } } });
             list.Add(new Item { Title = "Restart Windows Explorer", Sub = "The taskbar and desktop, restarted", Kind = "Action", Glyph = G.Refresh, Keywords = "explorer taskbar frozen", Weight = 10,
                 Run = () => { foreach (var p in Process.GetProcessesByName("explorer")) try { p.Kill(); } catch { } } });
             return list;
@@ -515,6 +518,36 @@ namespace OmniDx
             Hotkeys();
             index.Build(a => { try { BeginInvoke(a); } catch { } });
             Welcome();
+            SignInCount();
+        }
+        // The Edition's promise is 80 processes or fewer at sign-in: counted two minutes after it (as the tune counts
+        // "after restart"), kept for the Hub, and the names written down so anything over is easy to find. Only the
+        // process list is read: asking WMI would itself start a process.
+        void SignInCount()
+        {
+            double up = Native.GetTickCount64() / 60000.0;
+            DateTime started = DateTime.Now;
+            try { started = Process.GetCurrentProcess().StartTime; } catch { }
+            if (up > 15 || (DateTime.Now - started).TotalMinutes > 2) return;
+            var t = new System.Windows.Forms.Timer { Interval = 120000 };
+            t.Tick += (s, e) =>
+            {
+                t.Stop(); t.Dispose();
+                try
+                {
+                    var all = Process.GetProcesses();
+                    State.Set("SignInCount", all.Length.ToString());
+                    State.Set("SignInAt", DateTime.Now.ToString("s"));
+                    var lines = all.GroupBy(p => p.ProcessName, StringComparer.OrdinalIgnoreCase)
+                        .OrderByDescending(g => g.Count()).ThenBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+                        .Select(g => g.Key + (g.Count() > 1 ? " x" + g.Count() : "")).ToList();
+                    lines.Insert(0, DateTime.Now.ToString("s") + "  " + all.Length + " processes, two minutes after sign-in (target: 80 or fewer)");
+                    File.WriteAllLines(Path.Combine(Edition.Local, "signin-processes.txt"), lines);
+                    Edition.Log("sign-in: " + all.Length + " processes");
+                }
+                catch (Exception ex) { Edition.Log("sign-in count: " + ex.Message); }
+            };
+            t.Start();
         }
         // The Hub's welcome, once: at the first sign-in after setup's restart (not while setup is still running).
         void Welcome()
