@@ -85,11 +85,20 @@ def main():
     tmp = tempfile.mkdtemp()
 
     segs = []   # (from, to, speed, words, sub)
-    if 'setup-running' in at and 'restarted' in at:
-        a, b = at['setup-running'], at['restarted'] + 20
-        sp = max(2, round((b - a) / A.setup_seconds))
+
+    def fast(a, b, seconds, words):
+        sp = max(2, round((b - a) / seconds))
         m = max(1, int(round((b - a) / 60)))
-        segs.append((a, b, sp, 'Its setup at the first sign-in, then a restart', f'{m} minute{"" if m == 1 else "s"}, {sp}x speed'))
+        segs.append((a, b, sp, words, f'{m} minute{"" if m == 1 else "s"}, {sp}x speed'))
+
+    # When Windows Update was waiting for a restart, the tune ran at the sign-in after it, then restarted the PC:
+    # the director marks 'welcome' when the Edition's welcome finally opens.
+    tune_after = 'restarted' in at and 'welcome' in at and at['welcome'] - at['restarted'] > 90
+    if 'setup-running' in at and 'restarted' in at:
+        fast(at['setup-running'], at['restarted'] + (0 if tune_after else 20), A.setup_seconds,
+             'Its setup at the first sign-in, then a restart' + (' for Windows Update' if tune_after else ''))
+    if tune_after:
+        fast(at['restarted'], at['welcome'] + 3, A.setup_seconds + 3, 'The OmniDx tune in Extreme, then its restart')
     steps = [e for e in ev if e['what'] in WORDS]
     prev_end = None
     for i, e in enumerate(steps):
