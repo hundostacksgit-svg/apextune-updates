@@ -25,6 +25,17 @@ public class Desk {
   [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
   [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r);
   public static string Title(IntPtr h) { var s = new StringBuilder(512); GetWindowTextW(h, s, 512); return s.ToString(); }
+  // Top-level windows by title without sending them anything (InternalGetWindowText does not wait on a busy window).
+  public delegate bool EnumProc(IntPtr h, IntPtr l);
+  [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc f, IntPtr l);
+  [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
+  [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int InternalGetWindowText(IntPtr h, StringBuilder s, int n);
+  public static System.Collections.Generic.List<IntPtr> Visible() {
+    var list = new System.Collections.Generic.List<IntPtr>();
+    EnumWindows((h, l) => { if (IsWindowVisible(h)) list.Add(h); return true; }, IntPtr.Zero);
+    return list;
+  }
+  public static string Name(IntPtr h) { var s = new StringBuilder(512); InternalGetWindowText(h, s, 512); return s.ToString(); }
 }
 "@
 [void][Desk]::SetProcessDPIAware()
@@ -73,7 +84,16 @@ function Answer($q) {
     'screen' { return @{ w = [Desk]::GetSystemMetrics(0); h = [Desk]::GetSystemMetrics(1) } }
     'fg' { $h = [Desk]::GetForegroundWindow(); $r = New-Object Desk+RECT; [void][Desk]::GetWindowRect($h, [ref]$r); return @{ title = [Desk]::Title($h); x = $r.Left; y = $r.Top; w = $r.Right - $r.Left; h = $r.Bottom - $r.Top } }
     'wins' { return @(Tops | ForEach-Object { try { $d = Describe $_; if ($d) { $d } } catch { } }) }
-    'win' { $w = Win "$($q.like)"; if ($w) { return (Describe $w) } else { return $null } }
+    'win' {
+      foreach ($h in [Desk]::Visible()) {
+        $n = [Desk]::Name($h)
+        if ($n -like "$($q.like)") {
+          $r = New-Object Desk+RECT; [void][Desk]::GetWindowRect($h, [ref]$r)
+          if ($r.Right - $r.Left -gt 50) { return @{ x = $r.Left; y = $r.Top; w = $r.Right - $r.Left; h = $r.Bottom - $r.Top; name = $n } }
+        }
+      }
+      return $null
+    }
     'find' {
       $root = if ($q.like) { Win "$($q.like)" } else { $A::RootElement }
       if (-not $root) { return $null }

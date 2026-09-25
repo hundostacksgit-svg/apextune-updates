@@ -386,17 +386,34 @@ def record_stop():
 
 
 # ------------------------------------------------------------------ the performance
+TM_LAYOUT = {}   # where Performance and the Processes figure were, relative to Task Manager's window, the first time
+
+
 def task_manager(what):
     press('ctrl', 'shift', 'esc')
-    tm = win('Task Manager', 20)
+    tm = win('Task Manager', 40)
+    if not tm and TM_LAYOUT:
+        # Task Manager reopens where it was; if the helper cannot answer in time, the places seen before are used.
+        note('Task Manager not reported by the helper; using where it was before'); pause(3.0, 3.5)
+        tm = dict(TM_LAYOUT['tm'])
     if not tm: note('Task Manager did not open'); return
     pause(1.2, 1.6)
     # Performance first (it opens on the process list, whose hundreds of rows make any search slow).
     perf = find('Task Manager', name='Performance', timeout=8)
-    if perf: click_at(*mid(perf)); pause(1.6, 2.1)
+    if perf:
+        TM_LAYOUT.setdefault('perf', (perf['x'] - tm['x'] + perf['w'] // 2, perf['y'] - tm['y'] + perf['h'] // 2))
+        click_at(*mid(perf))
+    elif 'perf' in TM_LAYOUT:
+        click_at(tm['x'] + TM_LAYOUT['perf'][0], tm['y'] + TM_LAYOUT['perf'][1])
+    pause(1.6, 2.1)
     label = find('Task Manager', name='Processes', pick='rightmost', timeout=8)
     if label:
-        move_to(label['x'] + label['w'] // 2 + 8, label['y'] + label['h'] // 2 + 30)
+        spot = (label['x'] + label['w'] // 2 + 8, label['y'] + label['h'] // 2 + 30)
+        TM_LAYOUT.setdefault('label', (spot[0] - tm['x'], spot[1] - tm['y']))
+        move_to(*spot)
+    elif 'label' in TM_LAYOUT:
+        move_to(tm['x'] + TM_LAYOUT['label'][0], tm['y'] + TM_LAYOUT['label'][1])
+    TM_LAYOUT.setdefault('tm', {'x': tm['x'], 'y': tm['y'], 'w': tm['w'], 'h': tm['h']})
     mark(what)
     drift(4.5)
 
