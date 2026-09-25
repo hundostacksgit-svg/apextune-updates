@@ -146,6 +146,15 @@
       </ul>
     </div>
     <div class="card reveal d1" style="margin-top:16px">
+      <div class="eyebrow" style="margin-bottom:12px">v1.77.1 · September 2026</div>
+      <h3>No empty PowerShell window after you sign in</h3>
+      <ul class="tick">
+        <li>The two small tasks the tune leaves (the one that keeps it cut after updates, three minutes after sign-in, and the one-time after-restart count) asked for a hidden window, but Windows shows the window for a moment before hiding it, and on a busy sign-in that moment was seconds long: an empty blue window on the desktop that took the focus from whatever you had open. Found while filming a clean install. On Windows 11 they now start with no window at all; Windows 10 keeps the hidden window</li>
+        <li>The after-restart count's command is now a script file next to the undo script, so each task's line is only a path</li>
+        <li>The Windows check starts the keep task through Task Scheduler, as a sign-in does, and fails unless it runs to the end, logs, and opens no window</li>
+      </ul>
+    </div>
+    <div class="card reveal d1" style="margin-top:16px">
       <div class="eyebrow" style="margin-bottom:12px">v1.77.0 · September 2026</div>
       <h3>Discord or Spotify left on at startup stays on, and a video of the whole thing</h3>
       <ul class="tick">

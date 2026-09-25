@@ -446,6 +446,36 @@ jobs:
           Write-Host 'keep: three things turned back on, three put back, status clean'
           exit 0
 
+      # The sign-in tasks start PowerShell with no window on Windows 11 (the console
+      # host, headless): an empty window three minutes after every sign-in took the
+      # focus from whatever was open. The keep task is started through Task
+      # Scheduler, as a sign-in starts it, and must run to the end and log.
+      - name: The sign-in tasks run with no window
+        timeout-minutes: 8
+        run: |
+          $headless = [Environment]::OSVersion.Version.Build -ge 22000
+          foreach ($n in 'OmniDx keep', 'OmniDx after-restart count') {
+            $t = Get-ScheduledTask -TaskName $n -ErrorAction SilentlyContinue
+            if (-not $t) { Write-Host "$n not registered (fine for the after-restart count when the run skipped it)"; continue }
+            $a = $t.Actions[0]
+            Write-Host ("{0}: {1} {2}" -f $n, $a.Execute, $a.Arguments)
+            if ($headless -and $a.Execute -ne 'conhost.exe') { Write-Host "$n still opens a console window"; exit 1 }
+            if ($a.Arguments -notmatch '-File "[^"]+\.ps1"') { Write-Host "$n does not run a script file"; exit 1 }
+          }
+          $t = Get-ScheduledTask -TaskName 'OmniDx keep'
+          $before = (Get-Item C:\OmniDx\keep-log.txt).LastWriteTime
+          $start = Get-Date
+          Start-ScheduledTask -InputObject $t
+          $end = (Get-Date).AddMinutes(5)
+          do { Start-Sleep -Seconds 3; $i = Get-ScheduledTaskInfo -InputObject $t; $s = (Get-ScheduledTask -TaskName 'OmniDx keep').State } while ((Get-Date) -lt $end -and ($s -eq 'Running' -or $i.LastRunTime -lt $start))
+          Write-Host ("keep task: state {0}, last run {1}, result {2}" -f $s, $i.LastRunTime, $i.LastTaskResult)
+          if ($i.LastRunTime -lt $start) { Write-Host 'the keep task did not start'; exit 1 }
+          if ($i.LastTaskResult -ne 0) { Write-Host ("the keep task ended with {0}" -f $i.LastTaskResult); exit 1 }
+          if ((Get-Item C:\OmniDx\keep-log.txt).LastWriteTime -le $before) { Write-Host 'the keep task ran but wrote nothing to its log'; exit 1 }
+          Get-Content C:\OmniDx\keep-log.txt -Tail 3
+          Write-Host 'sign-in tasks: headless where Windows allows, and the keep task ran to the end from Task Scheduler'
+          exit 0
+
       # Run it again on the same PC with the same key: accepted, and with
       # nearly nothing new to record, because it was already done. That is
       # the "run it again after an update, free" promise. Undo then walks
