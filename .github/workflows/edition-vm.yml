@@ -61,5 +61,19 @@ jobs:
           for d in guest disk; do [ -d "$d" ] && python3 -m zipfile -c "$d-files.zip" "$d" && rm -rf "$d"; done
           files=$(find . -maxdepth 1 -type f -size +0 | sort)
           tag="edition-vm-${{ github.run_id }}"
-          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --prerelease --target "$GITHUB_SHA" --title "OmniDx Edition preview $tag" --notes "A clean Windows 11 install set up as OmniDx Edition, pictured; deleted by the next run." $files \
-            && echo "released $tag with $(echo $files | wc -w) files" || echo "release failed"
+          if gh release create "$tag" --repo "$GITHUB_REPOSITORY" --prerelease --title "OmniDx Edition preview $tag" --notes "A clean Windows 11 install set up as OmniDx Edition, pictured; deleted by the next run." $files; then
+            echo "released $tag with $(echo $files | wc -w) files"
+          else
+            # A refused release (it happened once, 403, with the same token that had just deleted one) must not lose
+            # the take: the files go on the run's progress release, which exists by now.
+            echo "release refused; adding the files to edition-vm-progress-${{ github.run_id }}"
+            gh release upload "edition-vm-progress-${{ github.run_id }}" --repo "$GITHUB_REPOSITORY" --clobber $files && echo "uploaded to the progress release" || echo "upload failed too"
+          fi
+      # And as the run's own artifact, whatever happened above.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: edition-vm-take
+          path: ${{ runner.temp }}/pc/*
+          retention-days: 3
+          if-no-files-found: ignore

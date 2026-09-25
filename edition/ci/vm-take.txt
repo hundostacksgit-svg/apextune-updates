@@ -1,1 +1,1 @@
-take 2: 2026-09-25T21:24Z - Search from a sign-in task, welcome after the restart, locked taskbar layout, default account picture policy
+take 3: 2026-09-25T22:03Z - the same, with the pictures handed over even if a release is refused
