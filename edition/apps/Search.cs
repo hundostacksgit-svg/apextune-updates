@@ -410,6 +410,13 @@ namespace OmniDx
             if (Changed != null) Changed();
         }
 
+        // Asked for again while already on (from Search, the Hub or --boost): apps started since join at once, rather
+        // than at the next ten-second round.
+        public void Refresh()
+        {
+            if (On && State.Preset != "Balanced") { Eco.Lighten(gamePid); lastEco = DateTime.Now; Edition.Log("boost: " + Eco.Count + " background processes in Efficiency mode"); }
+        }
+
         // Every two seconds: is something other than the desktop or our own windows filling the screen?
         public void Tick()
         {
@@ -607,7 +614,7 @@ namespace OmniDx
             {
                 int w = (int)m.WParam;
                 if (w == Signal.ShowSearch) ShowSearch();
-                else if (w == Signal.Boost && !boost.On) boost.Set(true, false);
+                else if (w == Signal.Boost) { if (!boost.On) boost.Set(true, false); else boost.Refresh(); }
                 else if (w == Signal.Unboost && boost.On) boost.Set(false, false);
                 return;
             }

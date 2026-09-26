@@ -128,12 +128,17 @@ Start-Sleep 2
 $shellPrio = "$((Get-Process -Id $PID).PriorityClass)"
 try { (Get-Process -Id $bg.Id).PriorityClass = 'Normal' } catch { Note "could not set the stand-in to normal: $($_.Exception.Message)" }
 if (-not (Get-Process OmniSearch -ErrorAction SilentlyContinue)) { Start-Process (Join-Path $bin 'OmniSearch.exe') -ArgumentList '--background'; Start-Sleep 3 }
+# Game Boost may still be on from an earlier step; off first, so this run starts it.
+Start-Process (Join-Path $bin 'OmniSearch.exe') -ArgumentList '--unboost'; Start-Sleep 2
+try { (Get-Process -Id $bg.Id).PriorityClass = 'Normal' } catch { }
 $before = Prio $bg.Id
 Start-Process (Join-Path $bin 'OmniSearch.exe') -ArgumentList '--boost'; Start-Sleep 5
 $during = Prio $bg.Id
 Start-Process (Join-Path $bin 'OmniSearch.exe') -ArgumentList '--unboost'; Start-Sleep 4
 $after = Prio $bg.Id
 Note "A background app (Telegram.exe stand-in; this check runs at $shellPrio): $before, with Game Boost on $during, after $after"
+$elog = Join-Path $env:LOCALAPPDATA 'OmniDx\edition-log.txt'
+if (Test-Path $elog) { Get-Content $elog -Tail 40 | Where-Object { $_ -match 'boost' } | Select-Object -Last 6 | ForEach-Object { Note "  log: $_" } }
 Check ($before -eq 'Normal' -and $during -eq 'BelowNormal') 'Game Boost: a background app on the list runs in Efficiency mode while it is on'
 Check ($after -eq 'Normal') 'Game Boost: the app is back to normal when it ends'
 Stop-Process -Id $bg.Id -Force -ErrorAction SilentlyContinue
