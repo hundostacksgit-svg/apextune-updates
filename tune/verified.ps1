@@ -91,7 +91,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.78.0'
+$script:Version = '1.78.1'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -1009,7 +1009,8 @@ function Register-AfterCount {
   try {
     $name = 'OmniDx after-restart count'
     $out = Join-Path $script:Root 'after-restart.txt'
-    $cmd = "Start-Sleep -Seconds 120; `$p = @(Get-Process); `$o = Get-CimInstance Win32_OperatingSystem; `$m = [math]::Round((`$o.TotalVisibleMemorySize - `$o.FreePhysicalMemory) / 1024); `$c = ''; try { `$s = Get-Counter -Counter '\Processor(_Total)\% Processor Time', '\Processor(_Total)\% DPC Time' -SampleInterval 1 -MaxSamples 3 -ErrorAction Stop; `$c = ', idle CPU ' + [math]::Round((`$s.CounterSamples | Where-Object { `$_.Path -like '*Processor Time' } | Measure-Object CookedValue -Average).Average, 1) + '%, DPC ' + [math]::Round((`$s.CounterSamples | Where-Object { `$_.Path -like '*DPC Time' } | Measure-Object CookedValue -Average).Average, 2) + '%' } catch { }; `$b = ''; for (`$i = 0; `$i -lt 7 -and -not `$b; `$i++) { try { `$e = Get-WinEvent -FilterHashtable @{ LogName = 'Microsoft-Windows-Diagnostics-Performance/Operational'; Id = 100 } -MaxEvents 1 -ErrorAction Stop; if (`$e.TimeCreated -gt `$o.LastBootUpTime) { `$t = (([xml]`$e.ToXml()).Event.EventData.Data | Where-Object { `$_.Name -eq 'BootTime' } | Select-Object -First 1).'#text'; if (`$t) { `$b = ', boot ' + [math]::Round([double]`$t / 1000, 1) + ' s' } } } catch { }; if (-not `$b -and `$i -lt 6) { Start-Sleep -Seconds 30 } }; Add-Content -Path '$out' -Value ((Get-Date -Format s) + '  after restart: ' + `$p.Count + ' processes, ' + ((`$p | ForEach-Object { `$_.Threads.Count } | Measure-Object -Sum).Sum) + ' threads, ' + ((`$p | Measure-Object HandleCount -Sum).Sum) + ' handles, ' + `$m + ' MB in use' + `$c + `$b); Unregister-ScheduledTask -TaskName '$name' -Confirm:`$false"
+    $list = Join-Path $script:Root 'processes-after-restart.txt'
+    $cmd = "Start-Sleep -Seconds 120; `$p = @(Get-Process); try { Set-Content -Path '$list' -Encoding UTF8 -Value (`$p | Group-Object ProcessName | Sort-Object -Property @{ Expression = 'Count'; Descending = `$true }, @{ Expression = 'Name'; Descending = `$false } | ForEach-Object { '{0,-40} x{1,-3} {2,8:N0} MB' -f `$_.Name, `$_.Count, ((`$_.Group | Measure-Object WorkingSet64 -Sum).Sum / 1MB) }) } catch { }; `$o = Get-CimInstance Win32_OperatingSystem; `$m = [math]::Round((`$o.TotalVisibleMemorySize - `$o.FreePhysicalMemory) / 1024); `$c = ''; try { `$s = Get-Counter -Counter '\Processor(_Total)\% Processor Time', '\Processor(_Total)\% DPC Time' -SampleInterval 1 -MaxSamples 3 -ErrorAction Stop; `$c = ', idle CPU ' + [math]::Round((`$s.CounterSamples | Where-Object { `$_.Path -like '*Processor Time' } | Measure-Object CookedValue -Average).Average, 1) + '%, DPC ' + [math]::Round((`$s.CounterSamples | Where-Object { `$_.Path -like '*DPC Time' } | Measure-Object CookedValue -Average).Average, 2) + '%' } catch { }; `$b = ''; for (`$i = 0; `$i -lt 7 -and -not `$b; `$i++) { try { `$e = Get-WinEvent -FilterHashtable @{ LogName = 'Microsoft-Windows-Diagnostics-Performance/Operational'; Id = 100 } -MaxEvents 1 -ErrorAction Stop; if (`$e.TimeCreated -gt `$o.LastBootUpTime) { `$t = (([xml]`$e.ToXml()).Event.EventData.Data | Where-Object { `$_.Name -eq 'BootTime' } | Select-Object -First 1).'#text'; if (`$t) { `$b = ', boot ' + [math]::Round([double]`$t / 1000, 1) + ' s' } } } catch { }; if (-not `$b -and `$i -lt 6) { Start-Sleep -Seconds 30 } }; Add-Content -Path '$out' -Value ((Get-Date -Format s) + '  after restart: ' + `$p.Count + ' processes, ' + ((`$p | ForEach-Object { `$_.Threads.Count } | Measure-Object -Sum).Sum) + ' threads, ' + ((`$p | Measure-Object HandleCount -Sum).Sum) + ' handles, ' + `$m + ' MB in use' + `$c + `$b); Unregister-ScheduledTask -TaskName '$name' -Confirm:`$false"
     # The command goes in a file next to the undo script, so the task's line is only a path.
     $file = Join-Path $script:Root 'undo\after-count.ps1'
     New-Item -ItemType Directory -Force -Path (Split-Path $file) | Out-Null
@@ -1019,7 +1020,7 @@ function Register-AfterCount {
     Unregister-ScheduledTask -TaskName $name -Confirm:$false -ErrorAction SilentlyContinue
     Register-ScheduledTask -TaskName $name -Action $action -Trigger $trigger -RunLevel Highest -Force -ErrorAction Stop | Out-Null
     Record @{ type = 'task-created'; name = $name }
-    Did "One task runs once at your next sign-in: it writes the after-restart process count, memory, threads, handles, idle CPU and the boot time of that start (it waits up to three minutes more for Windows to log it) to C:\OmniDx\after-restart.txt, then removes itself."
+    Did "One task runs once at your next sign-in: it writes the after-restart process count, memory, threads, handles, idle CPU and the boot time of that start (it waits up to three minutes more for Windows to log it) to C:\OmniDx\after-restart.txt, and every process still running, grouped, to processes-after-restart.txt next to it, then removes itself."
   } catch { Warn ("Could not set the after-restart count task ({0})." -f $_.Exception.Message) }
 }
 
@@ -1273,6 +1274,8 @@ function Show-Status {
   $kc = Join-Path $script:Root 'card-after-restart.png'
   if (Test-Path $kc) { Say ("  Card with the last start's count, for posting: {0} (the keep task writes it fresh at every sign-in)" -f $kc) 'White' }
   if (Test-Path $ar) { $l = @(Get-Content $ar -ErrorAction SilentlyContinue) | Select-Object -Last 1; if ($l) { Say ("  After restart: {0}" -f $l) 'White'; if ($l -match 'after restart: (\d+) processes') { $arCount = [int]$Matches[1] } } }
+  $arList = Join-Path $script:Root 'processes-after-restart.txt'
+  if (Test-Path $arList) { $top = @(Get-Content $arList -ErrorAction SilentlyContinue | Select-Object -First 6 | ForEach-Object { ($_ -replace '\s{2,}', ' ').Trim() }); if ($top.Count) { Say ("  Most of them: {0}. All of them: {1}" -f ($top -join '; '), $arList) } }
   # The newest run still in place (its record is not in undo\done), so an undone Extreme does not speak for the tune.
   $stamps = @($files | ForEach-Object { $_.BaseName -replace '^changes-', '' })
   $sum = Get-ChildItem $script:Root -Filter 'summary-*.json' -ErrorAction SilentlyContinue | Where-Object { $stamps -contains ($_.BaseName -replace '^summary-', '') } | Sort-Object Name -Descending | Select-Object -First 1
@@ -1322,7 +1325,7 @@ function New-SupportBundle {
   $stage = Join-Path $env:TEMP ("omnidx-support-{0}" -f $script:Stamp)
   New-Item -ItemType Directory -Path $stage -Force | Out-Null
   $n = 0
-  foreach ($pat in 'log-*.txt', 'machine-*.json', 'summary-*.json', 'report-*.txt', 'report-preview-*.txt', 'keep-log.txt', 'after-restart.txt', 'README.txt') {
+  foreach ($pat in 'log-*.txt', 'machine-*.json', 'summary-*.json', 'report-*.txt', 'report-preview-*.txt', 'keep-log.txt', 'after-restart.txt', 'processes-after-restart.txt', 'README.txt') {
     foreach ($f in Get-ChildItem $script:Root -Filter $pat -File -ErrorAction SilentlyContinue) {
       try { (Get-Content $f.FullName -Raw -ErrorAction Stop) -replace '\b(TUNE|SQUAD)-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}\b', '$1-****-****-****-****' | Set-Content -Path (Join-Path $stage $f.Name) -Encoding UTF8; $n++ } catch { }
     }
@@ -1368,6 +1371,7 @@ internet.
   processes-before/after-<date>.txt   every process, grouped, before and after
   after-restart.txt           the process count taken at the next sign-in by a
                               one-shot task that then deletes itself
+  processes-after-restart.txt every process still running at that sign-in, grouped
   keep-log.txt                one line per sign-in from the keep task, if you
                               said yes to it: what a Windows update had turned
                               back on, and that it was put back
@@ -3744,7 +3748,7 @@ function Write-Report($m, $before, $after, $changesFile) {
     $(if ($script:Snapshots) { "  now:    " + (Format-Snapshot $script:Snapshots.after) } else { $null }),
     $(if ($script:BootBefore -ne $null) { "  last start: $($script:BootBefore) s, Windows' own measurement of the last full start; the first start after the tune lands in after-restart.txt, and status shows both" } else { $null }),
     $(if ((Get-GoneProcesses).Count) { "  gone by name: " + ((Get-GoneProcesses) -join ', ') } else { $null }),
-    "  full lists: processes-before-$($script:Stamp).txt and processes-after-$($script:Stamp).txt next to this file; after-restart.txt appears after your next sign-in.", "",
+    "  full lists: processes-before-$($script:Stamp).txt and processes-after-$($script:Stamp).txt next to this file; after-restart.txt and processes-after-restart.txt appear after your next sign-in.", "",
     "NEXT STEPS", @($i = 0; Get-NextSteps $m | ForEach-Object { $i++; "  {0}. {1}" -f $i, $_ }), "",
     "STILL RUNNING (most instances)", @($top), "",
     "KEPT, AND WHY", @($(if ($script:Kept.Count) { $script:Kept | Sort-Object -Unique | ForEach-Object { "  $_" } } else { "  nothing needed keeping" })), "",
