@@ -21,8 +21,8 @@ tune is run by hand), cut by `tools/promo/film/plan_full.py` and rendered by
 The newest cut (take 11, 1:25) counts 104 processes before the command and
 61 after the restart, at rest, with the filming helper (three processes) and
 Task Manager among them; memory in use 1,472 MB, processor 11% at rest; the
-install plays at 229x, setup at 55x, the run at 60x. The first cut (take 10,
-1:23, on the site's showcase) counted 111 and 73.
+install plays at 229x, setup at 55x, the run at 60x. It ends on the OmniDx card (tools/promo/film/outro.py) and is the film on the
+site's showcase (1:29 with the card). The first cut (take 10, 1:23) counted 111 and 73.
 
 **Caption:**
 
