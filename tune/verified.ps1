@@ -91,7 +91,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.78.2'
+$script:Version = '1.79.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -3126,6 +3126,7 @@ function Get-NextSteps($m) {
   else { $steps += 'BIOS: items 1 to 3 (memory profile, Re-Size BAR, CSM). Ten minutes, and the memory profile alone is the biggest free gain any PC has.' }
   $steps += 'GPU control panel: low latency mode, power management and V-Sync, from the list below. Two minutes.'
   $steps += 'Launchers and overlays: the list below names the one or two settings in each that matter; the overlays are the usual cause of a stutter that "came from nowhere".'
+  $steps += 'Your frame rate, measured, after the restart: irm omnidx.net/bench.ps1 | iex records a minute of a game with PresentMon (free, changes nothing). Ran it before the tune? It puts the two side by side and draws a card to post.'
   $steps += 'Any time: $env:OMNIDX_MODE=''status''; irm omnidx.net/go.ps1 | iex shows what is still in place; undo is one line, and it is in this report.'
   return $steps
 }
@@ -3316,6 +3317,7 @@ $script:Xaml = @'
         <TextBlock x:Name="WordDrawn" Text="OmniDx" FontSize="21" FontWeight="Bold" Margin="11,0,5,0" VerticalAlignment="Center"/>
         <TextBlock x:Name="TuneDrawn" Text="TUNE" FontSize="11" FontWeight="Bold" Foreground="#7D7199" VerticalAlignment="Center" Margin="0,2,0,0"/>
         <TextBlock x:Name="VersionText" FontSize="11" Foreground="#7D7199" VerticalAlignment="Center" Margin="10,2,0,0"/>
+        <Button x:Name="BtnBench" Content="Measure a game's FPS  -  free" Margin="18,0,0,0" Padding="12,5" FontSize="12" VerticalAlignment="Center" HorizontalAlignment="Left" ToolTip="OmniDx Bench: a minute of your game recorded with PresentMon. Run it before the tune and again after the restart for the side by side."/>
       </StackPanel>
       <TextBlock x:Name="StatusText" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="#B3A8CF" Text="Reading this PC..."/>
     </DockPanel>
@@ -3401,7 +3403,7 @@ function Show-Gui {
 
   $w = [System.Windows.Markup.XamlReader]::Parse($script:Xaml)
   $ui = @{}
-  foreach ($n in 'LogoImage', 'MarkDrawn', 'WordDrawn', 'TuneDrawn', 'VersionText', 'StatusText', 'MachineText', 'CountText', 'TargetText', 'AdviceText', 'StartupPanel', 'KeyBox', 'KeyNote', 'BtnRun', 'BtnReport', 'BtnUndo', 'BtnStatus', 'BtnFolder', 'BtnRestart', 'BtnOpenReport', 'ResultText', 'LogBox', 'Progress', 'FootText',
+  foreach ($n in 'LogoImage', 'MarkDrawn', 'WordDrawn', 'TuneDrawn', 'VersionText', 'BtnBench', 'StatusText', 'MachineText', 'CountText', 'TargetText', 'AdviceText', 'StartupPanel', 'KeyBox', 'KeyNote', 'BtnRun', 'BtnReport', 'BtnUndo', 'BtnStatus', 'BtnFolder', 'BtnRestart', 'BtnOpenReport', 'ResultText', 'LogBox', 'Progress', 'FootText',
                   'ChkStartup', 'ChkServices', 'ChkTasks', 'ChkApps', 'ChkDebloat', 'ChkTelemetry', 'ChkSystem', 'ChkPower', 'ChkNetwork', 'ChkPrograms', 'ChkGames', 'ChkGameFiles', 'ChkNvidia', 'ChkCleanup', 'ChkAfterCount', 'ChkKeep', 'ChkXbox', 'ChkDns', 'ChkVbs', 'ChkExtreme') {
     $ui[$n] = $w.FindName($n)
   }
@@ -3538,6 +3540,8 @@ function Show-Gui {
   })
   $ui.BtnStatus.Add_Click({ $ui.LogBox.Clear(); & $start @{ Status = $true } 'status' })
   $ui.BtnFolder.Add_Click({ New-Item -ItemType Directory -Path $script:Root -Force | Out-Null; Start-Process explorer.exe $script:Root })
+  # OmniDx Bench in a window of its own (this one has administrator rights, so that one does too, which PresentMon needs).
+  $ui.BtnBench.Add_Click({ Start-Process powershell.exe -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-NoExit', '-Command', 'irm omnidx.net/bench.ps1 | iex') })
   $ui.BtnOpenReport.IsEnabled = [bool](Get-ChildItem $script:Root -Filter 'report-*.html' -ErrorAction SilentlyContinue)
   $ui.BtnRestart.Add_Click({
     if (-not $state.restartArmed) { $state.restartArmed = $true; $ui.BtnRestart.Content = 'Sure? Click again to restart'; return }
@@ -3920,12 +3924,14 @@ function Write-Preview($m, $before) {
   foreach ($x in $glines) { Say ("    - {0}" -f $x) }
   Say ("  Plus: the OmniDx power plan, network latency settings, Discord / Spotify / browser, game profiles, the BIOS checklist for {0}." -f $m.board) 'White'
   Say ("  Processes now: {0}. Target after the tune and a restart: about {1}." -f $before, $target) 'Green'
+  Say '  Want the frame rate before and after too? Measure a game now, before the tune: irm omnidx.net/bench.ps1 | iex (free, changes nothing).'
   Say ("  Looked in {0} s: startup {1}, services {2}, tasks {3}, apps {4}, Windows pieces {5}, game files {6}" -f [math]::Round(($tm.Values | Measure-Object -Sum).Sum, 1), $tm.startup, $tm.services, $tm.tasks, $tm.apps, $tm.pieces, $tm.gamefiles)
   $rep = Join-Path $script:Root ("report-preview-{0}.txt" -f $script:Stamp)
   $lines = @(
     "OmniDx Tune $($script:Version) - free report (nothing was changed), $((Get-Date).ToString('f'))", "",
     "MACHINE", @($script:Log | Where-Object { $_ -match '^  (CPU|GPU|RAM|Board|Laptop|Desktop|Keeps|UEFI|Microsoft|Windows|Driver)' }), "",
     "PROCESSES", "  now: $before", "  target for this PC after the tune and a restart: about $target", "",
+    "FRAME RATE", "  Measure a game now, before the tune, and again after it and a restart: irm omnidx.net/bench.ps1 | iex (free, changes nothing).", "",
     "WHAT THE TUNE WOULD DO HERE",
     "  startup entries off: $($startup.Count)", @($startup | ForEach-Object { "    - $($_.label)" }),
     "  services stopped or set to manual: $($svcOff.Count)", @($svcOff | ForEach-Object { "    - $_" }),
