@@ -18,10 +18,14 @@ It is one take of `.github/workflows/edition-vm.yml` in its full-film mode
 tune is run by hand), cut by `tools/promo/film/plan_full.py` and rendered by
 `tools/promo/film/edit.py`, with the install from `tools/promo/film/timelapse.py`.
 
+The first cut (take 10, 1:23) counts 111 processes before the command and
+73 after the restart, at rest, with the filming helper and Task Manager
+among them; the install plays at 228x, setup at 55x, the run at 63x.
+
 **Caption:**
 
-> Clean Windows 11 → my own gaming OS → one command. Everything, start to
-> finish, on a real (test) PC. Would you run it? 👇
+> Clean Windows 11 → my own gaming OS → one command. 111 processes to 73,
+> start to finish, on a real (test) PC. Would you run it? 👇
 > #windows11 #pcgaming #gamingpc #pcsetup #fps
 
 Pinned comment: *Genuine Windows 11 from Microsoft's installer, set up by a
