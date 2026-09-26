@@ -1547,6 +1547,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if ($('#tour-deck')) import('./tour.js').then((m) => m.initTour()).catch(() => {});
   if ($('#fresh-form')) import('./fresh.js').then((m) => m.initFresh()).catch(() => {});
   if ($('[data-watch]')) import('./watch.js').then((m) => m.initWatch()).catch(() => {});
+  // The Discord link shows once the Discord workflow has written the server's invite into assets/discord.json.
+  if ($('[data-discord]')) {
+    fetch(new URL('./discord.json', import.meta.url), { cache: 'no-cache' }).then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (d && /^https:\/\/discord\.gg\/[A-Za-z0-9-]+$/.test(d.invite || '')) $$('[data-discord]').forEach((a) => { a.href = d.invite; a.hidden = false; });
+    }).catch(() => {});
+  }
   if ($('#showcase')) import('./showcase.js').then((m) => { window.__showcase = m; m.initShowcase(); }).catch(() => {});
 
   // Mark the current page in the nav without hard-coding it per page.

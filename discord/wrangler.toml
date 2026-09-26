@@ -1,0 +1,25 @@
+name = "omnidx-discord"
+main = "worker.js"
+compatibility_date = "2026-01-15"
+
+# Tickets, verified keys and the server's ids. The Discord workflow finds or makes this database and writes its id
+# here for its run only; nothing is committed.
+[[d1_databases]]
+binding = "DB"
+database_name = "omnidx-discord"
+database_id = "PASTE_YOUR_DATABASE_ID_HERE"
+
+# /verify asks the licence Worker directly: one Worker on workers.dev cannot fetch another on the same account by
+# URL, so it goes through a service binding. LICENCE_API is only used when the binding is missing.
+[[services]]
+binding = "LICENCE"
+service = "omnidx-studio-api"
+
+# Every half hour: tickets waiting on the member get a note after 24 hours and close 24 hours later; tickets
+# waiting on the team are flagged after 12.
+[triggers]
+crons = ["*/30 * * * *"]
+
+[vars]
+LICENCE_API = "https://omnidx-studio-api.omnidx-tune.workers.dev"
+# APP_ID and PUBLIC_KEY are read off the bot's token by the workflow and passed with --var; DISCORD_TOKEN is a secret.

@@ -258,6 +258,7 @@ def build_footer(s: str) -> str:
         <a href="{s}trust/#cant">What it won't touch</a>
         <a href="{s}changelog/">Changelog</a>
         <a href="{s}terms/">Terms, privacy, money</a>
+        <a href="https://discord.com/" data-discord hidden>The OmniDx Discord</a>
         <a href="{s}app/">OmniDx Studio — the video editor</a>
         <span class="foot-support" data-support="OmniDx Tune — help" hidden></span>
       </div>
