@@ -599,6 +599,10 @@ $lean += 'background game recording, update sharing with other PCs'
 # At sign-in: the Windows Security tray icon (Windows Security itself, and Defender, keep running) and OneDrive when
 # no one is signed in to it.
 if (Disable-Startup 'HKLM' 'SecurityHealth') { $lean += 'the Windows Security tray icon (Defender keeps running)' }
+# Windows installs OneDrive for the account in the background at its first sign-in, which is when this runs; its
+# start-with-Windows entry appears when that installer finishes, so it gets up to two minutes to.
+$ods = @(Get-Process OneDriveSetup -ErrorAction SilentlyContinue)
+if ($ods.Count) { Note "OneDrive's first-sign-in installer is running; waiting for it (up to two minutes)"; try { $ods | Wait-Process -Timeout 120 -ErrorAction Stop } catch { } }
 $od = Get-ChildItem 'HKCU:\Software\Microsoft\OneDrive\Accounts' -ErrorAction SilentlyContinue | Where-Object { (Get-ItemProperty $_.PSPath -Name UserEmail -ErrorAction SilentlyContinue).UserEmail }
 if (-not $od -and (Disable-Startup 'HKCU' 'OneDrive')) { $lean += 'OneDrive at sign-in (no one is signed in to it)' }
 # The disk: the space Windows holds back for updates (about 7 GB on a new install) is given back. Updates still

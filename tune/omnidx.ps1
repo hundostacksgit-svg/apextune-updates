@@ -91,7 +91,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.78.1'
+$script:Version = '1.78.2'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -1862,11 +1862,17 @@ function Get-DebloatPlan($m) {
     # A name this build does not have is an error here, and simply not on the list.
     try { $hit = Get-WindowsOptionalFeature -Online -FeatureName $f[0] -LogPath $dismLog -ErrorAction Stop; if ($hit -and $hit.State -eq 'Enabled') { $feats += @{ name = $hit.FeatureName; what = $f[1] } } } catch { }
   }
+  $one = Get-OneDriveState
+  @{ caps = $caps; feats = $feats; oneSignedIn = $one.signedIn; oneInstalled = $one.installed; oneSetup = $one.setup }
+}
+
+<# OneDrive for this account: its installer, whether it is installed, whether anyone is signed in to it. #>
+function Get-OneDriveState {
   $hk = $script:HKCU
-  $oneSignedIn = (Test-Path "$hk\Software\Microsoft\OneDrive\Accounts\Personal") -or (Test-Path "$hk\Software\Microsoft\OneDrive\Accounts\Business1")
-  $oneSetup = @("$env:SystemRoot\System32\OneDriveSetup.exe", "$env:SystemRoot\SysWOW64\OneDriveSetup.exe", (Join-Path $script:LocalAppData 'Microsoft\OneDrive\OneDriveSetup.exe')) | Where-Object { Test-Path $_ } | Select-Object -First 1
-  $oneInstalled = [bool]($oneSetup -and ((Get-Process OneDrive -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $script:LocalAppData 'Microsoft\OneDrive\OneDrive.exe')) -or (Test-Path "$env:ProgramFiles\Microsoft OneDrive\OneDrive.exe")))
-  @{ caps = $caps; feats = $feats; oneSignedIn = $oneSignedIn; oneInstalled = $oneInstalled; oneSetup = $oneSetup }
+  $signedIn = (Test-Path "$hk\Software\Microsoft\OneDrive\Accounts\Personal") -or (Test-Path "$hk\Software\Microsoft\OneDrive\Accounts\Business1")
+  $setup = @("$env:SystemRoot\System32\OneDriveSetup.exe", "$env:SystemRoot\SysWOW64\OneDriveSetup.exe", (Join-Path $script:LocalAppData 'Microsoft\OneDrive\OneDriveSetup.exe')) | Where-Object { Test-Path $_ } | Select-Object -First 1
+  $installed = [bool]($setup -and ((Get-Process OneDrive -ErrorAction SilentlyContinue) -or (Test-Path (Join-Path $script:LocalAppData 'Microsoft\OneDrive\OneDrive.exe')) -or (Test-Path "$env:ProgramFiles\Microsoft OneDrive\OneDrive.exe")))
+  @{ signedIn = $signedIn; installed = $installed; setup = $setup }
 }
 
 function Debloat($m) {
@@ -1876,6 +1882,16 @@ function Debloat($m) {
   $dt = [System.Diagnostics.Stopwatch]::StartNew(); $dtimes = [ordered]@{}
   $plan = Get-DebloatPlan $m
   $dtimes['look'] = [math]::Round($dt.Elapsed.TotalSeconds, 1); $dt.Restart()
+  # A new Windows installs OneDrive for each account in the background at its first sign-in. Looked at while that
+  # installer runs, OneDrive is not there yet, and it arrives with its start-with-Windows entry after the tune (found
+  # filming a clean install): the installer gets up to two minutes to finish, and OneDrive is looked at again.
+  $ods = @(Get-Process OneDriveSetup -ErrorAction SilentlyContinue)
+  if ($ods.Count) {
+    Say "  OneDrive's first-sign-in installer is still running; waiting for it to finish (up to two minutes)."
+    try { $ods | Wait-Process -Timeout 120 -ErrorAction Stop } catch { }
+    $one = Get-OneDriveState
+    $plan.oneSignedIn = $one.signedIn; $plan.oneInstalled = $one.installed; $plan.oneSetup = $one.setup
+  }
   # OneDrive: gone if nobody is signed in to it. Signed in means in use; it then only loses its auto-start.
   if ($plan.oneInstalled) {
     if ($plan.oneSignedIn) { Keep 'OneDrive' 'you are signed in to it; it just no longer starts with Windows'; Did "OneDrive kept: signed in" }
