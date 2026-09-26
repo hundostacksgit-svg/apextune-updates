@@ -349,6 +349,41 @@ let ticketChannel;
   expect(t3 && rows('SELECT status FROM tickets WHERE id = ?', t3.id)[0].status === 'closed', 'a ticket channel deleted by hand is marked closed at the next sweep');
 }
 
+/* 7b. /review: Verified Buyers only, the team decides, and only shown reviews leave on GET /reviews. */
+{
+  const BUYER = member('U7', 'gamer', ['R_BUYER']);
+  const BUYER2 = member('U8', 'second', ['R_BUYER']);
+  const opts = (stars, text, name) => [{ name: 'stars', value: stars }, { name: 'text', value: text }, ...(name ? [{ name: 'name', value: name }] : [])];
+  const pub = async () => (await worker.fetch(new Request('https://bot.example/reviews'), env, { waitUntil() { } })).json();
+  let r = await send(command(PLAYER, 'review', opts(5, 'Great tool, my PC feels snappier.'), 'GENERAL'));
+  expect(r.body.type === 4 && /Verified Buyers/.test(r.body.data.content) && !rows('SELECT * FROM reviews').length, 'someone who has not verified is asked to verify first, and nothing is stored');
+  const logsBefore = state.messages.get('LOGS').length;
+  r = await send(command(BUYER, 'review', opts(5, 'Went from 180 to 95 processes, <@123> check https://spam.example it out. **Smooth** now.', 'Gamer Joe <3'), 'GENERAL'));
+  const row1 = rows("SELECT * FROM reviews WHERE user_id = 'U7'")[0];
+  expect(r.body.type === 4 && r.body.data.flags === 64 && /team reads every review/.test(r.body.data.content), 'a Verified Buyer\'s review is taken, only they see the answer');
+  expect(row1 && row1.status === 'pending' && row1.stars === 5 && !/<@|https?:|\*/.test(row1.text) && row1.name === 'Gamer Joe 3', `mentions, links and markdown are taken out, the name is cleaned (${row1 && JSON.stringify([row1.text, row1.name])})`);
+  const card = state.messages.get('LOGS').slice(logsBefore).find((m) => /A review/.test(m.embeds?.[0]?.title || ''));
+  expect(card && card.components[0].components.map((b) => b.custom_id).join() === 'rv:show:U7,rv:hide:U7' && row1.log_message === card.id, 'the team gets a card in #ticket-logs with Show and Hide');
+  let p = await pub();
+  expect(p.count === 0 && p.reviews.length === 0, 'nothing is public before the team decides');
+  r = await send(button(BUYER, 'rv:show:U7', 'LOGS', card));
+  expect(/for the team/.test(r.body.data.content) && rows("SELECT status FROM reviews WHERE user_id = 'U7'")[0].status === 'pending', 'a member cannot show their own review');
+  r = await send(button(STAFF, 'rv:show:U7', 'LOGS', card));
+  expect(r.body.type === 7 && /Shown on omnidx\.net/.test(JSON.stringify(r.body.data.embeds)) && r.body.data.components[0].components[0].disabled, 'the team shows it; the card says so');
+  await send(command(BUYER2, 'review', opts(4, 'Easy to run and the undo worked when I needed it.'), 'GENERAL'));
+  p = await pub();
+  expect(p.count === 1 && p.reviews[0].name === 'Gamer Joe 3' && p.reviews[0].stars === 5 && p.average === 5 && !JSON.stringify(p).includes('U7'), 'GET /reviews has the shown one (name, stars, text, date), no Discord id, and not the one still waiting');
+  const h = await worker.fetch(new Request('https://bot.example/reviews'), env, { waitUntil() { } });
+  expect(h.headers.get('access-control-allow-origin') === '*', 'the site may read it from any page');
+  r = await send(button(STAFF, 'rv:hide:U7', 'LOGS', card));
+  p = await pub();
+  expect(p.count === 0, 'hidden, it is off the site again');
+  r = await send(command(BUYER, 'review', opts(3, 'Changed my mind a little, still good.'), 'GENERAL'));
+  expect(/Updated/.test(r.body.data.content) && rows("SELECT * FROM reviews WHERE user_id = 'U7'").length === 1 && rows("SELECT status FROM reviews WHERE user_id = 'U7'")[0].status === 'pending', 'a second /review replaces the first and waits for the team again');
+  r = await send(command(STAFF, 'stats', [], 'GENERAL'));
+  expect(r.body.data.embeds[0].fields.some((f) => f.name === 'Reviews' && /0 shown, 2 waiting/.test(f.value)), '/stats counts the reviews');
+}
+
 /* 8. setup.mjs on a brand-new server, twice: everything made the first time, nothing made twice the second. */
 {
   const os = await import('node:os');
@@ -395,7 +430,7 @@ let ticketChannel;
     expect(wm.components.flatMap((r) => r.components).some((b) => b.custom_id === 'vf:open'), 'the welcome has Verify my purchase');
     expect(state.guild.icon === 'set' && state.guild.system_channel_id === general.id && state.guild.verification_level === 1, 'the server gets the eagle as its icon, #general for join messages, and email verification');
     expect(state.me.username === 'OmniDx' && state.me.avatar === 'set', 'the bot is named OmniDx and wears the eagle');
-    expect(state.commands.map((c) => c.name).join() === 'ticket,verify,faq,stats', 'the four slash commands are registered');
+    expect(state.commands.map((c) => c.name).join() === 'ticket,verify,faq,review,stats', 'the five slash commands are registered');
     expect(state.memberRoles.get('OWNER')?.has(team), 'the owner wears the OmniDx Team role');
     const sql = fs.readFileSync(path.join(out, 'config.sql'), 'utf8');
     expect(['guild_id', 'bot_id', 'team_role', 'buyer_role', 'tickets_category', 'logs_channel', 'invite'].every((k) => sql.includes(`'${k}'`)), 'config.sql carries every id the bot needs, and the invite');

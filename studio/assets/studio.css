@@ -822,3 +822,11 @@ footer{border-top:1px solid var(--line-soft);padding:52px 0 60px;background:colo
 .watch-tx ol{margin:10px 0 0;padding-left:22px}
 .watch-tx li{margin:5px 0}
 @media (max-width:560px){.watch{width:calc(100vw - 16px);border-radius:14px}.watch-in{padding:8px}}
+
+/* Reviews from Verified Buyers (front page, filled by initReviews) */
+.review{margin:0;display:flex;flex-direction:column;gap:12px}
+.review .stars{color:#FFC247;font-size:18px;letter-spacing:3px;line-height:1}
+.review .stars .off{color:var(--text-3)}
+.review blockquote{margin:0;font-size:15.5px;line-height:1.6;color:var(--text)}
+.review figcaption{font-size:13px;color:var(--text-3);margin-top:auto}
+.review figcaption b{color:var(--text-2)}

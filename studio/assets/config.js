@@ -299,6 +299,8 @@ export const TUNE = {
   benchCommand: 'irm omnidx.net/bench.ps1 | iex',
   /* The OmniDx Discord (a permanent invite): the key page offers it, with /verify for the buyers lounge. */
   discord: 'https://discord.gg/VvbYJcDQbB',
+  /* Reviews from Verified Buyers (/review in the Discord, shown only after the team approves each one): discord/bot.js GET /reviews. */
+  reviewsApi: 'https://omnidx-discord.omnidx-tune.workers.dev/reviews',
   /* Where the script and its config are served from. The site can be opened
      from any host for testing, but the script always fetches from the domain. */
   scriptUrl: 'https://omnidx.net/tune/omnidx.ps1',

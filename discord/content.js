@@ -147,5 +147,9 @@ export const COMMANDS = [
     { type: 3, name: 'key', description: 'TUNE-XXXX-XXXX-XXXX-XXXX', required: true, max_length: 40 }] },
   { name: 'faq', description: 'Post a quick answer in this channel', options: [
     { type: 3, name: 'topic', description: 'Which question', required: true, choices: Object.entries(FAQ).map(([k, v]) => ({ name: v.short.slice(0, 100), value: k })) }] },
+  { name: 'review', description: 'Review OmniDx for omnidx.net (Verified Buyers; the team reads it first)', options: [
+    { type: 4, name: 'stars', description: 'How many stars', required: true, choices: [5, 4, 3, 2, 1].map((n) => ({ name: '★'.repeat(n) + '☆'.repeat(5 - n), value: n })) },
+    { type: 3, name: 'text', description: 'What it did for you, in a sentence or two', required: true, min_length: 10, max_length: 300 },
+    { type: 3, name: 'name', description: 'The name shown with it (your Discord name if left empty)', required: false, max_length: 32 }] },
   { name: 'stats', description: 'Tickets, ratings and verified buyers (team)', default_member_permissions: String(1n << 13n) },
 ];

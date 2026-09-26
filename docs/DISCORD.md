@@ -71,6 +71,18 @@ role, #buyers-lounge, and the OmniDx Edition line with their key in it. A key
 belongs to one Discord account; six tries an hour per person. Only the member
 sees the key or the answer.
 
+## Reviews on the site
+
+`/review` (stars, a sentence or two, and optionally the name to show) works for
+**Verified Buyers** only, so every review on omnidx.net is from someone whose key
+the licence server confirmed. Links, mentions and markdown are taken out. Each
+review lands in #ticket-logs as a card with **Show on omnidx.net** and **Hide**
+(the team decides); a new `/review` from the same person replaces the old one
+and waits again. The bot serves the shown ones at `GET /reviews` (name, stars,
+text, date, and the average; no Discord ids), and the front page's **What
+buyers say** section reads it (`reviewsApi` in `studio/assets/config.js`). With
+none shown, the section stays hidden. `/stats` counts shown and waiting.
+
 ## Changing it
 
 The words, channels, ticket kinds, FAQ and rules are all in

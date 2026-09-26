@@ -46,6 +46,8 @@ const browser = await chromium.launch({ args: ['--no-sandbox'], ...(process.env.
 async function openPage(options) {
   const page = await browser.newPage(options);
   await page.route('**/tune/config.json*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ api: '', version: '0', sha256: 'x' }) }));
+  // The reviews the Discord bot serves: none, unless a scenario routes some (never the live bot).
+  await page.route('**/omnidx-discord.omnidx-tune.workers.dev/reviews*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ count: 0, average: null, reviews: [] }) }));
   return page;
 }
 
@@ -112,6 +114,21 @@ try {
     const run = await page.evaluate(() => document.querySelector('[data-tour-run]').textContent);
     expect(a === 1 && b === 6 && inert === 7 && paused === 'true' && /== Reading this PC/.test(run) && !errs.length,
       `front page tour: next goes to 2, a dot to 7, seven slides inert, pause holds, the run slide reads the published log${errs.length ? ' (' + errs.join('; ') + ')' : ''}`);
+    await page.close();
+  }
+  /* 1a2. Reviews: hidden with none; with the bot's answer, the cards show with their stars, names escaped, the average on top. */
+  {
+    const page = await openPage({ viewport: { width: 390, height: 900 } });
+    const errs = watch(page);
+    await page.goto(`${base}/studio/`, { waitUntil: 'networkidle' });
+    const hiddenEmpty = await page.evaluate(() => document.getElementById('reviews').hidden);
+    await page.route('**/omnidx-discord.omnidx-tune.workers.dev/reviews*', (r) => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ count: 2, average: 4.5, reviews: [
+      { name: 'Gamer <b>Joe</b>', stars: 5, text: 'Went from 180 to 95 processes. <img src=x onerror=alert(1)>', date: '2026-09-20' },
+      { name: 'Sam', stars: 4, text: 'Easy to run and the undo worked when I needed it.', date: '2026-09-18' }] }) }));
+    await page.goto(`${base}/studio/`, { waitUntil: 'networkidle' });
+    const got = await page.evaluate(() => ({ hidden: document.getElementById('reviews').hidden, cards: document.querySelectorAll('#reviews .review').length, img: !!document.querySelector('#reviews img'), name: document.querySelector('#reviews figcaption b')?.textContent, stars: document.querySelector('#reviews .stars')?.getAttribute('aria-label'), sum: document.querySelector('[data-reviews-summary]')?.textContent }));
+    expect(hiddenEmpty && !got.hidden && got.cards === 2 && !got.img && got.name === 'Gamer <b>Joe</b>' && got.stars === '5 out of 5 stars' && /4\.5 out of 5 from 2 reviews/.test(got.sum) && !errs.length && !(await overflow(page)),
+      `front page reviews: hidden with none; two shown with stars and the average, HTML in them shown as text, no sideways scroll at 390px (${JSON.stringify(got)})${errs.length ? ' (' + errs.join('; ') + ')' : ''}`);
     await page.close();
   }
   /* 1b. "Watch it work" opens the tutorial in a dialog: WebM first, MP4 after it, a poster, the steps in words; Esc closes

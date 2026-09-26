@@ -191,6 +191,7 @@ await panel(ids.buyers, [{
       `▸ Undo: \`$env:OMNIDX_MODE='undo'; ${TUNE_LINE}\``,
       `▸ Stock against tuned, measured: \`${BENCH_LINE}\` before and after (restart first), card in <#` + ids.results + '>',
       '▸ Every update is free: the same command always fetches the newest version.',
+      '▸ Liked it? `/review` puts your review on omnidx.net, with the Verified Buyer mark (the team reads it first)',
     ].join('\n') }],
 }]);
 

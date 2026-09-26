@@ -198,10 +198,34 @@ function initDrawer() {
  * beats "first one intersecting", which flickers between two neighbours on a
  * fast scroll and picks the wrong one for a section shorter than the screen.
  */
+/*
+ * Reviews from Verified Buyers: written with /review in the OmniDx Discord, each one read by the team before it is
+ * shown (discord/bot.js, GET /reviews). The section stays hidden until there is at least one; a failed fetch leaves
+ * it hidden, and nothing here is ever made up.
+ */
+function initReviews() {
+  const box = $('#reviews'), grid = $('[data-reviews]');
+  if (!box || !grid || !TUNE.reviewsApi) return;
+  fetch(TUNE.reviewsApi, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).then((d) => {
+    const list = (d && Array.isArray(d.reviews) ? d.reviews : []).filter((x) => x && x.text && x.name && x.stars >= 1 && x.stars <= 5).slice(0, 9);
+    if (!list.length) return;
+    const when = (iso) => { const t = new Date(iso); return isNaN(t) ? '' : t.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }); };
+    grid.innerHTML = list.map((x) => {
+      const n = Math.round(x.stars);
+      return `<figure class="card review"><div class="stars" role="img" aria-label="${n} out of 5 stars">${'★'.repeat(n)}<span class="off">${'☆'.repeat(5 - n)}</span></div>
+        <blockquote>${esc(x.text)}</blockquote>
+        <figcaption><b>${esc(x.name)}</b> · Verified Buyer${x.date && when(x.date) ? ` · <time datetime="${esc(x.date)}">${esc(when(x.date))}</time>` : ''}</figcaption></figure>`;
+    }).join('');
+    const sum = $('[data-reviews-summary]');
+    if (sum && d.count && d.average) sum.textContent = `${d.average} out of 5 from ${d.count} review${d.count === 1 ? '' : 's'}.`;
+    box.hidden = false;
+  }).catch(() => { });
+}
+
 function initRail() {
   const sections = $$('[data-rail], section[id], header[id]')
     .filter((el, i, all) => all.indexOf(el) === i)
-    .filter((el) => el.id && el.dataset.rail !== 'off');
+    .filter((el) => el.id && el.dataset.rail !== 'off' && !el.hidden);
   if (sections.length < 3) return;
   if (!$('.rail')) {
     const rail = document.createElement('nav');
@@ -1533,6 +1557,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMenuBox();
   initDrawer();
   initSupport();
+  initReviews();
   initRail();
   initReveal();
   initPricing();

@@ -44,3 +44,18 @@ CREATE TABLE IF NOT EXISTS hits (
   n INTEGER NOT NULL,
   until INTEGER NOT NULL
 );
+
+-- /review from Verified Buyers: one per Discord account (a new /review replaces it and waits for the team again).
+-- Only 'shown' ones leave the server, on GET /reviews, which omnidx.net reads.
+CREATE TABLE IF NOT EXISTS reviews (
+  user_id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,                      -- the name shown with it
+  stars INTEGER NOT NULL,
+  text TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',  -- pending, shown, hidden
+  created_at INTEGER NOT NULL,
+  decided_at INTEGER,
+  decided_by TEXT,
+  log_message TEXT                         -- the card in #ticket-logs with Show and Hide
+);
+CREATE INDEX IF NOT EXISTS reviews_status ON reviews (status, decided_at);

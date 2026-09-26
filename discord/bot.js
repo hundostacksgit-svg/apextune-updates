@@ -12,6 +12,8 @@
  *   /verify    a key the licence server issued (and not refunded) gives the Verified Buyer role; a key belongs to
  *              one Discord account. Also from the button in #welcome.
  *   /faq       a quick answer, posted where it is asked. /stats: the numbers, for the team.
+ *   /review    Verified Buyers review OmniDx; the team shows or hides each one from a card in #ticket-logs, and the shown
+ *              ones are served on GET /reviews, which omnidx.net reads. Nothing reaches the site without the team.
  *
  * Environment: DISCORD_TOKEN (secret), PUBLIC_KEY and APP_ID (vars set by the deploy), DB (D1), LICENCE (a service
  * binding to the licence Worker; LICENCE_API is the fallback URL). setup.mjs writes the server's role and channel
@@ -127,6 +129,7 @@ export const handler = {
       try { await env.DB.prepare('SELECT 1').first(); db = true; } catch { }
       return json({ ok: true, db, app: env.APP_ID || null });
     }
+    if (request.method === 'GET' && url.pathname === '/reviews') return publicReviews(env);
     if (request.method !== 'POST' || url.pathname !== '/interactions') return new Response('OmniDx Discord bot. Nothing to see here.', { status: 404 });
     const body = await request.text();
     if (!(await verifySignature(request, body, env.PUBLIC_KEY))) return new Response('invalid request signature', { status: 401 });
@@ -153,6 +156,7 @@ async function route(i, env, ctx) {
     if (name === 'verify') return verify(i, env, ctx, c, option(i.data.options, 'key'));
     if (name === 'faq') return faq(option(i.data.options, 'topic'));
     if (name === 'stats') return stats(i, env, c);
+    if (name === 'review') return review(i, env, ctx, c);
     return say('That command is not known here any more.');
   }
   if (i.type === T.COMPONENT) {
@@ -166,6 +170,7 @@ async function route(i, env, ctx) {
     if (id.startsWith('rate:')) return rate(i, env, ctx, c);
     if (id === 'vf:open') return { type: R.MODAL, data: { custom_id: 'vf:form', title: 'Verify your purchase', components: [row({ type: 4, custom_id: 'key', label: 'Your OmniDx Tune key', style: 1, required: true, max_length: 40, placeholder: 'TUNE-XXXX-XXXX-XXXX-XXXX' })] } };
     if (id === 'role:ping') return togglePing(i, env, c);
+    if (id.startsWith('rv:')) return decideReview(i, env, c);
     return say('That button is from an older version of this message.');
   }
   if (i.type === T.MODAL) {
@@ -523,6 +528,63 @@ async function togglePing(i, env, c) {
   return say(has ? '🔕 Announcement pings off.' : `🔔 You will be pinged for announcements${c.announcements_channel ? ` in <#${c.announcements_channel}>` : ''}. Press again to stop.`);
 }
 
+/* ---------------------------------------------------------------- /review and the reviews omnidx.net shows */
+
+// Plain text only: no mentions, no links, no markdown that would look different on the site, one line of spaces.
+const cleanReview = (s) => String(s || '').replace(/<[@#][!&]?\d+>/g, '').replace(/https?:\/\/\S+|discord\.gg\/\S+|www\.\S+/gi, '').replace(/[*_~`|>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 300);
+const cleanName = (s) => String(s || '').replace(/[^\p{L}\p{N} ._'-]/gu, '').replace(/\s+/g, ' ').trim().slice(0, 32);
+const starLine = (n) => '★'.repeat(n) + '☆'.repeat(5 - n);
+
+function reviewCard(r, decidedBy) {
+  const state = r.status === 'shown' ? `Shown on omnidx.net${decidedBy ? ` (by ${decidedBy})` : ''}` : r.status === 'hidden' ? `Hidden${decidedBy ? ` (by ${decidedBy})` : ''}` : 'Waiting for the team';
+  return {
+    content: '', allowed_mentions: { parse: [] },
+    embeds: [{ color: r.status === 'shown' ? COLOR.green : r.status === 'hidden' ? COLOR.grey : COLOR.amber, title: `📝 A review: ${starLine(r.stars)}`, description: r.text,
+      fields: [{ name: 'Shown as', value: `${r.name} · Verified Buyer`, inline: true }, { name: 'From', value: `<@${r.user_id}>`, inline: true }, { name: 'Status', value: state, inline: true }] }],
+    components: [row(
+      { type: 2, style: 3, custom_id: `rv:show:${r.user_id}`, label: 'Show on omnidx.net', disabled: r.status === 'shown' },
+      { type: 2, style: 4, custom_id: `rv:hide:${r.user_id}`, label: 'Hide', disabled: r.status === 'hidden' })],
+  };
+}
+
+async function review(i, env, ctx, c) {
+  if (!i.guild_id) return say('Review from the server: /review there.');
+  const u = who(i);
+  if (!c.buyer_role || !(i.member?.roles || []).includes(c.buyer_role)) return say('Reviews come from Verified Buyers, so every one on omnidx.net is from someone who paid. Verify first with /verify and your key (or the button in #welcome), then /review.');
+  const stars = Math.max(1, Math.min(5, Math.round(Number(option(i.data.options, 'stars')) || 0)));
+  const text = cleanReview(option(i.data.options, 'text'));
+  if (text.length < 10) return say('A sentence or two, please: what it did for you. Links and mentions are taken out.');
+  const name = cleanName(option(i.data.options, 'name')) || cleanName(nameOf(u)) || 'A buyer';
+  const old = await env.DB.prepare('SELECT user_id FROM reviews WHERE user_id = ?').bind(u.id).first();
+  await env.DB.prepare("INSERT OR REPLACE INTO reviews (user_id, name, stars, text, status, created_at) VALUES (?, ?, ?, ?, 'pending', ?)").bind(u.id, name, stars, text, Date.now()).run();
+  if (c.logs_channel) ctx.waitUntil((async () => {
+    const m = await discord(env, 'POST', `/channels/${c.logs_channel}/messages`, reviewCard({ user_id: u.id, name, stars, text, status: 'pending' }));
+    if (m && m.id) await env.DB.prepare('UPDATE reviews SET log_message = ? WHERE user_id = ?').bind(m.id, u.id).run();
+  })().catch(() => { }));
+  return say(`${old ? 'Updated' : 'Thank you'}: ${starLine(stars)} as **${name}**. The team reads every review before it goes on omnidx.net, with your name and the Verified Buyer mark. /review again any time to change it.`);
+}
+
+async function decideReview(i, env, c) {
+  if (!isTeam(i, c)) return say('That is for the team.');
+  const [, action, userId] = i.data.custom_id.split(':');
+  const r = await env.DB.prepare('SELECT * FROM reviews WHERE user_id = ?').bind(userId).first();
+  if (!r) return say('That review is gone (replaced or removed).');
+  const status = action === 'show' ? 'shown' : 'hidden';
+  const by = nameOf(who(i));
+  await env.DB.prepare('UPDATE reviews SET status = ?, decided_at = ?, decided_by = ? WHERE user_id = ?').bind(status, Date.now(), who(i).id, userId).run();
+  return { type: R.UPDATE, data: reviewCard({ ...r, status }, by) };
+}
+
+// What omnidx.net shows: the shown reviews, newest decision first, and the average of all of them. Anyone may read it.
+async function publicReviews(env) {
+  const { results } = await env.DB.prepare("SELECT name, stars, text, decided_at FROM reviews WHERE status = 'shown' ORDER BY decided_at DESC LIMIT 30").all();
+  const all = await env.DB.prepare("SELECT COUNT(*) AS n, AVG(stars) AS avg FROM reviews WHERE status = 'shown'").first();
+  const list = (results || []).map((r) => ({ name: r.name, stars: r.stars, text: r.text, date: new Date(r.decided_at).toISOString().slice(0, 10) }));
+  return new Response(JSON.stringify({ count: all?.n || 0, average: all?.n ? Math.round(all.avg * 10) / 10 : null, reviews: list }), {
+    headers: { 'content-type': 'application/json', 'access-control-allow-origin': '*', 'cache-control': 'public, max-age=300' },
+  });
+}
+
 /* ---------------------------------------------------------------- /faq and /stats */
 
 function faq(topic) {
@@ -540,6 +602,7 @@ async function stats(i, env, c) {
   const closed = await one("SELECT COUNT(*) AS n, AVG(closed_at - opened_at) AS took FROM tickets WHERE status = 'closed' AND closed_at > ?", now - 7 * 24 * HOUR);
   const rated = await one('SELECT COUNT(*) AS n, AVG(rating) AS avg FROM tickets WHERE rating IS NOT NULL AND closed_at > ?', now - 30 * 24 * HOUR);
   const buyers = await one('SELECT COUNT(DISTINCT user_id) AS n FROM links');
+  const revs = await one("SELECT SUM(status = 'shown') AS shown, SUM(status = 'pending') AS waiting FROM reviews");
   const byKind = await env.DB.prepare('SELECT kind, COUNT(*) AS n FROM tickets WHERE opened_at > ? GROUP BY kind ORDER BY n DESC').bind(now - 30 * 24 * HOUR).all();
   const hours = closed.took ? (closed.took / HOUR).toFixed(1) : '–';
   return say('', {
@@ -549,6 +612,7 @@ async function stats(i, env, c) {
       { name: 'Closed, 7 days', value: `${closed.n || 0} (avg ${hours} h open)`, inline: true },
       { name: 'Rating, 30 days', value: rated.n ? `${Number(rated.avg).toFixed(2)} / 5 from ${rated.n}` : 'no ratings yet', inline: true },
       { name: 'Verified buyers', value: String(buyers.n || 0), inline: true },
+      { name: 'Reviews', value: `${revs.shown || 0} shown, ${revs.waiting || 0} waiting`, inline: true },
       { name: 'What about, 30 days', value: (byKind.results || []).map((r) => `${kindOf(r.kind).emoji} ${kindOf(r.kind).label}: ${r.n}`).join('\n') || 'nothing yet' },
     ] }],
   });
