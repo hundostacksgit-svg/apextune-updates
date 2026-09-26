@@ -138,6 +138,17 @@
 <section style="padding-top:26px">
   <div class="wrap" style="max-width:820px">
     <div class="card reveal">
+      <div class="eyebrow" style="margin-bottom:12px">v1.78.0 · September 2026</div>
+      <h3>Your games set up in the NVIDIA driver itself</h3>
+      <ul class="tick">
+        <li>On an NVIDIA card, every listed game the tune finds on the PC now gets the driver settings NVIDIA Control Panel &gt; Manage 3D settings &gt; Program Settings would give it by hand: power management at prefer maximum performance (the card keeps its clocks mid-match), low latency mode on (one frame queued instead of up to three) and texture filtering at high performance. A game NVIDIA already has a profile for gets them on that profile; one it has none for gets its own, "OmniDx - " and the game's name</li>
+        <li>It goes through NVIDIA's own driver interface (NVAPI), the one the Control Panel uses, function by function as NVIDIA publishes it. A driver that expects another layout refuses the call rather than misreading it, and the tune says so and moves on</li>
+        <li>V-Sync, the frame cap and G-Sync are left to each game and to you: Reflex and G-Sync want them set together, not by a script. The report says which to set globally by hand</li>
+        <li>Every value it replaces is recorded. Undo puts a setting you had chosen back, takes the rest off the profile so NVIDIA's own value applies again, and removes the profiles it made</li>
+        <li>The NVIDIA step now reads the driver's version and age; a driver more than four months old is flagged with where to get the current Game Ready driver</li>
+      </ul>
+    </div>
+    <div class="card reveal d1" style="margin-top:16px">
       <div class="eyebrow" style="margin-bottom:12px">Terms · 24 September 2026</div>
       <h3>All sales are final</h3>
       <ul class="tick">

@@ -91,7 +91,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.77.1'
+$script:Version = '1.78.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -391,6 +391,17 @@ function Invoke-Timed([scriptblock]$work, [object[]]$argList, [int]$seconds) {
   Receive-Job $job -ErrorAction SilentlyContinue | Out-Null; Remove-Job $job -Force -ErrorAction SilentlyContinue
   if ($state -eq 'Completed' -and $errs -eq 0) { return 'ok' } else { return 'failed' }
 }
+# NVIDIA driver profiles: the tune left the helper it used next to this file (omnidx-nv.cs); loaded once, when a
+# record needs it.
+$script:nvReady = $null
+function Open-Nv {
+  if ($null -ne $script:nvReady) { return $script:nvReady }
+  $script:nvReady = $false
+  $src = Join-Path $dir 'omnidx-nv.cs'
+  if (-not (Test-Path $src)) { Write-Host "NVIDIA profile records, but no omnidx-nv.cs next to this file; NVIDIA Control Panel > Manage 3D settings > Restore puts them back by hand" -ForegroundColor Yellow; return $false }
+  try { if (-not ('OmniNv' -as [type])) { Add-Type -Path $src -ErrorAction Stop }; $e = [OmniNv]::Open(); if ($e) { Write-Host "NVIDIA driver: $e" -ForegroundColor Yellow } else { $script:nvReady = $true } } catch { Write-Host ("NVIDIA driver: {0}" -f $_.Exception.Message) -ForegroundColor Yellow }
+  return $script:nvReady
+}
 # The legacy pieces go back in one DISM session (a session per piece cost
 # minutes); if DISM will not take them together they go one at a time, and
 # if the batch simply timed out (Windows Update out of reach) one at a time
@@ -494,6 +505,20 @@ foreach ($c in $changes) {
           $p = Start-Process $c.setup -ArgumentList '/silent' -WindowStyle Hidden -PassThru -ErrorAction SilentlyContinue
           if ($p) { if ($p.WaitForExit(180000)) { Write-Host "OneDrive reinstalled" -ForegroundColor DarkGray } else { Write-Host "OneDrive's installer is still running in the background; it finishes on its own" -ForegroundColor Yellow } }
         }
+      }
+      'nvdrs' {
+        # A game's NVIDIA driver setting: the value it had, or off the profile so the driver's own applies again.
+        if (-not (Open-Nv)) { throw 'NVIDIA driver interface not available' }
+        $np = [IntPtr]::Zero; $nn = ''
+        $ns = $(if ($c.own) { [OmniNv]::FindProfile([string]$c.own, [ref]$np) } else { [OmniNv]::FindApp([string]$c.exe, [ref]$np, [ref]$nn) })
+        if ($ns -eq 0) {
+          $nr = $(if ($null -eq $c.prev) { [OmniNv]::DeleteSetting($np, [uint32]$c.id) } else { [OmniNv]::SetDword($np, [uint32]$c.id, [uint32]$c.prev) })
+          [void][OmniNv]::Save()
+          Write-Host ("NVIDIA {0}: setting 0x{1:X8} {2}" -f $c.exe, [uint32]$c.id, $(if ($null -eq $c.prev) { 'back to the driver default' } else { "back to $($c.prev)" })) -ForegroundColor DarkGray
+        }
+      }
+      'nvprofile' {
+        if (Open-Nv) { $np = [IntPtr]::Zero; if ([OmniNv]::FindProfile([string]$c.name, [ref]$np) -eq 0) { [void][OmniNv]::DeleteProfile($np); [void][OmniNv]::Save(); Write-Host ("NVIDIA profile removed: {0}" -f $c.name) -ForegroundColor DarkGray } }
       }
     }
     if (-not $deferred) { $done++ }
@@ -2602,15 +2627,313 @@ function Set-GameFiles($m) {
 # ---------------------------------------------------------------------------
 # GPU vendor extras
 # ---------------------------------------------------------------------------
+<# The NVIDIA driver's profile settings, through its own interface (NVAPI, the one NVIDIA Control Panel and NVIDIA
+   Profile Inspector use). Kept next to undo.ps1 as omnidx-nv.cs when used, so undo can put the values back. #>
+$script:NvSource = @'
+using System;
+using System.Runtime.InteropServices;
+
+// The NVIDIA driver's profile settings (NVAPI DRS), the ones NVIDIA Control Panel > Manage 3D settings writes. Every
+// function comes from nvapi64.dll by its published ID (NVIDIA's nvapi_interface.h); every structure is laid out as
+// NVIDIA's nvapi.h has it, and carries its version (size | version << 16), so a driver that expects another layout
+// refuses the call (-9) instead of reading past it. Statuses are NVAPI's: 0 is OK, -163 no such profile, -166 no such
+// application, -167 application already in another profile.
+public static class OmniNv
+{
+    [DllImport("nvapi64.dll", EntryPoint = "nvapi_QueryInterface", CallingConvention = CallingConvention.Cdecl)]
+    static extern IntPtr QueryInterface(uint id);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate int F0();
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate int FOut(out IntPtr h);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate int FH(IntPtr h);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate int FHH(IntPtr s, IntPtr p);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate int FHPOut(IntPtr s, IntPtr p, out IntPtr h);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate int FHPOutP(IntPtr s, IntPtr name, out IntPtr prof, IntPtr app);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate int FHHP(IntPtr s, IntPtr prof, IntPtr p);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate int FHHUP(IntPtr s, IntPtr prof, uint id, IntPtr p);
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate int FHHU(IntPtr s, IntPtr prof, uint id);
+
+    static IntPtr session = IntPtr.Zero;
+    // NVDRS_SETTING_V1: 12328 bytes since its unions gained a 64-bit value (current value at 8224); 12320 before
+    // (current value at 8220). The first is tried, the second if the driver refuses it.
+    static int setSize = 12328, setCur = 8224;
+    // NVDRS_APPLICATION: version 4 (20492 bytes), or version 3 (16396) for an older driver.
+    static int appSize = 20492, appVer = 4;
+
+    static T Fn<T>(uint id) where T : class
+    {
+        IntPtr p = QueryInterface(id);
+        if (p == IntPtr.Zero) throw new InvalidOperationException("this driver has no NVAPI function 0x" + id.ToString("X8"));
+        return (T)(object)Marshal.GetDelegateForFunctionPointer(p, typeof(T));
+    }
+
+    static IntPtr Block(int size)
+    {
+        IntPtr b = Marshal.AllocHGlobal(size);
+        for (int i = 0; i < size; i += 4) Marshal.WriteInt32(b, i, 0);
+        return b;
+    }
+
+    // NvAPI_UnicodeString: 2048 UTF-16 units, zero-terminated, written at an offset in a block.
+    static void Text(IntPtr b, int at, string s)
+    {
+        s = s ?? "";
+        int n = Math.Min(s.Length, 2047);
+        for (int i = 0; i < n; i++) Marshal.WriteInt16(b, at + i * 2, (short)s[i]);
+        Marshal.WriteInt16(b, at + n * 2, 0);
+    }
+
+    static string ReadText(IntPtr b, int at)
+    {
+        var sb = new System.Text.StringBuilder();
+        for (int i = 0; i < 2048; i++) { short c = Marshal.ReadInt16(b, at + i * 2); if (c == 0) break; sb.Append((char)c); }
+        return sb.ToString();
+    }
+
+    // null when ready; otherwise what stopped it.
+    public static string Open()
+    {
+        try
+        {
+            int r = Fn<F0>(0x0150E828)();                                   // NvAPI_Initialize
+            if (r != 0) return "NvAPI_Initialize returned " + r;
+            IntPtr s;
+            r = Fn<FOut>(0x0694D52E)(out s);                                 // NvAPI_DRS_CreateSession
+            if (r != 0) return "NvAPI_DRS_CreateSession returned " + r;
+            session = s;
+            r = Fn<FH>(0x375DBD6B)(session);                                 // NvAPI_DRS_LoadSettings
+            if (r != 0) return "NvAPI_DRS_LoadSettings returned " + r;
+            return null;
+        }
+        catch (DllNotFoundException) { return "no NVIDIA driver interface (nvapi64.dll)"; }
+        catch (EntryPointNotFoundException) { return "nvapi64.dll without nvapi_QueryInterface"; }
+        catch (Exception e) { return e.Message; }
+    }
+
+    public static int Save() { return Fn<FH>(0xFCBC7E14)(session); }        // NvAPI_DRS_SaveSettings
+
+    public static void Close()
+    {
+        try { if (session != IntPtr.Zero) Fn<FH>(0xDAD9CFF8)(session); } catch { }  // NvAPI_DRS_DestroySession
+        session = IntPtr.Zero;
+    }
+
+    // The profile an executable belongs to (NVIDIA's own game profiles included), and that profile's name.
+    public static int FindApp(string exe, out IntPtr profile, out string profileName)
+    {
+        profile = IntPtr.Zero; profileName = "";
+        IntPtr name = Block(4096);
+        try
+        {
+            Text(name, 0, exe);
+            for (int attempt = 0; attempt < 2; attempt++)
+            {
+                IntPtr app = Block(appSize);
+                try
+                {
+                    Marshal.WriteInt32(app, 0, appSize | (appVer << 16));
+                    IntPtr p;
+                    int r = Fn<FHPOutP>(0xEEE566B2)(session, name, out p, app);  // NvAPI_DRS_FindApplicationByName
+                    if (r == -9 && appVer == 4) { appSize = 16396; appVer = 3; continue; }
+                    if (r != 0) return r;
+                    profile = p;
+                    profileName = ProfileName(p);
+                    return 0;
+                }
+                finally { Marshal.FreeHGlobal(app); }
+            }
+            return -9;
+        }
+        finally { Marshal.FreeHGlobal(name); }
+    }
+
+    static string ProfileName(IntPtr profile)
+    {
+        IntPtr info = Block(4116);                                           // NVDRS_PROFILE_V1
+        try
+        {
+            Marshal.WriteInt32(info, 0, 4116 | (1 << 16));
+            if (Fn<FHHP>(0x61CD6FD6)(session, profile, info) != 0) return "";   // NvAPI_DRS_GetProfileInfo
+            return ReadText(info, 4);
+        }
+        catch { return ""; }
+        finally { Marshal.FreeHGlobal(info); }
+    }
+
+    public static int FindProfile(string name, out IntPtr profile)
+    {
+        profile = IntPtr.Zero;
+        IntPtr n = Block(4096);
+        try { Text(n, 0, name); IntPtr p; int r = Fn<FHPOut>(0x7E4A9A0B)(session, n, out p); if (r == 0) profile = p; return r; }  // NvAPI_DRS_FindProfileByName
+        finally { Marshal.FreeHGlobal(n); }
+    }
+
+    public static int CreateProfile(string name, out IntPtr profile)
+    {
+        profile = IntPtr.Zero;
+        IntPtr info = Block(4116);
+        try
+        {
+            Marshal.WriteInt32(info, 0, 4116 | (1 << 16));
+            Text(info, 4, name);
+            IntPtr p; int r = Fn<FHPOut>(0xCC176068)(session, info, out p);  // NvAPI_DRS_CreateProfile
+            if (r == 0) profile = p;
+            return r;
+        }
+        finally { Marshal.FreeHGlobal(info); }
+    }
+
+    public static int DeleteProfile(IntPtr profile) { return Fn<FHH>(0x17093206)(session, profile); }  // NvAPI_DRS_DeleteProfile
+
+    public static int CreateApp(IntPtr profile, string exe, string friendly)
+    {
+        for (int attempt = 0; attempt < 2; attempt++)
+        {
+            IntPtr app = Block(appSize);
+            try
+            {
+                Marshal.WriteInt32(app, 0, appSize | (appVer << 16));
+                Text(app, 8, exe);                                           // appName
+                Text(app, 8 + 4096, friendly);                               // userFriendlyName
+                int r = Fn<FHHP>(0x4347A9DE)(session, profile, app);         // NvAPI_DRS_CreateApplication
+                if (r == -9 && appVer == 4) { appSize = 16396; appVer = 3; continue; }
+                return r;
+            }
+            finally { Marshal.FreeHGlobal(app); }
+        }
+        return -9;
+    }
+
+    // A DWORD setting on a profile: its value, where it comes from (0 this profile, 1 global, 2 base, 3 driver
+    // default) and whether it is NVIDIA's predefined value (non-zero) rather than one a person set.
+    public static int GetDword(IntPtr profile, uint id, out uint value, out int location, out int predefined)
+    {
+        value = 0; location = -1; predefined = 0;
+        for (int attempt = 0; attempt < 2; attempt++)
+        {
+            IntPtr b = Block(12328);
+            try
+            {
+                Marshal.WriteInt32(b, 0, setSize | (1 << 16));
+                int r = Fn<FHHUP>(0x73BF8338)(session, profile, id, b);    // NvAPI_DRS_GetSetting
+                if (r == -9 && setSize == 12328) { setSize = 12320; setCur = 8220; continue; }
+                if (r != 0) return r;
+                if (Marshal.ReadInt32(b, 4104) != 0) return -5;              // not a DWORD setting (NVAPI_INVALID_ARGUMENT)
+                location = Marshal.ReadInt32(b, 4108);
+                predefined = Marshal.ReadInt32(b, 4112);
+                value = (uint)Marshal.ReadInt32(b, setCur);
+                return 0;
+            }
+            finally { Marshal.FreeHGlobal(b); }
+        }
+        return -9;
+    }
+
+    public static int SetDword(IntPtr profile, uint id, uint value)
+    {
+        for (int attempt = 0; attempt < 2; attempt++)
+        {
+            IntPtr b = Block(12328);
+            try
+            {
+                Marshal.WriteInt32(b, 0, setSize | (1 << 16));
+                Marshal.WriteInt32(b, 4100, (int)id);                        // settingId
+                Marshal.WriteInt32(b, 4104, 0);                              // NVDRS_DWORD_TYPE
+                Marshal.WriteInt32(b, setCur, (int)value);                   // u32CurrentValue
+                int r = Fn<FHHP>(0x577DD202)(session, profile, b);           // NvAPI_DRS_SetSetting
+                if (r == -9 && setSize == 12328) { setSize = 12320; setCur = 8220; continue; }
+                return r;
+            }
+            finally { Marshal.FreeHGlobal(b); }
+        }
+        return -9;
+    }
+
+    // Takes a setting off a profile: the driver's predefined (or global) value applies again.
+    public static int DeleteSetting(IntPtr profile, uint id) { return Fn<FHHU>(0xE4A26362)(session, profile, id); }  // NvAPI_DRS_DeleteProfileSetting
+}
+'@
+
+<# Each listed game found on this PC, in the driver: what NVIDIA Control Panel > Manage 3D settings > Program
+   Settings would set for it by hand. Power management at prefer maximum performance (the card does not drop its
+   clocks mid-match), low latency mode on (one frame queued, not the driver's up to three), texture filtering at high
+   performance (a sharpness difference nobody sees in motion). A game NVIDIA already has a profile for gets these on
+   that profile; one it does not gets a profile of its own, "OmniDx - <game>". V-Sync, the frame cap and G-Sync are
+   left to the game and the player: Reflex and G-Sync want them set together, not by a script. Every value replaced
+   is recorded; undo puts it back, or takes the setting off the profile so the driver's own value applies again. #>
+$script:NvSettings = @(
+  @(0x1057EB71, 1, 'power management: prefer maximum performance'),
+  @(0x007BA09E, 1, 'low latency mode: on'),
+  @(0x00CE2691, 0x14, 'texture filtering: high performance')
+)
+function Set-NvidiaProfiles($m) {
+  $games = @($script:Games | Where-Object { $script:GamesFound -contains $_.name })
+  if (-not $games.Count) { Say "  No listed game found on this PC, so no NVIDIA game profiles to set."; return }
+  if (-not (Test-Path (Join-Path $env:SystemRoot 'System32\nvapi64.dll'))) { Say "  NVIDIA's driver interface (nvapi64.dll) is not on this PC; the game profiles wait for the driver."; return }
+  try { if (-not ('OmniNv' -as [type])) { Add-Type -TypeDefinition $script:NvSource -ErrorAction Stop } } catch { Warn ("NVIDIA game profiles skipped: {0}" -f $_.Exception.Message); return }
+  $e = [OmniNv]::Open()
+  if ($e) { Warn ("NVIDIA game profiles skipped: {0}" -f $e); [OmniNv]::Close(); return }
+  try { New-Item -ItemType Directory -Path (Join-Path $script:Root 'undo') -Force | Out-Null; Set-Content -Path (Join-Path $script:Root 'undo\omnidx-nv.cs') -Value $script:NvSource -Encoding ASCII } catch { }
+  $done = @(); $set = 0
+  try {
+    foreach ($g in $games) {
+      foreach ($exe in $g.exes) {
+        $p = [IntPtr]::Zero; $pname = ''; $own = ''
+        $st = [OmniNv]::FindApp($exe, [ref]$p, [ref]$pname)
+        if ($st -eq -166) {
+          # Not in any of NVIDIA's profiles: one of its own, named for the game, holding every exe of it.
+          $own = "OmniDx - $($g.name)"
+          $st = [OmniNv]::FindProfile($own, [ref]$p)
+          if ($st -eq -163) { $st = [OmniNv]::CreateProfile($own, [ref]$p); if ($st -eq 0) { Record @{ type = 'nvprofile'; name = $own } } }
+          if ($st -eq 0) { $st = [OmniNv]::CreateApp($p, $exe, $g.name); if ($st -eq -167) { $st = 0 } }
+          $pname = $own
+        }
+        if ($st -ne 0) { Say ("  {0}: the driver would not give {1} a profile (NVAPI {2}); left as it is" -f $g.name, $exe, $st); continue }
+        foreach ($s in $script:NvSettings) {
+          $cur = [uint32]0; $loc = 0; $pre = 0
+          $gs = [OmniNv]::GetDword($p, [uint32]$s[0], [ref]$cur, [ref]$loc, [ref]$pre)
+          # A value a person set on this profile is recorded to go back; anything else goes back to the driver's.
+          $mine = ($gs -eq 0 -and $loc -eq 0 -and $pre -eq 0)
+          if ($mine -and $cur -eq [uint32]$s[1]) { continue }
+          $r = [OmniNv]::SetDword($p, [uint32]$s[0], [uint32]$s[1])
+          if ($r -eq 0) { Record @{ type = 'nvdrs'; exe = $exe; own = $own; id = [uint32]$s[0]; prev = $(if ($mine) { $cur } else { $null }) }; $set++ }
+          else { Say ("  {0}: {1} not taken (NVAPI {2})" -f $g.name, $s[2], $r) }
+        }
+        if ($done -notcontains $g.name) { $done += $(if ($pname -and $pname -ne $own) { "$($g.name) (on NVIDIA's '$pname' profile)" } else { $g.name }) }
+      }
+    }
+    if ($set) {
+      $sv = [OmniNv]::Save()
+      if ($sv -ne 0) { Warn ("NVIDIA game profiles: the driver did not save them (NVAPI {0}); nothing changed there" -f $sv); return }
+    }
+  } finally { [OmniNv]::Close() }
+  if ($done.Count) { Did ("NVIDIA driver profiles for {0}: {1}. V-Sync, frame cap and G-Sync left to each game." -f ($done -join ', '), (($script:NvSettings | ForEach-Object { $_[2] }) -join ', ')) }
+}
+
+<# The driver itself: its version as NVIDIA numbers it (32.0.15.6094 is 560.94) and its age. A driver months old
+   misses the per-game fixes and profiles NVIDIA ships with each Game Ready release. #>
+function Test-NvidiaDriver {
+  $vc = Get-CimInstance Win32_VideoController -ErrorAction SilentlyContinue | Where-Object { $_.Name -match 'NVIDIA' } | Select-Object -First 1
+  if (-not $vc -or -not $vc.DriverVersion) { return }
+  $digits = ($vc.DriverVersion -replace '\D', '')
+  $ver = $(if ($digits.Length -ge 5) { $d = $digits.Substring($digits.Length - 5); '{0}.{1}' -f $d.Substring(0, 3).TrimStart('0'), $d.Substring(3) } else { $vc.DriverVersion })
+  if (-not $vc.DriverDate) { Say ("  NVIDIA driver {0}" -f $ver); return }
+  $age = [int]((Get-Date) - $vc.DriverDate).TotalDays
+  if ($age -gt 120) { Warn ("NVIDIA driver {0} is {1} days old. NVIDIA app > Drivers, or nvidia.com/drivers: the latest Game Ready driver, Custom install, Clean install ticked. New drivers carry per-game fixes and profiles." -f $ver, $age) }
+  else { Say ("  NVIDIA driver {0}, {1} days old: current." -f $ver, $age) }
+}
+
 function Tune-Gpu($m) {
   if ($m.gpuVendor -ne 'NVIDIA') { return }
   Head "NVIDIA extras"
+  Test-NvidiaDriver
   Set-ServiceStart 'NvTelemetryContainer' 'Disabled' 'NVIDIA telemetry'
   $n = 0
   foreach ($t in Get-ScheduledTask -TaskPath '\' -ErrorAction SilentlyContinue | Where-Object { $_.TaskName -match '^Nv(TmRep|TmMon|ProfileUpdater|DriverUpdateCheck|NodeLauncher)' -and $_.State -ne 'Disabled' }) {
     try { Disable-ScheduledTask -TaskPath '\' -TaskName $t.TaskName -ErrorAction Stop | Out-Null; Record @{ type = 'task'; path = '\'; name = $t.TaskName }; $n++ } catch { }
   }
   Did ("NVIDIA telemetry service off, {0} NVIDIA crash-report and updater tasks off. The display driver and its container are untouched." -f $n)
+  try { Set-NvidiaProfiles $m } catch { Warn ("NVIDIA game profiles stopped: {0}" -f $_.Exception.Message) }
 }
 
 # ---------------------------------------------------------------------------
@@ -2792,7 +3115,7 @@ function Get-NextSteps($m) {
 # ---------------------------------------------------------------------------
 function Get-GpuNotes($m) {
   switch ($m.gpuVendor) {
-    'NVIDIA' { @('NVIDIA Control Panel > Manage 3D settings (global): Low Latency Mode = Ultra, Power management = Prefer maximum performance, Vertical sync = Off, Texture filtering quality = High performance, Shader cache size = 10 GB, Threaded optimisation = Auto.', 'NVIDIA app: in-game overlay off unless you record; Reflex on in every game that has it.', 'Drivers: use the Game Ready driver, clean install ticked, GeForce Experience / NVIDIA app not set to start with Windows (the tune already switched it off).') + $(if ($m.laptop) { @('Laptop: NVIDIA Control Panel > Manage 3D settings > Preferred graphics processor = High-performance NVIDIA processor, and the same per game under Windows > Settings > System > Display > Graphics. Whisper Mode and Battery Boost off on mains; the frame cap they set is what many "my laptop is stuck at 60" threads are about.') } else { @() }) }
+    'NVIDIA' { @('The tune sets each listed game you have in the driver itself (power management prefer maximum performance, low latency mode on, texture filtering high performance); NVIDIA Control Panel > Manage 3D settings > Program Settings shows them. Globally, by hand: Shader cache size = 10 GB, Vertical sync = Off, and G-Sync with a frame cap a few fps under your refresh rate if your monitor has it.', 'NVIDIA app: in-game overlay off unless you record; Reflex on in every game that has it.', 'Drivers: use the Game Ready driver, clean install ticked, GeForce Experience / NVIDIA app not set to start with Windows (the tune already switched it off).') + $(if ($m.laptop) { @('Laptop: NVIDIA Control Panel > Manage 3D settings > Preferred graphics processor = High-performance NVIDIA processor, and the same per game under Windows > Settings > System > Display > Graphics. Whisper Mode and Battery Boost off on mains; the frame cap they set is what many "my laptop is stuck at 60" threads are about.') } else { @() }) }
     'AMD' { @('AMD Software > Gaming > Graphics: Radeon Anti-Lag = On (Anti-Lag 2 in games that support it), Radeon Boost = Off for competitive, Radeon Chill = Off, Wait for vertical refresh = Off, Texture filtering = Performance, Surface format optimisation = On, Tessellation = AMD optimised.', 'Shader cache = AMD optimised. Enhanced Sync off. Instant replay off unless you record.') + $(if ($m.laptop) { @('Laptop: AMD Software > Gaming > Graphics > Switchable Graphics: set each game to High performance; Radeon Chill off on mains (it is a frame cap dressed as a power saver).') } else { @() }) }
     'Intel' { @('Intel Graphics Command Center: Endurance Gaming off on mains, Adaptive tessellation on, V-Sync off, Anisotropic filtering per-application.') }
     default { @('GPU not identified; use the vendor control panel to set low-latency mode on, power management to maximum performance and V-Sync off.') }
@@ -3007,7 +3330,7 @@ $script:Xaml = @'
               <CheckBox x:Name="ChkPrograms" IsChecked="True" Content="Discord, Spotify, browsers"/>
               <CheckBox x:Name="ChkGames" IsChecked="True" Content="Game profiles"/>
               <CheckBox x:Name="ChkGameFiles" IsChecked="True" Content="Settings inside your games' files"/>
-              <CheckBox x:Name="ChkNvidia" IsChecked="True" Content="NVIDIA telemetry off"/>
+              <CheckBox x:Name="ChkNvidia" IsChecked="True" Content="NVIDIA: game profiles, telemetry off"/>
               <CheckBox x:Name="ChkCleanup" IsChecked="True" Content="Clear update caches, temp files"/>
               <CheckBox x:Name="ChkAfterCount" IsChecked="True" Content="Write the after-restart count"/>
               <CheckBox x:Name="ChkKeep" IsChecked="True" Content="Keep it cut after Windows updates"/>

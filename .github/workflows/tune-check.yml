@@ -99,6 +99,18 @@ jobs:
             Write-Host "$f parses ($($tokens.Count) tokens)"
           }
 
+      # The NVIDIA profile helper only compiles on a PC with an NVIDIA card, which this runner is not: compile it here
+      # the way the tune does (Add-Type in Windows PowerShell), and it must say there is no NVIDIA driver, not crash.
+      - name: The NVIDIA profile helper compiles and finds no NVIDIA driver here
+        run: |
+          $text = Get-Content .\tune\omnidx.ps1 -Raw
+          if ($text -notmatch "(?s)\`$script:NvSource = @'\r?\n(.*?)\r?\n'@") { Write-Host 'no NvSource in the script'; exit 1 }
+          Add-Type -TypeDefinition $Matches[1] -ErrorAction Stop
+          $e = [OmniNv]::Open(); [OmniNv]::Close()
+          Write-Host "OmniNv compiled; Open() says: $e"
+          if (-not $e) { Write-Host 'Open() claims an NVIDIA driver on a runner without one'; exit 1 }
+          exit 0
+
       # Four games' own settings files for the tune to find, in their own encodings: values it should change, a value of
       # the wrong shape it must leave, a missing setting it must not add, and a setting it does not list.
       - name: Plant four games' settings files
