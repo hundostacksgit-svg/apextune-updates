@@ -106,6 +106,8 @@ jobs:
           # The tune: ASCII, balanced, key maths agree, the transparency page is current.
           node tools/tune-check.mjs
           python3 tools/tune-touches.py --check
+          # Every page's menu and footer as build-site.py writes them (a regenerated page loses them otherwise).
+          python3 tools/build-site.py --check
 
           # The root must send visitors to Studio, or omnidx.net is a dead page.
           grep -q 'url=studio/' index.html || { echo "root index.html no longer redirects to studio/"; exit 1; }
