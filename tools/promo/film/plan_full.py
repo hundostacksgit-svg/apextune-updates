@@ -69,8 +69,11 @@ def main():
             b = a + beats(b - a)
             d = b - a
         else:
+            # A whole-number speed, as an editor would set it (the label reads "80x", not "79.278x"); the stretch is
+            # trimmed or let run by the fraction that takes, so its length on screen stays on the beat.
             d = beats((b - a) / sp)
-            sp = (b - a) / d
+            sp = max(2, round((b - a) / d))
+            b = a + sp * d
         s = {'from': round(a, 3), 'to': round(b, 3), 'speed': round(sp, 3)}
         if src: s['src'] = src
         segs.append(s)
