@@ -98,8 +98,15 @@ def main():
     def chapter(text, start):
         chapters.append({'from': round(start, 3), 'to': round(t, 3), 'text': text})
 
+    last = [None, None]   # the source span of the previous real-time step, so the next never shows it twice
+
     def step(name, lead, tail, words, box=None, size=62):
-        if name in ev: add(V(name) - lead, V(name) + tail, 1, cam(box) if box else FULL, words, size)
+        if name not in ev: return
+        a, b = V(name) - lead, V(name) + tail
+        if last[0] is not None and last[0] < a < last[1]: a = last[1]
+        if b - a < BEAT: return
+        add(a, b, 1, cam(box) if box else FULL, words, size)
+        last[0], last[1] = a, b
 
     n0, n1 = take.get('before'), take.get('after')
     # 0. The payoff first, two seconds of it: where this ends up. Then back to the start.
@@ -142,8 +149,10 @@ def main():
     if 'before-count' in ev:
         add(V('before-count') - 0.6, V('before-count') + 2.4, 1, cam('tm_count'), 'Task Manager, before the tune', 60,
             big=(str(n0), 'processes', '#ffb020') if n0 else None)
-    if has('start-menu', 'command-entered'):
-        add(V('start-menu') - 0.3, V('command-entered') + 0.6, 1, cam('ps'), 'Now the one line: irm omnidx.net/go.ps1 | iex', 56)
+    if has('start-menu', 'type-command', 'command-entered'):
+        # Windows + S, "powershell", Enter; the window opening skipped; then the line, typed in real time.
+        add(V('start-menu') - 0.3, V('start-menu') + 3.3, 1, cam('search'), 'Now the one command. Windows + S, PowerShell', 56)
+        add(V('type-command') - 0.4, V('command-entered') + 0.6, 1, cam('ps'), 'irm omnidx.net/go.ps1 | iex', 64)
     if 'uac-yes' in ev:
         add(V('uac-yes') - 1.0, V('uac-yes') + 0.8, 1, FULL, 'Windows asks. Yes')
     if has('uac-yes', 'app-read'):

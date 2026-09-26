@@ -459,7 +459,8 @@ if ($hasBrowser) {
   Set-Reg "$reg\Capabilities" 'ApplicationDescription' 'The web, light: sleeping tabs, trackers blocked, nothing else running.' 'String'
   Set-Reg "$reg\Capabilities" 'ApplicationIcon' "$exe,0" 'String'
   foreach ($s in 'http', 'https') { Set-Reg "$reg\Capabilities\URLAssociations" $s 'OmniDxBrowserURL' 'String' }
-  foreach ($x in '.htm', '.html', '.pdf', '.svg', '.webp') { Set-Reg "$reg\Capabilities\FileAssociations" $x 'OmniDxBrowserHTML' 'String' }
+  # Web links only. Offered for .html files too, Windows stopped the tune's report (a local .html) on "Select an app
+  # to open this .html file" (take 10 of the clean-install run); local pages stay with Windows' own viewer.
   Set-Reg "$reg\Capabilities\StartMenu" 'StartMenuInternet' 'OmniDx Browser' 'String'
   Set-Reg 'HKLM:\SOFTWARE\RegisteredApplications' 'OmniDx Browser' 'Software\Clients\StartMenuInternet\OmniDx Browser\Capabilities' 'String'
   foreach ($pid1 in 'OmniDxBrowserURL', 'OmniDxBrowserHTML') {
@@ -479,10 +480,8 @@ if ($hasBrowser) {
 <DefaultAssociations>
   <Association Identifier="http" ProgId="OmniDxBrowserURL" ApplicationName="OmniDx Browser" />
   <Association Identifier="https" ProgId="OmniDxBrowserURL" ApplicationName="OmniDx Browser" />
-  <Association Identifier=".htm" ProgId="OmniDxBrowserHTML" ApplicationName="OmniDx Browser" />
-  <Association Identifier=".html" ProgId="OmniDxBrowserHTML" ApplicationName="OmniDx Browser" />
 </DefaultAssociations>
-'@ | Set-Content -Path $assoc -Encoding UTF8
+'@ | ForEach-Object { [IO.File]::WriteAllText($assoc, $_, (New-Object Text.UTF8Encoding $false)) }   # no byte-order mark
     Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\System' 'DefaultAssociationsConfiguration' $assoc 'String'
     Note 'OmniDx Browser is the default browser from the next sign-in (Settings > Default apps changes it back)' 'Green'
   } else { Note 'OmniDx Browser registered; the default browser left as it is' 'Green' }
@@ -570,14 +569,24 @@ Set-Reg $ai 'DisableClickToDo' 1
 Set-Reg 'HKCU:\Software\Policies\Microsoft\Windows\WindowsAI' 'DisableClickToDo' 1
 Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot' 'TurnOffWindowsCopilot' 1
 $lean += 'Resume, Recall, Click to Do, Copilot'
-# Start's search: apps, settings and files on this PC, not the web (Windows + S is OmniDx Search, which has the web).
+# Three services with a service host each after the tune groups the rest (take 10's list at rest): Windows' AI
+# runtime (Recall and Click to Do are off above), the health-and-experiences helper and the compatibility inventory.
+# The last two start on demand when something asks for them.
+foreach ($s in @(@('WSAIFabricSvc', 4, "Windows' AI runtime"), @('whesvc', 3, 'health and optimized experiences helper'), @('InventorySvc', 3, 'compatibility inventory'))) {
+  if (Set-StartType $s[0] $s[1]) { $lean += $s[2] }
+}
+# Windows' own search: OmniDx Search is Windows + S, and finds apps, settings, files and the web. Windows' search
+# host kept seven processes running all the time (itself and six web views, about 330 MB; take 10); with its search
+# switched off by Windows' own policy it does not start. Start still lists and opens every app; typing in Start no
+# longer searches. Undo switches it back on.
 Set-Reg 'HKCU:\Software\Policies\Microsoft\Windows\Explorer' 'DisableSearchBoxSuggestions' 1
 $ws = 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search'
 Set-Reg $ws 'EnableDynamicContentInWSB' 0
 Set-Reg $ws 'ConnectedSearchUseWeb' 0
 Set-Reg $ws 'DisableWebSearch' 1
 Set-Reg $ws 'AllowCortana' 0
-$lean += "web results in Start's search"
+Set-Reg $ws 'DisableSearch' 1
+$lean += "Windows' own search (OmniDx Search is Windows + S)"
 # Edge (kept: Windows needs it) stays closed when it is closed.
 Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Edge' 'StartupBoostEnabled' 0
 Set-Reg 'HKLM:\SOFTWARE\Policies\Microsoft\Edge' 'BackgroundModeEnabled' 0

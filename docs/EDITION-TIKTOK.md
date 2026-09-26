@@ -96,7 +96,8 @@ Should I release it?*
 > #windows11 #pctips #productivity #pcgaming
 
 Pinned comment: *It starts with Windows and stays in memory (about 20 MB), so
-it opens instantly. Windows' own search still works from Start.*
+it opens instantly. Windows' own search is switched off: it kept seven
+processes running all the time. Start still opens every app.*
 
 **E3. A browser that runs nothing in the background**
 

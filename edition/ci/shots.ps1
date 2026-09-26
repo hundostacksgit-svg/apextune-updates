@@ -177,6 +177,7 @@ Check ((Get-ItemProperty $ek -Name TunePending -ErrorAction SilentlyContinue).Tu
 # The lean stage: telemetry and link tracking off where this Windows has them; Store apps kept from the background.
 foreach ($svc in 'DiagTrack', 'dmwappushservice', 'TrkWks') { if ($null -ne $leanBefore[$svc]) { Check ((Start-Of $svc) -eq 4) "lean: $svc is off ($($leanBefore[$svc]) -> $(Start-Of $svc))" } }
 Check ((Get-ItemProperty 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy' -Name LetAppsRunInBackground -ErrorAction SilentlyContinue).LetAppsRunInBackground -eq 2) 'lean: Store apps only run while open'
+Check ((Get-ItemProperty 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search' -Name DisableSearch -ErrorAction SilentlyContinue).DisableSearch -eq 1) "lean: Windows' own search is off (OmniDx Search is Windows + S)"
 if ($rsBefore -eq 'enabled') { Check ((Reserved) -eq 'disabled') "lean: the space held back for updates is given back ($rsBefore -> $(Reserved))" }
 Note ("lean: Spooler {0} -> {1}, WSearch {2} -> {3}" -f $leanBefore['Spooler'], (Start-Of 'Spooler'), $leanBefore['WSearch'], (Start-Of 'WSearch'))
 Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue   # Explorer restarts with the new taskbar
@@ -225,6 +226,7 @@ if ($rsBefore -in 'enabled', 'disabled') { Check ((Reserved) -eq $rsBefore) "und
 $saAfter = (Get-ItemProperty $sa -Name SecurityHealth -ErrorAction SilentlyContinue).SecurityHealth
 Check ("$saAfter" -eq "$saBefore") 'undo: the Windows Security tray icon starts as it did'
 Check ($null -eq (Get-ItemProperty 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy' -Name LetAppsRunInBackground -ErrorAction SilentlyContinue)) 'undo: the background-apps policy is gone'
+Check ($null -eq (Get-ItemProperty 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search' -Name DisableSearch -ErrorAction SilentlyContinue)) "undo: Windows' own search is back"
 Note ("after undo: TaskbarAl={0}, Program Files folder there: {1}" -f (Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced' -Name TaskbarAl -ErrorAction SilentlyContinue).TaskbarAl, (Test-Path (Join-Path $env:ProgramFiles 'OmniDx\Edition')))
 foreach ($f in (Join-Path $env:LOCALAPPDATA 'OmniDx\edition-log.txt'), (Join-Path $env:ProgramData 'OmniDx\Edition\setup-log.txt'), (Join-Path $env:ProgramData 'OmniDx\Edition\undo-setup.tsv')) {
   if (Test-Path $f) { Copy-Item $f $Out -Force }
