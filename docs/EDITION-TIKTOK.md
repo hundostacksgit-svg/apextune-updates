@@ -18,13 +18,15 @@ It is one take of `.github/workflows/edition-vm.yml` in its full-film mode
 tune is run by hand), cut by `tools/promo/film/plan_full.py` and rendered by
 `tools/promo/film/edit.py`, with the install from `tools/promo/film/timelapse.py`.
 
-The first cut (take 10, 1:23) counts 111 processes before the command and
-73 after the restart, at rest, with the filming helper and Task Manager
-among them; the install plays at 228x, setup at 55x, the run at 63x.
+The newest cut (take 11, 1:25) counts 104 processes before the command and
+61 after the restart, at rest, with the filming helper (three processes) and
+Task Manager among them; memory in use 1,472 MB, processor 11% at rest; the
+install plays at 229x, setup at 55x, the run at 60x. The first cut (take 10,
+1:23, on the site's showcase) counted 111 and 73.
 
 **Caption:**
 
-> Clean Windows 11 → my own gaming OS → one command. 111 processes to 73,
+> Clean Windows 11 → my own gaming OS → one command. 104 processes to 61,
 > start to finish, on a real (test) PC. Would you run it? 👇
 > #windows11 #pcgaming #gamingpc #pcsetup #fps
 
