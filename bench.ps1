@@ -280,7 +280,7 @@ function New-Card([string]$path, $cmp) {
   if (-not (Test-Path $logo)) { try { Invoke-WebRequest -Uri "$base/studio/assets/logo/omnidx-logo.png" -OutFile $logo -UseBasicParsing -TimeoutSec 20 } catch { } }
   $y = 96
   if (Test-Path $logo) {
-    try { $im = [System.Drawing.Image]::FromFile($logo); $lw = 440; $lh = [int]($im.Height * $lw / $im.Width); $g.DrawImage($im, [int](($W - $lw) / 2), $y, $lw, $lh); $im.Dispose(); $y += $lh + 26 } catch { $y += 10 }
+    try { $im = [System.Drawing.Image]::FromFile($logo); $lw = 380; $lh = [int]($im.Height * $lw / $im.Width); $g.DrawImage($im, [int](($W - $lw) / 2), $y, $lw, $lh); $im.Dispose(); $y += $lh + 26 } catch { $y += 10 }
   }
   else { $g.DrawString('OMNIDX', (& $font 64 'Bold'), (& $grad 0 $y $W 80), [single]($W / 2), [single]$y, $center); $y += 110 }
   $g.DrawString('B E N C H   R E S U L T', (& $font 28 'Bold'), (& $brush (& $col '#A78BFA')), [single]($W / 2), [single]$y, $center); $y += 52
@@ -289,53 +289,55 @@ function New-Card([string]$path, $cmp) {
 
   $st = $cmp.stock; $om = $cmp.omnidx; $both = $st -and $om
   $panelY = $y
-  $g.FillPath((& $brush (& $col '#0E0A17' 235)), (& $round 60 $panelY 960 540 36)); $g.DrawPath((New-Object System.Drawing.Pen (& $col '#2A1F45'), 2), (& $round 60 $panelY 960 540 36))
+  $arrow = [string][char]0x2192
+  $g.FillPath((& $brush (& $col '#0E0A17' 235)), (& $round 60 $panelY 960 480 36)); $g.DrawPath((New-Object System.Drawing.Pen (& $col '#2A1F45'), 2), (& $round 60 $panelY 960 480 36))
   $g.DrawString('AVERAGE FPS', (& $font 30 'Bold'), (& $brush (& $col '#7D7199')), [single]($W / 2), [single]($panelY + 40), $center)
   if ($both) {
     $g.DrawString('STOCK', (& $font 28 'Bold'), (& $brush (& $col '#9A8FB8')), [single]290, [single]($panelY + 110), $center)
     $g.DrawString('WITH OMNIDX', (& $font 28 'Bold'), (& $brush (& $col '#C4B5FD')), [single]790, [single]($panelY + 110), $center)
-    $g.DrawString((& $num $st.avg), (& $font 150 'Bold'), (& $brush (& $col '#CFC6E6')), [single]290, [single]($panelY + 150), $center)
-    $g.DrawString((& $num $om.avg), (& $font 150 'Bold'), (& $grad 560 ($panelY + 150) 460 200), [single]790, [single]($panelY + 150), $center)
-    $g.DrawString('>', (& $font 90 'Bold'), (& $brush (& $col '#6D5A99')), [single]540, [single]($panelY + 185), $center)
+    $g.DrawString((& $num $st.avg), (& $font 150 'Bold'), (& $brush (& $col '#CFC6E6')), [single]290, [single]($panelY + 140), $center)
+    $g.DrawString((& $num $om.avg), (& $font 150 'Bold'), (& $grad 560 ($panelY + 140) 460 200), [single]790, [single]($panelY + 140), $center)
+    $g.DrawString($arrow, (& $font 90 'Bold'), (& $brush (& $col '#6D5A99')), [single]540, [single]($panelY + 170), $center)
     $pc = Change $st.avg $om.avg; $t = ChangeText $pc
     $cc = if ($pc -ge 3) { '#34D399' } elseif ($pc -le -3) { '#F87171' } else { '#C4B5FD' }
-    $g.DrawString($t, (& $font 64 'Bold'), (& $brush (& $col $cc)), [single]($W / 2), [single]($panelY + 400), $center)
+    $g.DrawString($t, (& $font 64 'Bold'), (& $brush (& $col $cc)), [single]($W / 2), [single]($panelY + 356), $center)
   }
   else {
     $one = if ($st) { $st } else { $om }
     $g.DrawString((Side $(if ($st) { 'stock' } else { 'omnidx' })).ToUpper(), (& $font 28 'Bold'), (& $brush (& $col '#C4B5FD')), [single]($W / 2), [single]($panelY + 110), $center)
-    $g.DrawString((& $num $one.avg), (& $font 190 'Bold'), (& $grad 200 ($panelY + 150) 680 240), [single]($W / 2), [single]($panelY + 150), $center)
+    $g.DrawString((& $num $one.avg), (& $font 190 'Bold'), (& $grad 200 ($panelY + 150) 680 240), [single]($W / 2), [single]($panelY + 160), $center)
   }
 
-  $y = $panelY + 580
+  $y = $panelY + 520
   $rows = @(@('1% low', 'low1', $false), @('0.1% low', 'low01', $false), @('Stutters a minute', 'stutters', $true))
-  $g.FillPath((& $brush (& $col '#0E0A17' 235)), (& $round 60 $y 960 420 36)); $g.DrawPath((New-Object System.Drawing.Pen (& $col '#2A1F45'), 2), (& $round 60 $y 960 420 36))
-  $ry = $y + 40
+  $g.FillPath((& $brush (& $col '#0E0A17' 235)), (& $round 60 $y 960 380 36)); $g.DrawPath((New-Object System.Drawing.Pen (& $col '#2A1F45'), 2), (& $round 60 $y 960 380 36))
+  $ry = $y + 28
   foreach ($r in $rows) {
     $g.DrawString($r[0], (& $font 40 'Bold'), (& $brush (& $col '#F1ECFF')), [single]104, [single]($ry + 26), $left)
     if ($both) {
       $a = $st[$r[1]]; $b = $om[$r[1]]; $pc = Change $a $b
       $good = if ($r[2]) { $pc -le -3 } else { $pc -ge 3 }; $bad = if ($r[2]) { $pc -ge 3 } else { $pc -le -3 }
-      $g.DrawString(('{0}  >  {1}' -f (& $num $a), (& $num $b)), (& $font 54 'Bold'), (& $brush (& $col '#F1ECFF')), [single]976, [single]($ry + 6), $right)
+      $g.DrawString(('{0}  {2}  {1}' -f (& $num $a), (& $num $b), $arrow), (& $font 54 'Bold'), (& $brush (& $col '#F1ECFF')), [single]976, [single]($ry + 6), $right)
       $g.DrawString((ChangeText $pc), (& $font 28 'Bold'), (& $brush (& $col $(if ($good) { '#34D399' } elseif ($bad) { '#F87171' } else { '#9A8FB8' }))), [single]976, [single]($ry + 72), $right)
     }
     else {
       $one = if ($st) { $st } else { $om }
       $g.DrawString((& $num $one[$r[1]]), (& $font 54 'Bold'), (& $brush (& $col '#F1ECFF')), [single]976, [single]($ry + 14), $right)
     }
-    $ry += 118
+    $ry += 110
     if ($r -ne $rows[-1]) { $g.FillRectangle((& $brush (& $col '#2A1F45')), 104, $ry - 4, 872, 2) }
   }
 
-  $y += 470
+  $y += 420
   $last = $cmp.last
   $secsTxt = if ($both) { '{0} s of the same scene each' -f $st.seconds } else { '{0} s' -f $(if ($st) { $st.seconds } else { $om.seconds }) }
-  $foot = @(('{0}  |  PresentMon {1}  |  {2}' -f $secsTxt, $pmVersion, (Get-Date).ToString('d MMM yyyy', [Globalization.CultureInfo]::InvariantCulture)), [string]$last.pc.cpu, $(if ($last.pc.gpu) { '{0}{1}' -f $last.pc.gpu, $(if ([int]$last.pc.refreshHz -gt 0) { "  |  $($last.pc.refreshHz) Hz" }) } else { '' }))
+  $foot = @(('{0}  |  PresentMon {1}  |  {2}' -f $secsTxt, $pmVersion, (Get-Date).ToString('d MMM yyyy', [Globalization.CultureInfo]::InvariantCulture)), [string]$last.pc.cpu, $(if ($last.pc.gpu) { '{0}{1}' -f $last.pc.gpu, $(if ([int]$last.pc.refreshHz -ge 30) { "  |  $($last.pc.refreshHz) Hz" }) } else { '' }))
   foreach ($l in $foot) { if ($l) { $g.DrawString($l, (& $fit $l 30 960 'Regular'), (& $brush (& $col '#9A8FB8')), [single]($W / 2), [single]$y, $center); $y += 46 } }
   $y += 14
   $note = if ($both) { 'One PC, one scene. Yours will differ: run the free bench on yours.' } else { 'Run it again with the other setup for the side by side.' }
   $g.DrawString($note, (& $fit $note 30 960 'Regular'), (& $brush (& $col '#7D7199')), [single]($W / 2), [single]$y, $center)
-  $g.DrawString('omnidx.net', (& $font 64 'Bold'), (& $grad 300 1780 480 80), [single]($W / 2), [single]1790, $center)
+  $y = [Math]::Max($y + 70, 1740)
+  $g.DrawString('omnidx.net', (& $font 64 'Bold'), (& $grad 300 $y 480 80), [single]($W / 2), [single]$y, $center)
   $g.Dispose()
   $bmp.Save($path, [System.Drawing.Imaging.ImageFormat]::Png); $bmp.Dispose()
 }
