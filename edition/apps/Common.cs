@@ -230,6 +230,8 @@ namespace OmniDx
             int corner = round ? 2 : 1; try { DwmSetWindowAttribute(h, 33, ref corner, 4); } catch { }
             int bc = border.R | (border.G << 8) | (border.B << 16); try { DwmSetWindowAttribute(h, 34, ref bc, 4); } catch { }
         }
+        // Hidden from the screen but otherwise shown (DWMWA_CLOAK): a window that has not painted yet is not seen white.
+        public static void Cloak(IntPtr h, bool on) { int v = on ? 1 : 0; try { DwmSetWindowAttribute(h, 13, ref v, 4); } catch { } }
         public static void Caption(IntPtr h, Color caption, Color text)
         {
             int c = caption.R | (caption.G << 8) | (caption.B << 16); try { DwmSetWindowAttribute(h, 35, ref c, 4); } catch { }
@@ -591,9 +593,21 @@ namespace OmniDx
         {
             base.OnHandleCreated(e);
             Native.DarkWindow(Handle, true, Theme.Line);
+            // Out of sight until it has painted once: a window whose app is still loading would show white.
+            Native.Cloak(Handle, true);
             Signal.Listen(Handle);
             Native.SetWindowPos(Handle, IntPtr.Zero, 0, 0, 0, 0, 0x0020 | 0x0002 | 0x0001 | 0x0004 | 0x0010); // frame changed
         }
+        bool painted;
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            // In case nothing paints (it always should): shown anyway after a moment.
+            var t = new System.Windows.Forms.Timer { Interval = 1200 };
+            t.Tick += (s, a) => { t.Stop(); t.Dispose(); if (!painted) { painted = true; Native.Cloak(Handle, false); } };
+            t.Start();
+        }
+
         protected override void OnResize(EventArgs e)
         {
             int bw = Theme.S(46), bh = Math.Min(Caption, Theme.S(40));
@@ -625,6 +639,10 @@ namespace OmniDx
         {
             switch (m.Msg)
             {
+                case 0x000F: // WM_PAINT: the first one has drawn the window, so it can be seen now
+                    base.WndProc(ref m);
+                    if (!painted) { painted = true; BeginInvoke(new Action(() => Native.Cloak(Handle, false))); }
+                    return;
                 case 0x0083: // WM_NCCALCSIZE: keep Windows' side and bottom borders, drop its title bar
                     if (m.WParam != IntPtr.Zero)
                     {
