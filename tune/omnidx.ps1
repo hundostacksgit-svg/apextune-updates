@@ -91,7 +91,7 @@ param(
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference = 'SilentlyContinue'
-$script:Version = '1.79.0'
+$script:Version = '1.80.0'
 $script:Root = 'C:\OmniDx'
 # To the second: two runs inside one minute (a refusal, then a retry) once shared a stamp, and the second's
 # record would have overwritten the first's, taking its undo with it.
@@ -2242,18 +2242,32 @@ function New-PowerPlan($m) {
   & $set $sub.sleep '94ac6d29-73ce-41a6-809f-6363ba21b47e' 0       # hybrid sleep: off
   & $set $sub.video '3c0bc021-c8a8-4e07-a973-6b14cbcb2b7e' 900     # display off after 15 min (0 = never; 15 min saves the panel)
   & $set $sub.gfx 'dd848b2a-8a5d-4451-9ae2-39cd41658f6c' 2         # GPU preference: max performance (where the sub-group exists)
-  if ($m.laptop) {
-    # On battery the plan stays sensible: it is your battery. Mains gets the full treatment.
-    & powercfg /setdcvalueindex $guid $sub.proc '893dee8e-2bef-41e0-89c6-b55d0929964c' 5 | Out-Null
-    & powercfg /setdcvalueindex $guid $sub.proc 'bc5038f7-23e0-4960-96da-33abaf5935ec' 100 | Out-Null
-    & powercfg /setdcvalueindex $guid $sub.sleep '29f6c1db-86da-48c5-9fdb-f2b67b1f44da' 1800 | Out-Null
-  }
+  # On battery the plan is a battery plan: plugged in gets everything above, unplugged gets Windows' own sense back, so
+  # a laptop lasts and a game still boosts. The plan copies Ultimate Performance, whose battery values are as hungry as
+  # its mains ones, so each is set here. Every PC gets them: only a laptop, or a desktop on a UPS in a power cut, runs
+  # on battery, and there they are what it wants.
+  $dc = { param($s, $v, $val) $null = & powercfg /setdcvalueindex $guid $s $v $val 2>&1; if ($LASTEXITCODE -ne 0) { $script:PowerSkipped++ } }
+  & $dc $sub.proc '893dee8e-2bef-41e0-89c6-b55d0929964c' 5         # min state 5%: idles down
+  & $dc $sub.proc 'bc5038f7-23e0-4960-96da-33abaf5935ec' 100       # max state 100%: a game still gets the whole CPU
+  & $dc $sub.proc 'be337238-0d82-4146-a960-4f3749d470c7' 3         # boost mode: efficient
+  & $dc $sub.proc '36687f9e-e3a5-4dbf-b1dc-15eb381c6863' 50        # energy performance preference: the middle
+  & $dc $sub.proc '36687f9e-e3a5-4dbf-b1dc-15eb381c6864' 60        # the same, efficiency cores, a little further
+  & $dc $sub.proc '0cc5b647-c1df-4637-891a-dec35c318583' 10        # core parking allowed again (10% minimum unparked)
+  & $dc $sub.wifi '12bbebe6-58d6-4636-95bb-3217ef867c1a' 1         # Wi-Fi: low power saving (not the maximum that spikes ping)
+  & $dc $sub.pci 'ee12f906-d277-404b-b6da-e5fa1a576df5' 1          # PCIe link state: moderate
+  & $dc $sub.usb '48e6b7a6-50f5-4782-a5d4-53bb50f7e6c9' 1          # USB selective suspend: on
+  & $dc $sub.disk '6738e2c4-e8a5-4a42-b16a-e040e769756e' 600       # disk off after 10 minutes
+  & $dc $sub.video '3c0bc021-c8a8-4e07-a973-6b14cbcb2b7e' 300      # display off after 5 minutes
+  & $dc $sub.sleep '29f6c1db-86da-48c5-9fdb-f2b67b1f44da' 1800     # sleep after 30 minutes
+  & $dc $sub.sleep '9d7815a6-7ee4-497e-8888-515a05f02364' 10800    # hibernate after 3 hours asleep, so a sleeping laptop never runs flat
+  & $dc $sub.gfx 'dd848b2a-8a5d-4451-9ae2-39cd41658f6c' 1          # switchable graphics: optimise power savings
   if ($script:PowerSkipped) { Did ("{0} plan setting(s) this PC does not have were skipped." -f $script:PowerSkipped) }
   if ($created -or ($prevActive -ne $guid)) {
     & powercfg /setactive $guid | Out-Null
     Record @{ type = 'power'; prev = $prevActive; created = $created }
     Did "OmniDx plan created and active: CPU 100/100, boost aggressive, energy preference on performance, no core parking, no throttle states on a desktop, PCIe, USB and Wi-Fi power saving off, no sleep on mains."
   } else { Did "OmniDx plan already active; its settings checked and re-applied." }
+  if ($m.laptop) { Did "On battery the plan backs off by itself: CPU idles down to 5% and boosts efficiently, core parking and USB and PCIe power saving are back, Wi-Fi saves a little, the screen goes off after 5 minutes, sleep at 30, hibernate after 3 hours asleep. Plugged in, everything above." }
   # Hibernation off frees the hiberfile and ends Fast Startup for good - on a desktop.
   if (-not $m.laptop) {
     # The registry says whether hibernation is on in any language; powercfg's text is the fallback.

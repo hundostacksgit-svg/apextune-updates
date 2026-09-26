@@ -352,6 +352,28 @@ jobs:
           Get-Content C:\OmniDx\ci-summary.json
           exit 0
 
+      # The plan's battery half: a build machine never runs on battery, but the values are in the plan all the same.
+      - name: The OmniDx plan backs off on battery and stays at full speed plugged in
+        run: |
+          $plan = ((& powercfg /list) | Select-String '\(OmniDx\)' | ForEach-Object { if ($_ -match '([0-9a-f\-]{36})') { $Matches[1] } } | Select-Object -First 1)
+          if (-not $plan) { Write-Host 'no OmniDx plan'; exit 1 }
+          $proc = '54533251-82be-4824-96c1-47b60b740d00'
+          function Idx($setting) {
+            $q = (& powercfg /q $plan $proc $setting) -join "`n"
+            $ac = if ($q -match '(?m)AC Power Setting Index:\s*0x([0-9a-f]+)') { [Convert]::ToInt32($Matches[1], 16) } else { -1 }
+            $dcv = if ($q -match '(?m)DC Power Setting Index:\s*0x([0-9a-f]+)') { [Convert]::ToInt32($Matches[1], 16) } else { -1 }
+            return @($ac, $dcv)
+          }
+          $min = Idx '893dee8e-2bef-41e0-89c6-b55d0929964c'; $epp = Idx '36687f9e-e3a5-4dbf-b1dc-15eb381c6863'; $boost = Idx 'be337238-0d82-4146-a960-4f3749d470c7'
+          Write-Host ("CPU minimum: plugged in {0}%, on battery {1}%" -f $min[0], $min[1])
+          Write-Host ("energy preference: plugged in {0}, on battery {1}" -f $epp[0], $epp[1])
+          Write-Host ("boost mode: plugged in {0}, on battery {1}" -f $boost[0], $boost[1])
+          if ($min[0] -ne 100 -or $min[1] -ne 5) { Write-Host 'the CPU minimum is not 100 plugged in and 5 on battery'; exit 1 }
+          if ($epp[1] -ne -1 -and ($epp[0] -ne 0 -or $epp[1] -ne 50)) { Write-Host 'the energy preference is not performance plugged in and the middle on battery'; exit 1 }
+          if ($boost[1] -ne -1 -and ($boost[0] -ne 2 -or $boost[1] -ne 3)) { Write-Host 'boost is not aggressive plugged in and efficient on battery'; exit 1 }
+          Write-Host 'full speed plugged in, a battery plan on battery'
+          exit 0
+
       - name: An app kept at startup keeps its own start-with-Windows setting; one that is not gets it switched off
         run: |
           $ds = Get-Content (Join-Path $env:APPDATA 'discord\settings.json') -Raw; Write-Host $ds
