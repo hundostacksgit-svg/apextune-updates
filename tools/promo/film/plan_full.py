@@ -50,11 +50,15 @@ def main():
     events, take_path, install, out = sys.argv[1:5]
     take = json.load(open(take_path))
     boxes = take.get('boxes', {})
-    ev = {}
+    ev, allev = {}, {}
     for e in json.load(open(events, encoding='utf-8-sig')):
-        ev.setdefault(e['what'], e)
+        ev.setdefault(e['what'], e); allev.setdefault(e['what'], []).append(e)
     off = float(take.get('offset', 0))
     V = lambda k: ev[k]['t'] + off
+    # Windows' restarts as QEMU saw them (the director marks each a little after it happens and says how long after):
+    # the cut skips from the restart to the sign-in, past the helper being started by hand when it was.
+    resets = [e['t'] - float(e.get('ago', 0)) + off for e in allev.get('reset', [])]
+    after = lambda t0: next((r for r in resets if r > t0), None)
     has = lambda *ks: all(k in ev for k in ks)
     cam = lambda box: fit(boxes[box], ZOOM.get(box, 1180)) if box in boxes else FULL
 
@@ -114,10 +118,13 @@ def main():
 
     # 2. OmniDx Edition: setup at the first sign-in, one restart, and what it is now.
     c0 = t
+    r1 = after(V('setup-running')) if 'setup-running' in ev else None
     if has('setup-running', 'restarted'):
         add(V('setup-running') + 2.0, V('setup-running') + 4.4, 1, FULL, 'First sign-in: OmniDx Edition sets itself up', 60)
-        fast(V('setup-running') + 4.4, V('restarted') + 10.0, 5.4, FULL, 'Its apps, its look, the lean settings. By itself', 58)
-    if has('restarted', 'welcome'):
+        fast(V('setup-running') + 4.4, r1 if r1 else V('restarted') + 10.0, 5.4, FULL, 'Its apps, its look, the lean settings. By itself', 58)
+    if r1:
+        fast(r1, r1 + 110, 3.0, FULL, 'One restart', 64)
+    elif has('restarted', 'welcome'):
         fast(V('restarted') + 10.0, V('welcome') - 2.4, 3.0, FULL, 'One restart', 64)
     step('e01-welcome', 2.4, 0.6, 'And this is my Windows now', 'hub', 64)
     step('e07-desktop', 1.4, 0.4, 'Taskbar on the left')
@@ -151,7 +158,12 @@ def main():
     if 'report' in ev:
         add(V('report') + 0.4, V('report') + 2.8, 1, FULL, 'And a report of every change, with the undo', 58)
     if has('restart', 'three-minutes'):
-        fast(V('restart') - 0.5, V('three-minutes'), 3.0, FULL, 'Restart. Signed in. Three minutes later', 58)
+        r2 = after(V('restart'))
+        if r2 and 'signed-in' in ev:
+            fast(V('restart') - 0.5, r2 + 110, 2.4, FULL, 'Restart', 64)
+            fast(max(V('signed-in'), r2 + 110), V('three-minutes'), 2.4, FULL, 'Signed in. Three minutes later', 58)
+        else:
+            fast(V('restart') - 0.5, V('three-minutes'), 3.0, FULL, 'Restart. Signed in. Three minutes later', 58)
     if 'after-restart-count' in ev:
         a = V('after-restart-count')
         add(a - 0.6, a + 3.0, 1, cam('tm_count'), 'Task Manager, after', 64,

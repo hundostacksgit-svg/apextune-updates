@@ -1,1 +1,1 @@
-take 9: 2026-09-26 - the full film again: Defender leaves the filming helper's folder alone, the helper's starts are logged, and a dark administrator prompt is answered with Alt+Y
+take 10: 2026-09-26 - the full film: the director no longer stops on the helper's file text, the helper's own task waits a minute after sign-in, and the hand start comes after four minutes with no window

@@ -579,6 +579,14 @@ Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First 30 | F
 """
 
 
+def text_of(r):
+    """A file's text as the helper sends it: PowerShell hands Get-Content's string over with its note properties, so
+    it arrives as {"value": ...} (take 9 stopped on it), or as a plain string."""
+    t = (r or {}).get('text', '')
+    if isinstance(t, dict): t = t.get('value', '')
+    return t if isinstance(t, str) else ''
+
+
 def timelapse_frame(tl):
     """One frame of the install, from QEMU's own copy of the PC's screen (whatever size Windows Setup draws at),
     kept as a JPEG with the moment it was taken: the full film shows the install sped up from these."""
@@ -593,17 +601,24 @@ def timelapse_frame(tl):
         if len(tl) % 50 == 0: note(f'timelapse frame: {ex}')
 
 
+MARKED = set()
+
+
 def kick_agent(since, kicked):
     """The helper starts from two sign-in tasks and a first-sign-in script; in takes 6 and 7 of the Edition run none
-    of them did after the restart. Eight minutes after QEMU saw Windows restart with no word from the helper, it is
-    started from the Run box as administrator (this part of the recording is not used), once per restart."""
+    of them did after the restart. Four minutes after QEMU saw Windows restart with no word from the helper, it is
+    started from the Run box as administrator, with no window (this part of the recording is not used), once per
+    restart. Each restart is marked ("reset", with how long ago it was seen) so the cut can skip the wait."""
     resets = [t for t, e in Q.events if e == 'RESET' and t > since]
-    if not resets or resets[-1] in kicked or time.time() - resets[-1] < 8 * 60: return
+    for r in resets:
+        if r not in MARKED:
+            MARKED.add(r); mark('reset', ago=round(time.time() - r, 1))   # where the cut can skip what follows
+    if not resets or resets[-1] in kicked or time.time() - resets[-1] < 4 * 60: return
     kicked.add(resets[-1])
-    note('no word from the helper eight minutes after the restart; starting it from the Run box')
+    note('no word from the helper four minutes after the restart; starting it from the Run box')
     shot('kick-before.png')
     press('meta_l', 'r'); pause(1.2, 1.6)
-    type_text(r'C:\film\agent-start.cmd', 0.6)
+    type_text(r'conhost --headless cmd /d /c C:\film\agent-start.cmd', 0.6)
     pause(0.4, 0.6)
     press('ctrl', 'shift', 'ret')
     uac_yes(os.path.join(A.out, 'kick-before.png'), 40)
@@ -647,7 +662,7 @@ def edition():
     note(f'at rest: {n} processes' + (' - OVER the 80 target' if n and n > 80 else ' - within the 80 target' if n else ''))
     AG.ask('ps', code=IDLE_DUMP, timeout=120)
     r = AG.ask('read', path=r'C:\film\numbers-at-rest.txt', timeout=10)
-    if r: note('at rest: ' + r.get('text', '').replace('\n', ' | ')[:600])
+    note('at rest: ' + text_of(r).replace('\n', ' | ')[:600])
 
     def page(name, wait=2.5): pause(wait, wait + 0.6); shot(name); mark(name.split('.')[0])
 
@@ -723,7 +738,7 @@ def edition():
     note(f'at rest after the tune: {n} processes' + (' - OVER the 60 target' if n and n > 60 else ' - within the 60 target' if n else ''))
     AG.ask('ps', code=IDLE_DUMP, timeout=120)
     r = AG.ask('read', path=r'C:\film\numbers-at-rest.txt', timeout=10)
-    if r: note('at rest after the tune: ' + r.get('text', '').replace('\n', ' | ')[:600])
+    note('at rest after the tune: ' + text_of(r).replace('\n', ' | ')[:600])
 
 
 def main():
@@ -821,7 +836,7 @@ def main():
         record_stop()
         try:
             r = AG.ask('read', path=r'C:\OmniDx\after-restart.txt', timeout=10)
-            if r: note('after-restart.txt: ' + r.get('text', '').replace('\n', ' | ')[:600])
+            note('after-restart.txt: ' + text_of(r).replace('\n', ' | ')[:600])
             AG.ask('upload', dir=r'C:\OmniDx', timeout=120)
             AG.ask('upload', dir=r'C:\film', timeout=60)
         except Exception as ex:

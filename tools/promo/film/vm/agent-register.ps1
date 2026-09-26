@@ -10,7 +10,9 @@ $me = "$env:USERDOMAIN\$env:USERNAME"
 # this task too, and nothing on the disk said whether the task ran or PowerShell refused the script.
 $act = New-ScheduledTaskAction -Execute 'conhost.exe' -Argument '--headless cmd.exe /d /c C:\film\agent-start.cmd'
 $trig = New-ScheduledTaskTrigger -AtLogOn -User $me
-$trig.Delay = 'PT20S'
+# A minute after sign-in: the tasks that did start after the Edition's restarts all waited (15 seconds to 3 minutes),
+# and take 9's note shows this one, at 20 seconds, never starting at all.
+$trig.Delay = 'PT1M'
 $prin = New-ScheduledTaskPrincipal -UserId $me -LogonType Interactive -RunLevel Highest
 $set = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero) -MultipleInstances IgnoreNew
 $set.Priority = 4
