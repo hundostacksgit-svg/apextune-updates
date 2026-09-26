@@ -1,1 +1,1 @@
-take 5: 2026-09-26 - the lean stage (80 processes or fewer at sign-in) and every process listed at rest; a frozen install is reset once
+take 6: 2026-09-26 - the same as take 5, with Windows Update kept out of the recording PC (take 5 crashed installing one during the restart)
