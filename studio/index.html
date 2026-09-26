@@ -1,0 +1,991 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OmniDx Tune — 200 processes. Under 100. One command.</title>
+<meta name="description" content="One command cuts Windows down to what your games need: every startup app off, junk services and apps gone, a power plan built for frames, network, Discord, Spotify and browser tuned, per-game profiles and a BIOS checklist for your exact board. $19.99 once. Locked to your PC. Undo in one line.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="assets/icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<!-- Link previews. Every URL here must be absolute: the scrapers behind iMessage,
+     WhatsApp, Discord, Facebook and X do not resolve relative paths, and a
+     relative og:image is a card with no picture on it. -->
+<link rel="canonical" href="https://omnidx.net/studio/">
+<link rel="alternate" hreflang="en" href="https://omnidx.net/studio/">
+<link rel="alternate" hreflang="es" href="https://omnidx.net/studio/es/">
+<link rel="alternate" hreflang="pt-BR" href="https://omnidx.net/studio/pt/">
+<link rel="alternate" hreflang="x-default" href="https://omnidx.net/studio/">
+<meta property="og:url" content="https://omnidx.net/studio/">
+<meta property="og:image" content="https://omnidx.net/studio/assets/og-card.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="OmniDx: the eagle mark and the OMNIDX wordmark in purple on black, and the line: one command, Windows cut down to what your games need.">
+<meta name="twitter:image" content="https://omnidx.net/studio/assets/og-card.jpg">
+<meta name="twitter:title" content="OmniDx Tune — 200 processes. Under 100. One command.">
+<meta name="twitter:description" content="One command cuts Windows down to what your games need, builds a power plan for frames, tunes your network, Discord, Spotify and browser, and writes a BIOS checklist for your board. $19.99 once.">
+<meta property="og:site_name" content="OmniDx Tune">
+<meta property="og:title" content="OmniDx Tune — 200 processes. Under 100. One command.">
+<meta property="og:description" content="One command cuts Windows down to what your games need, builds a power plan for frames, tunes your network, Discord, Spotify and browser, and writes a BIOS checklist for your board. $19.99 once.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preload" as="image" href="assets/logo/omnidx-logo-800.webp" type="image/webp">
+<link rel="stylesheet" href="assets/studio.css">
+<script>
+/* Black is the design: dark unless this visitor chose light with the toggle. */
+(function(){try{var t=localStorage.getItem('omnidx.theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+</script>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"><div class="grid"></div></div>
+<!-- chrome:nav -->
+<nav class="nav">
+  <div class="wrap">
+    <a class="logo" href="./" aria-label="OmniDx"><img class="logo-img" src="assets/logo/omnidx-logo-800.webp" srcset="assets/logo/omnidx-logo-800.webp 800w, assets/logo/omnidx-logo-1600.webp 1600w" sizes="132px" width="800" height="402" alt="OmniDx" decoding="async"></a>
+
+    <!-- The menu box. One row on a desktop, and the same links live in the
+         drawer below for phones — never two different menus to keep in step. -->
+    <div class="menubox" data-menubox>
+      <div class="mb" data-mb>
+        <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp0">What it does<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="mb-pop" id="mbp0" role="menu"><a class="mb-link" href="#cut" role="menuitem"><span class="mb-ico" aria-hidden="true">🧹</span><span class="mb-txt"><b>What gets cut</b><span>Startup apps, services, tasks, bloat, telemetry</span></span></a><a class="mb-link" href="#debloat" role="menuitem"><span class="mb-ico" aria-hidden="true">🗑️</span><span class="mb-txt"><b>Debloat, for good</b><span>Preinstalled apps, OEM trials, OneDrive if unused, legacy Windows</span></span></a><a class="mb-link" href="#tailored" role="menuitem"><span class="mb-ico" aria-hidden="true">🔍</span><span class="mb-txt"><b>Reads your PC first</b><span>Laptop or desktop, printers, Bluetooth, Wi-Fi, Xbox — the safe bar is yours</span></span></a><a class="mb-link" href="#power" role="menuitem"><span class="mb-ico" aria-hidden="true">⚡</span><span class="mb-txt"><b>The OmniDx power plan</b><span>Built for frames: no core parking, no bus sleep</span></span></a><a class="mb-link" href="#games" role="menuitem"><span class="mb-ico" aria-hidden="true">🎮</span><span class="mb-txt"><b>Game profiles</b><span>Fortnite, VALORANT, CS2, Marvel Rivals and twenty-seven more</span></span></a><a class="mb-link" href="#gamefiles" role="menuitem"><span class="mb-ico" aria-hidden="true">🎯</span><span class="mb-txt"><b>Settings inside your games</b><span>V-Sync, shadows and blur written into each game's own file</span></span></a><a class="mb-link" href="#health" role="menuitem"><span class="mb-ico" aria-hidden="true">🌡️</span><span class="mb-txt"><b>GPU, heat and network</b><span>Throttling, temperatures, jitter and loss, as numbers</span></span></a><a class="mb-link" href="#streamers" role="menuitem"><span class="mb-ico" aria-hidden="true">🎙️</span><span class="mb-txt"><b>Streamers</b><span>OBS and Streamlabs keep what they need</span></span></a><a class="mb-link" href="#network" role="menuitem"><span class="mb-ico" aria-hidden="true">📶</span><span class="mb-txt"><b>Network</b><span>Nagle off, adapter power saving off, latency first</span></span></a><a class="mb-link" href="#apps" role="menuitem"><span class="mb-ico" aria-hidden="true">🎧</span><span class="mb-txt"><b>Discord, Spotify, browser</b><span>Hardware acceleration on, background running off</span></span></a><a class="mb-link" href="#bios" role="menuitem"><span class="mb-ico" aria-hidden="true">🧬</span><span class="mb-txt"><b>BIOS checklist</b><span>Written for your exact board and CPU</span></span></a><a class="mb-link" href="#safe" role="menuitem"><span class="mb-ico" aria-hidden="true">🛟</span><span class="mb-txt"><b>Fail-safes</b><span>Restore point, undo in one file, security untouched</span></span></a><a class="mb-link" href="what-it-touches/" role="menuitem"><span class="mb-ico" aria-hidden="true">📋</span><span class="mb-txt"><b>Everything it touches</b><span>Every service, task, app and value, with the reason</span></span></a></div>
+      </div>
+      <div class="mb" data-mb>
+        <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp1">Run it<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="mb-pop" id="mbp1" role="menu"><a class="mb-link" href="download/" role="menuitem"><span class="mb-ico" aria-hidden="true">⌨️</span><span class="mb-txt"><b>The command</b><span>One line in PowerShell. Nothing installed.</span></span></a><a class="mb-link" href="download/#report" role="menuitem"><span class="mb-ico" aria-hidden="true">📋</span><span class="mb-txt"><b>Free report mode</b><span>See what it would find, no key, changes nothing</span></span></a><a class="mb-link" href="download/#undo" role="menuitem"><span class="mb-ico" aria-hidden="true">↩️</span><span class="mb-txt"><b>Undo</b><span>Put everything back, one line</span></span></a><a class="mb-link" href="download/#options" role="menuitem"><span class="mb-ico" aria-hidden="true">🎛️</span><span class="mb-txt"><b>Options</b><span>Aggressive, cut Xbox, keep a startup app, DNS</span></span></a><a class="mb-link" href="edition/" role="menuitem"><span class="mb-ico" aria-hidden="true">🦅</span><span class="mb-txt"><b>OmniDx Edition</b><span>Windows set up for games, with every key</span></span></a><a class="mb-link" href="fresh/" role="menuitem"><span class="mb-ico" aria-hidden="true">💿</span><span class="mb-txt"><b>A fresh install</b><span>An answer file for a clean Windows, free</span></span></a><a class="mb-link" href="activate/" role="menuitem"><span class="mb-ico" aria-hidden="true">🔑</span><span class="mb-txt"><b>Your key</b><span>Get it again after paying</span></span></a><a class="mb-link" href="https://omnidx.net/tune/omnidx.ps1" role="menuitem"><span class="mb-ico" aria-hidden="true">📜</span><span class="mb-txt"><b>Read the script</b><span>Every line, public, before you run it</span></span></a></div>
+      </div>
+      <a class="mb-btn" href="showcase/">Showcase</a>
+      <a class="mb-btn" href="pricing/">Pricing</a>
+      <div class="mb" data-mb>
+        <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp4">Help<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="mb-pop" id="mbp4" role="menu"><a class="mb-link" href="pricing/#faq" role="menuitem"><span class="mb-ico" aria-hidden="true">💬</span><span class="mb-txt"><b>FAQ</b><span>Anti-cheat, laptops, money, new PC</span></span></a><a class="mb-link" href="trust/" role="menuitem"><span class="mb-ico" aria-hidden="true">🛡️</span><span class="mb-txt"><b>Is this safe? Is it a scam?</b><span>The straight answer, and how to check</span></span></a><a class="mb-link" href="guide/" role="menuitem"><span class="mb-ico" aria-hidden="true">📘</span><span class="mb-txt"><b>Do it by hand</b><span>The honest list, nothing to buy</span></span></a><a class="mb-link" href="undervolt/" role="menuitem"><span class="mb-ico" aria-hidden="true">🧊</span><span class="mb-txt"><b>Undervolt, not overclock</b><span>Cooler, quieter, same frames</span></span></a><a class="mb-link" href="builds/" role="menuitem"><span class="mb-ico" aria-hidden="true">🧱</span><span class="mb-txt"><b>Custom Windows builds</b><span>What they cut, and where the tune stops</span></span></a><a class="mb-link" href="trust/#cant" role="menuitem"><span class="mb-ico" aria-hidden="true">🚫</span><span class="mb-txt"><b>What it won't touch</b><span>Defender, firewall, Secure Boot, your drivers</span></span></a><a class="mb-link" href="activate/" role="menuitem"><span class="mb-ico" aria-hidden="true">🔓</span><span class="mb-txt"><b>Paid but no key?</b><span>Your receipt number gets it</span></span></a><a class="mb-link" href="changelog/" role="menuitem"><span class="mb-ico" aria-hidden="true">🗒️</span><span class="mb-txt"><b>Changelog</b><span>What changed in each version</span></span></a><a class="mb-link" href="terms/" role="menuitem"><span class="mb-ico" aria-hidden="true">📄</span><span class="mb-txt"><b>Terms, privacy, money</b><span>Plain words, one page</span></span></a><a class="mb-link" href="app/" role="menuitem"><span class="mb-ico" aria-hidden="true">🎬</span><span class="mb-txt"><b>OmniDx Studio</b><span>The video editor, still here</span></span></a></div>
+      </div>
+    </div>
+
+    <div class="nav-right">
+      <button class="tbtn" data-theme-toggle aria-label="Switch between dark and light">
+        <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>
+        <svg class="moon" viewBox="0 0 24 24"><path d="M20 14.5A8.2 8.2 0 0 1 9.5 4a8.3 8.3 0 1 0 10.5 10.5z"/></svg>
+      </button>
+      <a class="nav-discord" href="https://discord.gg/VvbYJcDQbB" target="_blank" rel="noopener" aria-label="Join the OmniDx Discord"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.74 19.74 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .078-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.009c.12.1.246.198.373.292a.077.077 0 0 1-.006.127c-.598.35-1.22.645-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.363 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg><span>Discord</span></a>
+      <a class="nav-key" href="activate/">Your key</a>
+      <a class="btn btn-primary nav-cta" href="pricing/">Get it — <span data-price="tune">$19.99</span></a>
+      <button class="burger" type="button" data-drawer aria-expanded="false"
+              aria-controls="drawer" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <span class="nav-progress" data-progress aria-hidden="true"></span>
+</nav>
+
+<!-- Phone menu. Hidden until the button is pressed, and it holds exactly the
+     same links as the box above so nothing is only reachable on a desktop. -->
+<div class="drawer" id="drawer" hidden>
+  <div class="drawer-inner">
+    <div class="drawer-top">
+      <a class="btn btn-primary btn-lg" href="pricing/">Get it — <span data-price="tune">$19.99</span></a>
+      <a class="btn btn-lg" href="download/">Run it</a>
+      <a class="btn btn-lg drawer-discord" href="https://discord.gg/VvbYJcDQbB" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.74 19.74 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .078-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.009c.12.1.246.198.373.292a.077.077 0 0 1-.006.127c-.598.35-1.22.645-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.363 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>Join the Discord</a>
+    </div>
+    <div class="drawer-group">
+      <div class="drawer-h">What it does</div>
+      <div class="drawer-links">
+        <a href="#cut"><span aria-hidden="true">🧹</span>What gets cut<em>Startup apps, services, tasks, bloat, telemetry</em></a>
+        <a href="#debloat"><span aria-hidden="true">🗑️</span>Debloat, for good<em>Preinstalled apps, OEM trials, OneDrive if unused, legacy Windows</em></a>
+        <a href="#tailored"><span aria-hidden="true">🔍</span>Reads your PC first<em>Laptop or desktop, printers, Bluetooth, Wi-Fi, Xbox — the safe bar is yours</em></a>
+        <a href="#power"><span aria-hidden="true">⚡</span>The OmniDx power plan<em>Built for frames: no core parking, no bus sleep</em></a>
+        <a href="#games"><span aria-hidden="true">🎮</span>Game profiles<em>Fortnite, VALORANT, CS2, Marvel Rivals and twenty-seven more</em></a>
+        <a href="#gamefiles"><span aria-hidden="true">🎯</span>Settings inside your games<em>V-Sync, shadows and blur written into each game's own file</em></a>
+        <a href="#health"><span aria-hidden="true">🌡️</span>GPU, heat and network<em>Throttling, temperatures, jitter and loss, as numbers</em></a>
+        <a href="#streamers"><span aria-hidden="true">🎙️</span>Streamers<em>OBS and Streamlabs keep what they need</em></a>
+        <a href="#network"><span aria-hidden="true">📶</span>Network<em>Nagle off, adapter power saving off, latency first</em></a>
+        <a href="#apps"><span aria-hidden="true">🎧</span>Discord, Spotify, browser<em>Hardware acceleration on, background running off</em></a>
+        <a href="#bios"><span aria-hidden="true">🧬</span>BIOS checklist<em>Written for your exact board and CPU</em></a>
+        <a href="#safe"><span aria-hidden="true">🛟</span>Fail-safes<em>Restore point, undo in one file, security untouched</em></a>
+        <a href="what-it-touches/"><span aria-hidden="true">📋</span>Everything it touches<em>Every service, task, app and value, with the reason</em></a>
+      </div>
+    </div>
+    <div class="drawer-group">
+      <div class="drawer-h">Run it</div>
+      <div class="drawer-links">
+        <a href="download/"><span aria-hidden="true">⌨️</span>The command<em>One line in PowerShell. Nothing installed.</em></a>
+        <a href="download/#report"><span aria-hidden="true">📋</span>Free report mode<em>See what it would find, no key, changes nothing</em></a>
+        <a href="download/#undo"><span aria-hidden="true">↩️</span>Undo<em>Put everything back, one line</em></a>
+        <a href="download/#options"><span aria-hidden="true">🎛️</span>Options<em>Aggressive, cut Xbox, keep a startup app, DNS</em></a>
+        <a href="edition/"><span aria-hidden="true">🦅</span>OmniDx Edition<em>Windows set up for games, with every key</em></a>
+        <a href="fresh/"><span aria-hidden="true">💿</span>A fresh install<em>An answer file for a clean Windows, free</em></a>
+        <a href="activate/"><span aria-hidden="true">🔑</span>Your key<em>Get it again after paying</em></a>
+        <a href="https://omnidx.net/tune/omnidx.ps1"><span aria-hidden="true">📜</span>Read the script<em>Every line, public, before you run it</em></a>
+      </div>
+    </div>
+    <a class="drawer-solo" href="showcase/">Showcase</a>
+    <a class="drawer-solo" href="pricing/">Pricing</a>
+    <div class="drawer-group">
+      <div class="drawer-h">Help</div>
+      <div class="drawer-links">
+        <a href="pricing/#faq"><span aria-hidden="true">💬</span>FAQ<em>Anti-cheat, laptops, money, new PC</em></a>
+        <a href="trust/"><span aria-hidden="true">🛡️</span>Is this safe? Is it a scam?<em>The straight answer, and how to check</em></a>
+        <a href="guide/"><span aria-hidden="true">📘</span>Do it by hand<em>The honest list, nothing to buy</em></a>
+        <a href="undervolt/"><span aria-hidden="true">🧊</span>Undervolt, not overclock<em>Cooler, quieter, same frames</em></a>
+        <a href="builds/"><span aria-hidden="true">🧱</span>Custom Windows builds<em>What they cut, and where the tune stops</em></a>
+        <a href="trust/#cant"><span aria-hidden="true">🚫</span>What it won't touch<em>Defender, firewall, Secure Boot, your drivers</em></a>
+        <a href="activate/"><span aria-hidden="true">🔓</span>Paid but no key?<em>Your receipt number gets it</em></a>
+        <a href="changelog/"><span aria-hidden="true">🗒️</span>Changelog<em>What changed in each version</em></a>
+        <a href="terms/"><span aria-hidden="true">📄</span>Terms, privacy, money<em>Plain words, one page</em></a>
+        <a href="app/"><span aria-hidden="true">🎬</span>OmniDx Studio<em>The video editor, still here</em></a>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /chrome:nav -->
+<!-- ==================== hero ==================== -->
+<header class="hero" id="top" data-rail="Top">
+  <div class="wrap">
+    <div class="eyebrow reveal in"><span class="pulse"></span>Windows 10 &amp; 11 · one command · paid once</div>
+    <h1 class="reveal in">200 processes.<br><span class="grad">Under 100.</span> One command.</h1>
+    <p class="lede reveal in d1">
+      A fresh Windows install idles at around two hundred processes, and most of them are not
+      for you. OmniDx Tune reads your PC, decides the safe bar for <em>your</em> machine, and cuts
+      to it: every startup app off, the junk services and apps gone, a power plan built for
+      frames, your network, Discord, Spotify and browser tuned, a profile for each game you play,
+      a full debloat kept gone by policy, and a BIOS checklist written for your exact board. Then it
+      hands you the undo.
+    </p>
+    <div class="btn-row hero-cta reveal in d2">
+      <a class="btn btn-primary btn-lg" href="pricing/">Get it — <span><span data-price="tune">$19.99</span>, once</span></a>
+      <a class="btn btn-lg btn-ghost" href="download/#report">Try the free report first</a>
+      <a class="btn btn-lg btn-ghost btn-watch" href="assets/video/omnidx-tune-how-it-works.mp4" data-watch><span class="play" aria-hidden="true"><svg width="9" height="10" viewBox="0 0 9 10"><path d="M0 0l9 5-9 5z" fill="#fff"/></svg></span>Watch it work <span class="len">1:14</span></a>
+      <a class="btn btn-lg btn-ghost" href="showcase/">Showcase: real runs on camera</a>
+    </div>
+
+    <!-- The console: the tune running, line by line, on an example PC, with
+         the process count falling on the right. Not a screenshot; it cannot
+         go stale, and it says on the window that it is an example. -->
+    <div class="console reveal in d4" id="console" aria-label="An example run of OmniDx Tune">
+      <div class="console-bar"><i></i><i></i><i></i><span class="t">Windows PowerShell — irm omnidx.net/go.ps1 | iex</span><span class="badge">Example run</span></div>
+      <div class="console-body">
+        <div class="console-log" aria-live="off"><span class="h">== Reading this PC</span></div>
+        <div class="console-side" aria-hidden="true">
+          <div>
+            <div class="lbl">This PC</div>
+            <div class="pc-line"><span>CPU</span><b>Ryzen 5 5600X</b></div>
+            <div class="pc-line"><span>GPU</span><b>RTX 3060</b></div>
+            <div class="pc-line"><span>RAM</span><b>16 GB</b></div>
+            <div class="pc-line"><span>Board</span><b>MSI B550-A PRO</b></div>
+            <div class="pc-line"><span>Kind</span><b>Desktop · NVMe · UEFI</b></div>
+          </div>
+          <div>
+            <div class="lbl">Processes</div>
+            <div class="count"><b data-count>214</b><s>214</s><span>now</span></div>
+            <div class="meter" style="margin-top:10px"><i data-meter></i></div>
+            <div class="meter-lbl"><span>0</span><span>safe bar for this PC: ~90</span><span>214</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-note reveal in d3">
+      <span><b>Restore point first</b>, every time</span>
+      <span>·</span>
+      <span>Undo is one line</span>
+      <span>·</span>
+      <span>Nothing installed, nothing running afterwards</span>
+      <span>·</span>
+      <span>Locked to your PC</span>
+    </div>
+    <p class="hero-check reveal in d3">
+      Sceptical? <a href="https://omnidx.net/tune/omnidx.ps1">Read every line of the script</a> before you pay —
+      or run the <a href="download/#report">free report mode</a>, which changes nothing.
+    </p>
+    <p class="hero-check reveal in d3" data-ci-run hidden></p>
+    <div class="trust reveal in d3">
+      <span>🪟 Windows 10 &amp; 11</span><span>🖥 Desktops &amp; laptops</span>
+      <span>🛡️ Security never lowered</span><span>↩️ Fully undoable</span><span>🔑 One key, one PC</span>
+    </div>
+
+    <div class="stat-row reveal">
+      <div class="s"><b>1</b><span>command, nothing to install</span></div>
+      <div class="s"><b>$19.99</b><span>once. No subscription</span></div>
+      <div class="s"><b data-games>49</b><span>games with their own profile</span></div>
+      <div class="s"><b>~4 min</b><span>from paste to restart</span></div>
+    </div>
+  </div>
+</header>
+
+<!-- ==================== the tour ==================== -->
+<!-- What a buyer gets, one slide at a time. Every slide is built from something
+     real: the build machine's last verified run (read from the log the check
+     commits), the window and the card the check draws, and the lines and lists
+     the tune prints, with the places your own numbers go marked as such. -->
+<section id="tour" data-rail="What you get">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>Everything you get, one slide at a time.</h2>
+      <p>No mock-ups. The run is the build machine's last verified run, word for word; the window and the card are drawn by the check from the current script. Where your own numbers go, the slide says so.</p>
+    </div>
+    <div class="tour reveal" id="tour-deck" role="region" aria-roledescription="carousel" aria-label="What you get, one slide at a time" tabindex="0">
+      <p class="sr-only" aria-live="polite" data-tour-live></p>
+      <div class="tour-stage">
+
+        <div class="tour-slide on" role="group" aria-roledescription="slide" aria-label="1 of 8: the run" data-title="The run, word for word">
+          <div class="tour-copy">
+            <div class="tour-kicker">The run</div>
+            <h3>One command, and it shows its work.</h3>
+            <p>It reads the PC, says what it keeps and why, checks your key, makes the restore point, then cuts, line by line. This is the build machine's last verified run: a bare server, so its count is lower than a gaming PC's.</p>
+          </div>
+          <div class="tour-media"><pre class="tour-log" data-tour-run><span class="h">== Reading this PC</span>
+<span class="dim">  Read in 3.5 s (cim 1.2, pnp 1.0, software 0.5, security 0.5)</span>
+<span class="dim">  Processes running now: 146</span>
+<span class="dim">  Target for this PC after the tune and a restart: about 70</span>
+<span class="h">== Your key</span>
+<span class="dim">  Key accepted. PC 1 of 1 on this key.</span>
+<span class="h">== Safety first</span>
+<span class="ok">  + Registry and service list backed up</span>
+<span class="ok">  + undo.ps1 written to C:\OmniDx\undo</span></pre></div>
+        </div>
+
+        <div class="tour-slide" role="group" aria-roledescription="slide" aria-label="2 of 8: the app" data-title="The app">
+          <div class="tour-copy">
+            <div class="tour-kicker">The app</div>
+            <h3>A window, if you would rather click.</h3>
+            <p>The same tune with a tick box for each part, the free report on one button and the undo on another. Still one file, still nothing installed. The check draws this picture from the current script on every change.</p>
+          </div>
+          <div class="tour-media"><img src="assets/app.png" width="1120" height="760" loading="lazy" decoding="async" alt="The OmniDx Tune window: this PC's parts on the left, tick boxes for each part of the tune, and the Tune, free report and undo buttons."></div>
+        </div>
+
+        <div class="tour-slide" role="group" aria-roledescription="slide" aria-label="3 of 8: your card" data-title="Your card">
+          <div class="tour-copy">
+            <div class="tour-kicker">Your card</div>
+            <h3>Your before and after, on one picture.</h3>
+            <p>Written on your PC when the run ends, with your CPU, your GPU and your count, and again after the restart with the real number. Made for posting. This one is the build machine's, labelled as such.</p>
+          </div>
+          <div class="tour-media tour-square"><img src="assets/ci-card.png" width="1080" height="1080" loading="lazy" decoding="async" alt="The build machine's card: the process count before and after the tune, the CPU and GPU, and omnidx.net."></div>
+        </div>
+
+        <div class="tour-slide" role="group" aria-roledescription="slide" aria-label="4 of 8: GPU, heat and network" data-title="GPU, heat and network">
+          <div class="tour-copy">
+            <div class="tour-kicker">New in 1.75</div>
+            <h3>Your GPU, heat and network, as numbers.</h3>
+            <p>The driver's own tool for an NVIDIA card's heat, power limit and throttling; the board's heat sensors; five pings each to your router and the internet's edge. The underlined words are where your numbers go, and a warning shows only when it applies.</p>
+          </div>
+          <div class="tour-media"><pre class="tour-log"><span class="dim">  GPU now <i class="ph">temperature</i> C, power limit <i class="ph">limit</i> W of <i class="ph">maximum</i> W, fan <i class="ph">speed</i>%, no throttling</span>
+<span class="dim">  Thermal zone <i class="ph">temperature</i> C</span>
+<span class="dim">  Network: router <i class="ph">ms</i> (jitter <i class="ph">ms</i>, loss <i class="ph">%</i>); internet edge <i class="ph">ms</i> (jitter <i class="ph">ms</i>, loss <i class="ph">%</i>)</span>
+<span class="w">  ! The GPU is thermally throttling at idle: dust, a stopped fan or a dead thermal pad.</span>
+<span class="w">  ! The link to your router is slow and jittery. That is the Wi-Fi: a cable to the router beats every network tweak there is.</span>
+<span class="w">  ! Packet loss to the internet edge. That is the line or the router, and no tweak fixes loss.</span></pre></div>
+        </div>
+
+        <div class="tour-slide" role="group" aria-roledescription="slide" aria-label="5 of 8: settings inside your games" data-title="Settings inside your games">
+          <div class="tour-copy">
+            <div class="tour-kicker">New in 1.76</div>
+            <h3>The competitive settings, written into each game's own file.</h3>
+            <p>It asks first, backs up each file, skips a game that is running, and only changes a setting the file already has. Undo puts every value back.</p>
+          </div>
+          <div class="tour-media"><div class="tour-table"><table>
+            <tr><th scope="row">Fortnite</th><td>V-Sync off, motion blur off, shadows off, post-processing low</td></tr>
+            <tr><th scope="row">Apex Legends</th><td>V-Sync off, sun and spot shadows off, adaptive resolution off</td></tr>
+            <tr><th scope="row">Counter-Strike 2</th><td>V-Sync off, boost player contrast on</td></tr>
+            <tr><th scope="row">Marvel Rivals</th><td>V-Sync off, shadows low, post-processing low</td></tr>
+            <tr><th scope="row">Rocket League</th><td>V-Sync off, motion blur off, dynamic shadows off, depth of field off</td></tr>
+            <tr><th scope="row">Rainbow Six Siege</th><td>V-Sync off</td></tr>
+            <tr><th scope="row">Minecraft (Java)</th><td>V-Sync off, entity shadows off</td></tr>
+          </table></div></div>
+        </div>
+
+        <div class="tour-slide" role="group" aria-roledescription="slide" aria-label="6 of 8: BIOS and undervolt" data-title="BIOS and undervolt">
+          <div class="tour-copy">
+            <div class="tour-kicker">The report</div>
+            <h3>A BIOS checklist for your board, and the safe way to more clock.</h3>
+            <p>The report names your board and your BIOS version, then walks the settings worth the most in order. New in 1.75: undervolt notes for your GPU and CPU, and a frame cap that stays smooth. Cooler, quieter, same frames; never an overclock.</p>
+          </div>
+          <div class="tour-media"><div class="tour-cols">
+            <div><div class="tour-sub">BIOS checklist</div><ol class="tour-list">
+              <li>Memory profile (XMP / EXPO): Enabled</li>
+              <li>Resizable BAR on, CSM off</li>
+              <li>Secure Boot and TPM on</li>
+              <li>Virtualisation and IOMMU on</li>
+              <li>Where each one is on your board's menus</li>
+            </ol></div>
+            <div><div class="tour-sub">Undervolt, not overclock</div><ol class="tour-list">
+              <li>NVIDIA: the voltage curve, flattened</li>
+              <li>AMD: voltage down in small steps</li>
+              <li>Ryzen: Curve Optimizer, negative</li>
+              <li>Intel 13th and 14th gen: the BIOS microcode first</li>
+              <li>A frame cap just under your refresh rate</li>
+            </ol></div>
+          </div></div>
+        </div>
+
+        <div class="tour-slide" role="group" aria-roledescription="slide" aria-label="7 of 8: streamers and PC makers" data-title="Streamers and PC makers">
+          <div class="tour-copy">
+            <div class="tour-kicker">New in 1.75 and 1.76</div>
+            <h3>Streamers keep their capture. PC makers lose their extras.</h3>
+            <p>With OBS Studio, Streamlabs Desktop or XSplit installed, the camera and screen-capture services stay, even in Extreme. And Extreme now takes out the PC maker's support agents and promotions; the hubs that run a laptop's fans and battery stay.</p>
+          </div>
+          <div class="tour-media"><div class="tour-cols">
+            <div class="tour-card"><div class="tour-sub">Streaming</div><p>Camera frame server and Windows Graphics Capture kept. The report: hardware encoder, above-normal priority, Game Capture, output at the stream size.</p></div>
+            <div class="tour-card"><div class="tour-sub">The PC maker</div><p>Dell, HP, Lenovo, ASUS and Acer support agents, promotions and telemetry services off. On a desktop the hub apps go too; on a laptop they stay.</p></div>
+          </div></div>
+        </div>
+
+        <div class="tour-slide" role="group" aria-roledescription="slide" aria-label="8 of 8: undo" data-title="Undo">
+          <div class="tour-copy">
+            <div class="tour-kicker">The way back</div>
+            <h3>Every change recorded. Undo is one line.</h3>
+            <p>A restore point first, then every value recorded as it changes. A small task at sign-in puts back what a Windows update turns on, and status mode tells you what is still in place, any time.</p>
+          </div>
+          <div class="tour-media"><pre class="tour-log"><span class="dim">Undo everything:</span>
+<span class="ok">  powershell -ExecutionPolicy Bypass -File C:\OmniDx\undo\undo.ps1</span>
+
+<span class="dim">What is still in place, any time:</span>
+<span class="ok">  $env:OMNIDX_MODE='status'; irm omnidx.net/go.ps1 | iex</span>
+
+<span class="dim">Or Windows Recovery &gt; System Restore &gt; the point named OmniDx Tune.</span></pre></div>
+        </div>
+
+      </div>
+      <div class="tour-bar">
+        <button class="tour-btn" type="button" data-dir="-1" aria-label="Previous slide">&#8249;</button>
+        <div class="tour-dots">
+          <button type="button" data-go="0" aria-label="Slide 1: the run" aria-current="true"></button>
+          <button type="button" data-go="1" aria-label="Slide 2: the app"></button>
+          <button type="button" data-go="2" aria-label="Slide 3: your card"></button>
+          <button type="button" data-go="3" aria-label="Slide 4: GPU, heat and network"></button>
+          <button type="button" data-go="4" aria-label="Slide 5: settings inside your games"></button>
+          <button type="button" data-go="5" aria-label="Slide 6: BIOS and undervolt"></button>
+          <button type="button" data-go="6" aria-label="Slide 7: streamers and PC makers"></button>
+          <button type="button" data-go="7" aria-label="Slide 8: undo"></button>
+        </div>
+        <button class="tour-btn" type="button" data-dir="1" aria-label="Next slide">&#8250;</button>
+        <button class="tour-btn tour-pause" type="button" data-tour-pause aria-pressed="false" aria-label="Pause the tour">&#10074;&#10074;</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== will it help ==================== -->
+<section id="check" data-rail="Will it help?">
+  <div class="wrap">
+    <div class="grid grid-2" style="align-items:center">
+      <div class="reveal">
+        <div class="eyebrow">Twenty seconds, no download</div>
+        <h2>Will it help your PC? Look at one number.</h2>
+        <p>
+          Press <span class="kbd">Ctrl</span>+<span class="kbd">Shift</span>+<span class="kbd">Esc</span>, open the
+          <b>Performance</b> tab, click <b>CPU</b>. Bottom left, next to Threads and Handles, is <b>Processes</b>.
+          Close everything else first and read it.
+        </p>
+        <ul class="tick">
+          <li><b>Over 150</b>: yes. That is the machine most people are gaming on.</li>
+          <li><b>110 to 150</b>: yes, and the power plan, network and BIOS checklist are most of the gain.</li>
+          <li><b>Under 100 with nothing open</b>: you have already done this by hand. Keep your money.</li>
+        </ul>
+        <p class="small muted">The free report mode reads your exact number, decides the target for your PC, and lists what it would switch off and keep, without changing anything.</p>
+      </div>
+      <div class="card reveal d1">
+        <div class="cmd"><code data-text="$env:OMNIDX_MODE='report'; irm omnidx.net/go.ps1 | iex">$env:OMNIDX_MODE='report'; irm omnidx.net/go.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
+        <p class="cmd-note">Free. No key. Changes nothing. Saves what it found to <span class="mono">C:\OmniDx</span>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== what gets cut ==================== -->
+<section id="cut" data-rail="What gets cut">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow"><span class="pulse"></span>The cut</div>
+      <h2>Everything Windows runs for itself, off.</h2>
+      <p>
+        Each of these is a real list in the script, with the reason next to every entry. It cuts
+        to a number decided on your PC — the services your hardware needs stay — and it prints
+        the before and after, so the claim in the headline is one you check on your own machine.
+        <a href="what-it-touches/">The full list, generated from the script, is here.</a>
+      </p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card reveal"><div class="card-icon">🚀</div><h3>Every startup app off, and you pick the exceptions</h3>
+        <p>Discord, Spotify, Steam, Epic, OneDrive, Teams, Edge, the printer utility, the RGB software — it shows you the list, numbered, and asks which to leave on. Everything else gets the same switch Task Manager has, thrown at once, plus the Store apps that register themselves separately.</p></div>
+      <div class="card reveal d1"><div class="card-icon">⚙️</div><h3>Services you will never use</h3>
+        <p>Fax, phone link, maps, retail demo, the parental controls broker, remote registry, the diagnostics and error-reporting stack, Windows Search indexing, the print spooler when there is no printer, Bluetooth when there is no Bluetooth. Stopped and set to manual or disabled, never deleted — Services can start any one of them again.</p></div>
+      <div class="card reveal d2"><div class="card-icon">🗓️</div><h3>Scheduled tasks that phone home</h3>
+        <p>The compatibility appraiser, the customer experience uploads, the disk diagnostic, the feedback prompts, the maps and speech downloads, the family safety monitor. Two dozen of them, off.</p></div>
+      <div class="card reveal"><div class="card-icon">📦</div><h3>Preinstalled apps nobody asked for</h3>
+        <p>Phone Link, Maps, Weather, News, Feedback Hub, 3D Viewer, Mixed Reality Portal, Get Help, Solitaire, the new Outlook, Teams, Copilot, the Bing everything, and the trials the PC maker added. Removed for every account on the PC, provisioned copies too. <a href="#debloat">The debloat goes further.</a></p></div>
+      <div class="card reveal d1"><div class="card-icon">📡</div><h3>Telemetry and background activity</h3>
+        <p>Diagnostic data to the minimum Windows allows, advertising id off, background apps off, Game DVR and the Xbox Game Bar recorder off, widgets, tips, suggestions and Start ads off. Windows Update stays on — it is not a tweak, it is patches.</p></div>
+      <div class="card reveal d2"><div class="card-icon">🎮</div><h3>Xbox, only if you don't use it</h3>
+        <p>The four Xbox services are kept when Game Pass or Minecraft is on the machine, because those need them. Say <span class="mono tiny">-CutXbox</span> and they go too. The script decides from what it finds, not from a guess.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== debloat ==================== -->
+<section id="debloat" data-rail="Debloat">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow"><span class="pulse"></span>Gone, and kept gone</div>
+      <h2>A full debloat, in the same run.</h2>
+      <p>
+        Not just the apps. The pieces of Windows nobody has opened in a decade, the PC maker's
+        trials, OneDrive when nobody is signed in to it, Edge's add-ons, and then the switches
+        that stop Windows quietly putting it all back. Every removal is recorded; undo puts it
+        back. Windows itself, your drivers and your files are never part of it.
+      </p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card reveal"><div class="card-icon">🗑️</div><h3>Apps and trials</h3>
+        <p>Sixty-eight patterns: the Microsoft apps you never open and the games, media players, antivirus trials and shopping apps that ship on new PCs. Removed for every account and from the image, so a new account does not get them either. Spotify, Photos, Calculator, Snipping Tool, Terminal and the Store stay.</p></div>
+      <div class="card reveal d1"><div class="card-icon">☁️</div><h3>OneDrive, if you don't use it</h3>
+        <p>Uninstalled when nobody is signed in to it, and kept when you are. Your files stay exactly where they are either way. Undo reinstalls it.</p></div>
+      <div class="card reveal d2"><div class="card-icon">🏚️</div><h3>Legacy Windows</h3>
+        <p>Internet Explorer 11, the 2009 Media Player, WordPad, Steps Recorder, Math Input Panel, XPS printing, Work Folders and the PowerShell 2.0 engine that bypasses modern security logging. Fax and Scan stays when you have a printer; Hello face stays when you have the camera.</p></div>
+      <div class="card reveal"><div class="card-icon">🌐</div><h3>Edge's add-ons</h3>
+        <p>Shopping assistant, recommendations, Spotlight, the in-game overlay, feedback prompts and usage reporting off by policy. Your tabs, history and settings untouched. Edge itself stays, because Windows needs it for sign-in pages.</p></div>
+      <div class="card reveal d1"><div class="card-icon">🔒</div><h3>Kept gone</h3>
+        <p>Consumer features, suggested apps, silent installs and account nags switched off by policy, so a monthly update does not bring the ads back. And when a feature update turns a service or a task back on, a small sign-in task puts it off again. It only touches what the tune recorded, never your own settings, and undo removes it.</p></div>
+      <div class="card reveal d2"><div class="card-icon">🧽</div><h3>Caches cleared</h3>
+        <p>Temp files older than a day, the Windows Update download cache and the peer-to-peer update cache. Usually hundreds of megabytes, sometimes gigabytes. Not undoable, because none of it was anything.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== tailored ==================== -->
+<section id="tailored" data-rail="Reads your PC">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">Tailored</div>
+      <h2>It reads your PC before it touches it.</h2>
+      <p>
+        A tweak list copied off a forum treats a gaming laptop with a fingerprint reader the same
+        as a desktop with three monitors. That is how people lose Wi-Fi. This reads the machine
+        first and cuts around what it finds — so the safe bar is different on every PC, and it is
+        the right one on yours.
+      </p>
+    </div>
+    <div class="grid grid-2">
+      <div class="card reveal">
+        <div class="card-icon">🔍</div>
+        <h3>What it detects</h3>
+        <ul class="tick">
+          <li>Laptop or desktop — a laptop keeps sensible battery behaviour and its lid, brightness and sensor services</li>
+          <li>Printers, Bluetooth devices, Wi-Fi, a touch screen, a fingerprint or face reader, a VPN adapter — each one keeps its service</li>
+          <li>Xbox, Game Pass and Minecraft in use — their services stay unless you say otherwise</li>
+          <li>SSD or NVMe — so a hard drive keeps SuperFetch and an SSD does not need it</li>
+          <li>Windows 10 or 11, and which build — the right registry keys for each</li>
+          <li>UEFI, Secure Boot, TPM and memory integrity — reported, never lowered</li>
+          <li>CPU vendor, GPU vendor, board and BIOS version — for the checklist and the power plan</li>
+        </ul>
+      </div>
+      <div class="card reveal d1">
+        <div class="card-icon">🎯</div>
+        <h3>What that changes</h3>
+        <ul class="tick">
+          <li>The service list is built per machine: the print spooler goes only when there is no printer</li>
+          <li>Core parking and the CPU floor are set by the plan, and the plan knows if it is on a battery</li>
+          <li>The BIOS checklist names your board's menus and your CPU's memory profile — EXPO or XMP</li>
+          <li>Game profiles: CPU, I/O and memory priority by executable name for every listed game; the GPU and fullscreen settings only for the ones it finds installed</li>
+          <li>Hibernation is turned off on a desktop and left alone on a laptop</li>
+          <li>The process target is printed for your PC, and the real before and after next to it</li>
+        </ul>
+        <p class="tiny muted" style="margin-top:14px">It prints everything it found before asking to go on. If it read something wrong, stop there — nothing has changed yet.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== health ==================== -->
+<section id="health" data-rail="GPU, heat, network">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">New in 1.75</div>
+      <h2>Your GPU, heat and network, as numbers.</h2>
+      <p>
+        The problems no tweak can fix are the ones worth finding first. The free report reads them in seconds and says
+        what each one means, in words, only when it applies.
+      </p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card reveal"><div class="card-icon">🟩</div><h3>GPU health</h3>
+        <p>On an NVIDIA card it asks the driver's own tool for the temperature, the power limit against the card's maximum, the fan, and whether it is throttling for heat or power. Hot or throttling at idle means dust, a fan or a thermal pad, not settings.</p></div>
+      <div class="card reveal d1"><div class="card-icon">🌡️</div><h3>Heat</h3>
+        <p>Where the board exposes its heat sensors, the hottest one and whether Windows is already holding the CPU back because of it.</p></div>
+      <div class="card reveal d2"><div class="card-icon">📡</div><h3>The network</h3>
+        <p>Five pings to your router and five to the internet's edge: the delay, the jitter and the loss. A jittery link to your own router is Wi-Fi or a bad cable; loss further out is the line. Neither is a tweak, and it says so.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== power plan ==================== -->
+<section id="power" data-rail="Power plan">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow"><span class="pulse"></span>Instant</div>
+      <h2>A power plan called OmniDx. Built for frames.</h2>
+      <p>
+        Windows' "Balanced" plan parks cores, drops the CPU to 5% between frames and lets the PCIe
+        bus and USB ports doze — every one of those costs a frame time spike. The OmniDx plan is
+        made from Ultimate Performance and then pushed further, and it is active the moment the
+        script finishes. Undo puts your old plan back.
+      </p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card reveal"><div class="card-icon">🧠</div><h3>CPU 100 / 100</h3>
+        <p>Minimum and maximum processor state both at 100%, boost mode aggressive, core parking off on every core, active cooling. The clock is up before the game asks for it.</p></div>
+      <div class="card reveal d1"><div class="card-icon">🔌</div><h3>No bus ever sleeps</h3>
+        <p>PCIe link state power management off, USB selective suspend off, USB 3 link power off, disks never spin down. Your GPU and your mouse are never waking up from anything.</p></div>
+      <div class="card reveal d2"><div class="card-icon">🛌</div><h3>No sleep, no hibernate, on mains</h3>
+        <p>Sleep, hibernate and hybrid sleep off while plugged in. On a laptop the battery side of the plan stays sensible — it is your battery. Desktops also lose the hiberfile and Fast Startup, so every boot is a clean one.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== games ==================== -->
+<section id="games" data-rail="Game profiles">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">Competitive play</div>
+      <h2>Different games, different cuts.</h2>
+      <p>
+        For every game it finds, three things are set per executable that Windows never sets on
+        its own: CPU priority <em>high</em>, the high-performance GPU, and fullscreen optimisations
+        off for real exclusive fullscreen and the lowest input latency. Then the report lists the
+        in-game settings the competitive players actually run — the ones that cost nothing to see.
+      </p>
+    </div>
+    <div class="games reveal">
+      <span>Fortnite</span><span>VALORANT</span><span>Counter-Strike 2</span><span>Marvel Rivals</span>
+      <span>Apex Legends</span><span>Call of Duty</span><span>Overwatch 2</span><span>Rainbow Six Siege</span>
+      <span>Rocket League</span><span>Minecraft</span><span>Roblox</span><span>League of Legends</span>
+      <span>GTA V</span><span>Rust</span><span>Escape from Tarkov</span><span>PUBG</span>
+    </div>
+    <div class="grid grid-3" style="margin-top:26px">
+      <div class="card reveal"><div class="card-icon">🛡️</div><h3>Anti-cheat is left alone</h3>
+        <p>Vanguard, Easy Anti-Cheat, BattlEye and Ricochet are never stopped, disabled or delayed. VALORANT (Vanguard On-Demand) and FACEIT now require Secure Boot, TPM 2.0, IOMMU and memory integrity on: the script reports all four, never turns any of them off, and the BIOS checklist says where each one is.</p></div>
+      <div class="card reveal d1"><div class="card-icon">🎯</div><h3>Per-game settings, in the report</h3>
+        <p>For seven games the settings go straight into the game's own file (<a href="#gamefiles">below</a>). For the rest, the report: performance mode, raw input and Reflex, launch options, what to give Java. Written next to the game it found.</p></div>
+      <div class="card reveal d2"><div class="card-icon">🖱️</div><h3>Latency, not just frames</h3>
+        <p>Mouse acceleration off, the scheduler set for the game in front, power throttling off, Game DVR off so nothing records behind your game, and the 20% network reserve Windows keeps for itself given back.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== game files ==================== -->
+<section id="gamefiles" data-rail="Inside your games">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">New in 1.76</div>
+      <h2>The competitive settings, written into each game's own file.</h2>
+      <p>
+        The settings that cost frames and show you nothing are set where the game reads them: V-Sync off, motion blur off,
+        shadows and post-processing down. It asks first, backs up each file, skips a game that is running, and only changes
+        a setting the file already has, so a game update that renames one is simply left alone. Undo puts every value back.
+      </p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card reveal"><div class="card-icon">🎮</div><h3>Seven games, their own files</h3>
+        <p>Fortnite, Apex Legends, Counter-Strike 2, Marvel Rivals, Rocket League, Rainbow Six Siege and Minecraft. The free report lists exactly what it would write for the ones on your PC before anything changes.</p></div>
+      <div class="card reveal d1"><div class="card-icon">💾</div><h3>Backed up, then undone value by value</h3>
+        <p>A copy of each file goes into <span class="mono">C:\OmniDx\backup</span> first. Undo puts back each setting it changed, and leaves alone any you changed yourself afterwards.</p></div>
+      <div class="card reveal d2"><div class="card-icon">☁️</div><h3>Where the account owns it, it says so</h3>
+        <p>VALORANT, Overwatch 2 and League of Legends keep their settings in your account and would overwrite a file. The report lists theirs to set in the game instead.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== network ==================== -->
+<section id="network" data-rail="Network">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">Network</div>
+      <h2>Latency over throughput on the adapter you actually use.</h2>
+      <p>
+        Downloads are not made slower — the "disable autotuning" myth that halves your speed is
+        left where it belongs. What changes is how fast a small packet leaves your PC and how
+        often the adapter is allowed to nap.
+      </p>
+    </div>
+    <div class="grid grid-2">
+      <div class="card reveal">
+        <div class="card-icon">📶</div>
+        <h3>On the live adapter</h3>
+        <ul class="tick">
+          <li>Nagle's algorithm off: small packets go now, not after a 200 ms wait for company</li>
+          <li>Adapter power management off, so the link never drops to save a watt</li>
+          <li>Energy-efficient Ethernet, green Ethernet, interrupt moderation, ultra-low-power mode off — by whichever name your driver uses</li>
+          <li>Optionally, DNS to 1.1.1.1 with <span class="mono tiny">-Dns</span>. Off by default; your router is usually fine</li>
+        </ul>
+      </div>
+      <div class="card reveal d1">
+        <div class="card-icon">🧮</div>
+        <h3>In the TCP stack</h3>
+        <ul class="tick">
+          <li>Autotuning stays <em>normal</em> — the one setting people break most</li>
+          <li>ECN and timestamps off, receive-side scaling on, CTCP congestion control</li>
+          <li>The 20% bandwidth reservation for Windows' own traffic set to zero</li>
+          <li>Every one of these is recorded and put back by undo</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== apps ==================== -->
+<section id="apps" data-rail="Discord, Spotify, browser">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">The apps you run alongside</div>
+      <h2>Discord, Spotify and your browser, tuned too.</h2>
+      <p>
+        Nothing that changes how an app looks or sounds. Only what it does when you are not
+        looking at it — which, in a game, is all the time.
+      </p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card reveal"><div class="card-icon">💬</div><h3>Discord</h3>
+        <p>Hardware acceleration on, so the voice overlay is drawn by the GPU and not your CPU. Open-with-Windows off. It is tuned while it is closed, because Discord rewrites its own settings on exit.</p></div>
+      <div class="card reveal d1"><div class="card-icon">🎵</div><h3>Spotify</h3>
+        <p>Hardware acceleration on, auto-start off, the friend feed off. Both the desktop and the Store version, wherever the preferences file lives. Backed up first.</p></div>
+      <div class="card reveal d2"><div class="card-icon">🌐</div><h3>Chrome, Brave, Edge</h3>
+        <p>No running in the background after the last window closes, no startup boost, hardware acceleration kept on. Your tabs, extensions and history are not touched.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== streamers ==================== -->
+<section id="streamers" data-rail="Streamers">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">Streamers and PC makers</div>
+      <h2>Your stream keeps its capture. The PC maker loses its extras.</h2>
+      <p>
+        With OBS Studio, Streamlabs Desktop or XSplit installed (or <span class="mono">-Streamer</span> on the command), the
+        camera frame server and Windows Graphics Capture stay, even in Extreme, and the report has the encoder and capture
+        settings. Extreme also takes out the PC maker's support agents, promotions and telemetry; on a laptop, the maker's
+        hub that runs the fans, the battery limit and the hotkeys stays.
+      </p>
+    </div>
+    <div class="grid grid-3">
+      <div class="card reveal"><div class="card-icon">🎙️</div><h3>What streaming needs, kept</h3>
+        <p>The camera frame server and Windows Graphics Capture. Hardware encoding (NVENC, AMF or Quick Sync), above-normal priority for OBS, Game Capture over Display Capture: in the report.</p></div>
+      <div class="card reveal d1"><div class="card-icon">🏷️</div><h3>The PC maker's software</h3>
+        <p>Dell, HP, Lenovo, ASUS and Acer support agents and promotions, and their data-collection services, in Extreme. Every one is listed on the <a href="what-it-touches/#oem">transparency page</a> and comes back from the Store.</p></div>
+      <div class="card reveal d2"><div class="card-icon">🧊</div><h3>Undervolt, not overclock</h3>
+        <p>The report says how to undervolt your GPU and CPU and set a frame cap that stays smooth. Cooler, quieter, same frames. <a href="undervolt/">The full guide</a>, free.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== bios ==================== -->
+<section id="bios" data-rail="BIOS checklist">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">Below Windows</div>
+      <h2>The best BIOS settings for your board, on paper.</h2>
+      <p>
+        Nothing on the PC can change your BIOS for you, and anything that claims to should
+        frighten you. What the script can do is read your board, your BIOS version and your CPU,
+        and write the checklist for exactly that — which key to press, which menu each setting is
+        under, and what to set it to. It opens at the end, and it is the most valuable page in
+        the report.
+      </p>
+    </div>
+    <div class="grid grid-2">
+      <div class="card reveal">
+        <div class="card-icon">🧬</div>
+        <h3>Written for your board</h3>
+        <ul class="tick">
+          <li>ASUS, MSI, Gigabyte, ASRock, Dell, HP, Lenovo, Acer — the right key and the right menu names for each</li>
+          <li>EXPO on AMD, XMP on Intel: your RAM runs at the slow default until you flip this, and it is the single biggest free gain on any PC</li>
+          <li>Above 4G Decoding and Resizable BAR, and the CSM setting they depend on — only when you boot UEFI</li>
+          <li>Secure Boot, TPM and IOMMU: on, with the exact page, because Windows 11, VALORANT and FACEIT expect them</li>
+        </ul>
+      </div>
+      <div class="card reveal d1">
+        <div class="card-icon">📝</div>
+        <h3>And what not to do</h3>
+        <ul class="tick">
+          <li>Precision Boost Overdrive on AMD, power limits on Intel — never a voltage</li>
+          <li>C-states and HPET left alone, with the reason: the 2013 tweaks that hurt today</li>
+          <li>Fan curves that let a boost clock stay up</li>
+          <li>Onboard devices you do not use, each one an interrupt source gone</li>
+          <li>Do not flash the BIOS unless the release notes name your problem — the one thing here that cannot be undone from Windows</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== fail-safes ==================== -->
+<section id="safe" data-rail="Fail-safes">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">Before it changes anything</div>
+      <h2>Restore point, a record of every change, undo in one line.</h2>
+      <p>
+        The tune is a long list of small, ordinary changes — registry values, service start
+        types, a power plan, a few app settings — and every one of them is written down with its
+        previous value as it is made. Undo replays the list backwards.
+      </p>
+    </div>
+    <div class="fixes">
+      <div class="fix reveal">
+        <div class="gripe"><div class="src">The fear</div><h4>"It'll break something and I won't know what"</h4>
+          <p>Tweak tools from a video with no record of what they touched.</p></div>
+        <div class="fixed"><h4>A System Restore point first, every run</h4>
+          <p>Named and dated. If anything at all feels wrong, Windows can put the whole system back to the minute before the script started. It refuses to go on without one unless you tell it to.</p></div>
+      </div>
+      <div class="fix reveal">
+        <div class="gripe"><div class="src">The fear</div><h4>"How do I get it all back?"</h4>
+          <p>Reinstall Windows, usually.</p></div>
+        <div class="fixed"><h4>Undo is one file, and it is yours</h4>
+          <p>Every change lands in <span class="mono tiny">C:\OmniDx\undo\changes-latest.json</span> with what it was before, and <span class="mono tiny">undo.ps1</span> next to it replays them in reverse: services, tasks, registry, the power plan, the app files from their backups. No key needed, no internet needed.</p></div>
+      </div>
+      <div class="fix reveal">
+        <div class="gripe"><div class="src">The fear</div><h4>"Those tools turn Defender off"</h4>
+          <p>The usual "optimizer" lowers your security to raise a number.</p></div>
+        <div class="fixed"><h4>Security is never lowered</h4>
+          <p>Defender, the firewall, UAC, SmartScreen, Secure Boot and Windows Update are not touched. The one performance-for-security trade that exists — memory integrity (VBS) off — is opt-in with <span class="mono tiny">-Aggressive</span>, explained, and asked about again before it happens.</p></div>
+      </div>
+      <div class="fix reveal">
+        <div class="gripe"><div class="src">The fear</div><h4>"What's it installing?"</h4>
+          <p>A tray icon, an updater, a service of its own.</p></div>
+        <div class="fixed"><h4>Nothing</h4>
+          <p>The script runs from memory and exits. Nothing of it stays running, nothing starts with Windows, nothing checks for updates. What stays is a folder of text: the report, the checklist, the backups and the undo. The one exception, said plainly: a task that runs once at your next sign-in, writes the after-restart process count to that folder, and deletes itself. Skip it with <span class="mono tiny">-NoAfterCount</span>.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== by hand ==================== -->
+<section id="byhand" data-rail="Versus by hand">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">Or do it yourself</div>
+      <h2>You could do all of this by hand. Here is what that costs.</h2>
+      <p>Everything the tune does is a setting you can reach in Task Manager, Services, Settings, powercfg and the registry. The difference is an afternoon, a record, and knowing which ones. <a href="guide/">The by-hand list is here</a>, with nothing to buy on it.</p>
+    </div>
+    <div class="cmp-wrap">
+      <table class="cmp" aria-label="By hand, a typical optimizer app, OmniDx Tune">
+        <thead><tr><th></th><th>By hand</th><th>A typical "optimizer" app</th><th>OmniDx Tune</th></tr></thead>
+        <tbody>
+          <tr><td>Time</td><td class="p">An afternoon, and a weekend of reading</td><td class="y">Minutes</td><td class="y">About two minutes</td></tr>
+          <tr><td>Knows what your PC needs to keep</td><td class="p">If you do</td><td class="n">Rarely; one list for everyone</td><td class="y">Reads the PC first, keeps what it finds</td></tr>
+          <tr><td>A record of every change, and undo</td><td class="n">Only if you kept notes</td><td class="p">Sometimes, inside the app</td><td class="y">A file on your disk, no app needed</td></tr>
+          <tr><td>Stays installed and running</td><td class="y">No</td><td class="n">Yes, usually with an updater and a tray icon</td><td class="y">No</td></tr>
+          <tr><td>Subscription</td><td class="y">No</td><td class="n">Often</td><td class="y">No. Paid once</td></tr>
+          <tr><td>Lowers security to raise a number</td><td class="p">Depends on the guide</td><td class="n">Often, quietly</td><td class="y">Never; one opt-in trade, asked twice</td></tr>
+          <tr><td>BIOS checklist for your board</td><td class="p">If you find the right guide</td><td class="n">No</td><td class="y">Written for your board and CPU</td></tr>
+          <tr><td>You can read exactly what it does</td><td class="y">Yes</td><td class="n">No</td><td class="y">Yes, every line</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== locked ==================== -->
+<section id="locked" data-rail="Your key">
+  <div class="wrap">
+    <div class="grid grid-2" style="align-items:center">
+      <div class="reveal">
+        <div class="eyebrow">One key, one PC</div>
+        <h2>Locked to your machine. Not to a login.</h2>
+        <p>
+          You get a key on the page after you pay. The first PC that runs it becomes its PC: the
+          script takes a fingerprint from the board, the system id and the CPU, and the key is
+          bound to it. The same PC can run the tune again whenever it likes — after a Windows
+          update put a startup app back, say — for nothing. A different PC is refused.
+        </p>
+        <p>
+          No account, no email to verify, no sign-in. Replaced your motherboard or bought a new
+          rig? Email with the receipt and the key moves once. Need it on the second PC and the
+          laptop too, or for two friends? <a href="pricing/">Squad is three keys for the price of two.</a>
+        </p>
+      </div>
+      <div class="card reveal d1" style="text-align:center">
+        <div class="keybox" style="margin:0 0 14px"><small>What a key looks like</small>TUNE-9WQ2-4C9E-GK3R-D94C</div>
+        <p class="small" style="margin:0">The last block is a checksum, so a typo is caught on your PC before anything is asked of anyone. The key is real because it is on record against your order.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== how ==================== -->
+<section id="how" data-rail="How it works">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">Start to finish</div>
+      <h2>About two minutes, and one of them is the restart.</h2>
+    </div>
+    <ol class="steps-list reveal" style="max-width:820px">
+      <li><b>Pay once</b><p>Card, Apple Pay, Google Pay, Cash App Pay or PayPal, through Square. <span data-price="tune">$19.99</span> for one PC.</p></li>
+      <li><b>Get your key</b><p>Square sends you straight back here and your key is on the screen. Saved in your browser too.</p></li>
+      <li><b>Paste one line into PowerShell</b>
+        <div class="cmd"><code data-cmd>irm omnidx.net/go.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
+        <p class="cmd-note">It asks for administrator rights itself and opens the app. Nothing is downloaded to disk.</p></li>
+      <li><b>Read what it found, tick what you want, press Run</b><p>The window shows your PC and your process count, every phase and every startup app as a tick box, and your key. It makes the restore point, then cuts, with every change in a live log.</p></li>
+      <li><b>Restart. Do the BIOS checklist.</b><p>The report opens at the end with the exact before and after, the checklist for your board, and the settings for each of your games. Three to five minutes in all; the debloat is most of it.</p></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ==================== the app ==================== -->
+<section id="app" data-rail="The app">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">What the command opens</div>
+      <h2>A window. Still one file, still nothing installed.</h2>
+      <p>The script draws its own app: your PC on the left, the tune in the middle with a tick box for every phase and every startup app, your key and the buttons on the right, the live log underneath. Undo, the free report and restart are one press each.</p>
+    </div>
+    <div class="reveal" style="border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:var(--shadow),0 0 0 1px color-mix(in srgb,var(--blue) 18%,transparent);background:var(--surface)">
+      <img src="assets/app.png" alt="The OmniDx Tune window: the PC it read on the left, the tune's phases and startup apps with tick boxes in the middle, the key and the Run, Free report, Undo, Open folder and Restart buttons on the right, and a live log below." width="1120" height="760" loading="lazy" style="display:block;width:100%;height:auto">
+    </div>
+    <p class="tiny muted" style="margin-top:10px">Drawn by the script itself on a build machine every time it changes, so the picture is never out of date. The machine in it is that build machine, not a gaming PC.</p>
+  </div>
+</section>
+
+<!-- ==================== omnidx edition ==================== -->
+<section id="edition" data-rail="OmniDx Edition">
+  <div class="wrap">
+    <div class="grid grid-2" style="align-items:center;gap:40px">
+      <div class="reveal">
+        <div class="section-head" style="margin-bottom:18px">
+          <div class="eyebrow">Included with every key</div>
+          <h2>OmniDx Edition. Windows, set up for games.</h2>
+          <p>Genuine Windows from Microsoft's own USB stick, set up in one go: the OmniDx look, OmniDx Search on Windows + S,
+            a light browser, OmniDx Hub with Game Boost and three presets, the lean stage, and the tune in Extreme. On a clean
+            install, or on your PC as it is. Every value it changes is written down, and one line takes it off.</p>
+        </div>
+        <p class="small" style="margin:0 0 18px">Filmed on a clean Windows 11 install: <b>104 processes before the tune, 61 after the restart</b>, with Defender, Windows Update and Secure Boot all still on.</p>
+        <div class="btn-row">
+          <a class="btn btn-primary" href="edition/">The guide, step by step</a>
+          <a class="btn btn-ghost" href="showcase/">Watch the full film</a>
+        </div>
+      </div>
+      <div class="reveal d1">
+        <video controls playsinline preload="none" poster="assets/video/omnidx-edition-film.jpg" width="1080" height="1920" aria-label="The full film: a clean Windows 11 install becoming OmniDx Edition, then the one command" style="display:block;width:100%;max-width:320px;margin:0 auto;aspect-ratio:9/16;height:auto;max-height:72vh;border-radius:16px;background:#000;border:1px solid var(--line);box-shadow:0 30px 80px -30px var(--glow)">
+          <source src="assets/video/omnidx-edition-film.mp4" type="video/mp4">
+          <a href="assets/video/omnidx-edition-film.mp4">Download the film (MP4)</a>
+        </video>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== reviews: from /review in the Discord, hidden until the team has shown one ==================== -->
+<section id="reviews" data-rail="Reviews" hidden>
+  <div class="wrap">
+    <div class="center"><div class="section-head reveal">
+      <div class="eyebrow">From Verified Buyers</div>
+      <h2>What buyers say</h2>
+      <p><span data-reviews-summary></span> Every review here is from someone who proved they paid (their key, checked in the OmniDx
+        Discord), and the team reads each one before it shows.</p>
+    </div></div>
+    <div class="grid grid-3" data-reviews></div>
+    <p class="small muted center" style="margin:22px auto 0">Bought it? <a href="https://discord.gg/VvbYJcDQbB" target="_blank" rel="noopener">Join the Discord</a>,
+      verify your key, and type <span class="mono">/review</span>.</p>
+  </div>
+</section>
+
+<!-- ==================== pricing teaser ==================== -->
+<section id="pricing-teaser" data-rail="Pricing">
+  <div class="wrap center">
+    <div class="section-head reveal">
+      <div class="eyebrow">Pricing</div>
+      <h2>One payment. Yours.</h2>
+      <p>No subscription, no renewal, no account. Every future version of the script is included:
+        the same command fetches the newest one, and your key keeps working on your PC.</p>
+    </div>
+    <div class="price-card reveal">
+      <div class="tname" style="font-size:13px;font-weight:750;letter-spacing:.12em;text-transform:uppercase;color:var(--text-3)">OmniDx Tune</div>
+      <div class="amount"><span data-price="tune">$19.99</span> <small>once</small></div>
+      <p class="small" style="margin:0">One PC. The whole tune, the power plan, every game profile, the BIOS checklist, OmniDx Edition, undo, and every update.</p>
+      <a class="btn btn-primary btn-lg" href="pricing/">Get it</a>
+      <p class="alt">Three keys for the price of two: <a href="pricing/">Squad, <span data-price="squad">$39.99</span></a>. The key is on screen the moment you pay. All sales are final, so try the free report first.</p>
+    </div>
+    <div class="pays">
+      <span class="pay"><span class="g"></span>Card</span>
+      <span class="pay"><span class="g"></span>Apple Pay</span>
+      <span class="pay"><span class="g"></span>Google Pay</span>
+      <span class="pay"><span class="g"></span>Cash App Pay</span>
+      <span class="pay"><span class="g"></span>PayPal</span>
+      <span class="pay"><span class="g"></span>Klarna</span>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== cta ==================== -->
+<section>
+  <div class="wrap">
+    <div class="band reveal">
+      <h2>One command. Then go play.</h2>
+      <p class="lede" style="margin-left:auto;margin-right:auto">
+        Not sure yet? The report mode is free, needs no key, and changes nothing — it just shows you what it would find on your PC.
+      </p>
+      <div class="btn-row" style="justify-content:center;margin-top:28px">
+        <a class="btn btn-primary btn-lg" href="pricing/">Get OmniDx Tune</a>
+        <a class="btn btn-lg btn-ghost" href="download/#report">Run the free report</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- chrome:footer -->
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a class="logo logo-foot" href="./" aria-label="OmniDx"><img class="logo-img" src="assets/logo/omnidx-logo-800.webp" width="800" height="402" alt="OmniDx" loading="lazy" decoding="async"></a>
+        <p class="small" style="margin-top:14px;max-width:34ch">One command. Windows cut down to what your
+          games need, a power plan built for frames, and a BIOS checklist for your exact board.</p>
+        <p class="tiny muted" style="margin-top:10px">One payment. No subscription, ever. Nothing installed.</p>
+        <div id="rate-us" class="rate-host" aria-label="Rate OmniDx Tune"></div>
+      </div>
+      <div>
+        <h4>What it does</h4>
+        <a href="#cut">What gets cut</a>
+        <a href="#debloat">Debloat, for good</a>
+        <a href="#tailored">Reads your PC first</a>
+        <a href="#power">The power plan</a>
+        <a href="#games">Game profiles</a>
+        <a href="#bios">BIOS checklist</a>
+        <a href="#safe">Fail-safes</a>
+        <a href="what-it-touches/">Everything it touches</a>
+        <a href="showcase/">Showcase: real runs on camera</a>
+      </div>
+      <div>
+        <h4>Get it</h4>
+        <a href="pricing/">Pricing</a>
+        <a href="download/">Run it</a>
+        <a href="edition/">OmniDx Edition</a>
+        <a href="activate/">Your key</a>
+        <a href="download/#undo">Undo</a>
+        <a href="https://omnidx.net/tune/omnidx.ps1">Read the script</a>
+      </div>
+      <div>
+        <h4>More</h4>
+        <a href="trust/">Is this safe? Is it a scam?</a>
+        <a href="pricing/#faq">FAQ</a>
+        <a href="trust/#cant">What it won't touch</a>
+        <a href="changelog/">Changelog</a>
+        <a href="terms/">Terms, privacy, money</a>
+        <a href="https://discord.gg/VvbYJcDQbB" target="_blank" rel="noopener">The OmniDx Discord</a>
+        <a href="es/" hreflang="es" lang="es">En español</a>
+        <a href="pt/" hreflang="pt-BR" lang="pt-BR">Em português</a>
+        <a href="app/">OmniDx Studio — the video editor</a>
+        <span class="foot-support" data-support="OmniDx Tune — help" hidden></span>
+      </div>
+    </div>
+    <div class="foot-note">
+      <span>© 2026 OmniDx. One payment. Yours. Script <span data-script-version>v1.2.0</span>.</span>
+      <span>Nothing leaves your PC except the key check.</span>
+    </div>
+  </div>
+</footer>
+<!-- /chrome:footer -->
+<script type="module" src="assets/studio.js"></script>
+</body>
+</html>

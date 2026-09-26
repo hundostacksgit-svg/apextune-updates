@@ -1,0 +1,9 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>OmniDx Tune tutorial - score</title>
+<!-- The tutorial's sound, rendered offline by score.js. render.mjs calls window.renderScore(). -->
+<script type="module">
+import { renderScore } from './score.js';
+window.renderScore = renderScore;
+window.ready = true;
+</script>

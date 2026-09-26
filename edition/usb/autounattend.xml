@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- OmniDx Edition answer file (make-usb.ps1 fills in the account and the language).
+     Skips the licence, account and privacy screens, makes a local account and signs it in once; at that first
+     sign-in, OmniDx Edition sets itself up from the omnidx folder on this stick and restarts.
+     It never names a disk: Windows setup still asks where to install. No product key: Windows activates from the
+     PC's digital licence, or setup asks for one. Windows itself is installed exactly as Microsoft ships it. -->
+<unattend xmlns="urn:schemas-microsoft-com:unattend" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+  <settings pass="windowsPE">
+    <component name="Microsoft-Windows-International-Core-WinPE" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <SetupUILanguage><UILanguage>{{LANG}}</UILanguage></SetupUILanguage>
+      <InputLocale>{{INPUT}}</InputLocale>
+      <SystemLocale>{{REGION}}</SystemLocale>
+      <UILanguage>{{LANG}}</UILanguage>
+      <UserLocale>{{REGION}}</UserLocale>
+    </component>
+    <component name="Microsoft-Windows-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <UserData><AcceptEula>true</AcceptEula></UserData>
+    </component>
+  </settings>
+  <settings pass="specialize">
+    <component name="Microsoft-Windows-Deployment" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <RunSynchronous>
+        <RunSynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <Description>Let setup finish without a network, so a local account is always possible</Description>
+          <Path>reg add HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\OOBE /v BypassNRO /t REG_DWORD /d 1 /f</Path>
+        </RunSynchronousCommand>
+      </RunSynchronous>
+    </component>
+  </settings>
+  <settings pass="oobeSystem">
+    <component name="Microsoft-Windows-International-Core" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <InputLocale>{{INPUT}}</InputLocale>
+      <SystemLocale>{{REGION}}</SystemLocale>
+      <UILanguage>{{LANG}}</UILanguage>
+      <UserLocale>{{REGION}}</UserLocale>
+    </component>
+    <component name="Microsoft-Windows-Shell-Setup" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+      <OOBE>
+        <HideEULAPage>true</HideEULAPage>
+        <HideOEMRegistrationScreen>true</HideOEMRegistrationScreen>
+        <HideOnlineAccountScreens>true</HideOnlineAccountScreens>
+        <HideWirelessSetupInOOBE>{{WIFI}}</HideWirelessSetupInOOBE>
+        <ProtectYourPC>3</ProtectYourPC>
+      </OOBE>
+      <UserAccounts>
+        <LocalAccounts>
+          <LocalAccount wcm:action="add">
+            <Name>{{ACCOUNT}}</Name>
+            <DisplayName>{{ACCOUNT}}</DisplayName>
+            <Group>Administrators</Group>
+            <Password><Value>{{PASSWORD}}</Value><PlainText>true</PlainText></Password>
+          </LocalAccount>
+        </LocalAccounts>
+      </UserAccounts>
+      <AutoLogon>
+        <Username>{{ACCOUNT}}</Username>
+        <Enabled>true</Enabled>
+        <LogonCount>1</LogonCount>
+        <Password><Value>{{PASSWORD}}</Value><PlainText>true</PlainText></Password>
+      </AutoLogon>
+      <FirstLogonCommands>
+        <SynchronousCommand wcm:action="add">
+          <Order>1</Order>
+          <Description>OmniDx Edition: set up from the omnidx folder on the install stick</Description>
+          <CommandLine>cmd /c for %d in (D E F G H I J K L M N O P Q R S T U V W X Y Z) do @if exist %d:\omnidx\edition\first-logon.cmd call %d:\omnidx\edition\first-logon.cmd</CommandLine>
+        </SynchronousCommand>
+      </FirstLogonCommands>
+    </component>
+  </settings>
+</unattend>

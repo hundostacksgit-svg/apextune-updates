@@ -1,0 +1,769 @@
+name: Check the tune
+
+# The tune is a PowerShell script nobody here can run without Windows. This
+# does two things on a real Windows runner every time it changes: parses both
+# scripts with PowerShell's own parser (a syntax error would otherwise ship),
+# and runs the tune in report mode, which reads the machine and changes
+# nothing. The bootstrapper's option parsing is exercised the same way.
+on:
+  push:
+    branches: [main, master, "claude/omnidx-editing-platform-9phdcc"]
+    paths: ["tune/**", "go.ps1", "tools/**", "server/worker.js", ".github/workflows/tune-check.yml"]
+  pull_request:
+    paths: ["tune/**", "go.ps1"]
+  workflow_dispatch:
+
+permissions:
+  # The Windows job commits the window's screenshot, the run's numbers and the
+  # script it tested back to the branch, then asks the Pages workflow to
+  # publish them (a push made with the workflow token starts no workflow by
+  # itself, but a dispatch does).
+  contents: write
+  actions: write
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: ASCII, brackets, key maths, config
+        run: node tools/tune-check.mjs
+      # The licence server's money path, offline: three keys per Squad order,
+      # one email, Square's signature, one PC per key.
+      - name: The licence server issues, emails, locks and moves keys as promised
+        run: |
+          npm install --no-audit --no-fund --prefix server
+          node tools/worker-test.mjs
+
+  # Forty minutes of Windows for a change to the licence server or the site
+  # proves nothing the static job did not; the Windows job runs when the
+  # script, the bootstrapper, the licence server it runs against or this workflow
+  # changed, and always on the button.
+  changes:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      windows: ${{ steps.pick.outputs.windows }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: pick
+        run: |
+          if [ "${{ github.event_name }}" != "push" ]; then echo "windows=true" >> "$GITHUB_OUTPUT"; echo "not a push: the Windows job runs"; exit 0; fi
+          # The whole push, not only its last commit: a push of eight commits whose last one is a doc
+          # change must still run the Windows job when an earlier one changed the tune.
+          before="${{ github.event.before }}"
+          if [ -n "$before" ] && [ "$before" != "0000000000000000000000000000000000000000" ] && git cat-file -e "$before" 2>/dev/null; then
+            changed="$(git diff --name-only "$before" HEAD 2>/dev/null || echo tune/omnidx.ps1)"
+          else
+            changed="$(git diff --name-only HEAD~1 HEAD 2>/dev/null || echo tune/omnidx.ps1)"
+          fi
+          echo "$changed"
+          if echo "$changed" | grep -Eq '^(tune/|go\.ps1$|server/worker\.js$|tools/worker-serve\.mjs$|tools/worker-standin\.mjs$|tools/ci-red\.ps1$|tools/ci-pieces\.ps1$|tools/make-tune-key\.py$|\.github/workflows/tune-check\.yml$)'; then
+            echo "windows=true" >> "$GITHUB_OUTPUT"; echo "the tune changed: the Windows job runs"
+          else
+            echo "windows=false" >> "$GITHUB_OUTPUT"; echo "nothing the Windows job tests changed: skipped"
+          fi
+
+  windows:
+    # A push to a checked branch already ran this; the pull request for the
+    # same commit would only run it twice.
+    needs: changes
+    if: github.event_name != 'pull_request' && needs.changes.outputs.windows == 'true'
+    runs-on: windows-latest
+    timeout-minutes: 75
+    defaults:
+      run:
+        shell: powershell
+    env:
+      # The runner is Windows Server, which the tune refuses; report mode is
+      # let through here so the read, the preview and the key check can run.
+      OMNIDX_ALLOW_SERVER: "1"
+      # The runner cannot get the legacy pieces (WordPad, Media Player...) back
+      # from Windows Update; every restore times out, twenty minutes a run for
+      # nothing proved. Undo lists them for Settings > Apps > Optional features instead.
+      OMNIDX_SKIP_DISM: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Parse both scripts with PowerShell's parser
+        run: |
+          foreach ($f in 'tune\omnidx.ps1', 'go.ps1') {
+            $tokens = $null; $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f), [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count) { $errors | ForEach-Object { Write-Host ("{0}: {1} at line {2}" -f $f, $_.Message, $_.Extent.StartLineNumber) }; exit 1 }
+            Write-Host "$f parses ($($tokens.Count) tokens)"
+          }
+
+      # The NVIDIA profile helper only compiles on a PC with an NVIDIA card, which this runner is not: compile it here
+      # the way the tune does (Add-Type in Windows PowerShell), and it must say there is no NVIDIA driver, not crash.
+      - name: The NVIDIA profile helper compiles and finds no NVIDIA driver here
+        run: |
+          $text = Get-Content .\tune\omnidx.ps1 -Raw
+          if ($text -notmatch "(?s)\`$script:NvSource = @'\r?\n(.*?)\r?\n'@") { Write-Host 'no NvSource in the script'; exit 1 }
+          Add-Type -TypeDefinition $Matches[1] -ErrorAction Stop
+          $e = [OmniNv]::Open(); [OmniNv]::Close()
+          Write-Host "OmniNv compiled; Open() says: $e"
+          if (-not $e) { Write-Host 'Open() claims an NVIDIA driver on a runner without one'; exit 1 }
+          exit 0
+
+      # Four games' own settings files for the tune to find, in their own encodings: values it should change, a value of
+      # the wrong shape it must leave, a missing setting it must not add, and a setting it does not list.
+      - name: Plant four games' settings files
+        run: |
+          $fx = 'C:\OmniDx-ci\fixtures'; New-Item -ItemType Directory -Path $fx -Force | Out-Null
+          $u16 = New-Object System.Text.UnicodeEncoding($false, $true); $u8 = New-Object System.Text.UTF8Encoding($false)
+          $docs = [Environment]::GetFolderPath('MyDocuments')
+          $files = @(
+            @{ path = (Join-Path $env:LOCALAPPDATA 'FortniteGame\Saved\Config\WindowsClient\GameUserSettings.ini'); enc = $u16; text = "[/Script/FortniteGame.FortGameUserSettings]`r`nbUseVSync=True`r`nbMotionBlur=True`r`nFrameRateLimit=60.000000`r`n`r`n[ScalabilityGroups]`r`nsg.ResolutionQuality=100.000000`r`nsg.ShadowQuality=3`r`nsg.PostProcessQuality=3`r`n" },
+            @{ path = (Join-Path $env:USERPROFILE 'Saved Games\Respawn\Apex\local\videoconfig.txt'); enc = $u8; text = "`"VideoConfig`"`n{`n`t`"setting.mat_vsync_mode`"`t`t`"1`"`n`t`"setting.csm_enabled`"`t`t`"1`"`n`t`"setting.shadow_enable`"`t`t`"1`"`n`t`"setting.dvs_enable`"`t`t`"auto`"`n}`n" },
+            @{ path = (Join-Path $env:APPDATA '.minecraft\options.txt'); enc = $u8; text = "version:3955`nenableVsync:true`nrenderClouds:`"true`"`nmaxFps:120`n" },
+            @{ path = (Join-Path $docs 'My Games\Rocket League\TAGame\Config\TASystemSettings.ini'); enc = $u8; text = "[SystemSettings]`r`nUseVsync=True`r`nMotionBlur=True`r`nDynamicShadows=True`r`nDepthOfField=True`r`nBloom=True`r`n" },
+            # Two apps' own settings: Discord is kept at startup in the run below, Spotify is not.
+            @{ path = (Join-Path $env:APPDATA 'discord\settings.json'); enc = $u8; text = "{`n  `"OPEN_ON_STARTUP`": true,`n  `"IS_MAXIMIZED`": false`n}" },
+            @{ path = (Join-Path $env:APPDATA 'Spotify\prefs'); enc = $u8; text = "app.autostart-mode=`"normal`"`nui.hardware_acceleration=false`nstorage.size=2048`n" }
+          )
+          $i = 0
+          foreach ($f in $files) {
+            New-Item -ItemType Directory -Path (Split-Path $f.path) -Force | Out-Null
+            [IO.File]::WriteAllText($f.path, $f.text, $f.enc); $i++
+            Copy-Item $f.path (Join-Path $fx ("{0}.orig" -f $i)) -Force
+            Add-Content (Join-Path $fx 'list.txt') $f.path
+            Write-Host ("planted {0}" -f $f.path)
+          }
+
+      - name: Run the tune in report mode (changes nothing)
+        run: |
+          $lsw = [System.Diagnostics.Stopwatch]::StartNew()
+          $out = & .\tune\omnidx.ps1 -Report *>&1 | Out-String -Width 4000
+          $lookTotal = [math]::Round($lsw.Elapsed.TotalSeconds, 1)
+          Write-Host $out
+          if (-not (Test-Path 'C:\OmniDx')) { Write-Host 'no C:\OmniDx folder was made'; exit 1 }
+          # The free look's own timing line and the machine read's, for the published record; the whole
+          # command's wall time too. A look that gets much slower than the last published run fails below.
+          $look = -1; if ($out -match 'Looked in ([0-9.]+) s') { $look = [double]$Matches[1] }
+          $read = -1; if ($out -match 'Read in ([0-9.]+) s') { $read = [double]$Matches[1] }
+          # The look's split and the read's slowest laps too, so a slower look says where.
+          $parts = ''; if ($out -match 'Looked in [0-9.]+ s: startup ([0-9.]+), services ([0-9.]+), tasks ([0-9.]+), apps ([0-9.]+), Windows pieces ([0-9.]+)') { $parts = "{0} {1} {2} {3} {4}" -f $Matches[1], $Matches[2], $Matches[3], $Matches[4], $Matches[5] }
+          $readParts = ''; if ($out -match 'Read in [0-9.]+ s \(([^)]+)\)') { $readParts = $Matches[1] }
+          Write-Host ("free look: {0} s of looking, {1} s of reading the machine, {2} s wall" -f $look, $read, $lookTotal)
+          Set-Content C:\OmniDx\ci-look.txt -Value ("{0} {1} {2} {3}" -f $look, $read, $lookTotal, $parts).Trim()
+          Set-Content C:\OmniDx\ci-read.txt -Value $readParts
+          $last = $null; try { $last = Get-Content studio\assets\ci-run.json -Raw | ConvertFrom-Json } catch { }
+          if ($last -and ($null -ne $last.look) -and ([double]$last.look -ge 0) -and $look -ge 0 -and ($look -gt ([double]$last.look + 20))) { Write-Host ("the free look took {0} s; the last published run took {1} s" -f $look, $last.look); exit 1 }
+          if ($out -notmatch '(?m)^  Network: ') { Write-Host 'the free look printed no network line'; exit 1 }
+          if ($out -notmatch "Settings it would write into your games' own files: 12") { Write-Host 'the free look did not find the twelve game settings planted for it'; exit 1 }
+          Get-ChildItem C:\OmniDx | ForEach-Object { Write-Host $_.Name }
+          $preview = Get-ChildItem C:\OmniDx -Filter 'report-preview-*.txt' | Select-Object -First 1
+          if (-not $preview) { Write-Host 'no preview report was written'; exit 1 }
+          Get-Content $preview.FullName
+          exit 0
+
+      # The streamer profile: -Streamer must reach the machine's keep list without streaming software installed.
+      - name: The streamer profile keeps what streaming needs
+        run: |
+          $out = & .\tune\omnidx.ps1 -Report -Streamer *>&1 | Out-String -Width 4000
+          & .\tools\ci-red.ps1 -Text $out -Step 'The streamer profile keeps what streaming needs'
+          Write-Host $out
+          $mj = Get-ChildItem C:\OmniDx -Filter 'machine-*.json' | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if ($mj) { $rec = Get-Content $mj.FullName -Raw | ConvertFrom-Json; Write-Host ("machine record {0}: streamer = [{1}]" -f $mj.Name, (@($rec.streamer) -join ', ')) }
+          $keeps = @($out -split "`r?`n" | Where-Object { $_ -match '^  Keeps: ' })
+          Write-Host $keeps
+          # What the list construct 1.75.0 replaced does in this PowerShell, for the record.
+          $tm = @{ streamer = @('x'); printers = 0; laptop = $false }
+          $tk = @(@(
+            $(if ($tm.printers) { 'printer' }), $(if ($tm.streamer.Count) { 'streaming (' + ($tm.streamer -join ', ') + ')' }), $(if ($tm.laptop) { 'battery' })
+          ) | Where-Object { $_ })
+          Write-Host ("old construct in PowerShell {0}: {1} item(s) [{2}]" -f $PSVersionTable.PSVersion, $tk.Count, ($tk -join '|'))
+          if (-not ($keeps -match 'streaming \(asked for with -Streamer\)')) { Write-Host '-Streamer did not reach the keep list'; exit 1 }
+          if ($out -notmatch 'Streaming software found') { Write-Host 'the advice did not name the streamer profile'; exit 1 }
+          exit 0
+
+      # DISM's own answer about every Windows piece, with the cost of asking, next to the component store's
+      # registry and the optional-feature class (which the look reads instead). The look's count must match.
+      - name: The free look's Windows pieces match DISM's answer
+        run: |
+          $out = & .\tools\ci-pieces.ps1 -Compare *>&1 | Out-String -Width 4000
+          Write-Host $out
+          if ($out -match 'PIECES MISMATCH') { exit 1 }
+          if ($out -notmatch 'PIECES MATCH') { Write-Host 'the pieces comparison did not run'; exit 1 }
+
+      # The bootstrapper, end to end: a copy of the site's tune files is served
+      # from the build machine (LF bytes, as the site serves them), go.ps1 must
+      # fetch the verified copy, match its hash and run the report through it;
+      # then, with both served copies altered, it must refuse to run anything.
+      - name: go.ps1 fetches the verified copy, checks its hash, and refuses a tampered one
+        timeout-minutes: 10
+        run: |
+          $site = Join-Path $env:RUNNER_TEMP 'site'
+          New-Item -ItemType Directory -Path (Join-Path $site 'tune') -Force | Out-Null
+          foreach ($f in 'tune\verified.ps1', 'tune\verified.json', 'tune\omnidx.ps1', 'tune\config.json', 'go.ps1') {
+            if (Test-Path $f) { [IO.File]::WriteAllText((Join-Path $site $f), ([IO.File]::ReadAllText((Resolve-Path $f).Path) -replace "`r`n", "`n"), [Text.Encoding]::ASCII) }
+          }
+          $srv = Start-Process python -ArgumentList '-m', 'http.server', '8090', '--bind', '127.0.0.1' -WorkingDirectory $site -PassThru -WindowStyle Hidden
+          Start-Sleep -Seconds 4
+          try {
+            $env:OMNIDX_BASE = 'http://127.0.0.1:8090'; $env:OMNIDX_MODE = 'report'
+            $out = & .\go.ps1 *>&1 | Out-String -Width 4000
+            Write-Host $out
+            if ($out -notmatch 'Script verified: sha256') { Write-Host 'go.ps1 did not verify the script it fetched'; exit 1 }
+            if ((Test-Path tune\verified.json) -and ($out -notmatch 'matches the copy the Windows check tested')) { Write-Host 'go.ps1 did not use the verified copy'; exit 1 }
+            if ($out -notmatch 'Target') { Write-Host 'the report did not run through go.ps1'; exit 1 }
+            # Now both served copies are altered by one line; neither hash can match, and nothing may run.
+            foreach ($f in 'tune\verified.ps1', 'tune\omnidx.ps1') { $p = Join-Path $site $f; if (Test-Path $p) { [IO.File]::AppendAllText($p, "# tampered`n") } }
+            $refused = ''
+            try { $out2 = & .\go.ps1 *>&1 | Out-String -Width 4000; $refused = $out2 } catch { $refused = "$out2`n$_" }
+            Write-Host $refused
+            if ($refused -notmatch 'Could not fetch a good copy') { Write-Host 'a tampered copy was not refused'; exit 1 }
+            if ($refused -match 'Target') { Write-Host 'the tampered copy ran'; exit 1 }
+          } finally {
+            Stop-Process -Id $srv.Id -Force -ErrorAction SilentlyContinue
+            Remove-Item Env:OMNIDX_BASE, Env:OMNIDX_MODE -ErrorAction SilentlyContinue
+          }
+          exit 0
+
+      - name: The script can see its own text, from a file and from memory
+        run: |
+          # -Width 4000: Out-String wraps at the console width, and a long CPU name pushed the probe line onto two lines.
+          $a = & .\tune\omnidx.ps1 -SelfTest *>&1 | Out-String -Width 4000
+          $b = & ([scriptblock]::Create((Get-Content .\tune\omnidx.ps1 -Raw))) -SelfTest *>&1 | Out-String -Width 4000
+          Write-Host $a; Write-Host $b
+          foreach ($o in $a, $b) { if ($o -notmatch 'self text: (\d+) chars' -or [int]$Matches[1] -lt 10000) { Write-Host 'the script cannot see itself'; exit 1 } }
+          foreach ($o in $a, $b) { if ($o -notmatch "runspace probe: \d+ output objects, (\d+) info lines, cpu '.+', (\d+) processes,\s+0 errors" -or [int]$Matches[1] -lt 3 -or [int]$Matches[2] -lt 10) { Write-Host 'the background runspace did not deliver the probe and its log'; exit 1 } }
+          exit 0
+
+      - name: Probe mode prints one JSON object for the app
+        run: |
+          $j = & .\tune\omnidx.ps1 -Probe | Select-Object -Last 1
+          $o = $j | ConvertFrom-Json
+          Write-Host ("probe: {0} processes, target {1}, {2} startup entries, {3} warnings" -f $o.before, $o.target, @($o.startup).Count, @($o.warnings).Count)
+          Write-Host ("read timings (ms): " + (($o.timings.PSObject.Properties | ForEach-Object { "{0}={1}" -f $_.Name, $_.Value }) -join ' '))
+          if (-not $o.cpu -or -not $o.before) { Write-Host 'probe is missing fields'; exit 1 }
+          exit 0
+
+      - name: Draw the app window to a PNG without showing it
+        run: |
+          & .\tune\omnidx.ps1 -Gui -Screenshot C:\OmniDx\app.png
+          if (-not (Test-Path C:\OmniDx\app.png)) { Write-Host 'no screenshot was drawn'; exit 1 }
+          Write-Host ("app.png: {0} bytes" -f (Get-Item C:\OmniDx\app.png).Length)
+          exit 0
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-window
+          path: C:\OmniDx\app.png
+          if-no-files-found: error
+
+      - name: Undo with nothing recorded says so
+        run: |
+          & .\tune\omnidx.ps1 -Undo
+          exit 0
+
+      # The real thing, on a machine nobody needs afterwards: a valid key,
+      # every phase, no prompts, no restart. Then undo. Then the numbers go to
+      # the site, so every visitor sees the last run on a fresh Windows.
+      # A first run needs a licence server to vouch for the key; the build machine
+      # gets a stand-in on 127.0.0.1 that accepts any well-formed key. First, though,
+      # the script must refuse a first run with no server at all.
+      - name: Without a licence server, a first run refuses and changes nothing
+        run: |
+          $key = (& python tools\make-tune-key.py | Select-Object -First 1).Trim()
+          $out = & .\tune\omnidx.ps1 -Key $key -Api 'http://127.0.0.1:1/' -Yes -NoRestart -NoAfterCount *>&1 | Out-String -Width 4000
+          & .\tools\ci-red.ps1 -Text $out -Step 'Without a licence server, a first run refuses and changes nothing'
+          Write-Host $out
+          if ($out -match '== Done') { Write-Host 'the tune ran with a server that does not exist'; exit 1 }
+          if ($out -notmatch 'Nothing has changed on this PC') { Write-Host 'no refusal was printed'; exit 1 }
+          if (Test-Path C:\OmniDx\undo\changes-latest.json) { Write-Host 'a change record was written without a licence check'; exit 1 }
+          # The licence server for the rest of the check is the real Worker code (server/worker.js under Node, with the
+          # tests' stand-in database and Square), on the loopback address. It issues one key for a stand-in order at
+          # start, the way the key page does after a payment, and writes it to a file for the steps below.
+          $keyFile = Join-Path $env:RUNNER_TEMP 'ci-key.txt'
+          Remove-Item $keyFile -Force -ErrorAction SilentlyContinue
+          # Started through the shell, not as a redirected child: a redirected child belongs to this step and is
+          # ended with it, and the server has to outlive this step. It keeps its own log instead.
+          $serveLog = Join-Path $env:RUNNER_TEMP 'worker-serve.log'
+          Start-Process node -ArgumentList 'tools\worker-serve.mjs', '--port', '8787', '--key-file', $keyFile, '--log', $serveLog -WindowStyle Hidden
+          $h = $null
+          foreach ($i in 1..40) { Start-Sleep -Milliseconds 500; try { $h = Invoke-RestMethod http://127.0.0.1:8787/v1/health -TimeoutSec 5; break } catch { } }
+          if (-not $h -or -not $h.ok -or -not $h.square) {
+            Write-Host 'the licence server (the real Worker code under Node) did not start; its log:'
+            if (Test-Path $serveLog) { Get-Content $serveLog | Select-Object -First 40 | ForEach-Object { Write-Host ("  " + $_) } }
+            exit 1
+          }
+          if (-not (Test-Path $keyFile)) { Write-Host 'the licence server wrote no key'; exit 1 }
+          Write-Host ("licence server up: the real Worker code, mail {0}, refunds {1}; one key issued for the check" -f $h.mail, $h.refunds)
+          exit 0
+
+      - name: Run the whole tune with a real key
+        timeout-minutes: 20
+        run: |
+          # The key the licence server issued at start: a key that was really issued, as a buyer's is.
+          $key = (Get-Content (Join-Path $env:RUNNER_TEMP 'ci-key.txt') -Raw).Trim()
+          try { $null = Invoke-RestMethod http://127.0.0.1:8787/v1/health -TimeoutSec 5 } catch {
+            Write-Host 'the licence server is not answering any more; its log:'
+            $serveLog = Join-Path $env:RUNNER_TEMP 'worker-serve.log'
+            if (Test-Path $serveLog) { Get-Content $serveLog | Select-Object -First 40 | ForEach-Object { Write-Host ("  " + $_) } }
+            exit 1
+          }
+          # -Width: Out-String wraps at the console width otherwise, and the site shows these lines whole.
+          # -Keep Discord: what the app's untick does; Discord's own start-with-Windows setting must survive it (checked below).
+          $out = & .\tune\omnidx.ps1 -Key $key -Api http://127.0.0.1:8787 -Yes -NoRestart -NoAfterCount -Keep Discord *>&1 | Out-String -Width 4000
+          & .\tools\ci-red.ps1 -Text $out -Step 'Run the whole tune with a real key'
+          Write-Host $out
+          if ($out -notmatch '== Done') { Write-Host 'the tune did not reach Done'; exit 1 }
+          if ($out -notmatch 'Processes: (\d+) -> (\d+)') { Write-Host 'no before/after line'; exit 1 }
+          # A per-user template service (not in the plain service listing) must still be configured: a 1.25 refactor silently skipped seven of them.
+          if ($out -notmatch 'WpnUserService -> manual') { Write-Host 'the per-user template services were not configured'; exit 1 }
+          $html = Get-ChildItem C:\OmniDx -Filter 'report-*.html' | Select-Object -First 1
+          if (-not $html) { Write-Host 'no HTML report'; exit 1 }
+          # The card the run writes for posting: one PNG with the before and after; a run without one is a run that lost a feature.
+          $card = Get-ChildItem C:\OmniDx -Filter 'card-*.png' | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if (-not $card) { Write-Host 'no card was drawn'; exit 1 }
+          if ($card.Length -lt 20000) { Write-Host ("the card is {0} bytes; a drawn one is far bigger" -f $card.Length); exit 1 }
+          Write-Host ("card: {0} ({1} bytes)" -f $card.Name, $card.Length)
+          Copy-Item $card.FullName C:\OmniDx\ci-card.png -Force
+          # The report of this run, as it opened on the build machine, for the site: a buyer can see the real thing before paying.
+          # Its card image is renamed to the one the site commits next to it.
+          Set-Content C:\OmniDx\ci-report.html -Value ((Get-Content $html.FullName -Raw) -replace 'card-[0-9_\-]+\.png', 'ci-card.png') -Encoding UTF8 -NoNewline
+          # Its "What was done" must be a list of headings and lines, not one blob: 1.42.0 drew every line into a single heading and nothing caught it.
+          if ((Get-Content $html.FullName -Raw) -notmatch '<h2>Undervolt, not overclock, and a frame cap</h2>') { Write-Host 'the HTML report has no undervolt section'; exit 1 }
+          $h4 = ([regex]::Matches((Get-Content $html.FullName -Raw), '<h4>')).Count
+          if ($h4 -lt 8) { Write-Host ("the HTML report's What was done has {0} headings; expected one per phase" -f $h4); exit 1 }
+          if (-not (Test-Path C:\OmniDx\undo\changes-latest.json)) { Write-Host 'no change record'; exit 1 }
+          if (-not (Test-Path C:\OmniDx\README.txt)) { Write-Host 'no README.txt'; exit 1 }
+          $summary = Get-ChildItem C:\OmniDx -Filter 'summary-*.json' | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          Copy-Item $summary.FullName C:\OmniDx\ci-summary.json
+          # Fewer changes than the last published run by more than a handful means something stopped being done, not that the PC got cleaner.
+          $now = Get-Content C:\OmniDx\ci-summary.json | ConvertFrom-Json
+          $last = $null; try { $last = Get-Content studio\assets\ci-run.json -Raw | ConvertFrom-Json } catch { }
+          # A setting the run found already at or past the tune's target is left alone, and the log says so on its own line;
+          # those lines count as done, so a rule that now leaves something alone (1.42.0: a disabled service stays disabled) does not read as a regression.
+          $leftAlone = ([regex]::Matches($out, 'already (disabled; left that way|capped at)')).Count
+          Set-Content C:\OmniDx\ci-left-alone.txt $leftAlone
+          if ($last -and $last.changes -and (($now.changes + $leftAlone) -lt ($last.changes - 6))) { Write-Host ("this run recorded {0} changes and left {1} alone on purpose, the last published run recorded {2}: something is no longer being done; compare the logs" -f $now.changes, $leftAlone, $last.changes); exit 1 }
+          # The run, word for word, for the site: the phase headers, what was done, the numbers.
+          $log = @($out -split "`r?`n" | Where-Object { $_ -match '^(== |  \+ |  ! |  Processes|  Before:|  After:|  Gone:|  Target|  Looked|  Read in|  Removing|  Key accepted|  \(debloat|  \([0-9]+ (pieces|features?)|  Where the time|  Outside the|  [0-9]+ )' -and $_ -notmatch 'Under 100' } | Select-Object -First 200)
+          Set-Content studio\assets\ci-log.txt -Value $log -Encoding UTF8
+          Write-Host ("{0} log lines kept for the site" -f $log.Count)
+          Get-Content C:\OmniDx\ci-summary.json
+          exit 0
+
+      # The plan's battery half: a build machine never runs on battery, but the values are in the plan all the same.
+      - name: The OmniDx plan backs off on battery and stays at full speed plugged in
+        run: |
+          $plan = ((& powercfg /list) | Select-String '\(OmniDx\)' | ForEach-Object { if ($_ -match '([0-9a-f\-]{36})') { $Matches[1] } } | Select-Object -First 1)
+          if (-not $plan) { Write-Host 'no OmniDx plan'; exit 1 }
+          $proc = '54533251-82be-4824-96c1-47b60b740d00'
+          function Idx($setting) {
+            $q = (& powercfg /q $plan $proc $setting) -join "`n"
+            $ac = if ($q -match '(?m)AC Power Setting Index:\s*0x([0-9a-f]+)') { [Convert]::ToInt32($Matches[1], 16) } else { -1 }
+            $dcv = if ($q -match '(?m)DC Power Setting Index:\s*0x([0-9a-f]+)') { [Convert]::ToInt32($Matches[1], 16) } else { -1 }
+            return @($ac, $dcv)
+          }
+          $min = Idx '893dee8e-2bef-41e0-89c6-b55d0929964c'; $epp = Idx '36687f9e-e3a5-4dbf-b1dc-15eb381c6863'; $boost = Idx 'be337238-0d82-4146-a960-4f3749d470c7'
+          Write-Host ("CPU minimum: plugged in {0}%, on battery {1}%" -f $min[0], $min[1])
+          Write-Host ("energy preference: plugged in {0}, on battery {1}" -f $epp[0], $epp[1])
+          Write-Host ("boost mode: plugged in {0}, on battery {1}" -f $boost[0], $boost[1])
+          if ($min[0] -ne 100 -or $min[1] -ne 5) { Write-Host 'the CPU minimum is not 100 plugged in and 5 on battery'; exit 1 }
+          if ($epp[1] -ne -1 -and ($epp[0] -ne 0 -or $epp[1] -ne 50)) { Write-Host 'the energy preference is not performance plugged in and the middle on battery'; exit 1 }
+          if ($boost[1] -ne -1 -and ($boost[0] -ne 2 -or $boost[1] -ne 3)) { Write-Host 'boost is not aggressive plugged in and efficient on battery'; exit 1 }
+          Write-Host 'full speed plugged in, a battery plan on battery'
+          exit 0
+
+      - name: An app kept at startup keeps its own start-with-Windows setting; one that is not gets it switched off
+        run: |
+          $ds = Get-Content (Join-Path $env:APPDATA 'discord\settings.json') -Raw; Write-Host $ds
+          $d = $ds | ConvertFrom-Json
+          if ($d.OPEN_ON_STARTUP -ne $true) { Write-Host 'Discord was kept at startup, but its own open-at-startup setting was changed'; exit 1 }
+          if ($d.enableHardwareAcceleration -ne $true) { Write-Host 'Discord: hardware acceleration was not set'; exit 1 }
+          $sp = Get-Content (Join-Path $env:APPDATA 'Spotify\prefs') -Raw; Write-Host $sp
+          if ($sp -notmatch 'app\.autostart-mode="off"' -or $sp -notmatch 'ui\.hardware_acceleration=true') { Write-Host 'Spotify was not kept, yet its auto-start was not switched off'; exit 1 }
+          if ((Get-Content studio\assets\ci-log.txt -Raw) -notmatch 'Discord: hardware acceleration on; it still starts with Windows, as you chose') { Write-Host 'the log does not say Discord was left starting with Windows'; exit 1 }
+          Write-Host 'Discord kept: its own setting left on. Spotify not kept: its auto-start off.'
+          exit 0
+
+      - name: The games' own settings files were written, backed up, and left alone where they should be
+        run: |
+          $list = @(Get-Content C:\OmniDx-ci\fixtures\list.txt)
+          $b = [IO.File]::ReadAllBytes($list[0]); if ($b[0] -ne 0xFF -or $b[1] -ne 0xFE) { Write-Host 'the Fortnite file lost its UTF-16 mark'; exit 1 }
+          $fn = [IO.File]::ReadAllText($list[0], [Text.Encoding]::Unicode)
+          Write-Host $fn
+          if ($fn -notmatch '(?m)^bUseVSync=False\r?$' -or $fn -notmatch '(?m)^sg\.ShadowQuality=0\r?$' -or $fn -notmatch '(?m)^FrameRateLimit=60\.000000\r?$') { Write-Host 'Fortnite: not written as expected'; exit 1 }
+          $ap = Get-Content $list[1] -Raw; Write-Host $ap
+          if ($ap -notmatch '"setting\.csm_enabled"\t\t"0"') { Write-Host 'Apex: sun shadows not written'; exit 1 }
+          if ($ap -notmatch '"setting\.dvs_enable"\t\t"auto"') { Write-Host 'Apex: a value of the wrong shape was changed'; exit 1 }
+          $mc = Get-Content $list[2] -Raw; Write-Host $mc
+          if ($mc -notmatch '(?m)^enableVsync:false') { Write-Host 'Minecraft: V-Sync not written'; exit 1 }
+          if ($mc -match 'entityShadows') { Write-Host 'Minecraft: a setting the file did not have was added'; exit 1 }
+          $rl = Get-Content $list[3] -Raw; Write-Host $rl
+          if ($rl -notmatch '(?m)^UseVsync=False' -or $rl -notmatch '(?m)^DepthOfField=False') { Write-Host 'Rocket League: not written'; exit 1 }
+          if ($rl -notmatch '(?m)^Bloom=True') { Write-Host 'Rocket League: a setting the tune does not list was changed'; exit 1 }
+          $bk = @(Get-ChildItem C:\OmniDx\backup -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $_.Directory.Name -eq 'games' })
+          if ($bk.Count -ne 4) { Write-Host ("expected four game file backups, found {0}" -f $bk.Count); exit 1 }
+          $rec = @(Get-Content C:\OmniDx\undo\changes-latest.json -Raw | ConvertFrom-Json | ForEach-Object { $_ } | Where-Object { $_.type -eq 'gamefile' })
+          if ($rec.Count -ne 12) { Write-Host ("expected twelve game settings recorded, found {0}" -f $rec.Count); exit 1 }
+          Write-Host 'four files, twelve settings, four backups; the wrong-shaped value, the missing setting and the unlisted one left alone'
+          exit 0
+
+      # The support zip: on the desktop, with the logs in it and no key in them.
+      - name: The support bundle zips the logs with the key masked
+        run: |
+          $out = & .\tune\omnidx.ps1 -SupportBundle *>&1 | Out-String -Width 4000
+          & .\tools\ci-red.ps1 -Text $out -Step 'The support bundle zips the logs with the key masked'
+          Write-Host $out
+          if ($out -notmatch 'files zipped to (.+\.zip)') { Write-Host 'no zip was written'; exit 1 }
+          $zip = $Matches[1].Trim()
+          if (-not (Test-Path $zip)) { Write-Host "zip missing: $zip"; exit 1 }
+          Expand-Archive $zip -DestinationPath C:\OmniDx\bundle-check -Force
+          $names = @(Get-ChildItem C:\OmniDx\bundle-check | ForEach-Object { $_.Name })
+          Write-Host ("bundle: " + ($names -join ', '))
+          if (-not ($names -like 'log-*.txt') -or -not ($names -like 'summary-*.json') -or -not ($names -like 'changes-*.json')) { Write-Host 'the bundle is missing a log, a summary or a change record'; exit 1 }
+          $key = (Get-ItemProperty 'HKLM:\SOFTWARE\OmniDx\Tune').Key
+          foreach ($f in Get-ChildItem C:\OmniDx\bundle-check -File) { if ((Get-Content $f.FullName -Raw) -match [regex]::Escape($key)) { Write-Host ("the key is in the bundle: {0}" -f $f.Name); exit 1 } }
+          Write-Host 'bundle written, key masked'
+          exit 0
+
+      # Everything the run recorded must still be in place, and the keep task
+      # must be registered (the run answered yes to it).
+      - name: Status says everything is still in place
+        run: |
+          $out = & .\tune\omnidx.ps1 -Status *>&1 | Out-String -Width 4000
+          & .\tools\ci-red.ps1 -Text $out -Step 'Status says everything is still in place'
+          Write-Host $out
+          if ($out -notmatch 'Settings checked: (\d+)\. All still in place') { Write-Host 'status did not say everything is in place'; exit 1 }
+          if ([int]$Matches[1] -lt 50) { Write-Host ("status checked only {0} settings" -f $Matches[1]); exit 1 }
+          if ($out -notmatch 'Keep task: on') { Write-Host 'the keep task was not registered'; exit 1 }
+          exit 0
+
+      # What a Windows update does, done by hand: a service back to automatic,
+      # a task enabled, a value reset. keep.ps1 -Check must see all three;
+      # keep.ps1 must put them back; status must then be clean again.
+      - name: The keep task puts back what an update turns on
+        timeout-minutes: 10
+        run: |
+          $changes = @(Get-Content C:\OmniDx\undo\changes-latest.json -Raw | ConvertFrom-Json | ForEach-Object { $_ })
+          $svc = @($changes | Where-Object { $_.type -eq 'service' -and $_.now -ne 'Automatic' } | Select-Object -First 1)[0]
+          $task = @($changes | Where-Object { $_.type -eq 'task' } | Select-Object -First 1)[0]
+          # Any HKLM DWord the keep task would check (the build image may already have a telemetry policy, so no one value is certain to be in the record).
+          $yours = 'Control Panel|StartupApproved|CurrentVersion\\Run|Explorer\\Advanced|GameBar|GameConfigStore|GameDVR|Accessibility|UserGpuPreferences|VisualEffects|Explorer\\Serialize|Personalization'
+          $reg = @($changes | Where-Object { $_.type -eq 'reg' -and -not $_.removed -and $_.path -like 'HKLM:*' -and $_.kind -eq 'DWord' -and $_.path -notmatch $yours } | Select-Object -First 1)[0]
+          if (-not $svc) { Write-Host 'the record has no service set to manual or disabled'; exit 1 }
+          if (-not $task) { Write-Host 'the record has no disabled task'; exit 1 }
+          if (-not $reg) { Write-Host 'the record has no HKLM DWord the keep task would check'; exit 1 }
+          & sc.exe config $svc.name start= auto | Out-Null
+          Enable-ScheduledTask -TaskPath $task.path -TaskName $task.name | Out-Null
+          Set-ItemProperty -Path $reg.path -Name $reg.name -Value ([int]$reg.value + 1)
+          Write-Host ("undid by hand: service {0}, task {1}, value {2}\{3}" -f $svc.name, $task.name, $reg.path, $reg.name)
+          $out = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\OmniDx\undo\keep.ps1 -Check *>&1 | Out-String -Width 4000
+          Write-Host $out
+          if ($out -notmatch 'checked \d+, (\d+) had drifted \(check only\)') { Write-Host 'keep -Check did not report'; exit 1 }
+          if ([int]$Matches[1] -lt 3) { Write-Host ("keep -Check saw {0} drifted, expected 3" -f $Matches[1]); exit 1 }
+          $out = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\OmniDx\undo\keep.ps1 *>&1 | Out-String -Width 4000
+          Write-Host $out
+          if ($out -notmatch '(\d+) had drifted, (\d+) put back') { Write-Host 'keep did not put anything back'; exit 1 }
+          if ([int]$Matches[2] -lt 3) { Write-Host ("keep put back {0}, expected 3" -f $Matches[2]); exit 1 }
+          Set-Content C:\OmniDx\ci-kept.txt $Matches[2]
+          if (-not (Test-Path C:\OmniDx\keep-log.txt)) { Write-Host 'no keep log'; exit 1 }
+          # keep.ps1 writes the after-restart card with this start's count; a run without one lost the feature.
+          $kc = Get-Item C:\OmniDx\card-after-restart.png -ErrorAction SilentlyContinue
+          if (-not $kc) { Write-Host 'keep.ps1 wrote no card-after-restart.png'; exit 1 }
+          if ($kc.Length -lt 20000) { Write-Host ("the after-restart card is {0} bytes" -f $kc.Length); exit 1 }
+          Write-Host ("after-restart card: {0} bytes" -f $kc.Length)
+          Get-Content C:\OmniDx\keep-log.txt
+          $out = & .\tune\omnidx.ps1 -Status *>&1 | Out-String -Width 4000
+          & .\tools\ci-red.ps1 -Text $out -Step 'The keep task puts back what an update turns on'
+          if ($out -notmatch 'All still in place') { Write-Host "status is not clean after keep:`n$out"; exit 1 }
+          Write-Host 'keep: three things turned back on, three put back, status clean'
+          exit 0
+
+      # The sign-in tasks start PowerShell with no window on Windows 11 (the console
+      # host, headless): an empty window three minutes after every sign-in took the
+      # focus from whatever was open. The keep task is started through Task
+      # Scheduler, as a sign-in starts it, and must run to the end and log.
+      - name: The sign-in tasks run with no window
+        timeout-minutes: 8
+        run: |
+          $headless = [Environment]::OSVersion.Version.Build -ge 22000
+          foreach ($n in 'OmniDx keep', 'OmniDx after-restart count') {
+            $t = Get-ScheduledTask -TaskName $n -ErrorAction SilentlyContinue
+            if (-not $t) { Write-Host "$n not registered (fine for the after-restart count when the run skipped it)"; continue }
+            $a = $t.Actions[0]
+            Write-Host ("{0}: {1} {2}" -f $n, $a.Execute, $a.Arguments)
+            if ($headless -and $a.Execute -ne 'conhost.exe') { Write-Host "$n still opens a console window"; exit 1 }
+            if ($a.Arguments -notmatch '-File "[^"]+\.ps1"') { Write-Host "$n does not run a script file"; exit 1 }
+          }
+          $t = Get-ScheduledTask -TaskName 'OmniDx keep'
+          $before = (Get-Item C:\OmniDx\keep-log.txt).LastWriteTime
+          # Task Scheduler keeps the last run to the whole second: the mark is a second early so a run in this second counts.
+          $start = (Get-Date).AddSeconds(-1)
+          Start-ScheduledTask -InputObject $t
+          $end = (Get-Date).AddMinutes(5)
+          do { Start-Sleep -Seconds 3; $i = Get-ScheduledTaskInfo -InputObject $t; $s = (Get-ScheduledTask -TaskName 'OmniDx keep').State } while ((Get-Date) -lt $end -and ($s -eq 'Running' -or $i.LastRunTime -lt $start))
+          Write-Host ("keep task: state {0}, last run {1}, result {2}" -f $s, $i.LastRunTime, $i.LastTaskResult)
+          if ($i.LastRunTime -lt $start) { Write-Host 'the keep task did not start'; exit 1 }
+          if ($i.LastTaskResult -ne 0) { Write-Host ("the keep task ended with {0}" -f $i.LastTaskResult); exit 1 }
+          if ((Get-Item C:\OmniDx\keep-log.txt).LastWriteTime -le $before) { Write-Host 'the keep task ran but wrote nothing to its log'; exit 1 }
+          Get-Content C:\OmniDx\keep-log.txt -Tail 3
+          # The after-restart count's own command (the runs here skip its task), taken from the script as it builds it,
+          # without its two-minute wait, its wait for the boot time or removing its task: it must write the count line
+          # and the grouped list of processes.
+          $ast = [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path .\tune\omnidx.ps1), [ref]$null, [ref]$null)
+          $fn = $ast.Find({ param($x) $x -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $x.Name -eq 'Register-AfterCount' }, $true)
+          $as = $fn.Find({ param($x) $x -is [System.Management.Automation.Language.AssignmentStatementAst] -and $x.Left.Extent.Text -eq '$cmd' }, $true)
+          $script:Root = 'C:\OmniDx'; $out = 'C:\OmniDx\after-restart.txt'; $list = 'C:\OmniDx\processes-after-restart.txt'; $name = 'OmniDx after-restart count'
+          Invoke-Expression $as.Extent.Text
+          $ac = $cmd.Replace('Start-Sleep -Seconds 120; ', '').Replace('-lt 7 -and', '-lt 1 -and') -replace 'Unregister-ScheduledTask .*$', ''
+          & ([scriptblock]::Create($ac))
+          $rows = @(Get-Content C:\OmniDx\processes-after-restart.txt -ErrorAction SilentlyContinue)
+          Write-Host ("after-restart count: {0}" -f (Get-Content C:\OmniDx\after-restart.txt -Tail 1))
+          Write-Host ("processes-after-restart.txt: {0} groups, first: {1}" -f $rows.Count, $(if ($rows.Count) { $rows[0] }))
+          if ($rows.Count -lt 10 -or $rows[0] -notmatch '^\S+\s+x\d+\s+[\d,]+ MB$') { Write-Host 'the after-restart count did not write its process list'; exit 1 }
+          Write-Host 'sign-in tasks: headless where Windows allows, the keep task ran to the end from Task Scheduler, the after-restart count writes its list'
+          exit 0
+
+      # Run it again on the same PC with the same key: accepted, and with
+      # nearly nothing new to record, because it was already done. That is
+      # the "run it again after an update, free" promise. Undo then walks
+      # back both runs, newest first.
+      - name: A second run is accepted and records nearly nothing new
+        timeout-minutes: 15
+        run: |
+          # A startup entry the first run switched off, turned back on by hand (as Task Manager would): the second run must leave it on.
+          $rec = @(Get-Content C:\OmniDx\undo\changes-latest.json -Raw | ConvertFrom-Json | ForEach-Object { $_ })
+          $entry = @($rec | Where-Object { $_.type -eq 'reg' -and $_.path -like '*StartupApproved\Run*' -and $_.kind -eq 'Binary' } | Select-Object -First 1)[0]
+          if (-not $entry) { Write-Host 'the first run cut no Run startup entry to test with'; exit 1 }
+          Set-ItemProperty -Path $entry.path -Name $entry.name -Value ([byte[]](2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+          Write-Host ("turned back on by hand: {0}" -f $entry.name)
+          # No -Key: the PC remembers it. -NoKeep: a "no" must also take down the task the first run left.
+          $out = & .\tune\omnidx.ps1 -Api http://127.0.0.1:8787 -Yes -NoRestart -NoAfterCount -NoKeep *>&1 | Out-String -Width 4000
+          & .\tools\ci-red.ps1 -Text $out -Step 'A second run is accepted and records nearly nothing new'
+          Write-Host $out
+          if ($out -notmatch '== Done') { Write-Host 'the second run did not reach Done'; exit 1 }
+          if ($out -notmatch 'you turned it back on after the last run: stays on') { Write-Host 'the second run did not notice the entry turned back on'; exit 1 }
+          $now = (Get-ItemProperty -Path $entry.path -Name $entry.name).($entry.name)
+          if ($now[0] -ne 2) { Write-Host ("the second run cut {0} again; a decision made by hand must stand" -f $entry.name); exit 1 }
+          if ($out -notmatch 'Using the key already bound') { Write-Host 'the second run did not reuse the bound key'; exit 1 }
+          if ($out -notmatch 'Key accepted') { Write-Host 'the same key on the same PC was not accepted'; exit 1 }
+          if ($out -notmatch 'Keep task from an earlier run removed') { Write-Host '-NoKeep did not remove the keep task the first run left'; exit 1 }
+          if (Get-ScheduledTask -TaskName 'OmniDx keep' -ErrorAction SilentlyContinue) { Write-Host 'the keep task is still registered after -NoKeep'; exit 1 }
+          $summary = Get-ChildItem C:\OmniDx -Filter 'summary-*.json' | Sort-Object Name -Descending | Select-Object -First 1
+          $s = Get-Content $summary.FullName | ConvertFrom-Json
+          Write-Host ("second run recorded {0} changes" -f $s.changes)
+          if ($s.changes -gt 20) { Write-Host 'a second run should find nearly everything already done'; exit 1 }
+          $records = @(Get-ChildItem C:\OmniDx\undo -Filter 'changes-20*.json')
+          if ($records.Count -ne 2) { Write-Host ("expected two records, found {0}" -f $records.Count); exit 1 }
+          Set-Content C:\OmniDx\ci-second.txt ("{0} {1}" -f $s.changes, $s.seconds)
+          # The second run's phases too, so its half minute can be read the way the first run's is.
+          Set-Content C:\OmniDx\ci-second-phases.json ($s.phases | ConvertTo-Json -Compress)
+          if ($s.steps) { Set-Content C:\OmniDx\ci-second-steps.json ($s.steps | ConvertTo-Json -Compress) }
+          exit 0
+
+      # Extreme, on top: it must ask nothing under -Yes, record its extra changes,
+      # and leave status clean. Undo then walks back all three runs.
+      - name: A third run, Extreme, records its extras and leaves status clean
+        timeout-minutes: 15
+        run: |
+          $out = & .\tune\omnidx.ps1 -Api http://127.0.0.1:8787 -Extreme -Yes -NoRestart -NoAfterCount -NoKeep *>&1 | Out-String -Width 4000
+          & .\tools\ci-red.ps1 -Text $out -Step 'A third run, Extreme, records its extras and leaves status clean'
+          Write-Host $out
+          if ($out -notmatch '== Extreme') { Write-Host 'the Extreme phase did not run'; exit 1 }
+          if ($out -notmatch 'Extreme applied') { Write-Host 'Extreme did not finish'; exit 1 }
+          if ($out -notmatch '== Done') { Write-Host 'the third run did not reach Done'; exit 1 }
+          $summary = Get-ChildItem C:\OmniDx -Filter 'summary-*.json' | Sort-Object Name -Descending | Select-Object -First 1
+          $s = Get-Content $summary.FullName | ConvertFrom-Json
+          Write-Host ("extreme run recorded {0} changes" -f $s.changes)
+          # Judged against the last published Extreme count, like the main run's gate: the build image already has three of
+          # Extreme's services disabled (left alone since 1.42.0), so a fixed twenty sat one change from a false failure.
+          $lastRec = $null; try { $lastRec = Get-Content studio\assets\ci-run.json -Raw | ConvertFrom-Json } catch { }
+          $floor = 12; if ($lastRec -and [int]$lastRec.extreme -gt 0) { $floor = [math]::Max(12, [int]$lastRec.extreme - 6) }
+          if ($s.changes -lt $floor) { Write-Host ("Extreme recorded {0} changes; the last published run recorded {1}: too little to have done its work" -f $s.changes, $(if ($lastRec) { $lastRec.extreme } else { 'none' })); exit 1 }
+          if (-not $s.extreme) { Write-Host 'the summary does not say it was extreme'; exit 1 }
+          Set-Content C:\OmniDx\ci-extreme.txt $s.changes
+          $st = & .\tune\omnidx.ps1 -Status *>&1 | Out-String -Width 4000
+          if ($st -notmatch 'All still in place') { Write-Host "status is not clean after Extreme:`n$st"; exit 1 }
+          if ((Get-ChildItem C:\OmniDx\undo -Filter 'changes-20*.json').Count -ne 3) { Write-Host 'expected three records'; exit 1 }
+          exit 0
+
+      # Dropping Extreme without dropping the tune: only the newest run goes
+      # back, the two earlier records stay, status is clean, and the record
+      # that went back is in done.
+      - name: Undo the last run only puts Extreme back and leaves the tune
+        timeout-minutes: 15
+        run: |
+          $out = & .\tune\omnidx.ps1 -UndoLast *>&1 | Out-String -Width 4000
+          & .\tools\ci-red.ps1 -Text $out -Step 'Undo the last run only puts Extreme back and leaves the tune'
+          Write-Host $out
+          if (([regex]::Matches($out, 'Putting back \d+ changes?')).Count -ne 1) { Write-Host 'undo-last should walk back exactly one run'; exit 1 }
+          foreach ($bad in 'tcp settings restored', 'power plan restored') { if ($out -match $bad) { Write-Host "undo-last touched the standard tune ($bad): that phase records itself again on every run"; exit 1 } }
+          if ($out -notmatch 'Done: (\d+) put back') { Write-Host 'undo-last did not finish'; exit 1 }
+          $n = [int]$Matches[1]
+          $ex = [int](Get-Content C:\OmniDx\ci-extreme.txt)
+          if ($n -lt [math]::Floor($ex * 0.7)) { Write-Host ("undo-last put back {0} of the Extreme run's {1} changes" -f $n, $ex); exit 1 }
+          if ((Get-ChildItem C:\OmniDx\undo -Filter 'changes-20*.json').Count -ne 2) { Write-Host 'expected two records left in place'; exit 1 }
+          if ((Get-ChildItem C:\OmniDx\undo\done -Filter 'changes-20*.json').Count -ne 1) { Write-Host 'the undone record should be in done'; exit 1 }
+          if (-not (Test-Path C:\OmniDx\undo\changes-latest.json)) { Write-Host 'changes-latest.json should follow the newest remaining run'; exit 1 }
+          $st = & .\tune\omnidx.ps1 -Status *>&1 | Out-String -Width 4000
+          Write-Host $st
+          if ($st -notmatch 'All still in place') { Write-Host "status is not clean after undoing Extreme:`n$st"; exit 1 }
+          if ($st -notmatch 'Runs in place: 2 \(1 undone earlier') { Write-Host 'status should show two runs in place and one undone'; exit 1 }
+          exit 0
+
+      - name: Undo the whole tune
+        timeout-minutes: 30
+        run: |
+          $out = & .\tune\omnidx.ps1 -Undo *>&1 | Out-String -Width 4000
+          & .\tools\ci-red.ps1 -Text $out -Step 'Undo the whole tune'
+          Write-Host $out
+          if ($out -notmatch 'Done: (\d+) put back') { Write-Host 'undo did not finish'; exit 1 }
+          # Read the group now: any later -match or -notmatch, even one that only tests, overwrites $Matches.
+          $undone = [int]$Matches[1]
+          if (Test-Path C:\OmniDx\undo\changes-latest.json) { Write-Host 'undo left changes-latest.json behind'; exit 1 }
+          if (-not (Get-ChildItem C:\OmniDx\undo\done -Filter 'changes-*.json')) { Write-Host 'undo did not move the record to done'; exit 1 }
+          if (Get-ScheduledTask -TaskName 'OmniDx keep' -ErrorAction SilentlyContinue) { Write-Host 'the keep task is still registered after undo'; exit 1 }
+          $s = Get-Content C:\OmniDx\ci-summary.json | ConvertFrom-Json
+          if ($undone -lt [math]::Floor($s.changes * 0.7)) { Write-Host ("undo put back {0} of {1} changes; that is a broken undo" -f $undone, $s.changes); exit 1 }
+          $kept = 0; if (Test-Path C:\OmniDx\ci-kept.txt) { $kept = [int](Get-Content C:\OmniDx\ci-kept.txt) }
+          $second = -1; $secondSeconds = -1
+          if (Test-Path C:\OmniDx\ci-second.txt) { $sp = "$(Get-Content C:\OmniDx\ci-second.txt)".Trim() -split ' '; $second = [int]$sp[0]; if ($sp.Count -ge 2) { $secondSeconds = [int]$sp[1] } }
+          $extreme = -1; if (Test-Path C:\OmniDx\ci-extreme.txt) { $extreme = [int](Get-Content C:\OmniDx\ci-extreme.txt) }
+          $leftAlone = 0; if (Test-Path C:\OmniDx\ci-left-alone.txt) { $leftAlone = [int](Get-Content C:\OmniDx\ci-left-alone.txt) }
+          $look = -1; $read = -1; $lookTotal = -1; $lookParts = $null; $readParts = ''
+          if (Test-Path C:\OmniDx\ci-look.txt) { $lk = (Get-Content C:\OmniDx\ci-look.txt) -split ' '; if ($lk.Count -ge 3) { $look = [double]$lk[0]; $read = [double]$lk[1]; $lookTotal = [double]$lk[2] }; if ($lk.Count -ge 8) { $lookParts = [ordered]@{ startup = [double]$lk[3]; services = [double]$lk[4]; tasks = [double]$lk[5]; apps = [double]$lk[6]; pieces = [double]$lk[7] } } }
+          if (Test-Path C:\OmniDx\ci-read.txt) { $readParts = "$(Get-Content C:\OmniDx\ci-read.txt)".Trim() }
+          $secondPhases = $null; if (Test-Path C:\OmniDx\ci-second-phases.json) { try { $secondPhases = Get-Content C:\OmniDx\ci-second-phases.json -Raw | ConvertFrom-Json } catch { $secondPhases = $null } }
+          $secondSteps = $null; if (Test-Path C:\OmniDx\ci-second-steps.json) { try { $secondSteps = Get-Content C:\OmniDx\ci-second-steps.json -Raw | ConvertFrom-Json } catch { $secondSteps = $null } }
+          # Two runs are left after the undo-last step above; the third is already in done.
+          if (([regex]::Matches($out, 'Putting back \d+ changes?')).Count -ne 2) { Write-Host 'undo should have walked back the two remaining runs'; exit 1 }
+          $ci = [ordered]@{ version = $s.version; when = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'); os = $s.os; cpu = $s.cpu; before = $s.before; after = $s.after; target = $s.target; changes = $s.changes; warnings = $s.warnings; seconds = $s.seconds; undone = $undone; kept = $kept; second = $second; secondSeconds = $secondSeconds; extreme = $extreme; leftAlone = $leftAlone; runs = 3; gone = @($s.gone).Count; phases = $s.phases; sha = $env:GITHUB_SHA.Substring(0, 7); look = $look; read = $read; lookTotal = $lookTotal; lookParts = $lookParts; readParts = $readParts; secondPhases = $secondPhases; steps = $s.steps; secondSteps = $secondSteps }
+          $out = & .\tune\omnidx.ps1 -Status *>&1 | Out-String -Width 4000
+          & .\tools\ci-red.ps1 -Text $out -Step 'Status after undo'
+          Write-Host $out
+          if ($out -notmatch 'Runs in place: none \(3 undone\)') { Write-Host 'status after undo should say no runs, three undone'; exit 1 }
+          $out = & .\tune\omnidx.ps1 -Undo *>&1 | Out-String -Width 4000
+          & .\tools\ci-red.ps1 -Text $out -Step 'Undo with nothing left'
+          if ($out -notmatch 'already been put back') { Write-Host "a second undo should say there is nothing left:`n$out"; exit 1 }
+          # The red error text a buyer would see, across every run of the script above, counted with context,
+          # into the record the site and the repository keep, and into this run's Summary tab.
+          $last = $null; try { $last = Get-Content studio\assets\ci-run.json -Raw | ConvertFrom-Json } catch { }
+          $rl = @(); if (Test-Path C:\OmniDx\ci-red-lines.txt) { $rl = @(Get-Content C:\OmniDx\ci-red-lines.txt) }
+          $ci.red = $rl.Count; $ci.redLines = @($rl | Select-Object -First 30)
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ("## Red error text across every run of the script: {0}" -f $rl.Count)
+          if ($rl.Count) { Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ('```'); Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ($rl | Select-Object -First 40); Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ('```') }
+          # More red text than the last published run is a regression in what a buyer sees; the lines above say where.
+          if ($last -and ($null -ne $last.red) -and ($rl.Count -gt [int]$last.red)) { Write-Host ("red error text rose from {0} to {1}:" -f $last.red, $rl.Count); $rl | ForEach-Object { Write-Host ("  " + $_) }; exit 1 }
+          $ci | ConvertTo-Json | Set-Content studio\assets\ci-run.json -Encoding UTF8
+          Get-Content studio\assets\ci-run.json
+          exit 0
+
+      - name: After the undo, the games' and apps' settings files are back byte for byte
+        run: |
+          $list = @(Get-Content C:\OmniDx-ci\fixtures\list.txt)
+          for ($i = 0; $i -lt $list.Count; $i++) {
+            $now = (Get-FileHash $list[$i] -Algorithm SHA256).Hash
+            $was = (Get-FileHash (Join-Path 'C:\OmniDx-ci\fixtures' ("{0}.orig" -f ($i + 1))) -Algorithm SHA256).Hash
+            if ($now -ne $was) { Write-Host ("{0} is not back as it was" -f $list[$i]); Get-Content $list[$i]; exit 1 }
+          }
+          Write-Host 'all six planted files (four games, Discord, Spotify) are byte for byte as planted'
+          exit 0
+
+      - name: The key check refuses a bad key
+        run: |
+          $out = & .\tune\omnidx.ps1 -Key 'TUNE-AAAA-BBBB-CCCC-DDDD' -CheckKey *>&1 | Out-String -Width 4000
+          & .\tools\ci-red.ps1 -Text $out -Step 'The key check refuses a bad key'
+          Write-Host $out
+          if ($out -notmatch 'not an OmniDx key') { Write-Host 'a bad key was not refused'; exit 1 }
+          exit 0
+
+      # The four implementations of the checksum must agree. The Python tool
+      # (already checked against the browser module) makes keys; the script
+      # must accept every one and refuse every one with a digit changed.
+      - name: The key check accepts keys the Python tool makes
+        run: |
+          foreach ($product in 'tune', 'squad') {
+            foreach ($i in 1..3) {
+              $key = (& python tools\make-tune-key.py --product $product | Select-Object -First 1).Trim()
+              $out = & .\tune\omnidx.ps1 -Key $key -CheckKey *>&1 | Out-String -Width 4000
+              & .\tools\ci-red.ps1 -Text $out -Step 'The key check accepts keys the Python tool makes'
+              if ($out -notmatch 'Valid:') { Write-Host "refused a good key: $key`n$out"; exit 1 }
+              $bad = $key.Substring(0, $key.Length - 1) + $(if ($key[-1] -eq 'A') { 'B' } else { 'A' })
+              $out = & .\tune\omnidx.ps1 -Key $bad -CheckKey *>&1 | Out-String -Width 4000
+              & .\tools\ci-red.ps1 -Text $out -Step 'The key check accepts keys the Python tool makes'
+              if ($out -notmatch 'not an OmniDx key') { Write-Host "accepted a corrupted key: $bad`n$out"; exit 1 }
+              Write-Host "$key accepted; $bad refused"
+            }
+          }
+          exit 0
+
+      # The screenshot goes into the repository as the site's picture of the
+      # app, and the script this run tested goes in as tune/verified.ps1 with
+      # its hash in tune/verified.json: that is the copy go.ps1 fetches, so a
+      # change that fails this check never reaches anyone. A push made with
+      # the workflow token starts no workflow, so Pages is asked to publish.
+      - name: Commit the screenshot, the run's numbers and the verified script to the branch
+        # On a push, and on the button: a manual run is how a stale verified copy is refreshed (two runs finishing out of order
+        # once left an older script as the verified one). A pull-request run never commits.
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          # These files belong to the check, and the newest run wins: the branch
+          # is refreshed to its current tip first, then this run's files go on
+          # top, so two overlapping runs never leave a rebase conflict behind.
+          $keep = Join-Path $env:TEMP 'omnidx-ci-out'
+          New-Item -ItemType Directory -Path $keep -Force | Out-Null
+          Copy-Item C:\OmniDx\app.png (Join-Path $keep 'app.png') -Force
+          Copy-Item studio\assets\ci-run.json (Join-Path $keep 'ci-run.json') -Force
+          Copy-Item studio\assets\ci-log.txt (Join-Path $keep 'ci-log.txt') -Force
+          if (Test-Path C:\OmniDx\ci-report.html) { Copy-Item C:\OmniDx\ci-report.html (Join-Path $keep 'ci-report.html') -Force }
+          if (Test-Path C:\OmniDx\ci-card.png) { Copy-Item C:\OmniDx\ci-card.png (Join-Path $keep 'ci-card.png') -Force }
+          # The tested script, LF-only and hashed as the bytes the site will serve.
+          $text = [IO.File]::ReadAllText((Resolve-Path 'tune\omnidx.ps1').Path) -replace "`r`n", "`n"
+          [IO.File]::WriteAllText((Join-Path $keep 'verified.ps1'), $text, [Text.Encoding]::ASCII)
+          $digest = (([Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::ASCII.GetBytes($text)) | ForEach-Object { $_.ToString('x2') }) -join '')
+          $s = Get-Content C:\OmniDx\ci-summary.json | ConvertFrom-Json
+          [IO.File]::WriteAllText((Join-Path $keep 'verified.json'), (([ordered]@{ version = $s.version; sha256 = $digest; sha = $env:GITHUB_SHA.Substring(0, 7); when = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd') } | ConvertTo-Json) -replace "`r`n", "`n") + "`n", [Text.Encoding]::ASCII)
+          Write-Host ("verified copy: v{0} sha256 {1}" -f $s.version, $digest.Substring(0, 12))
+          $rec = Get-Content (Join-Path $keep 'ci-run.json') -Raw | ConvertFrom-Json
+          git config user.name 'omnidx-ci'
+          git config user.email 'ci@omnidx.net'
+          foreach ($try in 1..3) {
+            git fetch -q origin $env:GITHUB_REF_NAME
+            git reset -q --hard "origin/$env:GITHUB_REF_NAME"
+            Copy-Item (Join-Path $keep 'app.png') studio\assets\app.png -Force
+            Copy-Item (Join-Path $keep 'ci-run.json') studio\assets\ci-run.json -Force
+            Copy-Item (Join-Path $keep 'ci-log.txt') studio\assets\ci-log.txt -Force
+            if (Test-Path (Join-Path $keep 'ci-report.html')) { Copy-Item (Join-Path $keep 'ci-report.html') studio\assets\ci-report.html -Force }
+            if (Test-Path (Join-Path $keep 'ci-card.png')) { Copy-Item (Join-Path $keep 'ci-card.png') studio\assets\ci-card.png -Force }
+            Copy-Item (Join-Path $keep 'verified.ps1') tune\verified.ps1 -Force
+            Copy-Item (Join-Path $keep 'verified.json') tune\verified.json -Force
+            # Every verified run, newest first, so the trust page shows a history and not one sample.
+            # ConvertFrom-Json hands the array back as one object in Windows PowerShell; @() around a variable keeps its rows, @() around the pipeline did not.
+            $hist = @(); try { $parsed = Get-Content studio\assets\ci-history.json -Raw | ConvertFrom-Json; $hist = @($parsed) } catch { $hist = @() }
+            $hist = @($hist | ForEach-Object { $_ } | Where-Object { $_ -and $_.version })
+            $row = [ordered]@{ version = $rec.version; when = $rec.when; sha = $rec.sha; before = $rec.before; after = $rec.after; changes = $rec.changes; seconds = $rec.seconds; look = $rec.look; read = $rec.read; red = $rec.red }
+            $hist = @($row) + @($hist | Where-Object { -not ($_.sha -eq $rec.sha -and $_.when -eq $rec.when) }) | Select-Object -First 30
+            [IO.File]::WriteAllText((Resolve-Path 'studio\assets').Path + '\ci-history.json', ((ConvertTo-Json -InputObject @($hist) -Depth 3) -replace "`r`n", "`n") + "`n", [Text.Encoding]::ASCII)
+            git add studio/assets/app.png studio/assets/ci-run.json studio/assets/ci-log.txt studio/assets/ci-history.json tune/verified.ps1 tune/verified.json
+            if (Test-Path studio\assets\ci-report.html) { git add studio/assets/ci-report.html }
+            if (Test-Path studio\assets\ci-card.png) { git add studio/assets/ci-card.png }
+            git diff --cached --quiet
+            if ($LASTEXITCODE -eq 0) { Write-Host 'nothing changed'; exit 0 }
+            git commit -q -m 'Windows check: the app window, the numbers, the log, and the script this run verified'
+            git push -q origin HEAD:$env:GITHUB_REF_NAME
+            if ($LASTEXITCODE -eq 0) {
+              Write-Host ("pushed on try {0}" -f $try)
+              try {
+                Invoke-RestMethod -Method Post -Uri "https://api.github.com/repos/$env:GITHUB_REPOSITORY/actions/workflows/pages.yml/dispatches" -Headers @{ Authorization = "Bearer $env:GITHUB_TOKEN"; Accept = 'application/vnd.github+json' } -ContentType 'application/json' -Body (@{ ref = $env:GITHUB_REF_NAME } | ConvertTo-Json) | Out-Null
+                Write-Host 'asked Pages to publish the verified copy'
+              } catch { Write-Host ("Pages was not asked to publish ({0}); the next ordinary push will" -f $_.Exception.Message) }
+              exit 0
+            }
+            Write-Host ("push refused on try {0}; the branch moved, trying again" -f $try)
+            Start-Sleep -Seconds 5
+          }
+          Write-Host 'could not push the run files after three tries'
+          exit 1

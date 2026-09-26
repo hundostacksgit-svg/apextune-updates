@@ -1,0 +1,15 @@
+{
+  "name": "omnidx-discord",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The OmniDx Discord bot: tickets, purchase verification and the FAQ, as a Cloudflare Worker.",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "setup": "node setup.mjs",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A video editor you buy once — OmniDx Studio</title>
+<meta name="description" content="Looking for a CapCut alternative or an editor with no subscription? OmniDx Studio runs in the browser and on your phone, is free with no watermark, and paid editions are one payment: Creator $19.99, Studio $39.99.">
+<meta name="theme-color" content="#04060d">
+<link rel="icon" href="../assets/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="../assets/icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<!-- Link previews. Every URL here must be absolute: the scrapers behind iMessage,
+     WhatsApp, Discord, Facebook and X do not resolve relative paths, and a
+     relative og:image is a card with no picture on it. Run
+     `python3 tools/set-domain.py --site-url <url>` to rewrite them all after a
+     rename or a domain change. -->
+<link rel="canonical" href="https://omnidx.net/studio/alternative/">
+<meta property="og:url" content="https://omnidx.net/studio/alternative/">
+<meta property="og:image" content="https://omnidx.net/studio/assets/og-card.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="OmniDx: the eagle mark and the OMNIDX wordmark in purple on black, and the line: one command, Windows cut down to what your games need.">
+<meta name="twitter:image" content="https://omnidx.net/studio/assets/og-card.jpg">
+<meta name="twitter:title" content="A video editor you buy once — OmniDx Studio">
+<meta name="twitter:description" content="Looking for a CapCut alternative or an editor with no subscription? OmniDx Studio runs in the browser and on your phone, is free with no watermark, and paid editions are one payment: Creator $19.99, Studio $39.99.">
+<meta property="og:site_name" content="OmniDx Studio">
+<meta property="og:title" content="A video editor you buy once — OmniDx Studio">
+<meta property="og:description" content="Looking for a CapCut alternative or an editor with no subscription? OmniDx Studio runs in the browser and on your phone, is free with no watermark, and paid editions are one payment: Creator $19.99, Studio $39.99.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../assets/studio.css">
+<script>
+/* Set the theme before first paint so a light-mode visitor never sees a black
+   flash. Everything else waits for the module. */
+(function(){try{var t=localStorage.getItem('omnidx.theme')||(matchMedia('(prefers-color-scheme: light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+</script>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"><div class="grid"></div></div>
+<!-- chrome:nav -->
+<nav class="nav">
+  <div class="wrap">
+    <a class="logo" href="../"><span class="mark"><svg viewBox="0 0 64 64" aria-hidden="true" style="width:18px;height:18px"><rect x="13" y="18" width="26" height="6" rx="3" fill="#fff" opacity=".92"/><rect x="13" y="29" width="18" height="6" rx="3" fill="#fff" opacity=".68"/><rect x="13" y="40" width="30" height="6" rx="3" fill="#fff" opacity=".45"/><path d="M43 24.5 L54 32 L43 39.5 Z" fill="#fff"/></svg></span>OmniDx <small>Studio</small></a>
+
+    <!-- The menu box. One row on a desktop, and the same links live in the
+         drawer below for phones — never two different menus to keep in step. -->
+    <div class="menubox" data-menubox>
+      <div class="mb" data-mb>
+        <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp0">Products<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="mb-pop" id="mbp0" role="menu"><a class="mb-link" href="../#features" role="menuitem"><span class="mb-ico" aria-hidden="true">🎬</span><span class="mb-txt"><b>The editor</b><span>Multitrack timeline, colour, effects, export</span></span></a><a class="mb-link" href="../#ai" role="menuitem"><span class="mb-ico" aria-hidden="true">✨</span><span class="mb-txt"><b>AI editing</b><span>Say what you want. It builds the cut.</span></span></a><a class="mb-link" href="../#styles" role="menuitem"><span class="mb-ico" aria-hidden="true">⚡</span><span class="mb-txt"><b>Edit styles</b><span>176 styles and 21 full montages — anime, phonk, velocity</span></span></a><a class="mb-link" href="../#pro" role="menuitem"><span class="mb-ico" aria-hidden="true">🎚️</span><span class="mb-txt"><b>Pro tools</b><span>ProRes, audio repair, proxies, colour wheels</span></span></a><a class="mb-link" href="../#motion" role="menuitem"><span class="mb-ico" aria-hidden="true">ƒ</span><span class="mb-txt"><b>Motion design</b><span>Expressions, shapes, text animators, particles</span></span></a><a class="mb-link" href="../#levels" role="menuitem"><span class="mb-ico" aria-hidden="true">🎓</span><span class="mb-txt"><b>Skill levels</b><span>Beginner, Intermediate, Professional</span></span></a><a class="mb-link" href="../#pro" role="menuitem"><span class="mb-ico" aria-hidden="true">🔊</span><span class="mb-txt"><b>Audio filters</b><span>Underwater, telephone, cathedral, robot</span></span></a></div>
+      </div>
+      <div class="mb" data-mb>
+        <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp1">Download<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="mb-pop" id="mbp1" role="menu"><a class="mb-link" href="../download/#desktop" role="menuitem"><span class="mb-ico" aria-hidden="true">🍎</span><span class="mb-txt"><b>macOS</b><span>Apple silicon and Intel</span></span></a><a class="mb-link" href="../download/#desktop" role="menuitem"><span class="mb-ico" aria-hidden="true">🪟</span><span class="mb-txt"><b>Windows</b><span>Windows 10 and 11</span></span></a><a class="mb-link" href="../download/#mobile" role="menuitem"><span class="mb-ico" aria-hidden="true">📱</span><span class="mb-txt"><b>iPhone &amp; iPad</b><span>Installs from Safari, no App Store</span></span></a><a class="mb-link" href="../download/#mobile" role="menuitem"><span class="mb-ico" aria-hidden="true">🤖</span><span class="mb-txt"><b>Android</b><span>Android 10 and up</span></span></a><a class="mb-link" href="../app/" role="menuitem"><span class="mb-ico" aria-hidden="true">🌐</span><span class="mb-txt"><b>Open in the browser</b><span>No install. The whole editor.</span></span></a><a class="mb-link" href="../download/" role="menuitem"><span class="mb-ico" aria-hidden="true">📦</span><span class="mb-txt"><b>All downloads</b><span>Every platform on one page</span></span></a></div>
+      </div>
+      <a class="mb-btn" href="../pricing/">Pricing</a>
+      <div class="mb" data-mb>
+        <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp3">Help<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="mb-pop" id="mbp3" role="menu"><a class="mb-link" href="../app/" role="menuitem"><span class="mb-ico" aria-hidden="true">🚀</span><span class="mb-txt"><b>Getting started</b><span>The walkthrough, five minutes</span></span></a><a class="mb-link" href="../pricing/#compare" role="menuitem"><span class="mb-ico" aria-hidden="true">✅</span><span class="mb-txt"><b>What's built</b><span>Line by line, honestly</span></span></a><a class="mb-link" href="../pricing/#faq" role="menuitem"><span class="mb-ico" aria-hidden="true">💬</span><span class="mb-txt"><b>FAQ</b><span>Payments, devices, refunds</span></span></a><a class="mb-link" href="../activate/" role="menuitem"><span class="mb-ico" aria-hidden="true">🔓</span><span class="mb-txt"><b>Paid but locked?</b><span>Unlock your copy, no key needed</span></span></a><a class="mb-link" href="../download/" role="menuitem"><span class="mb-ico" aria-hidden="true">📥</span><span class="mb-txt"><b>Install the app</b><span>Every platform, one press</span></span></a><a class="mb-link" href="../trust/" role="menuitem"><span class="mb-ico" aria-hidden="true">🛡️</span><span class="mb-txt"><b>Is this a scam?</b><span>The straight answer, and how to check</span></span></a></div>
+      </div>
+    </div>
+
+    <div class="nav-right">
+      <button class="tbtn" data-theme-toggle aria-label="Switch between dark and light">
+        <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>
+        <svg class="moon" viewBox="0 0 24 24"><path d="M20 14.5A8.2 8.2 0 0 1 9.5 4a8.3 8.3 0 1 0 10.5 10.5z"/></svg>
+      </button>
+      <a class="nav-login" href="../account/">Log in</a>
+      <a class="btn btn-primary nav-cta" href="../app/">Open editor</a>
+      <button class="burger" type="button" data-drawer aria-expanded="false"
+              aria-controls="drawer" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <span class="nav-progress" data-progress aria-hidden="true"></span>
+</nav>
+
+<!-- Phone menu. Hidden until the button is pressed, and it holds exactly the
+     same links as the box above so nothing is only reachable on a desktop. -->
+<div class="drawer" id="drawer" hidden>
+  <div class="drawer-inner">
+    <div class="drawer-top">
+      <a class="btn btn-primary btn-lg" href="../app/">Open the editor</a>
+      <a class="btn btn-lg" href="../account/">Log in</a>
+    </div>
+    <div class="drawer-group">
+      <div class="drawer-h">Products</div>
+      <div class="drawer-links">
+        <a href="../#features"><span aria-hidden="true">🎬</span>The editor<em>Multitrack timeline, colour, effects, export</em></a>
+        <a href="../#ai"><span aria-hidden="true">✨</span>AI editing<em>Say what you want. It builds the cut.</em></a>
+        <a href="../#styles"><span aria-hidden="true">⚡</span>Edit styles<em>176 styles and 21 full montages — anime, phonk, velocity</em></a>
+        <a href="../#pro"><span aria-hidden="true">🎚️</span>Pro tools<em>ProRes, audio repair, proxies, colour wheels</em></a>
+        <a href="../#motion"><span aria-hidden="true">ƒ</span>Motion design<em>Expressions, shapes, text animators, particles</em></a>
+        <a href="../#levels"><span aria-hidden="true">🎓</span>Skill levels<em>Beginner, Intermediate, Professional</em></a>
+        <a href="../#pro"><span aria-hidden="true">🔊</span>Audio filters<em>Underwater, telephone, cathedral, robot</em></a>
+      </div>
+    </div>
+    <div class="drawer-group">
+      <div class="drawer-h">Download</div>
+      <div class="drawer-links">
+        <a href="../download/#desktop"><span aria-hidden="true">🍎</span>macOS<em>Apple silicon and Intel</em></a>
+        <a href="../download/#desktop"><span aria-hidden="true">🪟</span>Windows<em>Windows 10 and 11</em></a>
+        <a href="../download/#mobile"><span aria-hidden="true">📱</span>iPhone &amp; iPad<em>Installs from Safari, no App Store</em></a>
+        <a href="../download/#mobile"><span aria-hidden="true">🤖</span>Android<em>Android 10 and up</em></a>
+        <a href="../app/"><span aria-hidden="true">🌐</span>Open in the browser<em>No install. The whole editor.</em></a>
+        <a href="../download/"><span aria-hidden="true">📦</span>All downloads<em>Every platform on one page</em></a>
+      </div>
+    </div>
+    <a class="drawer-solo" href="../pricing/">Pricing</a>
+    <div class="drawer-group">
+      <div class="drawer-h">Help</div>
+      <div class="drawer-links">
+        <a href="../app/"><span aria-hidden="true">🚀</span>Getting started<em>The walkthrough, five minutes</em></a>
+        <a href="../pricing/#compare"><span aria-hidden="true">✅</span>What's built<em>Line by line, honestly</em></a>
+        <a href="../pricing/#faq"><span aria-hidden="true">💬</span>FAQ<em>Payments, devices, money</em></a>
+        <a href="../activate/"><span aria-hidden="true">🔓</span>Paid but locked?<em>Unlock your copy, no key needed</em></a>
+        <a href="../download/"><span aria-hidden="true">📥</span>Install the app<em>Every platform, one press</em></a>
+        <a href="../trust/"><span aria-hidden="true">🛡️</span>Is this a scam?<em>The straight answer, and how to check</em></a>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /chrome:nav -->
+
+<!--
+  Why this page exists: "CapCut alternative", "video editor no subscription"
+  and "browser video editor" are things people type into a search box, and a
+  page that answers those exact questions is found by them for years. The
+  promos get a hundred views and stop; this compounds.
+
+  Copy rules from docs/PROMOTION.md apply: competitors are named, never
+  disparaged; every price is the pricing page's; nothing is claimed that the
+  build cannot do today.
+-->
+<style>
+  /* Only what this page adds to the site's own stylesheet. */
+  .alt-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:28px}
+  .alt-cols .card h3{margin:0 0 8px;font-size:18px}
+  .alt-cols .card p{margin:0;color:var(--text-2)}
+  .alt-table{width:100%;border-collapse:collapse;margin-top:24px;font-size:15.5px}
+  .alt-table th,.alt-table td{text-align:left;vertical-align:top;padding:14px 12px;border-bottom:1px solid var(--line)}
+  .alt-table th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3)}
+  .alt-table td:first-child{white-space:nowrap;font-weight:700;width:34%}
+  .alt-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:22px}
+  @media (max-width:760px){.alt-cols{grid-template-columns:1fr} .alt-table td:first-child{white-space:normal;width:auto}}
+</style>
+<main>
+<header class="hero" style="padding:64px 0 30px">
+  <div class="wrap center">
+    <div class="eyebrow"><span class="pulse"></span>Looking for a CapCut alternative, or an editor with no subscription?</div>
+    <h1 style="font-size:clamp(34px,5.6vw,58px)">A video editor you buy once.<br><span class="grad">Or don't buy at all.</span></h1>
+    <p class="lede">
+      OmniDx Studio runs in the browser and on your phone. The free edition has no watermark,
+      no export cap and no account. The paid editions are a <b>single payment</b> —
+      $19.99 for Creator, $39.99 for Studio — and there is no monthly option, on purpose.
+    </p>
+    <div class="alt-cta"><a class="btn btn-primary btn-lg" href="../app/">Open the editor</a> <a class="btn" href="../pricing/">See every price</a></div>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <div class="section-head"><h2>What "no subscription" means here</h2></div>
+    <div class="alt-cols">
+      <div class="card"><h3>Nothing renews</h3><p>You pay once and the edition is yours. No card on file, no expiry, nothing that switches off in a year.</p></div>
+      <div class="card"><h3>Free is complete</h3><p>The timeline, twenty filters, the one-tap edit styles, transitions, stickers, audio filters and 1080p export — no watermark, no cap, no clock.</p></div>
+      <div class="card"><h3>Nothing leaves your device</h3><p>Editing, effects, export and the music library run on your machine. The <a href="../trust/">trust page</a> lists exactly what is and isn't on a server.</p></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head"><h2>Coming from another editor</h2><p>Naming them is fair; they are what most people use. This is what changes when you move.</p></div>
+    <table class="alt-table">
+      <thead><tr><th>If you use</th><th>What's different here</th></tr></thead>
+      <tbody>
+        <tr><td>CapCut</td><td>Beat-cut edits, templates and effects are here too — plus scopes, ProRes export on desktop, multicam, audio repair and expressions, and it works with no account and no connection.</td></tr>
+        <tr><td>Premiere Pro or After Effects</td><td>Keyframes with bezier easing, motion tracking, masks, shape layers with trim paths, per-character text animators, parenting and nulls — for one payment rather than a monthly one.</td></tr>
+        <tr><td>DaVinci Resolve</td><td>Three-way wheels, curves, LUTs, an HSL qualifier, power windows, waveform, vectorscope and RGB parade, in a browser tab.</td></tr>
+        <tr><td>iMovie or a phone app</td><td>The same editor on the phone and the desktop, the same project on both, and 4K60 export from either.</td></tr>
+      </tbody>
+    </table>
+    <p class="tiny muted" style="margin-top:12px">Every row on this table is something in the build you can open right now. Anything still being built is marked so on the <a href="../pricing/">pricing page</a>.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head"><h2>What it can't do yet</h2><p>Two things people ask for that are not here today: speech-to-text captions (the app finds the speech timings; you type the words) and stabilisation. Both are on the <a href="../trust/">trust page</a> so nobody finds out after paying.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap center">
+    <div class="section-head"><h2>Try it before you decide anything</h2><p>It opens in a tab. No account, no download, no watermark on what you export.</p></div>
+    <div class="alt-cta"><a class="btn btn-primary btn-lg" href="../app/">Open the editor</a></div>
+  </div>
+</section>
+</main>
+
+<!-- chrome:footer -->
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a class="logo" href="../"><span class="mark"><svg viewBox="0 0 64 64" aria-hidden="true" style="width:18px;height:18px"><rect x="13" y="18" width="26" height="6" rx="3" fill="#fff" opacity=".92"/><rect x="13" y="29" width="18" height="6" rx="3" fill="#fff" opacity=".68"/><rect x="13" y="40" width="30" height="6" rx="3" fill="#fff" opacity=".45"/><path d="M43 24.5 L54 32 L43 39.5 Z" fill="#fff"/></svg></span>OmniDx <small>Studio</small></a>
+        <p class="small" style="margin-top:14px;max-width:34ch">The editor that stops fighting you.
+          Free to use, yours to own, and it never holds your work hostage.</p>
+        <p class="tiny muted" style="margin-top:10px">One payment. No subscription, ever.</p>
+        <div id="rate-us" class="rate-host" aria-label="Rate OmniDx Studio"></div>
+      </div>
+      <div>
+        <h4>Product</h4>
+        <a href="../#features">Features</a>
+        <a href="../#ai">AI editing</a>
+        <a href="../#pro">Pro tools</a>
+        <a href="../#motion">Motion design</a>
+        <a href="../#styles">Edit styles</a>
+        <a href="../#fixes">What we fixed</a>
+      </div>
+      <div>
+        <h4>Get it</h4>
+        <a href="../app/">Open in browser</a>
+        <a href="../download/#desktop">Mac &amp; Windows</a>
+        <a href="../download/#mobile">iOS &amp; Android</a>
+        <a href="../pricing/">Pricing</a>
+        <a href="../account/">Your account</a>
+      </div>
+      <div>
+        <h4>More</h4>
+        <a href="../trust/">Is this a scam?</a>
+        <a href="../pricing/#faq">FAQ</a>
+        <a href="../activate/">Unlock my copy</a>
+        <a href="../pricing/#compare">What's built</a>
+        <a href="../trust/#cant">What it can't do</a>
+        <span class="foot-support" data-support="OmniDx Studio — help" hidden></span>
+      </div>
+    </div>
+    <div class="foot-note">
+      <span>© 2026 OmniDx. Built to be owned, not rented.</span>
+      <span>Your footage stays on your machine unless you ask it not to.</span>
+    </div>
+  </div>
+</footer>
+<!-- /chrome:footer -->
+<script type="module" src="../assets/studio.js"></script>
+</body>
+</html>

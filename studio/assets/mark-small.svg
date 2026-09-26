@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="OmniDx Tune">
+  <!-- The small mark: favicons and anything under about 48 pixels. Bolder bars
+       and a bigger bolt than mark.svg, because thin strokes vanish at 16px. -->
+  <defs>
+    <linearGradient id="sm-g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6d28d9"/>
+      <stop offset=".45" stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#d946ef"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#sm-g)"/>
+  <rect x="9" y="14" width="30" height="9" rx="4.5" fill="#fff" opacity=".95"/>
+  <rect x="9" y="28" width="20" height="9" rx="4.5" fill="#fff" opacity=".7"/>
+  <rect x="9" y="42" width="11" height="9" rx="4.5" fill="#fff" opacity=".45"/>
+  <path d="M50 8 L36 34 L46 34 L41 56 L57 28 L47 28 Z" fill="#fff"/>
+</svg>

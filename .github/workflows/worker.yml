@@ -1,0 +1,389 @@
+name: Deploy the Worker
+
+# The API deploys itself. A push that touches server/ (or a press of the
+# button) creates any missing tables and deploys the Worker; every six hours
+# a health check hits it, and a failing check redeploys rather than pages
+# anyone. The schema is additive (every statement is IF NOT EXISTS), so
+# re-running it is always safe.
+#
+# Going live is two repository secrets and this button:
+#   CLOUDFLARE_API_TOKEN   a token from the "Edit Cloudflare Workers" template with D1:Edit added;
+#                          the account is read off the token and the database is made if it is missing
+#   SQUARE_ACCESS_TOKEN    confirms Square orders; keys are not issued without it; refunds are checked with it hourly
+# The key shows on the page the buyer lands on after paying. Everything else is optional and the Summary tab says so:
+#   TUNE_ADMIN_TOKEN                          any long password you make up: unlocks the owner page (omnidx.net/studio/admin/)
+#   GMAIL_USER and GMAIL_APP_PASSWORD         only if the keys should also be emailed: the owner's Gmail and an app password;
+#                                             with these and no TUNE_ADMIN_TOKEN, an owner token is made and emailed to that Gmail
+#   SQUARE_WEBHOOK_SIGNATURE_KEY              refunds reach the keys in seconds instead of within the hour
+#   RESEND_API_KEY                            Resend instead of Gmail (a verified domain)
+#   CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_D1_ID   only to pin an account or database by hand
+# After a deploy the Worker's URL is written into tune/config.json (the site
+# and go.ps1 read `api` from there) and Pages is asked to publish. One
+# optional variable:
+#   WORKER_URL             e.g. https://omnidx-studio-api.<you>.workers.dev
+#                          (found from the deploy output when unset)
+on:
+  push:
+    branches: [main, master, "claude/omnidx-editing-platform-9phdcc"]
+    paths: ["server/**", ".github/workflows/worker.yml"]
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      send_owner_token:
+        description: "Email me the owner-page token again"
+        type: boolean
+        default: false
+
+permissions:
+  # The deploy writes the Worker's URL into tune/config.json and asks Pages to publish.
+  contents: write
+  actions: write
+
+concurrency:
+  group: deploy-worker
+  cancel-in-progress: false
+
+jobs:
+  worker:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_D1_ID: ${{ secrets.CLOUDFLARE_D1_ID }}
+      WORKER_URL: ${{ vars.WORKER_URL }}
+      SQUARE_ACCESS_TOKEN: ${{ secrets.SQUARE_ACCESS_TOKEN }}
+      SQUARE_WEBHOOK_SIGNATURE_KEY: ${{ secrets.SQUARE_WEBHOOK_SIGNATURE_KEY }}
+      GMAIL_USER: ${{ secrets.GMAIL_USER }}
+      GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      TUNE_ADMIN_TOKEN: ${{ secrets.TUNE_ADMIN_TOKEN }}
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Are the secrets there?
+        id: ready
+        # The run's Summary tab gets a table of every secret, set or not, and what each is for,
+        # so a phone can see in one glance what is left to add. Nothing deploys without the Cloudflare token.
+        run: |
+          {
+            echo "## Repository secrets"
+            echo "| Secret | Set | What it is for |"
+            echo "| --- | --- | --- |"
+            for pair in "CLOUDFLARE_API_TOKEN|**needed**: the deploy itself (the account and the database are found or made from it)" \
+                        "SQUARE_ACCESS_TOKEN|**needed to sell**: confirms each order and checks refunds hourly; the buy buttons stay shut without it. The key shows on the page after paying" \
+                        "TUNE_ADMIN_TOKEN|optional: any long password you make up; unlocks the owner page for support from a phone" \
+                        "GMAIL_USER|optional: only if the keys should also be emailed; your Gmail address" \
+                        "GMAIL_APP_PASSWORD|optional, with GMAIL_USER: an app password for that Gmail (Google Account > Security > 2-Step Verification > App passwords); without TUNE_ADMIN_TOKEN an owner token is made from it and emailed to you" \
+                        "SQUARE_WEBHOOK_SIGNATURE_KEY|optional: refunds reach the keys in seconds instead of within the hour" \
+                        "RESEND_API_KEY|optional: Resend instead of Gmail (needs a verified domain)" \
+                        "CLOUDFLARE_ACCOUNT_ID|optional: only to pin an account when the token can see more than one" \
+                        "CLOUDFLARE_D1_ID|optional: only to pin a database; otherwise omnidx-studio is found or made"; do
+              name="${pair%%|*}"; why="${pair#*|}"
+              if [ -n "${!name}" ]; then echo "| $name | yes | $why |"; else echo "| $name | no | $why |"; fi
+            done
+            echo
+            echo "Add one under Settings > Secrets and variables > Actions > New repository secret, then run this workflow again."
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::notice title=Not deployed::CLOUDFLARE_API_TOKEN is not set. Settings > Secrets and variables > Actions; the Summary tab of this run lists every secret."
+            echo "CLOUDFLARE_API_TOKEN is not set on this repository, so there is nothing to deploy with."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.ready.outputs.ready == 'true'
+        with:
+          node-version: 22
+
+      - name: Install
+        if: steps.ready.outputs.ready == 'true'
+        run: npm install --no-audit --no-fund
+
+      # A Worker that hands out the wrong number of keys, or mails twice, must
+      # not deploy: the offline money-path test runs first.
+      - name: The money path, offline
+        if: steps.ready.outputs.ready == 'true'
+        run: node ../tools/worker-test.mjs
+
+      # The token knows which account it belongs to; nobody has to copy an id off a dashboard.
+      - name: Find the account
+        if: steps.ready.outputs.ready == 'true'
+        run: |
+          if [ -n "$CLOUDFLARE_ACCOUNT_ID" ]; then echo "account pinned by CLOUDFLARE_ACCOUNT_ID"; exit 0; fi
+          id="$(curl -sS --max-time 20 -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" 'https://api.cloudflare.com/client/v4/accounts?per_page=5' \
+            | python3 -c 'import sys,json; d=json.load(sys.stdin); r=d.get("result") or []; print(r[0]["id"] if r else "")' 2>/dev/null || true)"
+          if [ -z "$id" ]; then
+            id="$(npx wrangler whoami 2>/dev/null | grep -oE '[0-9a-f]{32}' | head -1 || true)"
+          fi
+          if [ -z "$id" ]; then
+            echo "::error title=No account::The token cannot see a Cloudflare account. Make it from the 'Edit Cloudflare Workers' template (it includes Account Settings: Read), or set CLOUDFLARE_ACCOUNT_ID."
+            exit 1
+          fi
+          echo "CLOUDFLARE_ACCOUNT_ID=$id" >> "$GITHUB_ENV"
+          echo "account: ${id:0:6}..."
+
+      # The database, found by name or made on the spot. The id is written into
+      # the config for this run only; nothing is committed.
+      - name: Find or make the database
+        if: steps.ready.outputs.ready == 'true'
+        run: |
+          id="$CLOUDFLARE_D1_ID"
+          uuid='[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+          if [ -z "$id" ]; then
+            id="$(npx wrangler d1 list --json 2>/dev/null | python3 -c 'import sys,json
+          try:
+              for d in json.load(sys.stdin):
+                  if d.get("name") == "omnidx-studio": print(d.get("uuid") or d.get("id") or ""); break
+          except Exception: pass' || true)"
+            if [ -n "$id" ]; then echo "database omnidx-studio found"; fi
+          fi
+          if [ -z "$id" ]; then
+            out="$(npx wrangler d1 create omnidx-studio 2>&1 || true)"
+            id="$(printf '%s' "$out" | grep -oE "$uuid" | head -1 || true)"
+            if [ -n "$id" ]; then echo "database omnidx-studio made"; else printf '%s\n' "$out"; fi
+          fi
+          if [ -z "$id" ]; then
+            echo "::error title=No database::Could not find or make the omnidx-studio D1 database. Give the token the D1: Edit permission, or set CLOUDFLARE_D1_ID."
+            exit 1
+          fi
+          sed -i "s/PASTE_YOUR_DATABASE_ID_HERE/$id/" wrangler.toml
+          echo "CLOUDFLARE_D1_ID=$id" >> "$GITHUB_ENV"
+
+      # A new account has no workers.dev address until one is registered, and a non-interactive deploy
+      # cannot ask; so it is registered here, once, with a name built from the product and the account.
+      - name: Register the workers.dev address
+        if: steps.ready.outputs.ready == 'true'
+        run: |
+          api="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain"
+          sub="$(curl -sS --max-time 20 -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$api" \
+            | python3 -c 'import sys,json; print((json.load(sys.stdin).get("result") or {}).get("subdomain") or "")' 2>/dev/null || true)"
+          if [ -n "$sub" ]; then echo "workers.dev address already registered: $sub.workers.dev"; exit 0; fi
+          short="${CLOUDFLARE_ACCOUNT_ID:0:6}"
+          for try in "omnidx-tune" "omnidx-tune-$short" "omnidx-$short" "omnidx-$CLOUDFLARE_ACCOUNT_ID"; do
+            out="$(curl -sS --max-time 20 -X PUT -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" -H 'Content-Type: application/json' "$api" -d "{\"subdomain\":\"$try\"}")"
+            if printf '%s' "$out" | python3 -c 'import sys,json; d=json.load(sys.stdin); sys.exit(0 if d.get("success") else 1)' 2>/dev/null; then
+              echo "workers.dev address registered: $try.workers.dev"; exit 0
+            fi
+            echo "$try was not accepted: $(printf '%s' "$out" | python3 -c 'import sys,json; print("; ".join(e.get("message","") for e in json.load(sys.stdin).get("errors",[])))' 2>/dev/null)"
+          done
+          echo "::error title=No workers.dev address::Could not register one. Register it once by hand: dash.cloudflare.com > Workers & Pages > Overview > 'Your subdomain', then run this workflow again."
+          exit 1
+
+      # On a scheduled run, deploy only when the Worker is not answering.
+      - name: Health check (scheduled runs)
+        id: health
+        if: steps.ready.outputs.ready == 'true' && github.event_name == 'schedule'
+        run: |
+          url="$WORKER_URL"
+          if [ -z "$url" ]; then
+            url="$(npx wrangler deployments list 2>/dev/null | grep -o 'https://[^ ]*workers.dev' | head -1 || true)"
+          fi
+          if [ -z "$url" ]; then echo "No URL to check; deploying to be safe."; echo "ok=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if curl -fsS --max-time 20 "$url/v1/health" >/dev/null; then
+            echo "$url answers."; echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "$url did not answer — redeploying."; echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # The schema file is one batch (every CREATE is IF NOT EXISTS), then the
+      # columns that arrived after the first deploy go on one at a time, each
+      # allowed to fail with "duplicate column" on a database that has them.
+      - name: Create any missing tables
+        if: steps.ready.outputs.ready == 'true' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
+        run: |
+          npx wrangler d1 execute omnidx-studio --file=schema.sql --remote --yes
+          for stmt in \
+            "ALTER TABLE tune_keys ADD COLUMN moved_at INTEGER" \
+            "ALTER TABLE tune_keys ADD COLUMN emailed_at INTEGER" \
+            "ALTER TABLE tune_keys ADD COLUMN receipt TEXT" \
+            "ALTER TABLE tune_keys ADD COLUMN refund_checked_at INTEGER" \
+            "ALTER TABLE tune_keys ADD COLUMN followup_at INTEGER" \
+            "ALTER TABLE tune_machines ADD COLUMN version TEXT" \
+            "ALTER TABLE tune_machines ADD COLUMN os TEXT"; do
+            npx wrangler d1 execute omnidx-studio --remote --yes --command "$stmt" >/dev/null 2>&1 && echo "added: $stmt" || echo "already there: $stmt"
+          done
+
+      - name: Deploy
+        if: steps.ready.outputs.ready == 'true' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
+        # The build and the time go in as plain variables, so /v1/health can say which deploy is answering.
+        # pipefail: a deploy that fails must fail this step, not hide behind tee.
+        run: set -o pipefail; npx wrangler deploy --var DEPLOYED_SHA:"${GITHUB_SHA::7}" --var DEPLOYED_AT:"$(date -u +%Y-%m-%dT%H:%MZ)" 2>&1 | tee deploy.log
+
+      # The address, three ways: the deploy output prints it; the account's
+      # workers.dev subdomain names it; the WORKER_URL variable overrides both.
+      - name: Find the Worker's URL
+        id: where
+        if: steps.ready.outputs.ready == 'true' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
+        run: |
+          url="$WORKER_URL"
+          if [ -z "$url" ] && [ -f deploy.log ]; then
+            url="$(grep -o 'https://[A-Za-z0-9.-]*\.workers\.dev' deploy.log | head -1 || true)"
+          fi
+          if [ -z "$url" ]; then
+            sub="$(curl -sS --max-time 20 -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" \
+              | python3 -c 'import sys,json; print(json.load(sys.stdin).get("result",{}).get("subdomain",""))' 2>/dev/null || true)"
+            name="$(grep -m1 '^name *= *"' wrangler.toml | sed 's/.*"\(.*\)".*/\1/')"
+            if [ -n "$sub" ] && [ -n "$name" ]; then url="https://$name.$sub.workers.dev"; fi
+          fi
+          url="${url%/}"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          if [ -n "$url" ]; then echo "The Worker answers at $url"; else echo "Could not find the Worker's URL; set the WORKER_URL repository variable and run this again."; fi
+
+      # The owner page's token: yours if TUNE_ADMIN_TOKEN is set, otherwise one
+      # made from the Gmail app password (the same one every deploy, so it never
+      # changes under you) and emailed to that Gmail the first time, or whenever
+      # the button is pressed with "Email me the owner-page token again".
+      - name: The owner token
+        id: owner
+        if: steps.ready.outputs.ready == 'true' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
+        run: |
+          token="$TUNE_ADMIN_TOKEN"; made=false
+          if [ -z "$token" ] && [ -n "$GMAIL_APP_PASSWORD" ]; then
+            token="$(python3 -c 'import hmac,hashlib,base64,os; print(base64.b32encode(hmac.new(os.environ["GMAIL_APP_PASSWORD"].encode(), b"omnidx-owner-token", hashlib.sha256).digest()).decode().rstrip("=").lower()[:32])')"
+            made=true
+          fi
+          if [ -z "$token" ]; then echo "no owner token: the owner page stays off (keys, the key page and refunds work without it). Set TUNE_ADMIN_TOKEN to any long password to switch it on."; echo "have=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          first=true
+          if npx wrangler secret list 2>/dev/null | grep -q '"TUNE_ADMIN_TOKEN"'; then first=false; fi
+          echo "::add-mask::$token"
+          echo "OWNER_TOKEN=$token" >> "$GITHUB_ENV"
+          echo "have=true" >> "$GITHUB_OUTPUT"
+          echo "made=$made" >> "$GITHUB_OUTPUT"
+          echo "first=$first" >> "$GITHUB_OUTPUT"
+          echo "owner token: $(if $made; then echo made from the app password; else echo from TUNE_ADMIN_TOKEN; fi); $(if $first; then echo new on this Worker; else echo already on the Worker; fi)"
+
+      # The Worker's own secrets, from repository secrets of the same name.
+      # Each is pushed only when set; an unset one is left as it is on the
+      # Worker, so removing a secret here never blanks a working one.
+      - name: Push the Worker's secrets
+        if: steps.ready.outputs.ready == 'true' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
+        run: |
+          for name in SQUARE_ACCESS_TOKEN SQUARE_WEBHOOK_SIGNATURE_KEY GMAIL_USER GMAIL_APP_PASSWORD RESEND_API_KEY; do
+            val="${!name}"
+            if [ -n "$val" ]; then
+              printf '%s' "$val" | npx wrangler secret put "$name" >/dev/null && echo "$name: set"
+            else
+              echo "$name: not in the repository's secrets, left alone"
+            fi
+          done
+          if [ -n "$OWNER_TOKEN" ]; then printf '%s' "$OWNER_TOKEN" | npx wrangler secret put TUNE_ADMIN_TOKEN >/dev/null && echo "TUNE_ADMIN_TOKEN: set"; fi
+
+      # Square signs each webhook call with the exact URL it was told, so the
+      # Worker has to know its own address. Filled in once from the deploy.
+      # Optional: without a webhook the Worker asks Square about refunds on the hour.
+      - name: Tell the Worker its webhook address
+        if: steps.ready.outputs.ready == 'true' && steps.where.outputs.url != '' && env.SQUARE_WEBHOOK_SIGNATURE_KEY != '' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
+        run: |
+          hook="${{ steps.where.outputs.url }}/v1/webhooks/square"
+          if grep -q "^SQUARE_WEBHOOK_URL = \"$hook\"" wrangler.toml; then echo "already $hook"; exit 0; fi
+          sed -i "s|^SQUARE_WEBHOOK_URL = \".*\"|SQUARE_WEBHOOK_URL = \"$hook\"|" wrangler.toml
+          npx wrangler deploy --var DEPLOYED_SHA:"${GITHUB_SHA::7}" --var DEPLOYED_AT:"$(date -u +%Y-%m-%dT%H:%MZ)" >/dev/null && echo "webhook address: $hook"
+
+      # The site and go.ps1 read the licence server's address from
+      # tune/config.json. Written here so nobody has to edit a file by hand;
+      # a push with the workflow token starts nothing, so Pages is asked.
+      - name: Point the site at the Worker
+        if: steps.ready.outputs.ready == 'true' && steps.where.outputs.url != '' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
+        working-directory: .
+        run: |
+          set -euo pipefail
+          url="${{ steps.where.outputs.url }}"
+          git config user.name 'omnidx-ci'
+          git config user.email 'ci@omnidx.net'
+          for try in 1 2 3; do
+            git fetch -q origin "$GITHUB_REF_NAME"
+            git reset -q --hard "origin/$GITHUB_REF_NAME"
+            python3 - "$url" <<'PY'
+          import json, sys
+          p = 'tune/config.json'
+          cfg = json.load(open(p, encoding='utf-8-sig'))
+          if cfg.get('api') == sys.argv[1]:
+              print('config.json already points there'); sys.exit(0)
+          cfg['api'] = sys.argv[1]
+          open(p, 'w', encoding='utf-8', newline='\n').write(json.dumps(cfg, indent=2) + '\n')
+          print('config.json now points at', sys.argv[1])
+          PY
+            git add tune/config.json
+            if git diff --cached --quiet; then echo 'nothing to commit'; exit 0; fi
+            git commit -q -m "Worker deploy: the site and go.ps1 now point at the licence server"
+            if git push -q origin "HEAD:$GITHUB_REF_NAME"; then
+              curl -sS -o /dev/null -w 'Pages asked to publish (%{http_code})\n' -X POST \
+                -H "Authorization: Bearer $GITHUB_TOKEN" -H 'Accept: application/vnd.github+json' \
+                "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/workflows/pages.yml/dispatches" \
+                -d "{\"ref\":\"$GITHUB_REF_NAME\"}"
+              exit 0
+            fi
+            echo "push refused on try $try; the branch moved"; sleep 5
+          done
+          echo 'could not push config.json after three tries'; exit 1
+
+      # The owner's own inbox gets the token, the addresses, and what is left to do,
+      # the first time the token lands on the Worker or whenever the button asks.
+      - name: Email the owner what they need
+        if: steps.ready.outputs.ready == 'true' && steps.owner.outputs.have == 'true' && env.GMAIL_USER != '' && env.GMAIL_APP_PASSWORD != '' && (steps.owner.outputs.first == 'true' || github.event.inputs.send_owner_token == 'true') && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
+        env:
+          WORKER_URL_FOUND: ${{ steps.where.outputs.url }}
+          TOKEN_MADE: ${{ steps.owner.outputs.made }}
+        run: |
+          python3 - <<'PY'
+          import os, smtplib, ssl
+          from email.message import EmailMessage
+          user = os.environ['GMAIL_USER'].strip(); pw = os.environ['GMAIL_APP_PASSWORD']
+          url = os.environ.get('WORKER_URL_FOUND') or '(the address is in the deploy log)'
+          made = os.environ.get('TOKEN_MADE') == 'true'
+          sq = bool(os.environ.get('SQUARE_ACCESS_TOKEN'))
+          m = EmailMessage()
+          m['From'] = f'OmniDx Tune <{user}>'; m['To'] = user
+          m['Subject'] = 'OmniDx Tune: your owner page token, and what is left'
+          token = os.environ['OWNER_TOKEN']
+          lines = [
+              f'Your licence server is up at {url}', '',
+              'Owner page: https://omnidx.net/studio/admin/',
+              'Owner token (paste it there once; the page remembers it):', '', f'  {token}', '',
+              ('It was made from your Gmail app password, so it stays the same on every deploy; change the app password and a new one is made and sent.'
+               if made else 'It is the TUNE_ADMIN_TOKEN you set in the repository.'), '',
+              'What is left:',
+              ('  - Square is connected: orders are confirmed and refunds are checked every hour.' if sq else
+               '  - Add the repository secret SQUARE_ACCESS_TOKEN (Square developer dashboard > your application > Production > Access token), then run the deploy again. Nobody can buy until then.'),
+              '  - Square payment links: rename the $39.99 link "OmniDx Tune Squad - three keys" and the $19.99 link "OmniDx Tune - one PC"; delete the $69.99 link; the after-payment addresses are https://omnidx.net/studio/activate/?e=creator ($19.99) and https://omnidx.net/studio/activate/?e=studio ($39.99); refund policy link https://omnidx.net/studio/terms/',
+              '  - Then buy the $19.99 link yourself with your own card: the key appears on the page and in this inbox within a minute. Refund yourself in Square; within the hour the key stops working and a second email says so.', '',
+              'Keys go to buyers from this address. Replies come back here.',
+          ]
+          m.set_content('\n'.join(lines) + '\n')
+          with smtplib.SMTP_SSL('smtp.gmail.com', 465, context=ssl.create_default_context(), timeout=30) as s:
+              s.login(user, pw); s.send_message(m)
+          print('emailed', user[:2] + '***')
+          PY
+
+      - name: Check it answers
+        if: steps.ready.outputs.ready == 'true' && (github.event_name != 'schedule' || steps.health.outputs.ok != 'true')
+        run: |
+          url="${{ steps.where.outputs.url }}"
+          if [ -n "$url" ]; then
+            # A freshly registered workers.dev address takes a few minutes to answer; the first deploy waited one and went red for nothing.
+            for i in $(seq 1 24); do
+              if h="$(curl -fsS --max-time 20 "$url/v1/health")"; then
+                echo "$h"; echo; echo "Live at $url"
+                {
+                  echo "## Live at $url"
+                  echo
+                  echo '```'; echo "$h"; echo '```'
+                  echo
+                  echo "square: orders are confirmed (needed to sell). refunds: how a refund switches keys off. mail: keys are also emailed (optional). owner: the owner page works (optional). A false one names the secret still to add."
+                } >> "$GITHUB_STEP_SUMMARY"
+                exit 0
+              fi
+              sleep 10
+            done
+            echo "Deployed, but $url/v1/health did not answer within four minutes. A new address can take longer the first time: run this workflow again in a few minutes."; exit 1
+          else
+            echo "Deployed. Set the WORKER_URL repository variable so the health check knows where to look."
+          fi

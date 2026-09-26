@@ -1,0 +1,55 @@
+# Films the real tune on a real Windows 11 machine: the screen, recorded while
+# tools/promo/film/film.ps1 drives the mouse and keyboard the way a person
+# does, for promotion videos. The footage is promotion material, not a site
+# file: it leaves as a pre-release on this repository (tag film-*), is
+# downloaded and edited elsewhere, and the next run deletes the old ones.
+# Nothing is committed. tools/promo/film/probe.ps1 is the survey that chose
+# this machine (1024x768, fixed; administrator rights without a prompt).
+name: Film a real run
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/omnidx-editing-platform-9phdcc"]
+    paths: ["tools/promo/film/film.ps1", "tools/promo/film/Human.cs", ".github/workflows/film.yml"]
+
+permissions:
+  contents: write
+
+# One take at a time: each one clears the last one's footage.
+concurrency:
+  group: film
+  cancel-in-progress: false
+
+jobs:
+  film:
+    runs-on: windows-11-arm
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: powershell
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      # The x64 ffmpeg (about 200 MB) is fetched once and kept, not on every take.
+      - uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/ffmpeg-win64
+          key: ffmpeg-win64-${{ runner.os }}-2026-09
+      - name: Clear old footage
+        run: |
+          $old = gh release list --limit 50 --json tagName --jq '.[].tagName' | Where-Object { $_ -like 'film-*' }
+          foreach ($t in $old) { gh release delete $t --yes --cleanup-tag; Write-Host "deleted $t" }
+          exit 0
+      - name: Film the run
+        timeout-minutes: 45
+        run: |
+          & .\tools\promo\film\film.ps1 -Out (Join-Path $env:RUNNER_TEMP 'film')
+          exit 0
+      - name: Hand the footage over as a pre-release
+        if: always()
+        run: |
+          $tag = "film-${{ github.run_id }}"
+          $files = Get-ChildItem (Join-Path $env:RUNNER_TEMP 'film') -File | Where-Object Length -gt 0 | ForEach-Object FullName
+          gh release create $tag --prerelease --target $env:GITHUB_SHA --title "Film footage $tag" --notes "Raw footage for a promotion video; deleted by the next run." $files
+          Write-Host "released $tag with $($files.Count) files"

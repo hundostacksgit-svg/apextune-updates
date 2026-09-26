@@ -1,0 +1,325 @@
+# OmniDx Tune on TikTok: the fourteen cuts and how to post them
+
+Twelve 9:16 videos cut from the site's tutorial (1 to 7 and 10 to 14), each built around one hook a
+stranger scrolling past would stop for, and two that are screen recordings
+of real runs. They are made from code
+(`node tools/promo/tune/render-shorts.mjs`, see `tools/promo/tune/README.md`;
+the eighth and ninth from `tools/promo/film/`) and are promotion material:
+the MP4s never go into git. Every one ends on the OmniDx card: the logo
+burning in on the beat and omnidx.net rising under it
+(`python3 tools/promo/film/outro.py in.mp4 out.mp4 --bpm 120`; `--bpm 100`
+for 8 and 9), so each cut runs about four seconds longer than the table says.
+
+Nobody can promise views. What these are built on is what the feed rewards:
+a reason to stop in the first second, a caption that finishes the thought,
+something to comment ("what's your number?"), and an ending that loops.
+
+## The videos
+
+| # | File | Length | The hook | What it asks for |
+|---|---|---|---|---|
+| 1 | `01-check-your-number.mp4` | 0:24 | "Windows is running about 200 things right now." | Comment your number |
+| 2 | `02-ram-speed.mp4` | 0:22 | "Your RAM might be running slower than you paid for." | Comment your RAM speed |
+| 3 | `03-never-asked.mp4` | 0:24 | "Things Windows runs that you never asked for:" | Share |
+| 4 | `04-game-file.mp4` | 0:20 | "This one line edits your Fortnite settings file." | Comment the next game |
+| 5 | `05-undo-first.mp4` | 0:24 | "Scared to run a PC optimizer?" | Save |
+| 6 | `06-pov-one-line.mp4` | 0:26 | "POV: you paste one line into PowerShell" | Watch again |
+| 7 | `07-valorant-safe.mp4` | 0:20 | "Some 'FPS boost' tweaks turn off what VALORANT needs." | Comment, share to a VALORANT friend |
+| 8 | `08-real-test.mp4` | 1:05 | "Testing a $20 Windows optimizer on a Windows 11 PC" | Watch to the end, comment your number |
+| 9 | `09-restart-test.mp4` | 1:22 | "Testing a $20 Windows optimizer on a clean Windows 11 PC" | Watch to the end, comment your number |
+| 10 | `10-free-look.mp4` | 0:20 | "See what it would change before you pay." | Save, try the free report |
+| 11 | `11-keep-discord.mp4` | 0:20 | "Will it break my Discord?" | Comment the app you'd keep |
+| 12 | `12-checks-itself.mp4` | 0:22 | "Never paste a random command from the internet." | Share, read the script |
+| 13 | `13-one-payment.mp4` | 0:20 | "PC optimizers want a monthly fee." | Comment, save |
+| 14 | `14-reads-first.mp4` | 0:22 | "It reads your PC before it cuts anything." | Watch again, try the free report |
+
+Each has a cover image next to it (`NN-name-cover.jpg`, the hook on screen).
+In TikTok: Edit cover, pick the frame about a second and a half in, or upload
+the cover image.
+
+Every number on screen in 1 to 7 and 10 to 14 is the site's example PC, and the video
+says "Example run" whenever one is shown; the run is shown sped up and says
+so. Number 8 is a real run, recorded as it happened on a Windows 11 test PC
+in the cloud (a GitHub-hosted machine): the typing, the key, Task Manager
+before and after are real time with the waits cut out, and the two long
+waits (reading the PC, the run) are sped up with their speed on screen.
+
+Number 9 goes through the restart, which is where the number that counts is.
+The PC is a clean Windows 11 install (the Enterprise evaluation image from
+Microsoft, TPM and Secure Boot on) in a virtual machine, filmed from outside
+it so the recording runs on through the reboot (`tools/promo/film/vm/`). The
+mouse and keyboard are driven along human paths, the administrator prompt is
+answered Yes on screen, and Extreme is ticked in the app, on camera. The
+measured run: Task Manager 143 before; 85 three minutes after the sign-in
+that follows the restart, Task Manager's own Up time showing the fresh start.
+The same PC with the standard tune (no Extreme) went 145 to 118 after the
+restart, so the video says Extreme on screen, and so should the caption. Keep
+it that way in the captions: never promise a number, never a frame rate.
+
+## What to post with each
+
+Copy the caption as it is. Pin the pinned comment yourself right after
+posting (long-press your comment, Pin).
+
+**1. Check your number**
+
+> Ctrl + Shift + Esc → Performance → CPU → Processes. What's yours? 👇
+> #pcgaming #windows11 #pctips #gamingpc #pcsetup
+
+Pinned comment: *The number in the video is one example PC. The free check
+that changes nothing is on omnidx.net (the free report). Post your number.*
+
+Cover text: "What's your number?"
+
+**2. Your RAM might be running slow**
+
+> Task Manager → Performance → Memory → Speed. Lower than the number on your
+> RAM sticks? XMP (EXPO on AMD) is probably off. What's yours?
+> #pcbuild #buildapc #ram #xmp #pcgaming
+
+Pinned comment: *XMP / EXPO is in your BIOS. The free report on omnidx.net
+checks it and says where it is on your exact board. It changes nothing.*
+
+Cover text: "Is your RAM slow?"
+
+**3. Things Windows runs that you never asked for**
+
+> A fax service. In 2026. What else is yours running?
+> #windows11 #pctips #techtok #pcgaming #windows
+
+Pinned comment: *It keeps what your PC uses (printer, Bluetooth, Wi-Fi) and
+undo puts every one back. The whole script is public: omnidx.net*
+
+Cover text: "A fax service. In 2026."
+
+**4. It edits your Fortnite settings file**
+
+> V-Sync off, motion blur off, shadows off, post-processing low: written into
+> Fortnite's own settings file. Backed up first. Which game next?
+> #fortnite #fortnitesettings #fortnitetips #pcgaming #competitivefortnite
+
+Pinned comment: *Also Apex, CS2, Rocket League, Rainbow Six Siege, Marvel
+Rivals and Minecraft. It only changes lines already in the file, and undo
+puts every value back.*
+
+Cover text: "It edits your game's settings"
+
+**5. Scared to run a PC optimizer?**
+
+> Every PC optimizer should show you the way back first. Restore point, every
+> change recorded, undo is one button.
+> #pcgaming #windows11 #pctips #techtok #gamingpc
+
+Pinned comment: *Read every line before you pay: omnidx.net/tune/omnidx.ps1.
+Or run the free report first. It changes nothing.*
+
+Cover text: "The way back first"
+
+**6. POV: one line into PowerShell**
+
+> It reads your PC, keeps what you use, cuts the rest, sets your games' own
+> settings and writes a BIOS checklist for your board. $19.99 once.
+> #pcgaming #windows11 #gamingpc #pcsetup #powershell
+
+Pinned comment: *Example run on one PC, sped up. Try the free report first:
+it shows what it would do on yours and changes nothing. omnidx.net*
+
+Cover text: "One line."
+
+**7. Does it break VALORANT?**
+
+> Secure Boot, TPM and memory integrity stay on. VALORANT players: check
+> what an "FPS boost" turns off before you run it.
+> #valorant #valoranttips #pcgaming #windows11 #vanguard
+
+Pinned comment: *It never touches the anti-cheat. Memory integrity off is a
+box you would have to tick yourself. The free report checks all three.*
+
+Cover text: "Does it break VALORANT?"
+
+**10. See what it would change before you pay**
+
+> Run the free report first. It reads your PC, lists everything it would cut
+> and writes a BIOS checklist for your board. It changes nothing. No key.
+> #pcgaming #windows11 #pctips #gamingpc #pcsetup
+
+Pinned comment: *The free report: open PowerShell and paste the free report
+line from omnidx.net. It changes nothing on your PC; the report it writes is
+yours to keep.*
+
+Cover text: "Free. Changes nothing."
+
+**11. Will it break my Discord?**
+
+> Everything that starts with Windows is a tick box. Untick Discord and it
+> stays. Spotify still opens when you click it. What would you keep? 👇
+> #discord #pcgaming #windows11 #pcsetup #gamingpc
+
+Pinned comment: *Nothing gets uninstalled: startup apps are only stopped
+from starting with Windows, and undo puts every one back. Example run on one
+PC.*
+
+Cover text: "Will it break Discord?"
+
+**12. Never paste a random command**
+
+> Good rule. This one checks its own fingerprint against the copy the
+> Windows check tested, and refuses if one byte is off. Every line is public.
+> #cybersecurity #powershell #windows11 #pctips #techtok
+
+Pinned comment: *Read it before you run it: omnidx.net/tune/omnidx.ps1.
+omnidx.net/studio/trust/ says exactly what it downloads and checks, and it
+prints "Script verified" before it does anything.*
+
+Cover text: "Never paste random commands"
+
+**13. PC optimizers want a monthly fee**
+
+> This one is $19.99 once. Every future version free, undo included, and
+> OmniDx Edition comes with it. Squad: three keys for $39.99.
+> #pcgaming #windows11 #gamingpc #pcsetup #techtok
+
+Pinned comment: *No subscription, ever. The key is locked to your PC; run it
+again whenever there is a new version. Numbers on screen are one example PC.*
+
+Cover text: "No subscription."
+
+**14. It reads your PC before it cuts anything**
+
+> CPU, GPU, RAM, the board, laptop or desktop. It keeps your Wi-Fi,
+> controller and printer, leaves Secure Boot and TPM on, and spots RAM
+> running slow. Then a BIOS checklist for your exact board.
+> #pcbuild #buildapc #pcgaming #windows11 #pctips
+
+Pinned comment: *Example PC in the video. The free report does the same
+read on yours and changes nothing: omnidx.net.*
+
+Cover text: "It reads your PC first"
+
+## Your voice makes them stronger (optional)
+
+They work silent, with the text on screen and the music. Your own voice over
+them does better than any synthetic one: in TikTok, after uploading, Voice
+effects / Voiceover, and read these at a normal pace. Keep the original sound
+at about 40% under it.
+
+1. "Windows is running about two hundred things right now. Check yours:
+   Control, Shift, Escape. Performance, CPU, Processes. Most of them aren't
+   for you. One line cuts it down, restore point first. Two-fourteen to
+   eighty-six on this PC before a restart. What's your number?"
+2. "Your RAM might be running slower than you paid for. Task Manager,
+   Performance, Memory, Speed. Rated three-two-hundred, running at
+   twenty-one thirty-three. That's XMP, one setting in your BIOS, usually off.
+   The free report checks it for you. What's yours?"
+3. "Things Windows runs that you never asked for. Fax. Retail demo. Offline
+   maps. Phone service. Telemetry. Error reporting. Geolocation. One line
+   switches them off, keeps what you use, and one button puts it all back."
+4. "This one line edits your Fortnite settings file. V-Sync off. Motion blur
+   off. Shadows off. Post-processing low. Backed up first. Same for seven
+   games. Which one next?"
+5. "Scared to run a PC optimizer? Good. Look at the way back first. A restore
+   point before anything changes. Undo is one button. The whole script is
+   public. Or run the free report; it changes nothing."
+6. "POV: you paste one line into PowerShell. It checks itself, reads your PC,
+   keeps what you want, and cuts the rest. Then it sets your games and writes
+   your BIOS checklist."
+7. "Some FPS boost tweaks turn off what VALORANT needs. Secure Boot, TPM,
+   memory integrity. This one reads them first and leaves them on. It never
+   touches the anti-cheat."
+10. "See what it would change before you pay. It reads your PC, then the free
+    report lists everything it would cut and changes nothing. Plus a BIOS
+    checklist for your board. Most PCs have free speed sitting in there."
+11. "Will it break my Discord? Everything that starts with Windows is a tick
+    box. Untick Discord, it stays. Spotify doesn't auto-start, but it still
+    opens when you click it. What would you keep?"
+12. "Never paste a random command from the internet. Unless it checks itself.
+    It compares its fingerprint with the copy that was tested, and if one byte
+    is off, it refuses. Every line is public. Read it before you pay."
+13. "PC optimizers want a monthly fee. This one: nineteen ninety-nine, once.
+    Every future version free. Undo included. OmniDx Edition included."
+14. "It reads your PC before it cuts anything. CPU, GPU, RAM, the board. It
+    keeps what you use, security stays on, and it spots RAM running slow.
+    Then a BIOS checklist for your exact board."
+
+**8. The real test (screen recording)**
+
+> Tested it on a Windows 11 PC, start to finish. Task Manager before, one line
+> in PowerShell, Task Manager after. No restart yet. Try it on yours: omnidx.net
+> #pcgaming #windows11 #pctips #gamingpc #techtok
+
+Pinned comment: *Real run on a Windows 11 test PC in the cloud, recorded as
+it happened; only the two waits are sped up, and the video says so. The
+number drops further after a restart, when the services it switched off stop
+starting. The free report shows what it would do on your PC and changes
+nothing.*
+
+Cover: the last frame (Task Manager, the before and after numbers).
+
+**9. The restart test (screen recording)**
+
+> Clean Windows 11 PC, start to finish: Task Manager before, one line in
+> PowerShell, Extreme mode, restart, Task Manager after. 143 to 85 on this
+> test PC. Try it on yours: omnidx.net
+> #pcgaming #windows11 #pctips #gamingpc #techtok
+
+Pinned comment: *Real run on a clean Windows 11 test PC (a fresh install in a
+virtual machine), recorded as it happened through the restart; the waits are
+sped up and the video says by how much. Extreme is the app's opt-in tier:
+fewer conveniences (animations, the search box, notifications), and undo puts
+it all back. Without Extreme the same PC went 145 to 118. Your number depends
+on what your PC runs; the free report shows what it would do and changes
+nothing.*
+
+Cover: the last frame (Task Manager after the restart, 143 → 85).
+
+## Posting
+
+- **Order:** 9, 1, 8, 2, 11, 4, 10, 3, 7, 13, 5, 12, 14, 6. One a day. The first two ask for a comment,
+  which is what gets a new account shown to more people.
+- **When:** early evening in your viewers' time zone (6 to 9 pm); after a
+  week, TikTok's Analytics > Followers shows when yours are on.
+- **Upload the MP4 in the TikTok app itself**, not through a scheduler, for
+  the first posts. Keep "Allow Duet / Stitch" on.
+- **Sound:** the music is original and yours to use. If you add a trending
+  sound instead, keep it low (Volume, about 15%) so the key clicks and hits
+  still land; a business account can only use the Commercial Music Library.
+- **Bio:** "One command. 200 processes → under 100. $19.99 once." and
+  omnidx.net (the Website field needs a business account or 1,000
+  followers; until then put it in the bio text).
+- **The first hour:** answer every comment. When someone posts their number,
+  reply with a video (the reply button, Record video reply) doing theirs:
+  "312? Here's what's probably running." That reply is often the post that
+  travels.
+- **Reuse:** the same files go to Instagram Reels and YouTube Shorts with the
+  same captions (drop the hashtags to three on YouTube).
+
+## Replies to the comments you will get
+
+- **"Scam" / "virus" / "don't run random scripts"**: "Fair. The whole script
+  is public at omnidx.net/tune/omnidx.ps1; read it first. Or run the free
+  report: it changes nothing and tells you what it would do."
+- **"Just do it yourself"**: "You can, and the site has the list with every
+  setting's path: omnidx.net/studio/guide/. The tune is that list, done and
+  recorded, with an undo."
+- **"Does it give FPS?"**: "It cuts what runs in the background and fixes
+  settings like XMP. What that does for your frames depends on your PC, so no
+  promises; the free report shows what it would change first."
+- **"Does it break VALORANT / FACEIT?"**: "No. It never touches the
+  anti-cheat, and Secure Boot, TPM and memory integrity stay on."
+- **"Why pay?"**: "$19.99 once, no subscription, locked to your PC, undo
+  included. The free report is free forever."
+- **"What's Extreme? Is it safe?"**: "It's a box in the app, off unless you
+  tick it: it also turns off animations, the search box, notifications and
+  the extra services. Security stays on. Undo the last run puts only Extreme
+  back."
+- **"That's a virtual machine"**: "Yes, a test PC in the cloud, and the
+  video says so. A home PC with launchers, RGB and PC-maker apps has more to
+  cut. Run the free report on yours; it changes nothing."
+- **"My number is X"**: thank them, and if it's high, reply with the
+  what-it-cuts video (number 3).
+
+## Never, in a caption or a comment
+
+No frame-rate number, no "X% faster", no competitor named, no "AI", no fake
+urgency, and no number of buyers you don't have. The honest version already
+works: people trust the one that shows the undo first.

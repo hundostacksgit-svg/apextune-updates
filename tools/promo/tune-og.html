@@ -1,0 +1,97 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Tune share card</title>
+<!--
+  The link-preview card for OmniDx Tune. Rendered to studio/assets/og-card.png
+  by tools/promo/render-studio-og.mjs (pass --tune). Edit here, re-render,
+  commit the PNG.
+
+  1200x630 is the size every scraper crops to. Everything important stays well
+  inside the middle, because Twitter and iMessage crop the edges differently.
+-->
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1200px;height:630px;overflow:hidden;background:#050308}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
+  color:#f1ecff;-webkit-font-smoothing:antialiased}
+#s{position:relative;width:1200px;height:630px;overflow:hidden;
+  background:
+    radial-gradient(760px 460px at 84% 8%,rgba(139,92,246,.34),transparent 62%),
+    radial-gradient(620px 420px at 12% 96%,rgba(217,70,239,.20),transparent 64%),
+    #050308}
+#s::before{content:"";position:absolute;inset:0;opacity:.5;
+  background-image:linear-gradient(#1b1430 1px,transparent 1px),linear-gradient(90deg,#1b1430 1px,transparent 1px);
+  background-size:56px 56px;
+  -webkit-mask-image:radial-gradient(ellipse 90% 70% at 50% 0%,#000,transparent 72%)}
+.left{position:absolute;left:76px;top:0;bottom:0;width:620px;display:flex;flex-direction:column;
+  justify-content:center;gap:22px;z-index:2}
+.brand{display:flex;align-items:center;gap:16px}
+.mark{width:62px;height:62px;border-radius:16px;
+  background:linear-gradient(125deg,#6d28d9,#8b5cf6 45%,#d946ef);
+  box-shadow:0 12px 34px -8px rgba(139,92,246,.7);display:grid;place-items:center}
+.mark svg{width:38px;height:38px}
+.brand b{font-size:44px;font-weight:800;letter-spacing:-.025em}
+.brand small{font-size:19px;font-weight:700;letter-spacing:.16em;color:#7d7199;text-transform:uppercase}
+h1{font-size:58px;line-height:1.04;font-weight:800;letter-spacing:-.038em}
+.grad{background:linear-gradient(115deg,#8b5cf6,#c084fc 45%,#d946ef);
+  -webkit-background-clip:text;background-clip:text;color:transparent}
+p{font-size:23px;line-height:1.45;color:#b3a8cf;max-width:580px}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+.chip{padding:9px 19px;border:2px solid #2a1f45;border-radius:999px;font-size:19px;
+  color:#b3a8cf;font-weight:600}
+.chip.on{border-color:#8b5cf6;color:#f1ecff}
+
+/* The console, on the right. */
+.app{position:absolute;right:-46px;top:86px;width:600px;height:470px;border-radius:18px;
+  border:1px solid #2a1f45;background:#0e0a17;overflow:hidden;z-index:1;
+  box-shadow:0 40px 90px rgba(0,0,0,.7);transform:perspective(1500px) rotateY(-13deg) rotateX(3deg)}
+.bar{display:flex;align-items:center;gap:7px;padding:12px 16px;background:#150f22;border-bottom:1px solid #2a1f45}
+.bar i{width:11px;height:11px;border-radius:50%;background:#2a1f45;display:block}
+.bar i:nth-child(1){background:#ff5f57}.bar i:nth-child(2){background:#ffbd2e}.bar i:nth-child(3){background:#28c840}
+.bar span{margin-left:10px;font-size:14px;color:#7d7199;font-family:ui-monospace,Menlo,monospace}
+.log{padding:18px 20px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14.5px;line-height:1.6;color:#b3a8cf;white-space:pre}
+.log .h{color:#c084fc;font-weight:700}.log .ok{color:#30d38a}.log .w{color:#f1ecff}
+.count{position:absolute;right:26px;bottom:22px;text-align:right}
+.count b{display:block;font-family:ui-monospace,Menlo,monospace;font-size:64px;font-weight:700;letter-spacing:-.04em;line-height:1;
+  background:linear-gradient(115deg,#8b5cf6,#c084fc 45%,#d946ef);-webkit-background-clip:text;background-clip:text;color:transparent}
+.count s{font-family:ui-monospace,Menlo,monospace;font-size:24px;color:#7d7199;text-decoration-color:#ff5d6c}
+.count span{display:block;font-size:13px;color:#7d7199;margin-top:4px}
+</style></head><body>
+<div id="s">
+  <div class="app">
+    <div class="bar"><i></i><i></i><i></i><span>irm omnidx.net/go.ps1 | iex</span></div>
+    <div class="log"><span class="h">== Reading this PC</span>
+  Ryzen 5 5600X · RTX 3060 · 16 GB
+<span class="w">  Processes running now: 214</span>
+<span class="h">== Safety first</span>
+  + Restore point created
+<span class="h">== Startup apps</span>
+  + 11 disabled
+<span class="h">== Services</span>
+  + 38 stopped, set to manual
+<span class="h">== The OmniDx power plan</span>
+  + created and active
+<span class="h">== Game profiles</span>
+  + Fortnite · VALORANT · Marvel Rivals
+<span class="h">== Done</span>
+<span class="ok">  Processes: 214 → 86</span></div>
+    <div class="count"><s>214</s><b>86</b><span>processes</span></div>
+  </div>
+
+  <div class="left">
+    <div class="brand">
+      <span class="mark"><svg viewBox="0 0 64 64">
+        <rect x="12" y="17" width="30" height="6" rx="3" fill="#fff" opacity=".92"/>
+        <rect x="12" y="29" width="20" height="6" rx="3" fill="#fff" opacity=".68"/>
+        <rect x="12" y="41" width="11" height="6" rx="3" fill="#fff" opacity=".45"/>
+        <path d="M47 14 L37 34 L45 34 L41 50 L53 28 L45 28 Z" fill="#fff"/></svg></span>
+      <b>OmniDx</b><small>Tune</small>
+    </div>
+    <h1>200 processes.<br><span class="grad">Under 100.</span><br>One command.</h1>
+    <p>Windows cut down to what your games need, a power plan built for frames, and a BIOS checklist for your board.</p>
+    <div class="chips">
+      <span class="chip on">$19.99 once</span>
+      <span class="chip">Undo in one line</span>
+      <span class="chip">Locked to your PC</span>
+    </div>
+  </div>
+</div>
+</body></html>

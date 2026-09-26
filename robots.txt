@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /studio/activate/
+Disallow: /studio/account/
+Disallow: /studio/admin/
+Sitemap: https://omnidx.net/sitemap.xml

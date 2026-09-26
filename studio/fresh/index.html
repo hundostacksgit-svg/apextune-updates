@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A clean Windows, set up in one go — OmniDx Tune</title>
+<meta name="description" content="Make an answer file for a fresh Windows 11 install in your browser: a local account, no Microsoft account or privacy screens, and the OmniDx free look waiting on the desktop. Genuine Windows from Microsoft, nothing modified, no disk ever named.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="../assets/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="../assets/icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<link rel="canonical" href="https://omnidx.net/studio/fresh/">
+<meta property="og:url" content="https://omnidx.net/studio/fresh/">
+<meta property="og:image" content="https://omnidx.net/studio/assets/og-card.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="OmniDx: the eagle mark and the OMNIDX wordmark in purple on black, and the line: one command, Windows cut down to what your games need.">
+<meta name="twitter:image" content="https://omnidx.net/studio/assets/og-card.jpg">
+<meta name="twitter:title" content="A clean Windows, set up in one go — OmniDx Tune">
+<meta name="twitter:description" content="An answer file for a fresh Windows 11: a local account, the setup screens skipped, genuine Windows. Made in your browser.">
+<meta property="og:site_name" content="OmniDx Tune">
+<meta property="og:title" content="A clean Windows, set up in one go — OmniDx Tune">
+<meta property="og:description" content="An answer file for a fresh Windows 11: a local account, the setup screens skipped, genuine Windows. Made in your browser.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preload" as="image" href="../assets/logo/omnidx-logo-800.webp" type="image/webp">
+<link rel="stylesheet" href="../assets/studio.css">
+<script>
+(function(){try{var t=localStorage.getItem('omnidx.theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+</script>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"><div class="grid"></div></div>
+<!-- chrome:nav -->
+<nav class="nav">
+  <div class="wrap">
+    <a class="logo" href="../" aria-label="OmniDx"><img class="logo-img" src="../assets/logo/omnidx-logo-800.webp" srcset="../assets/logo/omnidx-logo-800.webp 800w, ../assets/logo/omnidx-logo-1600.webp 1600w" sizes="132px" width="800" height="402" alt="OmniDx" decoding="async"></a>
+
+    <!-- The menu box. One row on a desktop, and the same links live in the
+         drawer below for phones — never two different menus to keep in step. -->
+    <div class="menubox" data-menubox>
+      <div class="mb" data-mb>
+        <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp0">What it does<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="mb-pop" id="mbp0" role="menu"><a class="mb-link" href="../#cut" role="menuitem"><span class="mb-ico" aria-hidden="true">🧹</span><span class="mb-txt"><b>What gets cut</b><span>Startup apps, services, tasks, bloat, telemetry</span></span></a><a class="mb-link" href="../#debloat" role="menuitem"><span class="mb-ico" aria-hidden="true">🗑️</span><span class="mb-txt"><b>Debloat, for good</b><span>Preinstalled apps, OEM trials, OneDrive if unused, legacy Windows</span></span></a><a class="mb-link" href="../#tailored" role="menuitem"><span class="mb-ico" aria-hidden="true">🔍</span><span class="mb-txt"><b>Reads your PC first</b><span>Laptop or desktop, printers, Bluetooth, Wi-Fi, Xbox — the safe bar is yours</span></span></a><a class="mb-link" href="../#power" role="menuitem"><span class="mb-ico" aria-hidden="true">⚡</span><span class="mb-txt"><b>The OmniDx power plan</b><span>Built for frames: no core parking, no bus sleep</span></span></a><a class="mb-link" href="../#games" role="menuitem"><span class="mb-ico" aria-hidden="true">🎮</span><span class="mb-txt"><b>Game profiles</b><span>Fortnite, VALORANT, CS2, Marvel Rivals and twenty-seven more</span></span></a><a class="mb-link" href="../#gamefiles" role="menuitem"><span class="mb-ico" aria-hidden="true">🎯</span><span class="mb-txt"><b>Settings inside your games</b><span>V-Sync, shadows and blur written into each game's own file</span></span></a><a class="mb-link" href="../#health" role="menuitem"><span class="mb-ico" aria-hidden="true">🌡️</span><span class="mb-txt"><b>GPU, heat and network</b><span>Throttling, temperatures, jitter and loss, as numbers</span></span></a><a class="mb-link" href="../#streamers" role="menuitem"><span class="mb-ico" aria-hidden="true">🎙️</span><span class="mb-txt"><b>Streamers</b><span>OBS and Streamlabs keep what they need</span></span></a><a class="mb-link" href="../#network" role="menuitem"><span class="mb-ico" aria-hidden="true">📶</span><span class="mb-txt"><b>Network</b><span>Nagle off, adapter power saving off, latency first</span></span></a><a class="mb-link" href="../#apps" role="menuitem"><span class="mb-ico" aria-hidden="true">🎧</span><span class="mb-txt"><b>Discord, Spotify, browser</b><span>Hardware acceleration on, background running off</span></span></a><a class="mb-link" href="../#bios" role="menuitem"><span class="mb-ico" aria-hidden="true">🧬</span><span class="mb-txt"><b>BIOS checklist</b><span>Written for your exact board and CPU</span></span></a><a class="mb-link" href="../#safe" role="menuitem"><span class="mb-ico" aria-hidden="true">🛟</span><span class="mb-txt"><b>Fail-safes</b><span>Restore point, undo in one file, security untouched</span></span></a><a class="mb-link" href="../what-it-touches/" role="menuitem"><span class="mb-ico" aria-hidden="true">📋</span><span class="mb-txt"><b>Everything it touches</b><span>Every service, task, app and value, with the reason</span></span></a></div>
+      </div>
+      <div class="mb" data-mb>
+        <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp1">Run it<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="mb-pop" id="mbp1" role="menu"><a class="mb-link" href="../download/" role="menuitem"><span class="mb-ico" aria-hidden="true">⌨️</span><span class="mb-txt"><b>The command</b><span>One line in PowerShell. Nothing installed.</span></span></a><a class="mb-link" href="../download/#report" role="menuitem"><span class="mb-ico" aria-hidden="true">📋</span><span class="mb-txt"><b>Free report mode</b><span>See what it would find, no key, changes nothing</span></span></a><a class="mb-link" href="../download/#undo" role="menuitem"><span class="mb-ico" aria-hidden="true">↩️</span><span class="mb-txt"><b>Undo</b><span>Put everything back, one line</span></span></a><a class="mb-link" href="../download/#options" role="menuitem"><span class="mb-ico" aria-hidden="true">🎛️</span><span class="mb-txt"><b>Options</b><span>Aggressive, cut Xbox, keep a startup app, DNS</span></span></a><a class="mb-link" href="../edition/" role="menuitem"><span class="mb-ico" aria-hidden="true">🦅</span><span class="mb-txt"><b>OmniDx Edition</b><span>Windows set up for games, with every key</span></span></a><a class="mb-link" href="../fresh/" role="menuitem"><span class="mb-ico" aria-hidden="true">💿</span><span class="mb-txt"><b>A fresh install</b><span>An answer file for a clean Windows, free</span></span></a><a class="mb-link" href="../activate/" role="menuitem"><span class="mb-ico" aria-hidden="true">🔑</span><span class="mb-txt"><b>Your key</b><span>Get it again after paying</span></span></a><a class="mb-link" href="https://omnidx.net/tune/omnidx.ps1" role="menuitem"><span class="mb-ico" aria-hidden="true">📜</span><span class="mb-txt"><b>Read the script</b><span>Every line, public, before you run it</span></span></a></div>
+      </div>
+      <a class="mb-btn" href="../showcase/">Showcase</a>
+      <a class="mb-btn" href="../pricing/">Pricing</a>
+      <div class="mb" data-mb>
+        <button class="mb-btn" type="button" aria-expanded="false" aria-haspopup="true" aria-controls="mbp4">Help<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <div class="mb-pop" id="mbp4" role="menu"><a class="mb-link" href="../pricing/#faq" role="menuitem"><span class="mb-ico" aria-hidden="true">💬</span><span class="mb-txt"><b>FAQ</b><span>Anti-cheat, laptops, money, new PC</span></span></a><a class="mb-link" href="../trust/" role="menuitem"><span class="mb-ico" aria-hidden="true">🛡️</span><span class="mb-txt"><b>Is this safe? Is it a scam?</b><span>The straight answer, and how to check</span></span></a><a class="mb-link" href="../guide/" role="menuitem"><span class="mb-ico" aria-hidden="true">📘</span><span class="mb-txt"><b>Do it by hand</b><span>The honest list, nothing to buy</span></span></a><a class="mb-link" href="../undervolt/" role="menuitem"><span class="mb-ico" aria-hidden="true">🧊</span><span class="mb-txt"><b>Undervolt, not overclock</b><span>Cooler, quieter, same frames</span></span></a><a class="mb-link" href="../builds/" role="menuitem"><span class="mb-ico" aria-hidden="true">🧱</span><span class="mb-txt"><b>Custom Windows builds</b><span>What they cut, and where the tune stops</span></span></a><a class="mb-link" href="../trust/#cant" role="menuitem"><span class="mb-ico" aria-hidden="true">🚫</span><span class="mb-txt"><b>What it won't touch</b><span>Defender, firewall, Secure Boot, your drivers</span></span></a><a class="mb-link" href="../activate/" role="menuitem"><span class="mb-ico" aria-hidden="true">🔓</span><span class="mb-txt"><b>Paid but no key?</b><span>Your receipt number gets it</span></span></a><a class="mb-link" href="../changelog/" role="menuitem"><span class="mb-ico" aria-hidden="true">🗒️</span><span class="mb-txt"><b>Changelog</b><span>What changed in each version</span></span></a><a class="mb-link" href="../terms/" role="menuitem"><span class="mb-ico" aria-hidden="true">📄</span><span class="mb-txt"><b>Terms, privacy, money</b><span>Plain words, one page</span></span></a><a class="mb-link" href="../app/" role="menuitem"><span class="mb-ico" aria-hidden="true">🎬</span><span class="mb-txt"><b>OmniDx Studio</b><span>The video editor, still here</span></span></a></div>
+      </div>
+    </div>
+
+    <div class="nav-right">
+      <button class="tbtn" data-theme-toggle aria-label="Switch between dark and light">
+        <svg class="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/></svg>
+        <svg class="moon" viewBox="0 0 24 24"><path d="M20 14.5A8.2 8.2 0 0 1 9.5 4a8.3 8.3 0 1 0 10.5 10.5z"/></svg>
+      </button>
+      <a class="nav-discord" href="https://discord.gg/VvbYJcDQbB" target="_blank" rel="noopener" aria-label="Join the OmniDx Discord"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.74 19.74 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .078-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.009c.12.1.246.198.373.292a.077.077 0 0 1-.006.127c-.598.35-1.22.645-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.363 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg><span>Discord</span></a>
+      <a class="nav-key" href="../activate/">Your key</a>
+      <a class="btn btn-primary nav-cta" href="../pricing/">Get it — <span data-price="tune">$19.99</span></a>
+      <button class="burger" type="button" data-drawer aria-expanded="false"
+              aria-controls="drawer" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <span class="nav-progress" data-progress aria-hidden="true"></span>
+</nav>
+
+<!-- Phone menu. Hidden until the button is pressed, and it holds exactly the
+     same links as the box above so nothing is only reachable on a desktop. -->
+<div class="drawer" id="drawer" hidden>
+  <div class="drawer-inner">
+    <div class="drawer-top">
+      <a class="btn btn-primary btn-lg" href="../pricing/">Get it — <span data-price="tune">$19.99</span></a>
+      <a class="btn btn-lg" href="../download/">Run it</a>
+      <a class="btn btn-lg drawer-discord" href="https://discord.gg/VvbYJcDQbB" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.37a19.79 19.79 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.865-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.74 19.74 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.1 13.1 0 0 1-1.872-.892.077.077 0 0 1-.008-.128c.126-.094.252-.192.372-.291a.074.074 0 0 1 .078-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.009c.12.1.246.198.373.292a.077.077 0 0 1-.006.127c-.598.35-1.22.645-1.873.892a.077.077 0 0 0-.041.107c.36.698.772 1.363 1.225 1.993a.076.076 0 0 0 .084.028 19.84 19.84 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.095 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>Join the Discord</a>
+    </div>
+    <div class="drawer-group">
+      <div class="drawer-h">What it does</div>
+      <div class="drawer-links">
+        <a href="../#cut"><span aria-hidden="true">🧹</span>What gets cut<em>Startup apps, services, tasks, bloat, telemetry</em></a>
+        <a href="../#debloat"><span aria-hidden="true">🗑️</span>Debloat, for good<em>Preinstalled apps, OEM trials, OneDrive if unused, legacy Windows</em></a>
+        <a href="../#tailored"><span aria-hidden="true">🔍</span>Reads your PC first<em>Laptop or desktop, printers, Bluetooth, Wi-Fi, Xbox — the safe bar is yours</em></a>
+        <a href="../#power"><span aria-hidden="true">⚡</span>The OmniDx power plan<em>Built for frames: no core parking, no bus sleep</em></a>
+        <a href="../#games"><span aria-hidden="true">🎮</span>Game profiles<em>Fortnite, VALORANT, CS2, Marvel Rivals and twenty-seven more</em></a>
+        <a href="../#gamefiles"><span aria-hidden="true">🎯</span>Settings inside your games<em>V-Sync, shadows and blur written into each game's own file</em></a>
+        <a href="../#health"><span aria-hidden="true">🌡️</span>GPU, heat and network<em>Throttling, temperatures, jitter and loss, as numbers</em></a>
+        <a href="../#streamers"><span aria-hidden="true">🎙️</span>Streamers<em>OBS and Streamlabs keep what they need</em></a>
+        <a href="../#network"><span aria-hidden="true">📶</span>Network<em>Nagle off, adapter power saving off, latency first</em></a>
+        <a href="../#apps"><span aria-hidden="true">🎧</span>Discord, Spotify, browser<em>Hardware acceleration on, background running off</em></a>
+        <a href="../#bios"><span aria-hidden="true">🧬</span>BIOS checklist<em>Written for your exact board and CPU</em></a>
+        <a href="../#safe"><span aria-hidden="true">🛟</span>Fail-safes<em>Restore point, undo in one file, security untouched</em></a>
+        <a href="../what-it-touches/"><span aria-hidden="true">📋</span>Everything it touches<em>Every service, task, app and value, with the reason</em></a>
+      </div>
+    </div>
+    <div class="drawer-group">
+      <div class="drawer-h">Run it</div>
+      <div class="drawer-links">
+        <a href="../download/"><span aria-hidden="true">⌨️</span>The command<em>One line in PowerShell. Nothing installed.</em></a>
+        <a href="../download/#report"><span aria-hidden="true">📋</span>Free report mode<em>See what it would find, no key, changes nothing</em></a>
+        <a href="../download/#undo"><span aria-hidden="true">↩️</span>Undo<em>Put everything back, one line</em></a>
+        <a href="../download/#options"><span aria-hidden="true">🎛️</span>Options<em>Aggressive, cut Xbox, keep a startup app, DNS</em></a>
+        <a href="../edition/"><span aria-hidden="true">🦅</span>OmniDx Edition<em>Windows set up for games, with every key</em></a>
+        <a href="../fresh/"><span aria-hidden="true">💿</span>A fresh install<em>An answer file for a clean Windows, free</em></a>
+        <a href="../activate/"><span aria-hidden="true">🔑</span>Your key<em>Get it again after paying</em></a>
+        <a href="https://omnidx.net/tune/omnidx.ps1"><span aria-hidden="true">📜</span>Read the script<em>Every line, public, before you run it</em></a>
+      </div>
+    </div>
+    <a class="drawer-solo" href="../showcase/">Showcase</a>
+    <a class="drawer-solo" href="../pricing/">Pricing</a>
+    <div class="drawer-group">
+      <div class="drawer-h">Help</div>
+      <div class="drawer-links">
+        <a href="../pricing/#faq"><span aria-hidden="true">💬</span>FAQ<em>Anti-cheat, laptops, money, new PC</em></a>
+        <a href="../trust/"><span aria-hidden="true">🛡️</span>Is this safe? Is it a scam?<em>The straight answer, and how to check</em></a>
+        <a href="../guide/"><span aria-hidden="true">📘</span>Do it by hand<em>The honest list, nothing to buy</em></a>
+        <a href="../undervolt/"><span aria-hidden="true">🧊</span>Undervolt, not overclock<em>Cooler, quieter, same frames</em></a>
+        <a href="../builds/"><span aria-hidden="true">🧱</span>Custom Windows builds<em>What they cut, and where the tune stops</em></a>
+        <a href="../trust/#cant"><span aria-hidden="true">🚫</span>What it won't touch<em>Defender, firewall, Secure Boot, your drivers</em></a>
+        <a href="../activate/"><span aria-hidden="true">🔓</span>Paid but no key?<em>Your receipt number gets it</em></a>
+        <a href="../changelog/"><span aria-hidden="true">🗒️</span>Changelog<em>What changed in each version</em></a>
+        <a href="../terms/"><span aria-hidden="true">📄</span>Terms, privacy, money<em>Plain words, one page</em></a>
+        <a href="../app/"><span aria-hidden="true">🎬</span>OmniDx Studio<em>The video editor, still here</em></a>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- /chrome:nav -->
+
+<header class="hero" style="padding:64px 0 30px">
+  <div class="wrap center">
+    <div class="eyebrow"><span class="pulse"></span>Free · made in your browser · nothing sent anywhere</div>
+    <h1 style="font-size:clamp(34px,5.6vw,58px)">A clean Windows, set up in one go.</h1>
+    <p class="lede">
+      What people get from a custom Windows build is a clean install that comes up already quiet. You can have that
+      from genuine Windows: this page makes the answer file Windows setup reads, so a fresh install skips the account,
+      licence and privacy screens, makes a local account, and leaves the free look on the desktop. Then the tune does the rest,
+      with an undo, on Windows that still gets every update.
+    </p>
+  </div>
+</header>
+
+<section id="make" data-rail="Make the file">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>Make the file.</h2>
+      <p>Everything below stays in this page. The file never names a disk: setup still asks where to install, so it cannot wipe the wrong drive.</p>
+    </div>
+    <div class="grid grid-2">
+      <form class="card fresh-form" id="fresh-form" novalidate>
+        <h3>Your install</h3>
+        <label class="fresh-field"><span>Account name</span><input name="account" value="Player" maxlength="20" autocomplete="off" spellcheck="false" required></label>
+        <label class="fresh-field"><span>Password <em>(optional; leave it empty to set one later)</em></span><input name="password" type="password" autocomplete="new-password"></label>
+        <label class="fresh-field"><span>PC name <em>(optional; empty gives a random one)</em></span><input name="pc" maxlength="15" autocomplete="off" spellcheck="false" placeholder="GAMING-PC"></label>
+        <label class="fresh-field"><span>Windows language <em>(the one you downloaded)</em></span><select name="lang">
+          <option value="en-US" selected>English (United States)</option><option value="en-GB">English (International)</option>
+          <option value="fr-FR">French</option><option value="de-DE">German</option><option value="es-ES">Spanish</option>
+          <option value="es-MX">Spanish (Mexico)</option><option value="pt-BR">Portuguese (Brazil)</option><option value="it-IT">Italian</option>
+          <option value="pl-PL">Polish</option><option value="nl-NL">Dutch</option></select></label>
+        <label class="fresh-field"><span>Keyboard and region</span><select name="keyboard">
+          <option value="0409:00000409|en-US" selected>United States</option><option value="0809:00000809|en-GB">United Kingdom</option>
+          <option value="1009:00000409|en-CA">Canada (English)</option><option value="0c09:00000409|en-AU">Australia</option>
+          <option value="040c:0000040c|fr-FR">France</option><option value="0407:00000407|de-DE">Germany</option>
+          <option value="0c0a:0000040a|es-ES">Spain</option><option value="080a:0000080a|es-MX">Mexico</option>
+          <option value="0416:00000416|pt-BR">Brazil</option><option value="0410:00000410|it-IT">Italy</option>
+          <option value="0415:00000415|pl-PL">Poland</option><option value="0413:00020409|nl-NL">Netherlands</option></select></label>
+        <label class="fresh-field"><span>Time zone</span><select name="tz">
+          <option value="" selected>Let Windows choose from the region</option>
+          <option value="Eastern Standard Time">US Eastern</option><option value="Central Standard Time">US Central</option>
+          <option value="Mountain Standard Time">US Mountain</option><option value="Pacific Standard Time">US Pacific</option>
+          <option value="GMT Standard Time">UK and Ireland</option><option value="W. Europe Standard Time">Central Europe (Berlin, Paris, Rome)</option>
+          <option value="Romance Standard Time">Western Europe (Madrid, Brussels)</option><option value="Central European Standard Time">Central Europe (Warsaw)</option>
+          <option value="E. South America Standard Time">Brazil (Brasilia)</option><option value="AUS Eastern Standard Time">Australia Eastern</option></select></label>
+        <fieldset class="fresh-opts"><legend>Options</legend>
+          <label><input type="checkbox" name="privacy" checked> Privacy settings off (location, diagnostics, tailored ads)</label>
+          <label><input type="checkbox" name="shortcut" checked> Put the OmniDx free look on the desktop (it changes nothing when run)</label>
+          <label><input type="checkbox" name="skipwifi"> Skip the Wi-Fi screen (set Wi-Fi up afterwards)</label>
+        </fieldset>
+        <ul class="fresh-errors" id="fresh-errors" role="alert" hidden></ul>
+        <button class="btn btn-primary" type="submit" id="fresh-download">Download autounattend.xml</button>
+      </form>
+      <div class="card">
+        <h3>The file, as it will be saved</h3>
+        <p class="small">Read it before you use it. Every line is standard Windows setup; the comment at the top says what it does.</p>
+        <pre class="fresh-xml" id="fresh-xml" tabindex="0" aria-label="The answer file"></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="use" data-rail="How to use it">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>How to use it. Four steps.</h2>
+      <p>Back up anything you want to keep first: a clean install is clean.</p>
+    </div>
+    <div class="grid grid-2">
+      <div class="card reveal"><div class="card-icon">1</div><h3>Make the USB stick</h3><p>Microsoft's own <b>Media Creation Tool</b> (search "download Windows 11" on microsoft.com) makes a bootable USB stick from genuine Windows. Pick the same language you picked above.</p></div>
+      <div class="card reveal d1"><div class="card-icon">2</div><h3>Put the file on it</h3><p>Copy <span class="mono">autounattend.xml</span> to the top of the stick, next to <span class="mono">setup.exe</span>. The name matters: setup looks for exactly that name.</p></div>
+      <div class="card reveal d2"><div class="card-icon">3</div><h3>Install</h3><p>Boot from the stick. Setup asks for the edition if it cannot tell, and <b>where to install</b>: pick the disk yourself. If it asks for a product key, choose "I don't have a product key"; a PC that had Windows activates on its own.</p></div>
+      <div class="card reveal d3"><div class="card-icon">4</div><h3>First sign-in</h3><p>No account or privacy screens: it signs in to your local account once, and the desktop has <b>OmniDx free look</b>. Run it to see what the tune would do on this PC, then get the tune if you want it.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="why" data-rail="Why not a custom build">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <h2>Why this and not a custom Windows build.</h2>
+      <p>A custom build is Windows with parts cut out of the image before it installs. Some of what it cuts is what keeps you safe and in your games. <a href="../builds/">What they cut, and where the tune stops</a>.</p>
+    </div>
+    <div class="grid grid-2">
+      <div class="card reveal"><h3>Genuine Windows</h3><p>From Microsoft, unmodified, signed. Windows Update, Defender and repair from the official media all still work.</p></div>
+      <div class="card reveal d1"><h3>Anti-cheat stays happy</h3><p>Secure Boot, TPM 2.0, memory integrity and IOMMU are untouched, which is what VALORANT and FACEIT now require.</p></div>
+      <div class="card reveal d2"><h3>Everything can come back</h3><p>The tune records every change and undoes it in one line; a cut image cannot put back what it never installed.</p></div>
+      <div class="card reveal d3"><h3>Free, this part</h3><p>The answer file and the free look cost nothing. The tune is <span data-price="tune">$19.99</span>, once.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- chrome:footer -->
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a class="logo logo-foot" href="../" aria-label="OmniDx"><img class="logo-img" src="../assets/logo/omnidx-logo-800.webp" width="800" height="402" alt="OmniDx" loading="lazy" decoding="async"></a>
+        <p class="small" style="margin-top:14px;max-width:34ch">One command. Windows cut down to what your
+          games need, a power plan built for frames, and a BIOS checklist for your exact board.</p>
+        <p class="tiny muted" style="margin-top:10px">One payment. No subscription, ever. Nothing installed.</p>
+        <div id="rate-us" class="rate-host" aria-label="Rate OmniDx Tune"></div>
+      </div>
+      <div>
+        <h4>What it does</h4>
+        <a href="../#cut">What gets cut</a>
+        <a href="../#debloat">Debloat, for good</a>
+        <a href="../#tailored">Reads your PC first</a>
+        <a href="../#power">The power plan</a>
+        <a href="../#games">Game profiles</a>
+        <a href="../#bios">BIOS checklist</a>
+        <a href="../#safe">Fail-safes</a>
+        <a href="../what-it-touches/">Everything it touches</a>
+        <a href="../showcase/">Showcase: real runs on camera</a>
+      </div>
+      <div>
+        <h4>Get it</h4>
+        <a href="../pricing/">Pricing</a>
+        <a href="../download/">Run it</a>
+        <a href="../edition/">OmniDx Edition</a>
+        <a href="../activate/">Your key</a>
+        <a href="../download/#undo">Undo</a>
+        <a href="https://omnidx.net/tune/omnidx.ps1">Read the script</a>
+      </div>
+      <div>
+        <h4>More</h4>
+        <a href="../trust/">Is this safe? Is it a scam?</a>
+        <a href="../pricing/#faq">FAQ</a>
+        <a href="../trust/#cant">What it won't touch</a>
+        <a href="../changelog/">Changelog</a>
+        <a href="../terms/">Terms, privacy, money</a>
+        <a href="https://discord.gg/VvbYJcDQbB" target="_blank" rel="noopener">The OmniDx Discord</a>
+        <a href="../es/" hreflang="es" lang="es">En español</a>
+        <a href="../pt/" hreflang="pt-BR" lang="pt-BR">Em português</a>
+        <a href="../app/">OmniDx Studio — the video editor</a>
+        <span class="foot-support" data-support="OmniDx Tune — help" hidden></span>
+      </div>
+    </div>
+    <div class="foot-note">
+      <span>© 2026 OmniDx. One payment. Yours. Script <span data-script-version>v1.2.0</span>.</span>
+      <span>Nothing leaves your PC except the key check.</span>
+    </div>
+  </div>
+</footer>
+<!-- /chrome:footer -->
+<script type="module" src="../assets/studio.js"></script>
+</body>
+</html>

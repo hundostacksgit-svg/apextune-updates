@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Your key — OmniDx Tune</title>
+<meta name="description" content="Your payment went through. Here is your OmniDx Tune key and the one command that runs it.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="../assets/icons/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="../assets/icons/icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
+<link rel="canonical" href="https://omnidx.net/studio/activate/">
+<!-- A receipt page is nobody's share target, and a search result for it would
+     only ever confuse. Keep it out of both. -->
+<meta name="robots" content="noindex,nofollow">
+<link rel="preload" as="image" href="../assets/logo/omnidx-logo-800.webp" type="image/webp">
+<link rel="stylesheet" href="../assets/studio.css">
+<script>
+(function(){try{var t=localStorage.getItem('omnidx.theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+</script>
+<style>
+  .act-wrap{max-width:680px;margin:0 auto;padding:36px 20px 80px}
+  .act-top{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:28px}
+  .act-top .logo{font-size:17px}
+  .act-card{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-l,20px);padding:32px 26px}
+  @media(max-width:480px){.act-card{padding:24px 18px}}
+  .act-tick{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-size:32px;
+    margin:0 auto 18px;background:color-mix(in srgb,var(--ok,#35d07f) 18%,transparent);
+    border:1px solid color-mix(in srgb,var(--ok,#35d07f) 45%,transparent)}
+  .act-wrap h1{text-align:center;margin:0 0 8px;font-size:clamp(24px,5vw,32px)}
+  .act-sub{text-align:center;color:var(--text-2);margin:0 0 24px}
+  .act-row{display:flex;justify-content:space-between;gap:14px;padding:11px 0;border-top:1px solid var(--line);font-size:14px}
+  .act-row b{font-weight:600;text-align:right}
+  .act-actions{display:flex;flex-direction:column;gap:10px;margin-top:22px}
+  .act-actions .btn{width:100%;justify-content:center}
+  .act-note{margin-top:22px;font-size:13px;color:var(--text-2);line-height:1.6}
+  .act-h{font-size:12px;font-weight:750;letter-spacing:.14em;text-transform:uppercase;color:var(--blue-2);margin:28px 0 12px}
+  .act-spin{width:44px;height:44px;border-radius:50%;margin:0 auto 18px;
+    border:3px solid var(--line);border-top-color:var(--blue);animation:act-turn .8s linear infinite}
+  .keybox{margin:6px 0 12px}
+  .act-copy{display:flex;justify-content:center}
+  @keyframes act-turn{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion: reduce){.act-spin{animation-duration:2.4s}}
+  @media print{
+    .aurora,.act-top .btn,.act-copy,.act-actions,.act-move,.act-note:last-child,button{display:none!important}
+    body{background:#fff;color:#000}
+    .act-card{border:0;padding:0;background:#fff}
+    .keybox{border:2px solid #000;color:#000;background:#fff}
+    .cmd{border:1px solid #000;color:#000;background:#fff;box-shadow:none}
+    .steps-list li{border-color:#000;background:#fff}
+    .steps-list li::before{background:#000;color:#fff;box-shadow:none}
+    .act-row{border-color:#000}
+  }
+</style>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"><div class="grid"></div></div>
+
+<main class="act-wrap">
+  <div class="act-top">
+    <a class="logo" href="../" aria-label="OmniDx"><img class="logo-img" src="../assets/logo/omnidx-logo-800.webp" width="800" height="402" alt="OmniDx" decoding="async"></a>
+    <span style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn btn-sm" href="https://discord.gg/VvbYJcDQbB" target="_blank" rel="noopener" style="background:#5865f2;border-color:#5865f2;color:#fff">Discord</a><a class="btn btn-sm btn-ghost" href="../download/">How to run it</a></span>
+  </div>
+  <div class="act-card" id="card">
+    <div class="act-spin" aria-hidden="true"></div>
+    <h1>Getting your key</h1>
+    <p class="act-sub">One moment.</p>
+  </div>
+</main>
+
+<script type="module" src="./activate.js"></script>
+</body>
+</html>

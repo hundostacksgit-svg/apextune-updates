@@ -1,0 +1,81 @@
+# OmniDx Edition on a clean Windows 11 PC, the way a buyer gets it: Windows
+# installed from Microsoft's image by the Edition's answer file, the Edition's
+# setup at the first sign-in (with the tune in Extreme, from a key issued by
+# the real Worker code here), its restart, then a look round: the welcome,
+# the Hub, the desktop, Start, Windows + S, the browser, Task Manager,
+# Settings > About, the lock screen and the sign-in picture. The PC is the
+# virtual machine of tools/promo/film/vm (run.sh --edition), recorded from
+# outside it.
+#
+# The pictures and the recording are a preview for the owner, not a site
+# file: they leave as a pre-release on this repository (tag edition-vm-*),
+# and the next run deletes the old ones. Nothing is committed.
+name: OmniDx Edition on a clean Windows 11 PC
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/omnidx-editing-platform-9phdcc"]
+    paths: ["edition/ci/vm-take.txt", ".github/workflows/edition-vm.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: edition-vm
+  cancel-in-progress: true
+
+jobs:
+  pc:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PREFIX: edition-vm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Room for the PC
+        run: sudo mkdir -p /mnt/film/iso && sudo chown -R "$(id -u):$(id -g)" /mnt/film
+      # The Windows image (about 6 GB) is fetched from Microsoft once and kept (shared with the restart film).
+      - uses: actions/cache@v4
+        with:
+          path: /mnt/film/iso
+          key: win11-enterprise-eval-2334167
+      - name: Install Windows, set up OmniDx Edition, look round
+        timeout-minutes: 165
+        # --edition-command: the full film. No key on the stick, so setup leaves the tune to the one line in PowerShell,
+        # typed after the look round (in Extreme); the install itself is kept as a frame every five seconds.
+        run: bash tools/promo/film/vm/run.sh "$RUNNER_TEMP/pc" --edition --edition-command --extreme --eject cdrom0 --settle-before 0 --settle-after 210 || echo "run.sh exited $?"
+      - name: Clear old previews
+        if: always()
+        run: |
+          for t in $(gh release list --repo "$GITHUB_REPOSITORY" --limit 50 --json tagName --jq '.[].tagName' | grep -E '^edition-vm-' | grep -v "${{ github.run_id }}" || true); do
+            gh release delete "$t" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag && echo "deleted $t"
+          done
+      - name: Hand the pictures and the recording over as a pre-release
+        if: always()
+        run: |
+          cd "$RUNNER_TEMP/pc" || exit 0
+          shots=$(ls install-*.png settle-*.png setup-*.png uac.png 2>/dev/null || true)
+          [ -n "$shots" ] && python3 -m zipfile -c setup-shots.zip $shots && rm -f $shots
+          for d in guest disk timelapse; do [ -d "$d" ] && python3 -m zipfile -c "$d-files.zip" "$d" && rm -rf "$d"; done
+          files=$(find . -maxdepth 1 -type f -size +0 | sort)
+          tag="edition-vm-${{ github.run_id }}"
+          if gh release create "$tag" --repo "$GITHUB_REPOSITORY" --prerelease --title "OmniDx Edition preview $tag" --notes "A clean Windows 11 install set up as OmniDx Edition, pictured; deleted by the next run." $files; then
+            echo "released $tag with $(echo $files | wc -w) files"
+          else
+            # A refused release (it happened once, 403, with the same token that had just deleted one) must not lose
+            # the take: the files go on the run's progress release, which exists by now.
+            echo "release refused; adding the files to edition-vm-progress-${{ github.run_id }}"
+            gh release upload "edition-vm-progress-${{ github.run_id }}" --repo "$GITHUB_REPOSITORY" --clobber $files && echo "uploaded to the progress release" || echo "upload failed too"
+          fi
+      # And as the run's own artifact, whatever happened above.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: edition-vm-take
+          path: ${{ runner.temp }}/pc/*
+          retention-days: 3
+          if-no-files-found: ignore
