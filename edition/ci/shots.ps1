@@ -113,25 +113,26 @@ $gtr = (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager
 $dx = (Get-ItemProperty 'HKCU:\Software\Microsoft\DirectX\UserGpuPreferences' -Name DirectXUserGlobalSettings -ErrorAction SilentlyContinue).DirectXUserGlobalSettings
 Check ($gtr -eq 1) "Competitive: Game Boost's timer reaches every app (GlobalTimerResolutionRequests=$gtr)"
 Check ("$dx" -match 'SwapEffectUpgradeEnable=1;') "Competitive: windowed games get the flip model (DirectXUserGlobalSettings='$dx')"
-# Game Boost's Efficiency mode (Competitive is on): a browser in the background drops below normal while Boost is on
-# and is put back after. Judged on Edge's main process, whose priority Edge does not change by itself.
-Start-Process msedge.exe -ArgumentList '--no-first-run', '--no-default-browser-check', 'about:blank' -WindowStyle Minimized
-Start-Sleep 8
-function Edge-Main { Get-CimInstance Win32_Process -Filter "Name='msedge.exe'" | Where-Object { $_.CommandLine -notmatch '--type=' } | Select-Object -First 1 }
+# Game Boost's Efficiency mode (Competitive is on): an app on the list drops below normal while Boost is on and is put
+# back after. Judged on a stand-in the check starts itself at normal priority (ping.exe copied as Telegram.exe, one of
+# the names Game Boost lightens): Edge lowers its own main process in the background on some builds (this runner's
+# Edge was below normal before Boost ever ran), so a real browser's priority says nothing either way.
 function Prio([int]$id) { try { "$((Get-Process -Id $id -ErrorAction Stop).PriorityClass)" } catch { 'gone' } }
+$standIn = Join-Path $env:TEMP 'omnidx-eco\Telegram.exe'
+New-Item -ItemType Directory -Force -Path (Split-Path $standIn) | Out-Null
+Copy-Item "$env:SystemRoot\System32\PING.EXE" $standIn -Force
+$bg = Start-Process $standIn -ArgumentList '-t', '127.0.0.1' -WindowStyle Hidden -PassThru
+Start-Sleep 2
 if (-not (Get-Process OmniSearch -ErrorAction SilentlyContinue)) { Start-Process (Join-Path $bin 'OmniSearch.exe') -ArgumentList '--background'; Start-Sleep 3 }
-$edge = Edge-Main
-if ($edge) {
-  $before = Prio $edge.ProcessId
-  Start-Process (Join-Path $bin 'OmniSearch.exe') -ArgumentList '--boost'; Start-Sleep 5
-  $during = Prio $edge.ProcessId
-  Start-Process (Join-Path $bin 'OmniSearch.exe') -ArgumentList '--unboost'; Start-Sleep 4
-  $after = Prio $edge.ProcessId
-  Note "Edge's main process: $before, with Game Boost on $during, after $after"
-  Check ($before -eq 'Normal' -and $during -eq 'BelowNormal') 'Game Boost: a background browser runs in Efficiency mode while it is on'
-  Check ($after -eq 'Normal') 'Game Boost: the browser is back to normal when it ends'
-} else { Note 'Edge did not start here; the Efficiency mode check is skipped' }
-Get-Process msedge -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+$before = Prio $bg.Id
+Start-Process (Join-Path $bin 'OmniSearch.exe') -ArgumentList '--boost'; Start-Sleep 5
+$during = Prio $bg.Id
+Start-Process (Join-Path $bin 'OmniSearch.exe') -ArgumentList '--unboost'; Start-Sleep 4
+$after = Prio $bg.Id
+Note "A background app (Telegram.exe stand-in): $before, with Game Boost on $during, after $after"
+Check ($before -eq 'Normal' -and $during -eq 'BelowNormal') 'Game Boost: a background app on the list runs in Efficiency mode while it is on'
+Check ($after -eq 'Normal') 'Game Boost: the app is back to normal when it ends'
+Stop-Process -Id $bg.Id -Force -ErrorAction SilentlyContinue
 $r = Start-Process (Join-Path $bin 'OmniHub.exe') -ArgumentList '--restore' -Wait -PassThru
 Note ("restore -> exit {0}; Win32PrioritySeparation={1}, power plan: {2}" -f $r.ExitCode, (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\PriorityControl').Win32PrioritySeparation, ((powercfg /getactivescheme) -join ' '))
 $r = Start-Process (Join-Path $bin 'OmniHub.exe') -ArgumentList '--purge' -Wait -PassThru
