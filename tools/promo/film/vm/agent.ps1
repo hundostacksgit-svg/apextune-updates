@@ -113,7 +113,12 @@ function Answer($q) {
   }
 }
 
-$boot = (Get-CimInstance Win32_OperatingSystem).LastBootUpTime.ToString('o')
+# Straight to the filming machine: no proxy lookup (it can stall when the PC's own proxy discovery is switched off).
+[System.Net.WebRequest]::DefaultWebProxy = $null
+# The boot time from WMI, or from the uptime if WMI does not answer (to the second: the same boot gives the same text).
+$boot = $null
+try { $boot = (Get-CimInstance Win32_OperatingSystem -OperationTimeoutSec 30 -ErrorAction Stop).LastBootUpTime.ToString('o') } catch { Note "boot from WMI: $_" }
+if (-not $boot) { $t = (Get-Date).AddMilliseconds(-[double][Environment]::TickCount); $boot = $t.AddTicks(-($t.Ticks % 10000000)).ToString('o') }
 Note "agent up; boot $boot; user $env:USERNAME"
 $last = 0; $fails = 0
 while ($true) {
