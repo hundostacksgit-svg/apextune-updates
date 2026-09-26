@@ -31,8 +31,8 @@ reused.
 
 | | |
 |---|---|
-| **📌 START HERE** | #welcome (the banner, what OmniDx is, **Verify my purchase**, **Announcement pings**, links to the site), #rules, #announcements, #faq (nine answers). Everyone reads; only the team posts. |
-| **💬 COMMUNITY** | #general, #results (before and after), #setups, #clips, #suggestions, #off-topic. |
+| **📌 START HERE** | #welcome (the banner, what OmniDx is, **Verify my purchase**, **Announcement pings**, links to the site), #rules, #announcements, #faq (ten answers, one of them the free FPS bench). Everyone reads; only the team posts. |
+| **💬 COMMUNITY** | #general, #results (before and after, and OmniDx Bench cards), #setups, #clips, #suggestions, #off-topic. |
 | **🛠️ SUPPORT** | #open-a-ticket (the panel), #tune-help, #edition-help. |
 | **💜 BUYERS** | #buyers-lounge: Verified Buyers and the team only. |
 | **🎫 TICKETS** | Where each ticket's private channel opens. |

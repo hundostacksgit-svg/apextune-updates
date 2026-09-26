@@ -9,6 +9,7 @@ export const COLOR = { violet: 0x8b5cf6, green: 0x35d07f, red: 0xff5d6c, amber: 
 export const BANNER = 'https://omnidx.net/studio/assets/logo/banner-1500x500.jpg';
 export const TUNE_LINE = 'irm omnidx.net/go.ps1 | iex';
 export const EDITION_LINE = 'irm omnidx.net/edition.ps1 | iex';
+export const BENCH_LINE = 'irm omnidx.net/bench.ps1 | iex';
 
 /* The roles the bot makes. The owner gives "OmniDx Team" to whoever answers tickets; "Verified Buyer" comes from
    /verify; "Announcements" is the opt-in ping from the button in #welcome. Permissions are Discord's bit numbers. */
@@ -31,7 +32,7 @@ export const LAYOUT = [
   ] },
   { category: '💬 COMMUNITY', access: 'open', channels: [
     { key: 'general', name: 'general', topic: 'Talk about anything PC and gaming.' },
-    { key: 'results', name: 'results', topic: 'Before and after: post your Task Manager, your frame times, your 1% lows.' },
+    { key: 'results', name: 'results', topic: 'Before and after: post your OmniDx Bench card (irm omnidx.net/bench.ps1 | iex, free), your Task Manager, your 1% lows.' },
     { key: 'setups', name: 'setups', topic: 'Show your rig, your desk, your settings.' },
     { key: 'clips', name: 'clips', topic: 'Clips and highlights.' },
     { key: 'suggestions', name: 'suggestions', topic: 'What should OmniDx do next? One idea per message; react to vote.' },
@@ -99,7 +100,7 @@ export const FAQ = {
   anticheat: { short: 'Is it safe with anti-cheat (VALORANT, FACEIT, Fortnite)?', q: 'Is it safe with anti-cheat?',
     a: 'Yes. The tune and OmniDx Edition never touch Defender, Windows Update, Secure Boot, TPM or memory integrity, which is what Vanguard and FACEIT require, and never touch a game\'s files or its anti-cheat. It changes Windows\' own settings, each one recorded so undo puts it back.' },
   fps: { short: 'How many FPS will I gain?', q: 'How many FPS will I gain?',
-    a: 'No honest number fits every PC: it depends on your GPU, CPU and the game. What you get most is steadier frame times and fewer drops, because fewer things compete with the game. The biggest free gain on most PCs is the BIOS checklist in the report (RAM at its rated speed). The free report shows what it would change first: `$env:OMNIDX_MODE=\'report\'; irm omnidx.net/go.ps1 | iex`' },
+    a: 'No honest number fits every PC: it depends on your GPU, CPU and the game. What you get most is steadier frame times and fewer drops, because fewer things compete with the game. The biggest free gain on most PCs is the BIOS checklist in the report (RAM at its rated speed). The free report shows what it would change first: `$env:OMNIDX_MODE=\'report\'; irm omnidx.net/go.ps1 | iex`. And you can measure it on yours for free with OmniDx Bench: `irm omnidx.net/bench.ps1 | iex`' },
   undo: { short: 'How do I undo it?', q: 'How do I undo it?',
     a: 'One line in PowerShell puts every change back: `$env:OMNIDX_MODE=\'undo\'; irm omnidx.net/go.ps1 | iex`. A restore point is also made before every run. OmniDx Edition comes off with `$env:OMNIDX_EDITION=\'undo\'; irm omnidx.net/edition.ps1 | iex`.' },
   newpc: { short: 'I got a new PC. Can I move my key?', q: 'I got a new PC. Can I move my key?',
@@ -112,6 +113,8 @@ export const FAQ = {
     a: 'All sales are final: the key is delivered the moment you pay. That is why the free report exists, so you can see what it would do on your PC before paying. If the key will not work on your PC, open a ticket and it gets fixed.' },
   squad: { short: 'What is Squad?', q: 'What is Squad?',
     a: 'Three keys for $39.99, one PC each: you, a second rig or a laptop, and friends. Each key gets the tune and OmniDx Edition.' },
+  bench: { short: 'How do I measure my FPS before and after?', q: 'How do I measure my FPS before and after?',
+    a: 'OmniDx Bench, free for anyone: `irm omnidx.net/bench.ps1 | iex` in PowerShell. Get to the same spot in your game (practice range, a replay, a benchmark), press Enter, click back in: it records a minute with PresentMon (the frame-time tool reviewers use) and gives average FPS, 1% and 0.1% lows and stutters. Run it stock, then after the tune and a restart: it puts the two side by side and draws a card for #results. V-Sync and frame caps off for the test.' },
   laptop: { short: 'Does it work on a laptop?', q: 'Does it work on a laptop?',
     a: 'Yes, and it knows it is a laptop: battery, lid, brightness, Wi-Fi and Bluetooth keep working, and hibernation is left alone.' },
 };

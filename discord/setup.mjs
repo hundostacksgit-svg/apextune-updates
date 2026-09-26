@@ -15,7 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { discord } from './bot.js';
-import { LAYOUT, ROLES, KINDS, FAQ, RULES, COMMANDS, COLOR, BANNER, SITE, TUNE_LINE, EDITION_LINE } from './content.js';
+import { LAYOUT, ROLES, KINDS, FAQ, RULES, COMMANDS, COLOR, BANNER, SITE, TUNE_LINE, EDITION_LINE, BENCH_LINE } from './content.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const env = { DISCORD_TOKEN: process.env.DISCORD_TOKEN || process.env.DISCORD_BOT_TOKEN };
@@ -142,6 +142,7 @@ await panel(ids.welcome, [{
         '**OmniDx Edition** comes with every key: genuine Windows set up for games in one go.',
         '',
         `▸ Run it: \`${TUNE_LINE}\` in PowerShell (the free report changes nothing)`,
+        `▸ Your FPS, measured: \`${BENCH_LINE}\` (free), then post the card in <#` + ids.results + '>',
         '▸ Bought it? Press **Verify my purchase** for the Verified Buyer role and the buyers lounge',
         '▸ Need help? <#' + ids.tunehelp + '> for questions, <#' + ids.panel + '> for anything private',
         '▸ Read <#' + ids.rules + '>, then say hi in <#' + ids.general + '>',
@@ -188,6 +189,7 @@ await panel(ids.buyers, [{
       `▸ Extreme: \`$env:OMNIDX_MODE='extreme'; ${TUNE_LINE}\``,
       `▸ OmniDx Edition: \`$env:OMNIDX_KEY='YOUR-KEY'; ${EDITION_LINE}\` (the guide: ${SITE}edition/)`,
       `▸ Undo: \`$env:OMNIDX_MODE='undo'; ${TUNE_LINE}\``,
+      `▸ Stock against tuned, measured: \`${BENCH_LINE}\` before and after (restart first), card in <#` + ids.results + '>',
       '▸ Every update is free: the same command always fetches the newest version.',
     ].join('\n') }],
 }]);
