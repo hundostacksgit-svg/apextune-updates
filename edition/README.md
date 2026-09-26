@@ -96,6 +96,17 @@ The third run found:
   now takes the typing at once, before its engine has started. Only the new tab
   page may ask the browser to open an address.
 
+The seventh run (the first with the lean stage end to end) found:
+
+- After setup's restart and the tune's, the Edition signed in with 71
+  processes (OmniDx Search's count; 73 three minutes on), on a test PC with no
+  drivers of its own. The target is 60.
+- Windows installs OneDrive for the account in the background at the first
+  sign-in, which is when setup runs: the lean stage found no OneDrive
+  start-up entry to switch off, and the tune found no OneDrive to remove, so it
+  finished installing after both and started at every sign-in. Both now wait
+  for that installer (up to two minutes) first; tune 1.78.2.
+
 ## Before it goes on the site
 
 - Check the pins and the lock screen picture on Home and Pro (the VM is

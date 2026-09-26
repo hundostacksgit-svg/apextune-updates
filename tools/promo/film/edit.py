@@ -20,6 +20,8 @@ edl.json:
    "sources": {"install": "install.mp4"},      more recordings: a segment with "src": "install" is cut from that one,
                                                fitted to the screen's size (the install timelapse, for one)
    "chapters": [{"from": 0, "to": 9, "text": "1 · Install"}],   a small label in the corner, the part of the story
+   "punch": true,                              each cut lands with a small zoom that settles in a quarter second
+   "progress": true,                           a thin bar under the screen: how far into the story this is
    "bed": {"pops": [3.1], "whoosh": [5.0]},
    "cursor": {"csv": "cursor.csv", "video_offset": 2.5}}
 Times in "camera", "top" and "bottom" are output seconds.
@@ -228,8 +230,13 @@ def main():
         img = bg.crop((left, 0, left + OW, OH)).convert('RGBA')
         img.alpha_composite(dim)
         img.alpha_composite(shadow)
-        # The screen, through the camera.
+        # The screen, through the camera (pushed in a little just after a cut, when "punch" asks for it).
         cx, cy, cw, ch = camera_at(edl['camera'], t)
+        if edl.get('punch'):
+            since = min([t - a for (a, z, sp) in spans if 0 < a <= t] or [9])
+            if since < 0.25:
+                k = 1 + 0.045 * (1 - since / 0.25) ** 2
+                cx, cy, cw, ch = cx + cw * (1 - 1 / k) / 2, cy + ch * (1 - 1 / k) / 2, cw / k, ch / k
         view = frame.resize((bw, bh), Image.LANCZOS, box=(cx, cy, cx + cw, cy + ch))
         if pointer:
             p = pointer.at(t)
@@ -240,6 +247,10 @@ def main():
                 if -spr.width < px < bw and -spr.height < py < bh:
                     view.paste(spr, (px, py), spr)
         img.paste(view, (bx, by), mask)
+        if edl.get('progress'):
+            d = ImageDraw.Draw(img)
+            d.rounded_rectangle([bx + 28, by + bh + 16, bx + bw - 28, by + bh + 22], radius=3, fill=(255, 255, 255, 40))
+            d.rounded_rectangle([bx + 28, by + bh + 16, bx + 28 + max(6, (bw - 56) * t / dur), by + bh + 22], radius=3, fill=(139, 92, 246, 255))
         # Speed, when it is not real time.
         for (a, z, sp) in spans:
             if a <= t < z and sp > 1.01:
