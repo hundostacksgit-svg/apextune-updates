@@ -78,6 +78,7 @@ tr -d '\r' < "$HERE/setup.cmd" | sed 's/$/\r/' > "$ANS/film/setup.cmd"
   [ "$EDITION" = 1 ] && echo 'for %%d in (D E F G H I J K L M) do if exist %%d:\omnidx\edition\first-logon.cmd call %%d:\omnidx\edition\first-logon.cmd'
   echo 'exit /b 0'; } | tr -d '\r' | sed 's/$/\r/' > "$ANS/film/first-logon.cmd"
 cp "$HERE/agent.ps1" "$HERE/agent-register.ps1" "$ANS/film/"
+tr -d '\r' < "$HERE/agent-start.cmd" | sed 's/$/\r/' > "$ANS/film/agent-start.cmd"
 { printf '\xff\xfe'; iconv -f UTF-8 -t UTF-16LE "$HERE/agent-task.xml"; } > "$ANS/film/agent-task.xml"
 if [ "$EDITION" = 1 ]; then
   mkdir -p "$ANS/omnidx/edition"
@@ -155,7 +156,7 @@ cp "$TPM/swtpm.log" "$OUT/swtpm.txt" 2>/dev/null || true
   echo "Windows partition: $part"
   sudo ntfs-3g -o ro,remove_hiberfile "/dev/$part" /mnt/win || sudo ntfs-3g -o ro,force "/dev/$part" /mnt/win
   mkdir -p "$OUT/disk"
-  for f in film/agent-log.txt film/setup-log.txt film/first-logon.txt Windows/Panther/UnattendGC/setupact.log Windows/Panther/UnattendGC/setuperr.log Windows/Panther/setuperr.log Windows/System32/Tasks/FilmAgent Windows/System32/Tasks/FilmAgentUser Windows/System32/Tasks/FilmAgentPS ProgramData/OmniDx/Edition/setup-log.txt ProgramData/OmniDx/Edition/first-logon.txt ProgramData/OmniDx/Edition/undo-setup.tsv ProgramData/OmniDx/Edition/presets-undo.tsv ProgramData/OmniDx/Edition/edition.json Users/User/AppData/Local/OmniDx/edition-log.txt; do
+  for f in film/agent-log.txt film/task-ran.txt film/agent-out.txt film/setup-log.txt film/first-logon.txt Windows/Panther/UnattendGC/setupact.log Windows/Panther/UnattendGC/setuperr.log Windows/Panther/setuperr.log Windows/System32/Tasks/FilmAgent Windows/System32/Tasks/FilmAgentUser Windows/System32/Tasks/FilmAgentPS ProgramData/OmniDx/Edition/setup-log.txt ProgramData/OmniDx/Edition/first-logon.txt ProgramData/OmniDx/Edition/undo-setup.tsv ProgramData/OmniDx/Edition/presets-undo.tsv ProgramData/OmniDx/Edition/edition.json Users/User/AppData/Local/OmniDx/edition-log.txt; do
     [ -f "/mnt/win/$f" ] && sudo cp "/mnt/win/$f" "$OUT/disk/$(echo "$f" | tr '/' '_')"
   done
   [ -d /mnt/win/OmniDx ] && sudo find /mnt/win/OmniDx -maxdepth 1 -type f \( -name '*.txt' -o -name '*.json' -o -name '*.html' \) -exec cp {} "$OUT/disk/" \;
@@ -164,7 +165,7 @@ cp "$TPM/swtpm.log" "$OUT/swtpm.txt" 2>/dev/null || true
   [ -d /mnt/win/film ] && sudo find /mnt/win/film -maxdepth 1 -type f -name '*-at-rest.txt' -exec cp {} "$OUT/disk/" \;
   [ -d /mnt/win/Users/User/AppData/Local/OmniDx ] && sudo find /mnt/win/Users/User/AppData/Local/OmniDx -maxdepth 1 -type f -name '*.txt' -exec cp {} "$OUT/disk/" \;
   mkdir -p "$OUT/disk/evtx"
-  for l in System Application 'Windows PowerShell' Microsoft-Windows-TaskScheduler%4Operational Microsoft-Windows-PowerShell%4Operational; do
+  for l in System Application 'Windows PowerShell' Microsoft-Windows-TaskScheduler%4Operational Microsoft-Windows-PowerShell%4Operational 'Microsoft-Windows-Windows Defender%4Operational'; do
     [ -f "/mnt/win/Windows/System32/winevt/Logs/$l.evtx" ] && sudo cp "/mnt/win/Windows/System32/winevt/Logs/$l.evtx" "$OUT/disk/evtx/"
   done
   sudo ls /mnt/win/film > "$OUT/disk/film-folder.txt" 2>&1

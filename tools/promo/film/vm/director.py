@@ -340,6 +340,12 @@ def uac_yes(baseline, timeout=25):
             yes_x = left - 12 - bw // 2
             r, g, b = im.getpixel((yes_x, cy))
             note(f'prompt: No spans {left}-{right} at y {cy}; Yes at {yes_x},{cy} (colour {r},{g},{b})')
+            if max(r, g, b) < 90:
+                # Windows in dark theme (OmniDx Edition sets it) draws the prompt dark, Yes included (take 8: 33,33,33),
+                # so there is no light button to find; Alt+Y is the prompt's own key for Yes.
+                note('prompt: a dark prompt; Yes by its key, Alt+Y')
+                pause(0.8, 1.3); press('alt', 'y')
+                return True
             if min(r, g, b) < 200:
                 note('prompt: the spot left of the accent button is not a light button; not clicking')
                 return False
@@ -597,10 +603,11 @@ def kick_agent(since, kicked):
     note('no word from the helper eight minutes after the restart; starting it from the Run box')
     shot('kick-before.png')
     press('meta_l', 'r'); pause(1.2, 1.6)
-    type_text(r'powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File C:\film\agent.ps1', 0.6)
+    type_text(r'C:\film\agent-start.cmd', 0.6)
     pause(0.4, 0.6)
     press('ctrl', 'shift', 'ret')
     uac_yes(os.path.join(A.out, 'kick-before.png'), 40)
+    time.sleep(15); shot('kick-after.png')   # the wrapper's window, with whatever PowerShell said
     mark('helper-started-by-hand')
 
 

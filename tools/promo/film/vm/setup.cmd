@@ -25,7 +25,14 @@ rem    Nor does it encrypt its disk by itself (Windows 11 24H2 turns BitLocker o
 rem    for a new install with a TPM): the filming machine reads the PC's logs off
 rem    the disk afterwards, which take 6 could not.
 reg add "HKLM\SYSTEM\CurrentControlSet\Control\BitLocker" /v PreventDeviceEncryption /t REG_DWORD /d 1 /f
-rem 4. The helper that tells the filming machine where things are on screen, at every sign-in. Task Scheduler's own
+rem 4. Microsoft Defender watches everything on this PC but the helper's own folder. The helper asks the filming
+rem    machine what to do and runs it (a window's place, a process list, a file read), which is the shape of a
+rem    remote-control trojan: from takes 6 to 8 it ran at the first sign-in and never again after a restart, while
+rem    every other sign-in task started. Its folder is kept out of scanning, by policy here and again at the first
+rem    sign-in (agent-register.ps1). The PCs the Edition and the tune are for keep Defender as it is.
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Exclusions" /v Exclusions_Paths /t REG_DWORD /d 1 /f
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Exclusions\Paths" /v "C:\film" /t REG_SZ /d 0 /f
+rem 5. The helper that tells the filming machine where things are on screen, at every sign-in. Task Scheduler's own
 rem    log is switched on (Windows leaves it off), so a sign-in where the helper never starts says why.
 wevtutil sl Microsoft-Windows-TaskScheduler/Operational /e:true
 schtasks /create /tn FilmAgent /xml C:\film\agent-task.xml /f > C:\film\setup-log.txt 2>&1
