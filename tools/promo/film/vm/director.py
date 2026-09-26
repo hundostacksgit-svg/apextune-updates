@@ -576,6 +576,14 @@ $rs = (& dism.exe /Online /Get-ReservedStorageState /English 2>&1 | Select-Strin
   ('system files: ' + ($big -join ', ')), $rs
 ) | Set-Content C:\film\numbers-at-rest.txt -Encoding UTF8
 Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First 30 | ForEach-Object { '{0,-36} {1,8:N0} MB private {2,8:N0} MB' -f $_.ProcessName, ($_.WorkingSet64 / 1MB), ($_.PrivateMemorySize64 / 1MB) } | Set-Content C:\film\memory-at-rest.txt -Encoding UTF8
+# Where the processor goes at rest: thirty seconds of samples, the total and each process's share of the whole PC.
+$cs = @(Get-Counter '\Processor(_Total)\% Processor Time', '\Process(*)\% Processor Time' -SampleInterval 2 -MaxSamples 15 -ErrorAction SilentlyContinue)
+$cores = [Environment]::ProcessorCount; $by = @{}; $tot = @()
+foreach ($x in $cs) { foreach ($c in $x.CounterSamples) {
+  if ($c.Path -like '*\processor(_total)\*') { $tot += $c.CookedValue }
+  elseif ($c.InstanceName -notin @('_total', 'idle')) { $by[$c.InstanceName] = [double]$by[$c.InstanceName] + $c.CookedValue } } }
+$avg = if ($tot.Count) { ($tot | Measure-Object -Average).Average } else { -1 }
+@(('processor at rest: {0:N1} % average over {1} samples ({2} logical processors)' -f $avg, $cs.Count, $cores)) + @($by.GetEnumerator() | Sort-Object Value -Descending | Select-Object -First 25 | ForEach-Object { '{0,-36} {1,6:N2} %' -f $_.Key, ($_.Value / [Math]::Max(1, $cs.Count) / $cores) }) | Set-Content C:\film\cpu-at-rest.txt -Encoding UTF8
 """
 
 
@@ -663,6 +671,8 @@ def edition():
     AG.ask('ps', code=IDLE_DUMP, timeout=120)
     r = AG.ask('read', path=r'C:\film\numbers-at-rest.txt', timeout=10)
     note('at rest: ' + text_of(r).replace('\n', ' | ')[:600])
+    r = AG.ask('read', path=r'C:\film\cpu-at-rest.txt', timeout=10)
+    note('cpu at rest: ' + text_of(r).replace('\n', ' | ')[:600])
 
     def page(name, wait=2.5): pause(wait, wait + 0.6); shot(name); mark(name.split('.')[0])
 
