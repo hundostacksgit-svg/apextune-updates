@@ -410,12 +410,27 @@ namespace OmniDx
         // Every two seconds: is something other than the desktop or our own windows filling the screen?
         public void Tick()
         {
+            KeepMemoryFree();
             if (!State.AutoBoost) { if (On && Auto) Set(false, false); return; }
             int pid;
             bool full = Native.ForegroundFullscreen(out pid) && pid != ownPid && !IsOurs(pid);
             if (full) { lastFull = DateTime.Now; if (!On) Set(true, true); }
             else if (On && Auto && (DateTime.Now - lastFull).TotalSeconds > 20) Set(false, false);
         }
+        // While Game Boost is on (Competitive and Insane): when free memory runs under 1 GB and the standby list holds
+        // more than that, the standby list is emptied, at most once a minute. Otherwise Windows hands the game memory
+        // by repurposing standby pages as it asks, the hitch tools like ISLC exist for. Balanced leaves memory to Windows.
+        DateTime lastPurge = DateTime.MinValue;
+        void KeepMemoryFree()
+        {
+            if (!On || State.Preset == "Balanced" || (DateTime.Now - lastPurge).TotalSeconds < 60) return;
+            long free, standby; Native.MemoryLists(out free, out standby);
+            if (free < 0 || free >= 1024 || standby < 1024) return;
+            lastPurge = DateTime.Now;
+            Edition.Start("schtasks.exe", "/run /tn \"OmniDx\\Edition Free Memory\"");
+            Edition.Log(string.Format("boost: {0} MB free, {1} MB on standby; standby list emptied", free, standby));
+        }
+
         static bool IsOurs(int pid)
         {
             try

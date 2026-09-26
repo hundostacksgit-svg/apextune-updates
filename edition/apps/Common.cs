@@ -305,6 +305,26 @@ namespace OmniDx
             int cmd = 4; // MemoryPurgeStandbyList
             return NtSetSystemInformation(80, ref cmd, 4) == 0; // SystemMemoryListInformation
         }
+        // Free memory (the zeroed and free lists) and the standby list, in MB, from Windows' own memory counters (any
+        // user may read them); -1 where they cannot be read.
+        static PerformanceCounter freeCounter;
+        static PerformanceCounter[] standbyCounters;
+        public static void MemoryLists(out long freeMb, out long standbyMb)
+        {
+            freeMb = -1; standbyMb = -1;
+            try
+            {
+                if (freeCounter == null)
+                {
+                    standbyCounters = new[] { "Standby Cache Core Bytes", "Standby Cache Normal Priority Bytes", "Standby Cache Reserve Bytes" }
+                        .Select(n => new PerformanceCounter("Memory", n, true)).ToArray();
+                    freeCounter = new PerformanceCounter("Memory", "Free & Zero Page List Bytes", true);
+                }
+                freeMb = (long)(freeCounter.NextValue() / 1048576);
+                standbyMb = (long)(standbyCounters.Sum(c => (double)c.NextValue()) / 1048576);
+            }
+            catch { freeCounter = null; freeMb = -1; standbyMb = -1; }
+        }
         // Is the window in front covering its whole screen (a game, a video)? Not the desktop, not the taskbar.
         public static bool ForegroundFullscreen(out int pid)
         {

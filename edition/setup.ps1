@@ -72,6 +72,7 @@ public static class EdNative {
 #   file <path> <backup|->                             a file the Edition replaced (put back) or made (removed)
 #   task <name>                                        a scheduled task the Edition made
 #   svc <name> <start> <delayed>                       a service's start type, as it was (changed through sc.exe)
+#   reserved <Enabled>                                 Windows' reserved storage for updates, on before the Edition
 $script:Seen = @{}
 if (Test-Path $UndoFile) { foreach ($l in Get-Content $UndoFile) { $p = $l -split "`t"; if ($p.Count -ge 3) { $script:Seen[($p[0..([Math]::Min(3, $p.Count - 1))] -join '|')] = $true } } }
 function Remember([string[]]$fields, [string]$id) {
@@ -219,6 +220,7 @@ if ($Undo) {
             $mode = switch ([int]$p[2]) { 2 { if ($p[3] -eq '1') { 'delayed-auto' } else { 'auto' } } 3 { 'demand' } 4 { 'disabled' } default { $null } }
             if ($mode) { & sc.exe config "$($p[1])" start= $mode | Out-Null; if ([int]$p[2] -eq 2) { Start-Service -Name $p[1] -ErrorAction SilentlyContinue } }
           }
+          'reserved' { if ($p[1] -eq 'Enabled') { & dism.exe /Online /Set-ReservedStorageState /State:Enabled | Out-Null } }
           'sounds' {
             foreach ($ev in Get-ChildItem 'HKCU:\AppEvents\Schemes\Apps' -ErrorAction SilentlyContinue | Get-ChildItem -ErrorAction SilentlyContinue) {
               $def = Join-Path $ev.PSPath '.Default'; $cur = Join-Path $ev.PSPath '.Current'
@@ -599,6 +601,14 @@ $lean += 'background game recording, update sharing with other PCs'
 if (Disable-Startup 'HKLM' 'SecurityHealth') { $lean += 'the Windows Security tray icon (Defender keeps running)' }
 $od = Get-ChildItem 'HKCU:\Software\Microsoft\OneDrive\Accounts' -ErrorAction SilentlyContinue | Where-Object { (Get-ItemProperty $_.PSPath -Name UserEmail -ErrorAction SilentlyContinue).UserEmail }
 if (-not $od -and (Disable-Startup 'HKCU' 'OneDrive')) { $lean += 'OneDrive at sign-in (no one is signed in to it)' }
+# The disk: the space Windows holds back for updates (about 7 GB on a new install) is given back. Updates still
+# install, into free space; DISM refuses while an update is being serviced, and then it is left for the next run.
+$rs = (& dism.exe /Online /Get-ReservedStorageState /English 2>&1) -join ' '
+if ($rs -match 'Reserved storage is enabled') {
+  & dism.exe /Online /Set-ReservedStorageState /State:Disabled | Out-Null
+  if ($LASTEXITCODE -eq 0) { Remember @('reserved', 'Enabled') 'reserved'; $lean += 'the space held back for updates (about 7 GB back)' }
+  else { Note ("Reserved storage stays for now (DISM {0}: an update is being serviced); running setup again later frees it." -f $LASTEXITCODE) 'Yellow' }
+}
 Note ('Off: ' + ($lean -join '; ')) 'Green'
 
 Head "7. The $Preset preset"

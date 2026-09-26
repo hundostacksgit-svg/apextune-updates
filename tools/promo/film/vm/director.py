@@ -551,6 +551,19 @@ $lines = foreach ($x in ($p | Sort-Object Name)) {
 New-Item -ItemType Directory -Force -Path C:\film | Out-Null
 $lines | Set-Content C:\film\processes-at-rest.txt -Encoding UTF8
 tasklist /svc | Set-Content C:\film\services-at-rest.txt -Encoding UTF8
+# The other two numbers the Edition is held to: memory in use (Task Manager's "In use": all of it less what is
+# available) and the system disk, with the files Windows keeps on it.
+$o = Get-CimInstance Win32_OperatingSystem; $d = Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='C:'"
+$avail = (Get-Counter '\Memory\Available MBytes' -ErrorAction SilentlyContinue).CounterSamples[0].CookedValue
+$commit = (Get-Counter '\Memory\Committed Bytes' -ErrorAction SilentlyContinue).CounterSamples[0].CookedValue / 1MB
+$big = foreach ($f in 'C:\hiberfil.sys', 'C:\pagefile.sys', 'C:\swapfile.sys') { $i = Get-Item $f -Force -ErrorAction SilentlyContinue; if ($i) { '{0} {1:N1} GB' -f $i.Name, ($i.Length / 1GB) } }
+$rs = (& dism.exe /Online /Get-ReservedStorageState /English 2>&1 | Select-String 'Reserved storage is') -join ' '
+@(
+  ('memory in use: {0:N0} MB of {1:N0} MB (committed {2:N0} MB)' -f ($o.TotalVisibleMemorySize / 1KB - $avail), ($o.TotalVisibleMemorySize / 1KB), $commit),
+  ('disk C: {0:N1} GB used of {1:N1} GB, {2:N1} GB free' -f (($d.Size - $d.FreeSpace) / 1GB), ($d.Size / 1GB), ($d.FreeSpace / 1GB)),
+  ('system files: ' + ($big -join ', ')), $rs
+) | Set-Content C:\film\numbers-at-rest.txt -Encoding UTF8
+Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First 30 | ForEach-Object { '{0,-36} {1,8:N0} MB private {2,8:N0} MB' -f $_.ProcessName, ($_.WorkingSet64 / 1MB), ($_.PrivateMemorySize64 / 1MB) } | Set-Content C:\film\memory-at-rest.txt -Encoding UTF8
 """
 
 
@@ -605,7 +618,9 @@ def edition():
     n = procs()
     mark('at-rest', processes_at_rest=n)
     note(f'at rest: {n} processes' + (' - OVER the 80 target' if n and n > 80 else ' - within the 80 target' if n else ''))
-    AG.ask('ps', code=IDLE_DUMP, timeout=90)
+    AG.ask('ps', code=IDLE_DUMP, timeout=120)
+    r = AG.ask('read', path=r'C:\film\numbers-at-rest.txt', timeout=10)
+    if r: note('at rest: ' + r.get('text', '').replace('\n', ' | ')[:600])
 
     def page(name, wait=2.5): pause(wait, wait + 0.6); shot(name); mark(name.split('.')[0])
 

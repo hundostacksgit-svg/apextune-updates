@@ -161,6 +161,9 @@ function Tune-Task { Get-ScheduledTask -TaskName 'Edition Tune' -TaskPath '\Omni
 # The lean stage's services, as they were: checked again after setup and after undo.
 function Start-Of([string]$svc) { (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Services\$svc" -Name Start -ErrorAction SilentlyContinue).Start }
 $leanBefore = @{}; foreach ($svc in 'DiagTrack', 'dmwappushservice', 'TrkWks', 'Spooler', 'WSearch') { $leanBefore[$svc] = Start-Of $svc }
+function Reserved { ((& dism.exe /Online /Get-ReservedStorageState /English 2>&1) -join ' ') -replace '.*Reserved storage is (\w+).*', '$1' }
+$rsBefore = Reserved
+Note "reserved storage before setup: $rsBefore"
 $sa = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run'
 $saBefore = (Get-ItemProperty $sa -Name SecurityHealth -ErrorAction SilentlyContinue).SecurityHealth
 Note ("before setup: " + (($leanBefore.Keys | Sort-Object | ForEach-Object { "$_=$($leanBefore[$_])" }) -join ', ') + "; SecurityHealth startup: " + $(if ($saBefore) { ($saBefore | ForEach-Object { '{0:X2}' -f $_ }) -join '' } else { 'none' }))
@@ -174,6 +177,7 @@ Check ((Get-ItemProperty $ek -Name TunePending -ErrorAction SilentlyContinue).Tu
 # The lean stage: telemetry and link tracking off where this Windows has them; Store apps kept from the background.
 foreach ($svc in 'DiagTrack', 'dmwappushservice', 'TrkWks') { if ($null -ne $leanBefore[$svc]) { Check ((Start-Of $svc) -eq 4) "lean: $svc is off ($($leanBefore[$svc]) -> $(Start-Of $svc))" } }
 Check ((Get-ItemProperty 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy' -Name LetAppsRunInBackground -ErrorAction SilentlyContinue).LetAppsRunInBackground -eq 2) 'lean: Store apps only run while open'
+if ($rsBefore -eq 'enabled') { Check ((Reserved) -eq 'disabled') "lean: the space held back for updates is given back ($rsBefore -> $(Reserved))" }
 Note ("lean: Spooler {0} -> {1}, WSearch {2} -> {3}" -f $leanBefore['Spooler'], (Start-Of 'Spooler'), $leanBefore['WSearch'], (Start-Of 'WSearch'))
 Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue   # Explorer restarts with the new taskbar
 Start-Sleep 12
@@ -217,6 +221,7 @@ Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
 Start-Sleep 12
 Snap '33-desktop-after-undo'
 foreach ($svc in $leanBefore.Keys) { Check ((Start-Of $svc) -eq $leanBefore[$svc]) "undo: $svc is back as it was ($($leanBefore[$svc]) -> $(Start-Of $svc))" }
+if ($rsBefore -in 'enabled', 'disabled') { Check ((Reserved) -eq $rsBefore) "undo: reserved storage is $rsBefore again ($(Reserved))" }
 $saAfter = (Get-ItemProperty $sa -Name SecurityHealth -ErrorAction SilentlyContinue).SecurityHealth
 Check ("$saAfter" -eq "$saBefore") 'undo: the Windows Security tray icon starts as it did'
 Check ($null -eq (Get-ItemProperty 'HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy' -Name LetAppsRunInBackground -ErrorAction SilentlyContinue)) 'undo: the background-apps policy is gone'

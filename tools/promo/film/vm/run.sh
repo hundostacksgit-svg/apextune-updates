@@ -156,7 +156,9 @@ cp "$TPM/swtpm.log" "$OUT/swtpm.txt" 2>/dev/null || true
     [ -f "/mnt/win/$f" ] && sudo cp "/mnt/win/$f" "$OUT/disk/$(echo "$f" | tr '/' '_')"
   done
   [ -d /mnt/win/OmniDx ] && sudo find /mnt/win/OmniDx -maxdepth 1 -type f \( -name '*.txt' -o -name '*.json' -o -name '*.html' \) -exec cp {} "$OUT/disk/" \;
-  # The Edition's own notes (the sign-in process list among them), and Windows' logs of what started and what failed.
+  # The filming folder's lists (the process, service, memory and disk numbers at rest), the Edition's own notes (the
+  # sign-in process list among them), and Windows' logs of what started and what failed.
+  [ -d /mnt/win/film ] && sudo find /mnt/win/film -maxdepth 1 -type f -name '*-at-rest.txt' -exec cp {} "$OUT/disk/" \;
   [ -d /mnt/win/Users/User/AppData/Local/OmniDx ] && sudo find /mnt/win/Users/User/AppData/Local/OmniDx -maxdepth 1 -type f -name '*.txt' -exec cp {} "$OUT/disk/" \;
   mkdir -p "$OUT/disk/evtx"
   for l in System Application 'Windows PowerShell' Microsoft-Windows-TaskScheduler%4Operational Microsoft-Windows-PowerShell%4Operational; do
