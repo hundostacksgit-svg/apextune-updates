@@ -433,9 +433,11 @@ def performance():
     task_manager('before-count')
     close_foreground()
 
-    # 2. Start, "powershell", the one line.
+    # 2. Start (on OmniDx Edition, its own search: Windows + S), "powershell", the one line.
     mark('start-menu')
-    press('meta_l'); pause(0.9, 1.2)
+    if A.edition_command: press('meta_l', 's')
+    else: press('meta_l')
+    pause(0.9, 1.2)
     type_text('powershell', 1.1); pause(1.1, 1.5)
     press('ret')
     ps = win('*PowerShell*', 20)
@@ -530,7 +532,11 @@ def performance():
     mark('restart')
 
     # 9. The boot, the sign-in, and three minutes of Windows starting up.
-    boot = AG.wait_boot(not_this=first_boot, timeout=900)
+    boot = None; t_restart = time.time(); kicked = set()
+    while time.time() - t_restart < 900:
+        boot = AG.wait_boot(not_this=first_boot, timeout=30)
+        if boot: break
+        nudge(); kick_agent(t_restart, kicked)
     if not boot: raise RuntimeError('the PC did not come back')
     mark('signed-in')
     POS[0], POS[1] = W // 2, H // 2   # where Windows puts the pointer at sign-in
@@ -565,6 +571,20 @@ $rs = (& dism.exe /Online /Get-ReservedStorageState /English 2>&1 | Select-Strin
 ) | Set-Content C:\film\numbers-at-rest.txt -Encoding UTF8
 Get-Process | Sort-Object WorkingSet64 -Descending | Select-Object -First 30 | ForEach-Object { '{0,-36} {1,8:N0} MB private {2,8:N0} MB' -f $_.ProcessName, ($_.WorkingSet64 / 1MB), ($_.PrivateMemorySize64 / 1MB) } | Set-Content C:\film\memory-at-rest.txt -Encoding UTF8
 """
+
+
+def timelapse_frame(tl):
+    """One frame of the install, from QEMU's own copy of the PC's screen (whatever size Windows Setup draws at),
+    kept as a JPEG with the moment it was taken: the full film shows the install sped up from these."""
+    d = os.path.join(A.out, 'timelapse'); os.makedirs(d, exist_ok=True)
+    name = f'tl-{len(tl) + 1:05d}.jpg'; tmp = os.path.join(d, 'frame.png')
+    try:
+        from PIL import Image
+        Q.cmd('screendump', filename=tmp, format='png')
+        Image.open(tmp).convert('RGB').save(os.path.join(d, name), quality=84)
+        tl.append({'f': name, 'wall': time.time()})
+    except Exception as ex:
+        if len(tl) % 50 == 0: note(f'timelapse frame: {ex}')
 
 
 def kick_agent(since, kicked):
@@ -684,6 +704,20 @@ def edition():
     type_text('film'); pause(0.4, 0.6); press('ret')
     pause(10, 12); page('e21-back.png', 2.0)
 
+    if not A.edition_command: return
+    # The full film: the tune, by hand, with the one line (the restart film's run), then the count at rest once more.
+    # The first at-rest lists (the Edition alone) are kept under their own names.
+    AG.ask('ps', code=r"Get-ChildItem C:\film\*-at-rest.txt | ForEach-Object { Copy-Item $_.FullName ($_.FullName -replace '-at-rest', '-edition-only') -Force }", timeout=20)
+    AG.ask('clip', text=A.key); pause(1.0, 1.5)
+    mark('command-part')
+    performance()
+    n = procs()
+    mark('at-rest-tuned', processes_at_rest=n)
+    note(f'at rest after the tune: {n} processes' + (' - OVER the 60 target' if n and n > 60 else ' - within the 60 target' if n else ''))
+    AG.ask('ps', code=IDLE_DUMP, timeout=120)
+    r = AG.ask('read', path=r'C:\film\numbers-at-rest.txt', timeout=10)
+    if r: note('at rest after the tune: ' + r.get('text', '').replace('\n', ' | ')[:600])
+
 
 def main():
     global A, LOG, Q, W, H
@@ -692,6 +726,7 @@ def main():
     ap.add_argument('--display', default=':99'); ap.add_argument('--port', type=int, default=8099)
     ap.add_argument('--extreme', action='store_true')
     ap.add_argument('--edition', action='store_true', help='OmniDx Edition: its setup runs at the first sign-in; film it and look round after its restart')
+    ap.add_argument('--edition-command', action='store_true', help='with --edition: no key on the disc; after the look round the tune is run by hand with the one line')
     ap.add_argument('--settle-before', type=float, default=300, help='seconds after the first sign-in before filming')
     ap.add_argument('--settle-after', type=float, default=180, help='seconds after the sign-in that follows the restart')
     ap.add_argument('--eject', default='cdrom0,cdrom1')
@@ -711,8 +746,10 @@ def main():
     # A frozen PC (take 4 hung in Windows' own first-run screen: thirty minutes of byte-identical frames, spinner
     # included) is reset once after twelve still minutes; Windows picks its setup up again after a restart.
     i = 0; started = time.time(); still = 0; last = None; reset = False
-    while AG.wait_boot(timeout=20) is None:
+    tl = []
+    while AG.wait_boot(timeout=5 if A.edition else 20) is None:
         nudge()
+        if A.edition: timelapse_frame(tl)
         if time.time() - started > 60 * (i + 1):
             i += 1; shot(f'install-{i:03d}.png')
             try: h = hashlib.md5(open(os.path.join(A.out, f'install-{i:03d}.png'), 'rb').read()).hexdigest()
@@ -723,6 +760,7 @@ def main():
                 try: Q.cmd('system_reset')
                 except Exception as ex: note(f'reset: {ex}')
         if time.time() - started > (75 if reset else 55) * 60: note('no sign-in after %d minutes' % (75 if reset else 55)); shot('gave-up.png'); sys.exit(1)
+    if tl: json.dump(tl, open(os.path.join(A.out, 'timelapse', 'timelapse.json'), 'w'))
     first = time.monotonic()
     for dev in A.eject.split(','):
         try: Q.cmd('eject', id=dev, force=True); note(f'ejected {dev}')
@@ -739,11 +777,15 @@ def main():
             note(f'stopped: {ex}'); shot('stopped.png')
         finally:
             mark('end'); time.sleep(1); record_stop()
-            for d in (r'C:\ProgramData\OmniDx\Edition', r'C:\OmniDx', r'C:\film'):
-                try: AG.ask('upload', dir=d, timeout=120)
-                except Exception as ex: note(f'collect {d}: {ex}')
-            try: AG.ask('ps', code=r"Copy-Item $env:LOCALAPPDATA\OmniDx\edition-log.txt, $env:LOCALAPPDATA\OmniDx\signin-processes.txt C:\film\ -ErrorAction SilentlyContinue; Get-ChildItem C:\film | Out-String", timeout=20); AG.ask('upload', dir=r'C:\film', timeout=60)
-            except Exception: pass
+            # A helper silent for minutes answers nothing: the disk read after the PC is off collects instead.
+            if time.time() - AG.seen < 180:
+                for d in (r'C:\ProgramData\OmniDx\Edition', r'C:\OmniDx', r'C:\film'):
+                    try: AG.ask('upload', dir=d, timeout=120)
+                    except Exception as ex: note(f'collect {d}: {ex}')
+                try: AG.ask('ps', code=r"Copy-Item $env:LOCALAPPDATA\OmniDx\edition-log.txt, $env:LOCALAPPDATA\OmniDx\signin-processes.txt C:\film\ -ErrorAction SilentlyContinue; Get-ChildItem C:\film | Out-String", timeout=20); AG.ask('upload', dir=r'C:\film', timeout=60)
+                except Exception: pass
+            else:
+                note('the helper has been silent for minutes; its files come off the disk instead')
             json.dump(EVENTS, open(os.path.join(A.out, 'events.json'), 'w'), indent=1)
             try: Q.cmd('quit')
             except Exception: pass

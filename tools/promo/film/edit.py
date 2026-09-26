@@ -15,7 +15,11 @@ edl.json:
    "camera":   [{"t": 0, "rect": [0, 0, 1024, 768]}, {"t": 4.2, "rect": [600, 90, 340, 255], "hold": 2.5}, ...],
    "top":      [{"from": 0, "to": 3.5, "text": "...", "size": 74}, ...],
    "bottom":   [{"from": 3, "to": 9, "text": "...", "big": "142", "color": "#ff5d6c"}, ...],
+               ("roll": [143, 58] in place of "big": the number counts from the first to the second as it appears)
    "note": "Real run on a Windows 11 test PC",
+   "sources": {"install": "install.mp4"},      more recordings: a segment with "src": "install" is cut from that one,
+                                               fitted to the screen's size (the install timelapse, for one)
+   "chapters": [{"from": 0, "to": 9, "text": "1 · Install"}],   a small label in the corner, the part of the story
    "bed": {"pops": [3.1], "whoosh": [5.0]},
    "cursor": {"csv": "cursor.csv", "video_offset": 2.5}}
 Times in "camera", "top" and "bottom" are output seconds.
@@ -158,13 +162,18 @@ class Pointer:
 
 def build_cut(edl, src, cut):
     """The segments, at their speeds, as one 30 fps clip at the screen's size."""
+    extra = edl.get('sources', {}); names = list(extra)
+    inputs = ['-i', src]
+    for k in names: inputs += ['-i', extra[k]]
     parts, labels = [], []
     for i, s in enumerate(edl['segments']):
         sp = float(s.get('speed', 1))
-        parts.append(f"[0:v]trim=start={s['from']}:end={s['to']},setpts=(PTS-STARTPTS)/{sp},fps={FPS}[v{i}]")
+        n = names.index(s['src']) + 1 if s.get('src') else 0
+        fit = f",scale={SW}:{SH}:force_original_aspect_ratio=decrease,pad={SW}:{SH}:(ow-iw)/2:(oh-ih)/2:color=black,setsar=1" if n else ''
+        parts.append(f"[{n}:v]trim=start={s['from']}:end={s['to']},setpts=(PTS-STARTPTS)/{sp},fps={FPS}{fit}[v{i}]")
         labels.append(f"[v{i}]")
     graph = ';'.join(parts) + ';' + ''.join(labels) + f"concat=n={len(labels)}:v=1:a=0,format=rgb24[out]"
-    subprocess.run([FFMPEG, '-nostdin', '-y', '-loglevel', 'error', '-i', src, '-filter_complex', graph, '-map', '[out]',
+    subprocess.run([FFMPEG, '-nostdin', '-y', '-loglevel', 'error'] + inputs + ['-filter_complex', graph, '-map', '[out]',
                     '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '10', '-pix_fmt', 'yuv444p', cut], check=True)
     # Where each segment lands in output time, and at what speed, for the on-screen speed label.
     spans, t = [], 0.0
@@ -243,10 +252,17 @@ def main():
             if c['from'] <= t < c['to']:
                 k = min(1, (t - c['from']) / 0.18)
                 y = by + bh + 50
-                if c.get('big'):
-                    y = caption(img, c['big'], y, c.get('bigsize', 150), c.get('color', '#ffffff'), stroke=9, weight=900, pop=k)
+                big = c.get('big')
+                if c.get('roll'):
+                    a, z = c['roll']; e = ease((t - c['from']) / c.get('roll_s', 1.0))
+                    big = str(int(round(a + (z - a) * e)))
+                if big:
+                    y = caption(img, big, y, c.get('bigsize', 150), c.get('color', '#ffffff'), stroke=9, weight=900, pop=k)
                 if c.get('text'):
                     caption(img, c['text'], y + 6, c.get('size', 50), '#ffffff', stroke=6, weight=800, pop=k)
+        for c in edl.get('chapters', []):
+            if c['from'] <= t < c['to']:
+                pill(img, c['text'], bx + 24, by + 22, 30, fill=(124, 58, 237, 200), anchor='lt')
         if note:
             pill(img, note, OW / 2, OH - 150, 28, fill=(0, 0, 0, 150), color='#d8d2e8', anchor='ct')
         writer.stdin.write(img.tobytes())

@@ -20,7 +20,10 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 REPO=$(cd "$HERE/../../../.." && pwd)
 OUT=$(realpath -m "$1"); shift
 # --edition: the PC installs OmniDx Edition from the answer disc at its first sign-in (edition/, with a key for the tune).
-EDITION=0; for a in "$@"; do [ "$a" = "--edition" ] && EDITION=1; done
+# --edition-command as well: no key on the disc, so setup leaves the tune alone, and the tune is run by hand afterwards
+# with the one line in PowerShell, as the restart film does (the full film: install, Edition, command, restart).
+EDITION=0; BYHAND=0
+for a in "$@"; do [ "$a" = "--edition" ] && EDITION=1; [ "$a" = "--edition-command" ] && BYHAND=1; done
 PREFIX=${PREFIX:-restart}
 WORK=${WORK:-/mnt/film}
 ISO=${ISO:-$WORK/iso/win11-enterprise-eval.iso}
@@ -74,13 +77,13 @@ tr -d '\r' < "$HERE/setup.cmd" | sed 's/$/\r/' > "$ANS/film/setup.cmd"
 { grep -v '^exit /b 0' "$HERE/first-logon.cmd"
   [ "$EDITION" = 1 ] && echo 'for %%d in (D E F G H I J K L M) do if exist %%d:\omnidx\edition\first-logon.cmd call %%d:\omnidx\edition\first-logon.cmd'
   echo 'exit /b 0'; } | tr -d '\r' | sed 's/$/\r/' > "$ANS/film/first-logon.cmd"
-cp "$HERE/agent.ps1" "$ANS/film/"
+cp "$HERE/agent.ps1" "$HERE/agent-register.ps1" "$ANS/film/"
 { printf '\xff\xfe'; iconv -f UTF-8 -t UTF-16LE "$HERE/agent-task.xml"; } > "$ANS/film/agent-task.xml"
 if [ "$EDITION" = 1 ]; then
   mkdir -p "$ANS/omnidx/edition"
   (cd "$REPO/edition" && git ls-files | grep -v '^ci/' | while read -r f; do mkdir -p "$ANS/omnidx/edition/$(dirname "$f")"; cp "$f" "$ANS/omnidx/edition/$f"; done)
   sed -i 's/\r*$/\r/' "$ANS/omnidx/edition/first-logon.cmd"
-  cp "$WORK/key.txt" "$ANS/omnidx/key.txt"
+  [ "$BYHAND" = 1 ] || cp "$WORK/key.txt" "$ANS/omnidx/key.txt"
   log "OmniDx Edition on the answer disc: $(find "$ANS/omnidx" -type f | wc -l) files"
 fi
 genisoimage -quiet -J -r -V ANSWERS -o "$WORK/answer.iso" "$ANS"
@@ -152,7 +155,7 @@ cp "$TPM/swtpm.log" "$OUT/swtpm.txt" 2>/dev/null || true
   echo "Windows partition: $part"
   sudo ntfs-3g -o ro,remove_hiberfile "/dev/$part" /mnt/win || sudo ntfs-3g -o ro,force "/dev/$part" /mnt/win
   mkdir -p "$OUT/disk"
-  for f in film/agent-log.txt film/setup-log.txt film/first-logon.txt Windows/Panther/UnattendGC/setupact.log Windows/Panther/UnattendGC/setuperr.log Windows/Panther/setuperr.log Windows/System32/Tasks/FilmAgent Windows/System32/Tasks/FilmAgentUser ProgramData/OmniDx/Edition/setup-log.txt ProgramData/OmniDx/Edition/first-logon.txt ProgramData/OmniDx/Edition/undo-setup.tsv ProgramData/OmniDx/Edition/presets-undo.tsv ProgramData/OmniDx/Edition/edition.json Users/User/AppData/Local/OmniDx/edition-log.txt; do
+  for f in film/agent-log.txt film/setup-log.txt film/first-logon.txt Windows/Panther/UnattendGC/setupact.log Windows/Panther/UnattendGC/setuperr.log Windows/Panther/setuperr.log Windows/System32/Tasks/FilmAgent Windows/System32/Tasks/FilmAgentUser Windows/System32/Tasks/FilmAgentPS ProgramData/OmniDx/Edition/setup-log.txt ProgramData/OmniDx/Edition/first-logon.txt ProgramData/OmniDx/Edition/undo-setup.tsv ProgramData/OmniDx/Edition/presets-undo.tsv ProgramData/OmniDx/Edition/edition.json Users/User/AppData/Local/OmniDx/edition-log.txt; do
     [ -f "/mnt/win/$f" ] && sudo cp "/mnt/win/$f" "$OUT/disk/$(echo "$f" | tr '/' '_')"
   done
   [ -d /mnt/win/OmniDx ] && sudo find /mnt/win/OmniDx -maxdepth 1 -type f \( -name '*.txt' -o -name '*.json' -o -name '*.html' \) -exec cp {} "$OUT/disk/" \;

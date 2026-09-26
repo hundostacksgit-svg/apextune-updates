@@ -45,7 +45,9 @@ jobs:
           key: win11-enterprise-eval-2334167
       - name: Install Windows, set up OmniDx Edition, look round
         timeout-minutes: 165
-        run: bash tools/promo/film/vm/run.sh "$RUNNER_TEMP/pc" --edition --eject cdrom0 --settle-before 0 --settle-after 210 || echo "run.sh exited $?"
+        # --edition-command: the full film. No key on the stick, so setup leaves the tune to the one line in PowerShell,
+        # typed after the look round (in Extreme); the install itself is kept as a frame every five seconds.
+        run: bash tools/promo/film/vm/run.sh "$RUNNER_TEMP/pc" --edition --edition-command --extreme --eject cdrom0 --settle-before 0 --settle-after 210 || echo "run.sh exited $?"
       - name: Clear old previews
         if: always()
         run: |
@@ -58,7 +60,7 @@ jobs:
           cd "$RUNNER_TEMP/pc" || exit 0
           shots=$(ls install-*.png settle-*.png setup-*.png uac.png 2>/dev/null || true)
           [ -n "$shots" ] && python3 -m zipfile -c setup-shots.zip $shots && rm -f $shots
-          for d in guest disk; do [ -d "$d" ] && python3 -m zipfile -c "$d-files.zip" "$d" && rm -rf "$d"; done
+          for d in guest disk timelapse; do [ -d "$d" ] && python3 -m zipfile -c "$d-files.zip" "$d" && rm -rf "$d"; done
           files=$(find . -maxdepth 1 -type f -size +0 | sort)
           tag="edition-vm-${{ github.run_id }}"
           if gh release create "$tag" --repo "$GITHUB_REPOSITORY" --prerelease --title "OmniDx Edition preview $tag" --notes "A clean Windows 11 install set up as OmniDx Edition, pictured; deleted by the next run." $files; then

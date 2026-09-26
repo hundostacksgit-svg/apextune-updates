@@ -1,4 +1,37 @@
-# OmniDx Edition on TikTok: the series, and two more cuts of the command
+# OmniDx Edition on TikTok: the full film first, then the series
+
+## The full film (the one to lead with)
+
+What people watch is the whole story, the way the restart video (number 9 of
+the command's set) tells it, not one feature at a time. So the Edition leads
+with one film of a minute and a bit, `omnidx-full.mp4`: a clean Windows 11
+install from Microsoft's own installer (sped up and labelled), OmniDx Edition
+setting itself up at the first sign-in, one restart, a look round (the
+taskbar, its search, its browser, the presets, Game Boost's 1 ms timer), then
+Task Manager, the one line in PowerShell, the run, the restart and Task
+Manager again, the number counting down to the new one. Three chapters sit in
+the corner (Install, OmniDx Edition, The command); every cut lands on the
+music's beat.
+
+It is one take of `.github/workflows/edition-vm.yml` in its full-film mode
+(`run.sh --edition --edition-command --extreme`: no key on the stick, so the
+tune is run by hand), cut by `tools/promo/film/plan_full.py` and rendered by
+`tools/promo/film/edit.py`, with the install from `tools/promo/film/timelapse.py`.
+
+**Caption:**
+
+> Clean Windows 11 → my own gaming OS → one command. Everything, start to
+> finish, on a real (test) PC. Would you run it? 👇
+> #windows11 #pcgaming #gamingpc #pcsetup #fps
+
+Pinned comment: *Genuine Windows 11 from Microsoft's installer, set up by a
+script you can read, with one button to undo it. The command is
+irm omnidx.net/go.ps1 | iex.*
+
+Post it first, before anything below; the shorter cuts after it are for the
+days between, and only if the full film does well.
+
+## The series
 
 Ten 9:16 videos in the style of the restart test (number 9 of the command's
 set): the PC's own screen in the middle, the words above it, the speed on
