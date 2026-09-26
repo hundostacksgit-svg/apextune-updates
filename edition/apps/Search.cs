@@ -35,8 +35,8 @@ namespace OmniDx
                 // Already running: let it take the foreground and ask it to open.
                 foreach (var p in Process.GetProcessesByName(Process.GetCurrentProcess().ProcessName))
                     if (p.Id != Process.GetCurrentProcess().Id) Native.AllowSetForegroundWindow(p.Id);
-                if (args.Any(a => a == "--boost")) { Signal.Send(Signal.Boost); return; }
-                if (args.Any(a => a == "--unboost")) { Signal.Send(Signal.Unboost); return; }
+                if (args.Any(a => a == "--boost")) { Signal.ToSearch(true); return; }
+                if (args.Any(a => a == "--unboost")) { Signal.ToSearch(false); return; }
                 if (!background) showEvent.Set();
                 return;
             }
@@ -44,6 +44,18 @@ namespace OmniDx
             var h = form.Handle; // the window exists, hidden, from the start: the hot key and the signals need it
             var waiter = new Thread(() => { while (true) { showEvent.WaitOne(); try { form.BeginInvoke(new Action(form.ShowSearch)); } catch { } } }) { IsBackground = true };
             waiter.Start();
+            var boostEvent = new EventWaitHandle(false, EventResetMode.AutoReset, Signal.BoostEvent);
+            var unboostEvent = new EventWaitHandle(false, EventResetMode.AutoReset, Signal.UnboostEvent);
+            var boostWaiter = new Thread(() =>
+            {
+                var both = new WaitHandle[] { boostEvent, unboostEvent };
+                while (true)
+                {
+                    int which = WaitHandle.WaitAny(both);
+                    try { form.BeginInvoke(new Action(() => form.OnBoostSignal(which == 0))); } catch { }
+                }
+            }) { IsBackground = true };
+            boostWaiter.Start();
             if (!background) form.Shown1 = true;
             if (args.Any(a => a == "--boost")) form.Boost.Set(true, false);
             Application.Run(new SearchContext(form));
@@ -604,6 +616,14 @@ namespace OmniDx
             State.Set("Hotkey", hotkey);
             Edition.Log("hot key " + (hotkey == "" ? "none" : hotkey));
         }
+        // Game Boost asked for from outside (the Hub, --boost, the broadcast): on, on again (apps started since join),
+        // or off.
+        public void OnBoostSignal(bool on)
+        {
+            if (on) { if (!boost.On) boost.Set(true, false); else boost.Refresh(); }
+            else if (boost.On) boost.Set(false, false);
+        }
+
         static int taskbarCreated;
         protected override void WndProc(ref Message m)
         {
@@ -614,8 +634,8 @@ namespace OmniDx
             {
                 int w = (int)m.WParam;
                 if (w == Signal.ShowSearch) ShowSearch();
-                else if (w == Signal.Boost) { if (!boost.On) boost.Set(true, false); else boost.Refresh(); }
-                else if (w == Signal.Unboost && boost.On) boost.Set(false, false);
+                else if (w == Signal.Boost) OnBoostSignal(true);
+                else if (w == Signal.Unboost) OnBoostSignal(false);
                 return;
             }
             base.WndProc(ref m);

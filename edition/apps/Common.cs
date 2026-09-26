@@ -6,6 +6,7 @@
 // (.NET Framework 4.8's csc.exe): build.ps1 compiles it on the PC itself, so
 // nothing here arrives as a ready-made program.
 using System;
+using System.Threading;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -488,6 +489,16 @@ namespace OmniDx
         public static void Send(int what) { Native.PostMessage((IntPtr)0xFFFF, Msg, (IntPtr)what, IntPtr.Zero); }
         // A window run as administrator still hears the apps that are not.
         public static void Listen(IntPtr h) { try { Native.ChangeWindowMessageFilterEx(h, Msg, 1, IntPtr.Zero); } catch { } }
+        // Game Boost on or off, to OmniDx Search itself. Its window is hidden and owned (no taskbar button), and
+        // Windows leaves hidden owned windows out of a broadcast, so the broadcast never reached it while it was
+        // hidden; a named event, like the one that opens it, always does. The broadcast stays for everyone else.
+        public const string BoostEvent = @"Local\OmniDx.Search.Boost", UnboostEvent = @"Local\OmniDx.Search.Unboost";
+        public static void ToSearch(bool boostOn)
+        {
+            bool told = false;
+            try { EventWaitHandle e; if (EventWaitHandle.TryOpenExisting(boostOn ? BoostEvent : UnboostEvent, out e)) { e.Set(); e.Dispose(); told = true; } } catch { }
+            if (!told) Send(boostOn ? Boost : Unboost);
+        }
     }
 
     // ------------------------------------------------------------------ the games on this PC

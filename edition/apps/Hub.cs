@@ -422,7 +422,7 @@ namespace OmniDx
         public static void SetBoost(bool on)
         {
             if (Process.GetProcessesByName("OmniSearch").Length == 0) Edition.Start(Edition.Exe("OmniSearch"), "--background" + (on ? " --boost" : ""));
-            else Signal.Send(on ? Signal.Boost : Signal.Unboost);
+            else Signal.ToSearch(on);
         }
     }
 
