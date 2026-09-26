@@ -62,7 +62,7 @@ jobs:
           $out = ''
           try { $out = & .\bench.ps1 *>&1 | Out-String -Width 4000 } catch { $out = "$out`n$_" }
           Write-Host $out
-          if ($out -match 'PresentMon wrote nothing') { Write-Host 'PresentMon did not run with these options'; exit 1 }
+          if ($out -match 'PresentMon could not record') { Write-Host 'PresentMon did not run with these options'; exit 1 }
           if ($out -notmatch 'No game frames were recorded' -and $out -notmatch 'frames in') { Write-Host 'the capture did not end in a result or a plain no-game message'; exit 1 }
           exit 0
       - name: Known frame times give the exact numbers, the right game and a card

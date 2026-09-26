@@ -68,6 +68,11 @@ function Median([double[]]$v) {
   if ($n % 2) { return $s[($n - 1) / 2] } else { return ($s[$n / 2 - 1] + $s[$n / 2]) / 2 }
 }
 function Side([string]$l) { if ($l -eq 'omnidx') { 'With OmniDx' } else { 'Stock' } }
+function Say-NoGame([string[]]$seen) {
+  Say 'No game frames were recorded. Was the game in front and drawing for the whole minute?' 'Red'
+  if ($seen.Count) { Say ('Seen: {0}' -f ($seen -join ', ')) 'DarkGray' }
+  Say "To name the game: `$env:OMNIDX_BENCH_GAME='game.exe'; irm omnidx.net/bench.ps1 | iex" 'DarkGray'
+}
 
 Write-Host ''
 Say 'OmniDx Bench' 'Magenta'
@@ -380,16 +385,18 @@ else {
   $code = $LASTEXITCODE
   $ErrorActionPreference = 'Stop'
   Beep 660 150; Start-Sleep -Milliseconds 120; Beep 660 150
-  if (-not (Test-Path $csv)) { Say "PresentMon wrote nothing (exit $code): $(($out | Select-Object -Last 3) -join ' ')" 'Red'; return }
+  # PresentMon writes its file only once something it records draws a frame: no file and a clean exit is a minute
+  # with no game in it, anything else is PresentMon failing.
+  if (-not (Test-Path $csv)) {
+    if ($code -eq 0) { Say-NoGame @(); return }
+    Say "PresentMon could not record (exit $code): $(($out | Select-Object -Last 3) -join ' ')" 'Red'; return
+  }
 }
 
 $chains = Read-PresentMon $csv
 $chain = Select-Chain $chains
 if (-not $chain) {
-  $seen = @($chains.Values | Sort-Object { $_.ft.Count } -Descending | Select-Object -First 5 | ForEach-Object { '{0} ({1} frames)' -f $_.app, $_.ft.Count })
-  Say 'No game frames were recorded. Was the game in front and drawing for the whole minute?' 'Red'
-  if ($seen.Count) { Say ('Seen: {0}' -f ($seen -join ', ')) 'DarkGray' }
-  Say "To name the game: `$env:OMNIDX_BENCH_GAME='game.exe'; irm omnidx.net/bench.ps1 | iex" 'DarkGray'
+  Say-NoGame @($chains.Values | Sort-Object { $_.ft.Count } -Descending | Select-Object -First 5 | ForEach-Object { '{0} ({1} frames)' -f $_.app, $_.ft.Count })
   Remove-Item $csv -Force -ErrorAction SilentlyContinue
   return
 }
