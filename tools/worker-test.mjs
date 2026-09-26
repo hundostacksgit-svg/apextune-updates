@@ -359,6 +359,39 @@ env.GMAIL_USER = 'owner@gmail.test';
   env.SQUARE_WEBHOOK_SIGNATURE_KEY = savedSig;
 }
 
+/* 14. The one follow-up, three days after the keys went: the line again for a key that has not run, the restart and
+   the bench for one that has; never for an order older than ten days or refunded; never twice. */
+{
+  const ref = (k) => String(k.order_ref).replace(/#\d+$/, '');
+  const pretty = (k) => { const tag = k.startsWith('SQUAD') ? 'SQUAD' : 'TUNE'; const t = k.slice(tag.length); return `${tag}-${t.slice(0, 4)}-${t.slice(4, 8)}-${t.slice(8, 12)}-${t.slice(12, 16)}`; };
+  const live = db.tune_keys.filter((k) => !k.revoked_at && k.email);
+  const orders = [...new Set(live.map(ref))];
+  const [fresh, unused, used, old] = orders;
+  const rows = (o) => db.tune_keys.filter((k) => ref(k) === o);
+  db.tune_keys.forEach((k) => { k.followup_at = Date.now() - 30 * 86400_000; }); // everything else: already followed up
+  rows(fresh).forEach((k) => { k.followup_at = null; k.emailed_at = Date.now() - 1 * 86400_000; });
+  rows(unused).forEach((k) => { k.followup_at = null; k.emailed_at = Date.now() - 4 * 86400_000; });
+  rows(used).forEach((k) => { k.followup_at = null; k.emailed_at = Date.now() - 5 * 86400_000; });
+  rows(old).forEach((k) => { k.followup_at = null; k.emailed_at = Date.now() - 12 * 86400_000; });
+  db.tune_machines = db.tune_machines.filter((m) => !rows(unused).some((k) => k.key === m.key));
+  if (!db.tune_machines.some((m) => rows(used).some((k) => k.key === m.key))) db.tune_machines.push({ key: rows(used)[0].key, hwid: 'f'.repeat(64), label: 'test', version: '1.79.0', os: '26100', first_seen: Date.now(), last_seen: Date.now() });
+  const n = mails.length;
+  const jobs = [];
+  await worker.scheduled({ cron: '0 * * * *', scheduledTime: Date.now() }, env, { waitUntil: (p) => jobs.push(p) });
+  const [, follow] = await Promise.all(jobs);
+  const out = mails.slice(n).filter((m) => /OmniDx Tune key is waiting|Three days with OmniDx Tune/.test(m.subject));
+  const to = (o) => out.filter((m) => m.to[0] === rows(o)[0].email);
+  expect(follow && follow.sent === 2 && out.length === 2, `the hourly cron sends two follow-ups, the orders emailed three to ten days ago (${JSON.stringify(follow)}, ${out.length} mails)`);
+  const u = out.find((m) => /waiting/.test(m.subject)), d = out.find((m) => /Three days/.test(m.subject));
+  expect(u && /irm omnidx\.net\/go\.ps1/.test(u.text) && /bench\.ps1/.test(u.text) && u.text.includes(pretty(rows(unused)[0].key)), 'a key that has not run gets its line again, with the bench to measure first');
+  expect(d && /Restart/.test(d.text) && /after-restart\.txt/.test(d.text) && /bench\.ps1/.test(d.text) && /discord\.gg\/VvbYJcDQbB/.test(d.text) && /only follow-up/.test(d.text), 'a key that has run gets the restart, the BIOS list, the bench and the Discord, and says it is the only one');
+  expect(rows(fresh).every((k) => !k.followup_at) && rows(old).every((k) => !k.followup_at), 'an order emailed a day ago waits; one emailed twelve days ago is left alone');
+  const m2 = mails.length, jobs2 = [];
+  await worker.scheduled({ cron: '0 * * * *', scheduledTime: Date.now() }, env, { waitUntil: (p) => jobs2.push(p) });
+  const [, again] = await Promise.all(jobs2);
+  expect(again.sent === 0 && !mails.slice(m2).some((m) => /waiting|Three days/.test(m.subject)), 'the next hour sends nothing twice');
+}
+
 r = await call('/v1/tune/admin', { token: 'owner-token-test', action: 'lookup', ref: 'ORDER-TUNE-1' });
 delete env.TUNE_ADMIN_TOKEN;
 r = await call('/v1/tune/admin', { token: 'owner-token-test', action: 'lookup', ref: 'ORDER-TUNE-1' });

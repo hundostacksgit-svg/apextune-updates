@@ -155,7 +155,8 @@ CREATE TABLE IF NOT EXISTS tune_keys (
   moved_at      INTEGER,                 -- last self-service move to a new PC
   emailed_at    INTEGER,                 -- when the keys went to the checkout email
   receipt       TEXT,                    -- the short receipt number on Square's email, upper-case
-  refund_checked_at INTEGER              -- when Square was last asked whether the order was refunded (no webhook needed)
+  refund_checked_at INTEGER,             -- when Square was last asked whether the order was refunded (no webhook needed)
+  followup_at   INTEGER                  -- when the one three-day follow-up went (or was tried); never sent twice
 );
 CREATE INDEX IF NOT EXISTS tune_keys_email ON tune_keys(email);
 
@@ -188,4 +189,5 @@ CREATE TABLE IF NOT EXISTS tune_hits (
 -- with "duplicate column". They are not in this file because D1 runs a file
 -- as one batch, and one failing ALTER would fail the whole batch, tables
 -- included. The list lives in .github/workflows/worker.yml and server/deploy.sh:
---   tune_keys.moved_at, tune_keys.emailed_at, tune_keys.receipt, tune_machines.version, tune_machines.os
+--   tune_keys.moved_at, tune_keys.emailed_at, tune_keys.receipt, tune_keys.refund_checked_at, tune_keys.followup_at,
+--   tune_machines.version, tune_machines.os

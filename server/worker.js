@@ -388,6 +388,33 @@ async function sweepRefunds(env) {
 }
 
 /**
+ * One follow-up per order, three days after its keys were emailed: whether a key has run yet (from tune_machines),
+ * the restart that makes the number count, the free bench, the Discord and where help is. Orders emailed more than
+ * ten days ago are left alone, so switching this on never mails everyone who bought before it existed. The order is
+ * marked before the mail goes: a send that fails is not retried, so nobody ever gets it twice.
+ */
+async function sweepFollowups(env) {
+  if (!mailOn(env)) return { looked: 0, sent: 0 };
+  const now = Date.now();
+  const { results } = await env.DB.prepare(
+    'SELECT * FROM tune_keys WHERE followup_at IS NULL AND revoked_at IS NULL AND email IS NOT NULL AND emailed_at IS NOT NULL AND emailed_at < ? AND emailed_at > ? ORDER BY emailed_at LIMIT 60',
+  ).bind(now - 3 * 86400_000, now - 10 * 86400_000).all();
+  const orders = new Map();
+  for (const r of results || []) {
+    const o = String(r.order_ref || '').replace(/#\d+$/, '');
+    if (o) orders.set(o, [...(orders.get(o) || []), r]);
+  }
+  let sent = 0;
+  for (const [order, rows] of [...orders].slice(0, 20)) {
+    await env.DB.prepare('UPDATE tune_keys SET followup_at = ? WHERE order_ref = ? OR order_ref LIKE ?').bind(now, order, `${order}#%`).run();
+    let used = 0;
+    for (const r of rows) used += (await env.DB.prepare('SELECT COUNT(*) AS count FROM tune_machines WHERE key = ?').bind(r.key).first())?.count ? 1 : 0;
+    if (await emailTuneFollowup(env, rows[0].email, rows.map((r) => prettyTuneKey(r.key)), used, order)) sent++;
+  }
+  return { looked: orders.size, sent };
+}
+
+/**
  * Square's four-character receipt numbers are short enough to repeat over
  * time. A reference that lands on more than one order answers nothing: the
  * long order id from the page Square sent the buyer to always works.
@@ -1864,6 +1891,38 @@ async function emailTuneKeys(env, email, product, keys, order, receiptUrl, recei
   return r.ok;
 }
 
+/** Three days on: the one follow-up. Unused keys get the line again; used ones get the restart, the bench and the Discord. */
+async function emailTuneFollowup(env, email, keys, used, order) {
+  const three = keys.length > 1;
+  const none = used === 0;
+  const lines = [
+    none
+      ? (three ? 'Your OmniDx Tune keys have not been run on a PC yet, so here is the one line again for each:' : 'Your OmniDx Tune key has not been run on a PC yet, so here is the one line again:')
+      : `Three days in: ${three ? `${used} of your ${keys.length} keys ${used === 1 ? 'has' : 'have'} run.` : 'your key has run.'} Three things that get the most out of it:`,
+    '',
+    ...(none ? [
+      'On the PC you want tuned, open PowerShell (Windows key, type powershell, Enter) and paste:',
+      ...keys.map((k) => `  $env:OMNIDX_KEY='${k}'; irm omnidx.net/go.ps1 | iex`),
+      '',
+      'Want to see your frame rate before and after? Measure a game first, free (a minute of play, recorded with PresentMon):',
+      '  irm omnidx.net/bench.ps1 | iex',
+      'then run the tune, restart, and measure again: it puts the two side by side.',
+    ] : [
+      '1. Restart, if you have not since the tune. What it switched off keeps running until you do; the count after the restart is in C:\\OmniDx\\after-restart.txt.',
+      '2. The BIOS checklist in your report (C:\\OmniDx, the newest report-*.html). The memory profile alone is the biggest free gain most PCs have.',
+      '3. Measure it, free: irm omnidx.net/bench.ps1 | iex records a minute of a game and gives average FPS, 1% lows and stutters. Run before the tune? It shows the two side by side and draws a card to post.',
+    ]),
+    '',
+    'The Discord, for help, results and what is coming: https://discord.gg/VvbYJcDQbB',
+    'Something not right? Reply to this email with the order number, or open a ticket in the Discord.',
+    `Your order: ${order}. Your keys are also at https://omnidx.net/studio/activate/ any time.`,
+    '',
+    'This is the only follow-up; nothing else will be sent.',
+  ];
+  const r = await sendMail(env, { to: email, subject: none ? 'Your OmniDx Tune key is waiting' : 'Three days with OmniDx Tune: three things to check', text: lines.join('\n') });
+  return r.ok;
+}
+
 /** The keys stop working with the refund; say so, so nobody wonders. */
 async function emailTuneRefund(env, email, count, order) {
   const r = await sendMail(env, {
@@ -1899,10 +1958,14 @@ days, just reply to this email.`,
 /* ------------------------------------------------------------------ */
 
 export default {
-  // wrangler.toml, [triggers]: on the hour, Square is asked about refunds; Monday mornings, the week's figures go to the owner.
+  // wrangler.toml, [triggers]: on the hour, Square is asked about refunds and three-day-old orders get their one follow-up;
+  // Monday mornings, the week's figures go to the owner.
   async scheduled(event, env, ctx) {
     if (String(event.cron || '') === '0 13 * * 1') ctx.waitUntil(emailTuneSummary(env, 'the week').catch((err) => console.error('summary', err)));
-    else ctx.waitUntil(sweepRefunds(env).catch((err) => console.error('refunds', err)));
+    else {
+      ctx.waitUntil(sweepRefunds(env).catch((err) => console.error('refunds', err)));
+      ctx.waitUntil(sweepFollowups(env).catch((err) => console.error('follow-ups', err)));
+    }
   },
 
   async fetch(request, env) {

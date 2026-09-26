@@ -84,6 +84,13 @@ updates" box, ticked by default, maps to `-NoKeep` when unticked.
    the address). One order, one set of keys, whichever call comes first.
    Without `SQUARE_ACCESS_TOKEN` nothing is minted from the page: a key is
    never issued on the strength of a URL.
+   Three days after the keys were emailed, the hourly cron sends the order
+   its one follow-up (`sweepFollowups`): a key that has not run on a PC gets
+   its line again with the free bench to measure first; one that has gets the
+   restart, the BIOS checklist, the bench and the Discord. Orders emailed more
+   than ten days ago are skipped (switching it on never mails old buyers),
+   refunded ones too, and `followup_at` is set before the send, so it never
+   goes twice.
 5. The page shows the key or the three keys, the one-liner with the first key
    in it, copy buttons for each friend's line, and the steps. The keys are
    saved in that browser; the page shows them again on a return visit, and

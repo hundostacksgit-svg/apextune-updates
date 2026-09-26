@@ -21,7 +21,7 @@ function statement(sql, args) {
   if (s.startsWith('INSERT INTO tune_keys (key, product, seats, email, order_ref, receipt, provider, amount_cents, verified, created_at)')) {
     const [key, product, seats, email, order_ref, receipt, provider, amount_cents, verified, created_at] = args;
     if (db.tune_keys.some((r) => r.key === key || r.order_ref === order_ref)) throw new Error('UNIQUE constraint failed');
-    db.tune_keys.push({ key, product, seats, email, order_ref, receipt, provider, amount_cents, verified, created_at, revoked_at: null, moved_at: null, emailed_at: null, refund_checked_at: null });
+    db.tune_keys.push({ key, product, seats, email, order_ref, receipt, provider, amount_cents, verified, created_at, revoked_at: null, moved_at: null, emailed_at: null, refund_checked_at: null, followup_at: null });
     return [];
   }
   if (s.startsWith('UPDATE tune_keys SET receipt = ? WHERE order_ref = ? OR order_ref LIKE ?')) {
@@ -68,6 +68,12 @@ function statement(sql, args) {
   if (s.startsWith('SELECT DISTINCT order_ref FROM tune_keys WHERE revoked_at IS NULL AND created_at > ? AND (refund_checked_at IS NULL OR refund_checked_at < ?) LIMIT 40')) {
     const seen = new Set();
     return db.tune_keys.filter((r) => !r.revoked_at && r.created_at > args[0] && (!r.refund_checked_at || r.refund_checked_at < args[1]) && !seen.has(r.order_ref) && seen.add(r.order_ref)).slice(0, 40).map((r) => ({ order_ref: r.order_ref }));
+  }
+  if (s.startsWith('SELECT * FROM tune_keys WHERE followup_at IS NULL AND revoked_at IS NULL AND email IS NOT NULL AND emailed_at IS NOT NULL AND emailed_at < ? AND emailed_at > ? ORDER BY emailed_at LIMIT 60')) {
+    return db.tune_keys.filter((r) => !r.followup_at && !r.revoked_at && r.email && r.emailed_at && r.emailed_at < args[0] && r.emailed_at > args[1]).sort((a, b) => a.emailed_at - b.emailed_at).slice(0, 60);
+  }
+  if (s.startsWith('UPDATE tune_keys SET followup_at = ? WHERE order_ref = ? OR order_ref LIKE ?')) {
+    db.tune_keys.filter((r) => r.order_ref === args[1] || like(r.order_ref, args[2])).forEach((r) => { r.followup_at = args[0]; }); return [];
   }
   throw new Error('the stand-in database does not model: ' + s);
 }
