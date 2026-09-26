@@ -17,7 +17,7 @@ it never clicks or types.
 
     python3 director.py --qmp qmp.sock --out DIR --key KEY [--extreme] [--display :99]
 """
-import argparse, json, math, os, random, socket, subprocess, sys, threading, time
+import argparse, hashlib, json, math, os, random, socket, subprocess, sys, threading, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
@@ -671,12 +671,21 @@ def main():
     note('QMP connected; waiting for Windows to install and sign in')
     # Setup, watched: a screenshot every minute until the first sign-in. The pointer is nudged by a
     # pixel now and then, so the screen does not switch itself off while nobody is at the PC.
-    i = 0; started = time.time()
+    # A frozen PC (take 4 hung in Windows' own first-run screen: thirty minutes of byte-identical frames, spinner
+    # included) is reset once after twelve still minutes; Windows picks its setup up again after a restart.
+    i = 0; started = time.time(); still = 0; last = None; reset = False
     while AG.wait_boot(timeout=20) is None:
         nudge()
         if time.time() - started > 60 * (i + 1):
             i += 1; shot(f'install-{i:03d}.png')
-        if time.time() - started > 55 * 60: note('no sign-in after 55 minutes'); shot('gave-up.png'); sys.exit(1)
+            try: h = hashlib.md5(open(os.path.join(A.out, f'install-{i:03d}.png'), 'rb').read()).hexdigest()
+            except Exception: h = None
+            still = still + 1 if h and h == last else 0; last = h
+            if still >= 12 and not reset:
+                note(f'the screen has not changed for {still} minutes: the PC is reset once'); reset = True; still = 0
+                try: Q.cmd('system_reset')
+                except Exception as ex: note(f'reset: {ex}')
+        if time.time() - started > (75 if reset else 55) * 60: note('no sign-in after %d minutes' % (75 if reset else 55)); shot('gave-up.png'); sys.exit(1)
     first = time.monotonic()
     for dev in A.eject.split(','):
         try: Q.cmd('eject', id=dev, force=True); note(f'ejected {dev}')
