@@ -12,4 +12,6 @@
   <url><loc>https://omnidx.net/studio/builds/</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
   <url><loc>https://omnidx.net/studio/edition/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
   <url><loc>https://omnidx.net/studio/showcase/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://omnidx.net/studio/es/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://omnidx.net/studio/pt/</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 </urlset>

@@ -48,6 +48,9 @@ PAGES = {
     'what-it-touches/index.html': '../',
     'changelog/index.html': '../',
     'terms/index.html': '../',
+    # The front page in Spanish and Portuguese, written by tools/build-lang.py (run it first).
+    'es/index.html': '../',
+    'pt/index.html': '../',
 }
 
 LOGO_SVG = (
@@ -276,6 +279,8 @@ def build_footer(s: str) -> str:
         <a href="{s}changelog/">Changelog</a>
         <a href="{s}terms/">Terms, privacy, money</a>
         <a href="{DISCORD}" target="_blank" rel="noopener">The OmniDx Discord</a>
+        <a href="{s}es/" hreflang="es" lang="es">En español</a>
+        <a href="{s}pt/" hreflang="pt-BR" lang="pt-BR">Em português</a>
         <a href="{s}app/">OmniDx Studio — the video editor</a>
         <span class="foot-support" data-support="OmniDx Tune — help" hidden></span>
       </div>

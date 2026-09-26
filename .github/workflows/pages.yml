@@ -38,7 +38,7 @@ jobs:
                    studio/account/index.html studio/activate/index.html studio/activate/activate.js studio/admin/index.html studio/admin/admin.js studio/terms/index.html \
                    go.ps1 edition.ps1 bench.ps1 tools/edition-pack.py tune/omnidx.ps1 tune/config.json studio/assets/tune.js studio/assets/tunekey.js \
                    studio/what-it-touches/index.html studio/changelog/index.html robots.txt sitemap.xml 404.html studio/assets/app.png \
-                   studio/edition/index.html studio/showcase/index.html studio/assets/video/omnidx-edition-film.mp4 studio/assets/video/omnidx-tune-restart.mp4 \
+                   studio/edition/index.html studio/showcase/index.html studio/es/index.html studio/pt/index.html studio/assets/video/omnidx-edition-film.mp4 studio/assets/video/omnidx-tune-restart.mp4 \
                    tools/tune-check.mjs tools/tune-touches.py docs/TUNE.md \
                    studio/assets/studio.css studio/assets/studio.js studio/assets/showcase.css studio/assets/showcase.js \
                    studio/assets/config.js studio/assets/auth.js studio/assets/rate.js studio/assets/mark.svg \
