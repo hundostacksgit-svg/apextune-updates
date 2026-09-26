@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
   push:
     branches: ["claude/omnidx-editing-platform-9phdcc"]
-    paths: ["edition/**", ".github/workflows/edition.yml"]
+    paths: ["edition/**", "edition.ps1", "tools/edition-pack.py", ".github/workflows/edition.yml"]
 
 permissions:
   contents: write
@@ -32,6 +32,51 @@ jobs:
         shell: pwsh
         run: |
           try { (Invoke-RestMethod https://api.nuget.org/v3-flatcontainer/microsoft.web.webview2/index.json).versions | Where-Object { $_ -notmatch '-' } | Select-Object -Last 10 } catch { "could not list: $_" }
+      # The one command buyers run (irm omnidx.net/edition.ps1 | iex), end to end against a copy of what the publish
+      # puts at omnidx.net/edition/ (tools/edition-pack.py), served from this machine: it must download the zip,
+      # match its hash and make a stick out of a stand-in for a Media Creation Tool stick on a drive letter of its
+      # own; then, with the served zip altered, it must refuse to open it.
+      - name: edition.ps1 downloads, checks the hash and makes the stick; refuses a tampered zip
+        shell: powershell
+        timeout-minutes: 5
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $site = Join-Path $env:RUNNER_TEMP 'site'
+          python tools/edition-pack.py (Join-Path $site 'edition')
+          if ($LASTEXITCODE) { exit 1 }
+          New-Item -ItemType Directory -Force -Path (Join-Path $site 'tune') | Out-Null
+          Set-Content -Path (Join-Path $site 'tune\config.json') -Value '{}' -Encoding ASCII
+          $srv = Start-Process python -ArgumentList '-m', 'http.server', '8765', '--bind', '127.0.0.1' -WorkingDirectory $site -PassThru -WindowStyle Hidden
+          Start-Sleep -Seconds 4
+          $stick = Join-Path $env:RUNNER_TEMP 'stick'
+          New-Item -ItemType Directory -Force -Path (Join-Path $stick 'sources') | Out-Null
+          Set-Content -Path (Join-Path $stick 'setup.exe') -Value 'stand-in' -Encoding ASCII
+          subst X: $stick
+          try {
+            $env:OMNIDX_BASE = 'http://127.0.0.1:8765'; $env:OMNIDX_YES = '1'; $env:OMNIDX_EDITION = 'usb'; $env:OMNIDX_DRIVE = 'X:'
+            $env:OMNIDX_ACCOUNT = 'Tester'; $env:OMNIDX_KEY = 'TUNE-ABCD-EFGH-JKLM-NPQR'
+            $out = & .\edition.ps1 *>&1 | Out-String -Width 4000
+            Write-Host $out
+            if ($out -notmatch 'matches the one published next to it') { Write-Host 'edition.ps1 did not check the hash'; exit 1 }
+            foreach ($f in 'X:\autounattend.xml', 'X:\omnidx\edition\setup.ps1', 'X:\omnidx\edition\build.ps1', 'X:\omnidx\edition\apps\Search.cs', 'X:\omnidx\edition\assets\wallpaper.jpg', 'X:\omnidx\key.txt') {
+              if (-not (Test-Path $f)) { Write-Host "missing on the stick: $f"; exit 1 }
+            }
+            $xml = Get-Content X:\autounattend.xml -Raw
+            [xml]$xml | Out-Null
+            if ($xml -notmatch '<Name>Tester</Name>') { Write-Host 'the account name is not in the answer file'; exit 1 }
+            if ((Get-Content X:\omnidx\key.txt -Raw).Trim() -ne 'TUNE-ABCD-EFGH-JKLM-NPQR') { Write-Host 'the key on the stick is wrong'; exit 1 }
+            Set-Content -Path (Join-Path $site 'edition\omnidx-edition.zip') -Value 'tampered' -Encoding ASCII
+            $env:OMNIDX_EDITION = 'fetch'
+            $refused = ''
+            try { $refused = & .\edition.ps1 *>&1 | Out-String -Width 4000 } catch { $refused = "$refused`n$_" }
+            Write-Host $refused
+            if ($refused -notmatch 'Could not download a good copy' -or $refused -match 'Unpacked to') { Write-Host 'a tampered zip was not refused'; exit 1 }
+            Write-Host 'edition.ps1: downloaded, matched the hash, made the stick; refused a tampered zip'
+          } finally {
+            subst X: /d
+            Stop-Process -Id $srv.Id -Force -ErrorAction SilentlyContinue
+          }
+          exit 0
       - name: Build, open, picture; setup and undo
         shell: powershell
         run: powershell -NoProfile -ExecutionPolicy Bypass -File edition\ci\shots.ps1 -Out "$env:RUNNER_TEMP\edition-shots"

@@ -28,7 +28,7 @@ if (-not (Test-Path (Join-Path $root 'setup.exe')) -or -not (Test-Path (Join-Pat
   throw "$root does not look like a Windows USB stick (no setup.exe and sources folder). Make it with Microsoft's Media Creation Tool first."
 }
 if ($Account -match '["/\\\[\]:;|=,+*?<>@]' -or $Account.Length -gt 20 -or $Account -match '^(administrator|guest|user|admin)$') { throw 'The account name: up to 20 characters, none of " / \ [ ] : ; | = , + * ? < > @, and not a name Windows keeps for itself.' }
-if ($Key -and $Key -notmatch '^TUNE(-[A-Z0-9]{4}){4}$') { throw 'The key looks like TUNE-XXXX-XXXX-XXXX-XXXX.' }
+if ($Key -and $Key -notmatch '^(TUNE|SQUAD)(-[A-Z0-9]{4}){4}$') { throw 'The key looks like TUNE-XXXX-XXXX-XXXX-XXXX.' }
 $x = { param($t) [Security.SecurityElement]::Escape($t) }
 
 $template = Get-Content (Join-Path $PSScriptRoot 'usb\autounattend.xml') -Raw

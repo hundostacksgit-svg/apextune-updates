@@ -62,7 +62,7 @@ try {
   console.log('The site, in a browser');
 
   /* 1. Every page, two widths. */
-  for (const p of ['', 'pricing/', 'download/', 'trust/', 'changelog/', 'what-it-touches/', 'terms/', 'activate/', 'admin/', 'account/', 'guide/', 'fresh/', 'undervolt/', 'builds/']) {
+  for (const p of ['', 'pricing/', 'download/', 'trust/', 'changelog/', 'what-it-touches/', 'terms/', 'activate/', 'admin/', 'account/', 'guide/', 'fresh/', 'undervolt/', 'builds/', 'edition/', 'showcase/']) {
     for (const width of [1280, 390]) {
       const page = await openPage({ viewport: { width, height: 900 } });
       const errs = watch(page);
@@ -171,7 +171,7 @@ try {
     else {
       const axe = fs.readFileSync(axePath, 'utf8');
       // The published report of the build machine's run is a page every buyer opens; it is scanned too, once the check has published one.
-      const pages = ['', 'pricing/', 'download/', 'trust/', 'changelog/', 'what-it-touches/', 'terms/', 'activate/', 'admin/', 'guide/', 'fresh/', 'undervolt/', 'builds/'];
+      const pages = ['', 'pricing/', 'download/', 'trust/', 'changelog/', 'what-it-touches/', 'terms/', 'activate/', 'admin/', 'guide/', 'fresh/', 'undervolt/', 'builds/', 'edition/', 'showcase/'];
       if (fs.existsSync(path.join(root, 'studio/assets/ci-report.html'))) pages.push('assets/ci-report.html');
       // Every site page is scanned in both themes (the sun button switches the whole palette); the report has one look, so it is scanned once.
       for (const p of pages) {

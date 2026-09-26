@@ -3,31 +3,51 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Custom Windows builds, and where the tune stops — OmniDx Tune</title>
-<meta name="description" content="What custom and stripped Windows builds change to reach a low process count, what that costs in security, updates and anti-cheat, and how OmniDx Tune gets most of the way on genuine Windows with an undo.">
+<title>Showcase: real runs on camera — OmniDx Tune</title>
+<meta name="description" content="Two real runs, filmed start to finish on a clean Windows 11 PC: a clean install becoming OmniDx Edition and then the one command (111 processes to 73), and the tune on stock Windows 11 with a restart (143 to 85).">
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="../assets/icons/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="../assets/icons/icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="../assets/icons/apple-touch-icon.png">
-<link rel="canonical" href="https://omnidx.net/studio/builds/">
-<meta property="og:url" content="https://omnidx.net/studio/builds/">
+<link rel="canonical" href="https://omnidx.net/studio/showcase/">
+<meta property="og:url" content="https://omnidx.net/studio/showcase/">
 <meta property="og:image" content="https://omnidx.net/studio/assets/og-card.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="OmniDx: the eagle mark and the OMNIDX wordmark in purple on black, and the line: one command, Windows cut down to what your games need.">
 <meta name="twitter:image" content="https://omnidx.net/studio/assets/og-card.jpg">
-<meta name="twitter:title" content="Custom Windows builds, and where the tune stops — OmniDx Tune">
-<meta name="twitter:description" content="What stripped Windows builds cut, what it costs, and how the tune gets most of the way on genuine Windows.">
+<meta name="twitter:title" content="Showcase: real runs on camera — OmniDx Tune">
+<meta name="twitter:description" content="A clean install to OmniDx Edition to the one command, and the tune with a restart, filmed start to finish.">
 <meta property="og:site_name" content="OmniDx Tune">
-<meta property="og:title" content="Custom Windows builds, and where the tune stops — OmniDx Tune">
-<meta property="og:description" content="What stripped Windows builds cut, what it costs, and how the tune gets most of the way on genuine Windows.">
+<meta property="og:title" content="Showcase: real runs on camera — OmniDx Tune">
+<meta property="og:description" content="A clean install to OmniDx Edition to the one command, and the tune with a restart, filmed start to finish.">
 <meta property="og:type" content="website">
+<meta property="og:video" content="https://omnidx.net/studio/assets/video/omnidx-edition-film.mp4">
+<meta property="og:video:type" content="video/mp4">
+<meta property="og:video:width" content="1080">
+<meta property="og:video:height" content="1920">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preload" as="image" href="../assets/logo/omnidx-logo-800.webp" type="image/webp">
 <link rel="stylesheet" href="../assets/studio.css">
 <script>
 (function(){try{var t=localStorage.getItem('omnidx.theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
 </script>
+<style>
+  .films{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:26px;align-items:start}
+  .film{display:grid;gap:16px;padding:18px}
+  .film video{display:block;width:100%;max-width:400px;margin:0 auto;aspect-ratio:9/16;height:auto;max-height:78vh;
+    border-radius:16px;background:#000;border:1px solid var(--line);box-shadow:0 30px 80px -30px var(--glow)}
+  .film h3{margin:0;font-size:21px}
+  .film .num{font-family:var(--mono);font-weight:700;font-size:clamp(26px,4vw,34px);letter-spacing:-.02em;line-height:1.1}
+  .film .num em{font-style:normal;color:var(--ok,#35d07f)}
+  .film .num span{display:block;font-family:var(--sans);font-size:13px;font-weight:500;letter-spacing:0;color:var(--text-3);margin-top:4px}
+  .film p{margin:0;font-size:14.5px}
+  .film details summary{cursor:pointer;font-size:14px;color:var(--text-2)}
+  .film ol{margin:10px 0 0;padding-left:20px;font-size:14px;color:var(--text-2);display:grid;gap:6px}
+  .film ol b{color:var(--text)}
+  .film .tags{display:flex;flex-wrap:wrap;gap:8px}
+  .film .tags span{font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid var(--line);color:var(--text-2);background:var(--surface-2)}
+</style>
 </head>
 <body>
 <div class="aurora" aria-hidden="true"><div class="grid"></div></div>
@@ -133,51 +153,83 @@
 
 <header class="hero" style="padding:64px 0 30px">
   <div class="wrap center">
-    <div class="eyebrow"><span class="pulse"></span>The straight comparison</div>
-    <h1 style="font-size:clamp(34px,5.6vw,58px)">Custom Windows builds, and where the tune stops.</h1>
+    <div class="eyebrow"><span class="pulse"></span>Real runs · filmed start to finish · nothing staged</div>
+    <h1 style="font-size:clamp(34px,5.6vw,58px)">See it run.</h1>
     <p class="lede">
-      A custom build is Windows with parts removed from the install image, or a script run over a fresh install that
-      turns the protections off. The process counts look great. Here is what gets them there, what it costs, and the
-      line the tune will not cross.
+      Two runs on a clean Windows 11 PC, filmed from the first screen to the last number. The first is the whole thing:
+      Windows installed from Microsoft's own stick, OmniDx Edition setting itself up, then the one command. The second is
+      the tune on its own, on Windows as it comes, with the restart. Sound on.
     </p>
   </div>
 </header>
 
-<section id="what" data-rail="What they change">
+<section id="films" data-rail="The films">
   <div class="wrap">
-    <div class="section-head reveal"><h2>What they change to get the number.</h2></div>
-    <div class="cmp-wrap"><table class="cmp" style="min-width:0">
-      <thead><tr><th>What</th><th>A typical stripped build</th><th>OmniDx Tune</th></tr></thead>
-      <tbody>
-        <tr><td>Startup apps, junk services, telemetry tasks, preinstalled apps</td><td>Removed</td><td>Off or removed, for your hardware, recorded</td></tr>
-        <tr><td>Legacy Windows pieces, OneDrive, PC-maker trials</td><td>Removed from the image</td><td>Removed, and put back by undo</td></tr>
-        <tr><td>Microsoft Defender</td><td>Often removed or disabled</td><td>Never touched</td></tr>
-        <tr><td>Windows Update</td><td>Often disabled or paused for good</td><td>Never touched</td></tr>
-        <tr><td>CPU security mitigations</td><td>Sometimes switched off</td><td>Never touched</td></tr>
-        <tr><td>Memory integrity, Secure Boot, TPM, IOMMU</td><td>Often off</td><td>Left on; only switched off if you ask, and refused where VALORANT or FACEIT are installed</td></tr>
-        <tr><td>How it is installed</td><td>A modified image, from whoever made it</td><td>Genuine Windows from Microsoft, the script public</td></tr>
-        <tr><td>Getting back to normal</td><td>Reinstall</td><td>One line of undo, or the restore point</td></tr>
-      </tbody>
-    </table></div>
-  </div>
-</section>
+    <div class="films">
+      <article class="card film reveal" id="edition-film">
+        <video controls playsinline preload="none" poster="../assets/video/omnidx-edition-film.jpg" width="1080" height="1920" aria-label="The full film: a clean Windows 11 install becoming OmniDx Edition, then the one command">
+          <source src="../assets/video/omnidx-edition-film.mp4" type="video/mp4">
+          <a href="../assets/video/omnidx-edition-film.mp4">Download the film (MP4)</a>
+        </video>
+        <div class="tags"><span>1:23</span><span>OmniDx Edition</span><span>The one command</span><span>Extreme</span></div>
+        <h3>The full film: a clean install, OmniDx Edition, the one command</h3>
+        <div class="num">111 → <em>73</em><span>processes, before the tune and three minutes after signing in</span></div>
+        <p>Windows 11 from Microsoft's own installer. At the first sign-in OmniDx Edition sets itself up with nobody
+          touching it: its look, OmniDx Search on Windows + S, the browser, the Hub with its presets, the lean settings.
+          Then Task Manager, the one line in PowerShell, Extreme, the key, the restart, and the count again.
+          <a href="../edition/">How to get OmniDx Edition</a> (it comes with every key).</p>
+        <details><summary>What the film shows, as text</summary><ol>
+          <li><b>Clean Windows 11</b>, installing from Microsoft's own USB stick (sped up 228 times).</li>
+          <li><b>OmniDx Edition sets itself up</b> at the first sign-in: its apps, its look, the lean settings. By itself.</li>
+          <li><b>One restart</b>, then the OmniDx Edition welcome and the taskbar on the left.</li>
+          <li><b>Windows + S</b> opens OmniDx Search: typing "boost" finds Game Boost.</li>
+          <li><b>OmniDx Hub</b>: the Balanced, Competitive and Insane presets. Settings > About: still genuine Windows underneath.</li>
+          <li><b>Task Manager before the tune: 111 processes.</b></li>
+          <li><b>The one command</b>: Windows + S, PowerShell, <span class="mono">irm omnidx.net/go.ps1 | iex</span>. Windows asks; Yes.</li>
+          <li><b>Extreme</b> ticked, the key in, Run. Done, and the restart.</li>
+          <li><b>Signed in, three minutes later: 73 processes</b>, with Task Manager and the filming helper counted.</li>
+        </ol></details>
+      </article>
 
-<section id="cost" data-rail="What it costs">
-  <div class="wrap">
-    <div class="section-head reveal"><h2>What it costs.</h2></div>
-    <div class="grid grid-2">
-      <div class="card reveal"><h3>Anti-cheat</h3><p>Since 2026, VALORANT's Vanguard and FACEIT require Secure Boot, TPM 2.0, IOMMU and memory integrity. A build that turned them off is a build those games will not start on.</p></div>
-      <div class="card reveal d1"><h3>Security</h3><p>No Defender and no updates means the next browser exploit is yours to keep. The frames it bought are a few percent; the risk is the whole PC.</p></div>
-      <div class="card reveal d2"><h3>Trust</h3><p>A modified image is software from a stranger with the keys to everything. You cannot check what else was changed.</p></div>
-      <div class="card reveal d3"><h3>Repairs</h3><p>Official repair tools and feature updates expect the parts that were cut. When something breaks, the answer is usually a reinstall.</p></div>
+      <article class="card film reveal d1" id="restart-film">
+        <video controls playsinline preload="none" poster="../assets/video/omnidx-tune-restart.jpg" width="1080" height="1920" aria-label="The tune on stock Windows 11, with the restart">
+          <source src="../assets/video/omnidx-tune-restart.mp4" type="video/mp4">
+          <a href="../assets/video/omnidx-tune-restart.mp4">Download the film (MP4)</a>
+        </video>
+        <div class="tags"><span>1:21</span><span>Stock Windows 11</span><span>The one command</span><span>Restart</span></div>
+        <h3>The tune on Windows as it comes, and the restart</h3>
+        <div class="num">143 → <em>85</em><span>processes, before the tune and after the restart</span></div>
+        <p>No Edition this time: a fresh Windows 11 exactly as Microsoft ships it. Task Manager first, then one line in
+          PowerShell. The tune reads the PC, makes a restore point, cuts what this PC does not use, and asks for a restart.
+          Task Manager again after it. <a href="../download/">The command, screen by screen</a>.</p>
+        <details><summary>What the film shows, as text</summary><ol>
+          <li><b>A clean Windows 11 PC</b>, nothing installed.</li>
+          <li><b>Task Manager before: 143 processes running.</b></li>
+          <li><b>One line in PowerShell.</b> Windows asks first; Yes.</li>
+          <li><b>It reads the PC first</b>, Extreme mode on, the key in, Run.</li>
+          <li><b>A restore point first</b>, then it cuts what this PC does not use (sped up).</li>
+          <li><b>Done</b>; it asks for a restart. Restarting.</li>
+          <li><b>Task Manager after the restart: 85 processes.</b></li>
+        </ol></details>
+      </article>
     </div>
+    <p class="small muted center" style="margin:26px auto 0;max-width:760px">Both are filmed on a test PC: a virtual machine
+      with Windows 11 and nothing else, no drivers or apps of its own. A real PC runs its own graphics, audio and
+      network drivers, so it starts higher and ends higher. Your PC, your numbers: the
+      <a href="../download/#report">free report</a> counts yours before you pay.</p>
   </div>
 </section>
 
-<section id="instead" data-rail="Instead">
-  <div class="wrap">
-    <div class="section-head reveal"><h2>Most of the way, on genuine Windows.</h2>
-      <p>A clean install from Microsoft, set up in one go with <a href="../fresh/">the free answer file</a>, then the tune: the same startup apps, services, tasks and bloat gone, cut to what your hardware uses, with security on and an undo. Run the <a href="../download/#report">free report</a> first to see what it would do on your PC.</p></div>
+<section id="next" data-rail="Get it">
+  <div class="wrap center">
+    <div class="section-head reveal"><h2>One payment. Both of these.</h2>
+      <p>The tune and OmniDx Edition come with every key: <span data-price="tune">$19.99</span> for one PC,
+        <span data-price="squad">$39.99</span> for three. Paid once, never renews.</p></div>
+    <div class="btn-row" style="justify-content:center">
+      <a class="btn btn-primary btn-lg" href="../pricing/">Get it — <span data-price="tune">$19.99</span></a>
+      <a class="btn btn-lg btn-ghost" href="../edition/">OmniDx Edition: the guide</a>
+      <a class="btn btn-lg btn-ghost btn-watch" href="../assets/video/omnidx-tune-how-it-works.mp4" data-watch><span class="play" aria-hidden="true"><svg width="9" height="10" viewBox="0 0 9 10"><path d="M0 0l9 5-9 5z" fill="#fff"/></svg></span>The tutorial <span class="len">1:14</span></a>
+    </div>
   </div>
 </section>
 
@@ -231,6 +283,7 @@
   </div>
 </footer>
 <!-- /chrome:footer -->
+
 <script type="module" src="../assets/studio.js"></script>
 </body>
 </html>

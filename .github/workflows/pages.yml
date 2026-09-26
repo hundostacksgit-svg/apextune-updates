@@ -36,8 +36,9 @@ jobs:
           done
           for f in studio/index.html studio/pricing/index.html studio/download/index.html studio/trust/index.html studio/alternative/index.html \
                    studio/account/index.html studio/activate/index.html studio/activate/activate.js studio/admin/index.html studio/admin/admin.js studio/terms/index.html \
-                   go.ps1 tune/omnidx.ps1 tune/config.json studio/assets/tune.js studio/assets/tunekey.js \
+                   go.ps1 edition.ps1 tools/edition-pack.py tune/omnidx.ps1 tune/config.json studio/assets/tune.js studio/assets/tunekey.js \
                    studio/what-it-touches/index.html studio/changelog/index.html robots.txt sitemap.xml 404.html studio/assets/app.png \
+                   studio/edition/index.html studio/showcase/index.html studio/assets/video/omnidx-edition-film.mp4 studio/assets/video/omnidx-tune-restart.mp4 \
                    tools/tune-check.mjs tools/tune-touches.py docs/TUNE.md \
                    studio/assets/studio.css studio/assets/studio.js studio/assets/showcase.css studio/assets/showcase.js \
                    studio/assets/config.js studio/assets/auth.js studio/assets/rate.js studio/assets/mark.svg \
@@ -100,7 +101,7 @@ jobs:
           python3 -c "import json; json.load(open('studio/desktop/package.json'))"
           python3 -c "import json; json.load(open('studio/mobile/capacitor.config.json'))"
           python3 -m py_compile tools/sysreport.py tools/make-licence.py tools/set-domain.py \
-            tools/make-studio-key.py tools/make-tune-key.py tools/tune-touches.py tools/tune-stamp.py tools/release.py \
+            tools/make-studio-key.py tools/make-tune-key.py tools/tune-touches.py tools/tune-stamp.py tools/release.py tools/edition-pack.py \
             desktop/omnidx.py desktop/install.py
 
           # The tune: ASCII, balanced, key maths agree, the transparency page is current.
@@ -129,11 +130,15 @@ jobs:
           set -euo pipefail
           # gh-pages is a deploy branch that nothing else writes, so forcing it
           # to match the commit being published is always the correct result.
-          # OmniDx Edition (edition/) is a preview, not on the site yet: the
-          # published copy leaves that folder out.
+          # OmniDx Edition: the published copy of edition/ is the download that
+          # edition.ps1 fetches (tools/edition-pack.py: one zip and the SHA-256
+          # it checks), not the folder itself with its checks and film helpers.
           if [ -d edition ]; then
+            python3 tools/edition-pack.py "$RUNNER_TEMP/edition-pub"
             git -c user.name="github-actions[bot]" -c user.email="41898333+github-actions[bot]@users.noreply.github.com" rm -r -q --cached edition
-            git -c user.name="github-actions[bot]" -c user.email="41898333+github-actions[bot]@users.noreply.github.com" commit -q -m "Publish ${GITHUB_SHA} without edition/ (a preview, not on the site yet)"
+            cp "$RUNNER_TEMP/edition-pub/omnidx-edition.zip" "$RUNNER_TEMP/edition-pub/edition.json" edition/
+            git add -f edition/omnidx-edition.zip edition/edition.json
+            git -c user.name="github-actions[bot]" -c user.email="41898333+github-actions[bot]@users.noreply.github.com" commit -q -m "Publish ${GITHUB_SHA}: edition/ as its download (omnidx-edition.zip, edition.json)"
           fi
           git push origin "HEAD:refs/heads/gh-pages" --force
           echo "published ${GITHUB_SHA} to gh-pages"

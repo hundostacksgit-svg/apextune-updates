@@ -43,6 +43,8 @@ PAGES = {
     'fresh/index.html': '../',
     'undervolt/index.html': '../',
     'builds/index.html': '../',
+    'edition/index.html': '../',
+    'showcase/index.html': '../',
     'what-it-touches/index.html': '../',
     'changelog/index.html': '../',
     'terms/index.html': '../',
@@ -97,11 +99,13 @@ MENU = [
             ('📋', 'Free report mode', 'See what it would find, no key, changes nothing', '{s}download/#report'),
             ('↩️', 'Undo', 'Put everything back, one line', '{s}download/#undo'),
             ('🎛️', 'Options', 'Aggressive, cut Xbox, keep a startup app, DNS', '{s}download/#options'),
+            ('🦅', 'OmniDx Edition', 'Windows set up for games, with every key', '{s}edition/'),
             ('💿', 'A fresh install', 'An answer file for a clean Windows, free', '{s}fresh/'),
             ('🔑', 'Your key', 'Get it again after paying', '{s}activate/'),
             ('📜', 'Read the script', 'Every line, public, before you run it', 'https://omnidx.net/tune/omnidx.ps1'),
         ],
     },
+    {'label': 'Showcase', 'href': '{s}showcase/'},
     {'label': 'Pricing', 'href': '{s}pricing/'},
     {
         'label': 'Help',
@@ -236,11 +240,13 @@ def build_footer(s: str) -> str:
         <a href="{s}#bios">BIOS checklist</a>
         <a href="{s}#safe">Fail-safes</a>
         <a href="{s}what-it-touches/">Everything it touches</a>
+        <a href="{s}showcase/">Showcase: real runs on camera</a>
       </div>
       <div>
         <h4>Get it</h4>
         <a href="{s}pricing/">Pricing</a>
         <a href="{s}download/">Run it</a>
+        <a href="{s}edition/">OmniDx Edition</a>
         <a href="{s}activate/">Your key</a>
         <a href="{s}download/#undo">Undo</a>
         <a href="https://omnidx.net/tune/omnidx.ps1">Read the script</a>

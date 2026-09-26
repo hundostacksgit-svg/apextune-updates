@@ -131,7 +131,10 @@ function keyFile(info) {
     ...keys.map((k) => `  $env:OMNIDX_KEY='${k}'; ${TUNE.command}`), '',
     'Undo:   $env:OMNIDX_MODE=\'undo\'; ' + TUNE.command, '',
     'Extreme (caution - fewer conveniences, a few more frames; undo puts it all back):',
-    `  $env:OMNIDX_MODE='extreme'; $env:OMNIDX_KEY='${keys[0]}'; ${TUNE.command}`,
+    `  $env:OMNIDX_MODE='extreme'; $env:OMNIDX_KEY='${keys[0]}'; ${TUNE.command}`, '',
+    'OmniDx Edition (included): Windows set up for games in one go. Paste, then pick 1 (a USB stick for a clean install) or 2 (this PC as it is):',
+    ...(many ? keys : keys.slice(0, 1)).map((k) => `  $env:OMNIDX_KEY='${k}'; ${TUNE.editionCommand}`),
+    'The guide: https://omnidx.net/studio/edition/', '',
     'Help:   https://omnidx.net/studio/download/', '',
     many ? 'Each key locks to the first PC that runs it. Keep this file.' : 'The key locks to the first PC that runs it. Keep this file.',
   ].filter((l) => l !== null).join('\r\n');
@@ -142,6 +145,7 @@ function renderKey(info, { again = false } = {}) {
   const keys = info.keys || [info.key];
   const many = keys.length > 1;
   const oneLiner = `$env:OMNIDX_KEY='${keys[0]}'; ${TUNE.command}`;
+  const edLine = `$env:OMNIDX_KEY='${keys[0]}'; ${TUNE.editionCommand}`;
   const file = keyFile(info);
   const mail = `mailto:?subject=${encodeURIComponent(many ? 'My OmniDx Tune keys' : 'My OmniDx Tune key')}&body=${encodeURIComponent(file.replace(/\r\n/g, '\n'))}`;
   const save = 'data:text/plain;charset=utf-8,' + encodeURIComponent(file);
@@ -178,6 +182,11 @@ function renderKey(info, { again = false } = {}) {
     <p class="small" style="margin:0 0 10px">Everything above, plus what the people who tune for a living set afterwards: every extra service, Game Bar entirely, animations and transparency off, the taskbar search box and notification toasts off, multi-plane overlay off, memory compression off, superfetch and Windows Search off, the dynamic tick off, the service hosts grouped the old way, the Xbox pieces gone unless you use Game Pass or Minecraft, and an advanced BIOS list in the report. A few more frames and steadier lows for fewer conveniences. It asks first, records every line, and undo puts all of it back. Run the standard tune first; use this when you want the last of it.</p>
     <div class="cmd"><code data-text="${esc(`$env:OMNIDX_MODE='extreme'; ${oneLiner}`)}"><span class="ps">&gt;</span>${esc(`$env:OMNIDX_MODE='extreme'; ${oneLiner}`)}</code>${copyButton(`$env:OMNIDX_MODE='extreme'; ${oneLiner}`)}</div>
     <p class="cmd-note">Same key, same PC, no extra charge. The app opens with Extreme ticked; untick it to run the standard tune instead.</p>
+
+    <div class="act-h">OmniDx Edition — included</div>
+    <p class="small" style="margin:0 0 10px">Windows set up for games in one go: the OmniDx look, OmniDx Search on Windows + S, a light browser, OmniDx Hub with Game Boost and three presets, the lean stage, and the tune in Extreme with your key. Paste this line and pick <b>1</b> to make a USB stick for a clean install (the full experience, as in <a href="../showcase/">the film</a>), or <b>2</b> to set it up on this PC as it is. Genuine Windows from Microsoft, anti-cheat keeps working, and one line takes it off.</p>
+    <div class="cmd"><code data-text="${esc(edLine)}"><span class="ps">&gt;</span>${esc(edLine)}</code>${copyButton(edLine)}</div>
+    <p class="cmd-note">${many ? 'Each friend uses the same line with their own key in it. ' : ''}<a href="../edition/#tutorial">The guide, step by step</a>: the USB stick, booting from it, what happens at the first sign-in, and how to take it off.</p>
 
     <div class="act-h">Receipt</div>
     <div class="act-row"><span>Product</span><b>${esc(p.name)} — ${many ? `${keys.length} keys, one PC each` : '1 PC'}</b></div>

@@ -221,6 +221,7 @@ const script = ascii('tune/omnidx.ps1');
 const go = ascii('go.ps1');
 balance('tune/omnidx.ps1', script);
 balance('go.ps1', go);
+balance('edition.ps1', ascii('edition.ps1'));
 definedFunctions('tune/omnidx.ps1', script);
 undoCovers('tune/omnidx.ps1', script);
 windowNames('tune/omnidx.ps1', script);

@@ -1,4 +1,4 @@
-# OmniDx Edition (preview, not on omnidx.net yet)
+# OmniDx Edition
 
 A gaming setup of Windows 10 and 11 that looks and works like its own system,
 without being a copy of Windows. Windows is the one the user installs from
@@ -13,8 +13,17 @@ plus an answer file and this folder. Custom "gaming OS" downloads (a Windows
 image with parts cut out, often pre-activated) are a copy of Windows handed out
 without a licence to do so; this is not that.
 
-The Pages publish leaves this folder out (`.github/workflows/pages.yml`), so
-none of it is on omnidx.net until it is linked on purpose.
+It comes with every OmniDx Tune key. Buyers run one line from their key page
+(`$env:OMNIDX_KEY='TUNE-...'; irm omnidx.net/edition.ps1 | iex`, the script is
+`edition.ps1` at the top of the repository): it checks the key with the key
+server, then makes the install stick (1) or sets up the PC as it is (2), and
+takes it off again (3). The guide is `studio/edition/`, the films are on
+`studio/showcase/`. The Pages publish (`.github/workflows/pages.yml`) puts this
+folder on omnidx.net only as its download: `edition/omnidx-edition.zip`
+(everything here but `ci/`) and `edition/edition.json` with the zip's SHA-256,
+made by `tools/edition-pack.py`; `edition.ps1` refuses a zip that does not
+match. The Windows check runs `edition.ps1` end to end against a copy served
+from the build machine.
 
 ## What it is
 
@@ -36,7 +45,11 @@ Secure Boot, TPM and memory integrity are not touched, so anti-cheat
 
 ## Try it
 
-**On a PC being reinstalled (the full experience):**
+**The one line (what buyers use):**
+`$env:OMNIDX_KEY='TUNE-XXXX-XXXX-XXXX-XXXX'; irm omnidx.net/edition.ps1 | iex`,
+then 1 (the stick), 2 (this PC as it is) or 3 (take it off).
+
+**On a PC being reinstalled (the full experience), by hand:**
 
 1. Make a Windows USB stick with Microsoft's Media Creation Tool.
 2. On any Windows PC: `.\make-usb.ps1 -Drive E: -Account Player -Key TUNE-XXXX-XXXX-XXXX-XXXX`
@@ -107,7 +120,7 @@ The seventh run (the first with the lean stage end to end) found:
   finished installing after both and started at every sign-in. Both now wait
   for that installer (up to two minutes) first; tune 1.78.2.
 
-## Before it goes on the site
+## Still to check
 
 - Check the pins and the lock screen picture on Home and Pro (the VM is
   Enterprise), and whether users want the pins locked at all.
