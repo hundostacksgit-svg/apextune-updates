@@ -156,6 +156,12 @@ cp "$TPM/swtpm.log" "$OUT/swtpm.txt" 2>/dev/null || true
     [ -f "/mnt/win/$f" ] && sudo cp "/mnt/win/$f" "$OUT/disk/$(echo "$f" | tr '/' '_')"
   done
   [ -d /mnt/win/OmniDx ] && sudo find /mnt/win/OmniDx -maxdepth 1 -type f \( -name '*.txt' -o -name '*.json' -o -name '*.html' \) -exec cp {} "$OUT/disk/" \;
+  # The Edition's own notes (the sign-in process list among them), and Windows' logs of what started and what failed.
+  [ -d /mnt/win/Users/User/AppData/Local/OmniDx ] && sudo find /mnt/win/Users/User/AppData/Local/OmniDx -maxdepth 1 -type f -name '*.txt' -exec cp {} "$OUT/disk/" \;
+  mkdir -p "$OUT/disk/evtx"
+  for l in System Application 'Windows PowerShell' Microsoft-Windows-TaskScheduler%4Operational Microsoft-Windows-PowerShell%4Operational; do
+    [ -f "/mnt/win/Windows/System32/winevt/Logs/$l.evtx" ] && sudo cp "/mnt/win/Windows/System32/winevt/Logs/$l.evtx" "$OUT/disk/evtx/"
+  done
   sudo ls /mnt/win/film > "$OUT/disk/film-folder.txt" 2>&1
   sudo chown -R "$(id -u):$(id -g)" "$OUT/disk"
   sudo umount /mnt/win; sudo qemu-nbd -d /dev/nbd0

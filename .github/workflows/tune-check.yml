@@ -486,7 +486,21 @@ jobs:
           if ($i.LastTaskResult -ne 0) { Write-Host ("the keep task ended with {0}" -f $i.LastTaskResult); exit 1 }
           if ((Get-Item C:\OmniDx\keep-log.txt).LastWriteTime -le $before) { Write-Host 'the keep task ran but wrote nothing to its log'; exit 1 }
           Get-Content C:\OmniDx\keep-log.txt -Tail 3
-          Write-Host 'sign-in tasks: headless where Windows allows, and the keep task ran to the end from Task Scheduler'
+          # The after-restart count's own command (the runs here skip its task), taken from the script as it builds it,
+          # without its two-minute wait, its wait for the boot time or removing its task: it must write the count line
+          # and the grouped list of processes.
+          $ast = [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path .\tune\omnidx.ps1), [ref]$null, [ref]$null)
+          $fn = $ast.Find({ param($x) $x -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $x.Name -eq 'Register-AfterCount' }, $true)
+          $as = $fn.Find({ param($x) $x -is [System.Management.Automation.Language.AssignmentStatementAst] -and $x.Left.Extent.Text -eq '$cmd' }, $true)
+          $script:Root = 'C:\OmniDx'; $out = 'C:\OmniDx\after-restart.txt'; $list = 'C:\OmniDx\processes-after-restart.txt'; $name = 'OmniDx after-restart count'
+          Invoke-Expression $as.Extent.Text
+          $ac = $cmd.Replace('Start-Sleep -Seconds 120; ', '').Replace('-lt 7 -and', '-lt 1 -and') -replace 'Unregister-ScheduledTask .*$', ''
+          & ([scriptblock]::Create($ac))
+          $rows = @(Get-Content C:\OmniDx\processes-after-restart.txt -ErrorAction SilentlyContinue)
+          Write-Host ("after-restart count: {0}" -f (Get-Content C:\OmniDx\after-restart.txt -Tail 1))
+          Write-Host ("processes-after-restart.txt: {0} groups, first: {1}" -f $rows.Count, $(if ($rows.Count) { $rows[0] }))
+          if ($rows.Count -lt 10 -or $rows[0] -notmatch '^\S+\s+x\d+\s+[\d,]+ MB$') { Write-Host 'the after-restart count did not write its process list'; exit 1 }
+          Write-Host 'sign-in tasks: headless where Windows allows, the keep task ran to the end from Task Scheduler, the after-restart count writes its list'
           exit 0
 
       # Run it again on the same PC with the same key: accepted, and with

@@ -43,6 +43,8 @@ class QMP:
                 time.sleep(1)
         self.f = self.s.makefile('rw')
         self.lock = threading.Lock()
+        # QEMU's own events (a RESET is Windows restarting), kept as they pass between replies.
+        self.events = []
         json.loads(self.f.readline())
         self.cmd('qmp_capabilities')
 
@@ -51,6 +53,7 @@ class QMP:
             self.f.write(json.dumps({'execute': execute, 'arguments': args} if args else {'execute': execute}) + '\n'); self.f.flush()
             while True:
                 r = json.loads(self.f.readline())
+                if 'event' in r: self.events.append((time.time(), r['event'])); continue
                 if 'return' in r: return r['return']
                 if 'error' in r: raise RuntimeError(f"{execute}: {r['error']}")
 
@@ -551,16 +554,34 @@ tasklist /svc | Set-Content C:\film\services-at-rest.txt -Encoding UTF8
 """
 
 
+def kick_agent(since, kicked):
+    """The helper starts from two sign-in tasks and a first-sign-in script; in takes 6 and 7 of the Edition run none
+    of them did after the restart. Eight minutes after QEMU saw Windows restart with no word from the helper, it is
+    started from the Run box as administrator (this part of the recording is not used), once per restart."""
+    resets = [t for t, e in Q.events if e == 'RESET' and t > since]
+    if not resets or resets[-1] in kicked or time.time() - resets[-1] < 8 * 60: return
+    kicked.add(resets[-1])
+    note('no word from the helper eight minutes after the restart; starting it from the Run box')
+    shot('kick-before.png')
+    press('meta_l', 'r'); pause(1.2, 1.6)
+    type_text(r'powershell -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File C:\film\agent.ps1', 0.6)
+    pause(0.4, 0.6)
+    press('ctrl', 'shift', 'ret')
+    uac_yes(os.path.join(A.out, 'kick-before.png'), 40)
+    mark('helper-started-by-hand')
+
+
 def edition():
     """OmniDx Edition from a clean install: its setup at the first sign-in (with the tune in Extreme), the restart
     it ends with, then a look round as a new owner would: the welcome, the Hub, the desktop, Start, Windows + S,
     OmniDx Browser, Task Manager, Settings > About, Game Boost, the lock screen and the sign-in picture."""
     first_boot = AG.boot
     mark('setup-running')
-    start = time.time(); i = 0
+    start = time.time(); i = 0; kicked = set()
     while True:
         if AG.wait_boot(not_this=first_boot, timeout=60): break
         i += 1; shot(f'setup-{i:03d}.png'); nudge()
+        kick_agent(start, kicked)
         if time.time() - start > 70 * 60: raise RuntimeError('no restart within 70 minutes')
     mark('restarted')
     POS[0], POS[1] = W // 2, H // 2
@@ -572,6 +593,7 @@ def edition():
         b = AG.wait_boot(not_this=boot, timeout=40)
         if b: boot = b; mark('restarted again'); continue
         i += 1; shot(f'after-{i:03d}.png'); nudge()
+        kick_agent(wait0, kicked)
         if time.time() - wait0 > 75 * 60: note('no welcome within 75 minutes; looking round as it is'); break
     mark('welcome')
     si = time.monotonic()
