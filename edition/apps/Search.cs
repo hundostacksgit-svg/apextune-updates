@@ -377,7 +377,8 @@ namespace OmniDx
         public bool On { get; private set; }
         public bool Auto { get; private set; }
         uint heldTimer;
-        DateTime lastFull = DateTime.MinValue;
+        DateTime lastFull = DateTime.MinValue, lastEco = DateTime.MinValue;
+        int gamePid;
         int ownPid = Process.GetCurrentProcess().Id;
         public event Action Changed;
 
@@ -394,9 +395,11 @@ namespace OmniDx
                 string perf = PerformanceScheme();
                 if (prev != null && perf != null && !prev.Equals(perf, StringComparison.OrdinalIgnoreCase)) { State.Set("BoostPrevScheme", prev); Powercfg("/setactive " + perf); }
                 if (preset == "Insane") Edition.Start("schtasks.exe", "/run /tn \"OmniDx\\Edition Free Memory\"");
+                if (preset != "Balanced") { Eco.Lighten(gamePid); lastEco = DateTime.Now; Edition.Log("boost: " + Eco.Count + " background processes in Efficiency mode"); }
             }
             else
             {
+                if (Eco.Count > 0) { Edition.Log("boost: " + Eco.Count + " background processes back to normal"); Eco.RestoreAll(); }
                 if (heldTimer > 0) { uint cur; try { Native.NtSetTimerResolution(heldTimer, false, out cur); } catch { } heldTimer = 0; }
                 string prev = State.Get("BoostPrevScheme", null);
                 if (!string.IsNullOrEmpty(prev)) { Powercfg("/setactive " + prev); State.Set("BoostPrevScheme", ""); }
@@ -414,7 +417,9 @@ namespace OmniDx
             if (!State.AutoBoost) { if (On && Auto) Set(false, false); return; }
             int pid;
             bool full = Native.ForegroundFullscreen(out pid) && pid != ownPid && !IsOurs(pid);
-            if (full) { lastFull = DateTime.Now; if (!On) Set(true, true); }
+            if (full) { lastFull = DateTime.Now; gamePid = pid; if (!On) Set(true, true); }
+            // New background processes (a browser opens a tab, a launcher its web view) join, every ten seconds.
+            if (On && State.Preset != "Balanced" && (DateTime.Now - lastEco).TotalSeconds > 10) { Eco.Lighten(gamePid); lastEco = DateTime.Now; }
             else if (On && Auto && (DateTime.Now - lastFull).TotalSeconds > 20) Set(false, false);
         }
         // While Game Boost is on (Competitive and Insane): when free memory runs under 1 GB and the standby list holds

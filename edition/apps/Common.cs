@@ -342,6 +342,111 @@ namespace OmniDx
         }
     }
 
+    // ------------------------------------------------------------------ background apps, lighter while a game plays
+    // Windows' own Efficiency mode (Task Manager's leaf): a lower priority and EcoQoS, so the processor serves the game
+    // first and background work runs on its slowest, coolest setting. Only what a game can do without: browsers,
+    // launchers' web views and a few always-on apps, whole; and of chat and music apps only their window processes
+    // (Chromium's renderer and GPU processes), since Discord's voice and Spotify's playback run in their main
+    // process, which is left alone. Never anti-cheat, audio, recording software or the game. The apps keep running
+    // and answering; everything is put back when Game Boost ends, and an app brought to the front is put back at once.
+    static class Eco
+    {
+        [StructLayout(LayoutKind.Sequential)] struct Throttle { public uint Version, ControlMask, StateMask; }
+        [DllImport("kernel32.dll")] static extern IntPtr OpenProcess(int access, bool inherit, int pid);
+        [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr h);
+        [DllImport("kernel32.dll")] static extern bool SetProcessInformation(IntPtr h, int cls, ref Throttle info, int size);
+        [DllImport("kernel32.dll")] static extern bool SetPriorityClass(IntPtr h, uint cls);
+        [DllImport("kernel32.dll")] static extern uint GetPriorityClass(IntPtr h);
+        [DllImport("ntdll.dll")] static extern int NtQueryInformationProcess(IntPtr h, int cls, IntPtr buf, int len, out int ret);
+        const int SetInfo = 0x0200, QueryLimited = 0x1000;
+        const uint Normal = 0x20, BelowNormal = 0x4000;
+
+        static readonly HashSet<string> Whole = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+            "chrome", "msedge", "brave", "firefox", "opera", "vivaldi", "OmniBrowser",
+            "steamwebhelper", "EpicWebHelper", "EpicGamesLauncher", "Battle.net", "EADesktop", "GalaxyClient", "GalaxyClient Helper",
+            "OneDrive", "ms-teams", "Teams", "slack", "WhatsApp", "Telegram", "PhoneExperienceHost", "Widgets", "CrossDeviceResume" };
+        static readonly HashSet<string> WindowOnly = new HashSet<string>(StringComparer.OrdinalIgnoreCase) {
+            "Discord", "DiscordPTB", "DiscordCanary", "Spotify" };
+        static readonly Dictionary<int, uint> changed = new Dictionary<int, uint>();
+        public static int Count { get { return changed.Count; } }
+
+        // Puts matching background processes into Efficiency mode (already-changed ones are skipped), and puts back
+        // any app that is now in front. Called when Game Boost turns on and every few seconds while it is on.
+        public static void Lighten(int gamePid)
+        {
+            int front = 0; IntPtr fw = Native.GetForegroundWindow(); if (fw != IntPtr.Zero) Native.GetWindowThreadProcessId(fw, out front);
+            string frontName = null;
+            try { if (front != 0) frontName = Process.GetProcessById(front).ProcessName; } catch { }
+            int me = Process.GetCurrentProcess().Id;
+            foreach (var p in Process.GetProcesses())
+            {
+                try
+                {
+                    string n = p.ProcessName;
+                    if (p.Id == gamePid || p.Id == me) continue;
+                    bool whole = Whole.Contains(n), part = WindowOnly.Contains(n);
+                    if (!whole && !part) continue;
+                    if (frontName != null && n.Equals(frontName, StringComparison.OrdinalIgnoreCase)) { Restore(p.Id); continue; }
+                    if (changed.ContainsKey(p.Id)) continue;
+                    if (part && !IsWindowPart(p.Id)) continue;
+                    IntPtr h = OpenProcess(SetInfo | QueryLimited, false, p.Id);
+                    if (h == IntPtr.Zero) continue;   // another account's, or elevated: left alone
+                    try
+                    {
+                        uint prev = GetPriorityClass(h);
+                        if (prev == Normal) SetPriorityClass(h, BelowNormal);
+                        var t = new Throttle { Version = 1, ControlMask = 1, StateMask = 1 };   // execution speed: throttled
+                        SetProcessInformation(h, 4, ref t, Marshal.SizeOf(t));                   // ProcessPowerThrottling
+                        changed[p.Id] = prev;
+                    }
+                    finally { CloseHandle(h); }
+                }
+                catch { }
+                finally { p.Dispose(); }
+            }
+        }
+
+        public static void RestoreAll()
+        {
+            foreach (int pid in changed.Keys.ToList()) Restore(pid);
+        }
+
+        static void Restore(int pid)
+        {
+            uint prev;
+            if (!changed.TryGetValue(pid, out prev)) return;
+            changed.Remove(pid);
+            IntPtr h = OpenProcess(SetInfo | QueryLimited, false, pid);
+            if (h == IntPtr.Zero) return;   // it has closed
+            try
+            {
+                if (prev == Normal && GetPriorityClass(h) == BelowNormal) SetPriorityClass(h, Normal);
+                var t = new Throttle { Version = 1, ControlMask = 0, StateMask = 0 };   // back to Windows' own choice
+                SetProcessInformation(h, 4, ref t, Marshal.SizeOf(t));
+            }
+            finally { CloseHandle(h); }
+        }
+
+        // A Chromium or Electron child that only draws the window: its command line says --type=renderer or gpu-process.
+        static bool IsWindowPart(int pid)
+        {
+            IntPtr h = OpenProcess(QueryLimited, false, pid);
+            if (h == IntPtr.Zero) return false;
+            IntPtr buf = Marshal.AllocHGlobal(65536);
+            try
+            {
+                int ret;
+                if (NtQueryInformationProcess(h, 60, buf, 65536, out ret) != 0) return false;   // ProcessCommandLineInformation
+                int len = Marshal.ReadInt16(buf);                                               // a UNICODE_STRING, then its text
+                IntPtr text = Marshal.ReadIntPtr(buf, IntPtr.Size);
+                string cmd = Marshal.PtrToStringUni(text, len / 2);
+                return cmd.Contains("--type=renderer") || cmd.Contains("--type=gpu-process");
+            }
+            catch { return false; }
+            finally { Marshal.FreeHGlobal(buf); CloseHandle(h); }
+        }
+    }
+
     // ------------------------------------------------------------------ what the apps remember
     static class State
     {
