@@ -123,13 +123,17 @@ New-Item -ItemType Directory -Force -Path (Split-Path $standIn) | Out-Null
 Copy-Item "$env:SystemRoot\System32\PING.EXE" $standIn -Force
 $bg = Start-Process $standIn -ArgumentList '-t', '127.0.0.1' -WindowStyle Hidden -PassThru
 Start-Sleep 2
+# A process starts at its parent's priority, and this runner runs the check itself below normal (so everything it
+# starts, Edge included, began below normal): the stand-in is set to normal first, as an app a person starts would be.
+$shellPrio = "$((Get-Process -Id $PID).PriorityClass)"
+try { (Get-Process -Id $bg.Id).PriorityClass = 'Normal' } catch { Note "could not set the stand-in to normal: $($_.Exception.Message)" }
 if (-not (Get-Process OmniSearch -ErrorAction SilentlyContinue)) { Start-Process (Join-Path $bin 'OmniSearch.exe') -ArgumentList '--background'; Start-Sleep 3 }
 $before = Prio $bg.Id
 Start-Process (Join-Path $bin 'OmniSearch.exe') -ArgumentList '--boost'; Start-Sleep 5
 $during = Prio $bg.Id
 Start-Process (Join-Path $bin 'OmniSearch.exe') -ArgumentList '--unboost'; Start-Sleep 4
 $after = Prio $bg.Id
-Note "A background app (Telegram.exe stand-in): $before, with Game Boost on $during, after $after"
+Note "A background app (Telegram.exe stand-in; this check runs at $shellPrio): $before, with Game Boost on $during, after $after"
 Check ($before -eq 'Normal' -and $during -eq 'BelowNormal') 'Game Boost: a background app on the list runs in Efficiency mode while it is on'
 Check ($after -eq 'Normal') 'Game Boost: the app is back to normal when it ends'
 Stop-Process -Id $bg.Id -Force -ErrorAction SilentlyContinue
