@@ -1,11 +1,14 @@
-# OmniDx Tune on TikTok: the nine cuts and how to post them
+# OmniDx Tune on TikTok: the fourteen cuts and how to post them
 
-Seven 9:16 videos cut from the site's tutorial, each built around one hook a
+Twelve 9:16 videos cut from the site's tutorial (1 to 7 and 10 to 14), each built around one hook a
 stranger scrolling past would stop for, and two that are screen recordings
 of real runs. They are made from code
 (`node tools/promo/tune/render-shorts.mjs`, see `tools/promo/tune/README.md`;
 the eighth and ninth from `tools/promo/film/`) and are promotion material:
-the MP4s never go into git.
+the MP4s never go into git. Every one ends on the OmniDx card: the logo
+burning in on the beat and omnidx.net rising under it
+(`python3 tools/promo/film/outro.py in.mp4 out.mp4 --bpm 120`; `--bpm 100`
+for 8 and 9), so each cut runs about four seconds longer than the table says.
 
 Nobody can promise views. What these are built on is what the feed rewards:
 a reason to stop in the first second, a caption that finishes the thought,
@@ -24,12 +27,17 @@ something to comment ("what's your number?"), and an ending that loops.
 | 7 | `07-valorant-safe.mp4` | 0:20 | "Some 'FPS boost' tweaks turn off what VALORANT needs." | Comment, share to a VALORANT friend |
 | 8 | `08-real-test.mp4` | 1:05 | "Testing a $20 Windows optimizer on a Windows 11 PC" | Watch to the end, comment your number |
 | 9 | `09-restart-test.mp4` | 1:22 | "Testing a $20 Windows optimizer on a clean Windows 11 PC" | Watch to the end, comment your number |
+| 10 | `10-free-look.mp4` | 0:20 | "See what it would change before you pay." | Save, try the free report |
+| 11 | `11-keep-discord.mp4` | 0:20 | "Will it break my Discord?" | Comment the app you'd keep |
+| 12 | `12-checks-itself.mp4` | 0:22 | "Never paste a random command from the internet." | Share, read the script |
+| 13 | `13-one-payment.mp4` | 0:20 | "PC optimizers want a monthly fee." | Comment, save |
+| 14 | `14-reads-first.mp4` | 0:22 | "It reads your PC before it cuts anything." | Watch again, try the free report |
 
 Each has a cover image next to it (`NN-name-cover.jpg`, the hook on screen).
 In TikTok: Edit cover, pick the frame about a second and a half in, or upload
 the cover image.
 
-Every number on screen in 1 to 7 is the site's example PC, and the video
+Every number on screen in 1 to 7 and 10 to 14 is the site's example PC, and the video
 says "Example run" whenever one is shown; the run is shown sped up and says
 so. Number 8 is a real run, recorded as it happened on a Windows 11 test PC
 in the cloud (a GitHub-hosted machine): the typing, the key, Task Manager
@@ -129,6 +137,65 @@ box you would have to tick yourself. The free report checks all three.*
 
 Cover text: "Does it break VALORANT?"
 
+**10. See what it would change before you pay**
+
+> Run the free report first. It reads your PC, lists everything it would cut
+> and writes a BIOS checklist for your board. It changes nothing. No key.
+> #pcgaming #windows11 #pctips #gamingpc #pcsetup
+
+Pinned comment: *The free report: open PowerShell and paste the free report
+line from omnidx.net. It changes nothing on your PC; the report it writes is
+yours to keep.*
+
+Cover text: "Free. Changes nothing."
+
+**11. Will it break my Discord?**
+
+> Everything that starts with Windows is a tick box. Untick Discord and it
+> stays. Spotify still opens when you click it. What would you keep? 👇
+> #discord #pcgaming #windows11 #pcsetup #gamingpc
+
+Pinned comment: *Nothing gets uninstalled: startup apps are only stopped
+from starting with Windows, and undo puts every one back. Example run on one
+PC.*
+
+Cover text: "Will it break Discord?"
+
+**12. Never paste a random command**
+
+> Good rule. This one checks its own fingerprint against the copy the
+> Windows check tested, and refuses if one byte is off. Every line is public.
+> #cybersecurity #powershell #windows11 #pctips #techtok
+
+Pinned comment: *Read it before you run it: omnidx.net/tune/omnidx.ps1.
+omnidx.net/studio/trust/ says exactly what it downloads and checks, and it
+prints "Script verified" before it does anything.*
+
+Cover text: "Never paste random commands"
+
+**13. PC optimizers want a monthly fee**
+
+> This one is $19.99 once. Every future version free, undo included, and
+> OmniDx Edition comes with it. Squad: three keys for $39.99.
+> #pcgaming #windows11 #gamingpc #pcsetup #techtok
+
+Pinned comment: *No subscription, ever. The key is locked to your PC; run it
+again whenever there is a new version. Numbers on screen are one example PC.*
+
+Cover text: "No subscription."
+
+**14. It reads your PC before it cuts anything**
+
+> CPU, GPU, RAM, the board, laptop or desktop. It keeps your Wi-Fi,
+> controller and printer, leaves Secure Boot and TPM on, and spots RAM
+> running slow. Then a BIOS checklist for your exact board.
+> #pcbuild #buildapc #pcgaming #windows11 #pctips
+
+Pinned comment: *Example PC in the video. The free report does the same
+read on yours and changes nothing: omnidx.net.*
+
+Cover text: "It reads your PC first"
+
 ## Your voice makes them stronger (optional)
 
 They work silent, with the text on screen and the music. Your own voice over
@@ -159,6 +226,20 @@ at about 40% under it.
 7. "Some FPS boost tweaks turn off what VALORANT needs. Secure Boot, TPM,
    memory integrity. This one reads them first and leaves them on. It never
    touches the anti-cheat."
+10. "See what it would change before you pay. It reads your PC, then the free
+    report lists everything it would cut and changes nothing. Plus a BIOS
+    checklist for your board. Most PCs have free speed sitting in there."
+11. "Will it break my Discord? Everything that starts with Windows is a tick
+    box. Untick Discord, it stays. Spotify doesn't auto-start, but it still
+    opens when you click it. What would you keep?"
+12. "Never paste a random command from the internet. Unless it checks itself.
+    It compares its fingerprint with the copy that was tested, and if one byte
+    is off, it refuses. Every line is public. Read it before you pay."
+13. "PC optimizers want a monthly fee. This one: nineteen ninety-nine, once.
+    Every future version free. Undo included. OmniDx Edition included."
+14. "It reads your PC before it cuts anything. CPU, GPU, RAM, the board. It
+    keeps what you use, security stays on, and it spots RAM running slow.
+    Then a BIOS checklist for your exact board."
 
 **8. The real test (screen recording)**
 
@@ -193,7 +274,7 @@ Cover: the last frame (Task Manager after the restart, 143 → 85).
 
 ## Posting
 
-- **Order:** 9, 1, 8, 2, 4, 3, 7, 5, 6. One a day. The first two ask for a comment,
+- **Order:** 9, 1, 8, 2, 11, 4, 10, 3, 7, 13, 5, 12, 14, 6. One a day. The first two ask for a comment,
   which is what gets a new account shown to more people.
 - **When:** early evening in your viewers' time zone (6 to 9 pm); after a
   week, TikTok's Analytics > Followers shows when yours are on.

@@ -223,6 +223,24 @@
   </div>
 </section>
 
+<section id="bench" data-rail="Measure yours">
+  <div class="wrap">
+    <div class="center"><div class="section-head reveal"><h2>Measure your own frame rate. Free.</h2>
+      <p>A test PC in the cloud has no graphics card, so these films count processes, not frames. Your PC has one: OmniDx
+        Bench records a minute of your game with PresentMon, the frame-time tool reviewers use, and gives you the numbers.
+        It changes nothing.</p></div></div>
+    <div class="cmd reveal" style="max-width:560px;margin:0 auto"><code data-text="irm omnidx.net/bench.ps1 | iex">irm omnidx.net/bench.ps1 | iex</code><button class="btn btn-sm" type="button" data-copy>Copy</button></div>
+    <div class="grid grid-3" style="margin-top:30px">
+      <div class="card reveal"><div class="card-icon">📊</div><h3>What it measures</h3><p>Average FPS, the 1% and 0.1% lows (the slowest frames, the ones you feel as stutter) and stutters a minute. Every frame of the minute is written down, and PresentMon's own file is kept next to the numbers.</p></div>
+      <div class="card reveal d1"><div class="card-icon">⚖️</div><h3>A fair test</h3><p>Run it stock, then run the tune and restart, then run it again: same game, same scene, same settings, V-Sync and frame caps off. It sets the two side by side and calls a change under 3% "about the same", because two runs of one scene differ that much on their own.</p></div>
+      <div class="card reveal d2"><div class="card-icon">🖼️</div><h3>A card to post</h3><p>A 1080 x 1920 result card with your game, both numbers, your CPU and graphics card, saved in <span class="mono tiny">C:\OmniDx\bench</span>. It says what it is: one PC, one scene, measured. No promises: your numbers are yours.</p></div>
+    </div>
+    <p class="small muted center" style="margin:22px auto 0;max-width:760px">PresentMon is Intel's open-source tool; the bench
+      fetches it once from Intel's GitHub release and checks it against the fingerprint written in
+      <a href="../../bench.ps1">the script</a> before every use. Needs administrator rights to see the frames, like PresentMon itself.</p>
+  </div>
+</section>
+
 <section id="next" data-rail="Get it">
   <div class="wrap center">
     <div class="section-head reveal"><h2>One payment. Both of these.</h2>

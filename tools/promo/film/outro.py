@@ -2,10 +2,12 @@
 The OmniDx end card, added to the end of a finished vertical cut: the logo burns in from left to right on a violet
 glow, lands on the beat with a flash, a light streak and a ring, "omnidx.net" rises in letter by letter over a line
 that grows under it, a glint crosses the logo, and the card holds with a slow push-in while sparks drift. Its own
-sound, in the bed's key (D minor, 100 BPM): a whoosh into a low hit, a chime on the address, a soft chord to the end.
+sound, in the bed's key (D minor): a whoosh into a low hit, a chime on the address, a soft chord to the end.
 The cut dissolves into it over the last half second.
 
-    python3 tools/promo/film/outro.py in.mp4 out.mp4 [--logo studio/assets/logo/omnidx-logo.png] [--text omnidx.net]
+    python3 tools/promo/film/outro.py in.mp4 out.mp4 [--logo studio/assets/logo/omnidx-logo.png] [--text omnidx.net] [--bpm 100]
+
+--bpm is the bed's tempo, so the hit lands on its beat: 100 for the films, 120 for the TikTok cuts (shorts.js).
 
 FFMPEG (the ffmpeg binary) and FONTS (the folder with InterVariable.ttf) as for edit.py.
 """
@@ -18,7 +20,6 @@ FONTS = os.environ.get('FONTS', '')
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
 FPS = 30
 SR = 48000
-BEAT = 0.6
 VIOLET = np.array([139, 92, 246], np.float32) / 255
 PINK = np.array([217, 70, 239], np.float32) / 255
 
@@ -253,12 +254,14 @@ def main():
     ap.add_argument('--text', default='omnidx.net')
     ap.add_argument('--dur', type=float, default=4.5)
     ap.add_argument('--overlap', type=float, default=0.5)
+    ap.add_argument('--bpm', type=float, default=100)
     a = ap.parse_args()
     if not os.path.exists(os.path.join(FONTS, 'InterVariable.ttf')): sys.exit('FONTS must be the folder with InterVariable.ttf')
     src_dur, W, H = probe(a.src)
     start = src_dur - a.overlap
     # The hit lands on the bed's beat (cuts are on the beat from 0).
-    t_hit = round((start + 1.1) / BEAT) * BEAT - start
+    beat = 60 / a.bpm
+    t_hit = round((start + 1.1) / beat) * beat - start
     card = Card(W, H, a.logo, a.text, a.dur, t_hit)
     tmp = tempfile.mkdtemp(prefix='omnidx-outro-')
     vid = os.path.join(tmp, 'card.mp4'); wav = os.path.join(tmp, 'card.wav')

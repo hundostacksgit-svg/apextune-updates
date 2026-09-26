@@ -210,6 +210,8 @@ function seek(t) {
     if (t < bx.a || t >= bx.b) continue;
     const r = bx.sel ? W.rectOf(bx.sel) : W.rectOfText(bx.text[0], bx.text[1]);
     if (!r) continue;
+    const cr = bx.clip && W.rectOf(bx.clip); // an element that runs on past its scrolling parent: ring only what shows
+    if (cr) { const y0 = Math.max(r.y, cr.y), y1 = Math.min(r.y + r.h, cr.y + cr.h); r.y = y0; r.h = Math.max(0, y1 - y0); }
     const p = E.out(prog(t, bx.a, bx.a + 0.26)), o = E.in(prog(t, bx.b - 0.14, bx.b)), pad = 14, sc = lerp(1.2, 1, p);
     rh += `<div class="ring" style="left:${(r.x - pad).toFixed(1)}px;top:${(r.y - pad).toFixed(1)}px;width:${(r.w + pad * 2).toFixed(1)}px;height:${(r.h + pad * 2).toFixed(1)}px;opacity:${(p * (1 - o)).toFixed(3)};transform:scale(${sc.toFixed(4)})">${bx.label ? `<span class="lb">${esc(bx.label)}</span>` : ''}</div>`;
   }

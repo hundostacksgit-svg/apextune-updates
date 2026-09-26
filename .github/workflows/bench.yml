@@ -1,0 +1,128 @@
+# OmniDx Bench (bench.ps1, irm omnidx.net/bench.ps1 | iex), checked on Windows.
+#
+# A build machine has no graphics card and no games, so it cannot give a frame rate worth anything. What it can prove:
+# the script parses; PresentMon comes from Intel's release and matches the SHA-256 pinned in the script; PresentMon
+# runs with the script's own options and bench.ps1 handles a minute in which no game drew; and the maths and the card:
+# two PresentMon files with known frame times (tools/bench-fixture.py, one in PresentMon 2's columns, one in 1.x's,
+# with Discord's frames and the game's menu in them) must come out as the exact numbers worked out in Python, with
+# the right game picked, and a 1080 x 1920 card drawn.
+#
+# The card from the made-up runs leaves as a pre-release (tag bench-preview-*) for the owner to look at; the next run
+# deletes it. Nothing is committed, and it never goes on the site: those numbers are made up.
+name: OmniDx Bench check
+on:
+  workflow_dispatch:
+  push:
+    branches: ["claude/omnidx-editing-platform-9phdcc"]
+    paths: ["bench.ps1", "tools/bench-fixture.py", ".github/workflows/bench.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bench-check
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse bench.ps1 with PowerShell's parser
+        shell: powershell
+        run: |
+          $e = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path bench.ps1), [ref]$null, [ref]$e)
+          if ($e) { $e | ForEach-Object { Write-Host ("{0}: {1}" -f $_.Extent.StartLineNumber, $_.Message) }; exit 1 }
+          Write-Host 'bench.ps1 parses'
+      - name: PresentMon is fetched from Intel's release and matches the pinned SHA-256
+        shell: powershell
+        timeout-minutes: 5
+        run: |
+          $env:OMNIDX_BENCH_MODE = 'fetch'; $env:OMNIDX_YES = '1'; $env:OMNIDX_BENCH_DIR = Join-Path $env:RUNNER_TEMP 'bench'
+          $out = ''
+          try { $out = & .\bench.ps1 *>&1 | Out-String -Width 4000 } catch { $out = "$out`n$_" }
+          Write-Host $out
+          $pm = Get-ChildItem $env:OMNIDX_BENCH_DIR -Filter 'PresentMon-*.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($pm) {
+            Write-Host ("SHA-256 {0}" -f (Get-FileHash $pm.FullName -Algorithm SHA256).Hash)
+            $sig = Get-AuthenticodeSignature $pm.FullName
+            Write-Host ("Signature {0}: {1}" -f $sig.Status, $sig.SignerCertificate.Subject)
+          }
+          if ($out -notmatch 'SHA-256 matches') { Write-Host 'PresentMon was not fetched and matched'; exit 1 }
+          exit 0
+      - name: PresentMon runs with the script's options; a minute with no game in it is said plainly
+        shell: powershell
+        timeout-minutes: 5
+        run: |
+          $env:OMNIDX_YES = '1'; $env:OMNIDX_BENCH_DIR = Join-Path $env:RUNNER_TEMP 'bench'; $env:OMNIDX_BENCH_SECONDS = '20'; $env:OMNIDX_BENCH_LABEL = 'stock'
+          $out = ''
+          try { $out = & .\bench.ps1 *>&1 | Out-String -Width 4000 } catch { $out = "$out`n$_" }
+          Write-Host $out
+          if ($out -match 'PresentMon wrote nothing') { Write-Host 'PresentMon did not run with these options'; exit 1 }
+          if ($out -notmatch 'No game frames were recorded' -and $out -notmatch 'frames in') { Write-Host 'the capture did not end in a result or a plain no-game message'; exit 1 }
+          exit 0
+      - name: Known frame times give the exact numbers, the right game and a card
+        shell: powershell
+        timeout-minutes: 5
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $fx = Join-Path $env:RUNNER_TEMP 'fixture'
+          python tools/bench-fixture.py $fx
+          if ($LASTEXITCODE) { exit 1 }
+          $exp = Get-Content (Join-Path $fx 'expected.json') -Raw | ConvertFrom-Json
+          # The site's copy of the logo for the card, served from this machine as omnidx.net would serve it.
+          $srv = Start-Process python -ArgumentList '-m', 'http.server', '8765', '--bind', '127.0.0.1' -WorkingDirectory $PWD -PassThru -WindowStyle Hidden
+          Start-Sleep -Seconds 4
+          $dir = Join-Path $env:RUNNER_TEMP 'bench-fx'
+          try {
+            foreach ($l in 'stock', 'omnidx') {
+              $env:OMNIDX_BASE = 'http://127.0.0.1:8765'; $env:OMNIDX_YES = '1'; $env:OMNIDX_BENCH_DIR = $dir
+              $env:OMNIDX_BENCH_CSV = Join-Path $fx "$l.csv"; $env:OMNIDX_BENCH_LABEL = $l
+              $out = & .\bench.ps1 *>&1 | Out-String -Width 4000
+              Write-Host $out
+              $j = Get-ChildItem (Join-Path $dir 'counter-strike-2') -Filter "*-$l.json" | Sort-Object Name | Select-Object -Last 1
+              if (-not $j) { Write-Host "no $l run saved under counter-strike-2 (the wrong game was picked?)"; exit 1 }
+              $got = Get-Content $j.FullName -Raw | ConvertFrom-Json
+              if ($got.exe -ne 'cs2.exe') { Write-Host "picked $($got.exe), not cs2.exe"; exit 1 }
+              foreach ($k in 'frames', 'avg', 'low1', 'low01', 'stuttersPerMin') {
+                $want = [double]$exp.$l.$k; $have = [double]$got.$k
+                if ([Math]::Abs($want - $have) -gt 0.11) { Write-Host "$l ${k}: $have, expected $want"; exit 1 }
+                Write-Host "$l ${k}: $have (expected $want)"
+              }
+            }
+            if ($out -notmatch 'Average FPS' -or $out -notmatch 'With OmniDx') { Write-Host 'no side by side after both runs'; exit 1 }
+            $card = Join-Path $dir 'counter-strike-2\card.png'
+            if (-not (Test-Path $card)) { Write-Host 'no card'; exit 1 }
+            Add-Type -AssemblyName System.Drawing
+            $im = [System.Drawing.Image]::FromFile($card); $w = $im.Width; $h = $im.Height; $im.Dispose()
+            if ($w -ne 1080 -or $h -ne 1920) { Write-Host "the card is $w x $h"; exit 1 }
+            $env:OMNIDX_BENCH_CSV = ''; $env:OMNIDX_BENCH_MODE = 'compare'
+            $cmp = & .\bench.ps1 *>&1 | Out-String -Width 4000
+            Write-Host $cmp
+            if ($cmp -notmatch 'Result card') { Write-Host 'compare mode made no card'; exit 1 }
+            New-Item -ItemType Directory -Force -Path (Join-Path $env:RUNNER_TEMP 'preview') | Out-Null
+            Copy-Item $card (Join-Path $env:RUNNER_TEMP 'preview\bench-card-made-up-numbers.png')
+            Write-Host 'the numbers match, cs2.exe was picked over Discord and its menu, the card is 1080 x 1920'
+          } finally { Stop-Process -Id $srv.Id -Force -ErrorAction SilentlyContinue }
+          exit 0
+      - name: Clear old previews
+        if: always()
+        shell: bash
+        run: |
+          for t in $(gh release list --repo "$GITHUB_REPOSITORY" --limit 50 --json tagName --jq '.[].tagName' | grep -E '^bench-preview-' | grep -v "${{ github.run_id }}" || true); do
+            gh release delete "$t" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag && echo "deleted $t"
+          done
+      - name: Hand the card over as a pre-release
+        if: always()
+        shell: bash
+        run: |
+          cd "$RUNNER_TEMP/preview" 2>/dev/null || exit 0
+          files=$(find . -maxdepth 1 -type f -size +0 | sort)
+          [ -n "$files" ] || exit 0
+          tag="bench-preview-${{ github.run_id }}"
+          gh release create "$tag" --repo "$GITHUB_REPOSITORY" --prerelease --target "$GITHUB_SHA" --title "OmniDx Bench preview $tag" --notes "The card from the bench check's made-up runs (not a real result); deleted by the next run." $files \
+            && echo "released $tag" || echo "release failed"

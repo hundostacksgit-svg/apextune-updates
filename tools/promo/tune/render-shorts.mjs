@@ -97,7 +97,7 @@ try {
       if (only.length && !only.includes(S.id)) continue;
       console.log(`${S.id}`);
       const wav = await audio(S.id), pic = await picture(S.id);
-      const name = `${String(n + 1).padStart(2, '0')}-${S.id}`, mp4 = path.join(OUT, `${name}.mp4`), jpg = path.join(OUT, `${name}-cover.jpg`);
+      const name = `${String(S.num || n + 1).padStart(2, '0')}-${S.id}`, mp4 = path.join(OUT, `${name}.mp4`), jpg = path.join(OUT, `${name}-cover.jpg`);
       // TikTok re-encodes everything, so give it plenty to start from: high-profile H.264, 30 fps, AAC 48 kHz, loud like the feed.
       execFileSync(FFMPEG, ['-y', '-loglevel', 'error', '-i', pic, '-i', wav, '-map', '0:v', '-map', '1:a', '-c:v', 'libx264', '-preset', 'slow', '-crf', '17', '-profile:v', 'high', '-level', '4.2', '-pix_fmt', 'yuv420p', '-r', '30',
         '-af', 'loudnorm=I=-14:TP=-1.2:LRA=8', '-ar', '48000', '-c:a', 'aac', '-b:a', '192k', '-shortest', '-movflags', '+faststart', mp4]);

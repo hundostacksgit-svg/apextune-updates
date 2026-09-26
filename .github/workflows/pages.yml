@@ -36,7 +36,7 @@ jobs:
           done
           for f in studio/index.html studio/pricing/index.html studio/download/index.html studio/trust/index.html studio/alternative/index.html \
                    studio/account/index.html studio/activate/index.html studio/activate/activate.js studio/admin/index.html studio/admin/admin.js studio/terms/index.html \
-                   go.ps1 edition.ps1 tools/edition-pack.py tune/omnidx.ps1 tune/config.json studio/assets/tune.js studio/assets/tunekey.js \
+                   go.ps1 edition.ps1 bench.ps1 tools/edition-pack.py tune/omnidx.ps1 tune/config.json studio/assets/tune.js studio/assets/tunekey.js \
                    studio/what-it-touches/index.html studio/changelog/index.html robots.txt sitemap.xml 404.html studio/assets/app.png \
                    studio/edition/index.html studio/showcase/index.html studio/assets/video/omnidx-edition-film.mp4 studio/assets/video/omnidx-tune-restart.mp4 \
                    tools/tune-check.mjs tools/tune-touches.py docs/TUNE.md \
