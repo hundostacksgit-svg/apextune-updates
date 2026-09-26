@@ -21,6 +21,10 @@ reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v WUStatusServ
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" /v DoNotConnectToWindowsUpdateInternetLocations /t REG_DWORD /d 1 /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" /v UseWUServer /t REG_DWORD /d 1 /f
 reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" /v NoAutoUpdate /t REG_DWORD /d 1 /f
+rem    Nor does it encrypt its disk by itself (Windows 11 24H2 turns BitLocker on
+rem    for a new install with a TPM): the filming machine reads the PC's logs off
+rem    the disk afterwards, which take 6 could not.
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\BitLocker" /v PreventDeviceEncryption /t REG_DWORD /d 1 /f
 rem 4. The helper that tells the filming machine where things are on screen, at every sign-in.
 schtasks /create /tn FilmAgent /xml C:\film\agent-task.xml /f > C:\film\setup-log.txt 2>&1
 netsh interface portproxy show all >> C:\film\setup-log.txt 2>&1
