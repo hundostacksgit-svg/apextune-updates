@@ -42,7 +42,7 @@ STEPS = {
     'e13-browser-newtab':  (5.8, 0.6, 'Its own browser. The new tab loads nothing', 'browser'),
     'e14-browser-omnidx':  (8.6, 0.6, 'Trackers blocked. Tabs sleep while you play', 'browser'),
     'e15-browser-youtube': (10.8, 0.6, 'Ctrl + T: tabs in the title bar', 'browser'),
-    'e16-hub-boost':       (4.6, 0.8, 'Game Boost on: the system timer at 1 ms', 'timer'),
+    'e16-hub-boost':       (3.6, 0.3, 'Game Boost on: the system timer at 1 ms', 'timer'),
     'e18-settings-about':  (6.0, 0.8, 'Settings > About: OmniDx Edition', 'about'),
     'e19-lock':            (4.4, 0.4, 'The lock screen', None),
     'e20-sign-in':         (3.4, 0.4, 'The sign-in', None),
