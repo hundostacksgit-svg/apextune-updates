@@ -198,6 +198,7 @@ function renderKey(info, { again = false } = {}) {
 
     <div class="act-actions">
       <a class="btn btn-ghost" href="../download/">Everything the command does, screen by screen</a>
+      <a class="btn btn-ghost" href="${esc(TUNE.discord)}" target="_blank" rel="noopener">Join the OmniDx Discord — /verify there with your key for the buyers lounge</a>
     </div>
 
     <details class="act-move" style="margin-top:22px">

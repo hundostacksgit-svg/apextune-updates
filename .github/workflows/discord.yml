@@ -10,7 +10,7 @@ name: Discord
 # The first run deploys the bot and, while it is in no server yet, puts the link that adds it on the Summary tab (and
 # emails it, when the Gmail secrets are there). Add it to your server, run this again, and the server is built. Every
 # later push to discord/ redeploys and brings the server back in line; nothing is posted twice and nothing the owner
-# made is deleted.
+# made is deleted. The site links the owner's permanent invite (DISCORD in tools/build-site.py).
 on:
   push:
     branches: ["claude/omnidx-editing-platform-9phdcc"]
@@ -18,9 +18,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  # The server's invite goes into studio/assets/discord.json for the site, and Pages is asked to publish.
-  contents: write
-  actions: write
+  contents: read
 
 concurrency:
   group: discord
@@ -195,36 +193,9 @@ jobs:
           echo "SERVER_INVITE=$invite" >> "$GITHUB_ENV"
           { echo "## The OmniDx Discord is built"; echo; echo "- Invite people: ${invite:-(no invite: give the bot Manage Server)}"; echo "- Tickets: #open-a-ticket; transcripts and ratings: #ticket-logs (team only)"; echo "- Commands: /ticket open, close, add, remove, claim, rename · /verify · /faq · /stats"; echo "- Give the **OmniDx Team** role to anyone who answers tickets (you have it already)."; } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Put the invite on the site
-        id: site
-        if: steps.build.outputs.built == 'true'
-        working-directory: .
-        run: |
-          set -euo pipefail
-          git config user.name 'omnidx-ci'
-          git config user.email 'ci@omnidx.net'
-          for try in 1 2 3; do
-            git fetch -q origin "$GITHUB_REF_NAME"
-            git reset -q --hard "origin/$GITHUB_REF_NAME"
-            cp "$RUNNER_TEMP/discord-out/discord.json" studio/assets/discord.json
-            git add studio/assets/discord.json
-            if git diff --cached --quiet; then echo 'the site already has this invite'; exit 0; fi
-            git commit -q -m "Discord: the server's invite on the site"
-            if git push -q origin "HEAD:$GITHUB_REF_NAME"; then
-              echo "new=true" >> "$GITHUB_OUTPUT"
-              curl -sS -o /dev/null -w 'Pages asked to publish (%{http_code})\n' -X POST \
-                -H "Authorization: Bearer $GITHUB_TOKEN" -H 'Accept: application/vnd.github+json' \
-                "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/workflows/pages.yml/dispatches" -d "{\"ref\":\"$GITHUB_REF_NAME\"}"
-              exit 0
-            fi
-            echo "push refused on try $try; the branch moved"; sleep 5
-          done
-          exit 1
-
-      # From a phone the links are easier in an inbox than on the Summary tab: once while the bot waits to be added,
-      # once when the server is first built (or its invite changes), never on an ordinary redeploy.
+      # From a phone the link is easier in an inbox than on the Summary tab: only while the bot waits to be added.
       - name: Email the links
-        if: steps.ready.outputs.ready == 'true' && env.GMAIL_USER != '' && env.GMAIL_APP_PASSWORD != '' && (steps.build.outputs.built == 'false' || steps.site.outputs.new == 'true')
+        if: steps.ready.outputs.ready == 'true' && env.GMAIL_USER != '' && env.GMAIL_APP_PASSWORD != '' && steps.build.outputs.built == 'false'
         env:
           BUILT: ${{ steps.build.outputs.built }}
         run: |

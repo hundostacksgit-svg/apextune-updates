@@ -295,6 +295,8 @@ export const TUNE = {
   command: 'irm omnidx.net/go.ps1 | iex',
   /* OmniDx Edition, included with every key: edition.ps1 makes the install stick or sets this PC up (studio/edition/). */
   editionCommand: 'irm omnidx.net/edition.ps1 | iex',
+  /* The OmniDx Discord (a permanent invite): the key page offers it, with /verify for the buyers lounge. */
+  discord: 'https://discord.gg/VvbYJcDQbB',
   /* Where the script and its config are served from. The site can be opened
      from any host for testing, but the script always fetches from the domain. */
   scriptUrl: 'https://omnidx.net/tune/omnidx.ps1',

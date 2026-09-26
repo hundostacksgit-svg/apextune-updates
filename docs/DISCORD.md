@@ -19,8 +19,9 @@ licence server on Cloudflare (free, always on, nothing to keep running on a PC).
 The first run deploys the bot and, because it is not in a server yet, emails
 you (and puts on the run's Summary tab) the link that adds it. Open it, pick
 **OmniDx**, press **Authorize**, and run the workflow once more: the server is
-built, and a second email brings the invite link. The site's footer shows
-"The OmniDx Discord" from then on.
+built. The site links the server's permanent invite
+(https://discord.gg/VvbYJcDQbB, `DISCORD` in `tools/build-site.py`) from a Discord
+button in the bar on every page, the phone menu, the footer and the key page.
 
 Everything else is read off that token: the application id, the public key,
 the server. The Cloudflare token the licence server already deploys with is
@@ -87,4 +88,4 @@ name next to it on the next run.
 | `discord/setup.mjs` | Builds the server from `content.js`; run by the workflow. |
 | `discord/schema.sql` | Its D1 database (`omnidx-discord`): tickets, verified keys, the server's ids. |
 | `tools/discord-test.mjs` | Everything above against a stand-in Discord and licence server, and setup run twice on a new server; the workflow runs it before every deploy. |
-| `.github/workflows/discord.yml` | Test, deploy, point Discord at the bot, build the server, put the invite on the site. |
+| `.github/workflows/discord.yml` | Test, deploy, point Discord at the bot, build the server. |
